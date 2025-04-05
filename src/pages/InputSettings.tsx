@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { getMonthName } from '@/lib/date-utils';
 import { ModuleType } from '@/types/kitchen-ledger';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/kitchen-service';
 
 interface InputSettingsProps {
   modulePrefix?: string;
@@ -20,6 +22,7 @@ interface InputSettingsProps {
 
 export default function InputSettings({ modulePrefix = "", moduleType = "food" }: InputSettingsProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const monthRecord = useMonthRecord(currentYear, currentMonth, moduleType);
@@ -28,13 +31,75 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const [costTarget, setCostTarget] = useState(Math.round(monthRecord.costTarget * 100));
   const [staffAllowance, setStaffAllowance] = useState(monthRecord.staffFoodAllowance);
   const [suppliers, setSuppliers] = useState(monthRecord.suppliers);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch suppliers from Supabase
+  const { data: supabaseSuppliers, isLoading: isFetchingSuppliers } = useQuery({
+    queryKey: ['suppliers', moduleType],
+    queryFn: async () => {
+      const data = await fetchSuppliers(moduleType);
+      return data;
+    }
+  });
+
+  // Mutations for suppliers
+  const createSupplierMutation = useMutation({
+    mutationFn: createSupplier,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers', moduleType] });
+      toast.success('Supplier added successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error adding supplier: ${error.message}`);
+    }
+  });
+
+  const updateSupplierMutation = useMutation({
+    mutationFn: updateSupplier,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers', moduleType] });
+      toast.success('Supplier updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error updating supplier: ${error.message}`);
+    }
+  });
+
+  const deleteSupplierMutation = useMutation({
+    mutationFn: deleteSupplier,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers', moduleType] });
+      toast.success('Supplier deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error deleting supplier: ${error.message}`);
+    }
+  });
+
+  // Sync local state with Supabase data when available
+  useEffect(() => {
+    if (supabaseSuppliers && !isFetchingSuppliers) {
+      const mappedSuppliers = supabaseSuppliers.map(s => ({
+        id: s.id,
+        name: s.name
+      }));
+      
+      if (mappedSuppliers.length > 0) {
+        setSuppliers(mappedSuppliers);
+      }
+      setIsLoading(false);
+    }
+  }, [supabaseSuppliers, isFetchingSuppliers]);
 
   useEffect(() => {
     setGpTarget(Math.round(monthRecord.gpTarget * 100));
     setCostTarget(Math.round(monthRecord.costTarget * 100));
     setStaffAllowance(monthRecord.staffFoodAllowance);
-    setSuppliers([...monthRecord.suppliers]);
-  }, [monthRecord]);
+    // Only update suppliers from month record if we haven't loaded from Supabase yet
+    if (isLoading) {
+      setSuppliers([...monthRecord.suppliers]);
+    }
+  }, [monthRecord, isLoading]);
 
   const handleMonthChange = (year: number, month: number) => {
     setCurrentYear(year);
@@ -47,6 +112,13 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   };
 
   const handleRemoveSupplier = (id: string) => {
+    // If the supplier exists in Supabase, delete it
+    const supplierToDelete = supabaseSuppliers?.find(s => s.id === id);
+    if (supplierToDelete) {
+      deleteSupplierMutation.mutate(id);
+    }
+    
+    // Remove from local state
     setSuppliers(suppliers.filter(s => s.id !== id));
   };
 
@@ -54,10 +126,11 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     setSuppliers(suppliers.map(s => s.id === id ? { ...s, name } : s));
   };
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     const newGpTarget = gpTarget / 100;
     const newCostTarget = costTarget / 100;
     
+    // Update local store
     useStore.setState(state => {
       const updatedMonths = state.annualRecord.months.map(month => {
         if (month.year === currentYear && month.month === currentMonth) {
@@ -80,6 +153,32 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
         }
       };
     });
+    
+    // Sync suppliers with Supabase
+    const validSuppliers = suppliers.filter(s => s.name.trim() !== '');
+    
+    for (const supplier of validSuppliers) {
+      const existingSupplier = supabaseSuppliers?.find(s => s.id === supplier.id);
+      
+      if (existingSupplier) {
+        // Update if name changed
+        if (existingSupplier.name !== supplier.name) {
+          await updateSupplierMutation.mutateAsync({ 
+            id: supplier.id, 
+            updates: { 
+              name: supplier.name,
+              module_type: moduleType
+            } 
+          });
+        }
+      } else {
+        // Create new supplier
+        await createSupplierMutation.mutateAsync({ 
+          name: supplier.name, 
+          module_type: moduleType 
+        });
+      }
+    }
     
     toast.success("Settings saved successfully");
   };
@@ -148,7 +247,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
 
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium">Suppliers</h3>
+              <h3 className="text-lg font-medium">{moduleType === 'food' ? 'Food' : 'Beverage'} Suppliers</h3>
               <Button onClick={handleAddSupplier} variant="outline" size="sm">
                 <Plus className="h-4 w-4 mr-1" /> Add Supplier
               </Button>
@@ -178,6 +277,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
             <Button 
               variant="default" 
               onClick={handleSaveSettings}
+              disabled={createSupplierMutation.isPending || updateSupplierMutation.isPending || deleteSupplierMutation.isPending}
             >
               <Save className="h-4 w-4 mr-2" /> Save Settings
             </Button>

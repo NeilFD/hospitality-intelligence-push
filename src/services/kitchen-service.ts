@@ -8,12 +8,14 @@ import {
   DbCreditNote,
   DbMonthlySettings
 } from '@/types/supabase-types';
+import { ModuleType } from '@/types/kitchen-ledger';
 
 // Suppliers
-export const fetchSuppliers = async () => {
+export const fetchSuppliers = async (moduleType: ModuleType = 'food') => {
   const { data, error } = await supabase
     .from('suppliers')
     .select('*')
+    .eq('module_type', moduleType)
     .order('name');
   
   if (error) throw error;
@@ -31,7 +33,8 @@ export const createSupplier = async (supplier: Omit<DbSupplier, 'id' | 'created_
   return data;
 };
 
-export const updateSupplier = async (id: string, updates: Partial<DbSupplier>) => {
+export const updateSupplier = async (params: { id: string, updates: Partial<DbSupplier> }) => {
+  const { id, updates } = params;
   const { data, error } = await supabase
     .from('suppliers')
     .update(updates)

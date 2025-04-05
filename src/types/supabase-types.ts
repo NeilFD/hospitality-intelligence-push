@@ -1,5 +1,6 @@
 
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
+import { ModuleType } from './kitchen-ledger';
 
 export interface Database {
   public: {
@@ -34,6 +35,7 @@ export interface Database {
           email?: string | null;
           phone?: string | null;
           notes?: string | null;
+          module_type?: ModuleType;
           created_at?: string;
           updated_at?: string;
         };
@@ -44,6 +46,7 @@ export interface Database {
           email?: string | null;
           phone?: string | null;
           notes?: string | null;
+          module_type?: ModuleType;
           created_at?: string;
           updated_at?: string;
         };
@@ -230,6 +233,7 @@ export interface DBSupplier {
   email: string | null;
   phone: string | null;
   notes: string | null;
+  module_type: ModuleType;
   created_at: string;
   updated_at: string;
 }
