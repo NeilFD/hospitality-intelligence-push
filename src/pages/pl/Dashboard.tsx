@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { FileUp, Info, CheckCircle, Loader2 } from 'lucide-react';
+import { FileUp, Info, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { useBudgetProcessor, fetchBudgetItems } from '@/utils/budget-processor';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
 
 const chartData = [
   { name: 'Budget', revenue: 73000, costs: 56450, ebitda: 16550 },
@@ -68,9 +69,16 @@ export default function PLDashboard() {
           file.type === 'application/vnd.ms-excel' || 
           file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
         setFileInput(file);
-        console.log(`${file.name} is ready to be processed.`);
+        toast({
+          title: "File Selected",
+          description: `${file.name} is ready to be processed.`,
+        });
       } else {
-        console.error("Please upload a CSV or Excel file.");
+        toast({
+          title: "Invalid File Format",
+          description: "Please upload a CSV or Excel file.",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -80,7 +88,10 @@ export default function PLDashboard() {
       setIsProcessing(true);
       setIsProcessed(false);
       
-      console.log("Your budget file is being processed...");
+      toast({
+        title: "Processing Budget File",
+        description: "Your budget file is being processed...",
+      });
       
       try {
         const success = await processBudget(
@@ -90,15 +101,27 @@ export default function PLDashboard() {
         );
         
         if (success) {
-          console.log("Budget data imported successfully!");
+          toast({
+            title: "Success!",
+            description: `Budget data for ${currentMonthName} ${currentYear} imported successfully!`,
+            variant: "default",
+          });
           setIsProcessed(true);
           refetch();
         } else {
-          console.error("Failed to process the budget file.");
+          toast({
+            title: "Processing Failed",
+            description: "Failed to process the budget file. Please check the format.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Error processing budget file:', error);
-        console.error("An error occurred while processing the budget file.");
+        toast({
+          title: "Error",
+          description: "An error occurred while processing the budget file.",
+          variant: "destructive",
+        });
       } finally {
         setIsProcessing(false);
       }
@@ -267,7 +290,8 @@ export default function PLDashboard() {
             )}
             
             <div className="text-xs text-gray-500 mt-2">
-              <p>Your budget will be used to calculate variances and forecasts.</p>
+              <p>Budget data is now stored in your Supabase database.</p>
+              <p>It will be used to calculate variances and forecasts.</p>
             </div>
           </CardContent>
         </Card>

@@ -1,4 +1,3 @@
-
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -16,8 +15,8 @@ import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/auth/RequireAuth";
 import { useAuthStore } from "./services/auth-service";
 import Index from "./pages/Index";
+import { Toaster } from "@/components/ui/toaster";
 
-// Import module-specific pages
 import FoodDashboard from "./pages/food/Dashboard";
 import FoodInputSettings from "./pages/food/InputSettings";
 import FoodMonthSummary from "./pages/food/MonthSummary";
@@ -89,6 +88,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
+          <Toaster />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
