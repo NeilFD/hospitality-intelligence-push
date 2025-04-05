@@ -1,3 +1,4 @@
+
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -194,7 +195,18 @@ export interface Database {
         };
       };
       budget_items: {
-        Row: BudgetItem;
+        Row: {
+          id: string;
+          year: number;
+          month: number;
+          category: string;
+          name: string;
+          budget_amount: number;
+          actual_amount?: number | null;
+          forecast_amount?: number | null;
+          created_at: string;
+          updated_at: string;
+        };
         Insert: {
           id?: string;
           year: number;
@@ -233,7 +245,17 @@ export interface Database {
   };
 }
 
-export type BudgetItem = Database['public']['Tables']['budget_items']['Row'] & {
+// Define each type explicitly without circular references
+export type DbBudgetItem = Database['public']['Tables']['budget_items']['Row'];
+export type DbSupplier = Database['public']['Tables']['suppliers']['Row'];
+export type DbDailyRecord = Database['public']['Tables']['daily_records']['Row'];
+export type DbWeeklyRecord = Database['public']['Tables']['weekly_records']['Row'];
+export type DbPurchase = Database['public']['Tables']['purchases']['Row'];
+export type DbCreditNote = Database['public']['Tables']['credit_notes']['Row'];
+export type DbMonthlySettings = Database['public']['Tables']['monthly_settings']['Row'];
+export type DbProfile = Database['public']['Tables']['profiles']['Row'];
+
+export interface BudgetItem {
   id: string;
   year: number;
   month: number;
@@ -244,15 +266,7 @@ export type BudgetItem = Database['public']['Tables']['budget_items']['Row'] & {
   forecast_amount?: number | null;
   created_at: string;
   updated_at: string;
-};
-
-export type DbSupplier = Database['public']['Tables']['suppliers']['Row'];
-export type DbDailyRecord = Database['public']['Tables']['daily_records']['Row'];
-export type DbWeeklyRecord = Database['public']['Tables']['weekly_records']['Row'];
-export type DbPurchase = Database['public']['Tables']['purchases']['Row'];
-export type DbCreditNote = Database['public']['Tables']['credit_notes']['Row'];
-export type DbMonthlySettings = Database['public']['Tables']['monthly_settings']['Row'];
-export type DbProfile = Database['public']['Tables']['profiles']['Row'];
+}
 
 export interface UserProfile {
   id: string;
