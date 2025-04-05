@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/services/auth-service';
-import { toast } from 'sonner';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -20,7 +19,6 @@ export default function LoginForm() {
     
     try {
       await login(email, password);
-      toast.success('Logged in successfully');
       navigate('/');
     } catch (err) {
       // Error is handled by the login function
