@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -45,7 +46,7 @@ interface AnnualSummaryProps {
 export default function AnnualSummary({ 
   modulePrefix = "", 
   moduleType = "food", 
-  chartMargins = { top: 20, right: 30, left: -20, bottom: 20 } 
+  chartMargins = { top: 20, right: 30, left: -40, bottom: 20 } 
 }: AnnualSummaryProps) {
   const pageTitle = modulePrefix ? `${modulePrefix} Annual Summary` : "Annual Summary";
   const annualRecord = useStore(state => state.annualRecord);
