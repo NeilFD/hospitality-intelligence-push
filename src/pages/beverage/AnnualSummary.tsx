@@ -3,7 +3,7 @@ import AnnualSummary from '../AnnualSummary';
 
 export default function BeverageAnnualSummary() {
   // Minimize left margin while keeping y-axis readable
-  const chartMargins = { top: 20, right: 30, left: -40, bottom: 20 };
+  const chartMargins = { top: 20, right: 30, left: -30, bottom: 20 };
 
   return <AnnualSummary 
     modulePrefix="Beverage" 
