@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -45,17 +44,14 @@ const Layout = () => {
   const isMobile = useIsMobile();
   const { user, profile, isAuthenticated, logout } = useAuthStore();
   
-  // Get current date information for navigation
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
   
-  // Use the Zustand selectors correctly to avoid infinite loops
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
-  // Sort modules by display order - memoized to prevent unnecessary recalculations
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
@@ -86,7 +82,7 @@ const Layout = () => {
       case 'beverage':
         return <Wine className="mr-2 h-4 w-4" />;
       case 'pl':
-        return <DollarSign className="mr-2 h-4 w-4" />;
+        return <span className="mr-2 h-4 w-4 text-lg font-bold">£</span>;
       case 'wages':
         return <Clock className="mr-2 h-4 w-4" />;
       case 'performance':
@@ -96,7 +92,6 @@ const Layout = () => {
     }
   };
 
-  // Generate module-specific navigation items - memoized to prevent recreating on every render
   const getModuleNavItems = useMemo(() => {
     switch(currentModule) {
       case 'food':
@@ -153,7 +148,6 @@ const Layout = () => {
     }
   }, [currentModule, currentYear, currentMonth]);
 
-  // First level navigation shows all modules - memoized
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
       name: module.name,
@@ -163,7 +157,6 @@ const Layout = () => {
     }));
   }, [sortedModules]);
   
-  // Handle module selection
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
@@ -174,7 +167,6 @@ const Layout = () => {
     return <Outlet />;
   }
 
-  // Sidebar component
   const Sidebar = (
     <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
@@ -183,7 +175,6 @@ const Layout = () => {
       </div>
       <Separator className="bg-tavern-blue-light/20" />
       
-      {/* Modules Navigation */}
       <div className="p-2 my-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
           {!sidebarCollapsed && (
@@ -218,7 +209,6 @@ const Layout = () => {
       
       <Separator className="bg-tavern-blue-light/20" />
       
-      {/* Current Module Navigation */}
       <div className="flex-1 p-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
           {!sidebarCollapsed && (
@@ -256,7 +246,6 @@ const Layout = () => {
     </div>
   );
 
-  // ProfileAvatar component
   const ProfileAvatar = () => (
     <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-tavern-blue text-white">
@@ -302,7 +291,7 @@ const Layout = () => {
           </Sheet>
           <div className="flex-1 overflow-auto pt-16">
             <div className="absolute top-4 left-0 right-0 flex justify-between px-4">
-              <div className="w-8"></div> {/* Spacer for alignment */}
+              <div className="w-8"></div>
               <TavernLogo size="sm" />
               {isAuthenticated && (
                 <DropdownMenu>
