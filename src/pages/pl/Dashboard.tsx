@@ -144,7 +144,7 @@ export default function PLDashboard() {
                 type="file"
                 accept=".csv, .xls, .xlsx"
                 onChange={handleFileUpload}
-                className="cursor-pointer 
+                className="
                   file:mr-4 
                   file:py-2 
                   file:px-4 
@@ -154,9 +154,11 @@ export default function PLDashboard() {
                   file:bg-purple-50 
                   file:text-purple-700 
                   hover:file:bg-purple-100
-                  text-gray-500
+                  text-transparent  // Hide the default text
+                  cursor-pointer
                   max-w-full
-                  truncate"
+                "
+                placeholder="Choose File"
                 disabled={isProcessing}
               />
             </div>
