@@ -1,7 +1,6 @@
 
 import { read, utils } from 'xlsx';
 import { supabase } from '@/lib/supabase';
-import { toast } from "sonner";
 
 export interface BudgetItem {
   category: string;
@@ -199,19 +198,19 @@ export const useBudgetProcessor = () => {
       const budgetItems = await processBudgetFile(file);
       
       if (budgetItems.length === 0) {
-        toast.error("No valid budget data found in the file.");
+        console.log("No valid budget data found in the file.");
         return false;
       }
       
       // Save to database
       await saveBudgetItems(budgetItems, year, month);
       
-      toast.success(`Successfully imported ${budgetItems.length} budget items.`);
+      console.log(`Successfully imported ${budgetItems.length} budget items.`);
       
       return true;
     } catch (error) {
       console.error('Budget processing error:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to process budget file.");
+      console.error(error instanceof Error ? error.message : "Failed to process budget file.");
       return false;
     }
   };

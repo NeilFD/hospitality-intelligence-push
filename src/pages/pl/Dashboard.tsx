@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -7,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { FileUp, Info, CheckCircle, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { useBudgetProcessor, fetchBudgetItems } from '@/utils/budget-processor';
 import { useQuery } from '@tanstack/react-query';
 
@@ -68,9 +68,9 @@ export default function PLDashboard() {
           file.type === 'application/vnd.ms-excel' || 
           file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
         setFileInput(file);
-        toast.success(`${file.name} is ready to be processed.`);
+        console.log(`${file.name} is ready to be processed.`);
       } else {
-        toast.error("Please upload a CSV or Excel file.");
+        console.error("Please upload a CSV or Excel file.");
       }
     }
   };
@@ -80,7 +80,7 @@ export default function PLDashboard() {
       setIsProcessing(true);
       setIsProcessed(false);
       
-      toast.loading("Your budget file is being processed...");
+      console.log("Your budget file is being processed...");
       
       try {
         const success = await processBudget(
@@ -90,15 +90,15 @@ export default function PLDashboard() {
         );
         
         if (success) {
-          toast.success("Budget data imported successfully!");
+          console.log("Budget data imported successfully!");
           setIsProcessed(true);
           refetch();
         } else {
-          toast.error("Failed to process the budget file.");
+          console.error("Failed to process the budget file.");
         }
       } catch (error) {
         console.error('Error processing budget file:', error);
-        toast.error("An error occurred while processing the budget file.");
+        console.error("An error occurred while processing the budget file.");
       } finally {
         setIsProcessing(false);
       }

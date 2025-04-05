@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/services/auth-service';
-import { toast } from 'sonner';
 
 export default function RegisterForm() {
   const [email, setEmail] = useState('');
@@ -22,7 +21,7 @@ export default function RegisterForm() {
     
     try {
       await register(email, password, firstName, lastName);
-      toast.success('Registration successful! Please check your email to verify your account.');
+      console.log('Registration successful! Please check your email to verify your account.');
       navigate('/login');
     } catch (err) {
       // Error is handled by the register function
