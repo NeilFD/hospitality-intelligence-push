@@ -16,23 +16,24 @@ export default function StatusBox({ label, value, status, className }: StatusBox
     neutral: 'bg-tavern-blue-light/5 backdrop-blur-sm text-tavern-blue-dark border-tavern-blue-light/20'
   };
   
-  // Determine font size based on value length
+  // More advanced font size calculation
   const getFontSize = () => {
     const length = value.length;
-    if (length <= 3) return 'text-3xl sm:text-4xl';
-    if (length <= 5) return 'text-2xl sm:text-3xl';
-    return 'text-xl sm:text-2xl';
+    if (length <= 4) return 'text-3xl sm:text-4xl';
+    if (length <= 6) return 'text-2xl sm:text-3xl';
+    if (length <= 8) return 'text-xl sm:text-2xl';
+    return 'text-lg sm:text-xl';
   };
 
   return (
     <div className={cn(
-      'rounded-xl p-4 flex flex-col items-center justify-center border shadow-sm glass-morphism',
+      'rounded-xl p-4 flex flex-col items-center justify-center border shadow-sm glass-morphism h-28 min-w-[150px]',
       statusClasses[status],
       className
     )}>
-      <h3 className="text-sm font-medium opacity-80">{label}</h3>
+      <h3 className="text-sm font-medium opacity-80 mb-1">{label}</h3>
       <p className={cn(
-        'font-bold mt-1 truncate w-full text-center',
+        'font-bold truncate w-full text-center',
         getFontSize()
       )}>
         {value}
