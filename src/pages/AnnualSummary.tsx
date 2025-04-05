@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -52,14 +51,11 @@ export default function AnnualSummary({
   const annualRecord = useStore(state => state.annualRecord);
   const isMobile = useIsMobile();
   
-  // State for expanded chart view
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
   
-  // Process data for charts
   const monthlyData = React.useMemo(() => {
     const months = [];
     
-    // Process each month
     for (let i = 0; i < 12; i++) {
       const monthNumber = i + 1;
       const monthName = new Date(2023, i, 1).toLocaleString('default', { month: 'short' });
@@ -69,7 +65,6 @@ export default function AnnualSummary({
       );
       
       if (monthRecord) {
-        // Calculate totals
         let totalRevenue = 0;
         let totalPurchases = 0;
         
@@ -77,17 +72,14 @@ export default function AnnualSummary({
           week.days.forEach(day => {
             totalRevenue += day.revenue;
             
-            // Sum purchases for each supplier
             Object.values(day.purchases).forEach(amount => {
               totalPurchases += amount;
             });
             
-            // Subtract credit notes
             totalPurchases -= day.creditNotes.reduce((sum, amount) => sum + amount, 0);
           });
         });
         
-        // Calculate GP
         const grossProfit = totalRevenue - totalPurchases;
         const gpPercentage = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
         
@@ -101,7 +93,6 @@ export default function AnnualSummary({
           target: monthRecord.gpTarget * 100
         });
       } else {
-        // Add placeholder for months without data
         months.push({
           name: monthName,
           month: monthNumber,
@@ -117,7 +108,6 @@ export default function AnnualSummary({
     return months;
   }, [annualRecord]);
   
-  // Calculate annual totals
   const annualTotals = React.useMemo(() => {
     const totals = {
       revenue: 0,
@@ -135,11 +125,10 @@ export default function AnnualSummary({
         ? parseFloat(((totals.grossProfit / totals.revenue) * 100).toFixed(2))
         : 0;
       
-      // Calculate average target GP
       const monthsWithData = monthlyData.filter(month => month.revenue > 0);
       totals.averageTargetGP = monthsWithData.length > 0
         ? parseFloat((monthsWithData.reduce((sum, month) => sum + month.target, 0) / monthsWithData.length).toFixed(2))
-        : 68; // Default target
+        : 68;
     }
     
     return totals;
@@ -168,7 +157,6 @@ export default function AnnualSummary({
     }
   };
 
-  // Toggle chart expansion
   const toggleChartExpansion = (chartId: string) => {
     if (expandedChart === chartId) {
       setExpandedChart(null);
@@ -177,7 +165,6 @@ export default function AnnualSummary({
     }
   };
   
-  // Render mobile view with carousel for charts
   if (isMobile && !expandedChart) {
     return (
       <div className="container py-8">
@@ -300,7 +287,6 @@ export default function AnnualSummary({
     );
   }
   
-  // Render expanded chart view
   if (expandedChart) {
     return (
       <div className="container py-8">
@@ -325,7 +311,7 @@ export default function AnnualSummary({
           </CardHeader>
           <CardContent className="overflow-hidden">
             <ChartContainer config={chartConfig} className="h-[70vh]">
-              <ResponsiveContainer width="99%" height="99%">
+              <ResponsiveContainer width="100%" height="99%">
                 {expandedChart === 'revenue' ? (
                   <BarChart
                     data={monthlyData}
@@ -397,7 +383,6 @@ export default function AnnualSummary({
     );
   }
   
-  // Regular desktop view
   return (
     <div className="container py-8">
       <h1 className="text-2xl font-bold text-tavern-blue mb-6">{pageTitle}</h1>
@@ -440,35 +425,37 @@ export default function AnnualSummary({
               Monthly Revenue & Purchases
             </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-hidden">
-            <ChartContainer config={chartConfig} className="h-80">
-              <ResponsiveContainer width="99%" height="99%">
-                <BarChart
-                  data={monthlyData}
-                  margin={chartMargins}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <ChartTooltipContent
-                            className="bg-background border-border"
-                            payload={payload}
-                          />
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="revenue" name="Revenue" fill={chartConfig.revenue.color} />
-                  <Bar dataKey="purchases" name="Purchases" fill={chartConfig.purchases.color} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+          <CardContent className="overflow-visible p-0 pl-0">
+            <div className="pl-0 pr-4 py-6">
+              <ChartContainer config={chartConfig} className="h-80">
+                <ResponsiveContainer width="100%" height="99%">
+                  <BarChart
+                    data={monthlyData}
+                    margin={chartMargins}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <ChartTooltipContent
+                              className="bg-background border-border"
+                              payload={payload}
+                            />
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend />
+                    <Bar dataKey="revenue" name="Revenue" fill={chartConfig.revenue.color} />
+                    <Bar dataKey="purchases" name="Purchases" fill={chartConfig.purchases.color} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
           </CardContent>
           <CardFooter className="flex justify-end">
             <Button 
@@ -490,47 +477,49 @@ export default function AnnualSummary({
               Monthly Gross Profit %
             </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-hidden">
-            <ChartContainer config={chartConfig} className="h-80">
-              <ResponsiveContainer width="99%" height="99%">
-                <LineChart
-                  data={monthlyData}
-                  margin={chartMargins}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <ChartTooltipContent
-                            className="bg-background border-border"
-                            payload={payload}
-                          />
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="gpPercentage" 
-                    name="GP %" 
-                    stroke={chartConfig.gpPercentage.color} 
-                    activeDot={{ r: 6 }} 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="target" 
-                    name="Target GP %" 
-                    stroke={chartConfig.target.color}
-                    strokeDasharray="5 5" 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+          <CardContent className="overflow-visible p-0 pl-0">
+            <div className="pl-0 pr-4 py-6">
+              <ChartContainer config={chartConfig} className="h-80">
+                <ResponsiveContainer width="100%" height="99%">
+                  <LineChart
+                    data={monthlyData}
+                    margin={chartMargins}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <ChartTooltipContent
+                              className="bg-background border-border"
+                              payload={payload}
+                            />
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="gpPercentage" 
+                      name="GP %" 
+                      stroke={chartConfig.gpPercentage.color} 
+                      activeDot={{ r: 6 }} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="target" 
+                      name="Target GP %" 
+                      stroke={chartConfig.target.color}
+                      strokeDasharray="5 5" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
           </CardContent>
           <CardFooter className="flex justify-end">
             <Button 
