@@ -15,6 +15,7 @@ type ToasterToast = ToastProps & {
   description?: React.ReactNode
   action?: ToastActionElement
   open?: boolean // Adding the open property to the type definition
+  onOpenChange?: (open: boolean) => void // Adding the onOpenChange property to the type definition
 }
 
 const actionTypes = {
