@@ -67,7 +67,7 @@ const Layout = () => {
     <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="sm" className="mb-3" />
-        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Ledger</p>}
+        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Tracker</p>}
       </div>
       <Separator className="bg-tavern-blue-light/20" />
       <nav className="flex-1 p-4 space-y-2">
