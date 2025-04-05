@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -9,7 +8,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { ArrowUpRight, FileUp, Info } from 'lucide-react';
 
-// Sample data structure for P&L items
 const sampleBudgetData = [
   { category: 'Revenue', name: 'Food Sales', budget: 45000, actual: 44200, forecast: 47500 },
   { category: 'Revenue', name: 'Beverage Sales', budget: 28000, actual: 26800, forecast: 27500 },
@@ -22,7 +20,6 @@ const sampleBudgetData = [
   { category: 'Profit', name: 'EBITDA', budget: 16550, actual: 15000, forecast: 16500 },
 ];
 
-// Sample chart data
 const chartData = [
   { name: 'Budget', revenue: 73000, costs: 56450, ebitda: 16550 },
   { name: 'MTD Actual', revenue: 71000, costs: 56000, ebitda: 15000 },
@@ -61,7 +58,6 @@ export default function PLDashboard() {
         title: "Processing file",
         description: "Your budget file is being processed...",
       });
-      // In a real implementation, this would parse the file and store the data
       setTimeout(() => {
         toast({
           title: "Budget imported",
@@ -69,6 +65,20 @@ export default function PLDashboard() {
         });
       }, 1500);
     }
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <ChartTooltipContent
+          active={active}
+          payload={payload}
+          label={label}
+          formatter={(value, name) => [`£${value.toLocaleString()}`, name]}
+        />
+      );
+    }
+    return null;
   };
 
   return (
@@ -94,12 +104,7 @@ export default function PLDashboard() {
               <BarChart data={chartData}>
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip content={(props) => (
-                  <ChartTooltipContent 
-                    {...props}
-                    formatter={(value, name) => [`£${value.toLocaleString()}`, name]}
-                  />
-                )} />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />
                 <Bar dataKey="costs" name="Costs" fill="var(--color-costs)" />
