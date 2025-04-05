@@ -211,31 +211,30 @@ export default function PLDashboard() {
               <p>Supported formats: CSV, Excel (.xls, .xlsx)</p>
             </div>
             
-            <div className="mt-2 flex justify-center items-center">
-              <div className="w-full flex justify-center">
-                <Input
-                  type="file"
-                  accept=".csv, .xls, .xlsx"
-                  onChange={handleFileUpload}
-                  className="
-                    file:mr-4 
-                    file:py-2 
-                    file:px-4 
-                    file:rounded-full 
-                    file:text-sm 
-                    file:font-semibold 
-                    file:bg-purple-50 
-                    file:text-purple-700 
-                    hover:file:bg-purple-100
-                    text-transparent
-                    cursor-pointer
-                    w-auto
-                    self-center
-                  "
-                  placeholder="Choose File"
-                  disabled={isProcessing}
-                />
-              </div>
+            <div className="flex justify-center items-center">
+              <Input
+                type="file"
+                accept=".csv, .xls, .xlsx"
+                onChange={handleFileUpload}
+                className="
+                  w-full 
+                  max-w-sm 
+                  file:mr-4 
+                  file:py-2 
+                  file:px-4 
+                  file:rounded-full 
+                  file:text-sm 
+                  file:font-semibold 
+                  file:bg-purple-50 
+                  file:text-purple-700 
+                  hover:file:bg-purple-100
+                  file:cursor-pointer
+                  text-center
+                  self-center
+                "
+                placeholder="Choose File"
+                disabled={isProcessing}
+              />
             </div>
             
             <Button 
