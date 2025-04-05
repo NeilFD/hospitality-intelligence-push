@@ -233,7 +233,7 @@ const Layout = () => {
           </div>
           <div className="flex-1 overflow-auto relative">
             <div className="flex items-center justify-between px-8 py-4">
-              <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40">
+              <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-gray-800">
                 {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
               <TavernLogo size="sm" />
