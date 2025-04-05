@@ -43,8 +43,8 @@ const createInitialMonth = (year: number, month: number, moduleType: ModuleType 
     weeks: weekDates.map((dates, index) => 
       createEmptyWeek(dates.startDate, dates.endDate, index + 1, initialSuppliers)
     ),
-    gpTarget: 0.68, // 68%
-    costTarget: 0.32, // 32%
+    gpTarget: 0.7, // Changed from 0.68 to 0.7 (70%)
+    costTarget: 0.3, // Changed from 0.32 to 0.3 (30%)
     staffFoodAllowance: 0,
     suppliers: [...initialSuppliers]
   };
