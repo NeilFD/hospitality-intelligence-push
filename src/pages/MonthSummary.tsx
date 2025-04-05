@@ -168,7 +168,7 @@ export default function MonthSummary() {
                     <td className="table-cell">
                       <Button variant="outline" size="sm" asChild className="rounded-full shadow-sm hover:shadow transition-all">
                         <Link to={`/week/${currentYear}/${currentMonth}/${week.weekNumber}`}>
-                          View Details
+                          Dive In
                         </Link>
                       </Button>
                     </td>
