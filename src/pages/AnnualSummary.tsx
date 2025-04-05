@@ -313,9 +313,9 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
               {expandedChart === 'revenue' ? 'Monthly Revenue & Purchases' : 'Monthly Gross Profit %'}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-hidden">
             <ChartContainer config={chartConfig} className="h-[70vh]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="99%" height="99%">
                 {expandedChart === 'revenue' ? (
                   <BarChart
                     data={monthlyData}
@@ -348,7 +348,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
-                    <YAxis domain={[0, dataMax => Math.min(Math.ceil(dataMax * 1.1), 100)]} />
+                    <YAxis domain={[0, 100]} />
                     <Tooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
@@ -430,9 +430,9 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
               Monthly Revenue & Purchases
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-hidden">
             <ChartContainer config={chartConfig} className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="99%" height="99%">
                 <BarChart
                   data={monthlyData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
@@ -480,16 +480,16 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
               Monthly Gross Profit %
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-hidden">
             <ChartContainer config={chartConfig} className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="99%" height="99%">
                 <LineChart
                   data={monthlyData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
-                  <YAxis domain={[0, dataMax => Math.min(Math.ceil(dataMax * 1.1), 100)]} />
+                  <YAxis domain={[0, 100]} />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
