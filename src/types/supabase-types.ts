@@ -1,45 +1,31 @@
-
 import { Supplier, WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 
 export interface Database {
   public: {
     Tables: {
       profiles: {
-        Row: {
-          id: string;
-          first_name: string | null;
-          last_name: string | null;
-          avatar_url: string | null;
-          role: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+        Row: UserProfile;
         Insert: {
           id: string;
           first_name?: string | null;
           last_name?: string | null;
-          avatar_url?: string | null;
           role?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
           first_name?: string | null;
           last_name?: string | null;
-          avatar_url?: string | null;
           role?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       suppliers: {
-        Row: {
-          id: string;
-          name: string;
-          contact_name: string | null;
-          email: string | null;
-          phone: string | null;
-          notes: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+        Row: Supplier;
         Insert: {
           id?: string;
           name: string;
@@ -47,6 +33,8 @@ export interface Database {
           email?: string | null;
           phone?: string | null;
           notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -55,6 +43,8 @@ export interface Database {
           email?: string | null;
           phone?: string | null;
           notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       weekly_records: {
@@ -201,10 +191,18 @@ export interface Database {
         };
       };
     };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
   };
 }
 
-// Utility types for mapping database types to frontend types
 export type DbSupplier = Database['public']['Tables']['suppliers']['Row'];
 export type DbDailyRecord = Database['public']['Tables']['daily_records']['Row'];
 export type DbWeeklyRecord = Database['public']['Tables']['weekly_records']['Row'];
@@ -213,6 +211,24 @@ export type DbCreditNote = Database['public']['Tables']['credit_notes']['Row'];
 export type DbMonthlySettings = Database['public']['Tables']['monthly_settings']['Row'];
 export type DbProfile = Database['public']['Tables']['profiles']['Row'];
 
-export interface UserProfile extends DbProfile {
-  full_name?: string;
+export interface UserProfile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+  email?: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }

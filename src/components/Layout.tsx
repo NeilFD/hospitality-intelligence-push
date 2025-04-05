@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -48,7 +47,6 @@ const Layout = () => {
     navigate('/login');
   };
 
-  // Get user initials for avatar
   const getUserInitials = () => {
     if (!profile) return '?';
     
@@ -98,10 +96,8 @@ const Layout = () => {
     </div>
   );
 
-  // Determine if we're on an auth page (login/register)
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
-  // If we're on an auth page, render just the outlet with no layout
   if (isAuthPage) {
     return <Outlet />;
   }
