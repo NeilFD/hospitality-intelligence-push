@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { Plus, Trash2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { getMonthName } from '@/lib/date-utils';
-import { Supplier } from '@/types/kitchen-ledger';
 
 export default function InputSettings() {
   const navigate = useNavigate();
@@ -19,15 +17,14 @@ export default function InputSettings() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const monthRecord = useMonthRecord(currentYear, currentMonth);
   
-  const [gpTarget, setGpTarget] = useState(monthRecord.gpTarget);
-  const [costTarget, setCostTarget] = useState(monthRecord.costTarget);
+  const [gpTarget, setGpTarget] = useState(Math.round(monthRecord.gpTarget * 100));
+  const [costTarget, setCostTarget] = useState(Math.round(monthRecord.costTarget * 100));
   const [staffAllowance, setStaffAllowance] = useState(monthRecord.staffFoodAllowance);
-  const [suppliers, setSuppliers] = useState<Supplier[]>(monthRecord.suppliers);
+  const [suppliers, setSuppliers] = useState(monthRecord.suppliers);
 
-  // Update local state when month record changes
   useEffect(() => {
-    setGpTarget(monthRecord.gpTarget);
-    setCostTarget(monthRecord.costTarget);
+    setGpTarget(Math.round(monthRecord.gpTarget * 100));
+    setCostTarget(Math.round(monthRecord.costTarget * 100));
     setStaffAllowance(monthRecord.staffFoodAllowance);
     setSuppliers([...monthRecord.suppliers]);
   }, [monthRecord]);
@@ -51,9 +48,8 @@ export default function InputSettings() {
   };
 
   const handleSaveSettings = () => {
-    // Ensure GP and Cost targets are complementary
-    const newGpTarget = parseFloat(gpTarget.toString());
-    const newCostTarget = 1 - newGpTarget;
+    const newGpTarget = gpTarget / 100;
+    const newCostTarget = costTarget / 100;
     
     useStore.setState(state => {
       const updatedMonths = state.annualRecord.months.map(month => {
@@ -104,13 +100,12 @@ export default function InputSettings() {
                 id="gpTarget" 
                 type="number" 
                 min="0" 
-                max="1"
-                step="0.01"
+                max="100"
                 value={gpTarget} 
                 onChange={(e) => {
-                  const value = parseFloat(e.target.value);
+                  const value = Math.min(100, Math.max(0, parseInt(e.target.value || '0')));
                   setGpTarget(value);
-                  setCostTarget(1 - value);
+                  setCostTarget(100 - value);
                 }}
               />
             </div>
@@ -120,13 +115,12 @@ export default function InputSettings() {
                 id="costTarget" 
                 type="number"
                 min="0" 
-                max="1" 
-                step="0.01"
+                max="100" 
                 value={costTarget}
                 onChange={(e) => {
-                  const value = parseFloat(e.target.value);
+                  const value = Math.min(100, Math.max(0, parseInt(e.target.value || '0')));
                   setCostTarget(value);
-                  setGpTarget(1 - value);
+                  setGpTarget(100 - value);
                 }}
               />
             </div>
