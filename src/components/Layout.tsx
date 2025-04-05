@@ -91,7 +91,9 @@ const Layout = () => {
             </SheetContent>
           </Sheet>
           <div className="flex-1 overflow-auto pt-16">
-            <TavernLogo size="sm" className="absolute top-4 right-4" />
+            <div className="absolute top-4 left-0 right-0 flex justify-center">
+              <TavernLogo size="sm" />
+            </div>
             <Outlet />
           </div>
         </>
