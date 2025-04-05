@@ -45,7 +45,7 @@ interface AnnualSummaryProps {
 export default function AnnualSummary({ 
   modulePrefix = "", 
   moduleType = "food", 
-  chartMargins = { top: 20, right: 30, left: 10, bottom: 20 } 
+  chartMargins = { top: 20, right: 30, left: 0, bottom: 20 } 
 }: AnnualSummaryProps) {
   const pageTitle = modulePrefix ? `${modulePrefix} Annual Summary` : "Annual Summary";
   const annualRecord = useStore(state => state.annualRecord);
@@ -425,8 +425,8 @@ export default function AnnualSummary({
               Monthly Revenue & Purchases
             </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-visible p-0 pl-0">
-            <div className="pl-0 pr-4 py-6">
+          <CardContent className="overflow-visible p-0">
+            <div className="pl-4 pr-4 py-6">
               <ChartContainer config={chartConfig} className="h-80">
                 <ResponsiveContainer width="100%" height="99%">
                   <BarChart
@@ -477,8 +477,8 @@ export default function AnnualSummary({
               Monthly Gross Profit %
             </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-visible p-0 pl-0">
-            <div className="pl-0 pr-4 py-6">
+          <CardContent className="overflow-visible p-0">
+            <div className="pl-4 pr-4 py-6">
               <ChartContainer config={chartConfig} className="h-80">
                 <ResponsiveContainer width="100%" height="99%">
                   <LineChart
