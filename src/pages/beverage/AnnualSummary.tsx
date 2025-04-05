@@ -3,8 +3,8 @@ import React from 'react';
 import AnnualSummary from '../AnnualSummary';
 
 export default function BeverageAnnualSummary() {
-  // Adjust left margin to ensure full x-axis visibility
-  const chartMargins = { top: 20, right: 30, left: 40, bottom: 20 };
+  // Adjust margins to ensure full x-axis visibility
+  const chartMargins = { top: 20, right: 30, left: 20, bottom: 20 };
 
   return <AnnualSummary 
     modulePrefix="Beverage" 
