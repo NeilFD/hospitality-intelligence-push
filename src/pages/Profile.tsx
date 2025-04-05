@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
-  // Form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -80,14 +78,12 @@ const Profile = () => {
         
       if (uploadError) throw uploadError;
       
-      // Get public URL
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
         
       const avatarUrl = data.publicUrl;
       
-      // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: avatarUrl })
@@ -128,8 +124,8 @@ const Profile = () => {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <Avatar className="h-32 w-32 border-2 border-tavern-blue">
+              <div className="relative">
+                <Avatar className="h-32 w-32">
                   {avatarUrl ? (
                     <AvatarImage 
                       src={avatarUrl} 
@@ -143,10 +139,10 @@ const Profile = () => {
                   )}
                 </Avatar>
                 
-                <div className="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4">
+                <div className="absolute -bottom-2 -right-2">
                   <Label 
                     htmlFor="avatar-upload" 
-                    className="bg-tavern-blue text-white p-2 rounded-full cursor-pointer hover:bg-tavern-blue-dark transition-colors shadow-md group-hover:scale-105 duration-300"
+                    className="bg-tavern-blue text-white p-2 rounded-full cursor-pointer hover:bg-tavern-blue-dark transition-colors shadow-md inline-flex items-center justify-center"
                   >
                     {uploadingAvatar ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
