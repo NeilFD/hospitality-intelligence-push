@@ -288,6 +288,7 @@ export default function WeeklyTracker() {
                         <td key={dayIndex} className="table-cell p-0">
                           <Input 
                             type="number"
+                            inputMode="decimal"
                             min="0"
                             step="0.01"
                             value={day.purchases[supplier.id] || ''}
@@ -336,6 +337,7 @@ export default function WeeklyTracker() {
                         <td key={dayIndex} className="table-cell p-0">
                           <Input 
                             type="number"
+                            inputMode="decimal"
                             min="0"
                             step="0.01"
                             value={day.creditNotes[creditIndex] || ''}
@@ -364,6 +366,7 @@ export default function WeeklyTracker() {
                       <td key={dayIndex} className="table-cell p-0">
                         <Input 
                           type="number"
+                          inputMode="decimal"
                           min="0"
                           step="0.01"
                           value={day.staffFoodAllowance || ''}
@@ -407,6 +410,7 @@ export default function WeeklyTracker() {
                       <td key={dayIndex} className="table-cell p-0">
                         <Input 
                           type="number"
+                          inputMode="decimal"
                           min="0"
                           step="0.01"
                           value={day.revenue || ''}
