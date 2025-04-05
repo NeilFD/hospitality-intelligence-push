@@ -67,7 +67,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="shadow-md border-tavern-blue-light">
           <CardHeader className="pb-2 border-b border-tavern-blue-light">
-            <CardTitle className="text-tavern-blue-dark">Current Month Performance</CardTitle>
+            <CardTitle className="text-tavern-blue-dark text-xl">
+              Current Month
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-2 gap-4">
@@ -100,7 +102,9 @@ export default function Dashboard() {
 
         <Card className="shadow-md border-tavern-blue-light">
           <CardHeader className="pb-2 border-b border-tavern-blue-light">
-            <CardTitle className="text-tavern-blue-dark">Annual Performance</CardTitle>
+            <CardTitle className="text-tavern-blue-dark text-xl">
+              Annual Performance
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-2 gap-4">
