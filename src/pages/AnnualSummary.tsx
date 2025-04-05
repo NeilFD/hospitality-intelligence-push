@@ -93,6 +93,11 @@ export default function AnnualSummary({
           target: parseFloat((monthRecord.gpTarget * 100).toFixed(2))
         });
       } else {
+        const existingMonths = annualRecord.months.filter(m => m.year === annualRecord.year);
+        const defaultTarget = existingMonths.length > 0 
+          ? parseFloat((existingMonths[existingMonths.length - 1].gpTarget * 100).toFixed(2))
+          : 70;
+          
         months.push({
           name: monthName,
           month: monthNumber,
@@ -100,7 +105,7 @@ export default function AnnualSummary({
           purchases: 0,
           grossProfit: 0,
           gpPercentage: 0,
-          target: 68
+          target: defaultTarget
         });
       }
     }
@@ -125,10 +130,10 @@ export default function AnnualSummary({
         ? parseFloat(((totals.grossProfit / totals.revenue) * 100).toFixed(2))
         : 0;
       
-      const monthsWithData = monthlyData.filter(month => month.revenue > 0);
+      const monthsWithData = monthlyData.filter(month => month.target > 0);
       totals.averageTargetGP = monthsWithData.length > 0
         ? parseFloat((monthsWithData.reduce((sum, month) => sum + month.target, 0) / monthsWithData.length).toFixed(2))
-        : 68;
+        : 70;
     }
     
     return totals;
