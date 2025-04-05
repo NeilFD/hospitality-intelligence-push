@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useStore, useMonthRecord } from '@/lib/store';
 import MonthSelector from '@/components/MonthSelector';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { getMonthName } from '@/lib/date-utils';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/kitchen-service';
+import { useBudgetProcessor } from '@/utils/budget-processor';
 
 interface InputSettingsProps {
   modulePrefix?: string;
@@ -32,6 +33,8 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const [staffAllowance, setStaffAllowance] = useState(monthRecord.staffFoodAllowance);
   const [suppliers, setSuppliers] = useState(monthRecord.suppliers);
   const [isLoading, setIsLoading] = useState(true);
+  const [budgetFile, setBudgetFile] = useState<File | null>(null);
+  const { processBudget } = useBudgetProcessor();
 
   // Fetch suppliers from Supabase
   const { data: supabaseSuppliers, isLoading: isFetchingSuppliers } = useQuery({
@@ -124,6 +127,29 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
 
   const handleSupplierNameChange = (id: string, name: string) => {
     setSuppliers(suppliers.map(s => s.id === id ? { ...s, name } : s));
+  };
+  
+  const handleBudgetFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setBudgetFile(file);
+      toast.success(`${file.name} selected. Ready to process.`);
+    }
+  };
+  
+  const handleBudgetUpload = async () => {
+    if (!budgetFile) return;
+    
+    try {
+      const result = await processBudget(budgetFile, currentYear, currentMonth);
+      if (result) {
+        toast.success(`Budget for ${getMonthName(currentMonth)} ${currentYear} imported successfully`);
+        setBudgetFile(null);
+      }
+    } catch (error) {
+      console.error("Budget upload error:", error);
+      toast.error("Failed to process budget file");
+    }
   };
 
   const handleSaveSettings = async () => {
@@ -248,6 +274,49 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
               />
             </div>
           </div>
+          
+          {moduleType === 'pl' && (
+            <div className="space-y-4 border p-4 rounded-lg">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">Budget Import</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="budgetFile">Upload Excel Budget File</Label>
+                  <Input
+                    id="budgetFile"
+                    type="file"
+                    accept=".csv, .xls, .xlsx"
+                    onChange={handleBudgetFileChange}
+                    className="
+                      file:mr-4 
+                      file:py-2 
+                      file:px-4 
+                      file:rounded-full 
+                      file:text-sm 
+                      file:font-semibold 
+                      file:bg-blue-50 
+                      file:text-blue-700 
+                      hover:file:bg-blue-100
+                    "
+                  />
+                  <p className="text-xs text-gray-500">Upload the monthly budget Excel file format</p>
+                </div>
+                
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={handleBudgetUpload}
+                    disabled={!budgetFile}
+                    className="w-full"
+                  >
+                    <FileUp className="h-4 w-4 mr-2" /> Process Budget File
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <div className="flex justify-between items-center">

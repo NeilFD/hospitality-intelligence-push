@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { 
   DbSupplier, 
@@ -6,7 +5,8 @@ import {
   DbDailyRecord, 
   DbPurchase,
   DbCreditNote,
-  DbMonthlySettings
+  DbMonthlySettings,
+  DbBudgetItem
 } from '@/types/supabase-types';
 import { ModuleType } from '@/types/kitchen-ledger';
 
@@ -51,6 +51,60 @@ export const deleteSupplier = async (id: string) => {
     .from('suppliers')
     .delete()
     .eq('id', id);
+  
+  if (error) throw error;
+};
+
+// Budget Items
+export const fetchBudgetItems = async (year: number, month: number) => {
+  const { data, error } = await supabase
+    .from('budget_items')
+    .select('*')
+    .eq('year', year)
+    .eq('month', month);
+  
+  if (error) throw error;
+  return data;
+};
+
+export const createBudgetItem = async (budgetItem: Omit<DbBudgetItem, 'id' | 'created_at' | 'updated_at'>) => {
+  const { data, error } = await supabase
+    .from('budget_items')
+    .insert(budgetItem)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+};
+
+export const updateBudgetItem = async (id: string, updates: Partial<DbBudgetItem>) => {
+  const { data, error } = await supabase
+    .from('budget_items')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+};
+
+export const deleteBudgetItem = async (id: string) => {
+  const { error } = await supabase
+    .from('budget_items')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const deleteBudgetItemsByYearMonth = async (year: number, month: number) => {
+  const { error } = await supabase
+    .from('budget_items')
+    .delete()
+    .eq('year', year)
+    .eq('month', month);
   
   if (error) throw error;
 };

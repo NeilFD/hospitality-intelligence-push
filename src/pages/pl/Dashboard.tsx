@@ -1,26 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { FileUp, Info, CheckCircle } from 'lucide-react';
-import { useBudgetProcessor } from '@/utils/budget-processor';
-
-const sampleBudgetData = [
-  { category: 'Revenue', name: 'Food Sales', budget: 45000, actual: 44200, forecast: 47500 },
-  { category: 'Revenue', name: 'Beverage Sales', budget: 28000, actual: 26800, forecast: 27500 },
-  { category: 'Cost', name: 'Food COGS', budget: 15750, actual: 16300, forecast: 16800 },
-  { category: 'Cost', name: 'Beverage COGS', budget: 7000, actual: 6500, forecast: 6900 },
-  { category: 'Cost', name: 'Wages', budget: 22000, actual: 21800, forecast: 22500 },
-  { category: 'Overhead', name: 'Rent', budget: 8500, actual: 8500, forecast: 8500 },
-  { category: 'Overhead', name: 'Utilities', budget: 3200, actual: 3400, forecast: 3450 },
-  { category: 'Profit', name: 'Gross Profit', budget: 50250, actual: 48200, forecast: 51300 },
-  { category: 'Profit', name: 'EBITDA', budget: 16550, actual: 15000, forecast: 16500 },
-];
+import { FileUp, Info, CheckCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useBudgetProcessor, fetchBudgetItems } from '@/utils/budget-processor';
+import { useQuery } from '@tanstack/react-query';
 
 const chartData = [
   { name: 'Budget', revenue: 73000, costs: 56450, ebitda: 16550 },
@@ -30,12 +20,51 @@ const chartData = [
 
 export default function PLDashboard() {
   const [fileInput, setFileInput] = useState<File | null>(null);
-  const [currentMonth, setCurrentMonth] = useState("April");
-  const [currentYear, setCurrentYear] = useState(2025);
+  const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
+  const [currentMonthName, setCurrentMonthName] = useState<string>(
+    new Date().toLocaleString('default', { month: 'long' })
+  );
+  const [currentYear, setCurrentYear] = useState<number>(2025);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
-  const { toast } = useToast();
   const { processBudget } = useBudgetProcessor();
+  
+  // Fetch budget items from the database
+  const { data: budgetItems, isLoading: isLoadingBudget, refetch } = useQuery({
+    queryKey: ['budget-items', currentYear, currentMonth],
+    queryFn: () => fetchBudgetItems(currentYear, currentMonth),
+    enabled: true,
+  });
+  
+  // Process budget items for display
+  const processedBudgetData = React.useMemo(() => {
+    if (!budgetItems) return [];
+    
+    // Group items by category
+    const grouped = budgetItems.reduce((acc, item) => {
+      const category = acc.find(c => c.category === item.category);
+      if (category) {
+        category.items.push(item);
+      } else {
+        acc.push({ 
+          category: item.category, 
+          items: [item] 
+        });
+      }
+      return acc;
+    }, [] as Array<{ category: string; items: typeof budgetItems }>);
+    
+    // Create display rows
+    return grouped.flatMap(group => [
+      ...group.items.map(item => ({
+        category: group.category,
+        name: item.name,
+        budget: item.budget_amount,
+        actual: item.actual_amount || 0,
+        forecast: item.forecast_amount || item.budget_amount,
+      })),
+    ]);
+  }, [budgetItems]);
   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -44,16 +73,9 @@ export default function PLDashboard() {
           file.type === 'application/vnd.ms-excel' || 
           file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
         setFileInput(file);
-        toast({
-          title: "File uploaded successfully",
-          description: `${file.name} is ready to be processed.`,
-        });
+        toast.success(`${file.name} is ready to be processed.`);
       } else {
-        toast({
-          title: "Invalid file format",
-          description: "Please upload a CSV or Excel file.",
-          variant: "destructive",
-        });
+        toast.error("Please upload a CSV or Excel file.");
       }
     }
   };
@@ -63,33 +85,39 @@ export default function PLDashboard() {
       setIsProcessing(true);
       setIsProcessed(false);
       
-      toast({
-        title: "Processing file",
-        description: "Your budget file is being processed...",
-      });
+      toast.loading("Your budget file is being processed...");
       
       try {
         // Process the file with actual budget processing logic
-        const success = await processBudget(fileInput, currentYear, 
-          // Convert month name to number (1-12)
-          new Date(`${currentMonth} 1, 2025`).getMonth() + 1
+        const success = await processBudget(
+          fileInput, 
+          currentYear, 
+          currentMonth
         );
         
         if (success) {
+          toast.success("Budget data imported successfully!");
           setIsProcessed(true);
+          // Refetch budget items
+          refetch();
+        } else {
+          toast.error("Failed to process the budget file.");
         }
       } catch (error) {
         console.error('Error processing budget file:', error);
-        toast({
-          title: "Processing Error",
-          description: "An error occurred while processing the budget file.",
-          variant: "destructive",
-        });
+        toast.error("An error occurred while processing the budget file.");
       } finally {
         setIsProcessing(false);
       }
     }
   };
+  
+  // Update month name when month changes
+  useEffect(() => {
+    const monthName = new Date(currentYear, currentMonth - 1, 1)
+      .toLocaleString('default', { month: 'long' });
+    setCurrentMonthName(monthName);
+  }, [currentMonth, currentYear]);
 
   const CustomTooltip = ({ active, payload, label }: { 
     active?: boolean, 
@@ -110,16 +138,53 @@ export default function PLDashboard() {
     }
     return null;
   };
+  
+  const handleMonthChange = (value: string) => {
+    setCurrentMonth(parseInt(value));
+  };
 
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold text-purple-600 mb-6 text-center">P&L Tracker Dashboard</h1>
       
+      <div className="flex justify-end gap-4 mb-6">
+        <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue>{currentMonthName}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">January</SelectItem>
+            <SelectItem value="2">February</SelectItem>
+            <SelectItem value="3">March</SelectItem>
+            <SelectItem value="4">April</SelectItem>
+            <SelectItem value="5">May</SelectItem>
+            <SelectItem value="6">June</SelectItem>
+            <SelectItem value="7">July</SelectItem>
+            <SelectItem value="8">August</SelectItem>
+            <SelectItem value="9">September</SelectItem>
+            <SelectItem value="10">October</SelectItem>
+            <SelectItem value="11">November</SelectItem>
+            <SelectItem value="12">December</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Select value={currentYear.toString()} onValueChange={(value) => setCurrentYear(parseInt(value))}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue>{currentYear}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="2024">2024</SelectItem>
+            <SelectItem value="2025">2025</SelectItem>
+            <SelectItem value="2026">2026</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-2">
           <CardHeader className="bg-white/40 border-b">
             <CardTitle className="flex items-center justify-between">
-              <span>Monthly Performance Overview - {currentMonth} 2025</span>
+              <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
               <Button variant="outline" size="sm" className="flex items-center gap-1">
                 <Info size={14} /> Details
               </Button>
@@ -150,7 +215,7 @@ export default function PLDashboard() {
           </CardHeader>
           <CardContent className="p-6 flex flex-col gap-4">
             <div className="text-sm text-gray-600">
-              <p className="mb-2">Upload your annual budget to compare with actual performance.</p>
+              <p className="mb-2">Upload your Excel budget for {currentMonthName} {currentYear}.</p>
               <p>Supported formats: CSV, Excel (.xls, .xlsx)</p>
             </div>
             
@@ -170,9 +235,9 @@ export default function PLDashboard() {
                     file:bg-purple-50 
                     file:text-purple-700 
                     hover:file:bg-purple-100
-                    text-transparent  // Hide the default text
+                    text-transparent
                     cursor-pointer
-                    w-auto  // Change from max-w-full to w-auto
+                    w-auto
                     self-center
                   "
                   placeholder="Choose File"
@@ -188,7 +253,7 @@ export default function PLDashboard() {
             >
               {isProcessing ? (
                 <>
-                  <span className="animate-spin mr-2">⏳</span>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
                 </>
               ) : (
@@ -220,56 +285,68 @@ export default function PLDashboard() {
       <div className="grid grid-cols-1 gap-6 mb-6">
         <Card className="shadow-md rounded-xl overflow-hidden">
           <CardHeader className="bg-white/40 border-b">
-            <CardTitle>P&L Flash Report - {currentMonth} 2025</CardTitle>
+            <CardTitle>P&L Flash Report - {currentMonthName} {currentYear}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-purple-50">
-                    <TableHead className="w-[250px]">Line Item</TableHead>
-                    <TableHead className="text-right">Monthly Budget</TableHead>
-                    <TableHead className="text-right">MTD Actual</TableHead>
-                    <TableHead className="text-right">Variance</TableHead>
-                    <TableHead className="text-right">Forecast</TableHead>
-                    <TableHead className="text-right">Forecast Variance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sampleBudgetData.map((item, i) => {
-                    const variance = item.actual - item.budget;
-                    const variancePercent = (variance / item.budget) * 100;
-                    const forecastVariance = item.forecast - item.budget;
-                    const forecastVariancePercent = (forecastVariance / item.budget) * 100;
-                    
-                    const isPositiveVariance = 
-                      (item.category === 'Revenue' || item.category === 'Profit') 
-                        ? variance > 0 
-                        : variance < 0;
-                    
-                    const isPositiveForecast = 
-                      (item.category === 'Revenue' || item.category === 'Profit') 
-                        ? forecastVariance > 0 
-                        : forecastVariance < 0;
-                    
-                    return (
-                      <TableRow key={i} className={item.category === 'Profit' ? 'font-semibold' : ''}>
-                        <TableCell>{item.name}</TableCell>
-                        <TableCell className="text-right">£{item.budget.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">£{item.actual.toLocaleString()}</TableCell>
-                        <TableCell className={`text-right ${isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
-                          {variance > 0 ? '+' : ''}{variance.toLocaleString()} ({variancePercent.toFixed(1)}%)
-                        </TableCell>
-                        <TableCell className="text-right">£{item.forecast.toLocaleString()}</TableCell>
-                        <TableCell className={`text-right ${isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
-                          {forecastVariance > 0 ? '+' : ''}{forecastVariance.toLocaleString()} ({forecastVariancePercent.toFixed(1)}%)
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            {isLoadingBudget ? (
+              <div className="flex justify-center items-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              </div>
+            ) : processedBudgetData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-purple-50">
+                      <TableHead className="w-[250px]">Line Item</TableHead>
+                      <TableHead className="text-right">Monthly Budget</TableHead>
+                      <TableHead className="text-right">MTD Actual</TableHead>
+                      <TableHead className="text-right">Variance</TableHead>
+                      <TableHead className="text-right">Forecast</TableHead>
+                      <TableHead className="text-right">Forecast Variance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {processedBudgetData.map((item, i) => {
+                      const variance = item.actual - item.budget;
+                      const variancePercent = item.budget !== 0 ? (variance / item.budget) * 100 : 0;
+                      const forecastVariance = item.forecast - item.budget;
+                      const forecastVariancePercent = item.budget !== 0 ? (forecastVariance / item.budget) * 100 : 0;
+                      
+                      const isPositiveVariance = 
+                        (item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit')) 
+                          ? variance > 0 
+                          : variance < 0;
+                      
+                      const isPositiveForecast = 
+                        (item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit')) 
+                          ? forecastVariance > 0 
+                          : forecastVariance < 0;
+                      
+                      return (
+                        <TableRow key={i} className={item.name.includes('Total') || item.name.includes('Gross Profit') ? 'font-semibold' : ''}>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell className="text-right">£{item.budget.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">£{item.actual.toLocaleString()}</TableCell>
+                          <TableCell className={`text-right ${isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
+                            {variance > 0 ? '+' : ''}{variance.toLocaleString()} ({variancePercent.toFixed(1)}%)
+                          </TableCell>
+                          <TableCell className="text-right">£{item.forecast.toLocaleString()}</TableCell>
+                          <TableCell className={`text-right ${isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
+                            {forecastVariance > 0 ? '+' : ''}{forecastVariance.toLocaleString()} ({forecastVariancePercent.toFixed(1)}%)
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center p-8 text-gray-500">
+                {isProcessed ? 
+                  "Processing your budget data... Please wait." : 
+                  "No budget data available. Please upload a budget file."}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
