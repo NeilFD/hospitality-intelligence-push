@@ -233,7 +233,7 @@ export default function WeeklyTracker() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatusBox 
           label="Weekly GP %" 
-          value={formatPercentage(weeklyGP)} 
+          value={formatPercentage(calculateWeeklyGP())} 
           status={gpStatus} 
         />
         <StatusBox 
@@ -258,12 +258,17 @@ export default function WeeklyTracker() {
               <thead>
                 <tr>
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
-                  {sortedDays.map((day, index) => (
-                    <th key={index} className="table-header-day">
-                      {day.dayOfWeek}<br />
-                      {new Date(day.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' })}
-                    </th>
-                  ))}
+                  {sortedDays.map((day, index) => {
+                    const dateObj = new Date(day.date);
+                    const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
+                    
+                    return (
+                      <th key={index} className="table-header-day">
+                        {day.dayOfWeek}<br />
+                        {formattedDate}
+                      </th>
+                    );
+                  })}
                   <th className="table-header rounded-tr-lg">Weekly Total</th>
                 </tr>
               </thead>
