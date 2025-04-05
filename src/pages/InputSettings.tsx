@@ -172,10 +172,14 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
           });
         }
       } else {
-        // Create new supplier
+        // Create new supplier with all required fields
         await createSupplierMutation.mutateAsync({ 
           name: supplier.name, 
-          module_type: moduleType 
+          module_type: moduleType,
+          contact_name: null,
+          email: null,
+          phone: null,
+          notes: null
         });
       }
     }
