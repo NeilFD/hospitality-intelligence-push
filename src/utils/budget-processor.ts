@@ -137,7 +137,7 @@ export const processBudgetFile = async (
             // Check if this is a main category header (often in all caps or without numbers)
             const hasNumericValues = row.slice(1).some(cell => 
               typeof cell === 'number' || 
-              (typeof cell === 'string' && /\d/.test(cell) && !isNaN(parseFloat(cell.replace(/[£$,]/g, '')))
+              (typeof cell === 'string' && /\d/.test(cell) && !isNaN(parseFloat(cell.replace(/[£$,]/g, ''))))
             );
             
             if (!hasNumericValues) {
