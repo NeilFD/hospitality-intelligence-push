@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { ArrowUpRight, FileUp, Info, CheckCircle } from 'lucide-react';
+import { FileUp, Info, CheckCircle } from 'lucide-react';
 
 const sampleBudgetData = [
   { category: 'Revenue', name: 'Food Sales', budget: 45000, actual: 44200, forecast: 47500 },
@@ -144,7 +142,19 @@ export default function PLDashboard() {
                 type="file"
                 accept=".csv, .xls, .xlsx"
                 onChange={handleFileUpload}
-                className="cursor-pointer"
+                className="cursor-pointer 
+                  file:mr-4 
+                  file:py-2 
+                  file:px-4 
+                  file:rounded-full 
+                  file:text-sm 
+                  file:font-semibold 
+                  file:bg-purple-50 
+                  file:text-purple-700 
+                  hover:file:bg-purple-100
+                  text-gray-500
+                  max-w-full
+                  truncate"
                 disabled={isProcessing}
               />
             </div>
