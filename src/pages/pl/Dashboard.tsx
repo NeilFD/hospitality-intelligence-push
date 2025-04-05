@@ -62,6 +62,17 @@ export default function PLDashboard() {
     ]);
   }, [budgetItems]);
   
+  const formatCurrency = (value: number): string => {
+    return `£${value.toLocaleString('en-GB', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })}`;
+  };
+  
+  const formatPercentage = (value: number): string => {
+    return `${value.toFixed(1)}%`;
+  };
+  
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     setProcessingError(null);
     setIsProcessed(false);
@@ -139,12 +150,6 @@ export default function PLDashboard() {
     }
   };
   
-  useEffect(() => {
-    const monthName = new Date(currentYear, currentMonth - 1, 1)
-      .toLocaleString('default', { month: 'long' });
-    setCurrentMonthName(monthName);
-  }, [currentMonth, currentYear]);
-
   const CustomTooltip = ({ active, payload, label }: { 
     active?: boolean, 
     payload?: Array<{ value: number, name: string }>, 
@@ -156,7 +161,7 @@ export default function PLDashboard() {
           <p className="font-bold">{label}</p>
           {payload.map((entry, index) => (
             <p key={index}>
-              {entry.name}: £{entry.value.toLocaleString()}
+              {entry.name}: {formatCurrency(entry.value)}
             </p>
           ))}
         </div>
@@ -168,6 +173,12 @@ export default function PLDashboard() {
   const handleMonthChange = (value: string) => {
     setCurrentMonth(parseInt(value));
   };
+
+  useEffect(() => {
+    const monthName = new Date(currentYear, currentMonth - 1, 1)
+      .toLocaleString('default', { month: 'long' });
+    setCurrentMonthName(monthName);
+  }, [currentMonth, currentYear]);
 
   return (
     <div className="container py-8">
@@ -365,14 +376,14 @@ export default function PLDashboard() {
                       return (
                         <TableRow key={i} className={item.name.includes('Total') || item.name.includes('Gross Profit') ? 'font-semibold' : ''}>
                           <TableCell>{item.name}</TableCell>
-                          <TableCell className="text-right">£{item.budget.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">£{item.actual.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.budget)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.actual)}</TableCell>
                           <TableCell className={`text-right ${isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
-                            {variance > 0 ? '+' : ''}{variance.toLocaleString()} ({variancePercent.toFixed(1)}%)
+                            {variance > 0 ? '+' : ''}{formatCurrency(variance)} ({formatPercentage(variancePercent)})
                           </TableCell>
-                          <TableCell className="text-right">£{item.forecast.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.forecast)}</TableCell>
                           <TableCell className={`text-right ${isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
-                            {forecastVariance > 0 ? '+' : ''}{forecastVariance.toLocaleString()} ({forecastVariancePercent.toFixed(1)}%)
+                            {forecastVariance > 0 ? '+' : ''}{formatCurrency(forecastVariance)} ({formatPercentage(forecastVariancePercent)})
                           </TableCell>
                         </TableRow>
                       );

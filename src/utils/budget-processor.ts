@@ -1,4 +1,3 @@
-
 import { read, utils } from 'xlsx';
 import { supabase } from '@/lib/supabase';
 
@@ -41,8 +40,47 @@ export const processBudgetFile = async (file: File): Promise<BudgetItem[]> => {
         // Budget items array
         const budgetItems: BudgetItem[] = [];
         
+        // Keep track of column indices for monthly data
+        let budgetColumnIndex = -1;
+        let currentMonthIndex = -1;
+        let currentYearIndex = -1;
+        
         // Skip empty rows and look for data directly
         let currentCategory = "";
+        
+        // First, identify the header row and column indices for monthly data
+        for (let i = 0; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row || !Array.isArray(row)) continue;
+          
+          // Look for header row with budget column
+          if (row.some(cell => {
+            const cellValue = String(cell).toLowerCase();
+            return cellValue.includes('monthly') && cellValue.includes('budget');
+          })) {
+            // Found header row, identify column indices
+            for (let j = 0; j < row.length; j++) {
+              const cellValue = String(row[j]).toLowerCase();
+              if (cellValue.includes('monthly') && cellValue.includes('budget')) {
+                budgetColumnIndex = j;
+              }
+              if (cellValue.includes('mtd') && cellValue.includes('actual')) {
+                currentMonthIndex = j;
+              }
+            }
+            
+            console.log(`Found header row with budget column at index ${budgetColumnIndex} and actual column at index ${currentMonthIndex}`);
+            break;
+          }
+        }
+        
+        // If we couldn't find the columns, try a more generic approach
+        if (budgetColumnIndex === -1) {
+          console.log("Couldn't find specific header columns, using generic approach");
+          // Just look for numeric columns after the first column
+          budgetColumnIndex = 1;
+          currentMonthIndex = 2;
+        }
         
         // Process all rows, looking for data that looks like budget items
         for (let i = 0; i < jsonData.length; i++) {
@@ -61,45 +99,54 @@ export const processBudgetFile = async (file: File): Promise<BudgetItem[]> => {
             // Category headers typically don't have numeric values in the next columns
             const hasNumericValues = row.slice(1).some(cell => typeof cell === 'number');
             
-            if (!hasNumericValues) {
+            if (!hasNumericValues && firstCell.trim() !== '') {
               // This looks like a category header
-              currentCategory = firstCell;
+              currentCategory = firstCell.trim();
               console.log("Found category:", currentCategory);
               continue;
             }
             
-            // If this looks like an item row with a name and at least one numeric value
-            // Extract the budget value from the row - it's usually in the first numeric column
-            let budgetValue = null;
-            for (let j = 1; j < row.length; j++) {
-              const cell = row[j];
-              if (typeof cell === 'number') {
-                budgetValue = cell;
-                break;
-              } else if (typeof cell === 'string' && !isNaN(parseFloat(cell.replace(/[£$,]/g, '')))) {
-                // Try to extract numeric value from string with currency symbols
-                budgetValue = parseFloat(cell.replace(/[£$,]/g, ''));
-                break;
+            // If this looks like an item row with a name and numeric values
+            const itemName = firstCell.trim();
+            if (itemName && currentCategory) {
+              // Extract budget value from the budget column if available
+              let budgetValue = null;
+              if (budgetColumnIndex >= 0 && budgetColumnIndex < row.length) {
+                const cell = row[budgetColumnIndex];
+                if (typeof cell === 'number') {
+                  budgetValue = cell;
+                } else if (typeof cell === 'string' && cell.trim() !== '') {
+                  // Try to extract numeric value from string with currency symbols
+                  const numericValue = cell.replace(/[£$,]/g, '');
+                  if (!isNaN(parseFloat(numericValue))) {
+                    budgetValue = parseFloat(numericValue);
+                  }
+                }
               }
-            }
-            
-            if (budgetValue !== null && currentCategory) {
-              budgetItems.push({
-                category: currentCategory,
-                name: firstCell,
-                budget: budgetValue,
-              });
-              console.log(`Added budget item: ${firstCell} (${currentCategory}) - £${budgetValue}`);
+              
+              // Only add items that have a budget value and are not summary items
+              if (budgetValue !== null && !itemName.toLowerCase().includes('year end')) {
+                budgetItems.push({
+                  category: currentCategory,
+                  name: itemName,
+                  budget: budgetValue,
+                });
+                console.log(`Added budget item: ${itemName} (${currentCategory}) - £${budgetValue}`);
+              }
             }
           } else if (typeof firstCell === 'number' && row.length > 1 && currentCategory) {
             // Handle case where first cell is a number and second cell might be a description
             const itemName = typeof row[1] === 'string' ? row[1] : `Item ${firstCell}`;
-            budgetItems.push({
-              category: currentCategory,
-              name: itemName,
-              budget: firstCell,
-            });
-            console.log(`Added budget item: ${itemName} (${currentCategory}) - £${firstCell}`);
+            const budgetValue = firstCell;
+            
+            if (!itemName.toLowerCase().includes('year end')) {
+              budgetItems.push({
+                category: currentCategory,
+                name: itemName,
+                budget: budgetValue,
+              });
+              console.log(`Added budget item: ${itemName} (${currentCategory}) - £${budgetValue}`);
+            }
           }
         }
         
