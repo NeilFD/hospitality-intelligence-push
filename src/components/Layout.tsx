@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,27 @@ const Layout = () => {
     </div>
   );
 
+  const ProfileAvatar = () => (
+    <div className="flex flex-col items-center">
+      <Avatar className="h-9 w-9 bg-tavern-blue text-white">
+        {profile?.avatar_url ? (
+          <AvatarImage 
+            src={profile.avatar_url}
+            alt="Profile" 
+            className="object-cover"
+          />
+        ) : (
+          <AvatarFallback>{getUserInitials()}</AvatarFallback>
+        )}
+      </Avatar>
+      {profile && (
+        <span className="text-xs mt-1 font-medium">
+          {profile.first_name || 'User'}
+        </span>
+      )}
+    </div>
+  );
+
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   if (isAuthPage) {
@@ -125,8 +147,41 @@ const Layout = () => {
             </SheetContent>
           </Sheet>
           <div className="flex-1 overflow-auto pt-16">
-            <div className="absolute top-4 left-0 right-0 flex justify-center">
+            <div className="absolute top-4 left-0 right-0 flex justify-between px-4">
+              <div className="w-8"></div> {/* Spacer for alignment */}
               <TavernLogo size="sm" />
+              {isAuthenticated && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
+                      <ProfileAvatar />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-0.5 leading-none">
+                        <p className="text-sm font-medium">
+                          {profile?.first_name} {profile?.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <Outlet />
           </div>
@@ -156,18 +211,8 @@ const Layout = () => {
               {isAuthenticated && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                      <Avatar className="h-9 w-9 bg-tavern-blue text-white">
-                        {profile?.avatar_url ? (
-                          <AvatarImage 
-                            src={profile.avatar_url}
-                            alt="Profile" 
-                            className="object-cover"
-                          />
-                        ) : (
-                          <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                        )}
-                      </Avatar>
+                    <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
+                      <ProfileAvatar />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
