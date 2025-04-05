@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -7,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { FileUp, Info, CheckCircle } from 'lucide-react';
+import { useBudgetProcessor } from '@/utils/budget-processor';
 
 const sampleBudgetData = [
   { category: 'Revenue', name: 'Food Sales', budget: 45000, actual: 44200, forecast: 47500 },
@@ -29,9 +31,11 @@ const chartData = [
 export default function PLDashboard() {
   const [fileInput, setFileInput] = useState<File | null>(null);
   const [currentMonth, setCurrentMonth] = useState("April");
+  const [currentYear, setCurrentYear] = useState(2025);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
   const { toast } = useToast();
+  const { processBudget } = useBudgetProcessor();
   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -54,7 +58,7 @@ export default function PLDashboard() {
     }
   };
 
-  const processFile = () => {
+  const processFile = async () => {
     if (fileInput) {
       setIsProcessing(true);
       setIsProcessed(false);
@@ -64,15 +68,26 @@ export default function PLDashboard() {
         description: "Your budget file is being processed...",
       });
       
-      setTimeout(() => {
-        setIsProcessing(false);
-        setIsProcessed(true);
+      try {
+        // Process the file with actual budget processing logic
+        const success = await processBudget(fileInput, currentYear, 
+          // Convert month name to number (1-12)
+          new Date(`${currentMonth} 1, 2025`).getMonth() + 1
+        );
         
+        if (success) {
+          setIsProcessed(true);
+        }
+      } catch (error) {
+        console.error('Error processing budget file:', error);
         toast({
-          title: "Budget imported",
-          description: "Your annual budget has been successfully imported.",
+          title: "Processing Error",
+          description: "An error occurred while processing the budget file.",
+          variant: "destructive",
         });
-      }, 1500);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 

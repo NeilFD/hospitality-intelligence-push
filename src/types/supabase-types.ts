@@ -1,4 +1,3 @@
-
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -194,6 +193,33 @@ export interface Database {
           created_by?: string | null;
         };
       };
+      budget_items: {
+        Row: BudgetItem;
+        Insert: {
+          id?: string;
+          year: number;
+          month: number;
+          category: string;
+          name: string;
+          budget_amount: number;
+          actual_amount?: number | null;
+          forecast_amount?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          year?: number;
+          month?: number;
+          category?: string;
+          name?: string;
+          budget_amount?: number;
+          actual_amount?: number | null;
+          forecast_amount?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -206,6 +232,19 @@ export interface Database {
     };
   };
 }
+
+export type BudgetItem = Database['public']['Tables']['budget_items']['Row'] & {
+  id: string;
+  year: number;
+  month: number;
+  category: string;
+  name: string;
+  budget_amount: number;
+  actual_amount?: number | null;
+  forecast_amount?: number | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export type DbSupplier = Database['public']['Tables']['suppliers']['Row'];
 export type DbDailyRecord = Database['public']['Tables']['daily_records']['Row'];
@@ -238,5 +277,4 @@ export interface DBSupplier {
   updated_at: string;
 }
 
-// Re-export the supplier type from kitchen-ledger to avoid conflicts
 export type { Supplier } from './kitchen-ledger';
