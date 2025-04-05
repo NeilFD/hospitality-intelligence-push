@@ -61,34 +61,36 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container py-6 space-y-6">
-      <h1 className="text-2xl font-bold text-tavern-blue">The Tavern Kitchen Ledger</h1>
+    <div className="container py-6 space-y-8">
+      <h1 className="text-3xl font-bold text-tavern-blue">The Tavern Kitchen Ledger</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Current Month Performance</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <Card className="shadow-md border-tavern-blue-light">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light">
+            <CardTitle className="text-tavern-blue-dark">Current Month Performance</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <StatusBox
                 label="Revenue"
                 value={formatCurrency(currentMonthRevenue)}
                 status="neutral"
+                className="h-28"
               />
               <StatusBox
                 label="Food Cost"
                 value={formatCurrency(currentMonthCost)}
                 status="neutral"
+                className="h-28"
               />
             </div>
             <StatusBox
               label="GP Percentage"
               value={formatPercentage(currentMonthGP)}
               status={getGpStatus(currentMonthGP, 0.68)}
-              className="w-full"
+              className="w-full h-24"
             />
-            <Button asChild className="w-full">
+            <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark">
               <Link to={`/month/${currentYear}/${currentMonth}`}>
                 View Month Details <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -96,30 +98,32 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Annual Performance</CardTitle>
+        <Card className="shadow-md border-tavern-blue-light">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light">
+            <CardTitle className="text-tavern-blue-dark">Annual Performance</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <StatusBox
                 label="Total Revenue"
                 value={formatCurrency(totalRevenue)}
                 status="neutral"
+                className="h-28"
               />
               <StatusBox
                 label="Total Food Cost"
                 value={formatCurrency(totalCost)}
                 status="neutral"
+                className="h-28"
               />
             </div>
             <StatusBox
               label="GP Percentage"
               value={formatPercentage(gpPercentage)}
               status={getGpStatus(gpPercentage, 0.68)}
-              className="w-full"
+              className="w-full h-24"
             />
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white">
               <Link to="/annual-summary">
                 View Annual Summary <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

@@ -19,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				typewriter: ['"Special Elite"', 'monospace'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -66,10 +69,13 @@ export default {
 				tavern: {
 					blue: '#4B6584',
 					'blue-light': '#A5C0E2',
+					'blue-dark': '#344861',
 					green: '#78E08F',
 					'green-light': '#B8F2C6',
+					'green-dark': '#4DA863',
 					amber: '#F7B731',
-					red: '#EB5757'
+					red: '#EB5757',
+					gray: '#F5F7FA'
 				}
 			},
 			borderRadius: {

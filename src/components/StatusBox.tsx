@@ -10,15 +10,15 @@ interface StatusBoxProps {
 
 export default function StatusBox({ label, value, status, className }: StatusBoxProps) {
   const statusClasses = {
-    good: 'bg-tavern-green-light text-tavern-blue',
-    warning: 'bg-tavern-amber text-tavern-blue',
-    bad: 'bg-tavern-red text-white',
-    neutral: 'bg-tavern-blue-light text-tavern-blue'
+    good: 'bg-tavern-green-light text-tavern-blue-dark border-tavern-green',
+    warning: 'bg-tavern-amber bg-opacity-20 text-tavern-blue-dark border-tavern-amber',
+    bad: 'bg-tavern-blue-light text-tavern-blue-dark border-tavern-blue',
+    neutral: 'bg-tavern-blue-light text-tavern-blue-dark border-tavern-blue-light'
   };
   
   return (
     <div className={cn(
-      'rounded-lg p-4 flex flex-col items-center justify-center',
+      'rounded-lg p-4 flex flex-col items-center justify-center border',
       statusClasses[status],
       className
     )}>

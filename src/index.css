@@ -73,7 +73,11 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased font-typewriter;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-typewriter;
   }
 }
 
@@ -106,5 +110,5 @@
 }
 
 .status-bad {
-  @apply bg-tavern-red text-white font-semibold;
+  @apply bg-tavern-blue-light text-tavern-blue font-semibold;
 }
