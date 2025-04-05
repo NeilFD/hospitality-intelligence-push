@@ -4,9 +4,9 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { ArrowUpRight, FileUp, Info } from 'lucide-react';
+import { ArrowUpRight, FileUp, Info, CheckCircle } from 'lucide-react';
 
 const sampleBudgetData = [
   { category: 'Revenue', name: 'Food Sales', budget: 45000, actual: 44200, forecast: 47500 },
@@ -29,6 +29,8 @@ const chartData = [
 export default function PLDashboard() {
   const [fileInput, setFileInput] = useState<File | null>(null);
   const [currentMonth, setCurrentMonth] = useState("April");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessed, setIsProcessed] = useState(false);
   const { toast } = useToast();
   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,11 +56,18 @@ export default function PLDashboard() {
 
   const processFile = () => {
     if (fileInput) {
+      setIsProcessing(true);
+      setIsProcessed(false);
+      
       toast({
         title: "Processing file",
         description: "Your budget file is being processed...",
       });
+      
       setTimeout(() => {
+        setIsProcessing(false);
+        setIsProcessed(true);
+        
         toast({
           title: "Budget imported",
           description: "Your annual budget has been successfully imported.",
@@ -136,16 +145,38 @@ export default function PLDashboard() {
                 accept=".csv, .xls, .xlsx"
                 onChange={handleFileUpload}
                 className="cursor-pointer"
+                disabled={isProcessing}
               />
             </div>
             
             <Button 
               onClick={processFile} 
-              disabled={!fileInput}
+              disabled={!fileInput || isProcessing}
               className="mt-2 w-full bg-purple-600 hover:bg-purple-700"
             >
-              <FileUp className="mr-2 h-4 w-4" /> Process Budget
+              {isProcessing ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {isProcessed ? (
+                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                  ) : (
+                    <FileUp className="mr-2 h-4 w-4" />
+                  )}
+                  {isProcessed ? 'Budget Processed' : 'Process Budget'}
+                </>
+              )}
             </Button>
+            
+            {isProcessed && (
+              <div className="text-green-600 text-sm flex items-center justify-center mt-2">
+                <CheckCircle className="mr-1 h-4 w-4" />
+                Budget data imported successfully!
+              </div>
+            )}
             
             <div className="text-xs text-gray-500 mt-2">
               <p>Your budget will be used to calculate variances and forecasts.</p>
