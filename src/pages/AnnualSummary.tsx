@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -35,9 +34,19 @@ import {
 interface AnnualSummaryProps {
   modulePrefix?: string;
   moduleType?: ModuleType;
+  chartMargins?: {
+    top: number;
+    right: number;
+    left: number;
+    bottom: number;
+  };
 }
 
-export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }: AnnualSummaryProps) {
+export default function AnnualSummary({ 
+  modulePrefix = "", 
+  moduleType = "food", 
+  chartMargins = { top: 20, right: 10, left: 0, bottom: 20 } 
+}: AnnualSummaryProps) {
   const pageTitle = modulePrefix ? `${modulePrefix} Annual Summary` : "Annual Summary";
   const annualRecord = useStore(state => state.annualRecord);
   const isMobile = useIsMobile();
@@ -319,7 +328,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
                 {expandedChart === 'revenue' ? (
                   <BarChart
                     data={monthlyData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                    margin={chartMargins}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
@@ -344,7 +353,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
                 ) : (
                   <LineChart
                     data={monthlyData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                    margin={chartMargins}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
@@ -435,7 +444,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
               <ResponsiveContainer width="99%" height="99%">
                 <BarChart
                   data={monthlyData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  margin={chartMargins}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
@@ -485,7 +494,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
               <ResponsiveContainer width="99%" height="99%">
                 <LineChart
                   data={monthlyData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  margin={chartMargins}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
