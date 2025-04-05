@@ -131,7 +131,11 @@ const Profile = () => {
               <div className="relative">
                 <Avatar className="h-32 w-32 border-2 border-tavern-blue">
                   {avatarUrl ? (
-                    <AvatarImage src={avatarUrl} alt="Profile" />
+                    <AvatarImage 
+                      src={avatarUrl} 
+                      alt="Profile" 
+                      className="object-cover" 
+                    />
                   ) : (
                     <AvatarFallback className="bg-tavern-blue text-white text-2xl">
                       {getUserInitials()}
@@ -139,7 +143,7 @@ const Profile = () => {
                   )}
                 </Avatar>
                 
-                <div className="absolute -bottom-2 -right-2">
+                <div className="absolute bottom-0 right-0">
                   <Label 
                     htmlFor="avatar-upload" 
                     className="bg-tavern-blue text-white p-2 rounded-full cursor-pointer hover:bg-tavern-blue-dark transition-colors"
