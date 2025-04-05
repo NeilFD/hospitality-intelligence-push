@@ -1,3 +1,4 @@
+
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -60,12 +61,16 @@ export function createEmptyWeek(
   const days: DailyRecord[] = [];
   const start = new Date(startDate);
   
+  // Ensure we start from Monday
+  while (start.getDay() !== 1) {
+    start.setDate(start.getDate() - 1);
+  }
+  
   // Create 7 days (Monday to Sunday)
   for (let i = 0; i < 7; i++) {
     const date = new Date(start);
     date.setDate(date.getDate() + i);
     
-    // Fixed day calculation - corrected to ensure proper Monday-Sunday mapping
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const dayOfWeek = dayNames[i]; // Use i directly since we're starting from Monday and iterating in order
     
@@ -88,8 +93,8 @@ export function createEmptyWeek(
   return {
     id: uuidv4(),
     weekNumber,
-    startDate,
-    endDate,
+    startDate: formatDate(start),
+    endDate: formatDate(new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000)), // 6 days after start
     days,
   };
 }
