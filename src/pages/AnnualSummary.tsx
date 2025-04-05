@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { 
   ChartContainer,
   ChartTooltip,
@@ -21,7 +23,14 @@ import {
   Legend
 } from 'recharts';
 import { ModuleType } from '@/types/kitchen-ledger';
-import { ChartBarIcon } from 'lucide-react';
+import { ChartBarIcon, Maximize2Icon, Minimize2Icon } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface AnnualSummaryProps {
   modulePrefix?: string;
@@ -31,6 +40,10 @@ interface AnnualSummaryProps {
 export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }: AnnualSummaryProps) {
   const pageTitle = modulePrefix ? `${modulePrefix} Annual Summary` : "Annual Summary";
   const annualRecord = useStore(state => state.annualRecord);
+  const isMobile = useIsMobile();
+  
+  // State for expanded chart view
+  const [expandedChart, setExpandedChart] = useState<string | null>(null);
   
   // Process data for charts
   const monthlyData = React.useMemo(() => {
@@ -144,7 +157,237 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
       color: "#d946ef"
     }
   };
+
+  // Toggle chart expansion
+  const toggleChartExpansion = (chartId: string) => {
+    if (expandedChart === chartId) {
+      setExpandedChart(null);
+    } else {
+      setExpandedChart(chartId);
+    }
+  };
   
+  // Render mobile view with carousel for charts
+  if (isMobile && !expandedChart) {
+    return (
+      <div className="container py-8">
+        <h1 className="text-2xl font-bold text-tavern-blue mb-6">{pageTitle}</h1>
+        
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-3 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${annualTotals.revenue.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Annual GP %</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{annualTotals.gpPercentage}%</div>
+              <p className="text-xs text-muted-foreground">Target: {annualTotals.averageTargetGP}%</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Annual Gross Profit</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${annualTotals.grossProfit.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Carousel className="mb-6">
+          <CarouselContent>
+            <CarouselItem>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ChartBarIcon className="h-5 w-5" />
+                    Monthly Revenue & Purchases
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center min-h-[200px]">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => toggleChartExpansion('revenue')}
+                    className="flex items-center gap-2"
+                  >
+                    <Maximize2Icon className="h-4 w-4" />
+                    View Chart
+                  </Button>
+                </CardContent>
+              </Card>
+            </CarouselItem>
+            
+            <CarouselItem>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ChartBarIcon className="h-5 w-5" />
+                    Monthly Gross Profit %
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center min-h-[200px]">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => toggleChartExpansion('gp')}
+                    className="flex items-center gap-2"
+                  >
+                    <Maximize2Icon className="h-4 w-4" />
+                    View Chart
+                  </Button>
+                </CardContent>
+              </Card>
+            </CarouselItem>
+          </CarouselContent>
+          <div className="flex justify-center gap-2 mt-2">
+            <CarouselPrevious className="static transform-none" />
+            <CarouselNext className="static transform-none" />
+          </div>
+        </Carousel>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Performance Table</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Month</TableHead>
+                    <TableHead className="text-right">Revenue ($)</TableHead>
+                    <TableHead className="text-right">Purchases ($)</TableHead>
+                    <TableHead className="text-right">GP %</TableHead>
+                    <TableHead className="text-right">Target</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {monthlyData.map((month) => (
+                    <TableRow key={month.name}>
+                      <TableCell>{month.name}</TableCell>
+                      <TableCell className="text-right">{month.revenue.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{month.purchases.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{month.gpPercentage}%</TableCell>
+                      <TableCell className={`text-right ${month.gpPercentage >= month.target ? 'text-green-600' : 'text-red-600'}`}>
+                        {month.target}%
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Render expanded chart view
+  if (expandedChart) {
+    return (
+      <div className="container py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-tavern-blue">{pageTitle}</h1>
+          <Button 
+            variant="outline" 
+            onClick={() => setExpandedChart(null)}
+            className="flex items-center gap-2"
+          >
+            <Minimize2Icon className="h-4 w-4" />
+            Back to Summary
+          </Button>
+        </div>
+        
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ChartBarIcon className="h-5 w-5" />
+              {expandedChart === 'revenue' ? 'Monthly Revenue & Purchases' : 'Monthly Gross Profit %'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[70vh]">
+              <ResponsiveContainer width="100%" height="100%">
+                {expandedChart === 'revenue' ? (
+                  <BarChart
+                    data={monthlyData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <ChartTooltipContent
+                              className="bg-background border-border"
+                              payload={payload}
+                            />
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend />
+                    <Bar dataKey="revenue" name="Revenue" fill={chartConfig.revenue.color} />
+                    <Bar dataKey="purchases" name="Purchases" fill={chartConfig.purchases.color} />
+                  </BarChart>
+                ) : (
+                  <LineChart
+                    data={monthlyData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis domain={[0, 'dataMax + 10']} />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <ChartTooltipContent
+                              className="bg-background border-border"
+                              payload={payload}
+                            />
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="gpPercentage" 
+                      name="GP %" 
+                      stroke={chartConfig.gpPercentage.color} 
+                      activeDot={{ r: 6 }} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="target" 
+                      name="Target GP %" 
+                      stroke={chartConfig.target.color}
+                      strokeDasharray="5 5" 
+                    />
+                  </LineChart>
+                )}
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Regular desktop view
   return (
     <div className="container py-8">
       <h1 className="text-2xl font-bold text-tavern-blue mb-6">{pageTitle}</h1>
@@ -217,6 +460,17 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => toggleChartExpansion('revenue')}
+              className="flex items-center gap-1"
+            >
+              <Maximize2Icon className="h-3 w-3" />
+              Expand
+            </Button>
+          </CardFooter>
         </Card>
         
         <Card>
@@ -235,7 +489,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
-                  <YAxis />
+                  <YAxis domain={[0, 'dataMax + 10']} />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
@@ -268,6 +522,17 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => toggleChartExpansion('gp')}
+              className="flex items-center gap-1"
+            >
+              <Maximize2Icon className="h-3 w-3" />
+              Expand
+            </Button>
+          </CardFooter>
         </Card>
       </div>
       
