@@ -14,6 +14,7 @@ interface AuthState {
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
+  updateProfile: (updates: { first_name?: string; last_name?: string; role?: 'Owner' | 'Head Chef' | 'Staff'; avatar_url?: string }) => Promise<void>;
   clearError: () => void;
 }
 
@@ -122,6 +123,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: error.message || 'Failed to load user',
         isLoading: false,
         isAuthenticated: false
+      });
+    }
+  },
+  
+  updateProfile: async (updates) => {
+    const { user } = get();
+    if (!user) return;
+    
+    try {
+      set({ isLoading: true });
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Reload user data to get the updated profile
+      await get().loadUser();
+      
+      set({ isLoading: false });
+    } catch (error: any) {
+      set({
+        error: error.message || 'Failed to update profile',
+        isLoading: false
       });
     }
   },

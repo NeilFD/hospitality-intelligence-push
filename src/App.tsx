@@ -11,6 +11,7 @@ import InputSettings from "./pages/InputSettings";
 import MonthSummary from "./pages/MonthSummary";
 import WeeklyTracker from "./pages/WeeklyTracker";
 import AnnualSummary from "./pages/AnnualSummary";
+import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,7 @@ const App = () => {
               <Route path="/month/:year/:month" element={<RequireAuth><MonthSummary /></RequireAuth>} />
               <Route path="/week/:year/:month/:week" element={<RequireAuth><WeeklyTracker /></RequireAuth>} />
               <Route path="/annual-summary" element={<RequireAuth><AnnualSummary /></RequireAuth>} />
+              <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
               
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />

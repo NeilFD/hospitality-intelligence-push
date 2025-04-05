@@ -10,7 +10,7 @@ export interface Database {
           id: string;
           first_name?: string | null;
           last_name?: string | null;
-          role?: string | null;
+          role?: 'Owner' | 'Head Chef' | 'Staff' | null;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -19,7 +19,7 @@ export interface Database {
           id?: string;
           first_name?: string | null;
           last_name?: string | null;
-          role?: string | null;
+          role?: 'Owner' | 'Head Chef' | 'Staff' | null;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -216,7 +216,7 @@ export interface UserProfile {
   id: string;
   first_name: string | null;
   last_name: string | null;
-  role: string | null;
+  role: 'Owner' | 'Head Chef' | 'Staff' | null;
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
