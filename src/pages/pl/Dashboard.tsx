@@ -139,7 +139,7 @@ export default function PLDashboard() {
               <p>Supported formats: CSV, Excel (.xls, .xlsx)</p>
             </div>
             
-            <div className="mt-2">
+            <div className="mt-2 flex justify-center items-center">
               <Input
                 type="file"
                 accept=".csv, .xls, .xlsx"
@@ -157,6 +157,7 @@ export default function PLDashboard() {
                   text-transparent  // Hide the default text
                   cursor-pointer
                   max-w-full
+                  self-center
                 "
                 placeholder="Choose File"
                 disabled={isProcessing}
