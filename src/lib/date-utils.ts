@@ -1,4 +1,3 @@
-
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,7 +26,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   const dayOfWeek = firstDay.getDay();
   // If not Monday (1), go back to previous Monday
   if (dayOfWeek !== 1) {
-    firstMonday.setDate(firstMonday.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    firstMonday.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   }
   
   const weeks: WeekDates[] = [];
@@ -66,11 +65,9 @@ export function createEmptyWeek(
     const date = new Date(start);
     date.setDate(date.getDate() + i);
     
-    // Updated to ensure day names are in correct order for Monday-Sunday pattern
+    // Fixed day calculation - corrected to ensure proper Monday-Sunday mapping
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    // Since we start on Monday (which is day 1 in JS Date), we need to adjust the index
-    const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1; // Map Sunday (0) to 6, and others to 0-5
-    const dayOfWeek = dayNames[dayIndex];
+    const dayOfWeek = dayNames[i]; // Use i directly since we're starting from Monday and iterating in order
     
     // Initialize empty purchases object with all suppliers set to 0
     const purchases: Record<string, number> = {};
