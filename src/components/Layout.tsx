@@ -2,81 +2,54 @@ import { useState, useEffect, useMemo } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { 
-  Home, 
-  Settings, 
-  Calendar, 
-  ChartBar, 
-  ChevronLeft, 
-  ChevronRight,
-  PanelLeftClose,
-  PanelLeft,
-  LogOut,
-  User,
-  Sandwich,
-  Wine,
-  BarChart,
-  DollarSign,
-  Clock
-} from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Sandwich, Wine, BarChart, DollarSign, Clock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { TavernLogo } from "./TavernLogo";
 import { useAuthStore } from "@/services/auth-service";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ModuleType } from "@/types/kitchen-ledger";
 import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
-
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
-  const { user, profile, isAuthenticated, logout } = useAuthStore();
-  
+  const {
+    user,
+    profile,
+    isAuthenticated,
+    logout
+  } = useAuthStore();
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
-  
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
-  
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
-
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-
   const handleLogout = async () => {
     await logout();
     toast.success('You have been logged out');
     navigate('/login');
   };
-
   const getUserInitials = () => {
     if (!profile) return '?';
-    
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
-    
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-  
   const getModuleIcon = (type: ModuleType) => {
-    switch(type) {
+    switch (type) {
       case 'food':
         return <Sandwich className="mr-2 h-4 w-4" />;
       case 'beverage':
@@ -91,63 +64,50 @@ const Layout = () => {
         return <ChartBar className="mr-2 h-4 w-4" />;
     }
   };
-
   const getModuleNavItems = useMemo(() => {
-    switch(currentModule) {
+    switch (currentModule) {
       case 'food':
       case 'beverage':
         const prefix = currentModule === 'food' ? 'Food' : 'Beverage';
-        return [
-          { 
-            name: `${prefix} Dashboard`, 
-            path: `/${currentModule}/dashboard`, 
-            icon: <Home className="mr-2 h-4 w-4" /> 
-          },
-          { 
-            name: `${prefix} Input Settings`, 
-            path: `/${currentModule}/input-settings`, 
-            icon: <Settings className="mr-2 h-4 w-4" /> 
-          },
-          { 
-            name: `${prefix} Month Summary`, 
-            path: `/${currentModule}/month/${currentYear}/${currentMonth}`, 
-            icon: <Calendar className="mr-2 h-4 w-4" /> 
-          },
-          { 
-            name: `${prefix} Annual Summary`, 
-            path: `/${currentModule}/annual-summary`, 
-            icon: <ChartBar className="mr-2 h-4 w-4" /> 
-          },
-        ];
+        return [{
+          name: `${prefix} Dashboard`,
+          path: `/${currentModule}/dashboard`,
+          icon: <Home className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Input Settings`,
+          path: `/${currentModule}/input-settings`,
+          icon: <Settings className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Month Summary`,
+          path: `/${currentModule}/month/${currentYear}/${currentMonth}`,
+          icon: <Calendar className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Annual Summary`,
+          path: `/${currentModule}/annual-summary`,
+          icon: <ChartBar className="mr-2 h-4 w-4" />
+        }];
       case 'pl':
-        return [
-          { 
-            name: "P&L Dashboard", 
-            path: "/pl/dashboard", 
-            icon: <Home className="mr-2 h-4 w-4" /> 
-          },
-        ];
+        return [{
+          name: "P&L Dashboard",
+          path: "/pl/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }];
       case 'wages':
-        return [
-          { 
-            name: "Wages Dashboard", 
-            path: "/wages/dashboard", 
-            icon: <Home className="mr-2 h-4 w-4" /> 
-          },
-        ];
+        return [{
+          name: "Wages Dashboard",
+          path: "/wages/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }];
       case 'performance':
-        return [
-          { 
-            name: "Performance Dashboard", 
-            path: "/performance/dashboard", 
-            icon: <Home className="mr-2 h-4 w-4" /> 
-          },
-        ];
+        return [{
+          name: "Performance Dashboard",
+          path: "/performance/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }];
       default:
         return [];
     }
   }, [currentModule, currentYear, currentMonth]);
-
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
       name: module.name,
@@ -156,19 +116,14 @@ const Layout = () => {
       type: module.type
     }));
   }, [sortedModules]);
-  
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
-
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-
   if (isAuthPage) {
     return <Outlet />;
   }
-
-  const Sidebar = (
-    <div className="h-full flex flex-col bg-[#48495E]">
+  const Sidebar = <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="sm" className="mb-3" />
         {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Tracker</p>}
@@ -177,33 +132,18 @@ const Layout = () => {
       
       <div className="p-2 my-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && (
-            <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+          {!sidebarCollapsed && <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
               Modules
-            </p>
-          )}
+            </p>}
         </div>
         
         <nav className="space-y-1">
-          {moduleNavItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                currentModule === item.type
-                  ? "bg-white text-[#48495E] font-medium"
-                  : "text-white hover:bg-white/10"
-              )}
-              title={sidebarCollapsed ? item.name : undefined}
-              onClick={() => handleModuleSelect(item.type as ModuleType)}
-            >
+          {moduleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? "bg-white text-[#48495E] font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined} onClick={() => handleModuleSelect(item.type as ModuleType)}>
               <div className={sidebarCollapsed ? "mx-auto" : ""}>
                 {item.icon}
               </div>
               {!sidebarCollapsed && <span>{item.name}</span>}
-            </Link>
-          ))}
+            </Link>)}
         </nav>
       </div>
       
@@ -211,78 +151,39 @@ const Layout = () => {
       
       <div className="flex-1 p-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && (
-            <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+          {!sidebarCollapsed && <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
               {sortedModules.find(m => m.type === currentModule)?.name || 'Navigation'}
-            </p>
-          )}
+            </p>}
         </div>
         
         <nav className="space-y-1">
-          {getModuleNavItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                location.pathname === item.path
-                  ? "bg-tavern-blue-dark text-white font-medium"
-                  : "text-white hover:bg-white/10"
-              )}
-              title={sidebarCollapsed ? item.name : undefined}
-            >
+          {getModuleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? "bg-tavern-blue-dark text-white font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined}>
               <div className={sidebarCollapsed ? "mx-auto" : ""}>
                 {item.icon}
               </div>
               {!sidebarCollapsed && <span>{item.name}</span>}
-            </Link>
-          ))}
+            </Link>)}
         </nav>
       </div>
       
       <div className="p-4">
         {!sidebarCollapsed && <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>}
       </div>
-    </div>
-  );
-
-  const ProfileAvatar = () => (
-    <div className="flex flex-col items-center">
+    </div>;
+  const ProfileAvatar = () => <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-tavern-blue text-white">
-        {profile?.avatar_url ? (
-          <AvatarImage 
-            src={profile.avatar_url}
-            alt="Profile" 
-            className="object-cover"
-          />
-        ) : (
-          <AvatarFallback>{getUserInitials()}</AvatarFallback>
-        )}
+        {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
       </Avatar>
-      {profile && (
-        <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
+      {profile && <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
           {profile.first_name || 'User'}
-        </span>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {isMobile ? (
-        <>
+        </span>}
+    </div>;
+  return <div className="flex h-screen bg-background overflow-hidden">
+      {isMobile ? <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="fixed left-4 top-4 z-40 md:hidden"
-              >
-                {sidebarOpen ? (
-                  <ChevronLeft className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
+              <Button variant="outline" size="icon" className="fixed left-4 top-4 z-40 md:hidden text-zinc-800">
+                {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
@@ -293,8 +194,7 @@ const Layout = () => {
             <div className="absolute top-4 left-0 right-0 flex justify-between px-4">
               <div className="w-8"></div>
               <TavernLogo size="sm" />
-              {isAuthenticated && (
-                <DropdownMenu>
+              {isAuthenticated && <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
                       <ProfileAvatar />
@@ -323,36 +223,22 @@ const Layout = () => {
                       <span>Logout</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                </DropdownMenu>}
             </div>
             <Outlet />
           </div>
-        </>
-      ) : (
-        <>
-          <div className={cn("flex-shrink-0 transition-all duration-300", 
-            sidebarCollapsed ? "w-20" : "w-64")}>
+        </> : <>
+          <div className={cn("flex-shrink-0 transition-all duration-300", sidebarCollapsed ? "w-20" : "w-64")}>
             {Sidebar}
           </div>
           <div className="flex-1 overflow-auto relative">
             <div className="flex items-center justify-between px-8 py-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={toggleSidebar}
-                className="z-40"
-              >
-                {sidebarCollapsed ? (
-                  <PanelLeft className="h-4 w-4" />
-                ) : (
-                  <PanelLeftClose className="h-4 w-4" />
-                )}
+              <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40">
+                {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
               <TavernLogo size="sm" />
               
-              {isAuthenticated && (
-                <DropdownMenu>
+              {isAuthenticated && <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
                       <ProfileAvatar />
@@ -381,15 +267,11 @@ const Layout = () => {
                       <span>Logout</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                </DropdownMenu>}
             </div>
             <Outlet />
           </div>
-        </>
-      )}
-    </div>
-  );
-}
-
+        </>}
+    </div>;
+};
 export default Layout;
