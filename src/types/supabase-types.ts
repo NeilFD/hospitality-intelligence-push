@@ -1,4 +1,5 @@
-import { Supplier, WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
+
+import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 
 export interface Database {
   public: {
@@ -25,7 +26,7 @@ export interface Database {
         };
       };
       suppliers: {
-        Row: Supplier;
+        Row: DBSupplier;
         Insert: {
           id?: string;
           name: string;
@@ -222,7 +223,7 @@ export interface UserProfile {
   email?: string;
 }
 
-export interface Supplier {
+export interface DBSupplier {
   id: string;
   name: string;
   contact_name: string | null;
@@ -232,3 +233,6 @@ export interface Supplier {
   created_at: string;
   updated_at: string;
 }
+
+// Re-export the supplier type from kitchen-ledger to avoid conflicts
+export type { Supplier } from './kitchen-ledger';

@@ -2,9 +2,10 @@
 import { supabase, signIn, signUp, signOut, getCurrentUser, getProfile } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 import { create } from 'zustand';
+import { User } from '@supabase/supabase-js';
 
 interface AuthState {
-  user: UserProfile | null;
+  user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;

@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
+import { UserProfile } from '@/types/supabase-types';
 
 // Create a single supabase client for the entire app
 const supabaseUrl = 'https://kfiergoryrnjkewmeriy.supabase.co';
@@ -35,7 +36,7 @@ export const getCurrentUser = async () => {
   return data?.user;
 };
 
-export const getProfile = async (userId: string) => {
+export const getProfile = async (userId: string): Promise<UserProfile> => {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
