@@ -14,6 +14,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { TavernLogo } from "./TavernLogo";
 
 const Layout = () => {
   const location = useLocation();
@@ -29,8 +30,8 @@ const Layout = () => {
 
   const Sidebar = (
     <div className="h-full flex flex-col bg-tavern-blue">
-      <div className="p-4">
-        <h1 className="text-2xl font-bold text-white">The Tavern</h1>
+      <div className="p-4 flex flex-col items-center">
+        <TavernLogo size="sm" className="mb-2" />
         <p className="text-tavern-blue-light text-sm">Kitchen Ledger</p>
       </div>
       <Separator className="bg-tavern-blue-light/20" />
@@ -80,6 +81,7 @@ const Layout = () => {
             </SheetContent>
           </Sheet>
           <div className="flex-1 overflow-auto pt-16">
+            <TavernLogo size="sm" className="absolute top-4 right-4" />
             <Outlet />
           </div>
         </>
@@ -88,7 +90,8 @@ const Layout = () => {
           <div className="hidden md:flex w-64 flex-shrink-0">
             {Sidebar}
           </div>
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto relative">
+            <TavernLogo size="sm" className="absolute top-4 right-4" />
             <Outlet />
           </div>
         </>
