@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,11 +49,14 @@ export default function WeeklyTracker() {
   ) => {
     if (!weekRecord) return;
     
-    // Parse the value as a float if it's not empty
     const numericValue = value === '' ? 0 : parseFloat(value);
     
-    // Check if the parse result is valid
-    if (isNaN(numericValue)) return;
+    if (isNaN(numericValue)) {
+      console.log("Invalid numeric input:", value);
+      return;
+    }
+    
+    console.log(`Updating ${field} for day ${dayIndex} with value: ${numericValue}`);
     
     useStore.setState(state => {
       const updatedMonths = state.annualRecord.months.map(month => {
@@ -296,10 +298,9 @@ export default function WeeklyTracker() {
                         <td key={dayIndex} className="table-cell p-0">
                           <Input 
                             type="number"
-                            inputMode="decimal"
                             min="0"
                             step="0.01"
-                            value={value !== undefined && value !== 0 ? value : ''}
+                            value={value || ''} 
                             onChange={(e) => handleInputChange(
                               originalDayIndex, 
                               'purchases', 
@@ -346,10 +347,9 @@ export default function WeeklyTracker() {
                         <td key={dayIndex} className="table-cell p-0">
                           <Input 
                             type="number"
-                            inputMode="decimal"
                             min="0"
                             step="0.01"
-                            value={value !== undefined && value !== 0 ? value : ''}
+                            value={value || ''} 
                             onChange={(e) => handleInputChange(
                               originalDayIndex, 
                               'creditNotes', 
@@ -376,10 +376,9 @@ export default function WeeklyTracker() {
                       <td key={dayIndex} className="table-cell p-0">
                         <Input 
                           type="number"
-                          inputMode="decimal"
                           min="0"
                           step="0.01"
-                          value={value !== undefined && value !== 0 ? value : ''}
+                          value={value || ''} 
                           onChange={(e) => handleInputChange(
                             originalDayIndex, 
                             'staffFoodAllowance', 
@@ -421,10 +420,9 @@ export default function WeeklyTracker() {
                       <td key={dayIndex} className="table-cell p-0">
                         <Input 
                           type="number"
-                          inputMode="decimal"
                           min="0"
                           step="0.01"
-                          value={value !== undefined && value !== 0 ? value : ''}
+                          value={value || ''} 
                           onChange={(e) => handleInputChange(
                             originalDayIndex, 
                             'revenue', 
