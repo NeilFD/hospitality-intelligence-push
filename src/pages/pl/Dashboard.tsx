@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -7,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { FileUp, Info, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
-import { useBudgetProcessor, fetchBudgetItems } from '@/utils/budget-processor';
+import { fetchBudgetItems } from '@/utils/budget-processor';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 const chartData = [
   { name: 'Budget', revenue: 73000, costs: 56450, ebitda: 16550 },
@@ -18,18 +20,13 @@ const chartData = [
 ];
 
 export default function PLDashboard() {
-  const [fileInput, setFileInput] = useState<File | null>(null);
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
   const [currentMonthName, setCurrentMonthName] = useState<string>(
     new Date().toLocaleString('default', { month: 'long' })
   );
   const [currentYear, setCurrentYear] = useState<number>(2025);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isProcessed, setIsProcessed] = useState(false);
-  const [processingError, setProcessingError] = useState<string | null>(null);
-  const { processBudget } = useBudgetProcessor();
   
-  const { data: budgetItems, isLoading: isLoadingBudget, refetch } = useQuery({
+  const { data: budgetItems, isLoading: isLoadingBudget } = useQuery({
     queryKey: ['budget-items', currentYear, currentMonth],
     queryFn: () => fetchBudgetItems(currentYear, currentMonth),
     enabled: true,
@@ -73,103 +70,6 @@ export default function PLDashboard() {
     return `${value.toFixed(1)}%`;
   };
   
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setProcessingError(null);
-    setIsProcessed(false);
-    
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      if (file.type === 'text/csv' || 
-          file.type === 'application/vnd.ms-excel' || 
-          file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-        setFileInput(file);
-        toast({
-          title: "File Selected",
-          description: `${file.name} is ready to be processed.`,
-        });
-      } else {
-        setProcessingError("Invalid file format. Please upload a CSV or Excel file.");
-        toast({
-          title: "Invalid File Format",
-          description: "Please upload a CSV or Excel file.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const processFile = async () => {
-    if (fileInput) {
-      setIsProcessing(true);
-      setIsProcessed(false);
-      setProcessingError(null);
-      
-      toast({
-        title: "Processing Budget File",
-        description: "Your budget file is being processed...",
-      });
-      
-      try {
-        console.log("Starting budget processing for file:", fileInput.name);
-        const success = await processBudget(
-          fileInput, 
-          currentYear, 
-          currentMonth
-        );
-        
-        console.log("Budget processing complete, success:", success);
-        
-        if (success) {
-          toast({
-            title: "Success!",
-            description: `Budget data for ${currentMonthName} ${currentYear} imported successfully!`,
-            variant: "default",
-          });
-          setIsProcessed(true);
-          await refetch();
-        } else {
-          setProcessingError("Failed to process the budget file. No valid data was found.");
-          toast({
-            title: "Processing Failed",
-            description: "Failed to process the budget file. No valid data was found.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error('Error processing budget file:', error);
-        const errorMessage = error instanceof Error ? error.message : "An error occurred while processing the budget file.";
-        setProcessingError(errorMessage);
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } finally {
-        setIsProcessing(false);
-      }
-    }
-  };
-  
-  const CustomTooltip = ({ active, payload, label }: { 
-    active?: boolean, 
-    payload?: Array<{ value: number, name: string }>, 
-    label?: string 
-  }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border rounded-md p-2 shadow-lg">
-          <p className="font-bold">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index}>
-              {entry.name}: {formatCurrency(entry.value)}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-  
   const handleMonthChange = (value: string) => {
     setCurrentMonth(parseInt(value));
   };
@@ -184,41 +84,50 @@ export default function PLDashboard() {
     <div className="container py-8">
       <h1 className="text-3xl font-bold text-purple-600 mb-6 text-center">P&L Tracker Dashboard</h1>
       
-      <div className="flex justify-end gap-4 mb-6">
-        <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue>{currentMonthName}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">January</SelectItem>
-            <SelectItem value="2">February</SelectItem>
-            <SelectItem value="3">March</SelectItem>
-            <SelectItem value="4">April</SelectItem>
-            <SelectItem value="5">May</SelectItem>
-            <SelectItem value="6">June</SelectItem>
-            <SelectItem value="7">July</SelectItem>
-            <SelectItem value="8">August</SelectItem>
-            <SelectItem value="9">September</SelectItem>
-            <SelectItem value="10">October</SelectItem>
-            <SelectItem value="11">November</SelectItem>
-            <SelectItem value="12">December</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex gap-4">
+          <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue>{currentMonthName}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">January</SelectItem>
+              <SelectItem value="2">February</SelectItem>
+              <SelectItem value="3">March</SelectItem>
+              <SelectItem value="4">April</SelectItem>
+              <SelectItem value="5">May</SelectItem>
+              <SelectItem value="6">June</SelectItem>
+              <SelectItem value="7">July</SelectItem>
+              <SelectItem value="8">August</SelectItem>
+              <SelectItem value="9">September</SelectItem>
+              <SelectItem value="10">October</SelectItem>
+              <SelectItem value="11">November</SelectItem>
+              <SelectItem value="12">December</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={currentYear.toString()} onValueChange={(value) => setCurrentYear(parseInt(value))}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue>{currentYear}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2024">2024</SelectItem>
+              <SelectItem value="2025">2025</SelectItem>
+              <SelectItem value="2026">2026</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         
-        <Select value={currentYear.toString()} onValueChange={(value) => setCurrentYear(parseInt(value))}>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue>{currentYear}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="2024">2024</SelectItem>
-            <SelectItem value="2025">2025</SelectItem>
-            <SelectItem value="2026">2026</SelectItem>
-          </SelectContent>
-        </Select>
+        <Button variant="outline" asChild>
+          <Link to="/pl/budget" className="flex items-center gap-2">
+            <FileUp size={16} />
+            Manage Budget Data
+          </Link>
+        </Button>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-2">
+        <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-3">
           <CardHeader className="bg-white/40 border-b">
             <CardTitle className="flex items-center justify-between">
               <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
@@ -243,92 +152,6 @@ export default function PLDashboard() {
                 <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />
               </BarChart>
             </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-md rounded-xl overflow-hidden">
-          <CardHeader className="bg-white/40 border-b">
-            <CardTitle>Budget Import</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 flex flex-col gap-4">
-            <div className="text-sm text-gray-600">
-              <p className="mb-2">Upload your Excel budget for {currentMonthName} {currentYear}.</p>
-              <p>Supported formats: CSV, Excel (.xls, .xlsx)</p>
-            </div>
-            
-            <div className="flex justify-center items-center">
-              <Input
-                type="file"
-                accept=".csv, .xls, .xlsx"
-                onChange={handleFileUpload}
-                className="
-                  w-full 
-                  max-w-sm 
-                  file:mr-4 
-                  file:py-2 
-                  file:px-4 
-                  file:rounded-full 
-                  file:text-sm 
-                  file:font-semibold 
-                  file:bg-purple-50 
-                  file:text-purple-700 
-                  hover:file:bg-purple-100
-                  file:cursor-pointer
-                  text-center
-                  self-center
-                "
-                placeholder="Choose File"
-                disabled={isProcessing}
-              />
-            </div>
-            
-            {fileInput && (
-              <div className="text-sm text-center">
-                <p className="font-medium">Selected file:</p> 
-                <p className="text-purple-600">{fileInput.name}</p>
-              </div>
-            )}
-            
-            <Button 
-              onClick={processFile} 
-              disabled={!fileInput || isProcessing}
-              className="mt-2 w-full bg-purple-600 hover:bg-purple-700"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  {isProcessed ? (
-                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                  ) : (
-                    <FileUp className="mr-2 h-4 w-4" />
-                  )}
-                  {isProcessed ? 'Budget Processed' : 'Process Budget'}
-                </>
-              )}
-            </Button>
-            
-            {isProcessed && (
-              <div className="text-green-600 text-sm flex items-center justify-center mt-2">
-                <CheckCircle className="mr-1 h-4 w-4" />
-                Budget data imported successfully!
-              </div>
-            )}
-            
-            {processingError && (
-              <div className="text-red-600 text-sm flex items-center justify-center mt-2">
-                <AlertCircle className="mr-1 h-4 w-4" />
-                {processingError}
-              </div>
-            )}
-            
-            <div className="text-xs text-gray-500 mt-2">
-              <p>Budget data is now stored in your Supabase database.</p>
-              <p>It will be used to calculate variances and forecasts.</p>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -393,9 +216,13 @@ export default function PLDashboard() {
               </div>
             ) : (
               <div className="text-center p-8 text-gray-500">
-                {isProcessed ? 
-                  "Processing your budget data... Please wait." : 
-                  "No budget data available. Please upload a budget file."}
+                <p className="mb-4">No budget data available for {currentMonthName} {currentYear}.</p>
+                <Button asChild variant="outline">
+                  <Link to="/pl/budget">
+                    <FileUp className="mr-2 h-4 w-4" />
+                    Upload Budget Data
+                  </Link>
+                </Button>
               </div>
             )}
           </CardContent>
@@ -466,3 +293,26 @@ export default function PLDashboard() {
     </div>
   );
 }
+
+const CustomTooltip = ({ active, payload, label }: { 
+  active?: boolean, 
+  payload?: Array<{ value: number, name: string }>, 
+  label?: string 
+}) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border rounded-md p-2 shadow-lg">
+        <p className="font-bold">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index}>
+            {entry.name}: £{entry.value.toLocaleString('en-GB', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};

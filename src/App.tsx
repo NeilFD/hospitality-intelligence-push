@@ -1,3 +1,4 @@
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -28,6 +29,7 @@ import BeverageMonthSummary from "./pages/beverage/MonthSummary";
 import BeverageAnnualSummary from "./pages/beverage/AnnualSummary";
 
 import PLDashboard from "./pages/pl/Dashboard";
+import BudgetInput from "./pages/pl/BudgetInput";
 import WagesDashboard from "./pages/wages/Dashboard";
 import PerformanceDashboard from "./pages/performance/Dashboard";
 
@@ -58,6 +60,7 @@ const App = () => {
 
               {/* P&L Tracker Module */}
               <Route path="/pl/dashboard" element={<RequireAuth><PLDashboard /></RequireAuth>} />
+              <Route path="/pl/budget" element={<RequireAuth><BudgetInput /></RequireAuth>} />
               
               {/* Wages Tracker Module */}
               <Route path="/wages/dashboard" element={<RequireAuth><WagesDashboard /></RequireAuth>} />
