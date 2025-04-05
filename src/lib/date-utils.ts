@@ -106,6 +106,20 @@ export function createEmptyWeek(
   };
 }
 
+// Get day of week (0-6, where 0 is Monday and 6 is Sunday)
+export function getDayOfWeek(date: Date): number {
+  // JavaScript's getDay returns 0 for Sunday, 1 for Monday, etc.
+  // We want 0 for Monday, 1 for Tuesday, ..., 6 for Sunday
+  const jsDay = date.getDay();
+  return jsDay === 0 ? 6 : jsDay - 1;
+}
+
+// Get day name from day number
+export function getDayName(dayNumber: number): string {
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  return dayNames[dayNumber];
+}
+
 // Calculate GP percentage
 export function calculateGP(revenue: number, cost: number): number {
   if (revenue === 0) return 0;

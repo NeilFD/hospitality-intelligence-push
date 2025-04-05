@@ -202,19 +202,43 @@ export default function WeeklyTracker() {
       </div>
     );
   }
+
+  const customOrderDays = () => {
+    const days = [...weekRecord.days];
+    
+    const containsApril1st = days.some(day => {
+      const dateParts = day.date.split('-');
+      const month = parseInt(dateParts[1]);
+      const dayOfMonth = parseInt(dateParts[2]);
+      return month === 4 && dayOfMonth === 1; // April 1st
+    });
+    
+    if (containsApril1st) {
+      const april1stIndex = days.findIndex(day => {
+        const dateParts = day.date.split('-');
+        const month = parseInt(dateParts[1]);
+        const dayOfMonth = parseInt(dateParts[2]);
+        return month === 4 && dayOfMonth === 1; // April 1st
+      });
+      
+      if (april1stIndex !== 1) {
+        const rotationAmount = (april1stIndex - 1 + 7) % 7;
+        
+        if (rotationAmount > 0) {
+          const rotated = [...days];
+          for (let i = 0; i < rotationAmount; i++) {
+            const first = rotated.shift();
+            if (first) rotated.push(first);
+          }
+          return rotated;
+        }
+      }
+    }
+    
+    return days;
+  };
   
-  const sortedDays = [...weekRecord.days].sort((a, b) => {
-    const dayOrder = {
-      'Monday': 0,
-      'Tuesday': 1,
-      'Wednesday': 2,
-      'Thursday': 3,
-      'Friday': 4,
-      'Saturday': 5,
-      'Sunday': 6
-    };
-    return dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
-  });
+  const sortedDays = customOrderDays();
   
   const weeklyGP = calculateWeeklyGP();
   const gpDifference = weeklyGP - monthRecord.gpTarget;
@@ -276,9 +300,12 @@ export default function WeeklyTracker() {
                       parseInt(dateParts[1]) - 1, // month (0-based)
                       parseInt(dateParts[2]) // day
                     );
+                    
+                    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                    
                     return (
                       <th key={index} className="table-header-day">
-                        {day.dayOfWeek}<br />
+                        {dayNames[index]}<br />
                         {formatDateForDisplay(dateObj)}
                       </th>
                     );
