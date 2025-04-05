@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 210 80% 40%;
+    --primary: 210 80% 40%; // Updated to match tavern blue
     --primary-foreground: 210 40% 98%;
 
     --secondary: 150 60% 70%;
