@@ -1,3 +1,4 @@
+
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,11 +28,14 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   const firstDay = getFirstDayOfMonth(year, month);
   const lastDay = getLastDayOfMonth(year, month);
   
-  // Find the first Monday of the week containing the 1st of the month
+  // Find the first Monday that covers the 1st of the month
+  // If the 1st is already a Monday, use it; otherwise, go back to previous Monday
   const firstMonday = new Date(firstDay);
-  const dayOfWeek = firstDay.getDay();
-  // If not Monday (1), go back to previous Monday
+  const dayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // If not Monday (1), go back to the previous Monday
   if (dayOfWeek !== 1) {
+    // If Sunday (0), go back 6 days, otherwise go back (dayOfWeek - 1) days
     firstMonday.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   }
   
@@ -66,11 +70,10 @@ export function createEmptyWeek(
   const days: DailyRecord[] = [];
   const start = new Date(startDate);
   
-  // Explicitly check if the start date is already a Monday
+  // Make sure we're starting on a Monday
   const dayOfWeek = start.getDay();
   if (dayOfWeek !== 1) {
     // If not Monday (1), adjust to the correct Monday
-    // This ensures we don't move forward when we should go back
     start.setDate(start.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   }
   
