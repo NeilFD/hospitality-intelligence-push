@@ -90,7 +90,7 @@ export default function AnnualSummary({
           purchases: totalPurchases,
           grossProfit,
           gpPercentage: parseFloat(gpPercentage.toFixed(2)),
-          target: monthRecord.gpTarget * 100
+          target: parseFloat((monthRecord.gpTarget * 100).toFixed(2))
         });
       } else {
         months.push({
