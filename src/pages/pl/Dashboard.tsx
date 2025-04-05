@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -27,6 +26,7 @@ export default function PLDashboard() {
   const [currentYear, setCurrentYear] = useState<number>(2025);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
+  const [processingError, setProcessingError] = useState<string | null>(null);
   const { processBudget } = useBudgetProcessor();
   
   const { data: budgetItems, isLoading: isLoadingBudget, refetch } = useQuery({
@@ -63,6 +63,9 @@ export default function PLDashboard() {
   }, [budgetItems]);
   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setProcessingError(null);
+    setIsProcessed(false);
+    
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       if (file.type === 'text/csv' || 
@@ -74,6 +77,7 @@ export default function PLDashboard() {
           description: `${file.name} is ready to be processed.`,
         });
       } else {
+        setProcessingError("Invalid file format. Please upload a CSV or Excel file.");
         toast({
           title: "Invalid File Format",
           description: "Please upload a CSV or Excel file.",
@@ -87,6 +91,7 @@ export default function PLDashboard() {
     if (fileInput) {
       setIsProcessing(true);
       setIsProcessed(false);
+      setProcessingError(null);
       
       toast({
         title: "Processing Budget File",
@@ -94,11 +99,14 @@ export default function PLDashboard() {
       });
       
       try {
+        console.log("Starting budget processing for file:", fileInput.name);
         const success = await processBudget(
           fileInput, 
           currentYear, 
           currentMonth
         );
+        
+        console.log("Budget processing complete, success:", success);
         
         if (success) {
           toast({
@@ -107,19 +115,22 @@ export default function PLDashboard() {
             variant: "default",
           });
           setIsProcessed(true);
-          refetch();
+          await refetch();
         } else {
+          setProcessingError("Failed to process the budget file. No valid data was found.");
           toast({
             title: "Processing Failed",
-            description: "Failed to process the budget file. Please check the format.",
+            description: "Failed to process the budget file. No valid data was found.",
             variant: "destructive",
           });
         }
       } catch (error) {
         console.error('Error processing budget file:', error);
+        const errorMessage = error instanceof Error ? error.message : "An error occurred while processing the budget file.";
+        setProcessingError(errorMessage);
         toast({
           title: "Error",
-          description: "An error occurred while processing the budget file.",
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
@@ -260,6 +271,13 @@ export default function PLDashboard() {
               />
             </div>
             
+            {fileInput && (
+              <div className="text-sm text-center">
+                <p className="font-medium">Selected file:</p> 
+                <p className="text-purple-600">{fileInput.name}</p>
+              </div>
+            )}
+            
             <Button 
               onClick={processFile} 
               disabled={!fileInput || isProcessing}
@@ -286,6 +304,13 @@ export default function PLDashboard() {
               <div className="text-green-600 text-sm flex items-center justify-center mt-2">
                 <CheckCircle className="mr-1 h-4 w-4" />
                 Budget data imported successfully!
+              </div>
+            )}
+            
+            {processingError && (
+              <div className="text-red-600 text-sm flex items-center justify-center mt-2">
+                <AlertCircle className="mr-1 h-4 w-4" />
+                {processingError}
               </div>
             )}
             

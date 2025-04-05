@@ -36,35 +36,15 @@ export const processBudgetFile = async (file: File): Promise<BudgetItem[]> => {
         // Convert to JSON - using header row
         const jsonData = utils.sheet_to_json<any>(worksheet, { header: 1 });
         
+        console.log("Excel data parsed, rows found:", jsonData.length);
+        
         // Budget items array
         const budgetItems: BudgetItem[] = [];
         
-        // Based on the image, we're looking for rows starting from the Consolidation - Profit and Loss section
-        // Skip header rows
-        let startProcessing = false;
+        // Skip empty rows and look for data directly
         let currentCategory = "";
         
-        // Months mapping from the header row
-        const monthColumns: {[key: string]: number} = {};
-        
-        // Find the header row with months (it should contain Mar-25, Apr-25, etc.)
-        for (let i = 0; i < jsonData.length; i++) {
-          const row = jsonData[i];
-          if (row && Array.isArray(row) && row.some(cell => typeof cell === 'string' && cell.includes('-25'))) {
-            // Found month header row
-            for (let j = 1; j < row.length; j++) { // Start from 1 to skip the first column
-              const cell = row[j];
-              if (typeof cell === 'string' && cell.includes('-25')) {
-                // Extract month from format like "Apr-25" -> "Apr"
-                const monthName = cell.split('-')[0];
-                monthColumns[monthName] = j;
-              }
-            }
-            break;
-          }
-        }
-        
-        // Process the data rows
+        // Process all rows, looking for data that looks like budget items
         for (let i = 0; i < jsonData.length; i++) {
           const row = jsonData[i];
           
@@ -72,64 +52,72 @@ export const processBudgetFile = async (file: File): Promise<BudgetItem[]> => {
           
           const firstCell = row[0];
           
-          // Start processing after we find the "Consolidation - Profit and Loss" text
-          if (!startProcessing && firstCell === "Consolidation - Profit and Loss") {
-            startProcessing = true;
-            continue;
-          }
-          
-          if (!startProcessing) continue;
-          
           // Skip empty rows or rows without a name in the first column
           if (!firstCell) continue;
           
-          // Check if this is a category header (like "Food Revenue", "Beverage Revenue", etc.)
-          // In the image, it seems categories don't have £ signs and are header-like
-          const isHeaderRow = typeof firstCell === 'string' && !row[1] && !row[2];
-          
-          if (isHeaderRow) {
-            currentCategory = firstCell;
-            continue;
-          }
-          
-          // If this looks like an item row (has a name and values)
-          const itemName = firstCell;
-          
-          if (typeof itemName === 'string' && itemName !== 'Total' && itemName !== 'Turnover') {
-            // Process values for each month
-            for (const [month, colIndex] of Object.entries(monthColumns)) {
-              // Check if we have a value for this month
-              const rawValue = row[colIndex];
-              const value = typeof rawValue === 'number' ? 
-                rawValue : 
-                (typeof rawValue === 'string' && rawValue.startsWith('£') ? 
-                  parseFloat(rawValue.replace('£', '').replace(/,/g, '').trim()) : 
-                  null);
-              
-              if (value !== null && !isNaN(value)) {
-                budgetItems.push({
-                  category: currentCategory,
-                  name: itemName,
-                  budget: value,
-                  // For now, actual and forecast are null as they'll be filled later
-                });
+          // Handle row parsing more generically to identify budget items
+          if (typeof firstCell === 'string') {
+            // Check if this looks like a category header
+            // Category headers typically don't have numeric values in the next columns
+            const hasNumericValues = row.slice(1).some(cell => typeof cell === 'number');
+            
+            if (!hasNumericValues) {
+              // This looks like a category header
+              currentCategory = firstCell;
+              console.log("Found category:", currentCategory);
+              continue;
+            }
+            
+            // If this looks like an item row with a name and at least one numeric value
+            // Extract the budget value from the row - it's usually in the first numeric column
+            let budgetValue = null;
+            for (let j = 1; j < row.length; j++) {
+              const cell = row[j];
+              if (typeof cell === 'number') {
+                budgetValue = cell;
+                break;
+              } else if (typeof cell === 'string' && !isNaN(parseFloat(cell.replace(/[£$,]/g, '')))) {
+                // Try to extract numeric value from string with currency symbols
+                budgetValue = parseFloat(cell.replace(/[£$,]/g, ''));
+                break;
               }
             }
+            
+            if (budgetValue !== null && currentCategory) {
+              budgetItems.push({
+                category: currentCategory,
+                name: firstCell,
+                budget: budgetValue,
+              });
+              console.log(`Added budget item: ${firstCell} (${currentCategory}) - £${budgetValue}`);
+            }
+          } else if (typeof firstCell === 'number' && row.length > 1 && currentCategory) {
+            // Handle case where first cell is a number and second cell might be a description
+            const itemName = typeof row[1] === 'string' ? row[1] : `Item ${firstCell}`;
+            budgetItems.push({
+              category: currentCategory,
+              name: itemName,
+              budget: firstCell,
+            });
+            console.log(`Added budget item: ${itemName} (${currentCategory}) - £${firstCell}`);
           }
         }
         
         if (budgetItems.length === 0) {
-          throw new Error("No valid budget items found in the spreadsheet");
+          console.log("No valid budget items found in the spreadsheet");
+          throw new Error("No valid budget items found in the spreadsheet. Please check the format or try a different file.");
         }
         
+        console.log(`Successfully extracted ${budgetItems.length} budget items`);
         resolve(budgetItems);
       } catch (error) {
         console.error('Error processing Excel file:', error);
-        reject(new Error('Failed to process the Excel file. Please check the format.'));
+        reject(error instanceof Error ? error : new Error('Failed to process the Excel file. Please check the format.'));
       }
     };
     
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error);
       reject(new Error('Error reading the file.'));
     };
     
@@ -150,26 +138,25 @@ export const saveBudgetItems = async (
   month: number
 ): Promise<void> => {
   try {
-    const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'short' });
-    
     // First, delete any existing budget items for this year/month
-    await supabase
+    const { error: deleteError } = await supabase
       .from('budget_items')
       .delete()
       .eq('year', year)
       .eq('month', month);
     
-    // Filter for items specific to the selected month
-    const monthItems = budgetItems.filter(item => {
-      // This would need to be adjusted based on how you determine which items belong to which month
-      return true; // For now, assuming all items are for the selected month
-    });
+    if (deleteError) {
+      console.error('Error deleting existing budget items:', deleteError);
+      throw deleteError;
+    }
+    
+    console.log(`Deleted existing budget items for ${month}/${year}`);
     
     // Then insert the new budget items
-    const { error } = await supabase
+    const { error: insertError } = await supabase
       .from('budget_items')
       .insert(
-        monthItems.map(item => ({
+        budgetItems.map(item => ({
           year,
           month,
           category: item.category,
@@ -180,7 +167,12 @@ export const saveBudgetItems = async (
         }))
       );
     
-    if (error) throw error;
+    if (insertError) {
+      console.error('Error inserting budget items:', insertError);
+      throw insertError;
+    }
+    
+    console.log(`Successfully inserted ${budgetItems.length} budget items`);
   } catch (error) {
     console.error('Error saving budget items:', error);
     throw new Error('Failed to save budget data to the database.');
@@ -194,6 +186,8 @@ export const saveBudgetItems = async (
 export const useBudgetProcessor = () => {
   const processBudget = async (file: File, year: number, month: number) => {
     try {
+      console.log(`Processing budget file for ${month}/${year}:`, file.name);
+      
       // Process the file
       const budgetItems = await processBudgetFile(file);
       
@@ -211,7 +205,7 @@ export const useBudgetProcessor = () => {
     } catch (error) {
       console.error('Budget processing error:', error);
       console.error(error instanceof Error ? error.message : "Failed to process budget file.");
-      return false;
+      throw error; // Re-throw to let the UI handle the error
     }
   };
   
