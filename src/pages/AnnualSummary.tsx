@@ -1,29 +1,9 @@
-
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { 
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  LineChart,
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend
-} from 'recharts';
-import { ModuleType } from '@/types/kitchen-ledger';
-import { ChartBarIcon, Maximize2Icon, Minimize2Icon } from 'lucide-react';
+import { ChartBarIcon, Maximize2Icon } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -54,15 +34,13 @@ export default function AnnualSummary({
   
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
   
-  // Get the latest GP target value from monthly records, default to 70%
   const getDefaultTargetGP = () => {
     const existingMonths = annualRecord.months.filter(m => m.year === annualRecord.year);
     if (existingMonths.length > 0) {
-      // Get the most recent month with a GP target
       const sortedMonths = [...existingMonths].sort((a, b) => b.month - a.month);
       return parseFloat((sortedMonths[0].gpTarget * 100).toFixed(2));
     }
-    return 70; // Default to 70% if no months exist
+    return 70;
   };
   
   const monthlyData = React.useMemo(() => {
@@ -113,7 +91,7 @@ export default function AnnualSummary({
           purchases: 0,
           grossProfit: 0,
           gpPercentage: 0,
-          target: defaultTarget  // Use the default target for months without data
+          target: defaultTarget
         });
       }
     }
@@ -138,7 +116,6 @@ export default function AnnualSummary({
         ? parseFloat(((totals.grossProfit / totals.revenue) * 100).toFixed(2))
         : 0;
       
-      // Calculate the average target GP from all months
       totals.averageTargetGP = parseFloat(
         (monthlyData.reduce((sum, month) => sum + month.target, 0) / monthlyData.length).toFixed(2)
       );
@@ -227,7 +204,7 @@ export default function AnnualSummary({
                   <Button 
                     variant="outline" 
                     onClick={() => toggleChartExpansion('revenue')}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 border-tavern-green bg-tavern-green/10 hover:bg-tavern-green/20 text-tavern-green-dark"
                   >
                     <Maximize2Icon className="h-4 w-4" />
                     View Chart
@@ -248,7 +225,7 @@ export default function AnnualSummary({
                   <Button 
                     variant="outline" 
                     onClick={() => toggleChartExpansion('gp')}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 border-tavern-green bg-tavern-green/10 hover:bg-tavern-green/20 text-tavern-green-dark"
                   >
                     <Maximize2Icon className="h-4 w-4" />
                     View Chart
