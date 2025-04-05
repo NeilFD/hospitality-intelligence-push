@@ -38,8 +38,8 @@ const Layout = () => {
   const Sidebar = (
     <div className="h-full flex flex-col bg-tavern-blue">
       <div className="p-4 flex flex-col items-center">
-        <TavernLogo size="sm" className="mb-2" />
-        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm">Kitchen Ledger</p>}
+        <TavernLogo size="sm" className="mb-3" />
+        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Ledger</p>}
       </div>
       <Separator className="bg-tavern-blue-light/20" />
       <nav className="flex-1 p-4 space-y-2">
@@ -115,7 +115,7 @@ const Layout = () => {
                   <PanelLeftClose className="h-4 w-4" />
                 )}
               </Button>
-              <TavernLogo size="sm" className="mr-2" />
+              <TavernLogo size="sm" />
             </div>
             <Outlet />
           </div>
@@ -123,6 +123,6 @@ const Layout = () => {
       )}
     </div>
   );
-};
+}
 
 export default Layout;

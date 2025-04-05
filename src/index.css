@@ -82,8 +82,12 @@
   }
 }
 
+.glass-morphism {
+  @apply backdrop-blur-md bg-white/10 border border-white/20 shadow-sm;
+}
+
 .table-cell {
-  @apply border border-tavern-blue-light/50 p-2 text-center transition-all;
+  @apply border border-tavern-blue-light/30 p-2 text-center transition-all;
 }
 
 .table-input {
@@ -91,25 +95,25 @@
 }
 
 .table-header {
-  @apply bg-tavern-blue/90 text-white font-semibold p-2 text-center rounded-t-md;
+  @apply bg-tavern-blue/80 backdrop-blur-sm text-white font-semibold p-2 text-center rounded-t-md;
 }
 
 .table-header-day {
-  @apply bg-tavern-blue-light/70 text-tavern-blue font-semibold p-2 text-center;
+  @apply bg-tavern-blue-light/50 backdrop-blur-sm text-tavern-blue font-semibold p-2 text-center;
 }
 
 .table-row-totals {
-  @apply bg-tavern-blue-light/40 font-medium;
+  @apply bg-tavern-blue-light/20 backdrop-blur-sm font-medium;
 }
 
 .status-good {
-  @apply bg-gradient-to-r from-tavern-green-light to-tavern-green/30 text-tavern-blue font-semibold;
+  @apply bg-tavern-green/10 backdrop-blur-sm text-tavern-blue font-semibold border border-tavern-green/30;
 }
 
 .status-warning {
-  @apply bg-gradient-to-r from-tavern-amber/70 to-tavern-amber/30 text-tavern-blue font-semibold;
+  @apply bg-tavern-amber/10 backdrop-blur-sm text-tavern-blue font-semibold border border-tavern-amber/30;
 }
 
 .status-bad {
-  @apply bg-gradient-to-r from-tavern-blue-light to-tavern-blue-light/50 text-tavern-blue font-semibold;
+  @apply bg-tavern-blue-light/10 backdrop-blur-sm text-tavern-blue font-semibold border border-tavern-blue/30;
 }

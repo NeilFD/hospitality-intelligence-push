@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { formatCurrency, formatPercentage, calculateGP } from '@/lib/date-utils';
+
 export default function Dashboard() {
   const {
     annualRecord,
@@ -59,8 +61,8 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center md:text-left">The Tavern Kitchen Ledger</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-md border-tavern-blue-light/30 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-gradient-to-r from-tavern-blue-light/30 to-tavern-blue-light/10">
+        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
             <CardTitle className="text-tavern-blue-dark text-xl">
               Current Month
             </CardTitle>
@@ -71,20 +73,20 @@ export default function Dashboard() {
                 label="Revenue" 
                 value={formatCurrency(currentMonthRevenue)} 
                 status="neutral" 
-                className="h-28 min-h-[7rem]" 
+                className="h-28" 
               />
               <StatusBox 
                 label="Food Cost" 
                 value={formatCurrency(currentMonthCost)} 
                 status="neutral" 
-                className="h-28 min-h-[7rem]" 
+                className="h-28" 
               />
             </div>
             <StatusBox 
               label="GP Percentage" 
               value={formatPercentage(currentMonthGP)} 
               status={getGpStatus(currentMonthGP, 0.68)} 
-              className="w-full h-24 min-h-[6rem]" 
+              className="w-full h-24" 
             />
             <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark rounded-lg shadow-sm transition-all duration-300">
               <Link to={`/month/${currentYear}/${currentMonth}`}>
@@ -94,8 +96,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-tavern-blue-light/30 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-gradient-to-r from-tavern-blue-light/30 to-tavern-blue-light/10">
+        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
             <CardTitle className="text-tavern-blue-dark text-xl">
               Annual Performance
             </CardTitle>
@@ -106,20 +108,20 @@ export default function Dashboard() {
                 label="Total Revenue" 
                 value={formatCurrency(totalRevenue)} 
                 status="neutral" 
-                className="h-28 min-h-[7rem]" 
+                className="h-28" 
               />
               <StatusBox 
                 label="Total Food Cost" 
                 value={formatCurrency(totalCost)} 
                 status="neutral" 
-                className="h-28 min-h-[7rem]" 
+                className="h-28" 
               />
             </div>
             <StatusBox 
               label="GP Percentage" 
               value={formatPercentage(gpPercentage)} 
               status={getGpStatus(gpPercentage, 0.68)} 
-              className="w-full h-24 min-h-[6rem]" 
+              className="w-full h-24" 
             />
             <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white rounded-lg shadow-sm transition-all duration-300">
               <Link to="/annual-summary">

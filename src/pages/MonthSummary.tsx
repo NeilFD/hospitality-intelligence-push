@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +27,6 @@ export default function MonthSummary() {
   
   const monthRecord = useMonthRecord(currentYear, currentMonth);
   
-  // Navigate when params change
   useEffect(() => {
     if (yearParam && monthParam) {
       setCurrentYear(parseInt(yearParam));
@@ -42,7 +40,6 @@ export default function MonthSummary() {
     navigate(`/month/${year}/${month}`);
   };
   
-  // Calculate summary data
   const totalRevenue = monthRecord.weeks.reduce((sum, week) => {
     const weekRevenue = week.days.reduce((daySum, day) => daySum + day.revenue, 0);
     return sum + weekRevenue;
@@ -64,7 +61,6 @@ export default function MonthSummary() {
     gpDifference >= -0.02 ? 'warning' : 
     'bad';
 
-  // Target spend based on current revenue
   const targetSpend = totalRevenue * monthRecord.costTarget;
   const spendDifference = targetSpend - totalCosts;
   const spendStatus = 
@@ -72,7 +68,6 @@ export default function MonthSummary() {
     spendDifference >= -targetSpend * 0.05 ? 'warning' : 
     'bad';
 
-  // Calculate weekly data
   const weeklyData = monthRecord.weeks.map(week => {
     const weekRevenue = week.days.reduce((sum, day) => sum + day.revenue, 0);
     
@@ -141,8 +136,8 @@ export default function MonthSummary() {
         />
       </div>
 
-      <Card className="rounded-xl shadow-md border-tavern-blue-light/20 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-tavern-blue-light/30 to-tavern-blue-light/10 border-b border-tavern-blue-light/20">
+      <Card className="rounded-xl shadow-md border-tavern-blue-light/20 overflow-hidden bg-tavern-blue-light/5 backdrop-blur-sm">
+        <CardHeader className="bg-white/40 border-b border-tavern-blue-light/20">
           <CardTitle>Weekly Breakdown</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
@@ -186,10 +181,10 @@ export default function MonthSummary() {
                   <td className="table-header">{formatCurrency(totalRevenue)}</td>
                   <td className="table-header">{formatCurrency(totalCosts)}</td>
                   <td className={`table-header ${
-                    gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light/70' : 
-                    gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber/70' : 
-                    'bg-tavern-blue-light/70 text-tavern-blue-dark'
-                  }`}>
+                    gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light/50' : 
+                    gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber/50' : 
+                    'bg-tavern-blue-light/50 text-tavern-blue-dark'
+                  } backdrop-blur-sm`}>
                     {formatPercentage(gpPercentage)}
                   </td>
                   <td className="table-header rounded-br-lg"></td>
