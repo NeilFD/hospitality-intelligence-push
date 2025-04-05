@@ -198,6 +198,20 @@ export default function WeeklyTracker() {
     );
   }
   
+  // Sort days to ensure they're in Monday-Sunday order
+  const sortedDays = [...weekRecord.days].sort((a, b) => {
+    const dayOrder = {
+      'Monday': 0,
+      'Tuesday': 1,
+      'Wednesday': 2,
+      'Thursday': 3,
+      'Friday': 4,
+      'Saturday': 5,
+      'Sunday': 6
+    };
+    return dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
+  });
+  
   return (
     <div className="container py-8 space-y-6">
       <div className="flex justify-between items-center">
@@ -244,7 +258,7 @@ export default function WeeklyTracker() {
               <thead>
                 <tr>
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
-                  {weekRecord.days.map((day, index) => (
+                  {sortedDays.map((day, index) => (
                     <th key={index} className="table-header-day">
                       {day.dayOfWeek}<br />
                       {new Date(day.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' })}
@@ -257,23 +271,28 @@ export default function WeeklyTracker() {
                 {monthRecord.suppliers.map(supplier => (
                   <tr key={supplier.id}>
                     <td className="table-cell text-left font-medium">{supplier.name}</td>
-                    {weekRecord.days.map((day, dayIndex) => (
-                      <td key={dayIndex} className="table-cell p-0">
-                        <Input 
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={day.purchases[supplier.id] || ''}
-                          onChange={(e) => handleInputChange(
-                            dayIndex, 
-                            'purchases', 
-                            e.target.value, 
-                            supplier.id
-                          )}
-                          className="table-input rounded-md"
-                        />
-                      </td>
-                    ))}
+                    {sortedDays.map((day, dayIndex) => {
+                      // Find original index to use with handleInputChange
+                      const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                      
+                      return (
+                        <td key={dayIndex} className="table-cell p-0">
+                          <Input 
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={day.purchases[supplier.id] || ''}
+                            onChange={(e) => handleInputChange(
+                              originalDayIndex, 
+                              'purchases', 
+                              e.target.value, 
+                              supplier.id
+                            )}
+                            className="table-input rounded-md"
+                          />
+                        </td>
+                      );
+                    })}
                     <td className="table-cell table-row-totals">
                       {formatCurrency(calculateSupplierTotal(supplier.id))}
                     </td>
@@ -282,11 +301,16 @@ export default function WeeklyTracker() {
                 
                 <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-medium">Total Purchases</td>
-                  {weekRecord.days.map((day, dayIndex) => (
-                    <td key={dayIndex} className="table-cell table-row-totals">
-                      {formatCurrency(calculateTotalPurchases(dayIndex))}
-                    </td>
-                  ))}
+                  {sortedDays.map((day, dayIndex) => {
+                    // Find original index to use with calculation function
+                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                    
+                    return (
+                      <td key={dayIndex} className="table-cell table-row-totals">
+                        {formatCurrency(calculateTotalPurchases(originalDayIndex))}
+                      </td>
+                    );
+                  })}
                   <td className="table-cell table-row-totals font-bold">
                     {formatCurrency(calculateTotalPurchases())}
                   </td>
@@ -297,46 +321,56 @@ export default function WeeklyTracker() {
                     <td className="table-cell text-left font-medium text-tavern-red">
                       Credit note {creditIndex + 1}
                     </td>
-                    {weekRecord.days.map((day, dayIndex) => (
-                      <td key={dayIndex} className="table-cell p-0">
-                        <Input 
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={day.creditNotes[creditIndex] || ''}
-                          onChange={(e) => handleInputChange(
-                            dayIndex, 
-                            'creditNotes', 
-                            e.target.value, 
-                            undefined, 
-                            creditIndex
-                          )}
-                          className="table-input text-tavern-red rounded-md"
-                        />
-                      </td>
-                    ))}
+                    {sortedDays.map((day, dayIndex) => {
+                      // Find original index to use with handleInputChange
+                      const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                      
+                      return (
+                        <td key={dayIndex} className="table-cell p-0">
+                          <Input 
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={day.creditNotes[creditIndex] || ''}
+                            onChange={(e) => handleInputChange(
+                              originalDayIndex, 
+                              'creditNotes', 
+                              e.target.value, 
+                              undefined, 
+                              creditIndex
+                            )}
+                            className="table-input text-tavern-red rounded-md"
+                          />
+                        </td>
+                      );
+                    })}
                     <td className="table-cell"></td>
                   </tr>
                 ))}
                 
                 <tr>
                   <td className="table-cell text-left font-medium">Staff Food Allowance</td>
-                  {weekRecord.days.map((day, dayIndex) => (
-                    <td key={dayIndex} className="table-cell p-0">
-                      <Input 
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={day.staffFoodAllowance || ''}
-                        onChange={(e) => handleInputChange(
-                          dayIndex, 
-                          'staffFoodAllowance', 
-                          e.target.value
-                        )}
-                        className="table-input rounded-md"
-                      />
-                    </td>
-                  ))}
+                  {sortedDays.map((day, dayIndex) => {
+                    // Find original index to use with handleInputChange
+                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                    
+                    return (
+                      <td key={dayIndex} className="table-cell p-0">
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={day.staffFoodAllowance || ''}
+                          onChange={(e) => handleInputChange(
+                            originalDayIndex, 
+                            'staffFoodAllowance', 
+                            e.target.value
+                          )}
+                          className="table-input rounded-md"
+                        />
+                      </td>
+                    );
+                  })}
                   <td className="table-cell table-row-totals">
                     {formatCurrency(calculateTotalStaffAllowance())}
                   </td>
@@ -344,11 +378,16 @@ export default function WeeklyTracker() {
                 
                 <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-semibold">Daily Total Food Cost</td>
-                  {weekRecord.days.map((day, dayIndex) => (
-                    <td key={dayIndex} className="table-cell table-row-totals font-semibold">
-                      {formatCurrency(calculateDailyCost(dayIndex))}
-                    </td>
-                  ))}
+                  {sortedDays.map((day, dayIndex) => {
+                    // Find original index to use with calculation function
+                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                    
+                    return (
+                      <td key={dayIndex} className="table-cell table-row-totals font-semibold">
+                        {formatCurrency(calculateDailyCost(originalDayIndex))}
+                      </td>
+                    );
+                  })}
                   <td className="table-cell table-row-totals font-bold">
                     {formatCurrency(calculateTotalFoodCost())}
                   </td>
@@ -356,18 +395,27 @@ export default function WeeklyTracker() {
                 
                 <tr className="border-t-2 border-tavern-blue/30">
                   <td className="table-cell text-left font-semibold">Daily Net Food Revenue</td>
-                  {weekRecord.days.map((day, dayIndex) => (
-                    <td key={dayIndex} className="table-cell p-0">
-                      <Input 
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={day.revenue || ''}
-                        onChange={(e) => handleInputChange(dayIndex, 'revenue', e.target.value)}
-                        className="table-input font-semibold rounded-md"
-                      />
-                    </td>
-                  ))}
+                  {sortedDays.map((day, dayIndex) => {
+                    // Find original index to use with handleInputChange
+                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                    
+                    return (
+                      <td key={dayIndex} className="table-cell p-0">
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={day.revenue || ''}
+                          onChange={(e) => handleInputChange(
+                            originalDayIndex, 
+                            'revenue', 
+                            e.target.value
+                          )}
+                          className="table-input font-semibold rounded-md"
+                        />
+                      </td>
+                    );
+                  })}
                   <td className="table-cell table-row-totals font-bold">
                     {formatCurrency(calculateTotalRevenue())}
                   </td>
@@ -375,8 +423,10 @@ export default function WeeklyTracker() {
                 
                 <tr>
                   <td className="table-cell text-left font-semibold rounded-bl-lg">GP % Daily</td>
-                  {weekRecord.days.map((day, dayIndex) => {
-                    const dailyGP = calculateDailyGP(dayIndex);
+                  {sortedDays.map((day, dayIndex) => {
+                    // Find original index to use with calculation function
+                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                    const dailyGP = calculateDailyGP(originalDayIndex);
                     const gpStatus = 
                       dailyGP >= monthRecord.gpTarget ? 'status-good' : 
                       dailyGP >= monthRecord.gpTarget - 0.02 ? 'status-warning' : 
