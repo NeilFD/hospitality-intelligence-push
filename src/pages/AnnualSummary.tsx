@@ -470,7 +470,7 @@ export default function AnnualSummary({
               variant="outline" 
               size="sm" 
               onClick={() => toggleChartExpansion('revenue')}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 border-tavern-green bg-tavern-green/10 hover:bg-tavern-green/20 text-tavern-green-dark"
             >
               <Maximize2Icon className="h-3 w-3" />
               Expand
@@ -534,7 +534,7 @@ export default function AnnualSummary({
               variant="outline" 
               size="sm" 
               onClick={() => toggleChartExpansion('gp')}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 border-tavern-green bg-tavern-green/10 hover:bg-tavern-green/20 text-tavern-green-dark"
             >
               <Maximize2Icon className="h-3 w-3" />
               Expand
