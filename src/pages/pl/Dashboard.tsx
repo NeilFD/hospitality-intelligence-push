@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -29,18 +28,15 @@ export default function PLDashboard() {
   const [isProcessed, setIsProcessed] = useState(false);
   const { processBudget } = useBudgetProcessor();
   
-  // Fetch budget items from the database
   const { data: budgetItems, isLoading: isLoadingBudget, refetch } = useQuery({
     queryKey: ['budget-items', currentYear, currentMonth],
     queryFn: () => fetchBudgetItems(currentYear, currentMonth),
     enabled: true,
   });
   
-  // Process budget items for display
-  const processedBudgetData = React.useMemo(() => {
+  const processedBudgetData = useMemo(() => {
     if (!budgetItems) return [];
     
-    // Group items by category
     const grouped = budgetItems.reduce((acc, item) => {
       const category = acc.find(c => c.category === item.category);
       if (category) {
@@ -54,7 +50,6 @@ export default function PLDashboard() {
       return acc;
     }, [] as Array<{ category: string; items: typeof budgetItems }>);
     
-    // Create display rows
     return grouped.flatMap(group => [
       ...group.items.map(item => ({
         category: group.category,
@@ -88,7 +83,6 @@ export default function PLDashboard() {
       toast.loading("Your budget file is being processed...");
       
       try {
-        // Process the file with actual budget processing logic
         const success = await processBudget(
           fileInput, 
           currentYear, 
@@ -98,7 +92,6 @@ export default function PLDashboard() {
         if (success) {
           toast.success("Budget data imported successfully!");
           setIsProcessed(true);
-          // Refetch budget items
           refetch();
         } else {
           toast.error("Failed to process the budget file.");
@@ -112,7 +105,6 @@ export default function PLDashboard() {
     }
   };
   
-  // Update month name when month changes
   useEffect(() => {
     const monthName = new Date(currentYear, currentMonth - 1, 1)
       .toLocaleString('default', { month: 'long' });
