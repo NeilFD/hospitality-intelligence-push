@@ -73,18 +73,18 @@ export const useStore = create<AppState>()(
   )
 );
 
-export const useCurrentModule = () => {
-  return useStore(state => state.currentModule);
+// Create stable selector functions that won't cause re-renders
+export const useCurrentModule = () => useStore(state => state.currentModule);
+export const useModules = () => useStore(state => state.modules);
+
+// Create setter function outside of component to prevent re-creation
+const setCurrentModuleAction = (moduleType: ModuleType) => {
+  useStore.setState({ currentModule: moduleType });
 };
 
 export const useSetCurrentModule = () => {
-  return useStore(state => (moduleType: ModuleType) => {
-    useStore.setState({ currentModule: moduleType });
-  });
-};
-
-export const useModules = () => {
-  return useStore(state => state.modules);
+  // Return a stable reference to the action
+  return setCurrentModuleAction;
 };
 
 export const useMonthRecord = (year: number, month: number, moduleType: ModuleType = 'food') => {

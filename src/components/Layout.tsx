@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,17 +45,20 @@ const Layout = () => {
   const isMobile = useIsMobile();
   const { user, profile, isAuthenticated, logout } = useAuthStore();
   
-  const currentModule = useCurrentModule();
-  const setCurrentModule = useSetCurrentModule();
-  const modules = useModules();
-  
   // Get current date information for navigation
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
   
-  // Sort modules by display order
-  const sortedModules = [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
+  // Use the Zustand selectors correctly to avoid infinite loops
+  const currentModule = useCurrentModule();
+  const setCurrentModule = useSetCurrentModule();
+  const modules = useModules();
+  
+  // Sort modules by display order - memoized to prevent unnecessary recalculations
+  const sortedModules = useMemo(() => {
+    return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
+  }, [modules]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -93,31 +96,31 @@ const Layout = () => {
     }
   };
 
-  // Generate module-specific navigation items
-  const getModuleNavItems = (moduleType: ModuleType) => {
-    switch(moduleType) {
+  // Generate module-specific navigation items - memoized to prevent recreating on every render
+  const getModuleNavItems = useMemo(() => {
+    switch(currentModule) {
       case 'food':
       case 'beverage':
-        const prefix = moduleType === 'food' ? 'Food' : 'Beverage';
+        const prefix = currentModule === 'food' ? 'Food' : 'Beverage';
         return [
           { 
             name: `${prefix} Dashboard`, 
-            path: `/${moduleType}/dashboard`, 
+            path: `/${currentModule}/dashboard`, 
             icon: <Home className="mr-2 h-4 w-4" /> 
           },
           { 
             name: `${prefix} Input Settings`, 
-            path: `/${moduleType}/input-settings`, 
+            path: `/${currentModule}/input-settings`, 
             icon: <Settings className="mr-2 h-4 w-4" /> 
           },
           { 
             name: `${prefix} Month Summary`, 
-            path: `/${moduleType}/month/${currentYear}/${currentMonth}`, 
+            path: `/${currentModule}/month/${currentYear}/${currentMonth}`, 
             icon: <Calendar className="mr-2 h-4 w-4" /> 
           },
           { 
             name: `${prefix} Annual Summary`, 
-            path: `/${moduleType}/annual-summary`, 
+            path: `/${currentModule}/annual-summary`, 
             icon: <ChartBar className="mr-2 h-4 w-4" /> 
           },
         ];
@@ -148,24 +151,30 @@ const Layout = () => {
       default:
         return [];
     }
-  };
+  }, [currentModule, currentYear, currentMonth]);
 
-  // First level navigation shows all modules
-  const moduleNavItems = sortedModules.map(module => ({
-    name: module.name,
-    path: `/${module.type}/dashboard`,
-    icon: getModuleIcon(module.type),
-    type: module.type
-  }));
+  // First level navigation shows all modules - memoized
+  const moduleNavItems = useMemo(() => {
+    return sortedModules.map(module => ({
+      name: module.name,
+      path: `/${module.type}/dashboard`,
+      icon: getModuleIcon(module.type),
+      type: module.type
+    }));
+  }, [sortedModules]);
   
-  // Second level navigation depends on the current module
-  const currentModuleNavItems = getModuleNavItems(currentModule);
-
   // Handle module selection
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
 
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  if (isAuthPage) {
+    return <Outlet />;
+  }
+
+  // Sidebar component
   const Sidebar = (
     <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
@@ -220,7 +229,7 @@ const Layout = () => {
         </div>
         
         <nav className="space-y-1">
-          {currentModuleNavItems.map((item) => (
+          {getModuleNavItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
@@ -247,6 +256,7 @@ const Layout = () => {
     </div>
   );
 
+  // ProfileAvatar component
   const ProfileAvatar = () => (
     <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-tavern-blue text-white">
@@ -267,12 +277,6 @@ const Layout = () => {
       )}
     </div>
   );
-
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-
-  if (isAuthPage) {
-    return <Outlet />;
-  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
