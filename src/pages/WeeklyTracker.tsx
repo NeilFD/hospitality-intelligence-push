@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,8 @@ import {
   calculateGP, 
   formatCurrency, 
   formatPercentage, 
-  getMonthName 
+  getMonthName,
+  formatDateForDisplay 
 } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import StatusBox from '@/components/StatusBox';
@@ -264,7 +265,7 @@ export default function WeeklyTracker() {
                     return (
                       <th key={index} className="table-header-day">
                         {day.dayOfWeek}<br />
-                        {dateObj.getDate()}/{dateObj.getMonth() + 1}
+                        {formatDateForDisplay(dateObj)}
                       </th>
                     );
                   })}
