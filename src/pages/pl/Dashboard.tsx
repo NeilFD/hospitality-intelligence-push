@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -131,7 +130,11 @@ export default function PLDashboard() {
           <CardHeader className="bg-white/40 border-b">
             <CardTitle className="flex items-center justify-between">
               <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1 border-tavern-blue text-tavern-blue hover:bg-tavern-green hover:text-white"
+              >
                 <Info size={14} /> Details
               </Button>
             </CardTitle>
