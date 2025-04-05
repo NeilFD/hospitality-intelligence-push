@@ -57,7 +57,7 @@ const App = () => {
               
               {/* Legacy routes - will be redirected or removed */}
               <Route path="/input-settings" element={<RequireAuth><Navigate to="/food/input-settings" replace /></RequireAuth>} />
-              <Route path="/month/:year/:month" element={<RequireAuth><Navigate to={(params) => `/food/month/${params.year}/${params.month}`} replace /></RequireAuth>} />
+              <Route path="/month/:year/:month" element={<RequireAuth><Navigate to="/food/month/:year/:month" replace /></RequireAuth>} />
               <Route path="/week/:year/:month/:week" element={<RequireAuth><WeeklyTracker /></RequireAuth>} />
               <Route path="/annual-summary" element={<RequireAuth><Navigate to="/food/annual-summary" replace /></RequireAuth>} />
 

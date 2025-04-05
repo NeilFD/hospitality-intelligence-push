@@ -49,6 +49,11 @@ const Layout = () => {
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
+  // Get current date information for navigation
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  
   // Sort modules by display order
   const sortedModules = [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
 
