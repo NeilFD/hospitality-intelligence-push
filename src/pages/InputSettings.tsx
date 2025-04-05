@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,12 +11,18 @@ import { Plus, Trash2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { getMonthName } from '@/lib/date-utils';
+import { ModuleType } from '@/types/kitchen-ledger';
 
-export default function InputSettings() {
+interface InputSettingsProps {
+  modulePrefix?: string;
+  moduleType?: ModuleType;
+}
+
+export default function InputSettings({ modulePrefix = "", moduleType = "food" }: InputSettingsProps) {
   const navigate = useNavigate();
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
-  const monthRecord = useMonthRecord(currentYear, currentMonth);
+  const monthRecord = useMonthRecord(currentYear, currentMonth, moduleType);
   
   const [gpTarget, setGpTarget] = useState(Math.round(monthRecord.gpTarget * 100));
   const [costTarget, setCostTarget] = useState(Math.round(monthRecord.costTarget * 100));
@@ -77,10 +84,12 @@ export default function InputSettings() {
     toast.success("Settings saved successfully");
   };
 
+  const pageTitle = modulePrefix ? `${modulePrefix} Input Settings` : "Input Settings";
+
   return (
     <div className="container py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-tavern-blue">Input Settings</h1>
+        <h1 className="text-2xl font-bold text-tavern-blue">{pageTitle}</h1>
         <MonthSelector 
           currentYear={currentYear} 
           currentMonth={currentMonth}
@@ -125,7 +134,7 @@ export default function InputSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="staffAllowance">Staff Food Allowance (£)</Label>
+              <Label htmlFor="staffAllowance">Staff {moduleType === 'food' ? 'Food' : moduleType === 'beverage' ? 'Beverage' : ''} Allowance (£)</Label>
               <Input 
                 id="staffAllowance" 
                 type="number" 

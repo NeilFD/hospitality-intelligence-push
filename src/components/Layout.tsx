@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,12 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
-  User
+  User,
+  Sandwich,
+  Wine,
+  BarChart,
+  DollarSign,
+  Clock
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -28,6 +34,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { ModuleType } from "@/types/kitchen-ledger";
+import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
 
 const Layout = () => {
   const location = useLocation();
@@ -36,6 +44,13 @@ const Layout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const { user, profile, isAuthenticated, logout } = useAuthStore();
+  
+  const currentModule = useCurrentModule();
+  const setCurrentModule = useSetCurrentModule();
+  const modules = useModules();
+  
+  // Sort modules by display order
+  const sortedModules = [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -55,13 +70,96 @@ const Layout = () => {
     
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
+  
+  const getModuleIcon = (type: ModuleType) => {
+    switch(type) {
+      case 'food':
+        return <Sandwich className="mr-2 h-4 w-4" />;
+      case 'beverage':
+        return <Wine className="mr-2 h-4 w-4" />;
+      case 'pl':
+        return <DollarSign className="mr-2 h-4 w-4" />;
+      case 'wages':
+        return <Clock className="mr-2 h-4 w-4" />;
+      case 'performance':
+        return <BarChart className="mr-2 h-4 w-4" />;
+      default:
+        return <ChartBar className="mr-2 h-4 w-4" />;
+    }
+  };
 
-  const navItems = [
-    { name: "Dashboard", path: "/", icon: <Home className="mr-2 h-4 w-4" /> },
-    { name: "Input Settings", path: "/input-settings", icon: <Settings className="mr-2 h-4 w-4" /> },
-    { name: "Month Summary", path: "/month/2025/4", icon: <Calendar className="mr-2 h-4 w-4" /> },
-    { name: "Annual Summary", path: "/annual-summary", icon: <ChartBar className="mr-2 h-4 w-4" /> },
-  ];
+  // Generate module-specific navigation items
+  const getModuleNavItems = (moduleType: ModuleType) => {
+    switch(moduleType) {
+      case 'food':
+      case 'beverage':
+        const prefix = moduleType === 'food' ? 'Food' : 'Beverage';
+        return [
+          { 
+            name: `${prefix} Dashboard`, 
+            path: `/${moduleType}/dashboard`, 
+            icon: <Home className="mr-2 h-4 w-4" /> 
+          },
+          { 
+            name: `${prefix} Input Settings`, 
+            path: `/${moduleType}/input-settings`, 
+            icon: <Settings className="mr-2 h-4 w-4" /> 
+          },
+          { 
+            name: `${prefix} Month Summary`, 
+            path: `/${moduleType}/month/${currentYear}/${currentMonth}`, 
+            icon: <Calendar className="mr-2 h-4 w-4" /> 
+          },
+          { 
+            name: `${prefix} Annual Summary`, 
+            path: `/${moduleType}/annual-summary`, 
+            icon: <ChartBar className="mr-2 h-4 w-4" /> 
+          },
+        ];
+      case 'pl':
+        return [
+          { 
+            name: "P&L Dashboard", 
+            path: "/pl/dashboard", 
+            icon: <Home className="mr-2 h-4 w-4" /> 
+          },
+        ];
+      case 'wages':
+        return [
+          { 
+            name: "Wages Dashboard", 
+            path: "/wages/dashboard", 
+            icon: <Home className="mr-2 h-4 w-4" /> 
+          },
+        ];
+      case 'performance':
+        return [
+          { 
+            name: "Performance Dashboard", 
+            path: "/performance/dashboard", 
+            icon: <Home className="mr-2 h-4 w-4" /> 
+          },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  // First level navigation shows all modules
+  const moduleNavItems = sortedModules.map(module => ({
+    name: module.name,
+    path: `/${module.type}/dashboard`,
+    icon: getModuleIcon(module.type),
+    type: module.type
+  }));
+  
+  // Second level navigation depends on the current module
+  const currentModuleNavItems = getModuleNavItems(currentModule);
+
+  // Handle module selection
+  const handleModuleSelect = (moduleType: ModuleType) => {
+    setCurrentModule(moduleType);
+  };
 
   const Sidebar = (
     <div className="h-full flex flex-col bg-[#48495E]">
@@ -70,26 +168,74 @@ const Layout = () => {
         {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Tracker</p>}
       </div>
       <Separator className="bg-tavern-blue-light/20" />
-      <nav className="flex-1 p-4 space-y-2">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={cn(
-              "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-              location.pathname === item.path
-                ? "bg-white text-[#48495E] font-medium"
-                : "text-white hover:bg-white/10"
-            )}
-            title={sidebarCollapsed ? item.name : undefined}
-          >
-            <div className={sidebarCollapsed ? "mx-auto" : ""}>
-              {item.icon}
-            </div>
-            {!sidebarCollapsed && <span>{item.name}</span>}
-          </Link>
-        ))}
-      </nav>
+      
+      {/* Modules Navigation */}
+      <div className="p-2 my-2">
+        <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
+          {!sidebarCollapsed && (
+            <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+              Modules
+            </p>
+          )}
+        </div>
+        
+        <nav className="space-y-1">
+          {moduleNavItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+                currentModule === item.type
+                  ? "bg-white text-[#48495E] font-medium"
+                  : "text-white hover:bg-white/10"
+              )}
+              title={sidebarCollapsed ? item.name : undefined}
+              onClick={() => handleModuleSelect(item.type as ModuleType)}
+            >
+              <div className={sidebarCollapsed ? "mx-auto" : ""}>
+                {item.icon}
+              </div>
+              {!sidebarCollapsed && <span>{item.name}</span>}
+            </Link>
+          ))}
+        </nav>
+      </div>
+      
+      <Separator className="bg-tavern-blue-light/20" />
+      
+      {/* Current Module Navigation */}
+      <div className="flex-1 p-2">
+        <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
+          {!sidebarCollapsed && (
+            <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+              {sortedModules.find(m => m.type === currentModule)?.name || 'Navigation'}
+            </p>
+          )}
+        </div>
+        
+        <nav className="space-y-1">
+          {currentModuleNavItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+                location.pathname === item.path
+                  ? "bg-tavern-blue-dark text-white font-medium"
+                  : "text-white hover:bg-white/10"
+              )}
+              title={sidebarCollapsed ? item.name : undefined}
+            >
+              <div className={sidebarCollapsed ? "mx-auto" : ""}>
+                {item.icon}
+              </div>
+              {!sidebarCollapsed && <span>{item.name}</span>}
+            </Link>
+          ))}
+        </nav>
+      </div>
+      
       <div className="p-4">
         {!sidebarCollapsed && <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>}
       </div>

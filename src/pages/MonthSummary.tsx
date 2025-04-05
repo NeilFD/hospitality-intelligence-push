@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +13,14 @@ import {
   getMonthName 
 } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
+import { ModuleType } from '@/types/kitchen-ledger';
 
-export default function MonthSummary() {
+interface MonthSummaryProps {
+  modulePrefix?: string;
+  moduleType?: ModuleType;
+}
+
+export default function MonthSummary({ modulePrefix = "", moduleType = "food" }: MonthSummaryProps) {
   const { year: yearParam, month: monthParam } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,7 +32,7 @@ export default function MonthSummary() {
     monthParam ? parseInt(monthParam) : new Date().getMonth() + 1
   );
   
-  const monthRecord = useMonthRecord(currentYear, currentMonth);
+  const monthRecord = useMonthRecord(currentYear, currentMonth, moduleType);
   
   useEffect(() => {
     if (yearParam && monthParam) {
@@ -37,7 +44,7 @@ export default function MonthSummary() {
   const handleMonthChange = (year: number, month: number) => {
     setCurrentYear(year);
     setCurrentMonth(month);
-    navigate(`/month/${year}/${month}`);
+    navigate(`/${moduleType}/month/${year}/${month}`);
   };
   
   const totalRevenue = monthRecord.weeks.reduce((sum, week) => {
@@ -87,11 +94,14 @@ export default function MonthSummary() {
     };
   });
 
+  const pageTitle = modulePrefix ? `${modulePrefix} Monthly Summary` : "Monthly Summary";
+  const costLabel = moduleType === 'food' ? 'Food Costs' : moduleType === 'beverage' ? 'Beverage Costs' : 'Costs';
+
   return (
     <div className="container py-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-tavern-blue">
-          Monthly Summary - {getMonthName(currentMonth)} {currentYear}
+          {pageTitle} - {getMonthName(currentMonth)} {currentYear}
         </h1>
         <MonthSelector 
           currentYear={currentYear} 
@@ -120,12 +130,12 @@ export default function MonthSummary() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatusBox 
-          label="Total Food Revenue" 
+          label={`Total ${moduleType === 'food' ? 'Food' : moduleType === 'beverage' ? 'Beverage' : ''} Revenue`}
           value={formatCurrency(totalRevenue)} 
           status="neutral" 
         />
         <StatusBox 
-          label="Total Food Costs" 
+          label={`Total ${costLabel}`}
           value={formatCurrency(totalCosts)} 
           status="neutral" 
         />
@@ -147,7 +157,7 @@ export default function MonthSummary() {
                 <tr>
                   <th className="table-header rounded-tl-lg">Week</th>
                   <th className="table-header">Revenue</th>
-                  <th className="table-header">Food Costs</th>
+                  <th className="table-header">{costLabel}</th>
                   <th className="table-header">GP %</th>
                   <th className="table-header rounded-tr-lg">Actions</th>
                 </tr>
@@ -167,7 +177,7 @@ export default function MonthSummary() {
                     </td>
                     <td className="table-cell">
                       <Button variant="outline" size="sm" asChild className="rounded-full shadow-sm hover:shadow transition-all">
-                        <Link to={`/week/${currentYear}/${currentMonth}/${week.weekNumber}`}>
+                        <Link to={`/${moduleType}/week/${currentYear}/${currentMonth}/${week.weekNumber}`}>
                           Dive In
                         </Link>
                       </Button>

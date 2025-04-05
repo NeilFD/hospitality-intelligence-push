@@ -46,8 +46,20 @@ export interface AnnualRecord {
   months: MonthlyRecord[];
 }
 
+export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance';
+
+export interface Module {
+  id: string;
+  type: ModuleType;
+  name: string;
+  enabled: boolean;
+  displayOrder: number;
+}
+
 export interface AppState {
   currentYear: number;
   currentMonth: number;
+  currentModule: ModuleType;
   annualRecord: AnnualRecord;
+  modules: Module[];
 }

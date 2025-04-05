@@ -17,6 +17,7 @@ export type Database = {
           daily_record_id: string
           description: string | null
           id: string
+          module_type: Database["public"]["Enums"]["module_type"]
           updated_at: string
         }
         Insert: {
@@ -26,6 +27,7 @@ export type Database = {
           daily_record_id: string
           description?: string | null
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           updated_at?: string
         }
         Update: {
@@ -35,6 +37,7 @@ export type Database = {
           daily_record_id?: string
           description?: string | null
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           updated_at?: string
         }
         Relationships: [
@@ -54,6 +57,7 @@ export type Database = {
           date: string
           day_of_week: string
           id: string
+          module_type: Database["public"]["Enums"]["module_type"]
           revenue: number | null
           staff_food_allowance: number | null
           updated_at: string
@@ -65,6 +69,7 @@ export type Database = {
           date: string
           day_of_week: string
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           revenue?: number | null
           staff_food_allowance?: number | null
           updated_at?: string
@@ -76,6 +81,7 @@ export type Database = {
           date?: string
           day_of_week?: string
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           revenue?: number | null
           staff_food_allowance?: number | null
           updated_at?: string
@@ -91,6 +97,36 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          created_at: string
+          display_order: number
+          enabled: boolean
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["module_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order: number
+          enabled?: boolean
+          id?: string
+          name: string
+          type: Database["public"]["Enums"]["module_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["module_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       monthly_settings: {
         Row: {
           cost_target: number | null
@@ -98,6 +134,7 @@ export type Database = {
           created_by: string | null
           gp_target: number | null
           id: string
+          module_type: Database["public"]["Enums"]["module_type"]
           month: number
           staff_food_allowance: number | null
           updated_at: string
@@ -109,6 +146,7 @@ export type Database = {
           created_by?: string | null
           gp_target?: number | null
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           month: number
           staff_food_allowance?: number | null
           updated_at?: string
@@ -120,6 +158,7 @@ export type Database = {
           created_by?: string | null
           gp_target?: number | null
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           month?: number
           staff_food_allowance?: number | null
           updated_at?: string
@@ -164,6 +203,7 @@ export type Database = {
           created_by: string | null
           daily_record_id: string
           id: string
+          module_type: Database["public"]["Enums"]["module_type"]
           supplier_id: string | null
           updated_at: string
         }
@@ -173,6 +213,7 @@ export type Database = {
           created_by?: string | null
           daily_record_id: string
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           supplier_id?: string | null
           updated_at?: string
         }
@@ -182,6 +223,7 @@ export type Database = {
           created_by?: string | null
           daily_record_id?: string
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           supplier_id?: string | null
           updated_at?: string
         }
@@ -208,6 +250,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          module_type: Database["public"]["Enums"]["module_type"]
           name: string
           notes: string | null
           phone: string | null
@@ -218,6 +261,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           name: string
           notes?: string | null
           phone?: string | null
@@ -228,6 +272,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           name?: string
           notes?: string | null
           phone?: string | null
@@ -241,6 +286,7 @@ export type Database = {
           created_by: string | null
           end_date: string
           id: string
+          module_type: Database["public"]["Enums"]["module_type"]
           month: number
           start_date: string
           updated_at: string
@@ -252,6 +298,7 @@ export type Database = {
           created_by?: string | null
           end_date: string
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           month: number
           start_date: string
           updated_at?: string
@@ -263,6 +310,7 @@ export type Database = {
           created_by?: string | null
           end_date?: string
           id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
           month?: number
           start_date?: string
           updated_at?: string
@@ -279,6 +327,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      module_type: "food" | "beverage" | "pl" | "wages" | "performance"
       user_role: "Owner" | "Head Chef" | "Staff"
     }
     CompositeTypes: {

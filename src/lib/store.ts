@@ -5,7 +5,9 @@ import {
   AppState, 
   MonthlyRecord, 
   WeeklyRecord, 
-  Supplier 
+  Supplier,
+  ModuleType,
+  Module
 } from '@/types/kitchen-ledger';
 import { generateWeekDates, createEmptyWeek } from './date-utils';
 
@@ -22,8 +24,17 @@ const initialSuppliers: Supplier[] = [
   { id: '5', name: 'Local Farm Co-op' },
 ];
 
+// Default modules
+const defaultModules: Module[] = [
+  { id: '1', type: 'pl', name: 'P&L Tracker', enabled: true, displayOrder: 1 },
+  { id: '2', type: 'wages', name: 'Wages Tracker', enabled: true, displayOrder: 2 },
+  { id: '3', type: 'food', name: 'Food Tracker', enabled: true, displayOrder: 3 },
+  { id: '4', type: 'beverage', name: 'Beverage Tracker', enabled: true, displayOrder: 4 },
+  { id: '5', type: 'performance', name: 'Performance and Analysis', enabled: true, displayOrder: 5 }
+];
+
 // Create initial month record with empty weeks
-const createInitialMonth = (year: number, month: number): MonthlyRecord => {
+const createInitialMonth = (year: number, month: number, moduleType: ModuleType = 'food'): MonthlyRecord => {
   const weekDates = generateWeekDates(year, month);
   
   return {
@@ -44,6 +55,8 @@ const createInitialState = (): AppState => {
   return {
     currentYear,
     currentMonth,
+    currentModule: 'food',
+    modules: defaultModules,
     annualRecord: {
       year: currentYear,
       months: [createInitialMonth(currentYear, currentMonth)]
@@ -60,7 +73,21 @@ export const useStore = create<AppState>()(
   )
 );
 
-export const useMonthRecord = (year: number, month: number) => {
+export const useCurrentModule = () => {
+  return useStore(state => state.currentModule);
+};
+
+export const useSetCurrentModule = () => {
+  return useStore(state => (moduleType: ModuleType) => {
+    useStore.setState({ currentModule: moduleType });
+  });
+};
+
+export const useModules = () => {
+  return useStore(state => state.modules);
+};
+
+export const useMonthRecord = (year: number, month: number, moduleType: ModuleType = 'food') => {
   return useStore(state => {
     const existingMonth = state.annualRecord.months.find(
       m => m.year === year && m.month === month
@@ -71,7 +98,7 @@ export const useMonthRecord = (year: number, month: number) => {
     }
     
     // Create and return a new month record if it doesn't exist
-    const newMonthRecord = createInitialMonth(year, month);
+    const newMonthRecord = createInitialMonth(year, month, moduleType);
     useStore.setState(state => ({
       ...state,
       annualRecord: {
