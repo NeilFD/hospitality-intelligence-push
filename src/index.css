@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 210 33% 98%;
-    --foreground: 222 47% 11%;
+    --background: 237 23% 36%;
+    --foreground: 0 0% 100%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -13,7 +13,6 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Updated to match tavern blue from image */
     --primary: 210 33% 36%;
     --primary-foreground: 210 40% 98%;
 
@@ -37,8 +36,8 @@
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 237 23% 36%;
+    --foreground: 0 0% 100%;
 
     --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
