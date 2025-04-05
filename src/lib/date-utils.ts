@@ -17,6 +17,11 @@ export function formatDate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
+// Format date as DD/MM for display
+export function formatDateForDisplay(date: Date): string {
+  return `${date.getDate()}/${date.getMonth() + 1}`;
+}
+
 // Generate week dates for a given month
 export function generateWeekDates(year: number, month: number): WeekDates[] {
   const firstDay = getFirstDayOfMonth(year, month);

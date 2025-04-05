@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useStore, useMonthRecord } from '@/lib/store';
-import { calculateGP, formatCurrency, formatPercentage, getMonthName } from '@/lib/date-utils';
+import { 
+  calculateGP, 
+  formatCurrency, 
+  formatPercentage, 
+  getMonthName 
+} from '@/lib/date-utils';
 import { toast } from 'sonner';
 import StatusBox from '@/components/StatusBox';
 
@@ -27,7 +31,6 @@ export default function WeeklyTracker() {
   const monthRecord = useMonthRecord(currentYear, currentMonth);
   const weekRecord = monthRecord.weeks.find(w => w.weekNumber === currentWeek);
   
-  // Navigate when params change
   useEffect(() => {
     if (yearParam && monthParam && weekParam) {
       setCurrentYear(parseInt(yearParam));
@@ -106,7 +109,6 @@ export default function WeeklyTracker() {
     });
   };
   
-  // Calculate totals for the week
   const calculateDailyCost = (dayIndex: number) => {
     if (!weekRecord) return 0;
     const day = weekRecord.days[dayIndex];
@@ -198,7 +200,6 @@ export default function WeeklyTracker() {
     );
   }
   
-  // Sort days to ensure they're in Monday-Sunday order
   const sortedDays = [...weekRecord.days].sort((a, b) => {
     const dayOrder = {
       'Monday': 0,
@@ -260,12 +261,10 @@ export default function WeeklyTracker() {
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
                   {sortedDays.map((day, index) => {
                     const dateObj = new Date(day.date);
-                    const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
-                    
                     return (
                       <th key={index} className="table-header-day">
                         {day.dayOfWeek}<br />
-                        {formattedDate}
+                        {dateObj.getDate()}/{dateObj.getMonth() + 1}
                       </th>
                     );
                   })}
@@ -277,7 +276,6 @@ export default function WeeklyTracker() {
                   <tr key={supplier.id}>
                     <td className="table-cell text-left font-medium">{supplier.name}</td>
                     {sortedDays.map((day, dayIndex) => {
-                      // Find original index to use with handleInputChange
                       const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                       
                       return (
@@ -307,7 +305,6 @@ export default function WeeklyTracker() {
                 <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-medium">Total Purchases</td>
                   {sortedDays.map((day, dayIndex) => {
-                    // Find original index to use with calculation function
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     
                     return (
@@ -327,7 +324,6 @@ export default function WeeklyTracker() {
                       Credit note {creditIndex + 1}
                     </td>
                     {sortedDays.map((day, dayIndex) => {
-                      // Find original index to use with handleInputChange
                       const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                       
                       return (
@@ -356,7 +352,6 @@ export default function WeeklyTracker() {
                 <tr>
                   <td className="table-cell text-left font-medium">Staff Food Allowance</td>
                   {sortedDays.map((day, dayIndex) => {
-                    // Find original index to use with handleInputChange
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     
                     return (
@@ -384,7 +379,6 @@ export default function WeeklyTracker() {
                 <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-semibold">Daily Total Food Cost</td>
                   {sortedDays.map((day, dayIndex) => {
-                    // Find original index to use with calculation function
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     
                     return (
@@ -401,7 +395,6 @@ export default function WeeklyTracker() {
                 <tr className="border-t-2 border-tavern-blue/30">
                   <td className="table-cell text-left font-semibold">Daily Net Food Revenue</td>
                   {sortedDays.map((day, dayIndex) => {
-                    // Find original index to use with handleInputChange
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     
                     return (
@@ -429,7 +422,6 @@ export default function WeeklyTracker() {
                 <tr>
                   <td className="table-cell text-left font-semibold rounded-bl-lg">GP % Daily</td>
                   {sortedDays.map((day, dayIndex) => {
-                    // Find original index to use with calculation function
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     const dailyGP = calculateDailyGP(originalDayIndex);
                     const gpStatus = 
