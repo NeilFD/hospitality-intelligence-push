@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -36,7 +35,7 @@ const Layout = () => {
   ];
 
   const Sidebar = (
-    <div className="h-full flex flex-col bg-tavern-blue">
+    <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="sm" className="mb-3" />
         {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Ledger</p>}
@@ -50,7 +49,7 @@ const Layout = () => {
             className={cn(
               "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
               location.pathname === item.path
-                ? "bg-white text-tavern-blue font-medium"
+                ? "bg-white text-[#48495E] font-medium"
                 : "text-white hover:bg-white/10"
             )}
             title={sidebarCollapsed ? item.name : undefined}

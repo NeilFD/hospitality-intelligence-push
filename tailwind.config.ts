@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -31,7 +32,7 @@ export default {
         },
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '210 33% 36%',
+          DEFAULT: '#48495E',
           foreground: 'hsl(var(--primary-foreground))'
         },
         secondary: {
@@ -69,7 +70,7 @@ export default {
           ring: 'hsl(var(--sidebar-ring))'
         },
         tavern: {
-          blue: '#4B6584',
+          blue: '#48495E',
           'blue-light': '#A5C0E2',
           'blue-dark': '#344861',
           green: '#78E08F',

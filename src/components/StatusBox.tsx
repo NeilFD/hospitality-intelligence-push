@@ -10,10 +10,10 @@ interface StatusBoxProps {
 
 export default function StatusBox({ label, value, status, className }: StatusBoxProps) {
   const statusClasses = {
-    good: 'bg-tavern-green/10 backdrop-blur-sm text-tavern-blue-dark border-tavern-green/30',
-    warning: 'bg-tavern-amber/10 backdrop-blur-sm text-tavern-blue-dark border-tavern-amber/30',
-    bad: 'bg-tavern-blue-light/10 backdrop-blur-sm text-tavern-blue-dark border-tavern-blue/30',
-    neutral: 'bg-tavern-blue-light/5 backdrop-blur-sm text-tavern-blue-dark border-tavern-blue-light/20'
+    good: 'bg-tavern-green/10 backdrop-blur-sm text-[#48495E] border-tavern-green/30',
+    warning: 'bg-tavern-amber/10 backdrop-blur-sm text-[#48495E] border-tavern-amber/30',
+    bad: 'bg-tavern-blue-light/10 backdrop-blur-sm text-[#48495E] border-tavern-blue/30',
+    neutral: 'bg-tavern-blue-light/5 backdrop-blur-sm text-[#48495E] border-tavern-blue-light/20'
   };
   
   // More advanced font size calculation
