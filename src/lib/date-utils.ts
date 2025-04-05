@@ -61,9 +61,9 @@ export function createEmptyWeek(
   const days: DailyRecord[] = [];
   const start = new Date(startDate);
   
-  // Ensure we start from Monday
+  // Ensure the start date is a Monday
   while (start.getDay() !== 1) {
-    start.setDate(start.getDate() - 1);
+    start.setDate(start.getDate() + 1);
   }
   
   // Create 7 days (Monday to Sunday)
@@ -72,7 +72,7 @@ export function createEmptyWeek(
     date.setDate(date.getDate() + i);
     
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const dayOfWeek = dayNames[i]; // Use i directly since we're starting from Monday and iterating in order
+    const dayOfWeek = dayNames[i];
     
     // Initialize empty purchases object with all suppliers set to 0
     const purchases: Record<string, number> = {};
