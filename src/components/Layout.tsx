@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+
+import { useState, useEffect } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,21 +11,51 @@ import {
   ChevronLeft, 
   ChevronRight,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  LogOut,
+  User
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { TavernLogo } from "./TavernLogo";
+import { useAuthStore } from "@/services/auth-service";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 const Layout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
+  const { user, profile, isAuthenticated, logout } = useAuthStore();
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success('You have been logged out');
+    navigate('/login');
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!profile) return '?';
+    
+    const firstName = profile.first_name || '';
+    const lastName = profile.last_name || '';
+    
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   const navItems = [
@@ -66,6 +97,14 @@ const Layout = () => {
       </div>
     </div>
   );
+
+  // Determine if we're on an auth page (login/register)
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  // If we're on an auth page, render just the outlet with no layout
+  if (isAuthPage) {
+    return <Outlet />;
+  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -117,6 +156,41 @@ const Layout = () => {
                 )}
               </Button>
               <TavernLogo size="sm" />
+              
+              {isAuthenticated && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-9 w-9 bg-tavern-blue text-white">
+                        <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-0.5 leading-none">
+                        <p className="text-sm font-medium">
+                          {profile?.first_name} {profile?.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <Outlet />
           </div>

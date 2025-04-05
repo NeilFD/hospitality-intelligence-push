@@ -9,7 +9,268 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      credit_notes: {
+        Row: {
+          amount: number | null
+          created_at: string
+          created_by: string | null
+          daily_record_id: string
+          description: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          daily_record_id: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          daily_record_id?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_daily_record_id_fkey"
+            columns: ["daily_record_id"]
+            isOneToOne: false
+            referencedRelation: "daily_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          day_of_week: string
+          id: string
+          revenue: number | null
+          staff_food_allowance: number | null
+          updated_at: string
+          weekly_record_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          day_of_week: string
+          id?: string
+          revenue?: number | null
+          staff_food_allowance?: number | null
+          updated_at?: string
+          weekly_record_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          day_of_week?: string
+          id?: string
+          revenue?: number | null
+          staff_food_allowance?: number | null
+          updated_at?: string
+          weekly_record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_records_weekly_record_id_fkey"
+            columns: ["weekly_record_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_settings: {
+        Row: {
+          cost_target: number | null
+          created_at: string
+          created_by: string | null
+          gp_target: number | null
+          id: string
+          month: number
+          staff_food_allowance: number | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          cost_target?: number | null
+          created_at?: string
+          created_by?: string | null
+          gp_target?: number | null
+          id?: string
+          month: number
+          staff_food_allowance?: number | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          cost_target?: number | null
+          created_at?: string
+          created_by?: string | null
+          gp_target?: number | null
+          id?: string
+          month?: number
+          staff_food_allowance?: number | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number | null
+          created_at: string
+          created_by: string | null
+          daily_record_id: string
+          id: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          daily_record_id: string
+          id?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          daily_record_id?: string
+          id?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_daily_record_id_fkey"
+            columns: ["daily_record_id"]
+            isOneToOne: false
+            referencedRelation: "daily_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      weekly_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          month: number
+          start_date: string
+          updated_at: string
+          week_number: number
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          month: number
+          start_date: string
+          updated_at?: string
+          week_number: number
+          year: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          month?: number
+          start_date?: string
+          updated_at?: string
+          week_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
