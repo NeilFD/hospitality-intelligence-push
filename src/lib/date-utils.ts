@@ -19,8 +19,10 @@ export function formatDate(date: Date): string {
 
 // Format date as DD/MM for display - showing the actual month the date belongs to
 export function formatDateForDisplay(date: Date): string {
-  // Adding 1 to month since JavaScript months are 0-based
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  // Using explicit day and month to prevent timezone issues
+  const day = date.getDate();
+  const month = date.getMonth() + 1; // JavaScript months are 0-based
+  return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
 }
 
 // Generate week dates for a given month
