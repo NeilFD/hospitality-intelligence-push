@@ -348,7 +348,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
-                    <YAxis domain={[0, 'dataMax + 10']} />
+                    <YAxis domain={[0, dataMax => Math.min(Math.ceil(dataMax * 1.1), 100)]} />
                     <Tooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
@@ -489,7 +489,7 @@ export default function AnnualSummary({ modulePrefix = "", moduleType = "food" }
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
-                  <YAxis domain={[0, 'dataMax + 10']} />
+                  <YAxis domain={[0, dataMax => Math.min(Math.ceil(dataMax * 1.1), 100)]} />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
