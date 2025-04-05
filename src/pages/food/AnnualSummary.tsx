@@ -3,7 +3,8 @@ import AnnualSummary from '../AnnualSummary';
 
 export default function FoodAnnualSummary() {
   // Minimize left margin while keeping y-axis readable
-  const chartMargins = { top: 20, right: 30, left: -30, bottom: 20 };
+  // Increase right margin to prevent overflow
+  const chartMargins = { top: 20, right: 50, left: -30, bottom: 20 };
 
   return <AnnualSummary 
     modulePrefix="Food" 
