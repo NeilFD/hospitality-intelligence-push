@@ -53,8 +53,18 @@ export default function AnnualSummary({
   
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
   
+  const getDefaultTargetGP = () => {
+    const existingMonths = annualRecord.months.filter(m => m.year === annualRecord.year);
+    if (existingMonths.length > 0) {
+      const sortedMonths = [...existingMonths].sort((a, b) => b.month - a.month);
+      return parseFloat((sortedMonths[0].gpTarget * 100).toFixed(2));
+    }
+    return 70;
+  };
+  
   const monthlyData = React.useMemo(() => {
     const months = [];
+    const defaultTarget = getDefaultTargetGP();
     
     for (let i = 0; i < 12; i++) {
       const monthNumber = i + 1;
@@ -93,11 +103,6 @@ export default function AnnualSummary({
           target: parseFloat((monthRecord.gpTarget * 100).toFixed(2))
         });
       } else {
-        const existingMonths = annualRecord.months.filter(m => m.year === annualRecord.year);
-        const defaultTarget = existingMonths.length > 0 
-          ? parseFloat((existingMonths[existingMonths.length - 1].gpTarget * 100).toFixed(2))
-          : 70;
-          
         months.push({
           name: monthName,
           month: monthNumber,
@@ -130,10 +135,9 @@ export default function AnnualSummary({
         ? parseFloat(((totals.grossProfit / totals.revenue) * 100).toFixed(2))
         : 0;
       
-      const monthsWithData = monthlyData.filter(month => month.target > 0);
-      totals.averageTargetGP = monthsWithData.length > 0
-        ? parseFloat((monthsWithData.reduce((sum, month) => sum + month.target, 0) / monthsWithData.length).toFixed(2))
-        : 70;
+      totals.averageTargetGP = parseFloat(
+        (monthlyData.reduce((sum, month) => sum + month.target, 0) / monthlyData.length).toFixed(2)
+      );
     }
     
     return totals;
