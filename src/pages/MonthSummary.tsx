@@ -93,7 +93,7 @@ export default function MonthSummary() {
   });
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container py-8 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-tavern-blue">
           Monthly Summary - {getMonthName(currentMonth)} {currentYear}
@@ -141,20 +141,20 @@ export default function MonthSummary() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="rounded-xl shadow-md border-tavern-blue-light/20 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-tavern-blue-light/30 to-tavern-blue-light/10 border-b border-tavern-blue-light/20">
           <CardTitle>Weekly Breakdown</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+        <CardContent className="p-4">
+          <div className="overflow-x-auto rounded-lg">
+            <table className="w-full border-collapse rounded-lg overflow-hidden">
               <thead>
                 <tr>
-                  <th className="table-header">Week</th>
+                  <th className="table-header rounded-tl-lg">Week</th>
                   <th className="table-header">Revenue</th>
                   <th className="table-header">Food Costs</th>
                   <th className="table-header">GP %</th>
-                  <th className="table-header">Actions</th>
+                  <th className="table-header rounded-tr-lg">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -171,7 +171,7 @@ export default function MonthSummary() {
                       {formatPercentage(week.gp)}
                     </td>
                     <td className="table-cell">
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild className="rounded-full shadow-sm hover:shadow transition-all">
                         <Link to={`/week/${currentYear}/${currentMonth}/${week.weekNumber}`}>
                           View Details
                         </Link>
@@ -182,17 +182,17 @@ export default function MonthSummary() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td className="table-header">Total</td>
+                  <td className="table-header rounded-bl-lg">Total</td>
                   <td className="table-header">{formatCurrency(totalRevenue)}</td>
                   <td className="table-header">{formatCurrency(totalCosts)}</td>
                   <td className={`table-header ${
-                    gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light' : 
-                    gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber' : 
-                    'bg-tavern-red text-white'
+                    gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light/70' : 
+                    gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber/70' : 
+                    'bg-tavern-blue-light/70 text-tavern-blue-dark'
                   }`}>
                     {formatPercentage(gpPercentage)}
                   </td>
-                  <td className="table-header"></td>
+                  <td className="table-header rounded-br-lg"></td>
                 </tr>
               </tfoot>
             </table>

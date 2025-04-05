@@ -61,12 +61,12 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container py-6 space-y-8">
-      <h1 className="text-3xl font-bold text-tavern-blue">The Tavern Kitchen Ledger</h1>
+    <div className="container py-8 space-y-8">
+      <h1 className="text-3xl font-bold text-tavern-blue mb-6">The Tavern Kitchen Ledger</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-md border-tavern-blue-light">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light">
+        <Card className="shadow-md border-tavern-blue-light/30 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-gradient-to-r from-tavern-blue-light/30 to-tavern-blue-light/10">
             <CardTitle className="text-tavern-blue-dark text-xl">
               Current Month
             </CardTitle>
@@ -92,7 +92,7 @@ export default function Dashboard() {
               status={getGpStatus(currentMonthGP, 0.68)}
               className="w-full h-24"
             />
-            <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark">
+            <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark rounded-lg shadow-sm transition-all duration-300">
               <Link to={`/month/${currentYear}/${currentMonth}`}>
                 View Month Details <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -100,8 +100,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-tavern-blue-light">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light">
+        <Card className="shadow-md border-tavern-blue-light/30 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-gradient-to-r from-tavern-blue-light/30 to-tavern-blue-light/10">
             <CardTitle className="text-tavern-blue-dark text-xl">
               Annual Performance
             </CardTitle>
@@ -127,7 +127,7 @@ export default function Dashboard() {
               status={getGpStatus(gpPercentage, 0.68)}
               className="w-full h-24"
             />
-            <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white">
+            <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white rounded-lg shadow-sm transition-all duration-300">
               <Link to="/annual-summary">
                 View Annual Summary <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

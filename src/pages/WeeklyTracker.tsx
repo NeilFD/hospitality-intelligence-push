@@ -199,13 +199,14 @@ export default function WeeklyTracker() {
   }
   
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container py-8 space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Button 
             variant="outline" 
             size="icon"
             onClick={() => navigate(`/month/${currentYear}/${currentMonth}`)}
+            className="rounded-full shadow-sm hover:shadow transition-all duration-200"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -233,23 +234,23 @@ export default function WeeklyTracker() {
         />
       </div>
       
-      <Card>
-        <CardHeader>
+      <Card className="rounded-xl shadow-md border-tavern-blue-light/20 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-tavern-blue-light/30 to-tavern-blue-light/10 border-b border-tavern-blue-light/20">
           <CardTitle>Daily Food Costs & Revenue</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+        <CardContent className="p-4">
+          <div className="overflow-x-auto rounded-lg">
+            <table className="w-full border-collapse rounded-lg overflow-hidden">
               <thead>
                 <tr>
-                  <th className="table-header">Supplier Name</th>
+                  <th className="table-header rounded-tl-lg">Supplier Name</th>
                   {weekRecord.days.map((day, index) => (
                     <th key={index} className="table-header-day">
                       {day.dayOfWeek}<br />
                       {new Date(day.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' })}
                     </th>
                   ))}
-                  <th className="table-header">Weekly Total</th>
+                  <th className="table-header rounded-tr-lg">Weekly Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,7 +270,7 @@ export default function WeeklyTracker() {
                             e.target.value, 
                             supplier.id
                           )}
-                          className="table-input"
+                          className="table-input rounded-md"
                         />
                       </td>
                     ))}
@@ -279,7 +280,7 @@ export default function WeeklyTracker() {
                   </tr>
                 ))}
                 
-                <tr className="border-t-2 border-tavern-blue">
+                <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-medium">Total Purchases</td>
                   {weekRecord.days.map((day, dayIndex) => (
                     <td key={dayIndex} className="table-cell table-row-totals">
@@ -310,7 +311,7 @@ export default function WeeklyTracker() {
                             undefined, 
                             creditIndex
                           )}
-                          className="table-input text-tavern-red"
+                          className="table-input text-tavern-red rounded-md"
                         />
                       </td>
                     ))}
@@ -332,7 +333,7 @@ export default function WeeklyTracker() {
                           'staffFoodAllowance', 
                           e.target.value
                         )}
-                        className="table-input"
+                        className="table-input rounded-md"
                       />
                     </td>
                   ))}
@@ -341,7 +342,7 @@ export default function WeeklyTracker() {
                   </td>
                 </tr>
                 
-                <tr className="border-t-2 border-tavern-blue">
+                <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-semibold">Daily Total Food Cost</td>
                   {weekRecord.days.map((day, dayIndex) => (
                     <td key={dayIndex} className="table-cell table-row-totals font-semibold">
@@ -353,7 +354,7 @@ export default function WeeklyTracker() {
                   </td>
                 </tr>
                 
-                <tr className="border-t-4 border-tavern-blue">
+                <tr className="border-t-2 border-tavern-blue/30">
                   <td className="table-cell text-left font-semibold">Daily Net Food Revenue</td>
                   {weekRecord.days.map((day, dayIndex) => (
                     <td key={dayIndex} className="table-cell p-0">
@@ -363,7 +364,7 @@ export default function WeeklyTracker() {
                         step="0.01"
                         value={day.revenue || ''}
                         onChange={(e) => handleInputChange(dayIndex, 'revenue', e.target.value)}
-                        className="table-input font-semibold"
+                        className="table-input font-semibold rounded-md"
                       />
                     </td>
                   ))}
@@ -373,7 +374,7 @@ export default function WeeklyTracker() {
                 </tr>
                 
                 <tr>
-                  <td className="table-cell text-left font-semibold">GP % Daily</td>
+                  <td className="table-cell text-left font-semibold rounded-bl-lg">GP % Daily</td>
                   {weekRecord.days.map((day, dayIndex) => {
                     const dailyGP = calculateDailyGP(dayIndex);
                     const gpStatus = 
@@ -387,7 +388,7 @@ export default function WeeklyTracker() {
                       </td>
                     );
                   })}
-                  <td className={`table-cell font-bold ${
+                  <td className={`table-cell font-bold rounded-br-lg ${
                     weeklyGP >= monthRecord.gpTarget ? 'status-good' : 
                     weeklyGP >= monthRecord.gpTarget - 0.02 ? 'status-warning' : 
                     'status-bad'
