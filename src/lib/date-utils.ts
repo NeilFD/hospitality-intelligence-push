@@ -36,7 +36,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   // Generate weeks until we pass the end of the month
   while (currentWeekStart <= lastDay) {
     const currentWeekEnd = new Date(currentWeekStart);
-    currentWeekEnd.setDate(currentWeekEnd.getDate() + 6); // Sunday
+    currentWeekEnd.setDate(currentWeekEnd.getDate() + 6); // Sunday (6 days after Monday)
     
     weeks.push({
       startDate: formatDate(currentWeekStart),
@@ -66,8 +66,11 @@ export function createEmptyWeek(
     const date = new Date(start);
     date.setDate(date.getDate() + i);
     
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayOfWeek = dayNames[date.getDay()];
+    // Updated to ensure day names are in correct order for Monday-Sunday pattern
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    // Since we start on Monday (which is day 1 in JS Date), we need to adjust the index
+    const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1; // Map Sunday (0) to 6, and others to 0-5
+    const dayOfWeek = dayNames[dayIndex];
     
     // Initialize empty purchases object with all suppliers set to 0
     const purchases: Record<string, number> = {};
