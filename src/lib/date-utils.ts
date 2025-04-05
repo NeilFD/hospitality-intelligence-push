@@ -61,9 +61,12 @@ export function createEmptyWeek(
   const days: DailyRecord[] = [];
   const start = new Date(startDate);
   
-  // Ensure the start date is a Monday
-  while (start.getDay() !== 1) {
-    start.setDate(start.getDate() + 1);
+  // Explicitly check if the start date is already a Monday
+  const dayOfWeek = start.getDay();
+  if (dayOfWeek !== 1) {
+    // If not Monday (1), adjust to the correct Monday
+    // This ensures we don't move forward when we should go back
+    start.setDate(start.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   }
   
   // Create 7 days (Monday to Sunday)
