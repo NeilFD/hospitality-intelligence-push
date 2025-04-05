@@ -1,4 +1,3 @@
-
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,9 +16,10 @@ export function formatDate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
-// Format date as DD/MM for display
+// Format date as DD/MM for display - showing the actual month the date belongs to
 export function formatDateForDisplay(date: Date): string {
-  return `${date.getDate()}/${date.getMonth() + 1}`;
+  // Adding 1 to month since JavaScript months are 0-based
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
 }
 
 // Generate week dates for a given month
