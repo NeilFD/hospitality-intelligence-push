@@ -102,19 +102,21 @@ const Layout = () => {
             {Sidebar}
           </div>
           <div className="flex-1 overflow-auto relative">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleSidebar}
-              className="absolute left-4 top-4 z-40"
-            >
-              {sidebarCollapsed ? (
-                <PanelLeft className="h-4 w-4" />
-              ) : (
-                <PanelLeftClose className="h-4 w-4" />
-              )}
-            </Button>
-            <TavernLogo size="sm" className="absolute top-4 right-4" />
+            <div className="flex items-center justify-between px-8 py-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleSidebar}
+                className="z-40"
+              >
+                {sidebarCollapsed ? (
+                  <PanelLeft className="h-4 w-4" />
+                ) : (
+                  <PanelLeftClose className="h-4 w-4" />
+                )}
+              </Button>
+              <TavernLogo size="sm" className="mr-2" />
+            </div>
             <Outlet />
           </div>
         </>

@@ -23,7 +23,7 @@ export default function StatusBox({ label, value, status, className }: StatusBox
       className
     )}>
       <h3 className="text-sm font-medium opacity-80">{label}</h3>
-      <p className="text-2xl font-bold mt-1">{value}</p>
+      <p className="text-2xl font-bold mt-1 break-words w-full text-center">{value}</p>
     </div>
   );
 }
