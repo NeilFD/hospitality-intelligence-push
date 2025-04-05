@@ -58,7 +58,7 @@ export default function Dashboard() {
 
   return (
     <div className="container py-4 space-y-4">
-      <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center md:text-left">The Tavern Kitchen Tracker</h1>
+      <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center">The Tavern Kitchen Tracker</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
@@ -134,3 +134,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
