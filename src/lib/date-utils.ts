@@ -19,9 +19,10 @@ export function formatDate(date: Date): string {
 
 // Format date as DD/MM for display - showing the actual month the date belongs to
 export function formatDateForDisplay(date: Date): string {
-  // Using explicit day and month to prevent timezone issues
-  const day = date.getDate();
-  const month = date.getMonth() + 1; // JavaScript months are 0-based
+  // Create a new Date object to avoid timezone issues
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDate();
+  const month = d.getMonth() + 1; // JavaScript months are 0-based
   return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
 }
 
@@ -30,33 +31,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   const firstDay = getFirstDayOfMonth(year, month);
   const lastDay = getLastDayOfMonth(year, month);
   
-  // Hard-code specific cases that need special handling
-  if (month === 4 && year === 2025) {
-    // Known fact: March 31, 2025 is the Monday before April 1, 2025
-    const firstMonday = new Date(2025, 2, 31); // Month is 0-based (2 = March)
-    
-    const weeks: WeekDates[] = [];
-    let currentWeekStart = new Date(firstMonday);
-    
-    // Generate weeks until we pass the end of the month
-    while (currentWeekStart <= lastDay) {
-      const currentWeekEnd = new Date(currentWeekStart);
-      currentWeekEnd.setDate(currentWeekEnd.getDate() + 6); // Sunday (6 days after Monday)
-      
-      weeks.push({
-        startDate: formatDate(currentWeekStart),
-        endDate: formatDate(currentWeekEnd),
-      });
-      
-      // Move to next Monday
-      currentWeekStart = new Date(currentWeekEnd);
-      currentWeekStart.setDate(currentWeekStart.getDate() + 1);
-    }
-    
-    return weeks;
-  }
-
-  // For all other months, use the regular logic
+  // Calculate the Monday that starts the week containing the first day of the month
   let firstMonday = new Date(firstDay);
   const dayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
   
@@ -98,17 +73,10 @@ export function createEmptyWeek(
   const days: DailyRecord[] = [];
   const start = new Date(startDate);
   
-  // Make sure we're starting on a Monday
-  const dayOfWeek = start.getDay();
-  if (dayOfWeek !== 1) {
-    // If not Monday (1), adjust to the correct Monday
-    start.setDate(start.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-  }
-  
   // Create 7 days (Monday to Sunday)
   for (let i = 0; i < 7; i++) {
-    const date = new Date(start);
-    date.setDate(date.getDate() + i);
+    const currentDate = new Date(start);
+    currentDate.setDate(start.getDate() + i);
     
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const dayOfWeek = dayNames[i];
@@ -120,7 +88,7 @@ export function createEmptyWeek(
     });
     
     days.push({
-      date: formatDate(date),
+      date: formatDate(currentDate),
       dayOfWeek,
       revenue: 0,
       purchases,

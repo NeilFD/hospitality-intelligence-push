@@ -185,14 +185,7 @@ export default function WeeklyTracker() {
     
     return calculateGP(totalRevenue, totalFoodCost);
   };
-  
-  const weeklyGP = calculateWeeklyGP();
-  const gpDifference = weeklyGP - monthRecord.gpTarget;
-  const gpStatus = 
-    gpDifference >= 0.02 ? 'good' : 
-    gpDifference >= -0.02 ? 'warning' : 
-    'bad';
-  
+
   if (!weekRecord) {
     return (
       <div className="container py-6">
@@ -213,6 +206,13 @@ export default function WeeklyTracker() {
     };
     return dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
   });
+  
+  const weeklyGP = calculateWeeklyGP();
+  const gpDifference = weeklyGP - monthRecord.gpTarget;
+  const gpStatus = 
+    gpDifference >= 0.02 ? 'good' : 
+    gpDifference >= -0.02 ? 'warning' : 
+    'bad';
   
   return (
     <div className="container py-8 space-y-6">
@@ -261,7 +261,12 @@ export default function WeeklyTracker() {
                 <tr>
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
                   {sortedDays.map((day, index) => {
-                    const dateObj = new Date(day.date);
+                    const dateParts = day.date.split('-');
+                    const dateObj = new Date(
+                      parseInt(dateParts[0]), // year
+                      parseInt(dateParts[1]) - 1, // month (0-based)
+                      parseInt(dateParts[2]) // day
+                    );
                     return (
                       <th key={index} className="table-header-day">
                         {day.dayOfWeek}<br />
