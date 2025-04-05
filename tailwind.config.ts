@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -27,7 +26,7 @@ export default {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: {
-          DEFAULT: '#48495E',
+          DEFAULT: '#f3f3f3',
           foreground: '#FFFFFF'
         },
         foreground: 'hsl(var(--foreground))',
