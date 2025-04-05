@@ -224,7 +224,10 @@ export default function AnnualSummary({
                     onClick={() => toggleChartExpansion('revenue')}
                     className="flex items-center gap-2 border-tavern-green bg-tavern-green/10 hover:bg-tavern-green/20 text-tavern-green-dark"
                   >
-                    <Maximize2Icon className="h-4 w-4 text-tavern-blue" />
+                    <Maximize2Icon 
+                      className="h-5 w-5 text-tavern-blue" 
+                      strokeWidth={2.5}
+                    />
                     View Chart
                   </Button>
                 </CardContent>
@@ -245,7 +248,10 @@ export default function AnnualSummary({
                     onClick={() => toggleChartExpansion('gp')}
                     className="flex items-center gap-2 border-tavern-green bg-tavern-green/10 hover:bg-tavern-green/20 text-tavern-green-dark"
                   >
-                    <Maximize2Icon className="h-4 w-4 text-tavern-blue" />
+                    <Maximize2Icon 
+                      className="h-5 w-5 text-tavern-blue" 
+                      strokeWidth={2.5}
+                    />
                     View Chart
                   </Button>
                 </CardContent>
