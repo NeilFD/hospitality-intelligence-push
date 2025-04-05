@@ -2,8 +2,26 @@ import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ChartBarIcon, Maximize2Icon } from 'lucide-react';
+import { 
+  ChartContainer,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  LineChart,
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend
+} from 'recharts';
+import { ModuleType } from '@/types/kitchen-ledger';
+import { ChartBarIcon, Maximize2Icon, Minimize2Icon } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
