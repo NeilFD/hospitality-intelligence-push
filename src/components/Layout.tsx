@@ -9,7 +9,9 @@ import {
   Calendar, 
   ChartBar, 
   ChevronLeft, 
-  ChevronRight
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeft
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -19,7 +21,12 @@ import { TavernLogo } from "./TavernLogo";
 const Layout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: <Home className="mr-2 h-4 w-4" /> },
@@ -32,7 +39,7 @@ const Layout = () => {
     <div className="h-full flex flex-col bg-tavern-blue">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="sm" className="mb-2" />
-        <p className="text-tavern-blue-light text-sm">Kitchen Ledger</p>
+        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm">Kitchen Ledger</p>}
       </div>
       <Separator className="bg-tavern-blue-light/20" />
       <nav className="flex-1 p-4 space-y-2">
@@ -46,14 +53,17 @@ const Layout = () => {
                 ? "bg-white text-tavern-blue font-medium"
                 : "text-white hover:bg-white/10"
             )}
+            title={sidebarCollapsed ? item.name : undefined}
           >
-            {item.icon}
-            {item.name}
+            <div className={sidebarCollapsed ? "mx-auto" : ""}>
+              {item.icon}
+            </div>
+            {!sidebarCollapsed && <span>{item.name}</span>}
           </Link>
         ))}
       </nav>
       <div className="p-4">
-        <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>
+        {!sidebarCollapsed && <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>}
       </div>
     </div>
   );
@@ -87,10 +97,23 @@ const Layout = () => {
         </>
       ) : (
         <>
-          <div className="hidden md:flex w-64 flex-shrink-0">
+          <div className={cn("flex-shrink-0 transition-all duration-300", 
+            sidebarCollapsed ? "w-20" : "w-64")}>
             {Sidebar}
           </div>
           <div className="flex-1 overflow-auto relative">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleSidebar}
+              className="absolute left-4 top-4 z-40"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeft className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </Button>
             <TavernLogo size="sm" className="absolute top-4 right-4" />
             <Outlet />
           </div>

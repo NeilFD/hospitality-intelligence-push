@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Updated to match tavern blue */
-    --primary: 210 80% 40%;
+    /* Updated to match tavern blue from image */
+    --primary: 210 33% 36%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 150 60% 70%;
@@ -47,7 +47,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 80% 60%;
+    --primary: 210 33% 46%;
     --primary-foreground: 222 47% 11%;
 
     --secondary: 150 60% 40%;
