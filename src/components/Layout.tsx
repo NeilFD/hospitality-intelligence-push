@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -111,7 +110,7 @@ const Layout = () => {
         )}
       </Avatar>
       {profile && (
-        <span className="text-xs mt-1 font-medium">
+        <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
           {profile.first_name || 'User'}
         </span>
       )}
