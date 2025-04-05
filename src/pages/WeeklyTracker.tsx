@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,11 +44,17 @@ export default function WeeklyTracker() {
   const handleInputChange = (
     dayIndex: number,
     field: 'revenue' | 'purchases' | 'creditNotes' | 'staffFoodAllowance',
-    value: any,
+    value: string,
     supplierId?: string,
     creditIndex?: number
   ) => {
     if (!weekRecord) return;
+    
+    // Parse the value as a float if it's not empty
+    const numericValue = value === '' ? 0 : parseFloat(value);
+    
+    // Check if the parse result is valid
+    if (isNaN(numericValue)) return;
     
     useStore.setState(state => {
       const updatedMonths = state.annualRecord.months.map(month => {
@@ -59,19 +66,19 @@ export default function WeeklyTracker() {
               if (field === 'revenue') {
                 updatedDays[dayIndex] = {
                   ...updatedDays[dayIndex],
-                  revenue: parseFloat(value) || 0
+                  revenue: numericValue
                 };
               } else if (field === 'purchases' && supplierId) {
                 updatedDays[dayIndex] = {
                   ...updatedDays[dayIndex],
                   purchases: {
                     ...updatedDays[dayIndex].purchases,
-                    [supplierId]: parseFloat(value) || 0
+                    [supplierId]: numericValue
                   }
                 };
               } else if (field === 'creditNotes' && typeof creditIndex === 'number') {
                 const updatedCreditNotes = [...updatedDays[dayIndex].creditNotes];
-                updatedCreditNotes[creditIndex] = parseFloat(value) || 0;
+                updatedCreditNotes[creditIndex] = numericValue;
                 
                 updatedDays[dayIndex] = {
                   ...updatedDays[dayIndex],
@@ -80,7 +87,7 @@ export default function WeeklyTracker() {
               } else if (field === 'staffFoodAllowance') {
                 updatedDays[dayIndex] = {
                   ...updatedDays[dayIndex],
-                  staffFoodAllowance: parseFloat(value) || 0
+                  staffFoodAllowance: numericValue
                 };
               }
               
@@ -283,6 +290,7 @@ export default function WeeklyTracker() {
                     <td className="table-cell text-left font-medium">{supplier.name}</td>
                     {sortedDays.map((day, dayIndex) => {
                       const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                      const value = day.purchases[supplier.id];
                       
                       return (
                         <td key={dayIndex} className="table-cell p-0">
@@ -291,7 +299,7 @@ export default function WeeklyTracker() {
                             inputMode="decimal"
                             min="0"
                             step="0.01"
-                            value={day.purchases[supplier.id] || ''}
+                            value={value !== undefined && value !== 0 ? value : ''}
                             onChange={(e) => handleInputChange(
                               originalDayIndex, 
                               'purchases', 
@@ -332,6 +340,7 @@ export default function WeeklyTracker() {
                     </td>
                     {sortedDays.map((day, dayIndex) => {
                       const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                      const value = day.creditNotes[creditIndex];
                       
                       return (
                         <td key={dayIndex} className="table-cell p-0">
@@ -340,7 +349,7 @@ export default function WeeklyTracker() {
                             inputMode="decimal"
                             min="0"
                             step="0.01"
-                            value={day.creditNotes[creditIndex] || ''}
+                            value={value !== undefined && value !== 0 ? value : ''}
                             onChange={(e) => handleInputChange(
                               originalDayIndex, 
                               'creditNotes', 
@@ -361,6 +370,7 @@ export default function WeeklyTracker() {
                   <td className="table-cell text-left font-medium">Staff Food Allowance</td>
                   {sortedDays.map((day, dayIndex) => {
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                    const value = day.staffFoodAllowance;
                     
                     return (
                       <td key={dayIndex} className="table-cell p-0">
@@ -369,7 +379,7 @@ export default function WeeklyTracker() {
                           inputMode="decimal"
                           min="0"
                           step="0.01"
-                          value={day.staffFoodAllowance || ''}
+                          value={value !== undefined && value !== 0 ? value : ''}
                           onChange={(e) => handleInputChange(
                             originalDayIndex, 
                             'staffFoodAllowance', 
@@ -405,6 +415,7 @@ export default function WeeklyTracker() {
                   <td className="table-cell text-left font-semibold">Daily Net Food Revenue</td>
                   {sortedDays.map((day, dayIndex) => {
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
+                    const value = day.revenue;
                     
                     return (
                       <td key={dayIndex} className="table-cell p-0">
@@ -413,7 +424,7 @@ export default function WeeklyTracker() {
                           inputMode="decimal"
                           min="0"
                           step="0.01"
-                          value={day.revenue || ''}
+                          value={value !== undefined && value !== 0 ? value : ''}
                           onChange={(e) => handleInputChange(
                             originalDayIndex, 
                             'revenue', 
