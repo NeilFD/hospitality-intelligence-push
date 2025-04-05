@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -177,7 +176,7 @@ export default function AnnualSummary({
               <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${annualTotals.revenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold">£{annualTotals.revenue.toFixed(2)}</div>
             </CardContent>
           </Card>
           
@@ -196,7 +195,7 @@ export default function AnnualSummary({
               <CardTitle className="text-sm font-medium">Annual Gross Profit</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${annualTotals.grossProfit.toFixed(2)}</div>
+              <div className="text-2xl font-bold">£{annualTotals.grossProfit.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
@@ -261,8 +260,8 @@ export default function AnnualSummary({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Month</TableHead>
-                    <TableHead className="text-right">Revenue ($)</TableHead>
-                    <TableHead className="text-right">Purchases ($)</TableHead>
+                    <TableHead className="text-right">Revenue (£)</TableHead>
+                    <TableHead className="text-right">Purchases (£)</TableHead>
                     <TableHead className="text-right">GP %</TableHead>
                     <TableHead className="text-right">Target</TableHead>
                   </TableRow>
@@ -271,8 +270,8 @@ export default function AnnualSummary({
                   {monthlyData.map((month) => (
                     <TableRow key={month.name}>
                       <TableCell>{month.name}</TableCell>
-                      <TableCell className="text-right">{month.revenue.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{month.purchases.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">£{month.revenue.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">£{month.purchases.toFixed(2)}</TableCell>
                       <TableCell className="text-right">{month.gpPercentage}%</TableCell>
                       <TableCell className={`text-right ${month.gpPercentage >= month.target ? 'text-green-600' : 'text-red-600'}`}>
                         {month.target}%
@@ -394,7 +393,7 @@ export default function AnnualSummary({
             <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${annualTotals.revenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">£{annualTotals.revenue.toFixed(2)}</div>
           </CardContent>
         </Card>
         
@@ -413,7 +412,7 @@ export default function AnnualSummary({
             <CardTitle className="text-sm font-medium">Annual Gross Profit</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${annualTotals.grossProfit.toFixed(2)}</div>
+            <div className="text-2xl font-bold">£{annualTotals.grossProfit.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
@@ -545,9 +544,9 @@ export default function AnnualSummary({
             <TableHeader>
               <TableRow>
                 <TableHead>Month</TableHead>
-                <TableHead className="text-right">Revenue ($)</TableHead>
-                <TableHead className="text-right">Purchases ($)</TableHead>
-                <TableHead className="text-right">Gross Profit ($)</TableHead>
+                <TableHead className="text-right">Revenue (£)</TableHead>
+                <TableHead className="text-right">Purchases (£)</TableHead>
+                <TableHead className="text-right">Gross Profit (£)</TableHead>
                 <TableHead className="text-right">GP %</TableHead>
                 <TableHead className="text-right">Target GP %</TableHead>
                 <TableHead className="text-right">Variance</TableHead>
@@ -557,9 +556,9 @@ export default function AnnualSummary({
               {monthlyData.map((month) => (
                 <TableRow key={month.name}>
                   <TableCell>{month.name}</TableCell>
-                  <TableCell className="text-right">{month.revenue.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">{month.purchases.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">{month.grossProfit.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">£{month.revenue.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">£{month.purchases.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">£{month.grossProfit.toFixed(2)}</TableCell>
                   <TableCell className="text-right">{month.gpPercentage}%</TableCell>
                   <TableCell className="text-right">{month.target}%</TableCell>
                   <TableCell className={`text-right ${month.gpPercentage >= month.target ? 'text-green-600' : 'text-red-600'}`}>
@@ -569,9 +568,9 @@ export default function AnnualSummary({
               ))}
               <TableRow className="font-bold">
                 <TableCell>TOTAL</TableCell>
-                <TableCell className="text-right">{annualTotals.revenue.toFixed(2)}</TableCell>
-                <TableCell className="text-right">{annualTotals.purchases.toFixed(2)}</TableCell>
-                <TableCell className="text-right">{annualTotals.grossProfit.toFixed(2)}</TableCell>
+                <TableCell className="text-right">£{annualTotals.revenue.toFixed(2)}</TableCell>
+                <TableCell className="text-right">£{annualTotals.purchases.toFixed(2)}</TableCell>
+                <TableCell className="text-right">£{annualTotals.grossProfit.toFixed(2)}</TableCell>
                 <TableCell className="text-right">{annualTotals.gpPercentage}%</TableCell>
                 <TableCell className="text-right">{annualTotals.averageTargetGP}%</TableCell>
                 <TableCell className={`text-right ${annualTotals.gpPercentage >= annualTotals.averageTargetGP ? 'text-green-600' : 'text-red-600'}`}>
