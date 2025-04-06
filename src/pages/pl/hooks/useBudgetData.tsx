@@ -74,11 +74,12 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       forecast_amount: 0
     });
     
-    // Add COGS items
+    // Add COGS items, but exclude "Other Staff Costs"
     const cogsItems = filteredItems.filter(item => 
-      item.name.toLowerCase().includes('cos') || 
-      item.name.toLowerCase().includes('cost of sales') ||
-      item.category.toLowerCase().includes('cost of sales')
+      (item.name.toLowerCase().includes('cos') || 
+       item.name.toLowerCase().includes('cost of sales') ||
+       item.category.toLowerCase().includes('cost of sales')) &&
+      !item.name.toLowerCase().includes('other staff costs')
     );
     
     cogsItems.forEach(item => {
