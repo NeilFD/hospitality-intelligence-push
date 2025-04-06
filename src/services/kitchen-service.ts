@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { 
   DbSupplier, 
@@ -162,7 +161,6 @@ export const fetchMonthlySettings = async (year: number, month: number, moduleTy
   return data;
 };
 
-// Fix: Update the function parameter type to include module_type
 export const createMonthlySettings = async (settings: Omit<DbMonthlySettings, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
   const { data, error } = await supabase
     .from('monthly_settings')
