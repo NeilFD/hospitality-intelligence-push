@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileUp } from 'lucide-react';
+import { Loader2, FileUp, LineChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatCurrency, formatPercentage } from '@/lib/date-utils';
+import { PLTracker } from './PLTracker';
 
 interface BudgetItem {
   id?: string;
@@ -34,10 +35,40 @@ export function PLReportTable({
   currentMonthName, 
   currentYear 
 }: PLReportTableProps) {
+  const [showTracker, setShowTracker] = useState(false);
+
+  // Toggle the tracker view
+  const handleToggleTracker = () => {
+    setShowTracker(!showTracker);
+  };
+
+  if (showTracker) {
+    return (
+      <PLTracker 
+        isLoading={isLoading}
+        processedBudgetData={processedBudgetData}
+        currentMonthName={currentMonthName}
+        currentYear={currentYear}
+        onClose={handleToggleTracker}
+      />
+    );
+  }
+
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
-      <CardHeader className="bg-white/40 border-b">
-        <CardTitle>P&L Flash Report - {currentMonthName} {currentYear}</CardTitle>
+      <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
+        <div className="flex items-center gap-4">
+          <CardTitle>P&L Flash Report - {currentMonthName} {currentYear}</CardTitle>
+          <Button 
+            onClick={handleToggleTracker} 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+          >
+            <LineChart className="h-4 w-4" />
+            Update Tracker
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-6">
         {isLoading ? (
