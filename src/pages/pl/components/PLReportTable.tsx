@@ -54,6 +54,20 @@ export function PLReportTable({
   const totalAdminActual = adminExpenseItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
   const totalAdminVariance = totalAdminActual - totalAdminBudget;
 
+  // Separate operating profit items for proper ordering
+  const operatingProfitItem = processedBudgetData.find(item => 
+    item.name.toLowerCase().includes('operating profit')
+  );
+
+  // Filter out operating profit from main display items
+  const displayItems = processedBudgetData
+    .filter(item => 
+      !item.name.toLowerCase().includes('total') && 
+      item.name !== 'ADMINISTRATIVE EXPENSES' &&
+      item.name !== 'Tavern' &&
+      !item.name.toLowerCase().includes('operating profit')
+    );
+
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
@@ -86,13 +100,7 @@ export function PLReportTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {processedBudgetData
-                  .filter(item => 
-                    !item.name.toLowerCase().includes('total') && 
-                    item.name !== 'ADMINISTRATIVE EXPENSES' &&
-                    item.name !== 'Tavern'
-                  )
-                  .map((item, i) => {
+                {displayItems.map((item, i) => {
                   if (item.isHeader) {
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
@@ -115,15 +123,9 @@ export function PLReportTable({
                   const isGrossProfit = item.name.toLowerCase().includes('gross profit') || 
                                         item.name.toLowerCase().includes('profit/(loss)');
                   
-                  const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
-                  
                   const isTurnover = item.name.toLowerCase() === 'turnover';
                   
-                  if (item.isHighlighted && isOperatingProfit) {
-                    // Style Operating Profit as a header row
-                    rowClassName = 'bg-[#8B5CF6]/90 text-white';
-                    fontClass = 'font-bold';
-                  } else if (item.isHighlighted) {
+                  if (item.isHighlighted) {
                     rowClassName = 'bg-[#48495e]/90 text-white';
                     fontClass = 'font-bold';
                   } else if (isGrossProfit || isTurnover) {
@@ -175,6 +177,35 @@ export function PLReportTable({
                     {formatCurrency(totalAdminVariance)}
                   </TableCell>
                 </TableRow>
+                
+                {/* Display Operating Profit row after Total Admin Expenses */}
+                {operatingProfitItem && (
+                  <TableRow className="bg-[#8B5CF6]/90 text-white">
+                    <TableCell className="font-bold">
+                      {operatingProfitItem.name}
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {formatCurrency(operatingProfitItem.budget_amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {operatingProfitItem.budget_percentage !== undefined 
+                        ? `${(operatingProfitItem.budget_percentage * 100).toFixed(2)}%` 
+                        : ''}
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {formatCurrency(operatingProfitItem.actual_amount || 0)}
+                    </TableCell>
+                    <TableCell className={`text-right font-bold ${
+                      (operatingProfitItem.actual_amount || 0) - operatingProfitItem.budget_amount > 0 
+                        ? 'text-green-200' 
+                        : (operatingProfitItem.actual_amount || 0) - operatingProfitItem.budget_amount < 0 
+                          ? 'text-red-200' 
+                          : ''
+                    }`}>
+                      {formatCurrency((operatingProfitItem.actual_amount || 0) - operatingProfitItem.budget_amount)}
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
