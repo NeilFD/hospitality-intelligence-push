@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -50,16 +49,23 @@ export function PLReportTable({
   console.log("Display items:", displayItems.map(item => item.name));
   
   // Find Food and Beverage Gross Profit items directly from processedBudgetData (not from filtered displayItems)
+  // Check for exact matches and also try with lowercase comparisons
   const foodGrossProfitItem = processedBudgetData.find(item => 
-    item.name === 'Food Gross Profit'
+    item.name === 'Food Gross Profit' || 
+    item.name === 'Food GP' ||
+    item.name.toLowerCase() === 'food gross profit'
   );
   
   const beverageGrossProfitItem = processedBudgetData.find(item => 
-    item.name === 'Beverage Gross Profit'
+    item.name === 'Beverage Gross Profit' || 
+    item.name === 'Beverage GP' ||
+    item.name.toLowerCase() === 'beverage gross profit' ||
+    item.name.toLowerCase() === 'drink gross profit' ||
+    item.name.toLowerCase() === 'drinks gross profit'
   );
 
-  console.log("Food GP item found:", !!foodGrossProfitItem);
-  console.log("Beverage GP item found:", !!beverageGrossProfitItem);
+  console.log("Food GP item found:", foodGrossProfitItem ? foodGrossProfitItem.name : "Not found");
+  console.log("Beverage GP item found:", beverageGrossProfitItem ? beverageGrossProfitItem.name : "Not found");
 
   // Determine if an item is an admin expense
   const isAdminExpense = (item: BudgetItem) => 
@@ -136,7 +142,12 @@ export function PLReportTable({
                 {/* First render all regular items except Gross Profit items */}
                 {displayItems.map((item, i) => {
                   // Skip Food and Beverage Gross Profit items as we'll render them separately
-                  if (item.name === 'Food Gross Profit' || item.name === 'Beverage Gross Profit') {
+                  if (item.name === 'Food Gross Profit' || item.name === 'Beverage Gross Profit' || 
+                      item.name === 'Food GP' || item.name === 'Beverage GP' ||
+                      item.name.toLowerCase() === 'food gross profit' || 
+                      item.name.toLowerCase() === 'beverage gross profit' ||
+                      item.name.toLowerCase() === 'drink gross profit' ||
+                      item.name.toLowerCase() === 'drinks gross profit') {
                     return null;
                   }
                   
