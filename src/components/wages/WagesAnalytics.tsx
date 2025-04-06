@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useWagesStore } from './WagesStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
 import { ChartContainer } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from "sonner";
 
 interface WagesAnalyticsProps {
@@ -20,11 +21,26 @@ interface VisibleSeries {
   totalRevenue: boolean;
 }
 
+interface WeekdayTotal {
+  fohWages: number;
+  kitchenWages: number;
+  foodRevenue: number;
+  bevRevenue: number;
+  totalWages: number;
+  totalRevenue: number;
+  wagesPercentage: number;
+  count: number;
+}
+
+interface WeekdayTotals {
+  [day: string]: WeekdayTotal;
+}
+
 export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
   const { getMonthlyWages, getWeekdayTotals } = useWagesStore();
   const [isLoading, setIsLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
-  const [weekdayTotals, setWeekdayTotals] = useState<any>({});
+  const [weekdayTotals, setWeekdayTotals] = useState<WeekdayTotals>({});
   
   const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
     fohWages: true,
@@ -40,7 +56,7 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
         const data = await getMonthlyWages(year, month);
         setMonthlyData(data);
         const totals = await getWeekdayTotals(year, month);
-        setWeekdayTotals(totals);
+        setWeekdayTotals(totals as WeekdayTotals);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
         toast.error('Failed to load analytics data');
