@@ -287,19 +287,6 @@ export function PLTracker({
     }
   };
 
-  const filterDuplicateTotalAdminRows = (items: PLTrackerBudgetItem[]) => {
-    const totalAdminIndices = items
-      .map((item, index) => item.name === 'Total Admin expenses' ? index : -1)
-      .filter(index => index !== -1);
-    
-    if (totalAdminIndices.length > 1) {
-      const indicesToRemove = totalAdminIndices.slice(0, totalAdminIndices.length - 1);
-      return items.filter((_, index) => !indicesToRemove.includes(index));
-    }
-    
-    return items;
-  };
-
   const filterOutTotalAdminExpenses = (items: PLTrackerBudgetItem[]) => {
     return items.filter(item => item.name !== 'Total Admin expenses');
   };
@@ -384,7 +371,9 @@ export function PLTracker({
                   }
                   
                   const proRatedBudget = calculateSummaryProRatedBudget(item);
-                  const actualAmount = getActualAmount(item);
+                  const actualAmount = item.tracking_type === 'Discrete' 
+                    ? (item.manually_entered_actual || 0)
+                    : calculateProRatedBudget(item);
                   const variance = actualAmount - proRatedBudget;
                   
                   let rowClassName = '';
