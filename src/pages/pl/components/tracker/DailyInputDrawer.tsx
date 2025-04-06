@@ -35,21 +35,10 @@ export function DailyInputDrawer({
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
-
-  // Control drawer state locally to prevent external state changes from causing flicker
-  useEffect(() => {
-    if (isOpen && !drawerOpen) {
-      setDrawerOpen(true);
-    } else if (!isOpen && drawerOpen) {
-      // Add a small delay before closing to prevent flickering
-      const timer = setTimeout(() => {
-        setDrawerOpen(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, drawerOpen]);
+  
+  // We're removing the drawerOpen state and relying on the parent component's isOpen prop
+  // This simplifies the component and avoids re-render loops
   
   // Load data only when the drawer opens
   useEffect(() => {
@@ -177,27 +166,29 @@ export function DailyInputDrawer({
     
     // Also update in-memory state via callback
     onSave(dailyInputs);
-    // Close the drawer through the state, not directly
     onClose();
   };
 
-  // Fixed drawer implementation to prevent flickering
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // Only call onClose when drawer is actually closed by user
-      // Don't set drawerOpen directly here to avoid flickering
-      onClose();
-    }
+  // Handle click events to prevent propagation
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
 
-  // Only render the drawer when it's actually supposed to be open
-  if (!drawerOpen) {
+  if (!isOpen) {
     return null;
   }
 
   return (
-    <Drawer open={true} onOpenChange={handleOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
+    <Drawer 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DrawerContent 
+        className="max-h-[90vh]"
+        onClick={handleContentClick}
+      >
         <DrawerHeader>
           <div className="flex items-center">
             <CalendarDays className="mr-2 h-5 w-5 text-purple-600" />

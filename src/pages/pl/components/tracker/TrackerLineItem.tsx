@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -78,7 +77,8 @@ export function TrackerLineItem({
     return null;
   }
   
-  const handleOpenDailyInput = () => {
+  const handleOpenDailyInput = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsDailyInputOpen(true);
   };
   
@@ -88,6 +88,7 @@ export function TrackerLineItem({
   
   const handleSaveDailyValues = (dailyValues: DayInput[]) => {
     updateDailyValues(index, dailyValues);
+    handleCloseDailyInput();
   };
 
   return (
@@ -135,18 +136,16 @@ export function TrackerLineItem({
         {formatCurrency(variance)}
       </TableCell>
       
-      {isDailyInputOpen && (
-        <DailyInputDrawer
-          isOpen={isDailyInputOpen}
-          onClose={handleCloseDailyInput}
-          onSave={handleSaveDailyValues}
-          initialValues={item.daily_values || []}
-          itemName={item.name}
-          monthName={currentMonthName}
-          year={currentYear}
-          budgetItemId={item.id}
-        />
-      )}
+      <DailyInputDrawer
+        isOpen={isDailyInputOpen}
+        onClose={handleCloseDailyInput}
+        onSave={handleSaveDailyValues}
+        initialValues={item.daily_values || []}
+        itemName={item.name}
+        monthName={currentMonthName}
+        year={currentYear}
+        budgetItemId={item.id}
+      />
     </TableRow>
   );
 }
