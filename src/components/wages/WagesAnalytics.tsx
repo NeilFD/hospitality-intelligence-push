@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useWagesStore } from './WagesStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +17,6 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
   const monthlyData = getMonthlyWages(year, month);
   const weekdayTotals = getWeekdayTotals(year, month);
   
-  // Calculate overall totals
   const totals = monthlyData.reduce((acc, day) => {
     acc.fohWages += day.fohWages;
     acc.kitchenWages += day.kitchenWages;
@@ -36,7 +34,6 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     totalRevenue: 0 
   });
   
-  // Prepare data for charts
   const wagesChartData = [
     { name: 'FOH', amount: totals.fohWages },
     { name: 'Kitchen', amount: totals.kitchenWages },
@@ -268,7 +265,7 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
         <CardHeader>
           <CardTitle>Daily Wage Trends</CardTitle>
         </CardHeader>
-        <CardContent className="h-96">
+        <CardContent className="h-[500px] w-full">
           <ChartContainer
             config={{
               fohWages: { color: "#4f46e5" },
@@ -277,13 +274,28 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
               totalRevenue: { color: "#0ea5e9" }
             }}
           >
-            <BarChart data={dailyChartData}>
+            <BarChart 
+              data={dailyChartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
+              <XAxis 
+                dataKey="name" 
+                height={60}
+                tick={{ fontSize: 12 }}
+                interval={0}
+              />
+              <YAxis 
+                yAxisId="left"
+                tick={{ fontSize: 12 }}  
+              />
+              <YAxis 
+                yAxisId="right" 
+                orientation="right"
+                tick={{ fontSize: 12 }}
+              />
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ paddingTop: 20, bottom: 0 }} />
               <Bar yAxisId="left" dataKey="fohWages" name="FOH Wages" fill="#4f46e5" />
               <Bar yAxisId="left" dataKey="kitchenWages" name="Kitchen Wages" fill="#059669" />
               <Bar yAxisId="left" dataKey="totalWages" name="Total Wages" fill="#d97706" />

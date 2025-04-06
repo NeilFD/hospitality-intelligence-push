@@ -11,7 +11,7 @@ export default function WagesDashboard() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   return (
-    <div className="container py-6">
+    <div className="container py-6 max-w-[1400px] mx-auto">
       <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center">Wages Tracker Dashboard</h1>
       
       <div className="mb-6">
