@@ -24,10 +24,25 @@ export default function WagesDashboard() {
       </div>
       
       <Tabs defaultValue="monthly" className="w-full">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="monthly">Monthly View</TabsTrigger>
-          <TabsTrigger value="weekly">Weekly Analysis</TabsTrigger>
-          <TabsTrigger value="trends">Trends & Analytics</TabsTrigger>
+        <TabsList className="grid grid-cols-3 mb-4 bg-gray-100">
+          <TabsTrigger 
+            value="monthly" 
+            className="data-[state=active]:bg-tavern-green data-[state=active]:text-white"
+          >
+            Monthly View
+          </TabsTrigger>
+          <TabsTrigger 
+            value="weekly" 
+            className="data-[state=active]:bg-tavern-green data-[state=active]:text-white"
+          >
+            Weekly Analysis
+          </TabsTrigger>
+          <TabsTrigger 
+            value="trends" 
+            className="data-[state=active]:bg-tavern-green data-[state=active]:text-white"
+          >
+            Trends & Analytics
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="monthly" className="space-y-6">
@@ -67,3 +82,4 @@ export default function WagesDashboard() {
     </div>
   );
 }
+
