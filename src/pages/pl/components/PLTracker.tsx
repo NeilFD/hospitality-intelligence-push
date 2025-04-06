@@ -12,6 +12,7 @@ import { PLTrackerSettings } from './PLTrackerSettings';
 
 interface PLTrackerBudgetItem extends ProcessedBudgetItem {
   tracking_type: 'Discrete' | 'Pro-Rated';
+  manually_entered_actual?: number;
 }
 
 interface PLTrackerProps {
@@ -43,9 +44,12 @@ export function PLTracker({
       setTrackedBudgetData(prevData => {
         if (prevData.length > 0) {
           const trackingTypeMap = new Map<string, 'Discrete' | 'Pro-Rated'>();
+          const manualActualsMap = new Map<string, number | undefined>();
+          
           prevData.forEach(item => {
             if (item.id) {
               trackingTypeMap.set(item.id, item.tracking_type);
+              manualActualsMap.set(item.id, item.manually_entered_actual);
             }
           });
           
@@ -53,7 +57,10 @@ export function PLTracker({
             ...item,
             tracking_type: (item.id && trackingTypeMap.has(item.id))
               ? trackingTypeMap.get(item.id)!
-              : 'Pro-Rated' // Default to Pro-Rated for all items
+              : 'Pro-Rated', // Default to Pro-Rated for all items
+            manually_entered_actual: (item.id && manualActualsMap.has(item.id))
+              ? manualActualsMap.get(item.id)
+              : undefined
           }));
         }
         
@@ -90,6 +97,18 @@ export function PLTracker({
     updatedData[index] = {
       ...updatedData[index],
       forecast_amount: numericValue
+    };
+    setTrackedBudgetData(updatedData);
+    setHasUnsavedChanges(true);
+  };
+
+  const updateManualActualAmount = (index: number, value: string) => {
+    const numericValue = value === '' ? undefined : parseFloat(value);
+    
+    const updatedData = [...trackedBudgetData];
+    updatedData[index] = {
+      ...updatedData[index],
+      manually_entered_actual: numericValue
     };
     setTrackedBudgetData(updatedData);
     setHasUnsavedChanges(true);
@@ -263,11 +282,21 @@ export function PLTracker({
     return 0;
   };
 
+  const getActualAmount = (item: PLTrackerBudgetItem): number => {
+    if (item.tracking_type === 'Pro-Rated') {
+      // For Pro-Rated items, use the pro-rated budget as the actual amount
+      return calculateProRatedBudget(item);
+    } else {
+      // For Discrete items, use the manually entered actual or 0
+      return item.manually_entered_actual || 0;
+    }
+  };
+
   if (showSettings) {
     return (
       <PLTrackerSettings
         isLoading={isLoading}
-        processedBudgetData={processedBudgetData}
+        processedBudgetData={trackedBudgetData}
         currentMonthName={currentMonthName}
         currentYear={currentYear}
         onBackToTracker={() => setShowSettings(false)}
@@ -341,7 +370,7 @@ export function PLTracker({
                   }
                   
                   const proRatedBudget = calculateSummaryProRatedBudget(item);
-                  const actualAmount = item.actual_amount || 0;
+                  const actualAmount = getActualAmount(item);
                   const variance = actualAmount - proRatedBudget;
                   
                   let rowClassName = '';
@@ -384,7 +413,18 @@ export function PLTracker({
                         {formatCurrency(proRatedBudget)}
                       </TableCell>
                       <TableCell className={`text-right ${fontClass}`}>
-                        {formatCurrency(actualAmount)}
+                        {item.tracking_type === 'Discrete' ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
+                            onChange={(e) => updateManualActualAmount(i, e.target.value)}
+                            className="h-8 w-24 text-right"
+                          />
+                        ) : (
+                          formatCurrency(actualAmount)
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Input
@@ -411,13 +451,13 @@ export function PLTracker({
                   const adminActualAmount = trackedBudgetData
                     .filter(item => 
                       !item.isHeader && 
-                      item.name.toLowerCase().includes('wages') || 
+                      (item.name.toLowerCase().includes('wages') || 
                       item.name.toLowerCase().includes('salary') || 
                       item.name.toLowerCase().includes('admin') ||
                       item.name.toLowerCase().includes('marketing') ||
-                      item.name.toLowerCase().includes('hotel')
+                      item.name.toLowerCase().includes('hotel'))
                     )
-                    .reduce((sum, item) => sum + (item.actual_amount || 0), 0);
+                    .reduce((sum, item) => sum + getActualAmount(item), 0);
                     
                   const adminVariance = adminActualAmount - adminExpenses;
                   
@@ -455,19 +495,21 @@ export function PLTracker({
                   const operatingProfit = calculateOperatingProfit();
                   
                   // Get actual operating profit as the difference between gross profit actual and admin expenses actual
-                  const grossProfitActual = trackedBudgetData.find(item => 
-                    item.isHighlighted && item.name.toLowerCase().includes('gross profit'))?.actual_amount || 0;
+                  const grossProfitItem = trackedBudgetData.find(item => 
+                    item.isHighlighted && item.name.toLowerCase().includes('gross profit'));
+                    
+                  const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
                   
                   const adminActual = trackedBudgetData
                     .filter(item => 
                       !item.isHeader && 
-                      item.name.toLowerCase().includes('wages') || 
+                      (item.name.toLowerCase().includes('wages') || 
                       item.name.toLowerCase().includes('salary') || 
                       item.name.toLowerCase().includes('admin') ||
                       item.name.toLowerCase().includes('marketing') ||
-                      item.name.toLowerCase().includes('hotel')
+                      item.name.toLowerCase().includes('hotel'))
                     )
-                    .reduce((sum, item) => sum + (item.actual_amount || 0), 0);
+                    .reduce((sum, item) => sum + getActualAmount(item), 0);
                     
                   const actualOperatingProfit = grossProfitActual - adminActual;
                   const opVariance = actualOperatingProfit - operatingProfit;
