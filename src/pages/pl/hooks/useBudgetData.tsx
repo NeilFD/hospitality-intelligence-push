@@ -314,3 +314,4 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
     processedBudgetData
   };
 }
+

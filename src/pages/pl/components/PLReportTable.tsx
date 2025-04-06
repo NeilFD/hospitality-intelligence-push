@@ -107,8 +107,15 @@ export function PLReportTable({
                                       item.name.toLowerCase() === 'cost of sales';
                   const isGrossProfitLoss = item.name.toLowerCase().includes('gross profit/(loss)');
                   
-                  // Apply bold styling to specified rows
-                  const shouldBeBold = isHighlighted || isTotalAdmin || isTurnover || isCostOfSales || isGrossProfitLoss;
+                  // Check if this is Food or Beverage specific Gross Profit
+                  const isFoodGrossProfit = item.name.toLowerCase() === 'food gross profit';
+                  const isBeverageGrossProfit = item.name.toLowerCase() === 'beverage gross profit';
+                  
+                  // Apply bold styling to specified rows, but not Food/Beverage Gross Profit
+                  const shouldBeBold = (isHighlighted || isTotalAdmin || isTurnover || 
+                                      isCostOfSales || isGrossProfitLoss) &&
+                                      !isFoodGrossProfit && !isBeverageGrossProfit;
+                  
                   const fontClass = shouldBeBold ? 'font-bold' : '';
                   
                   // Determine row styling
