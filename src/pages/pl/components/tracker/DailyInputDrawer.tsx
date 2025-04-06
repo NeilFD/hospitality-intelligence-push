@@ -37,6 +37,7 @@ export function DailyInputDrawer({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
+  // Load data only when the drawer opens and when props change
   useEffect(() => {
     if (isOpen) {
       const loadData = async () => {
@@ -165,7 +166,11 @@ export function DailyInputDrawer({
     onClose();
   };
 
-  return <Drawer open={isOpen} onOpenChange={isOpen => !isOpen && onClose()}>
+  // Fixed drawer implementation to prevent flickering
+  return (
+    <Drawer open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader>
           <div className="flex items-center">
@@ -217,5 +222,6 @@ export function DailyInputDrawer({
           </div>
         </DrawerFooter>
       </DrawerContent>
-    </Drawer>;
+    </Drawer>
+  );
 }
