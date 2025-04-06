@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -16,6 +17,7 @@ interface BudgetItem {
   isHeader?: boolean;
   isHighlighted?: boolean;
   isOperatingProfit?: boolean;
+  isGrossProfit?: boolean;
 }
 
 interface PLReportTableProps {
@@ -77,6 +79,15 @@ export function PLReportTable({
     item.name.toLowerCase().includes('operating profit')
   );
 
+  // Get the Food and Beverage Gross Profit items
+  const foodGrossProfitItem = processedBudgetData.find(item => 
+    item.name === 'Food Gross Profit'
+  );
+  
+  const beverageGrossProfitItem = processedBudgetData.find(item => 
+    item.name === 'Beverage Gross Profit'
+  );
+
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
@@ -129,8 +140,8 @@ export function PLReportTable({
                   let rowClassName = '';
                   let fontClass = '';
                   
-                  const isGrossProfit = item.name.toLowerCase().includes('gross profit') || 
-                                        item.name.toLowerCase().includes('profit/(loss)');
+                  const isGrossProfit = item.isGrossProfit || 
+                                       item.name.toLowerCase().includes('profit/(loss)');
                   
                   const isTurnover = item.name.toLowerCase() === 'turnover';
                   
