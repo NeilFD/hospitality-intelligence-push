@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -19,7 +20,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        typewriter: ['"Special Elite"', 'monospace'],
+        typewriter: ['"Scripter Serif"', '"Special Elite"', 'monospace'],
       },
       colors: {
         border: 'hsl(var(--border))',
