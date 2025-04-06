@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -57,7 +58,9 @@ export function PLReportTable({
     !item.name.toLowerCase().includes('operating profit') &&
     item.name !== 'Gross Profit' &&
     !item.name.toLowerCase().includes('total admin') &&
-    !(item.name.toLowerCase() === 'total')
+    !(item.name.toLowerCase() === 'total') &&
+    // Filter out the ADMIN EXPENSES header
+    !(item.name === 'ADMIN EXPENSES' && item.isHeader)
   );
   
   console.log("Display items:", displayItems.map(item => item.name));
