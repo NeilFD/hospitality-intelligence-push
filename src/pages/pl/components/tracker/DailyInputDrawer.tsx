@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/date-utils';
 import { CalendarDays } from 'lucide-react';
 import { DayInput } from '../types/PLTrackerTypes';
+
 interface DailyInputDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,6 +16,7 @@ interface DailyInputDrawerProps {
   monthName: string;
   year: number;
 }
+
 export function DailyInputDrawer({
   isOpen,
   onClose,
@@ -27,19 +29,16 @@ export function DailyInputDrawer({
   const [dailyInputs, setDailyInputs] = useState<DayInput[]>([]);
   const [total, setTotal] = useState(0);
 
-  // Initialize or reset daily inputs when drawer opens
   useEffect(() => {
     if (isOpen) {
       const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(monthName);
       const firstDayOfMonth = startOfMonth(new Date(year, monthIndex));
       const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
-      // Create array of days for the month
       let days: DayInput[] = [];
       for (let i = 0; i < daysInMonth; i++) {
         const currentDate = addDays(firstDayOfMonth, i);
 
-        // Check if we have a saved value for this day
         const savedDay = initialValues.find(day => day.date.getDate() === currentDate.getDate() && day.date.getMonth() === currentDate.getMonth());
         days.push({
           date: currentDate,
@@ -48,25 +47,26 @@ export function DailyInputDrawer({
       }
       setDailyInputs(days);
 
-      // Calculate initial total from saved values
       const calculatedTotal = days.reduce((sum, day) => sum + (day.value || 0), 0);
       setTotal(calculatedTotal);
     }
   }, [isOpen, monthName, year, initialValues]);
+
   const handleInputChange = (index: number, value: string) => {
     const numValue = value === '' ? null : parseFloat(value);
     const updatedInputs = [...dailyInputs];
     updatedInputs[index].value = numValue;
     setDailyInputs(updatedInputs);
 
-    // Recalculate total
     const newTotal = updatedInputs.reduce((sum, day) => sum + (day.value || 0), 0);
     setTotal(newTotal);
   };
+
   const handleSave = () => {
     onSave(dailyInputs);
     onClose();
   };
+
   return <Drawer open={isOpen} onOpenChange={isOpen => !isOpen && onClose()}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader>
@@ -82,7 +82,15 @@ export function DailyInputDrawer({
                 <div className="font-medium">
                   {format(dayInput.date, 'EEE, MMM d')}:
                 </div>
-                <Input type="number" value={dayInput.value !== null ? dayInput.value : ''} onChange={e => handleInputChange(index, e.target.value)} min="0" step="0.01" placeholder="0.00" className="w-full h-9" />
+                <Input 
+                  type="number" 
+                  value={dayInput.value !== null ? dayInput.value : ''} 
+                  onChange={e => handleInputChange(index, e.target.value)} 
+                  min="0" 
+                  step="0.01" 
+                  placeholder="0.00" 
+                  className="w-full h-9 text-tavern-blue" 
+                />
               </div>)}
           </div>
         </div>
