@@ -137,7 +137,16 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
             }
           }}>
             <BarChart data={chartData}>
-              <XAxis dataKey="name" />
+              <CartesianGrid 
+                vertical={false} 
+                horizontal={true} 
+                stroke="#E0E0E0" 
+                strokeDasharray="3 3" 
+              />
+              <XAxis 
+                dataKey="name" 
+                axisLine={{ stroke: '#48495e', strokeWidth: 2 }}
+              />
               <YAxis 
                 axisLine={{ stroke: '#48495e', strokeWidth: 2 }} 
                 tickLine={{ stroke: '#48495e' }}
