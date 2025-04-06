@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -104,7 +103,7 @@ export function PLReportTable({
                       isHighlighted ? 'bg-[#48495e]/90 text-white font-bold' : 
                       isGrossProfit ? 'font-semibold bg-purple-50/50' : ''
                     }>
-                      <TableCell className={isHighlighted ? 'font-bold text-sm tracking-wider py-2' : ''}>
+                      <TableCell className={`${isHighlighted ? 'font-bold' : ''}`}>
                         {item.name}
                         {isGrossProfit && item.budget_percentage && !isHighlighted && (
                           <span className="ml-2 text-xs text-gray-500">
@@ -168,4 +167,3 @@ export function PLReportTable({
     </Card>
   );
 }
-
