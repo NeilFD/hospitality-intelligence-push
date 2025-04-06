@@ -6,8 +6,6 @@ import { Link } from 'react-router-dom';
 import { MonthYearSelector } from './components/MonthYearSelector';
 import { PerformanceChart } from './components/PerformanceChart';
 import { PLReportTable } from './components/PLReportTable';
-import { DailySalesEntry } from './components/DailySalesEntry';
-import { VariableCosts } from './components/VariableCosts';
 import { useBudgetData } from './hooks/useBudgetData';
 import { PLTracker } from './components/PLTracker';
 
@@ -118,11 +116,7 @@ export default function PLDashboard() {
           />
         </div>
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <DailySalesEntry />
-        <VariableCosts />
-      </div>
     </div>
   );
 }
+
