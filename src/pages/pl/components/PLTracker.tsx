@@ -140,8 +140,10 @@ export function PLTracker({
                          
     const isTotalAdmin = item.name.toLowerCase().includes('total admin');
     
+    const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
+    
     // If not a special summary item, use the standard calculation
-    if (!isTurnover && !isCostOfSales && !isTotalAdmin) {
+    if (!isTurnover && !isCostOfSales && !isTotalAdmin && !isOperatingProfit) {
       return calculateProRatedBudget(item);
     }
     
@@ -178,7 +180,51 @@ export function PLTracker({
         .reduce((sum, i) => sum + calculateProRatedBudget(i), 0);
     }
     
+    if (isOperatingProfit) {
+      // Calculate operating profit as gross profit minus total admin
+      // First get the gross profit
+      const grossProfitItem = trackedBudgetData.find(i => 
+        i.name.toLowerCase() === 'total gross profit' || 
+        (i.name.toLowerCase() === 'gross profit' && 
+         !i.name.toLowerCase().includes('food') && 
+         !i.name.toLowerCase().includes('beverage'))
+      );
+      
+      // Then get the total admin
+      const totalAdminItem = trackedBudgetData.find(i => 
+        i.name.toLowerCase().includes('total admin')
+      );
+      
+      // Calculate the operating profit
+      const grossProfit = grossProfitItem 
+        ? calculateSummaryProRatedBudget(grossProfitItem)
+        : 0;
+        
+      const totalAdmin = totalAdminItem 
+        ? calculateSummaryProRatedBudget(totalAdminItem) 
+        : 0;
+        
+      return grossProfit - totalAdmin;
+    }
+    
     return calculateProRatedBudget(item);
+  };
+
+  // Helper function to determine if an item should display the tracking type dropdown
+  const shouldShowTrackingType = (item: BudgetItem): boolean => {
+    // Don't show tracking type for headers, summary items, and special rows
+    const isSummaryItem = 
+      item.isHeader || 
+      item.isGrossProfit || 
+      item.isOperatingProfit || 
+      item.name.toLowerCase().includes('turnover') || 
+      item.name.toLowerCase() === 'turnover' || 
+      item.name.toLowerCase().includes('total admin') || 
+      (item.name.toLowerCase().includes('cost of sales') && 
+       !item.name.toLowerCase().includes('food') && 
+       !item.name.toLowerCase().includes('beverage'));
+    
+    return !isSummaryItem;
   };
 
   return (
@@ -265,11 +311,10 @@ export function PLTracker({
                         {item.name}
                       </TableCell>
                       <TableCell>
-                        {!item.isHeader && !isGrossProfit && !isOperatingProfit && !isTurnover ? (
+                        {shouldShowTrackingType(item) ? (
                           <Select
                             value={item.tracking_type}
                             onValueChange={(value) => updateTrackingType(i, value as 'Discrete' | 'Pro-Rated')}
-                            disabled={item.isHeader || isGrossProfit || isOperatingProfit || isTurnover}
                           >
                             <SelectTrigger className="h-8 w-36">
                               <SelectValue placeholder="Type" />
@@ -280,7 +325,7 @@ export function PLTracker({
                             </SelectContent>
                           </Select>
                         ) : (
-                          <span>{item.isHeader || isGrossProfit || isOperatingProfit || isTurnover ? '' : item.tracking_type}</span>
+                          <span></span>
                         )}
                       </TableCell>
                       <TableCell className={`text-right ${fontClass}`}>
