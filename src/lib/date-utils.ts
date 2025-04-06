@@ -1,4 +1,3 @@
-
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -126,11 +125,13 @@ export function calculateGP(revenue: number, cost: number): number {
   return 1 - (cost / revenue);
 }
 
-// Format currency
+// Format currency with zero decimal places
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 
