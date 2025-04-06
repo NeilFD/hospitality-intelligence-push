@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -15,6 +16,7 @@ interface BudgetItem {
   budget_percentage?: number;
   isHeader?: boolean;
   isHighlighted?: boolean;
+  isOperatingProfit?: boolean;
 }
 
 interface PLReportTableProps {
@@ -32,6 +34,26 @@ export function PLReportTable({
   currentYear,
   onOpenTracker
 }: PLReportTableProps) {
+  // Calculate total admin expenses
+  const adminExpenseItems = processedBudgetData.filter(item => 
+    !item.name.toLowerCase().includes('turnover') &&
+    !item.name.toLowerCase().includes('cost of sales') &&
+    !item.name.toLowerCase().includes('gross profit') &&
+    !item.name.toLowerCase().includes('operating profit') &&
+    !item.isHeader &&
+    !item.name.toLowerCase().includes('total') &&
+    item.category !== 'Revenue' &&
+    item.category !== 'Turnover' &&
+    item.category !== 'Cost of Sales' &&
+    item.category !== 'COS' &&
+    item.category !== 'Header' &&
+    item.category !== 'Summary'
+  );
+
+  const totalAdminBudget = adminExpenseItems.reduce((sum, item) => sum + item.budget_amount, 0);
+  const totalAdminActual = adminExpenseItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
+  const totalAdminVariance = totalAdminActual - totalAdminBudget;
+
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
@@ -97,8 +119,13 @@ export function PLReportTable({
                   
                   const isTurnover = item.name.toLowerCase() === 'turnover';
                   
-                  if (item.isHighlighted) {
+                  if (item.isHighlighted && isOperatingProfit) {
+                    // Style Operating Profit as a header row
+                    rowClassName = 'bg-[#8B5CF6]/90 text-white';
+                    fontClass = 'font-bold';
+                  } else if (item.isHighlighted) {
                     rowClassName = 'bg-[#48495e]/90 text-white';
+                    fontClass = 'font-bold';
                   } else if (isGrossProfit || isTurnover) {
                     rowClassName = 'bg-purple-50/50';
                   }
@@ -127,6 +154,27 @@ export function PLReportTable({
                     </TableRow>
                   );
                 })}
+                
+                {/* Add Total Admin Expenses row before Operating Profit */}
+                <TableRow className="bg-[#48495e]/90 text-white">
+                  <TableCell className="font-bold">
+                    Total Admin Expenses
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(totalAdminBudget)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {/* Percentage could be calculated if needed */}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(totalAdminActual)}
+                  </TableCell>
+                  <TableCell className={`text-right font-bold ${
+                    totalAdminVariance > 0 ? 'text-green-200' : totalAdminVariance < 0 ? 'text-red-200' : ''
+                  }`}>
+                    {formatCurrency(totalAdminVariance)}
+                  </TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </div>
