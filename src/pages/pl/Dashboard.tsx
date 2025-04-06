@@ -11,76 +11,80 @@ import { fetchBudgetItems } from '@/utils/budget-processor';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-
-const chartData = [
-  { name: 'Budget', revenue: 73000, costs: 56450, ebitda: 16550 },
-  { name: 'MTD Actual', revenue: 71000, costs: 56000, ebitda: 15000 },
-  { name: 'Forecast', revenue: 75000, costs: 58500, ebitda: 16500 },
-];
-
+const chartData = [{
+  name: 'Budget',
+  revenue: 73000,
+  costs: 56450,
+  ebitda: 16550
+}, {
+  name: 'MTD Actual',
+  revenue: 71000,
+  costs: 56000,
+  ebitda: 15000
+}, {
+  name: 'Forecast',
+  revenue: 75000,
+  costs: 58500,
+  ebitda: 16500
+}];
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
-  const [currentMonthName, setCurrentMonthName] = useState<string>(
-    new Date().toLocaleString('default', { month: 'long' })
-  );
+  const [currentMonthName, setCurrentMonthName] = useState<string>(new Date().toLocaleString('default', {
+    month: 'long'
+  }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
-  
-  const { data: budgetItems, isLoading: isLoadingBudget } = useQuery({
+  const {
+    data: budgetItems,
+    isLoading: isLoadingBudget
+  } = useQuery({
     queryKey: ['budget-items', currentYear, currentMonth],
     queryFn: () => fetchBudgetItems(currentYear, currentMonth),
-    enabled: true,
+    enabled: true
   });
-  
   const processedBudgetData = useMemo(() => {
     if (!budgetItems) return [];
-    
     const grouped = budgetItems.reduce((acc, item) => {
       const category = acc.find(c => c.category === item.category);
       if (category) {
         category.items.push(item);
       } else {
-        acc.push({ 
-          category: item.category, 
-          items: [item] 
+        acc.push({
+          category: item.category,
+          items: [item]
         });
       }
       return acc;
-    }, [] as Array<{ category: string; items: typeof budgetItems }>);
-    
-    return grouped.flatMap(group => [
-      ...group.items.map(item => ({
-        category: group.category,
-        name: item.name,
-        budget: item.budget_amount,
-        actual: item.actual_amount || 0,
-        forecast: item.forecast_amount || item.budget_amount,
-      })),
-    ]);
+    }, [] as Array<{
+      category: string;
+      items: typeof budgetItems;
+    }>);
+    return grouped.flatMap(group => [...group.items.map(item => ({
+      category: group.category,
+      name: item.name,
+      budget: item.budget_amount,
+      actual: item.actual_amount || 0,
+      forecast: item.forecast_amount || item.budget_amount
+    }))]);
   }, [budgetItems]);
-  
   const formatCurrency = (value: number): string => {
     return `£${value.toLocaleString('en-GB', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     })}`;
   };
-  
   const formatPercentage = (value: number): string => {
     return `${value.toFixed(1)}%`;
   };
-  
   const handleMonthChange = (value: string) => {
     setCurrentMonth(parseInt(value));
   };
-
   useEffect(() => {
-    const monthName = new Date(currentYear, currentMonth - 1, 1)
-      .toLocaleString('default', { month: 'long' });
+    const monthName = new Date(currentYear, currentMonth - 1, 1).toLocaleString('default', {
+      month: 'long'
+    });
     setCurrentMonthName(monthName);
   }, [currentMonth, currentYear]);
-
-  return (
-    <div className="container py-8">
+  return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold text-purple-600 mb-6 text-center">P&L Tracker Dashboard</h1>
       
       <div className="flex justify-between items-center mb-6">
@@ -105,7 +109,7 @@ export default function PLDashboard() {
             </SelectContent>
           </Select>
           
-          <Select value={currentYear.toString()} onValueChange={(value) => setCurrentYear(parseInt(value))}>
+          <Select value={currentYear.toString()} onValueChange={value => setCurrentYear(parseInt(value))}>
             <SelectTrigger className="w-[120px]">
               <SelectValue>{currentYear}</SelectValue>
             </SelectTrigger>
@@ -130,21 +134,23 @@ export default function PLDashboard() {
           <CardHeader className="bg-white/40 border-b">
             <CardTitle className="flex items-center justify-between">
               <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="flex items-center gap-2 bg-tavern-blue hover:bg-tavern-green text-white"
-              >
+              <Button variant="outline" size="sm" className="flex items-center gap-1">
                 <Info size={14} /> Details
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <ChartContainer config={{
-              revenue: { color: '#8B5CF6' },
-              costs: { color: '#F97316' },
-              ebitda: { color: '#10B981' },
-            }}>
+            revenue: {
+              color: '#8B5CF6'
+            },
+            costs: {
+              color: '#F97316'
+            },
+            ebitda: {
+              color: '#10B981'
+            }
+          }}>
               <BarChart data={chartData}>
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -165,12 +171,9 @@ export default function PLDashboard() {
             <CardTitle>P&L Flash Report - {currentMonthName} {currentYear}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {isLoadingBudget ? (
-              <div className="flex justify-center items-center p-8">
+            {isLoadingBudget ? <div className="flex justify-center items-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              </div>
-            ) : processedBudgetData.length > 0 ? (
-              <div className="overflow-x-auto">
+              </div> : processedBudgetData.length > 0 ? <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-purple-50">
@@ -184,23 +187,13 @@ export default function PLDashboard() {
                   </TableHeader>
                   <TableBody>
                     {processedBudgetData.map((item, i) => {
-                      const variance = item.actual - item.budget;
-                      const variancePercent = item.budget !== 0 ? (variance / item.budget) * 100 : 0;
-                      const forecastVariance = item.forecast - item.budget;
-                      const forecastVariancePercent = item.budget !== 0 ? (forecastVariance / item.budget) * 100 : 0;
-                      
-                      const isPositiveVariance = 
-                        (item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit')) 
-                          ? variance > 0 
-                          : variance < 0;
-                      
-                      const isPositiveForecast = 
-                        (item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit')) 
-                          ? forecastVariance > 0 
-                          : forecastVariance < 0;
-                      
-                      return (
-                        <TableRow key={i} className={item.name.includes('Total') || item.name.includes('Gross Profit') ? 'font-semibold' : ''}>
+                  const variance = item.actual - item.budget;
+                  const variancePercent = item.budget !== 0 ? variance / item.budget * 100 : 0;
+                  const forecastVariance = item.forecast - item.budget;
+                  const forecastVariancePercent = item.budget !== 0 ? forecastVariance / item.budget * 100 : 0;
+                  const isPositiveVariance = item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit') ? variance > 0 : variance < 0;
+                  const isPositiveForecast = item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit') ? forecastVariance > 0 : forecastVariance < 0;
+                  return <TableRow key={i} className={item.name.includes('Total') || item.name.includes('Gross Profit') ? 'font-semibold' : ''}>
                           <TableCell>{item.name}</TableCell>
                           <TableCell className="text-right">{formatCurrency(item.budget)}</TableCell>
                           <TableCell className="text-right">{formatCurrency(item.actual)}</TableCell>
@@ -211,14 +204,11 @@ export default function PLDashboard() {
                           <TableCell className={`text-right ${isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
                             {forecastVariance > 0 ? '+' : ''}{formatCurrency(forecastVariance)} ({formatPercentage(forecastVariancePercent)})
                           </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                        </TableRow>;
+                })}
                   </TableBody>
                 </Table>
-              </div>
-            ) : (
-              <div className="text-center p-8 text-gray-500">
+              </div> : <div className="text-center p-8 text-gray-500">
                 <p className="mb-4">No budget data available for {currentMonthName} {currentYear}.</p>
                 <Button asChild variant="outline">
                   <Link to="/pl/budget">
@@ -226,8 +216,7 @@ export default function PLDashboard() {
                     Upload Budget Data
                   </Link>
                 </Button>
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
@@ -293,29 +282,30 @@ export default function PLDashboard() {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 }
-
-const CustomTooltip = ({ active, payload, label }: { 
-  active?: boolean, 
-  payload?: Array<{ value: number, name: string }>, 
-  label?: string 
+const CustomTooltip = ({
+  active,
+  payload,
+  label
+}: {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    name: string;
+  }>;
+  label?: string;
 }) => {
   if (active && payload && payload.length) {
-    return (
-      <div className="bg-white border rounded-md p-2 shadow-lg">
+    return <div className="bg-white border rounded-md p-2 shadow-lg">
         <p className="font-bold">{label}</p>
-        {payload.map((entry, index) => (
-          <p key={index}>
+        {payload.map((entry, index) => <p key={index}>
             {entry.name}: £{entry.value.toLocaleString('en-GB', {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0
-            })}
-          </p>
-        ))}
-      </div>
-    );
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        })}
+          </p>)}
+      </div>;
   }
   return null;
 };
