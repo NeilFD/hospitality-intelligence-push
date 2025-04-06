@@ -1,22 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { BudgetItem } from '@/types/supabase-types';
+import { BudgetItem } from '@/utils/budget/types';
 
-// Type for processed budget data
-interface ProcessedBudgetItem {
-  id?: string;
-  category: string;
-  name: string;
+// Type for processed budget data that extends BudgetItem
+interface ProcessedBudgetItem extends Omit<BudgetItem, 'budget'> {
   budget_amount: number;
   actual_amount?: number;
   forecast_amount?: number;
-  budget_percentage?: number;
-  isHeader?: boolean;
-  isHighlighted?: boolean;
-  isGrossProfit?: boolean;
-  isOperatingProfit?: boolean;
-  tracking_type?: 'Discrete' | 'Pro-Rated';
 }
 
 export const useBudgetData = (year: number, month: number) => {

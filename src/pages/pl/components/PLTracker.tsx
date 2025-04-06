@@ -11,19 +11,8 @@ import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/ki
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
 
-interface PLTrackerBudgetItem {
-  id?: string;
-  category: string;
-  name: string;
+interface PLTrackerBudgetItem extends Omit<BudgetItem, 'budget'> {
   budget_amount: number;
-  actual_amount?: number;
-  forecast_amount?: number;
-  budget_percentage?: number;
-  isHeader?: boolean;
-  isHighlighted?: boolean;
-  isGrossProfit?: boolean;
-  isOperatingProfit?: boolean;
-  tracking_type?: 'Discrete' | 'Pro-Rated';
 }
 
 interface PLTrackerProps {
