@@ -232,6 +232,29 @@ export interface Database {
           updated_at?: string;
         };
       };
+      budget_item_tracking: {
+        Row: {
+          id: string;
+          budget_item_id: string;
+          tracking_type: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          budget_item_id: string;
+          tracking_type?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          budget_item_id?: string;
+          tracking_type?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -247,6 +270,7 @@ export interface Database {
 
 // Define each type explicitly without circular references
 export type DbBudgetItem = Database['public']['Tables']['budget_items']['Row'];
+export type DbBudgetItemTracking = Database['public']['Tables']['budget_item_tracking']['Row'];
 export type DbSupplier = Database['public']['Tables']['suppliers']['Row'];
 export type DbDailyRecord = Database['public']['Tables']['daily_records']['Row'];
 export type DbWeeklyRecord = Database['public']['Tables']['weekly_records']['Row'];
@@ -264,6 +288,14 @@ export interface BudgetItem {
   budget_amount: number;
   actual_amount?: number | null;
   forecast_amount?: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetItemTracking {
+  id: string;
+  budget_item_id: string;
+  tracking_type: string;
   created_at: string;
   updated_at: string;
 }

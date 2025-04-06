@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { 
   DbSupplier, 
@@ -6,7 +7,8 @@ import {
   DbPurchase,
   DbCreditNote,
   DbMonthlySettings,
-  DbBudgetItem
+  DbBudgetItem,
+  DbBudgetItemTracking
 } from '@/types/supabase-types';
 import { ModuleType } from '@/types/kitchen-ledger';
 
@@ -107,6 +109,27 @@ export const deleteBudgetItemsByYearMonth = async (year: number, month: number) 
     .eq('month', month);
   
   if (error) throw error;
+};
+
+// Budget Item Tracking
+export const fetchBudgetItemTracking = async (budgetItemIds: string[]) => {
+  const { data, error } = await supabase
+    .from('budget_item_tracking')
+    .select('*')
+    .in('budget_item_id', budgetItemIds);
+  
+  if (error) throw error;
+  return data;
+};
+
+export const upsertBudgetItemTracking = async (tracking: Omit<DbBudgetItemTracking, 'id' | 'created_at' | 'updated_at'>[]) => {
+  const { data, error } = await supabase
+    .from('budget_item_tracking')
+    .upsert(tracking, { onConflict: 'budget_item_id' })
+    .select();
+  
+  if (error) throw error;
+  return data;
 };
 
 // Monthly Settings

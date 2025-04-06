@@ -9,6 +9,38 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      budget_item_tracking: {
+        Row: {
+          budget_item_id: string
+          created_at: string
+          id: string
+          tracking_type: string
+          updated_at: string
+        }
+        Insert: {
+          budget_item_id: string
+          created_at?: string
+          id?: string
+          tracking_type?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_item_id?: string
+          created_at?: string
+          id?: string
+          tracking_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_item_tracking_budget_item_id_fkey"
+            columns: ["budget_item_id"]
+            isOneToOne: false
+            referencedRelation: "budget_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_items: {
         Row: {
           actual_amount: number | null

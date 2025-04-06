@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save } from 'lucide-react';
 import { formatCurrency } from '@/lib/date-utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface BudgetItem {
   id?: string;
@@ -43,54 +45,111 @@ export function PLTracker({
   const [daysInMonth, setDaysInMonth] = useState(0);
   const [dayOfMonth, setDayOfMonth] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+
+  // Load tracking type settings from database
+  const loadTrackingSettings = async (items: BudgetItem[]) => {
+    try {
+      // Get all tracking settings for the items that have IDs
+      const itemIds = items.filter(item => item.id).map(item => item.id);
+      
+      if (itemIds.length === 0) return items;
+      
+      const { data: trackingData, error } = await supabase
+        .from('budget_item_tracking')
+        .select('*')
+        .in('budget_item_id', itemIds as string[]);
+      
+      if (error) {
+        console.error('Error loading tracking settings:', error);
+        toast({
+          title: "Error loading settings",
+          description: "Could not load tracking settings from the database.",
+        });
+        return items;
+      }
+      
+      // Map the tracking settings to the items
+      if (trackingData && trackingData.length > 0) {
+        const trackingMap = trackingData.reduce((acc, curr) => {
+          acc[curr.budget_item_id] = curr.tracking_type;
+          return acc;
+        }, {} as Record<string, string>);
+        
+        // Apply the tracking settings to the items
+        return items.map(item => {
+          if (item.id && trackingMap[item.id]) {
+            return {
+              ...item,
+              tracking_type: trackingMap[item.id] as 'Discrete' | 'Pro-Rated'
+            };
+          }
+          return item;
+        });
+      }
+      
+      return items;
+    } catch (error) {
+      console.error('Error in loadTrackingSettings:', error);
+      return items;
+    }
+  };
 
   // Initialize tracking types for each budget item
   useEffect(() => {
     if (processedBudgetData.length > 0) {
-      const trackedData = processedBudgetData.map(item => {
+      const initializeData = async () => {
         // Set default tracking types based on item category
-        let trackingType: 'Discrete' | 'Pro-Rated' = 'Discrete';
+        let trackedData = processedBudgetData.map(item => {
+          // Set default tracking types based on item category
+          let trackingType: 'Discrete' | 'Pro-Rated' = 'Discrete';
+          
+          // Examples of items that might be pro-rated
+          const proRatedCategories = [
+            'Marketing',
+            'Bank charges',
+            'Insurance',
+            'Heat and power',
+            'Telephone and internet',
+            'Rates',
+            'Rent',
+            'Subscriptions'
+          ];
+          
+          const proRatedNames = [
+            'Marketing',
+            'Bank charges',
+            'Entertainment',
+            'Insurance',
+            'Heat and power',
+            'Telephone and internet',
+            'Rates',
+            'Rent',
+            'Subscriptions'
+          ];
+          
+          if (
+            proRatedCategories.includes(item.category) || 
+            proRatedNames.some(name => item.name.includes(name))
+          ) {
+            trackingType = 'Pro-Rated';
+          }
+          
+          return {
+            ...item,
+            tracking_type: trackingType
+          };
+        });
         
-        // Examples of items that might be pro-rated
-        const proRatedCategories = [
-          'Marketing',
-          'Bank charges',
-          'Insurance',
-          'Heat and power',
-          'Telephone and internet',
-          'Rates',
-          'Rent',
-          'Subscriptions'
-        ];
+        // Load tracking settings from the database
+        trackedData = await loadTrackingSettings(trackedData);
         
-        const proRatedNames = [
-          'Marketing',
-          'Bank charges',
-          'Entertainment',
-          'Insurance',
-          'Heat and power',
-          'Telephone and internet',
-          'Rates',
-          'Rent',
-          'Subscriptions'
-        ];
-        
-        if (
-          proRatedCategories.includes(item.category) || 
-          proRatedNames.some(name => item.name.includes(name))
-        ) {
-          trackingType = 'Pro-Rated';
-        }
-        
-        return {
-          ...item,
-          tracking_type: trackingType
-        };
-      });
+        setTrackedBudgetData(trackedData);
+        setHasUnsavedChanges(false);
+      };
       
-      setTrackedBudgetData(trackedData);
-      setHasUnsavedChanges(false);
+      initializeData();
     }
   }, [processedBudgetData]);
 
@@ -118,23 +177,89 @@ export function PLTracker({
     setHasUnsavedChanges(true);
   };
 
-  // Save tracking type settings
-  const saveTrackingSettings = () => {
-    // Here you would typically save the settings to a database
-    // For now, we'll just show a toast message
-    toast({
-      title: "Settings saved",
-      description: "Your tracking settings have been saved.",
-    });
-    setHasUnsavedChanges(false);
+  // Update forecast amount for a specific item
+  const updateForecastAmount = (index: number, value: string) => {
+    const numericValue = value === '' ? undefined : parseFloat(value);
     
-    // In a real implementation, you would save the data to your backend
-    // For example with Supabase:
-    // trackedBudgetData.forEach(async (item) => {
-    //   if (item.id) {
-    //     await updateBudgetItem(item.id, { tracking_type: item.tracking_type });
-    //   }
-    // });
+    const updatedData = [...trackedBudgetData];
+    updatedData[index] = {
+      ...updatedData[index],
+      forecast_amount: numericValue
+    };
+    setTrackedBudgetData(updatedData);
+    setHasUnsavedChanges(true);
+  };
+
+  // Save tracking type settings and forecast amounts to the database
+  const saveTrackingSettings = async () => {
+    if (!hasUnsavedChanges) return;
+    
+    setIsSaving(true);
+    
+    try {
+      // Filter the items that have IDs
+      const itemsWithId = trackedBudgetData.filter(item => item.id);
+      
+      // Prepare upsert operations for tracking settings
+      const trackingUpserts = itemsWithId.map(item => ({
+        budget_item_id: item.id as string,
+        tracking_type: item.tracking_type || 'Discrete'
+      }));
+      
+      if (trackingUpserts.length > 0) {
+        // Upsert tracking settings
+        const { error: trackingError } = await supabase
+          .from('budget_item_tracking')
+          .upsert(trackingUpserts, { onConflict: 'budget_item_id' });
+        
+        if (trackingError) {
+          console.error('Error saving tracking settings:', trackingError);
+          toast({
+            title: "Error saving settings",
+            description: "Could not save tracking settings to the database.",
+          });
+          setIsSaving(false);
+          return;
+        }
+      }
+      
+      // Prepare updates for forecast amounts
+      const forecastUpdates = itemsWithId
+        .filter(item => item.forecast_amount !== undefined)
+        .map(item => ({
+          id: item.id,
+          forecast_amount: item.forecast_amount
+        }));
+      
+      if (forecastUpdates.length > 0) {
+        // Process each update individually to avoid conflicts
+        for (const update of forecastUpdates) {
+          const { error: forecastError } = await supabase
+            .from('budget_items')
+            .update({ forecast_amount: update.forecast_amount })
+            .eq('id', update.id);
+          
+          if (forecastError) {
+            console.error(`Error updating forecast for item ${update.id}:`, forecastError);
+            // Continue with other updates even if one fails
+          }
+        }
+      }
+      
+      toast({
+        title: "Settings saved",
+        description: "Your tracking settings and forecast amounts have been saved.",
+      });
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Error in saveTrackingSettings:', error);
+      toast({
+        title: "Error saving settings",
+        description: "An unexpected error occurred while saving settings.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Calculate pro-rated budget amount for a standard item
@@ -260,11 +385,15 @@ export function PLTracker({
           <Button 
             onClick={saveTrackingSettings} 
             variant="outline" 
-            disabled={!hasUnsavedChanges}
+            disabled={!hasUnsavedChanges || isSaving}
             className="flex items-center gap-2"
           >
-            <Save size={16} />
-            Save Changes
+            {isSaving ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Save size={16} />
+            )}
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
           <Button onClick={onClose} variant="outline">Close Tracker</Button>
         </div>
@@ -285,6 +414,7 @@ export function PLTracker({
                   <TableHead className="text-right">%</TableHead>
                   <TableHead className="text-right">Pro-Rated Budget MTD</TableHead>
                   <TableHead className="text-right">Actual MTD</TableHead>
+                  <TableHead className="text-right">Forecast</TableHead>
                   <TableHead className="text-right">Var MTD</TableHead>
                 </TableRow>
               </TableHeader>
@@ -295,7 +425,7 @@ export function PLTracker({
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
                         <TableCell 
-                          colSpan={7} 
+                          colSpan={8} 
                           className="font-bold text-sm tracking-wider py-2"
                         >
                           {item.name}
@@ -372,6 +502,16 @@ export function PLTracker({
                       </TableCell>
                       <TableCell className={`text-right ${fontClass}`}>
                         {formatCurrency(actualAmount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
+                          onChange={(e) => updateForecastAmount(i, e.target.value)}
+                          className="h-8 w-24 text-right"
+                        />
                       </TableCell>
                       <TableCell className={`text-right ${fontClass} ${
                         variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''
