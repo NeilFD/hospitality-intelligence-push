@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
@@ -251,7 +252,27 @@ export const useBudgetData = (year: number, month: number) => {
     );
     
     if (adminCategories.length > 0) {
-      // Removing the "ADMINISTRATIVE EXPENSES" header and "Total Admin expenses" as requested
+      // Find all items that should be under Admin Expenses
+      const allAdminItems = adminCategories.flatMap(category => categorizedItems[category]);
+      
+      // Find the "Wages and Salaries" item - as the start point
+      const wagesIndex = allAdminItems.findIndex(item => 
+        item.name.toLowerCase().includes('wages and salaries'));
+        
+      // Find the "Hotel and Travel" item - as the end point
+      const hotelTravelIndex = allAdminItems.findIndex(item => 
+        item.name.toLowerCase().includes('hotel and travel'));
+        
+      // Add the ADMIN EXPENSES header row
+      if (wagesIndex !== -1) {
+        result.push({ 
+          category: 'Header', 
+          name: 'ADMIN EXPENSES', 
+          budget_amount: 0, 
+          isHeader: true,
+          isAdminHeader: true  // Adding this flag to identify the admin header
+        });
+      }
       
       let totalAdminBudget = 0;
       let totalAdminActual = 0;

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -14,6 +15,7 @@ interface BudgetItem {
   forecast_amount?: number;
   budget_percentage?: number;
   isHeader?: boolean;
+  isAdminHeader?: boolean;
   isHighlighted?: boolean;
   isOperatingProfit?: boolean;
   isGrossProfit?: boolean;
@@ -202,8 +204,15 @@ export function PLReportTable({
               <TableBody>
                 {displayItems.map((item, i) => {
                   if (item.isHeader) {
+                    let headerClass = 'bg-[#48495e]/90 text-white';
+                    
+                    // Use light purple for the Admin Expenses header
+                    if (item.name === 'ADMIN EXPENSES' || item.isAdminHeader) {
+                      headerClass = 'bg-purple-300 text-[#48495e]';
+                    }
+                    
                     return (
-                      <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
+                      <TableRow key={i} className={headerClass}>
                         <TableCell 
                           colSpan={5} 
                           className="font-bold text-sm tracking-wider py-2"
