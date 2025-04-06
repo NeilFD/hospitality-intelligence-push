@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -105,6 +106,22 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
+// Add a sticky header variant
+const TableStickyHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <thead 
+    ref={ref} 
+    className={cn(
+      "[&_tr]:border-b sticky top-0 bg-white z-10 shadow-sm",
+      className
+    )} 
+    {...props} 
+  />
+))
+TableStickyHeader.displayName = "TableStickyHeader"
+
 export {
   Table,
   TableHeader,
@@ -114,4 +131,5 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  TableStickyHeader,
 }

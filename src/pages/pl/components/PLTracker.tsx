@@ -1,19 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Table, TableStickyHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Cog } from 'lucide-react';
 import { formatCurrency } from '@/lib/date-utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/kitchen-service';
 import { supabase } from '@/lib/supabase';
-import { BudgetItem } from '@/utils/budget/types';
 import { ProcessedBudgetItem } from '../hooks/useBudgetData';
+import { PLTrackerSettings } from './PLTrackerSettings';
 
 interface PLTrackerBudgetItem extends ProcessedBudgetItem {
-  tracking_type: 'Discrete' | 'Pro-Rated'; // Make tracking_type required
+  tracking_type: 'Discrete' | 'Pro-Rated';
 }
 
 interface PLTrackerProps {
@@ -37,103 +36,35 @@ export function PLTracker({
   const [dayOfMonth, setDayOfMonth] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
-
-  const loadTrackingSettings = async (items: ProcessedBudgetItem[]): Promise<PLTrackerBudgetItem[]> => {
-    try {
-      const itemIds = items.filter(item => item.id).map(item => item.id);
-      
-      if (itemIds.length === 0) {
-        return items.map(item => ({
-          ...item,
-          tracking_type: 'Discrete' as const // Set default tracking type
-        }));
-      }
-      
-      const trackingData = await fetchBudgetItemTracking(itemIds as string[]);
-      
-      if (trackingData && trackingData.length > 0) {
-        const trackingMap = trackingData.reduce((acc, curr) => {
-          acc[curr.budget_item_id] = curr.tracking_type;
-          return acc;
-        }, {} as Record<string, string>);
-        
-        return items.map(item => {
-          if (item.id && trackingMap[item.id]) {
-            return {
-              ...item,
-              tracking_type: trackingMap[item.id] as 'Discrete' | 'Pro-Rated'
-            };
-          }
-          return {
-            ...item,
-            tracking_type: 'Discrete' as const // Default tracking type
-          };
-        });
-      }
-      
-      return items.map(item => ({
-        ...item,
-        tracking_type: 'Discrete' as const // Set default tracking type
-      }));
-    } catch (error) {
-      console.error('Error in loadTrackingSettings:', error);
-      return items.map(item => ({
-        ...item,
-        tracking_type: 'Discrete' as const // Set default tracking type on error
-      }));
-    }
-  };
 
   useEffect(() => {
     if (processedBudgetData.length > 0) {
-      const initializeData = async () => {
-        let trackedData = processedBudgetData.map(item => {
-          let trackingType: 'Discrete' | 'Pro-Rated' = 'Discrete';
+      setTrackedBudgetData(prevData => {
+        // Preserve tracking_type from previous state if available
+        if (prevData.length > 0) {
+          const trackingTypeMap = new Map<string, 'Discrete' | 'Pro-Rated'>();
+          prevData.forEach(item => {
+            if (item.id) {
+              trackingTypeMap.set(item.id, item.tracking_type);
+            }
+          });
           
-          const proRatedCategories = [
-            'Marketing',
-            'Bank charges',
-            'Insurance',
-            'Heat and power',
-            'Telephone and internet',
-            'Rates',
-            'Rent',
-            'Subscriptions'
-          ];
-          
-          const proRatedNames = [
-            'Marketing',
-            'Bank charges',
-            'Entertainment',
-            'Insurance',
-            'Heat and power',
-            'Telephone and internet',
-            'Rates',
-            'Rent',
-            'Subscriptions'
-          ];
-          
-          if (
-            (item.category && proRatedCategories.includes(item.category)) || 
-            (item.name && proRatedNames.some(name => item.name.includes(name)))
-          ) {
-            trackingType = 'Pro-Rated';
-          }
-          
-          return {
+          return processedBudgetData.map(item => ({
             ...item,
-            tracking_type: item.tracking_type || trackingType
-          } as PLTrackerBudgetItem;
-        });
+            tracking_type: (item.id && trackingTypeMap.has(item.id))
+              ? trackingTypeMap.get(item.id)!
+              : 'Discrete'
+          }));
+        }
         
-        trackedData = await loadTrackingSettings(processedBudgetData);
-        
-        setTrackedBudgetData(trackedData);
-        setHasUnsavedChanges(false);
-      };
-      
-      initializeData();
+        return processedBudgetData.map(item => ({
+          ...item,
+          tracking_type: 'Discrete'
+        }));
+      });
+      setHasUnsavedChanges(false);
     }
   }, [processedBudgetData]);
 
@@ -147,16 +78,6 @@ export function PLTracker({
     setDayOfMonth(Math.min(currentDate.getDate(), lastDay));
   }, [currentMonthName, currentYear, currentDate]);
 
-  const updateTrackingType = (index: number, value: 'Discrete' | 'Pro-Rated') => {
-    const updatedData = [...trackedBudgetData];
-    updatedData[index] = {
-      ...updatedData[index],
-      tracking_type: value
-    };
-    setTrackedBudgetData(updatedData);
-    setHasUnsavedChanges(true);
-  };
-
   const updateForecastAmount = (index: number, value: string) => {
     const numericValue = value === '' ? undefined : parseFloat(value);
     
@@ -169,24 +90,13 @@ export function PLTracker({
     setHasUnsavedChanges(true);
   };
 
-  const saveTrackingSettings = async () => {
+  const saveForecastAmounts = async () => {
     if (!hasUnsavedChanges) return;
     
     setIsSaving(true);
     
     try {
       const itemsWithId = trackedBudgetData.filter(item => item.id);
-      
-      const trackingUpserts = itemsWithId
-        .filter(item => item.tracking_type)
-        .map(item => ({
-          budget_item_id: item.id as string,
-          tracking_type: item.tracking_type as 'Discrete' | 'Pro-Rated'
-        }));
-      
-      if (trackingUpserts.length > 0) {
-        await upsertBudgetItemTracking(trackingUpserts);
-      }
       
       const forecastUpdates = itemsWithId
         .filter(item => item.forecast_amount !== undefined)
@@ -207,19 +117,24 @@ export function PLTracker({
       }
       
       toast({
-        title: "Settings saved",
-        description: "Your tracking settings and forecast amounts have been saved.",
+        title: "Forecast amounts saved",
+        description: "Your forecast amounts have been saved.",
       });
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Error in saveTrackingSettings:', error);
+      console.error('Error in saveForecastAmounts:', error);
       toast({
-        title: "Error saving settings",
-        description: "An unexpected error occurred while saving settings.",
+        title: "Error saving forecast",
+        description: "An unexpected error occurred while saving forecast amounts.",
       });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSettingsSaved = (updatedItems: PLTrackerBudgetItem[]) => {
+    setTrackedBudgetData(updatedItems);
+    setShowSettings(false);
   };
 
   const calculateProRatedBudget = (item: PLTrackerBudgetItem): number => {
@@ -305,16 +220,19 @@ export function PLTracker({
     return calculateProRatedBudget(item);
   };
 
-  const shouldShowTrackingType = (item: PLTrackerBudgetItem): boolean => {
-    const isSummaryItem = 
-      item.isHeader || 
-      item.isGrossProfit || 
-      item.isOperatingProfit || 
-      item.name.toLowerCase().includes('turnover') || 
-      item.name.toLowerCase() === 'turnover';
-    
-    return !isSummaryItem;
-  };
+  // If settings page is active, show that instead
+  if (showSettings) {
+    return (
+      <PLTrackerSettings
+        isLoading={isLoading}
+        processedBudgetData={processedBudgetData}
+        currentMonthName={currentMonthName}
+        currentYear={currentYear}
+        onBackToTracker={() => setShowSettings(false)}
+        onSettingsSaved={handleSettingsSaved}
+      />
+    );
+  }
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
@@ -323,7 +241,15 @@ export function PLTracker({
         <div className="flex items-center gap-2">
           <div className="text-sm">Current Date: {currentDate.toLocaleDateString()}</div>
           <Button 
-            onClick={saveTrackingSettings} 
+            onClick={() => setShowSettings(true)} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            <Cog size={16} />
+            Line Item Settings
+          </Button>
+          <Button 
+            onClick={saveForecastAmounts} 
             variant="outline" 
             disabled={!hasUnsavedChanges || isSaving}
             className="flex items-center gap-2"
@@ -333,7 +259,7 @@ export function PLTracker({
             ) : (
               <Save size={16} />
             )}
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Saving..." : "Save Forecasts"}
           </Button>
           <Button onClick={onClose} variant="outline">Close Tracker</Button>
         </div>
@@ -344,12 +270,11 @@ export function PLTracker({
             <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
           </div>
         ) : trackedBudgetData.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[calc(100vh-200px)]">
             <Table>
-              <TableHeader>
+              <TableStickyHeader>
                 <TableRow className="bg-purple-50">
                   <TableHead className="w-[250px]">Line Item</TableHead>
-                  <TableHead>Discrete or Pro-Rated</TableHead>
                   <TableHead className="text-right">Budget</TableHead>
                   <TableHead className="text-right">%</TableHead>
                   <TableHead className="text-right">Pro-Rated Budget MTD</TableHead>
@@ -357,14 +282,14 @@ export function PLTracker({
                   <TableHead className="text-right">Forecast</TableHead>
                   <TableHead className="text-right">Var MTD</TableHead>
                 </TableRow>
-              </TableHeader>
+              </TableStickyHeader>
               <TableBody>
                 {trackedBudgetData.map((item, i) => {
                   if (item.isHeader) {
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
                         <TableCell 
-                          colSpan={8} 
+                          colSpan={7} 
                           className="font-bold text-sm tracking-wider py-2"
                         >
                           {item.name}
@@ -376,8 +301,6 @@ export function PLTracker({
                   const proRatedBudget = calculateSummaryProRatedBudget(item);
                   const actualAmount = item.actual_amount || 0;
                   const variance = actualAmount - proRatedBudget;
-                  
-                  const isPercentageRow = item.name.includes('%) ');
                   
                   let rowClassName = '';
                   let fontClass = '';
@@ -404,24 +327,6 @@ export function PLTracker({
                     <TableRow key={i} className={rowClassName}>
                       <TableCell className={fontClass}>
                         {item.name}
-                      </TableCell>
-                      <TableCell>
-                        {shouldShowTrackingType(item) ? (
-                          <Select
-                            value={item.tracking_type}
-                            onValueChange={(value) => updateTrackingType(i, value as 'Discrete' | 'Pro-Rated')}
-                          >
-                            <SelectTrigger className="h-8 w-36">
-                              <SelectValue placeholder="Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Discrete">Discrete</SelectItem>
-                              <SelectItem value="Pro-Rated">Pro-Rated</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span></span>
-                        )}
                       </TableCell>
                       <TableCell className={`text-right ${fontClass}`}>
                         {formatCurrency(item.budget_amount)}
