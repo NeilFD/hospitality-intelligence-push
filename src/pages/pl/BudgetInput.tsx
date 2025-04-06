@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUp, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
-import { useBudgetProcessor } from '@/utils/budget-processor';
+import { useBudgetProcessor } from '@/utils/budget/hooks';
 import { toast } from 'sonner';
 
 export default function BudgetInput() {

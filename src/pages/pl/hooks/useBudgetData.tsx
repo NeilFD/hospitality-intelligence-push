@@ -1,7 +1,6 @@
-
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchBudgetItems } from '@/utils/budget-processor';
+import { fetchBudgetItems } from '@/utils/budget/api';
 
 interface BudgetItem {
   id?: string;

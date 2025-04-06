@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import { getMonthName } from '@/lib/date-utils';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/kitchen-service';
-import { useBudgetProcessor } from '@/utils/budget-processor';
+import { useBudgetProcessor } from '@/utils/budget/hooks';
 
 interface InputSettingsProps {
   modulePrefix?: string;
@@ -36,7 +35,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const [budgetFile, setBudgetFile] = useState<File | null>(null);
   const { processBudget } = useBudgetProcessor();
 
-  // Fetch suppliers from Supabase
   const { data: supabaseSuppliers, isLoading: isFetchingSuppliers } = useQuery({
     queryKey: ['suppliers', moduleType],
     queryFn: async () => {
@@ -45,7 +43,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
-  // Mutations for suppliers
   const createSupplierMutation = useMutation({
     mutationFn: createSupplier,
     onSuccess: () => {
@@ -79,7 +76,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
-  // Sync local state with Supabase data when available
   useEffect(() => {
     if (supabaseSuppliers && !isFetchingSuppliers) {
       const mappedSuppliers = supabaseSuppliers.map(s => ({
@@ -98,7 +94,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     setGpTarget(Math.round(monthRecord.gpTarget * 100));
     setCostTarget(Math.round(monthRecord.costTarget * 100));
     setStaffAllowance(monthRecord.staffFoodAllowance);
-    // Only update suppliers from month record if we haven't loaded from Supabase yet
     if (isLoading) {
       setSuppliers([...monthRecord.suppliers]);
     }
@@ -115,13 +110,10 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   };
 
   const handleRemoveSupplier = (id: string) => {
-    // If the supplier exists in Supabase, delete it
     const supplierToDelete = supabaseSuppliers?.find(s => s.id === id);
     if (supplierToDelete) {
       deleteSupplierMutation.mutate(id);
     }
-    
-    // Remove from local state
     setSuppliers(suppliers.filter(s => s.id !== id));
   };
 
@@ -156,7 +148,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     const newGpTarget = gpTarget / 100;
     const newCostTarget = costTarget / 100;
     
-    // Update local store
     useStore.setState(state => {
       const updatedMonths = state.annualRecord.months.map(month => {
         if (month.year === currentYear && month.month === currentMonth) {
@@ -180,14 +171,12 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       };
     });
     
-    // Sync suppliers with Supabase
     const validSuppliers = suppliers.filter(s => s.name.trim() !== '');
     
     for (const supplier of validSuppliers) {
       const existingSupplier = supabaseSuppliers?.find(s => s.id === supplier.id);
       
       if (existingSupplier) {
-        // Update if name changed
         if (existingSupplier.name !== supplier.name) {
           await updateSupplierMutation.mutateAsync({ 
             id: supplier.id, 
@@ -198,7 +187,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
           });
         }
       } else {
-        // Create new supplier with all required fields
         await createSupplierMutation.mutateAsync({ 
           name: supplier.name, 
           module_type: moduleType,
