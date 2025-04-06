@@ -319,6 +319,17 @@ export const useBudgetData = (year: number, month: number) => {
     console.log("Food GP Item:", foodGpItem);
     console.log("Beverage GP Item:", bevGpItem);
     
+    // Filter out any row with the name "Total" that follows the Gross Profit row
+    const grossProfitIndex = result.findIndex(item => item.name === 'Gross Profit');
+    if (grossProfitIndex !== -1) {
+      result = result.filter((item, index) => {
+        if (index > grossProfitIndex && item.name === 'Total') {
+          return false;
+        }
+        return true;
+      });
+    }
+    
     return result;
   };
   
