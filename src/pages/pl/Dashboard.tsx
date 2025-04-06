@@ -11,7 +11,6 @@ import { fetchBudgetItems } from '@/utils/budget-processor';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-
 const chartData = [{
   name: 'Budget',
   revenue: 73000,
@@ -28,14 +27,12 @@ const chartData = [{
   costs: 58500,
   ebitda: 16500
 }];
-
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
   const [currentMonthName, setCurrentMonthName] = useState<string>(new Date().toLocaleString('default', {
     month: 'long'
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
-
   const {
     data: budgetItems,
     isLoading: isLoadingBudget
@@ -44,7 +41,6 @@ export default function PLDashboard() {
     queryFn: () => fetchBudgetItems(currentYear, currentMonth),
     enabled: true
   });
-
   const processedBudgetData = useMemo(() => {
     if (!budgetItems) return [];
     const grouped = budgetItems.reduce((acc, item) => {
@@ -70,29 +66,24 @@ export default function PLDashboard() {
       forecast: item.forecast_amount || item.budget_amount
     }))]);
   }, [budgetItems]);
-
   const formatCurrency = (value: number): string => {
     return `£${value.toLocaleString('en-GB', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     })}`;
   };
-
   const formatPercentage = (value: number): string => {
     return `${value.toFixed(1)}%`;
   };
-
   const handleMonthChange = (value: string) => {
     setCurrentMonth(parseInt(value));
   };
-
   useEffect(() => {
     const monthName = new Date(currentYear, currentMonth - 1, 1).toLocaleString('default', {
       month: 'long'
     });
     setCurrentMonthName(monthName);
   }, [currentMonth, currentYear]);
-
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold text-purple-600 mb-6 text-center">P&L Tracker Dashboard</h1>
       
@@ -106,7 +97,7 @@ export default function PLDashboard() {
               <SelectItem value="1">January</SelectItem>
               <SelectItem value="2">February</SelectItem>
               <SelectItem value="3">March</SelectItem>
-              <SelectItem value="4">April</SelectItem>
+              <SelectItem value="4" className="text-[#48495e]">April</SelectItem>
               <SelectItem value="5">May</SelectItem>
               <SelectItem value="6">June</SelectItem>
               <SelectItem value="7">July</SelectItem>
@@ -143,11 +134,7 @@ export default function PLDashboard() {
           <CardHeader className="bg-white/40 border-b">
             <CardTitle className="flex items-center justify-between">
               <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1 border-[#48495E] text-[#48495E] hover:bg-tavern-green hover:text-white"
-              >
+              <Button variant="outline" size="sm" className="flex items-center gap-1">
                 <Info size={14} /> Details
               </Button>
             </CardTitle>
@@ -297,7 +284,6 @@ export default function PLDashboard() {
       </div>
     </div>;
 }
-
 const CustomTooltip = ({
   active,
   payload,
