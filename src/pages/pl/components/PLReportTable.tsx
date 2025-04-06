@@ -101,7 +101,7 @@ export function PLReportTable({
                   
                   return (
                     <TableRow key={i} className={
-                      isHighlighted ? 'bg-[#48495e]/90 text-white' :
+                      isHighlighted ? 'bg-[#48495e]/90 text-white font-bold' : 
                       isGrossProfit ? 'font-semibold bg-purple-50/50' : ''
                     }>
                       <TableCell className={isHighlighted ? 'font-bold text-sm tracking-wider py-2' : ''}>
@@ -168,3 +168,4 @@ export function PLReportTable({
     </Card>
   );
 }
+
