@@ -15,11 +15,13 @@ export default function BudgetInput() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
+  const [uploadTimestamp, setUploadTimestamp] = useState<string | null>(null);
   const { processBudget } = useBudgetProcessor();
   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     setProcessingError(null);
     setIsProcessed(false);
+    setUploadTimestamp(null);
     
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
@@ -41,10 +43,12 @@ export default function BudgetInput() {
       setIsProcessed(false);
       setProcessingError(null);
       
+      const now = new Date();
+      setUploadTimestamp(now.toLocaleString());
       toast.success("Processing your budget file...");
       
       try {
-        console.log("Starting budget processing for file:", fileInput.name);
+        console.log("Starting budget processing for file:", fileInput.name, "at", now.toISOString());
         const success = await processBudget(fileInput, currentYear, 0); // 0 means process all months
         
         console.log("Budget processing complete, success:", success);
@@ -151,6 +155,12 @@ export default function BudgetInput() {
                 )}
               </Button>
               
+              {uploadTimestamp && (
+                <div className="text-gray-600 text-sm p-2 bg-gray-50 rounded-md">
+                  Last upload attempt: {uploadTimestamp}
+                </div>
+              )}
+              
               {isProcessed && (
                 <div className="text-green-600 text-sm flex items-center p-3 bg-green-50 rounded-md">
                   <CheckCircle className="mr-2 h-4 w-4" />
@@ -181,6 +191,7 @@ export default function BudgetInput() {
               <li>Revenue lines (Food Revenue, Beverage Revenue, etc.)</li>
               <li>Cost lines organized by category</li>
               <li>Clear headers identifying each month</li>
+              <li>Food Gross Profit and Beverage Gross Profit lines clearly labeled</li>
             </ul>
           </div>
         </CardContent>
