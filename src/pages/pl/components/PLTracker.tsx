@@ -27,6 +27,12 @@ export function PLTracker({
   const [showSettings, setShowSettings] = useState(false);
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
+  // Convert ProcessedBudgetItem to PLTrackerBudgetItem to ensure tracking_type is defined
+  const processedDataWithTrackingType = processedBudgetData.map(item => ({
+    ...item,
+    tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined
+  })) as PLTrackerBudgetItem[];
+  
   const {
     trackedBudgetData,
     setTrackedBudgetData,
@@ -36,7 +42,7 @@ export function PLTracker({
     updateManualActualAmount,
     updateDailyValues,
     saveForecastAmounts
-  } = useTrackerData(processedBudgetData);
+  } = useTrackerData(processedDataWithTrackingType);
   
   // Filter out header items with null budget values
   const filteredBudgetData = trackedBudgetData.filter(item => 

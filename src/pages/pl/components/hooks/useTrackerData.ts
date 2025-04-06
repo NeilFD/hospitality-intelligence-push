@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { fetchDailyValues } from '@/services/budget-service';
+import { fetchDailyValues, saveDailyValues } from '@/services/budget-service';
 
 export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
   const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
@@ -15,6 +15,10 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
   useEffect(() => {
     const initializeTrackerData = async () => {
       console.log("Initializing tracker data with", processedBudgetData.length, "items");
+      
+      if (processedBudgetData.length === 0) {
+        return;
+      }
       
       // Create a copy of the budget data with tracking information
       const trackedData: PLTrackerBudgetItem[] = await Promise.all(processedBudgetData.map(async (item) => {
@@ -43,6 +47,12 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
                   value: dbValue.value
                 };
               });
+              
+              // Calculate the total value from daily values
+              const totalValue = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
+              
+              // Update the actual_amount
+              item.actual_amount = totalValue;
             }
           } catch (error) {
             console.error(`Error fetching daily values for item ${item.name}:`, error);

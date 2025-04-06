@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
@@ -7,7 +8,8 @@ export interface ProcessedBudgetItem extends Omit<BudgetItem, 'budget'> {
   budget_amount: number;
   actual_amount?: number;
   forecast_amount?: number;
-  isAdminHeader?: boolean; // Add this to match the BudgetItem
+  isAdminHeader?: boolean; 
+  tracking_type?: string; // Add tracking_type as optional
 }
 
 export const useBudgetData = (year: number, month: number) => {
