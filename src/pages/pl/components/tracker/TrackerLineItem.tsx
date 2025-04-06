@@ -106,16 +106,16 @@ export function TrackerLineItem({
           <div className="flex items-center justify-end gap-2">
             <Button 
               variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0 flex items-center justify-center border-purple-400 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800"
+              size="icon"
+              className="h-9 w-9 rounded-full border-purple-500 bg-purple-50/70 text-purple-700 hover:bg-purple-100"
               onClick={handleOpenDailyInput}
             >
-              <CalendarDays className="h-4 w-4" />
+              <CalendarDays className="h-5 w-5" />
             </Button>
             <Input
               type="text"
               value={formatCurrency(item.manually_entered_actual !== undefined ? item.manually_entered_actual : 0)}
-              className="h-8 w-24 text-right cursor-pointer bg-gray-50"
+              className="h-9 w-24 text-right cursor-pointer bg-gray-50 border-purple-200 focus:border-purple-500"
               onClick={handleOpenDailyInput}
               readOnly
             />
