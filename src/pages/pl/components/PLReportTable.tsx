@@ -42,8 +42,10 @@ export function PLReportTable({
       item.name !== 'ADMINISTRATIVE EXPENSES' &&
       item.name !== 'Tavern' &&
       !item.name.toLowerCase().includes('operating profit') &&
-      item.name !== 'Food Gross Profit' &&
-      item.name !== 'Beverage Gross Profit'
+      // Removed this filter so Food & Beverage Gross Profit are included
+      // item.name !== 'Food Gross Profit' &&
+      // item.name !== 'Beverage Gross Profit'
+      true
     );
 
   // Determine if an item is an admin expense (not revenue, COS, etc.)
@@ -184,7 +186,7 @@ export function PLReportTable({
                   );
                 })}
                 
-                {/* Add Food Gross Profit row */}
+                {/* Add Food Gross Profit row if it exists */}
                 {foodGrossProfitItem && (
                   <TableRow className="bg-purple-50/50">
                     <TableCell>
@@ -213,7 +215,7 @@ export function PLReportTable({
                   </TableRow>
                 )}
                 
-                {/* Add Beverage Gross Profit row */}
+                {/* Add Beverage Gross Profit row if it exists */}
                 {beverageGrossProfitItem && (
                   <TableRow className="bg-purple-50/50">
                     <TableCell>
