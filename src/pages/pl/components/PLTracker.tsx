@@ -49,7 +49,7 @@ export function PLTracker({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const loadTrackingSettings = async (items: PLTrackerBudgetItem[]) => {
+  const loadTrackingSettings = async (items: PLTrackerBudgetItem[]): Promise<PLTrackerBudgetItem[]> => {
     try {
       const itemIds = items.filter(item => item.id).map(item => item.id);
       
