@@ -11,6 +11,7 @@ import { fetchBudgetItems } from '@/utils/budget-processor';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+
 const chartData = [{
   name: 'Budget',
   revenue: 73000,
@@ -27,12 +28,14 @@ const chartData = [{
   costs: 58500,
   ebitda: 16500
 }];
+
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
   const [currentMonthName, setCurrentMonthName] = useState<string>(new Date().toLocaleString('default', {
     month: 'long'
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
+
   const {
     data: budgetItems,
     isLoading: isLoadingBudget
@@ -41,6 +44,7 @@ export default function PLDashboard() {
     queryFn: () => fetchBudgetItems(currentYear, currentMonth),
     enabled: true
   });
+
   const processedBudgetData = useMemo(() => {
     if (!budgetItems) return [];
     const grouped = budgetItems.reduce((acc, item) => {
@@ -66,31 +70,39 @@ export default function PLDashboard() {
       forecast: item.forecast_amount || item.budget_amount
     }))]);
   }, [budgetItems]);
+
   const formatCurrency = (value: number): string => {
     return `£${value.toLocaleString('en-GB', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     })}`;
   };
+
   const formatPercentage = (value: number): string => {
     return `${value.toFixed(1)}%`;
   };
+
   const handleMonthChange = (value: string) => {
     setCurrentMonth(parseInt(value));
   };
+
   useEffect(() => {
     const monthName = new Date(currentYear, currentMonth - 1, 1).toLocaleString('default', {
       month: 'long'
     });
     setCurrentMonthName(monthName);
   }, [currentMonth, currentYear]);
+
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold text-purple-600 mb-6 text-center">P&L Tracker Dashboard</h1>
       
       <div className="flex justify-between items-center mb-6">
         <div className="flex gap-4">
-          <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
-            <SelectTrigger className="w-[180px]">
+          <Select 
+            value={currentMonth.toString()} 
+            onValueChange={handleMonthChange}
+          >
+            <SelectTrigger className="w-[180px] border-[#48495e]">
               <SelectValue>{currentMonthName}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -109,8 +121,11 @@ export default function PLDashboard() {
             </SelectContent>
           </Select>
           
-          <Select value={currentYear.toString()} onValueChange={value => setCurrentYear(parseInt(value))}>
-            <SelectTrigger className="w-[120px]">
+          <Select 
+            value={currentYear.toString()} 
+            onValueChange={value => setCurrentYear(parseInt(value))}
+          >
+            <SelectTrigger className="w-[120px] border-[#48495e]">
               <SelectValue>{currentYear}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -284,6 +299,7 @@ export default function PLDashboard() {
       </div>
     </div>;
 }
+
 const CustomTooltip = ({
   active,
   payload,
