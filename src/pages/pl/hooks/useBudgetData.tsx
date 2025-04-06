@@ -100,13 +100,6 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       forecast_amount: 0
     });
     
-    // Add Gross Profit items - make sure to include Food and Beverage-specific gross profits
-    const profitItems = filteredItems.filter(item => 
-      item.name.toLowerCase().includes('gross profit') || 
-      item.name.toLowerCase().includes('profit/(loss)') ||
-      item.category.toLowerCase().includes('profit')
-    );
-    
     // Calculate Food Gross Profit if it doesn't exist
     const foodRevenueItem = revenueItems.find(item => 
       item.name.toLowerCase().includes('food') && 
@@ -118,21 +111,26 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       (item.name.toLowerCase().includes('cost') || item.name.toLowerCase().includes('cos'))
     );
     
-    const hasFoodGrossProfit = profitItems.some(item => 
+    const hasFoodGrossProfit = filteredItems.some(item => 
       item.name.toLowerCase().includes('food') && 
       item.name.toLowerCase().includes('gross profit')
     );
     
+    let foodGrossProfitAmount = 0;
+    let foodGrossProfitActual = 0;
+    let foodGrossProfitForecast = 0;
+    let foodGPPercentage = 0;
+    
     // Add Food Gross Profit if food revenue and cost exist but gross profit doesn't
     if (foodRevenueItem && foodCostItem && !hasFoodGrossProfit) {
-      const foodGrossProfitAmount = foodRevenueItem.budget_amount - foodCostItem.budget_amount;
-      const foodGrossProfitActual = 
+      foodGrossProfitAmount = foodRevenueItem.budget_amount - foodCostItem.budget_amount;
+      foodGrossProfitActual = 
         (foodRevenueItem.actual_amount || 0) - (foodCostItem.actual_amount || 0);
-      const foodGrossProfitForecast = 
+      foodGrossProfitForecast = 
         (foodRevenueItem.forecast_amount || foodRevenueItem.budget_amount) - 
         (foodCostItem.forecast_amount || foodCostItem.budget_amount);
       
-      const foodGPPercentage = foodRevenueItem.budget_amount !== 0 ? 
+      foodGPPercentage = foodRevenueItem.budget_amount !== 0 ? 
         (foodGrossProfitAmount / foodRevenueItem.budget_amount) * 100 : 0;
       
       processedData.push({
@@ -146,6 +144,18 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
         isHeader: false,
         isGrossProfit: true
       });
+    } else if (hasFoodGrossProfit) {
+      // If the food gross profit already exists in the data, find it
+      const existingFoodGP = filteredItems.find(item => 
+        item.name.toLowerCase().includes('food') && 
+        item.name.toLowerCase().includes('gross profit')
+      );
+      
+      if (existingFoodGP) {
+        foodGrossProfitAmount = existingFoodGP.budget_amount;
+        foodGrossProfitActual = existingFoodGP.actual_amount || 0;
+        foodGrossProfitForecast = existingFoodGP.forecast_amount || existingFoodGP.budget_amount;
+      }
     }
     
     // Calculate and add Beverage Gross Profit if it doesn't exist
@@ -182,7 +192,7 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
     ) : null;
     
     // Check if beverage gross profit already exists
-    const hasBevGrossProfit = profitItems.some(item => 
+    const hasBevGrossProfit = filteredItems.some(item => 
       (item.name.toLowerCase().includes('beverage') || 
        item.name.toLowerCase().includes('drink') || 
        item.name.toLowerCase().includes('bar') ||
@@ -193,6 +203,11 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
     // Get the actual cost item to use
     const actualBevCostItem = bevCostItem || fallbackBevCostItem;
     
+    let bevGrossProfitAmount = 0;
+    let bevGrossProfitActual = 0;
+    let bevGrossProfitForecast = 0;
+    let bevGPPercentage = 0;
+    
     // Add Beverage Gross Profit if beverage revenue exists and no gross profit exists yet
     if (bevRevenueItem && !hasBevGrossProfit) {
       // Use cost if found, otherwise assume a default cost percentage (e.g., 25% of revenue)
@@ -200,21 +215,21 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
         ? actualBevCostItem.budget_amount 
         : bevRevenueItem.budget_amount * 0.25; // Default 25% cost if no cost item found
       
-      const bevGrossProfitAmount = bevRevenueItem.budget_amount - bevCostAmount;
+      bevGrossProfitAmount = bevRevenueItem.budget_amount - bevCostAmount;
       
       const bevCostActual = actualBevCostItem ? (actualBevCostItem.actual_amount || 0) : 
                                              bevRevenueItem.actual_amount ? bevRevenueItem.actual_amount * 0.25 : 0;
       
-      const bevGrossProfitActual = (bevRevenueItem.actual_amount || 0) - bevCostActual;
+      bevGrossProfitActual = (bevRevenueItem.actual_amount || 0) - bevCostActual;
       
       const bevCostForecast = actualBevCostItem 
         ? (actualBevCostItem.forecast_amount || actualBevCostItem.budget_amount)
         : (bevRevenueItem.forecast_amount || bevRevenueItem.budget_amount) * 0.25;
         
-      const bevGrossProfitForecast = 
+      bevGrossProfitForecast = 
         (bevRevenueItem.forecast_amount || bevRevenueItem.budget_amount) - bevCostForecast;
       
-      const bevGPPercentage = bevRevenueItem.budget_amount !== 0 ? 
+      bevGPPercentage = bevRevenueItem.budget_amount !== 0 ? 
         (bevGrossProfitAmount / bevRevenueItem.budget_amount) * 100 : 0;
       
       processedData.push({
@@ -228,31 +243,93 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
         isHeader: false,
         isGrossProfit: true
       });
-
-      console.log("Added Beverage Gross Profit with value:", bevGrossProfitAmount, "Revenue:", bevRevenueItem.budget_amount, "Cost:", bevCostAmount);
-      console.log("Beverage Revenue Item:", bevRevenueItem.name, "Beverage Cost Item:", actualBevCostItem ? actualBevCostItem.name : "Not found - using default cost");
+    } else if (hasBevGrossProfit) {
+      // If the beverage gross profit already exists in the data, find it
+      const existingBevGP = filteredItems.find(item => 
+        (item.name.toLowerCase().includes('beverage') || 
+         item.name.toLowerCase().includes('drink') || 
+         item.name.toLowerCase().includes('bar') ||
+         item.name.toLowerCase().includes('liquor')) && 
+        item.name.toLowerCase().includes('gross profit')
+      );
       
-      if (!actualBevCostItem) {
-        console.log("No beverage cost found - using default 25% cost calculation");
+      if (existingBevGP) {
+        bevGrossProfitAmount = existingBevGP.budget_amount;
+        bevGrossProfitActual = existingBevGP.actual_amount || 0;
+        bevGrossProfitForecast = existingBevGP.forecast_amount || existingBevGP.budget_amount;
       }
-    } else {
-      console.log("Beverage Gross Profit check:", { 
-        hasBevRevenue: !!bevRevenueItem, 
-        hasBevCost: !!bevCostItem, 
-        hasFallbackBevCost: !!fallbackBevCostItem,
-        alreadyHasGP: hasBevGrossProfit,
-        bevRevenue: bevRevenueItem ? bevRevenueItem.name : 'not found',
-        bevCostName: actualBevCostItem ? actualBevCostItem.name : 'not found'
-      });
-      
-      // Log all revenue items to help identify beverage revenue
-      console.log("All revenue items:", revenueItems.map(item => item.name));
-      
-      // Log all COGS items to help identify beverage costs
-      console.log("All COGS items:", cogsItems.map(item => item.name));
     }
     
-    // Add existing profit items
+    // Calculate the total gross profit as the sum of food and beverage GPs
+    const totalGrossProfitAmount = foodGrossProfitAmount + bevGrossProfitAmount;
+    const totalGrossProfitActual = foodGrossProfitActual + bevGrossProfitActual;
+    const totalGrossProfitForecast = foodGrossProfitForecast + bevGrossProfitForecast;
+    
+    // Get total revenue for percentage calculation
+    const totalRevenue = revenueItems.reduce((sum, item) => sum + item.budget_amount, 0);
+    const totalGPPercentage = totalRevenue !== 0 ? (totalGrossProfitAmount / totalRevenue) * 100 : 0;
+    
+    // Add existing profit items, but exclude any that we're calculating ourselves
+    const profitItems = filteredItems.filter(item => 
+      (item.name.toLowerCase().includes('gross profit') || 
+       item.name.toLowerCase().includes('profit/(loss)') ||
+       item.category.toLowerCase().includes('profit')) &&
+      !item.name.toLowerCase().includes('food gross profit') &&
+      !item.name.toLowerCase().includes('beverage gross profit') &&
+      !item.name.toLowerCase().includes('drink gross profit') &&
+      !item.name.toLowerCase().includes('bar gross profit')
+    );
+    
+    // Find if there's already a total gross profit item in the data (not food or beverage specific)
+    const existingTotalGP = profitItems.find(item => 
+      (item.name.toLowerCase() === 'gross profit' || 
+       item.name.toLowerCase() === 'profit/(loss)' ||
+       item.name.toLowerCase() === 'gross profit/(loss)') &&
+      !item.name.toLowerCase().includes('food') &&
+      !item.name.toLowerCase().includes('beverage') &&
+      !item.name.toLowerCase().includes('drink') &&
+      !item.name.toLowerCase().includes('bar')
+    );
+    
+    // Add or replace the total gross profit item
+    if (existingTotalGP) {
+      // Replace the existing total gross profit with our calculated sum
+      const updatedTotalGP = {
+        ...existingTotalGP,
+        budget_amount: totalGrossProfitAmount,
+        actual_amount: totalGrossProfitActual,
+        forecast_amount: totalGrossProfitForecast,
+        budget_percentage: totalGPPercentage,
+        isHeader: false,
+        isGrossProfit: true,
+        isHighlighted: true
+      };
+      
+      // Add the updated total gross profit to processed data
+      processedData.push(updatedTotalGP);
+      
+      // Remove the existing item from profitItems so we don't add it again below
+      const indexToRemove = profitItems.findIndex(item => item.id === existingTotalGP.id);
+      if (indexToRemove !== -1) {
+        profitItems.splice(indexToRemove, 1);
+      }
+    } else {
+      // Add a new total gross profit item
+      processedData.push({
+        id: 'total-gross-profit',
+        category: 'Gross Profit',
+        name: 'Total Gross Profit',
+        budget_amount: totalGrossProfitAmount,
+        actual_amount: totalGrossProfitActual,
+        forecast_amount: totalGrossProfitForecast,
+        budget_percentage: totalGPPercentage,
+        isHeader: false,
+        isGrossProfit: true,
+        isHighlighted: true
+      });
+    }
+    
+    // Add remaining profit items (if any)
     profitItems.forEach(item => {
       processedData.push({
         ...item,
