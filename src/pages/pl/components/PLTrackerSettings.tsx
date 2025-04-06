@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -189,8 +190,7 @@ export function PLTrackerSettings({
       item.name === 'Total Admin expenses' ||
       item.name === 'Operating profit' ||
       item.name === 'Gross Profit/(Loss)' ||
-      item.name.toLowerCase() === 'turnover' ||
-      item.name === 'Total';
+      item.name.toLowerCase() === 'turnover';
     
     return !isSummaryItem;
   };
@@ -307,3 +307,4 @@ export function PLTrackerSettings({
     </Card>
   );
 }
+

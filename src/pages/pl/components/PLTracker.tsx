@@ -304,9 +304,7 @@ export function PLTracker({
     return items.filter(item => item.name !== 'Total Admin expenses');
   };
 
-  const filteredBudgetData = trackedBudgetData.filter(item => 
-    item.name !== 'Total Admin expenses'
-  );
+  const filteredBudgetData = filterOutTotalAdminExpenses(trackedBudgetData);
 
   if (showSettings) {
     return (
