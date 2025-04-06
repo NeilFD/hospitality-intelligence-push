@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { DailyInputDrawer } from './DailyInputDrawer';
 import { CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { fetchDailyValues } from '@/services/budget-service';
 
 interface TrackerLineItemProps {
   item: PLTrackerBudgetItem;
@@ -138,6 +140,7 @@ export function TrackerLineItem({
           itemName={item.name}
           monthName={currentMonthName}
           year={currentYear}
+          budgetItemId={item.id}
         />
       )}
     </TableRow>

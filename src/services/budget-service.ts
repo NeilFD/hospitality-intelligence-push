@@ -9,6 +9,7 @@ export const fetchDailyValues = async (
   year: number
 ): Promise<{day: number, value: number | null}[]> => {
   try {
+    console.log(`Fetching daily values for budget item: ${budgetItemId}, month: ${month}, year: ${year}`);
     const { data, error } = await supabase
       .from('budget_item_daily_values')
       .select('day, value')
@@ -16,7 +17,12 @@ export const fetchDailyValues = async (
       .eq('month', month)
       .eq('year', year);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching daily values:', error);
+      throw error;
+    }
+    
+    console.log(`Retrieved ${data?.length || 0} daily values:`, data);
     return data || [];
   } catch (error) {
     console.error('Error fetching daily values:', error);
@@ -49,6 +55,8 @@ export const saveDailyValues = async (
       return true;
     }
     
+    console.log(`Saving ${filteredValues.length} daily values for budget item: ${budgetItemId}`);
+    
     // Upsert values to handle both inserts and updates
     const { error } = await supabase
       .from('budget_item_daily_values')
@@ -57,7 +65,12 @@ export const saveDailyValues = async (
         ignoreDuplicates: false
       });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error saving daily values:', error);
+      throw error;
+    }
+    
+    console.log('Daily values saved successfully');
     return true;
   } catch (error) {
     console.error('Error saving daily values:', error);

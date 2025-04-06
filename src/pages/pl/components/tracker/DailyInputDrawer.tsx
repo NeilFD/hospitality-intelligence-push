@@ -50,37 +50,42 @@ export function DailyInputDrawer({
         
         // If we have a budget item ID and it's a Supabase item, try to fetch stored values
         if (budgetItemId) {
-          const dbValues = await fetchDailyValues(budgetItemId, monthIndex + 1, year);
-          
-          // Create days array with loaded values
-          for (let i = 0; i < daysInMonth; i++) {
-            const currentDate = addDays(firstDayOfMonth, i);
-            const dayOfMonth = currentDate.getDate();
+          try {
+            console.log("Fetching daily values for item:", budgetItemId, "month:", monthIndex + 1, "year:", year);
+            const dbValues = await fetchDailyValues(budgetItemId, monthIndex + 1, year);
+            console.log("Fetched daily values:", dbValues);
             
-            // Check if we have a stored value for this day
-            const storedValue = dbValues.find(item => item.day === dayOfMonth);
-            
-            // Check if we have an in-memory initial value for this day
-            const savedDay = initialValues.find(day => day.date.getDate() === currentDate.getDate() && day.date.getMonth() === currentDate.getMonth());
-            
-            // Priority: database value > in-memory value > null
-            const value = storedValue !== undefined ? storedValue.value : (savedDay ? savedDay.value : null);
-            
-            days.push({
-              date: currentDate,
-              value: value
-            });
+            // Create days array with loaded values
+            for (let i = 0; i < daysInMonth; i++) {
+              const currentDate = addDays(firstDayOfMonth, i);
+              const dayOfMonth = currentDate.getDate();
+              
+              // Check if we have a stored value for this day
+              const storedValue = dbValues.find(item => item.day === dayOfMonth);
+              
+              // Check if we have an in-memory initial value for this day
+              const savedDay = initialValues.find(day => 
+                day.date instanceof Date && 
+                day.date.getDate() === currentDate.getDate() && 
+                day.date.getMonth() === currentDate.getMonth()
+              );
+              
+              // Priority: database value > in-memory value > null
+              const value = storedValue !== undefined ? storedValue.value : (savedDay ? savedDay.value : null);
+              
+              days.push({
+                date: currentDate,
+                value: value
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching daily values:", error);
+            // Fallback to initialValues if fetch fails
+            days = createDaysFromInitialValues(daysInMonth, firstDayOfMonth, initialValues);
           }
         } else {
           // If no budget item ID, just use in-memory values
-          for (let i = 0; i < daysInMonth; i++) {
-            const currentDate = addDays(firstDayOfMonth, i);
-            const savedDay = initialValues.find(day => day.date.getDate() === currentDate.getDate() && day.date.getMonth() === currentDate.getMonth());
-            days.push({
-              date: currentDate,
-              value: savedDay ? savedDay.value : null
-            });
-          }
+          days = createDaysFromInitialValues(daysInMonth, firstDayOfMonth, initialValues);
         }
         
         setDailyInputs(days);
@@ -94,6 +99,23 @@ export function DailyInputDrawer({
       loadData();
     }
   }, [isOpen, monthName, year, initialValues, budgetItemId]);
+
+  const createDaysFromInitialValues = (daysInMonth: number, firstDayOfMonth: Date, initialValues: DayInput[]): DayInput[] => {
+    const days: DayInput[] = [];
+    for (let i = 0; i < daysInMonth; i++) {
+      const currentDate = addDays(firstDayOfMonth, i);
+      const savedDay = initialValues.find(day => 
+        day.date instanceof Date && 
+        day.date.getDate() === currentDate.getDate() && 
+        day.date.getMonth() === currentDate.getMonth()
+      );
+      days.push({
+        date: currentDate,
+        value: savedDay ? savedDay.value : null
+      });
+    }
+    return days;
+  };
 
   const handleInputChange = (index: number, value: string) => {
     const numValue = value === '' ? null : parseFloat(value);
