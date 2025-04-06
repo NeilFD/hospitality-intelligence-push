@@ -54,13 +54,13 @@ export function PLTracker({
             ...item,
             tracking_type: (item.id && trackingTypeMap.has(item.id))
               ? trackingTypeMap.get(item.id)!
-              : 'Discrete'
+              : 'Pro-Rated' // Default to Pro-Rated for all items
           }));
         }
         
         return processedBudgetData.map(item => ({
           ...item,
-          tracking_type: 'Discrete'
+          tracking_type: 'Pro-Rated' // Default to Pro-Rated for all items
         }));
       });
       setHasUnsavedChanges(false);
@@ -144,10 +144,7 @@ export function PLTracker({
   };
 
   const calculateProRatedBudget = (item: PLTrackerBudgetItem): number => {
-    if (item.isHeader || item.tracking_type === 'Discrete') {
-      return item.budget_amount;
-    }
-    
+    // Always pro-rate all budget items based on the day of month
     return (item.budget_amount / daysInMonth) * dayOfMonth;
   };
   
@@ -410,10 +407,20 @@ export function PLTracker({
                 })}
                 
                 {(() => {
+                  // Calculate pro-rated admin expenses
                   const adminExpenses = calculateAdminExpenses();
-                  const proRatedAdminExpenses = adminExpenses; // Already pro-rated by the calculation function
-                  const adminActualAmount = 42875; // Note: This should ideally be calculated from actual data
-                  const adminVariance = adminActualAmount - proRatedAdminExpenses;
+                  const adminActualAmount = trackedBudgetData
+                    .filter(item => 
+                      !item.isHeader && 
+                      item.name.toLowerCase().includes('wages') || 
+                      item.name.toLowerCase().includes('salary') || 
+                      item.name.toLowerCase().includes('admin') ||
+                      item.name.toLowerCase().includes('marketing') ||
+                      item.name.toLowerCase().includes('hotel')
+                    )
+                    .reduce((sum, item) => sum + (item.actual_amount || 0), 0);
+                    
+                  const adminVariance = adminActualAmount - adminExpenses;
                   
                   return (
                     <TableRow className="bg-purple-100/50 text-[#48495e]">
@@ -421,13 +428,13 @@ export function PLTracker({
                         ADMIN EXPENSES
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(adminExpenses)}
+                        {formatCurrency(adminExpenses * daysInMonth / dayOfMonth)}
                       </TableCell>
                       <TableCell className="text-right">
                         {/* Percentage can be added here if needed */}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(proRatedAdminExpenses)}
+                        {formatCurrency(adminExpenses)}
                       </TableCell>
                       <TableCell className="text-right font-bold">
                         {formatCurrency(adminActualAmount)}
@@ -435,7 +442,9 @@ export function PLTracker({
                       <TableCell className="text-right">
                         {/* Forecast can be added here if needed */}
                       </TableCell>
-                      <TableCell className="text-right text-red-600 font-bold">
+                      <TableCell className="text-right font-bold" className={`text-right font-bold ${
+                        adminVariance > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
                         {formatCurrency(adminVariance)}
                       </TableCell>
                     </TableRow>
@@ -443,10 +452,26 @@ export function PLTracker({
                 })()}
                 
                 {(() => {
+                  // Calculate pro-rated operating profit
                   const operatingProfit = calculateOperatingProfit();
-                  const proRatedOperatingProfit = operatingProfit; // Already pro-rated
-                  const actualOperatingProfit = -7712; // Note: This should ideally be calculated from actual data
-                  const opVariance = actualOperatingProfit - proRatedOperatingProfit;
+                  
+                  // Get actual operating profit as the difference between gross profit actual and admin expenses actual
+                  const grossProfitActual = trackedBudgetData.find(item => 
+                    item.isHighlighted && item.name.toLowerCase().includes('gross profit'))?.actual_amount || 0;
+                  
+                  const adminActual = trackedBudgetData
+                    .filter(item => 
+                      !item.isHeader && 
+                      item.name.toLowerCase().includes('wages') || 
+                      item.name.toLowerCase().includes('salary') || 
+                      item.name.toLowerCase().includes('admin') ||
+                      item.name.toLowerCase().includes('marketing') ||
+                      item.name.toLowerCase().includes('hotel')
+                    )
+                    .reduce((sum, item) => sum + (item.actual_amount || 0), 0);
+                    
+                  const actualOperatingProfit = grossProfitActual - adminActual;
+                  const opVariance = actualOperatingProfit - operatingProfit;
                   
                   return (
                     <TableRow className="bg-[#8B5CF6]/90 text-white">
@@ -454,13 +479,13 @@ export function PLTracker({
                         Operating profit
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(operatingProfit)}
+                        {formatCurrency(operatingProfit * daysInMonth / dayOfMonth)}
                       </TableCell>
                       <TableCell className="text-right">
                         {/* Percentage can be added here if needed */}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(proRatedOperatingProfit)}
+                        {formatCurrency(operatingProfit)}
                       </TableCell>
                       <TableCell className="text-right font-bold">
                         {formatCurrency(actualOperatingProfit)}
@@ -482,7 +507,9 @@ export function PLTracker({
                           className="h-8 w-24 text-right"
                         />
                       </TableCell>
-                      <TableCell className="text-right text-green-200 font-bold">
+                      <TableCell className={`text-right font-bold ${
+                        opVariance > 0 ? 'text-green-200' : 'text-red-300'
+                      }`}>
                         {formatCurrency(opVariance)}
                       </TableCell>
                     </TableRow>
