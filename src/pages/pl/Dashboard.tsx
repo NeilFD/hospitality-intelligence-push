@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -149,23 +150,23 @@ export default function PLDashboard() {
           <CardHeader className="bg-white/40 border-b">
             <CardTitle className="flex items-center justify-between">
               <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Button variant="outline" size="sm" className="flex items-center gap-1 border-[#48495e] text-[#48495e] hover:bg-[#48495e] hover:text-white">
                 <Info size={14} /> Details
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <ChartContainer config={{
-            revenue: {
-              color: '#8B5CF6'
-            },
-            costs: {
-              color: '#F97316'
-            },
-            ebitda: {
-              color: '#10B981'
-            }
-          }}>
+              revenue: {
+                color: '#7E69AB' // Complementary purple
+              },
+              costs: {
+                color: '#A5C0E2' // Complementary blue
+              },
+              ebitda: {
+                color: '#6C7787' // Muted complementary color
+              }
+            }}>
               <BarChart data={chartData}>
                 <XAxis dataKey="name" />
                 <YAxis />
