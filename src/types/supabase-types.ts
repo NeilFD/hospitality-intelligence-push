@@ -174,6 +174,7 @@ export interface Database {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          module_type: ModuleType; // Added module_type field here
         };
         Insert: {
           id?: string;
@@ -183,6 +184,7 @@ export interface Database {
           cost_target?: number | null;
           staff_food_allowance?: number | null;
           created_by?: string | null;
+          module_type?: ModuleType; // Added module_type field here
         };
         Update: {
           id?: string;
@@ -192,6 +194,7 @@ export interface Database {
           cost_target?: number | null;
           staff_food_allowance?: number | null;
           created_by?: string | null;
+          module_type?: ModuleType; // Added module_type field here
         };
       };
       budget_items: {
