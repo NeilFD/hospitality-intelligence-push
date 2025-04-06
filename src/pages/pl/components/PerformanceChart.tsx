@@ -140,8 +140,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
               <CartesianGrid 
                 vertical={false} 
                 horizontal={true} 
-                stroke="#48495e" 
-                strokeWidth={1.5}
+                stroke="#F1F0FB"  // Soft Gray from the color palette 
+                strokeWidth={1}
                 strokeDasharray="0" 
               />
               <ReferenceLine 
