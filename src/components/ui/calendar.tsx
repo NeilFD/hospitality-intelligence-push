@@ -14,6 +14,11 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  // Prevent event propagation to avoid drawer interaction issues
+  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -56,6 +61,7 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
       }}
+      onMouseDown={handleMouseDown}
       {...props}
     />
   );

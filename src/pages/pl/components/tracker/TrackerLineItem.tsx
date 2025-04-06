@@ -82,6 +82,10 @@ export function TrackerLineItem({
     setIsDailyInputOpen(true);
   };
   
+  const handleCloseDailyInput = () => {
+    setIsDailyInputOpen(false);
+  };
+  
   const handleSaveDailyValues = (dailyValues: DayInput[]) => {
     updateDailyValues(index, dailyValues);
   };
@@ -134,7 +138,7 @@ export function TrackerLineItem({
       {isDailyInputOpen && (
         <DailyInputDrawer
           isOpen={isDailyInputOpen}
-          onClose={() => setIsDailyInputOpen(false)}
+          onClose={handleCloseDailyInput}
           onSave={handleSaveDailyValues}
           initialValues={item.daily_values || []}
           itemName={item.name}

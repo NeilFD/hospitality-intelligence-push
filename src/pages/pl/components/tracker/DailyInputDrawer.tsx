@@ -35,9 +35,23 @@ export function DailyInputDrawer({
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load data only when the drawer opens and when props change
+  // Control drawer state locally to prevent external state changes from causing flicker
+  useEffect(() => {
+    if (isOpen && !drawerOpen) {
+      setDrawerOpen(true);
+    } else if (!isOpen && drawerOpen) {
+      // Add a small delay before closing to prevent flickering
+      const timer = setTimeout(() => {
+        setDrawerOpen(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, drawerOpen]);
+  
+  // Load data only when the drawer opens
   useEffect(() => {
     if (isOpen) {
       const loadData = async () => {
@@ -163,14 +177,26 @@ export function DailyInputDrawer({
     
     // Also update in-memory state via callback
     onSave(dailyInputs);
+    // Close the drawer through the state, not directly
     onClose();
   };
 
   // Fixed drawer implementation to prevent flickering
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // Only call onClose when drawer is actually closed by user
+      // Don't set drawerOpen directly here to avoid flickering
+      onClose();
+    }
+  };
+
+  // Only render the drawer when it's actually supposed to be open
+  if (!drawerOpen) {
+    return null;
+  }
+
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => {
-      if (!open) onClose();
-    }}>
+    <Drawer open={true} onOpenChange={handleOpenChange}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader>
           <div className="flex items-center">
