@@ -148,8 +148,7 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       });
     }
     
-    // Calculate Beverage Gross Profit if it doesn't exist
-    // More specific beverage revenue identification - looking for terms specifically in the name
+    // Calculate and add Beverage Gross Profit if it doesn't exist
     const bevRevenueItem = revenueItems.find(item => 
       (item.name.toLowerCase().includes('beverage') || 
        item.name.toLowerCase().includes('drink') || 
@@ -160,15 +159,29 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
        item.name.toLowerCase().includes('turnover'))
     );
     
-    // More specific beverage cost identification
+    // Find beverage cost item - expand search terms to find relevant cost items
     const bevCostItem = cogsItems.find(item => 
       (item.name.toLowerCase().includes('beverage') || 
        item.name.toLowerCase().includes('drink') || 
-       item.name.toLowerCase().includes('bar') || 
-       item.name.toLowerCase().includes('liquor')) && 
-      (item.name.toLowerCase().includes('cost') || item.name.toLowerCase().includes('cos'))
+       item.name.toLowerCase().includes('bar') ||
+       item.name.toLowerCase().includes('liquor') ||
+       item.name.toLowerCase().includes('wine') ||
+       item.name.toLowerCase().includes('spirit')) && 
+      (item.name.toLowerCase().includes('cost') || 
+       item.name.toLowerCase().includes('cos') ||
+       item.name.toLowerCase().includes('cogs'))
     );
     
+    // Alternative search if specific cost item not found
+    const fallbackBevCostItem = !bevCostItem ? cogsItems.find(item =>
+      item.name.toLowerCase().includes('drink') ||
+      item.name.toLowerCase().includes('beverage cost') ||
+      item.name.toLowerCase() === 'beverage' ||
+      item.name.toLowerCase() === 'drinks' ||
+      item.name.toLowerCase() === 'liquor cost'
+    ) : null;
+    
+    // Check if beverage gross profit already exists
     const hasBevGrossProfit = profitItems.some(item => 
       (item.name.toLowerCase().includes('beverage') || 
        item.name.toLowerCase().includes('drink') || 
@@ -177,18 +190,29 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       item.name.toLowerCase().includes('gross profit')
     );
     
-    // Add Beverage Gross Profit if beverage revenue and cost items are found
+    // Get the actual cost item to use
+    const actualBevCostItem = bevCostItem || fallbackBevCostItem;
+    
+    // Add Beverage Gross Profit if beverage revenue exists and no gross profit exists yet
     if (bevRevenueItem && !hasBevGrossProfit) {
-      // If no cost item found, assume zero for now
-      const bevCostAmount = bevCostItem ? bevCostItem.budget_amount : 0;
+      // Use cost if found, otherwise assume a default cost percentage (e.g., 25% of revenue)
+      const bevCostAmount = actualBevCostItem 
+        ? actualBevCostItem.budget_amount 
+        : bevRevenueItem.budget_amount * 0.25; // Default 25% cost if no cost item found
+      
       const bevGrossProfitAmount = bevRevenueItem.budget_amount - bevCostAmount;
       
-      const bevGrossProfitActual = 
-        (bevRevenueItem.actual_amount || 0) - (bevCostItem ? (bevCostItem.actual_amount || 0) : 0);
+      const bevCostActual = actualBevCostItem ? (actualBevCostItem.actual_amount || 0) : 
+                                             bevRevenueItem.actual_amount ? bevRevenueItem.actual_amount * 0.25 : 0;
+      
+      const bevGrossProfitActual = (bevRevenueItem.actual_amount || 0) - bevCostActual;
+      
+      const bevCostForecast = actualBevCostItem 
+        ? (actualBevCostItem.forecast_amount || actualBevCostItem.budget_amount)
+        : (bevRevenueItem.forecast_amount || bevRevenueItem.budget_amount) * 0.25;
         
       const bevGrossProfitForecast = 
-        (bevRevenueItem.forecast_amount || bevRevenueItem.budget_amount) - 
-        (bevCostItem ? (bevCostItem.forecast_amount || bevCostAmount) : 0);
+        (bevRevenueItem.forecast_amount || bevRevenueItem.budget_amount) - bevCostForecast;
       
       const bevGPPercentage = bevRevenueItem.budget_amount !== 0 ? 
         (bevGrossProfitAmount / bevRevenueItem.budget_amount) * 100 : 0;
@@ -206,14 +230,19 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       });
 
       console.log("Added Beverage Gross Profit with value:", bevGrossProfitAmount, "Revenue:", bevRevenueItem.budget_amount, "Cost:", bevCostAmount);
-      console.log("Beverage Revenue Item:", bevRevenueItem.name, "Beverage Cost Item:", bevCostItem ? bevCostItem.name : "Not found");
+      console.log("Beverage Revenue Item:", bevRevenueItem.name, "Beverage Cost Item:", actualBevCostItem ? actualBevCostItem.name : "Not found - using default cost");
+      
+      if (!actualBevCostItem) {
+        console.log("No beverage cost found - using default 25% cost calculation");
+      }
     } else {
       console.log("Beverage Gross Profit check:", { 
         hasBevRevenue: !!bevRevenueItem, 
         hasBevCost: !!bevCostItem, 
+        hasFallbackBevCost: !!fallbackBevCostItem,
         alreadyHasGP: hasBevGrossProfit,
         bevRevenue: bevRevenueItem ? bevRevenueItem.name : 'not found',
-        bevCostName: bevCostItem ? bevCostItem.name : 'not found'
+        bevCostName: actualBevCostItem ? actualBevCostItem.name : 'not found'
       });
       
       // Log all revenue items to help identify beverage revenue
