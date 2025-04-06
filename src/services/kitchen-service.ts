@@ -133,12 +133,13 @@ export const upsertBudgetItemTracking = async (tracking: Omit<DbBudgetItemTracki
 };
 
 // Monthly Settings
-export const fetchMonthlySettings = async (year: number, month: number) => {
+export const fetchMonthlySettings = async (year: number, month: number, moduleType: ModuleType = 'food') => {
   const { data, error } = await supabase
     .from('monthly_settings')
     .select('*')
     .eq('year', year)
     .eq('month', month)
+    .eq('module_type', moduleType)
     .single();
   
   if (error && error.code !== 'PGRST116') {
@@ -153,7 +154,8 @@ export const fetchMonthlySettings = async (year: number, month: number) => {
       month,
       gp_target: 68.00,
       cost_target: 32.00,
-      staff_food_allowance: 0
+      staff_food_allowance: 0,
+      module_type: moduleType
     });
   }
   

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { getMonthName } from '@/lib/date-utils';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/kitchen-service';
+import { 
+  fetchSuppliers, createSupplier, updateSupplier, deleteSupplier, 
+  fetchMonthlySettings, createMonthlySettings, updateMonthlySettings
+} from '@/services/kitchen-service';
 import { useBudgetProcessor } from '@/utils/budget/hooks';
 
 interface InputSettingsProps {
@@ -33,8 +37,10 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const [suppliers, setSuppliers] = useState(monthRecord.suppliers);
   const [isLoading, setIsLoading] = useState(true);
   const [budgetFile, setBudgetFile] = useState<File | null>(null);
+  const [settingsId, setSettingsId] = useState<string | null>(null);
   const { processBudget } = useBudgetProcessor();
 
+  // Fetch suppliers from Supabase
   const { data: supabaseSuppliers, isLoading: isFetchingSuppliers } = useQuery({
     queryKey: ['suppliers', moduleType],
     queryFn: async () => {
@@ -43,6 +49,21 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
+  // Fetch monthly settings from Supabase
+  const { data: monthlySettings, isLoading: isFetchingSettings } = useQuery({
+    queryKey: ['monthly-settings', currentYear, currentMonth, moduleType],
+    queryFn: async () => {
+      try {
+        const settings = await fetchMonthlySettings(currentYear, currentMonth);
+        return settings;
+      } catch (error) {
+        console.error('Error fetching monthly settings:', error);
+        return null;
+      }
+    }
+  });
+
+  // Mutations for suppliers
   const createSupplierMutation = useMutation({
     mutationFn: createSupplier,
     onSuccess: () => {
@@ -76,6 +97,31 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
+  // Mutations for monthly settings
+  const createMonthlySettingsMutation = useMutation({
+    mutationFn: createMonthlySettings,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['monthly-settings', currentYear, currentMonth, moduleType] });
+      setSettingsId(data.id);
+      toast.success('Monthly settings saved to database');
+    },
+    onError: (error) => {
+      toast.error(`Error saving monthly settings: ${error.message}`);
+    }
+  });
+
+  const updateMonthlySettingsMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string, updates: any }) => updateMonthlySettings(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monthly-settings', currentYear, currentMonth, moduleType] });
+      toast.success('Monthly settings updated in database');
+    },
+    onError: (error) => {
+      toast.error(`Error updating monthly settings: ${error.message}`);
+    }
+  });
+
+  // Load suppliers from Supabase
   useEffect(() => {
     if (supabaseSuppliers && !isFetchingSuppliers) {
       const mappedSuppliers = supabaseSuppliers.map(s => ({
@@ -90,14 +136,35 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   }, [supabaseSuppliers, isFetchingSuppliers]);
 
+  // Load monthly settings from Supabase
   useEffect(() => {
-    setGpTarget(Math.round(monthRecord.gpTarget * 100));
-    setCostTarget(Math.round(monthRecord.costTarget * 100));
-    setStaffAllowance(monthRecord.staffFoodAllowance);
+    if (monthlySettings && !isFetchingSettings) {
+      setSettingsId(monthlySettings.id);
+      
+      // Convert from decimal to percentage for display
+      setGpTarget(Math.round(monthlySettings.gp_target * 100));
+      setCostTarget(Math.round(monthlySettings.cost_target * 100));
+      setStaffAllowance(monthlySettings.staff_food_allowance);
+    } else {
+      // If no settings found in Supabase, use local state
+      setGpTarget(Math.round(monthRecord.gpTarget * 100));
+      setCostTarget(Math.round(monthRecord.costTarget * 100));
+      setStaffAllowance(monthRecord.staffFoodAllowance);
+    }
+  }, [monthlySettings, isFetchingSettings, monthRecord]);
+
+  // Update local state when month changes
+  useEffect(() => {
+    if (!monthlySettings) {
+      setGpTarget(Math.round(monthRecord.gpTarget * 100));
+      setCostTarget(Math.round(monthRecord.costTarget * 100));
+      setStaffAllowance(monthRecord.staffFoodAllowance);
+    }
+    
     if (isLoading) {
       setSuppliers([...monthRecord.suppliers]);
     }
-  }, [monthRecord, isLoading]);
+  }, [monthRecord, isLoading, monthlySettings]);
 
   const handleMonthChange = (year: number, month: number) => {
     setCurrentYear(year);
@@ -147,7 +214,34 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const handleSaveSettings = async () => {
     const newGpTarget = gpTarget / 100;
     const newCostTarget = costTarget / 100;
+    const newStaffAllowance = parseFloat(staffAllowance.toString());
     
+    // Update Supabase settings
+    const settingsData = {
+      year: currentYear,
+      month: currentMonth,
+      gp_target: newGpTarget,
+      cost_target: newCostTarget,
+      staff_food_allowance: newStaffAllowance,
+      module_type: moduleType
+    };
+    
+    try {
+      if (settingsId) {
+        // Update existing settings
+        await updateMonthlySettingsMutation.mutateAsync({
+          id: settingsId,
+          updates: settingsData
+        });
+      } else {
+        // Create new settings
+        await createMonthlySettingsMutation.mutateAsync(settingsData);
+      }
+    } catch (error) {
+      console.error('Error saving settings to Supabase:', error);
+    }
+    
+    // Also update local state for immediate UI updates
     useStore.setState(state => {
       const updatedMonths = state.annualRecord.months.map(month => {
         if (month.year === currentYear && month.month === currentMonth) {
@@ -155,7 +249,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
             ...month,
             gpTarget: newGpTarget,
             costTarget: newCostTarget,
-            staffFoodAllowance: parseFloat(staffAllowance.toString()),
+            staffFoodAllowance: newStaffAllowance,
             suppliers: suppliers.filter(s => s.name.trim() !== '')
           };
         }
@@ -171,6 +265,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       };
     });
     
+    // Save suppliers to Supabase
     const validSuppliers = suppliers.filter(s => s.name.trim() !== '');
     
     for (const supplier of validSuppliers) {
