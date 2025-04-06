@@ -12,6 +12,7 @@ import { fetchBudgetItems } from '@/utils/budget-processor';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { formatCurrency, formatPercentage } from '@/lib/date-utils';
 
 const chartData = [{
   name: 'Budget',
@@ -36,6 +37,12 @@ export default function PLDashboard() {
     month: 'long'
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
+
+  const handleMonthChange = (value: string) => {
+    const month = parseInt(value);
+    setCurrentMonth(month);
+    setCurrentMonthName(new Date(2000, month - 1, 1).toLocaleString('default', { month: 'long' }));
+  };
 
   const {
     data: budgetItems,
