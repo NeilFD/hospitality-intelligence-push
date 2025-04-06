@@ -37,9 +37,6 @@ export function DailyInputDrawer({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   
-  // We're removing the drawerOpen state and relying on the parent component's isOpen prop
-  // This simplifies the component and avoids re-render loops
-  
   // Load data only when the drawer opens
   useEffect(() => {
     if (isOpen) {
@@ -173,6 +170,10 @@ export function DailyInputDrawer({
   const handleContentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
+  
+  const handleDrawerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
 
   if (!isOpen) {
     return null;
@@ -184,10 +185,13 @@ export function DailyInputDrawer({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={handleDrawerClick}
     >
       <DrawerContent 
         className="max-h-[90vh]"
         onClick={handleContentClick}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <DrawerHeader>
           <div className="flex items-center">
@@ -201,7 +205,7 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
                   <div className="font-medium text-tavern-blue">
@@ -215,6 +219,7 @@ export function DailyInputDrawer({
                     step="0.01" 
                     placeholder="0.00" 
                     className="w-full h-9 text-tavern-blue" 
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </div>)}
             </div>
@@ -227,9 +232,21 @@ export function DailyInputDrawer({
             <div className="font-bold text-lg text-purple-700">{formatCurrency(total)}</div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
             <Button 
-              onClick={handleSave} 
+              variant="outline" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }} 
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSave();
+              }} 
               className="flex-1 bg-purple-600 hover:bg-purple-700"
               disabled={isSaving}
             >

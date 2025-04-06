@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
@@ -78,6 +79,8 @@ export function TrackerLineItem({
   }
   
   const handleOpenDailyInput = (e: React.MouseEvent) => {
+    // Stop the event from propagating to prevent drawer issues
+    e.preventDefault();
     e.stopPropagation();
     setIsDailyInputOpen(true);
   };
@@ -112,6 +115,7 @@ export function TrackerLineItem({
             size="icon"
             onClick={handleOpenDailyInput}
             className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <CalendarDays className="h-5 w-5" />
           </Button>

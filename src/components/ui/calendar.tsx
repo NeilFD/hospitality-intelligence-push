@@ -14,6 +14,15 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  // Prevent event propagation to stop the flickering
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -56,6 +65,8 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
       }}
+      onMouseDown={handleMouseDown}
+      onClick={handleClick}
       {...props}
     />
   );
