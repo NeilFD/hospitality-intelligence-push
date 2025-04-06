@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/types/supabase-types';
@@ -63,7 +62,6 @@ export const useBudgetData = (year: number, month: number) => {
     fetchBudgetData();
   }, [year, month]);
   
-  // Process raw budget data into the format needed for display
   const processBudgetData = (budgetData: BudgetItem[]): ProcessedBudgetItem[] => {
     // Group items by category for easier processing
     const categorizedItems = budgetData.reduce((acc, item) => {
@@ -197,15 +195,6 @@ export const useBudgetData = (year: number, month: number) => {
         });
       });
       
-      // Add Total Administrative Expenses
-      result.push({
-        category: 'Summary',
-        name: 'Total Administrative Expenses',
-        budget_amount: totalAdminBudget,
-        actual_amount: totalAdminActual,
-        forecast_amount: totalAdminForecast,
-        isHighlighted: true
-      });
       
       // Calculate Operating Profit
       const grossProfitItem = result.find(item => item.name === 'Gross Profit');
