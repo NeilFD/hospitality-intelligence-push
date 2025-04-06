@@ -6,32 +6,26 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/date-utils';
 import { CalendarDays } from 'lucide-react';
-
-interface DayInput {
-  date: Date;
-  value: number | null;
-}
+import { DayInput } from '../types/PLTrackerTypes';
 
 interface DailyInputDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (total: number) => void;
-  initialTotal: number;
+  onSave: (dailyValues: DayInput[]) => void;
+  initialValues: DayInput[];
   itemName: string;
   monthName: string;
   year: number;
-  savedDailyValues: DayInput[];
 }
 
 export function DailyInputDrawer({
   isOpen,
   onClose,
   onSave,
-  initialTotal,
+  initialValues,
   itemName,
   monthName,
-  year,
-  savedDailyValues
+  year
 }: DailyInputDrawerProps) {
   const [dailyInputs, setDailyInputs] = useState<DayInput[]>([]);
   const [total, setTotal] = useState(0);
@@ -54,7 +48,7 @@ export function DailyInputDrawer({
         const currentDate = addDays(firstDayOfMonth, i);
         
         // Check if we have a saved value for this day
-        const savedDay = savedDailyValues.find(
+        const savedDay = initialValues.find(
           day => day.date.getDate() === currentDate.getDate() && 
                 day.date.getMonth() === currentDate.getMonth()
         );
@@ -68,13 +62,13 @@ export function DailyInputDrawer({
       setDailyInputs(days);
       
       // Calculate initial total from saved values
-      const calculatedTotal = savedDailyValues.reduce((sum, day) => 
+      const calculatedTotal = days.reduce((sum, day) => 
         sum + (day.value || 0), 0
       );
       
-      setTotal(calculatedTotal || initialTotal);
+      setTotal(calculatedTotal);
     }
-  }, [isOpen, monthName, year, savedDailyValues, initialTotal]);
+  }, [isOpen, monthName, year, initialValues]);
   
   const handleInputChange = (index: number, value: string) => {
     const numValue = value === '' ? null : parseFloat(value);
@@ -91,7 +85,7 @@ export function DailyInputDrawer({
   };
   
   const handleSave = () => {
-    onSave(total);
+    onSave(dailyInputs);
     onClose();
   };
   
@@ -133,7 +127,7 @@ export function DailyInputDrawer({
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-            <Button onClick={handleSave} className="flex-1 bg-purple-600 hover:bg-purple-700">Save Total</Button>
+            <Button onClick={handleSave} className="flex-1 bg-purple-600 hover:bg-purple-700">Save Values</Button>
           </div>
         </DrawerFooter>
       </DrawerContent>

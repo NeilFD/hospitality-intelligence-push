@@ -2,7 +2,7 @@
 import React from 'react';
 import { TableBody, Table, TableStickyHeader } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
-import { PLTrackerBudgetItem } from '../types/PLTrackerTypes';
+import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { TrackerTableHeader } from './TrackerTableHeader';
 import { TrackerLineItem } from './TrackerLineItem';
 import { TrackerSummaryRows } from './TrackerSummaryRows';
@@ -16,6 +16,7 @@ interface PLTrackerContentProps {
   daysInMonth: number;
   updateManualActualAmount: (index: number, value: string) => void;
   updateForecastAmount: (index: number, value: string) => void;
+  updateDailyValues: (index: number, dailyValues: DayInput[]) => void;
   getActualAmount: (item: PLTrackerBudgetItem) => number;
   calculateProRatedBudget: (item: PLTrackerBudgetItem) => number;
   currentMonthName: string;
@@ -30,6 +31,7 @@ export function PLTrackerContent({
   daysInMonth,
   updateManualActualAmount,
   updateForecastAmount,
+  updateDailyValues,
   getActualAmount,
   calculateProRatedBudget,
   currentMonthName,
@@ -78,6 +80,7 @@ export function PLTrackerContent({
                 variance={variance}
                 updateManualActualAmount={updateManualActualAmount}
                 updateForecastAmount={updateForecastAmount}
+                updateDailyValues={updateDailyValues}
                 currentMonthName={currentMonthName}
                 currentYear={currentYear}
               />

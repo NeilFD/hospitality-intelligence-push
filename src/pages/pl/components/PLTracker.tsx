@@ -34,6 +34,7 @@ export function PLTracker({
     isSaving,
     updateForecastAmount,
     updateManualActualAmount,
+    updateDailyValues,
     saveForecastAmounts
   } = useTrackerData(processedBudgetData);
   
@@ -102,6 +103,7 @@ export function PLTracker({
             daysInMonth={daysInMonth}
             updateManualActualAmount={updateManualActualAmount}
             updateForecastAmount={updateForecastAmount}
+            updateDailyValues={updateDailyValues}
             getActualAmount={getActualAmount}
             calculateProRatedBudget={calculateProRatedBudget}
             currentMonthName={currentMonthName}

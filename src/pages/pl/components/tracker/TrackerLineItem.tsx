@@ -16,6 +16,7 @@ interface TrackerLineItemProps {
   variance: number;
   updateManualActualAmount: (index: number, value: string) => void;
   updateForecastAmount: (index: number, value: string) => void;
+  updateDailyValues: (index: number, dailyValues: DayInput[]) => void;
   currentMonthName: string;
   currentYear: number;
 }
@@ -28,6 +29,7 @@ export function TrackerLineItem({
   variance,
   updateManualActualAmount,
   updateForecastAmount,
+  updateDailyValues,
   currentMonthName,
   currentYear
 }: TrackerLineItemProps) {
@@ -82,8 +84,8 @@ export function TrackerLineItem({
     }
   };
   
-  const handleSaveDailyTotal = (total: number) => {
-    updateManualActualAmount(index, total.toString());
+  const handleSaveDailyValues = (dailyValues: DayInput[]) => {
+    updateDailyValues(index, dailyValues);
   };
   
   return (
@@ -145,12 +147,11 @@ export function TrackerLineItem({
         <DailyInputDrawer
           isOpen={isDailyInputOpen}
           onClose={() => setIsDailyInputOpen(false)}
-          onSave={handleSaveDailyTotal}
-          initialTotal={item.manually_entered_actual || 0}
+          onSave={handleSaveDailyValues}
+          initialValues={item.daily_values || []}
           itemName={item.name}
           monthName={currentMonthName}
           year={currentYear}
-          savedDailyValues={item.daily_values || []}
         />
       )}
     </TableRow>
