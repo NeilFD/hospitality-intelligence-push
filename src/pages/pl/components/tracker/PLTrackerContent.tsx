@@ -18,6 +18,8 @@ interface PLTrackerContentProps {
   updateForecastAmount: (index: number, value: string) => void;
   getActualAmount: (item: PLTrackerBudgetItem) => number;
   calculateProRatedBudget: (item: PLTrackerBudgetItem) => number;
+  currentMonthName: string;
+  currentYear: number;
 }
 
 export function PLTrackerContent({
@@ -29,7 +31,9 @@ export function PLTrackerContent({
   updateManualActualAmount,
   updateForecastAmount,
   getActualAmount,
-  calculateProRatedBudget
+  calculateProRatedBudget,
+  currentMonthName,
+  currentYear
 }: PLTrackerContentProps) {
   if (isLoading) {
     return (
@@ -74,6 +78,8 @@ export function PLTrackerContent({
                 variance={variance}
                 updateManualActualAmount={updateManualActualAmount}
                 updateForecastAmount={updateForecastAmount}
+                currentMonthName={currentMonthName}
+                currentYear={currentYear}
               />
             );
           })}

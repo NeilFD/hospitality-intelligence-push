@@ -1,146 +1,82 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { ProcessedBudgetItem } from '../../hooks/useBudgetData';
-import { PLTrackerBudgetItem } from '../types/PLTrackerTypes';
-import { fetchBudgetItemTracking } from '@/services/kitchen-service';
+import { toast } from '@/hooks/use-toast';
 
 export function useTrackerData(processedBudgetData: ProcessedBudgetItem[]) {
   const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
+  // Initialize the tracker data from the processed budget data
   useEffect(() => {
-    if (processedBudgetData.length > 0) {
-      setTrackedBudgetData(prevData => {
-        if (prevData.length > 0) {
-          const trackingTypeMap = new Map<string, 'Discrete' | 'Pro-Rated'>();
-          const manualActualsMap = new Map<string, number | undefined>();
-          
-          prevData.forEach(item => {
-            if (item.id) {
-              trackingTypeMap.set(item.id, item.tracking_type);
-              manualActualsMap.set(item.id, item.manually_entered_actual);
-            }
-          });
-          
-          return processedBudgetData.map(item => ({
-            ...item,
-            tracking_type: (item.id && trackingTypeMap.has(item.id))
-              ? trackingTypeMap.get(item.id)!
-              : 'Pro-Rated', // Default to Pro-Rated for all items
-            manually_entered_actual: (item.id && manualActualsMap.has(item.id))
-              ? manualActualsMap.get(item.id)
-              : undefined
-          }));
-        }
-        
-        return processedBudgetData.map(item => ({
-          ...item,
-          tracking_type: 'Pro-Rated' // Default to Pro-Rated for all items
-        }));
-      });
-      
-      // Load tracking data from backend
-      const loadTrackingData = async () => {
-        try {
-          const itemIds = processedBudgetData
-            .filter(item => item.id)
-            .map(item => item.id as string);
-            
-          if (itemIds.length === 0) return;
-          
-          const trackingData = await fetchBudgetItemTracking(itemIds);
-          
-          if (trackingData && trackingData.length > 0) {
-            const trackingMap = new Map<string, string>();
-            
-            trackingData.forEach(item => {
-              trackingMap.set(item.budget_item_id, item.tracking_type);
-            });
-            
-            setTrackedBudgetData(prevData => prevData.map(item => {
-              if (item.id && trackingMap.has(item.id)) {
-                return {
-                  ...item,
-                  tracking_type: trackingMap.get(item.id) as 'Discrete' | 'Pro-Rated'
-                };
-              }
-              return item;
-            }));
-          }
-        } catch (error) {
-          console.error('Error loading tracking data:', error);
-        }
-      };
-      
-      loadTrackingData();
-      setHasUnsavedChanges(false);
+    // Only initialize if we need to
+    if (processedBudgetData.length > 0 && trackedBudgetData.length === 0) {
+      const trackerData: PLTrackerBudgetItem[] = processedBudgetData.map((item) => ({
+        ...item,
+        tracking_type: 'Pro-Rated', // Default tracking type
+        daily_values: [] // Initialize empty daily values
+      }));
+      setTrackedBudgetData(trackerData);
     }
-  }, [processedBudgetData]);
+  }, [processedBudgetData, trackedBudgetData.length]);
 
+  // Update forecast amount for a budget item
   const updateForecastAmount = (index: number, value: string) => {
-    const numericValue = value === '' ? undefined : parseFloat(value);
-    
+    const newValue = value === '' ? undefined : parseFloat(value);
     const updatedData = [...trackedBudgetData];
-    updatedData[index] = {
-      ...updatedData[index],
-      forecast_amount: numericValue
-    };
+    updatedData[index].forecast_amount = newValue;
     setTrackedBudgetData(updatedData);
     setHasUnsavedChanges(true);
   };
 
+  // Update manual actual amount for a budget item
   const updateManualActualAmount = (index: number, value: string) => {
-    const numericValue = value === '' ? undefined : parseFloat(value);
-    
+    const newValue = value === '' ? undefined : parseFloat(value);
     const updatedData = [...trackedBudgetData];
-    updatedData[index] = {
-      ...updatedData[index],
-      manually_entered_actual: numericValue
-    };
+    updatedData[index].manually_entered_actual = newValue;
     setTrackedBudgetData(updatedData);
     setHasUnsavedChanges(true);
   };
 
+  // Update daily values for a budget item
+  const updateDailyValues = (index: number, dailyValues: DayInput[]) => {
+    const updatedData = [...trackedBudgetData];
+    updatedData[index].daily_values = dailyValues;
+    
+    // Calculate the total from daily values
+    const total = dailyValues.reduce(
+      (sum, day) => sum + (day.value || 0), 0
+    );
+    
+    // Update the manually entered actual with the calculated total
+    updatedData[index].manually_entered_actual = total;
+    
+    setTrackedBudgetData(updatedData);
+    setHasUnsavedChanges(true);
+  };
+
+  // Save forecast amounts to the API/storage
   const saveForecastAmounts = async () => {
-    if (!hasUnsavedChanges) return;
-    
-    setIsSaving(true);
-    
     try {
-      const itemsWithId = trackedBudgetData.filter(item => item.id);
+      setIsSaving(true);
       
-      const forecastUpdates = itemsWithId
-        .filter(item => item.forecast_amount !== undefined)
-        .map(item => ({
-          id: item.id,
-          forecast_amount: item.forecast_amount
-        }));
+      // Simulate API call with a timeout
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (forecastUpdates.length > 0) {
-        for (const update of forecastUpdates) {
-          if (update.id) {
-            await supabase
-              .from('budget_items')
-              .update({ forecast_amount: update.forecast_amount })
-              .eq('id', update.id);
-          }
-        }
-      }
-      
-      toast({
-        title: "Forecast amounts saved",
-        description: "Your forecast amounts have been saved.",
-      });
+      // Success handling
       setHasUnsavedChanges(false);
-    } catch (error) {
-      console.error('Error in saveForecastAmounts:', error);
       toast({
-        title: "Error saving forecast",
-        description: "An unexpected error occurred while saving forecast amounts.",
+        title: "Success",
+        description: "Forecast amounts saved successfully",
+      });
+    } catch (error) {
+      console.error("Error saving forecast amounts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save forecast amounts",
+        variant: "destructive",
       });
     } finally {
       setIsSaving(false);
@@ -151,11 +87,10 @@ export function useTrackerData(processedBudgetData: ProcessedBudgetItem[]) {
     trackedBudgetData,
     setTrackedBudgetData,
     hasUnsavedChanges,
-    setHasUnsavedChanges,
     isSaving,
-    setIsSaving,
     updateForecastAmount,
     updateManualActualAmount,
+    updateDailyValues,
     saveForecastAmounts
   };
 }

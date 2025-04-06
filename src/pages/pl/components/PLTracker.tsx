@@ -104,6 +104,8 @@ export function PLTracker({
             updateForecastAmount={updateForecastAmount}
             getActualAmount={getActualAmount}
             calculateProRatedBudget={calculateProRatedBudget}
+            currentMonthName={currentMonthName}
+            currentYear={currentYear}
           />
         </>
       )}
