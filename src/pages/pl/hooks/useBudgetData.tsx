@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
@@ -330,6 +329,12 @@ export const useBudgetData = (year: number, month: number) => {
       });
     }
     
+    result = result.filter(item => 
+      item.name.toLowerCase() !== 'total' && 
+      !item.name.toLowerCase().includes('total') &&
+      item.name !== 'Gross Profit'
+    );
+
     return result;
   };
   
