@@ -218,6 +218,45 @@ export function PLTracker({
     return calculateProRatedBudget(item);
   };
 
+  const calculateAdminExpenses = () => {
+    const wagesIndex = trackedBudgetData.findIndex(item => 
+      item.name.toLowerCase().includes('wages and salaries'));
+      
+    const hotelTravelIndex = trackedBudgetData.findIndex(item => 
+      item.name.toLowerCase().includes('hotel and travel'));
+    
+    if (wagesIndex !== -1 && hotelTravelIndex !== -1 && wagesIndex < hotelTravelIndex) {
+      return trackedBudgetData.slice(wagesIndex, hotelTravelIndex + 1)
+        .reduce((sum, item) => {
+          if (!item.isHeader && item.budget_amount) {
+            return sum + (item.budget_amount || 0);
+          }
+          return sum;
+        }, 0);
+    }
+    
+    return trackedBudgetData
+      .filter(item => 
+        !item.isHeader && 
+        !item.name.toLowerCase().includes('turnover') && 
+        !item.name.toLowerCase().includes('revenue') &&
+        !item.name.toLowerCase().includes('cost of sales') &&
+        !item.name.toLowerCase().includes('gross profit')
+      )
+      .reduce((sum, item) => sum + (item.budget_amount || 0), 0);
+  };
+  
+  const calculateOperatingProfit = (adminExpenses: number) => {
+    const grossProfitItem = trackedBudgetData.find(item => 
+      item.isHighlighted && item.name.toLowerCase().includes('gross profit'));
+    
+    if (grossProfitItem) {
+      return grossProfitItem.budget_amount - adminExpenses;
+    }
+    
+    return 0;
+  };
+
   if (showSettings) {
     return (
       <PLTrackerSettings
@@ -360,67 +399,83 @@ export function PLTracker({
                   );
                 })}
                 
-                <TableRow className="bg-purple-100/50 text-[#48495e]">
-                  <TableCell className="font-bold">
-                    ADMIN EXPENSES
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(42875)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {/* Percentage can be added here if needed */}
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(42875)}
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(42875)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {/* Forecast can be added here if needed */}
-                  </TableCell>
-                  <TableCell className="text-right text-red-600 font-bold">
-                    {formatCurrency(0)}
-                  </TableCell>
-                </TableRow>
+                {(() => {
+                  const adminExpenses = calculateAdminExpenses();
+                  const adminActualAmount = 42875;
+                  const adminVariance = adminActualAmount - adminExpenses;
+                  
+                  return (
+                    <TableRow className="bg-purple-100/50 text-[#48495e]">
+                      <TableCell className="font-bold">
+                        ADMIN EXPENSES
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(42875)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {/* Percentage can be added here if needed */}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(42875)}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(42875)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {/* Forecast can be added here if needed */}
+                      </TableCell>
+                      <TableCell className="text-right text-red-600 font-bold">
+                        {formatCurrency(adminVariance)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })()}
                 
-                <TableRow className="bg-[#8B5CF6]/90 text-white">
-                  <TableCell className="font-bold">
-                    Operating profit
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(-7712)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {/* Percentage can be added here if needed */}
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(-7712)}
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(-7712)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount !== undefined 
-                        ? trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount 
-                        : ''}
-                      onChange={(e) => {
-                        const opIndex = trackedBudgetData.findIndex(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted);
-                        if (opIndex >= 0) {
-                          updateForecastAmount(opIndex, e.target.value);
-                        }
-                      }}
-                      className="h-8 w-24 text-right"
-                    />
-                  </TableCell>
-                  <TableCell className="text-right text-green-200 font-bold">
-                    {formatCurrency(0)}
-                  </TableCell>
-                </TableRow>
+                {(() => {
+                  const adminExpenses = 42875;
+                  const operatingProfit = -7712;
+                  const opVariance = 0;
+                  
+                  return (
+                    <TableRow className="bg-[#8B5CF6]/90 text-white">
+                      <TableCell className="font-bold">
+                        Operating profit
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(operatingProfit)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {/* Percentage can be added here if needed */}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(operatingProfit)}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(operatingProfit)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount !== undefined 
+                            ? trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount 
+                            : ''}
+                          onChange={(e) => {
+                            const opIndex = trackedBudgetData.findIndex(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted);
+                            if (opIndex >= 0) {
+                              updateForecastAmount(opIndex, e.target.value);
+                            }
+                          }}
+                          className="h-8 w-24 text-right"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right text-green-200 font-bold">
+                        {formatCurrency(opVariance)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })()}
               </TableBody>
             </Table>
           </div>
