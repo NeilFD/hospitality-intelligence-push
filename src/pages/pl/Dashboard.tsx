@@ -131,9 +131,9 @@ export default function PLDashboard() {
             <CardTitle className="flex items-center justify-between">
               <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
               <Button 
-                variant="outline" 
+                variant="default" 
                 size="sm" 
-                className="flex items-center gap-1 border-tavern-blue text-tavern-blue hover:bg-tavern-green hover:text-white"
+                className="flex items-center gap-2 bg-tavern-blue hover:bg-tavern-green text-white"
               >
                 <Info size={14} /> Details
               </Button>
