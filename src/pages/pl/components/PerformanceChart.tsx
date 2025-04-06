@@ -146,8 +146,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
               />
               <ReferenceLine 
                 y={0} 
-                stroke="#48495e" 
-                strokeWidth={2} 
+                stroke="#9F9EA1" // Softer silver gray line
+                strokeWidth={1} 
                 isFront={true} 
               />
               <XAxis 
