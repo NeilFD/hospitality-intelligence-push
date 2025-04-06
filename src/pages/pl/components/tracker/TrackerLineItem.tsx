@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -103,24 +104,21 @@ export function TrackerLineItem({
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
         {item.tracking_type === 'Discrete' ? (
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-2">
             <Button 
-              variant="ghost" 
+              variant="outline"
               size="sm"
-              className="h-8 px-2 mr-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100"
+              className="h-8 w-8 p-0 flex items-center justify-center border-purple-400 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800"
               onClick={handleOpenDailyInput}
             >
               <CalendarDays className="h-4 w-4" />
             </Button>
             <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
-              onChange={(e) => updateManualActualAmount(index, e.target.value)}
+              type="text"
+              value={formatCurrency(item.manually_entered_actual !== undefined ? item.manually_entered_actual : 0)}
+              className="h-8 w-24 text-right cursor-pointer bg-gray-50"
               onClick={handleOpenDailyInput}
               readOnly
-              className="h-8 w-24 text-right ml-auto cursor-pointer"
             />
           </div>
         ) : (
