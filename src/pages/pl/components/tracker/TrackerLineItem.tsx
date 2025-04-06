@@ -113,15 +113,21 @@ export function TrackerLineItem({
             >
               <CalendarDays className="h-4 w-4" />
             </Button>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
-              onChange={(e) => updateManualActualAmount(index, e.target.value)}
+            <div 
+              className="relative cursor-pointer"
               onClick={handleOpenDailyInput}
-              className="h-8 w-24 text-right ml-auto cursor-pointer"
-            />
+            >
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
+                onChange={(e) => updateManualActualAmount(index, e.target.value)}
+                className="h-8 w-24 text-right ml-auto cursor-pointer"
+                readOnly
+              />
+              <div className="absolute inset-0" onClick={handleOpenDailyInput} />
+            </div>
           </div>
         ) : (
           formatCurrency(actualAmount)
