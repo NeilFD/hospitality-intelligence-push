@@ -48,28 +48,130 @@ export default function PLDashboard() {
 
   const processedBudgetData = useMemo(() => {
     if (!budgetItems) return [];
-    const grouped = budgetItems.reduce((acc, item) => {
-      const category = acc.find(c => c.category === item.category);
-      if (category) {
-        category.items.push(item);
-      } else {
-        acc.push({
-          category: item.category,
-          items: [item]
-        });
-      }
-      return acc;
-    }, [] as Array<{
-      category: string;
-      items: typeof budgetItems;
-    }>);
-    return grouped.flatMap(group => [...group.items.map(item => ({
-      category: group.category,
-      name: item.name,
-      budget: item.budget_amount,
-      actual: item.actual_amount || 0,
-      forecast: item.forecast_amount || item.budget_amount
-    }))]);
+    
+    // Filter out the "Tavern" row
+    const filteredItems = budgetItems.filter(item => 
+      item.name.toLowerCase() !== 'tavern' 
+    );
+    
+    // Add section headers
+    const sections = [
+      { id: 'revenue-header', category: 'Revenue', name: 'REVENUE', isHeader: true },
+      { id: 'costs-header', category: 'COGS', name: 'COST OF GOODS SOLD', isHeader: true },
+      { id: 'gross-profit-header', category: 'Profit', name: 'GROSS PROFIT', isHeader: true },
+      { id: 'expenses-header', category: 'Expenses', name: 'OPERATING EXPENSES', isHeader: true }
+    ];
+    
+    // Process the data to add headers and organize by category
+    const processedData = [];
+    
+    // Add Revenue section header and items
+    processedData.push({
+      id: 'revenue-header',
+      category: 'Header',
+      name: 'REVENUE',
+      isHeader: true,
+      budget: 0,
+      actual: 0,
+      forecast: 0
+    });
+    
+    // Add revenue items (Food Revenue, Beverage Revenue, Total Revenue)
+    const revenueItems = filteredItems.filter(item => 
+      item.name.toLowerCase().includes('revenue') || 
+      item.name.toLowerCase().includes('turnover') ||
+      item.category.toLowerCase().includes('revenue')
+    );
+    
+    revenueItems.forEach(item => {
+      processedData.push({
+        ...item,
+        isHeader: false
+      });
+    });
+    
+    // Add COGS section header and items
+    processedData.push({
+      id: 'cogs-header',
+      category: 'Header',
+      name: 'COST OF GOODS SOLD (COGS)',
+      isHeader: true,
+      budget: 0,
+      actual: 0,
+      forecast: 0
+    });
+    
+    // Add COGS items
+    const cogsItems = filteredItems.filter(item => 
+      item.name.toLowerCase().includes('cos') || 
+      item.name.toLowerCase().includes('cost of sales') ||
+      item.category.toLowerCase().includes('cost of sales')
+    );
+    
+    cogsItems.forEach(item => {
+      processedData.push({
+        ...item,
+        isHeader: false
+      });
+    });
+    
+    // Add Gross Profit section header and items
+    processedData.push({
+      id: 'profit-header',
+      category: 'Header',
+      name: 'GROSS PROFIT',
+      isHeader: true,
+      budget: 0, 
+      actual: 0,
+      forecast: 0
+    });
+    
+    // Add Gross Profit items
+    const profitItems = filteredItems.filter(item => 
+      item.name.toLowerCase().includes('gross profit') || 
+      item.name.toLowerCase().includes('profit/(loss)') ||
+      item.category.toLowerCase().includes('profit')
+    );
+    
+    profitItems.forEach(item => {
+      processedData.push({
+        ...item,
+        isHeader: false
+      });
+    });
+    
+    // Add Expenses section header
+    processedData.push({
+      id: 'expenses-header',
+      category: 'Header',
+      name: 'OPERATING EXPENSES',
+      isHeader: true,
+      budget: 0,
+      actual: 0,
+      forecast: 0
+    });
+    
+    // Add expense items (everything else)
+    const expenseItems = filteredItems.filter(item => 
+      !item.name.toLowerCase().includes('revenue') && 
+      !item.name.toLowerCase().includes('turnover') &&
+      !item.name.toLowerCase().includes('cos') && 
+      !item.name.toLowerCase().includes('cost of sales') &&
+      !item.name.toLowerCase().includes('gross profit') &&
+      !item.name.toLowerCase().includes('profit/(loss)') &&
+      !item.category.toLowerCase().includes('revenue') &&
+      !item.category.toLowerCase().includes('cost of sales') &&
+      !item.category.toLowerCase().includes('profit')
+    );
+    
+    expenseItems.forEach(item => {
+      processedData.push({
+        ...item,
+        isHeader: false
+      });
+    });
+    
+    return processedData;
   }, [budgetItems]);
 
   const formatCurrency = (value: number): string => {
@@ -203,25 +305,52 @@ export default function PLDashboard() {
                   </TableHeader>
                   <TableBody>
                     {processedBudgetData.map((item, i) => {
-                  const variance = item.actual - item.budget;
-                  const variancePercent = item.budget !== 0 ? variance / item.budget * 100 : 0;
-                  const forecastVariance = item.forecast - item.budget;
-                  const forecastVariancePercent = item.budget !== 0 ? forecastVariance / item.budget * 100 : 0;
-                  const isPositiveVariance = item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit') ? variance > 0 : variance < 0;
-                  const isPositiveForecast = item.category === 'Food Revenue' || item.category === 'Beverage Revenue' || item.category.includes('Profit') ? forecastVariance > 0 : forecastVariance < 0;
-                  return <TableRow key={i} className={item.name.includes('Total') || item.name.includes('Gross Profit') ? 'font-semibold' : ''}>
+                      if (item.isHeader) {
+                        return (
+                          <TableRow key={i} className="bg-[#48495e]/90">
+                            <TableCell 
+                              colSpan={6} 
+                              className="text-white font-bold text-sm tracking-wider py-2"
+                            >
+                              {item.name}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+                      
+                      const variance = item.actual_amount - item.budget_amount;
+                      const variancePercent = item.budget_amount !== 0 ? variance / item.budget_amount * 100 : 0;
+                      const forecastVariance = item.forecast_amount - item.budget_amount;
+                      const forecastVariancePercent = item.budget_amount !== 0 ? forecastVariance / item.budget_amount * 100 : 0;
+                      
+                      // Determine if variance is positive (good) based on category
+                      const isPositiveVariance = item.category === 'Food Revenue' || 
+                                               item.category === 'Beverage Revenue' || 
+                                               item.category.includes('Profit') ? variance > 0 : variance < 0;
+                      
+                      const isPositiveForecast = item.category === 'Food Revenue' || 
+                                               item.category === 'Beverage Revenue' || 
+                                               item.category.includes('Profit') ? forecastVariance > 0 : forecastVariance < 0;
+                      
+                      // Special styling for gross profit rows
+                      const isGrossProfit = item.name.toLowerCase().includes('gross profit') || 
+                                           item.name.toLowerCase().includes('profit/(loss)');
+                      
+                      return (
+                        <TableRow key={i} className={isGrossProfit ? 'font-semibold bg-purple-50/50' : ''}>
                           <TableCell>{item.name}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.budget)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.actual)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.budget_amount)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.actual_amount || 0)}</TableCell>
                           <TableCell className={`text-right ${isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
                             {variance > 0 ? '+' : ''}{formatCurrency(variance)} ({formatPercentage(variancePercent)})
                           </TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.forecast)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.forecast_amount || item.budget_amount)}</TableCell>
                           <TableCell className={`text-right ${isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
                             {forecastVariance > 0 ? '+' : ''}{formatCurrency(forecastVariance)} ({formatPercentage(forecastVariancePercent)})
                           </TableCell>
-                        </TableRow>;
-                })}
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div> : <div className="text-center p-8 text-gray-500">
@@ -326,3 +455,4 @@ const CustomTooltip = ({
   }
   return null;
 };
+
