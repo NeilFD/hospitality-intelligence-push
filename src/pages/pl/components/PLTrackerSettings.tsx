@@ -186,6 +186,10 @@ export function PLTrackerSettings({
       item.isGrossProfit || 
       item.isOperatingProfit || 
       item.name.toLowerCase().includes('turnover') || 
+      item.name === 'Cost of Sales' ||
+      item.name === 'Total Admin expenses' ||
+      item.name === 'Operating profit' ||
+      item.name === 'Gross Profit/(Loss)' ||
       item.name.toLowerCase() === 'turnover';
     
     return !isSummaryItem;
@@ -303,3 +307,4 @@ export function PLTrackerSettings({
     </Card>
   );
 }
+
