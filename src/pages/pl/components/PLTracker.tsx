@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -8,6 +7,7 @@ import { formatCurrency } from '@/lib/date-utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/kitchen-service';
 import { supabase } from '@/lib/supabase';
 
 interface BudgetItem {
@@ -48,36 +48,20 @@ export function PLTracker({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  // Load tracking type settings from database
   const loadTrackingSettings = async (items: BudgetItem[]) => {
     try {
-      // Get all tracking settings for the items that have IDs
       const itemIds = items.filter(item => item.id).map(item => item.id);
       
       if (itemIds.length === 0) return items;
       
-      const { data: trackingData, error } = await supabase
-        .from('budget_item_tracking')
-        .select('*')
-        .in('budget_item_id', itemIds as string[]);
+      const trackingData = await fetchBudgetItemTracking(itemIds as string[]);
       
-      if (error) {
-        console.error('Error loading tracking settings:', error);
-        toast({
-          title: "Error loading settings",
-          description: "Could not load tracking settings from the database.",
-        });
-        return items;
-      }
-      
-      // Map the tracking settings to the items
       if (trackingData && trackingData.length > 0) {
         const trackingMap = trackingData.reduce((acc, curr) => {
           acc[curr.budget_item_id] = curr.tracking_type;
           return acc;
         }, {} as Record<string, string>);
         
-        // Apply the tracking settings to the items
         return items.map(item => {
           if (item.id && trackingMap[item.id]) {
             return {
@@ -96,16 +80,12 @@ export function PLTracker({
     }
   };
 
-  // Initialize tracking types for each budget item
   useEffect(() => {
     if (processedBudgetData.length > 0) {
       const initializeData = async () => {
-        // Set default tracking types based on item category
         let trackedData = processedBudgetData.map(item => {
-          // Set default tracking types based on item category
           let trackingType: 'Discrete' | 'Pro-Rated' = 'Discrete';
           
-          // Examples of items that might be pro-rated
           const proRatedCategories = [
             'Marketing',
             'Bank charges',
@@ -142,7 +122,6 @@ export function PLTracker({
           };
         });
         
-        // Load tracking settings from the database
         trackedData = await loadTrackingSettings(trackedData);
         
         setTrackedBudgetData(trackedData);
@@ -153,20 +132,16 @@ export function PLTracker({
     }
   }, [processedBudgetData]);
 
-  // Calculate days in month and current day of month
   useEffect(() => {
     const year = currentYear;
     const month = new Date(`${currentMonthName} 1, ${currentYear}`).getMonth();
     
-    // Calculate days in the month
     const lastDay = new Date(year, month + 1, 0).getDate();
     setDaysInMonth(lastDay);
     
-    // Get current day of month
     setDayOfMonth(Math.min(currentDate.getDate(), lastDay));
   }, [currentMonthName, currentYear, currentDate]);
 
-  // Update tracking type for a specific item
   const updateTrackingType = (index: number, value: 'Discrete' | 'Pro-Rated') => {
     const updatedData = [...trackedBudgetData];
     updatedData[index] = {
@@ -177,7 +152,6 @@ export function PLTracker({
     setHasUnsavedChanges(true);
   };
 
-  // Update forecast amount for a specific item
   const updateForecastAmount = (index: number, value: string) => {
     const numericValue = value === '' ? undefined : parseFloat(value);
     
@@ -190,40 +164,25 @@ export function PLTracker({
     setHasUnsavedChanges(true);
   };
 
-  // Save tracking type settings and forecast amounts to the database
   const saveTrackingSettings = async () => {
     if (!hasUnsavedChanges) return;
     
     setIsSaving(true);
     
     try {
-      // Filter the items that have IDs
       const itemsWithId = trackedBudgetData.filter(item => item.id);
       
-      // Prepare upsert operations for tracking settings
-      const trackingUpserts = itemsWithId.map(item => ({
-        budget_item_id: item.id as string,
-        tracking_type: item.tracking_type || 'Discrete'
-      }));
+      const trackingUpserts = itemsWithId
+        .filter(item => item.tracking_type)
+        .map(item => ({
+          budget_item_id: item.id as string,
+          tracking_type: item.tracking_type as 'Discrete' | 'Pro-Rated'
+        }));
       
       if (trackingUpserts.length > 0) {
-        // Upsert tracking settings
-        const { error: trackingError } = await supabase
-          .from('budget_item_tracking')
-          .upsert(trackingUpserts, { onConflict: 'budget_item_id' });
-        
-        if (trackingError) {
-          console.error('Error saving tracking settings:', trackingError);
-          toast({
-            title: "Error saving settings",
-            description: "Could not save tracking settings to the database.",
-          });
-          setIsSaving(false);
-          return;
-        }
+        await upsertBudgetItemTracking(trackingUpserts);
       }
       
-      // Prepare updates for forecast amounts
       const forecastUpdates = itemsWithId
         .filter(item => item.forecast_amount !== undefined)
         .map(item => ({
@@ -232,16 +191,12 @@ export function PLTracker({
         }));
       
       if (forecastUpdates.length > 0) {
-        // Process each update individually to avoid conflicts
         for (const update of forecastUpdates) {
-          const { error: forecastError } = await supabase
-            .from('budget_items')
-            .update({ forecast_amount: update.forecast_amount })
-            .eq('id', update.id);
-          
-          if (forecastError) {
-            console.error(`Error updating forecast for item ${update.id}:`, forecastError);
-            // Continue with other updates even if one fails
+          if (update.id) {
+            await supabase
+              .from('budget_items')
+              .update({ forecast_amount: update.forecast_amount })
+              .eq('id', update.id);
           }
         }
       }
@@ -262,24 +217,19 @@ export function PLTracker({
     }
   };
 
-  // Calculate pro-rated budget amount for a standard item
   const calculateProRatedBudget = (item: BudgetItem): number => {
     if (item.isHeader || item.tracking_type === 'Discrete') {
       return item.budget_amount;
     }
     
-    // For pro-rated items, calculate based on the day of month
     return (item.budget_amount / daysInMonth) * dayOfMonth;
   };
   
-  // Calculate pro-rated budget for summary items (Turnover, Cost of Sales, etc.)
   const calculateSummaryProRatedBudget = (item: BudgetItem): number => {
-    // For header items or gross profit/operating profit calculations, we need to recalculate
     if (item.isHeader) {
       return 0;
     }
     
-    // Check if this is a summary item that needs special handling
     const isTurnover = item.name.toLowerCase().includes('turnover') || 
                        item.name.toLowerCase() === 'turnover';
                        
@@ -291,14 +241,11 @@ export function PLTracker({
     
     const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
     
-    // If not a special summary item, use the standard calculation
     if (!isTurnover && !isCostOfSales && !isTotalAdmin && !isOperatingProfit) {
       return calculateProRatedBudget(item);
     }
     
-    // For summary items, recalculate based on their components
     if (isTurnover) {
-      // Sum all revenue items that have been pro-rated
       return trackedBudgetData
         .filter(i => i.name.toLowerCase().includes('revenue') || 
                    (i.name.toLowerCase().includes('turnover') && i.name.toLowerCase() !== 'turnover'))
@@ -306,7 +253,6 @@ export function PLTracker({
     }
     
     if (isCostOfSales) {
-      // Sum all cost of sales items that have been pro-rated
       return trackedBudgetData
         .filter(i => (i.name.toLowerCase().includes('cost of sales') || 
                      i.name.toLowerCase().includes('cos') ||
@@ -316,7 +262,6 @@ export function PLTracker({
     }
     
     if (isTotalAdmin) {
-      // Sum all expense items that have been pro-rated
       return trackedBudgetData
         .filter(i => !i.name.toLowerCase().includes('revenue') && 
                    !i.name.toLowerCase().includes('turnover') &&
@@ -330,8 +275,6 @@ export function PLTracker({
     }
     
     if (isOperatingProfit) {
-      // Calculate operating profit as gross profit minus total admin
-      // First get the gross profit
       const grossProfitItem = trackedBudgetData.find(i => 
         i.name.toLowerCase() === 'total gross profit' || 
         (i.name.toLowerCase() === 'gross profit' && 
@@ -339,12 +282,10 @@ export function PLTracker({
          !i.name.toLowerCase().includes('beverage'))
       );
       
-      // Then get the total admin
       const totalAdminItem = trackedBudgetData.find(i => 
         i.name.toLowerCase().includes('total admin')
       );
       
-      // Calculate the operating profit
       const grossProfit = grossProfitItem 
         ? calculateSummaryProRatedBudget(grossProfitItem)
         : 0;
@@ -359,9 +300,7 @@ export function PLTracker({
     return calculateProRatedBudget(item);
   };
 
-  // Helper function to determine if an item should display the tracking type dropdown
   const shouldShowTrackingType = (item: BudgetItem): boolean => {
-    // Don't show tracking type for headers, summary items, and special rows
     const isSummaryItem = 
       item.isHeader || 
       item.isGrossProfit || 
@@ -421,7 +360,6 @@ export function PLTracker({
               <TableBody>
                 {trackedBudgetData.map((item, i) => {
                   if (item.isHeader) {
-                    // Handle section headers
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
                         <TableCell 
@@ -434,32 +372,25 @@ export function PLTracker({
                     );
                   }
                   
-                  // Use appropriate calculation method based on whether this is a summary item
                   const proRatedBudget = calculateSummaryProRatedBudget(item);
                   const actualAmount = item.actual_amount || 0;
                   const variance = actualAmount - proRatedBudget;
                   
-                  // Determine if this is a percentage row (e.g., GP percentage)
                   const isPercentageRow = item.name.includes('%) ');
                   
-                  // Determine styles based on item type
                   let rowClassName = '';
                   let fontClass = '';
                   
-                  // Special styling for gross profit rows
                   const isGrossProfit = item.isGrossProfit || 
                                       item.name.toLowerCase().includes('gross profit') || 
                                       item.name.toLowerCase().includes('profit/(loss)');
                   
-                  // Special handling for Operating Profit row
                   const isOperatingProfit = item.isOperatingProfit || 
                                           item.name.toLowerCase().includes('operating profit');
                   
-                  // Add special handling for Turnover row
                   const isTurnover = item.name.toLowerCase().includes('turnover') || 
                                     item.name.toLowerCase() === 'turnover';
                   
-                  // Apply styling based on row type
                   if (item.isHighlighted && !item.name.toLowerCase().includes('total admin')) {
                     rowClassName = 'bg-[#48495e]/90 text-white font-bold';
                   } else if ((isGrossProfit && !item.name.toLowerCase().includes('food gross profit') && !item.name.toLowerCase().includes('beverage gross profit')) || isTurnover) {
