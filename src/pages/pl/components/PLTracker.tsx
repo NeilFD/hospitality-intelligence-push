@@ -300,7 +300,11 @@ export function PLTracker({
     return items;
   };
 
-  const filteredBudgetData = filterDuplicateTotalAdminRows(trackedBudgetData);
+  const filterOutTotalAdminExpenses = (items: PLTrackerBudgetItem[]) => {
+    return items.filter(item => item.name !== 'Total Admin expenses');
+  };
+
+  const filteredBudgetData = filterOutTotalAdminExpenses(trackedBudgetData);
 
   if (showSettings) {
     return (
