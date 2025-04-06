@@ -199,6 +199,15 @@ export const useBudgetData = (year: number, month: number) => {
           isGrossProfit: true
         });
         
+        // Get beverage revenue and COS values
+        const beverageRevenueItems = revenueItems.filter(item => 
+          item.name.toLowerCase().includes('beverage') || 
+          item.name.toLowerCase().includes('drink') ||
+          item.name.toLowerCase().includes('bar'));
+        const beverageTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
+        const beverageActualTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
+        const beverageForecastTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
+        
         // Calculate Beverage Gross Profit
         const beverageGrossProfit = beverageTurnover - beverageCOS;
         const beverageGpPercentage = beverageTurnover > 0 ? beverageGrossProfit / beverageTurnover : 0;
