@@ -74,7 +74,6 @@ export function PLTracker({
   }, [processedBudgetData]);
 
   useEffect(() => {
-    // Set yesterday's date
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
@@ -86,7 +85,6 @@ export function PLTracker({
     const lastDay = new Date(year, month + 1, 0).getDate();
     setDaysInMonth(lastDay);
     
-    // Set day of month to yesterday's date
     setDayOfMonth(Math.min(yesterday.getDate(), lastDay));
   }, [currentMonthName, currentYear]);
 
@@ -162,7 +160,6 @@ export function PLTracker({
   };
 
   const calculateProRatedBudget = (item: PLTrackerBudgetItem): number => {
-    // Always pro-rate all budget items based on the day of month
     return (item.budget_amount / daysInMonth) * dayOfMonth;
   };
   
@@ -284,13 +281,26 @@ export function PLTracker({
 
   const getActualAmount = (item: PLTrackerBudgetItem): number => {
     if (item.tracking_type === 'Pro-Rated') {
-      // For Pro-Rated items, use the pro-rated budget as the actual amount
       return calculateProRatedBudget(item);
     } else {
-      // For Discrete items, use the manually entered actual or 0
       return item.manually_entered_actual || 0;
     }
   };
+
+  const filterDuplicateTotalAdminRows = (items: PLTrackerBudgetItem[]) => {
+    const totalAdminIndices = items
+      .map((item, index) => item.name === 'Total Admin expenses' ? index : -1)
+      .filter(index => index !== -1);
+    
+    if (totalAdminIndices.length > 1) {
+      const indicesToRemove = totalAdminIndices.slice(0, totalAdminIndices.length - 1);
+      return items.filter((_, index) => !indicesToRemove.includes(index));
+    }
+    
+    return items;
+  };
+
+  const filteredBudgetData = filterDuplicateTotalAdminRows(trackedBudgetData);
 
   if (showSettings) {
     return (
@@ -340,7 +350,7 @@ export function PLTracker({
           <div className="flex justify-center items-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
           </div>
-        ) : trackedBudgetData.length > 0 ? (
+        ) : filteredBudgetData.length > 0 ? (
           <div className="overflow-x-auto max-h-[calc(100vh-200px)]">
             <Table>
               <TableStickyHeader>
@@ -355,7 +365,7 @@ export function PLTracker({
                 </TableRow>
               </TableStickyHeader>
               <TableBody>
-                {trackedBudgetData.map((item, i) => {
+                {filteredBudgetData.map((item, i) => {
                   if (item.isHeader) {
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
@@ -446,7 +456,6 @@ export function PLTracker({
                 })}
                 
                 {(() => {
-                  // Calculate pro-rated admin expenses
                   const adminExpenses = calculateAdminExpenses();
                   const adminActualAmount = trackedBudgetData
                     .filter(item => 
@@ -491,10 +500,8 @@ export function PLTracker({
                 })()}
                 
                 {(() => {
-                  // Calculate pro-rated operating profit
                   const operatingProfit = calculateOperatingProfit();
                   
-                  // Get actual operating profit as the difference between gross profit actual and admin expenses actual
                   const grossProfitItem = trackedBudgetData.find(item => 
                     item.isHighlighted && item.name.toLowerCase().includes('gross profit'));
                     
