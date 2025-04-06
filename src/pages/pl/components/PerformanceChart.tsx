@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip, CartesianGrid } from 'recharts';
 import { Info, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 
@@ -138,7 +138,10 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
           }}>
             <BarChart data={chartData}>
               <XAxis dataKey="name" />
-              <YAxis />
+              <YAxis 
+                axisLine={{ stroke: '#48495e', strokeWidth: 2 }} 
+                tickLine={{ stroke: '#48495e' }}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
               {visibleSeries.revenue && <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />}
