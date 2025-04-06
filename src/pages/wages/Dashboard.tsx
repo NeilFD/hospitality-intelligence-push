@@ -1,14 +1,59 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WagesMonthlyTable } from '@/components/wages/WagesMonthlyTable';
 import { WagesAnalytics } from '@/components/wages/WagesAnalytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MonthYearSelector } from '@/components/wages/MonthYearSelector';
+import { getCurrentUser } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export default function WagesDashboard() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        setIsAuthenticated(!!user);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        toast.error('Authentication error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="container py-6 max-w-[1400px] mx-auto">
+        <div className="flex justify-center items-center py-20">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container py-6 max-w-[1400px] mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Please log in to access the Wages Tracker Dashboard.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-6 max-w-[1400px] mx-auto">
@@ -82,4 +127,3 @@ export default function WagesDashboard() {
     </div>
   );
 }
-

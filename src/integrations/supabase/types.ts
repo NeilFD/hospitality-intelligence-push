@@ -351,6 +351,54 @@ export type Database = {
         }
         Relationships: []
       }
+      wages: {
+        Row: {
+          bev_revenue: number
+          created_at: string
+          created_by: string | null
+          date: string
+          day: number
+          day_of_week: string
+          foh_wages: number
+          food_revenue: number
+          id: string
+          kitchen_wages: number
+          month: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          bev_revenue?: number
+          created_at?: string
+          created_by?: string | null
+          date: string
+          day: number
+          day_of_week: string
+          foh_wages?: number
+          food_revenue?: number
+          id?: string
+          kitchen_wages?: number
+          month: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          bev_revenue?: number
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          day?: number
+          day_of_week?: string
+          foh_wages?: number
+          food_revenue?: number
+          id?: string
+          kitchen_wages?: number
+          month?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       weekly_records: {
         Row: {
           created_at: string

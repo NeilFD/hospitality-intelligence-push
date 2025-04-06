@@ -1,17 +1,36 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useWagesStore } from './WagesStore';
 import { formatCurrency } from '@/lib/date-utils';
 import { ChartBar, DollarSign, Percent } from 'lucide-react';
+import { toast } from "sonner";
 
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [monthlyData, setMonthlyData] = React.useState<any[]>([]);
   const { getMonthlyWages, setDailyWages } = useWagesStore();
-  const monthlyData = getMonthlyWages(year, month);
   
-  const handleInputChange = (day: number, field: string, value: string) => {
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getMonthlyWages(year, month);
+        setMonthlyData(data);
+      } catch (error) {
+        console.error('Error fetching wages data:', error);
+        toast.error('Failed to load wages data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [year, month, getMonthlyWages]);
+  
+  const handleInputChange = async (day: number, field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     const currentDay = monthlyData.find(d => d.day === day) || {
       year, month, day,
@@ -28,7 +47,19 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       [field]: numValue
     };
     
-    setDailyWages(updatedDay);
+    try {
+      await setDailyWages(updatedDay);
+      
+      // Update local state
+      setMonthlyData(prevData => 
+        prevData.map(d => d.day === day ? updatedDay : d)
+      );
+      
+      toast.success('Data saved successfully');
+    } catch (error) {
+      console.error('Failed to save data:', error);
+      toast.error('Failed to save data');
+    }
   };
   
   // Calculate monthly totals
@@ -75,108 +106,112 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         </CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[120px]">Day & Date</TableHead>
-              <TableHead>FOH Wages</TableHead>
-              <TableHead>Kitchen Wages</TableHead>
-              <TableHead>Total Wages</TableHead>
-              <TableHead>Food Revenue</TableHead>
-              <TableHead>Bev Revenue</TableHead>
-              <TableHead>Total Revenue</TableHead>
-              <TableHead>FOH %</TableHead>
-              <TableHead>Kitchen %</TableHead>
-              <TableHead>Total %</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {monthlyData.map((day) => {
-              const totalDailyWages = day.fohWages + day.kitchenWages;
-              const totalDailyRevenue = day.foodRevenue + day.bevRevenue;
-              const fohPercent = totalDailyRevenue > 0 
-                ? (day.fohWages / totalDailyRevenue) * 100 
-                : 0;
-              const kitchenPercent = totalDailyRevenue > 0 
-                ? (day.kitchenWages / totalDailyRevenue) * 100 
-                : 0;
-              const totalPercent = totalDailyRevenue > 0 
-                ? (totalDailyWages / totalDailyRevenue) * 100 
-                : 0;
-              
-              return (
-                <TableRow key={day.day}>
-                  <TableCell className="font-medium">
-                    {day.dayOfWeek.substring(0, 3)}, {day.day}
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={day.fohWages || ''}
-                      onChange={(e) => handleInputChange(day.day, 'fohWages', e.target.value)}
-                      className="w-24"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={day.kitchenWages || ''}
-                      onChange={(e) => handleInputChange(day.day, 'kitchenWages', e.target.value)}
-                      className="w-24"
-                    />
-                  </TableCell>
-                  <TableCell>{formatCurrency(totalDailyWages)}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={day.foodRevenue || ''}
-                      onChange={(e) => handleInputChange(day.day, 'foodRevenue', e.target.value)}
-                      className="w-24"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={day.bevRevenue || ''}
-                      onChange={(e) => handleInputChange(day.day, 'bevRevenue', e.target.value)}
-                      className="w-24"
-                    />
-                  </TableCell>
-                  <TableCell>{formatCurrency(totalDailyRevenue)}</TableCell>
-                  <TableCell className={fohPercent > 20 ? 'text-red-500' : 'text-green-500'}>
-                    {fohPercent.toFixed(1)}%
-                  </TableCell>
-                  <TableCell className={kitchenPercent > 20 ? 'text-red-500' : 'text-green-500'}>
-                    {kitchenPercent.toFixed(1)}%
-                  </TableCell>
-                  <TableCell className={totalPercent > 35 ? 'text-red-500' : 'text-green-500'}>
-                    {totalPercent.toFixed(1)}%
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-          <TableFooter>
-            <TableRow className="font-medium">
-              <TableCell>MONTHLY TOTAL</TableCell>
-              <TableCell>{formatCurrency(totals.fohWages)}</TableCell>
-              <TableCell>{formatCurrency(totals.kitchenWages)}</TableCell>
-              <TableCell>{formatCurrency(totals.totalWages)}</TableCell>
-              <TableCell>{formatCurrency(totals.foodRevenue)}</TableCell>
-              <TableCell>{formatCurrency(totals.bevRevenue)}</TableCell>
-              <TableCell>{formatCurrency(totals.totalRevenue)}</TableCell>
-              <TableCell className={fohPercentage > 20 ? 'text-red-500' : 'text-green-500'}>
-                {fohPercentage.toFixed(1)}%
-              </TableCell>
-              <TableCell className={kitchenPercentage > 20 ? 'text-red-500' : 'text-green-500'}>
-                {kitchenPercentage.toFixed(1)}%
-              </TableCell>
-              <TableCell className={totalPercentage > 35 ? 'text-red-500' : 'text-green-500'}>
-                {totalPercentage.toFixed(1)}%
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
+        {isLoading ? (
+          <div className="py-10 text-center text-muted-foreground">Loading wages data...</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[120px]">Day & Date</TableHead>
+                <TableHead>FOH Wages</TableHead>
+                <TableHead>Kitchen Wages</TableHead>
+                <TableHead>Total Wages</TableHead>
+                <TableHead>Food Revenue</TableHead>
+                <TableHead>Bev Revenue</TableHead>
+                <TableHead>Total Revenue</TableHead>
+                <TableHead>FOH %</TableHead>
+                <TableHead>Kitchen %</TableHead>
+                <TableHead>Total %</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {monthlyData.map((day) => {
+                const totalDailyWages = day.fohWages + day.kitchenWages;
+                const totalDailyRevenue = day.foodRevenue + day.bevRevenue;
+                const fohPercent = totalDailyRevenue > 0 
+                  ? (day.fohWages / totalDailyRevenue) * 100 
+                  : 0;
+                const kitchenPercent = totalDailyRevenue > 0 
+                  ? (day.kitchenWages / totalDailyRevenue) * 100 
+                  : 0;
+                const totalPercent = totalDailyRevenue > 0 
+                  ? (totalDailyWages / totalDailyRevenue) * 100 
+                  : 0;
+                
+                return (
+                  <TableRow key={day.day}>
+                    <TableCell className="font-medium">
+                      {day.dayOfWeek.substring(0, 3)}, {day.day}
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={day.fohWages || ''}
+                        onChange={(e) => handleInputChange(day.day, 'fohWages', e.target.value)}
+                        className="w-24"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={day.kitchenWages || ''}
+                        onChange={(e) => handleInputChange(day.day, 'kitchenWages', e.target.value)}
+                        className="w-24"
+                      />
+                    </TableCell>
+                    <TableCell>{formatCurrency(totalDailyWages)}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={day.foodRevenue || ''}
+                        onChange={(e) => handleInputChange(day.day, 'foodRevenue', e.target.value)}
+                        className="w-24"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={day.bevRevenue || ''}
+                        onChange={(e) => handleInputChange(day.day, 'bevRevenue', e.target.value)}
+                        className="w-24"
+                      />
+                    </TableCell>
+                    <TableCell>{formatCurrency(totalDailyRevenue)}</TableCell>
+                    <TableCell className={fohPercent > 20 ? 'text-red-500' : 'text-green-500'}>
+                      {fohPercent.toFixed(1)}%
+                    </TableCell>
+                    <TableCell className={kitchenPercent > 20 ? 'text-red-500' : 'text-green-500'}>
+                      {kitchenPercent.toFixed(1)}%
+                    </TableCell>
+                    <TableCell className={totalPercent > 35 ? 'text-red-500' : 'text-green-500'}>
+                      {totalPercent.toFixed(1)}%
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+            <TableFooter>
+              <TableRow className="font-medium">
+                <TableCell>MONTHLY TOTAL</TableCell>
+                <TableCell>{formatCurrency(totals.fohWages)}</TableCell>
+                <TableCell>{formatCurrency(totals.kitchenWages)}</TableCell>
+                <TableCell>{formatCurrency(totals.totalWages)}</TableCell>
+                <TableCell>{formatCurrency(totals.foodRevenue)}</TableCell>
+                <TableCell>{formatCurrency(totals.bevRevenue)}</TableCell>
+                <TableCell>{formatCurrency(totals.totalRevenue)}</TableCell>
+                <TableCell className={fohPercentage > 20 ? 'text-red-500' : 'text-green-500'}>
+                  {fohPercentage.toFixed(1)}%
+                </TableCell>
+                <TableCell className={kitchenPercentage > 20 ? 'text-red-500' : 'text-green-500'}>
+                  {kitchenPercentage.toFixed(1)}%
+                </TableCell>
+                <TableCell className={totalPercentage > 35 ? 'text-red-500' : 'text-green-500'}>
+                  {totalPercentage.toFixed(1)}%
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages } from '@/services/wages-service';
 
 export interface DailyWages {
   year: number;
@@ -16,10 +17,11 @@ export interface DailyWages {
 
 interface WagesStore {
   wagesData: Record<string, DailyWages>;
-  setDailyWages: (data: DailyWages) => void;
-  getDailyWages: (year: number, month: number, day: number) => DailyWages | undefined;
-  getMonthlyWages: (year: number, month: number) => DailyWages[];
-  getWeekdayTotals: (year: number, month: number) => Record<string, {
+  isLoading: boolean;
+  setDailyWages: (data: DailyWages) => Promise<void>;
+  getDailyWages: (year: number, month: number, day: number) => Promise<DailyWages>;
+  getMonthlyWages: (year: number, month: number) => Promise<DailyWages[]>;
+  getWeekdayTotals: (year: number, month: number) => Promise<Record<string, {
     fohWages: number;
     kitchenWages: number;
     foodRevenue: number;
@@ -28,7 +30,7 @@ interface WagesStore {
     totalRevenue: number;
     wagesPercentage: number;
     count: number;
-  }>;
+  }>>;
 }
 
 const createEmptyDayData = (year: number, month: number, day: number): DailyWages => {
@@ -52,42 +54,107 @@ export const useWagesStore = create<WagesStore>()(
   persist(
     (set, get) => ({
       wagesData: {},
+      isLoading: false,
       
-      setDailyWages: (data: DailyWages) => {
-        set((state) => {
-          const key = `${data.year}-${data.month}-${data.day}`;
-          return {
-            wagesData: {
-              ...state.wagesData,
-              [key]: data
-            }
-          };
-        });
-      },
-      
-      getDailyWages: (year: number, month: number, day: number) => {
-        const key = `${year}-${month}-${day}`;
-        const data = get().wagesData[key];
-        if (data) return data;
-        
-        // Return empty data for this day
-        return createEmptyDayData(year, month, day);
-      },
-      
-      getMonthlyWages: (year: number, month: number) => {
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const result: DailyWages[] = [];
-        
-        for (let day = 1; day <= daysInMonth; day++) {
-          const data = get().getDailyWages(year, month, day);
-          result.push(data || createEmptyDayData(year, month, day));
+      setDailyWages: async (data: DailyWages) => {
+        try {
+          await upsertDailyWages(data);
+          set((state) => {
+            const key = `${data.year}-${data.month}-${data.day}`;
+            return {
+              wagesData: {
+                ...state.wagesData,
+                [key]: data
+              }
+            };
+          });
+        } catch (error) {
+          console.error('Failed to save wages data', error);
+          throw error;
         }
-        
-        return result;
       },
       
-      getWeekdayTotals: (year: number, month: number) => {
-        const monthlyData = get().getMonthlyWages(year, month);
+      getDailyWages: async (year: number, month: number, day: number) => {
+        const key = `${year}-${month}-${day}`;
+        const cachedData = get().wagesData[key];
+        
+        if (cachedData) return cachedData;
+        
+        try {
+          const data = await fetchWagesByDay(year, month, day);
+          if (data) {
+            set((state) => ({
+              wagesData: {
+                ...state.wagesData,
+                [key]: data
+              }
+            }));
+            return data;
+          }
+          
+          return createEmptyDayData(year, month, day);
+        } catch (error) {
+          console.error('Failed to fetch daily wages', error);
+          return createEmptyDayData(year, month, day);
+        }
+      },
+      
+      getMonthlyWages: async (year: number, month: number) => {
+        set({ isLoading: true });
+        
+        try {
+          const daysInMonth = new Date(year, month, 0).getDate();
+          const result: DailyWages[] = [];
+          
+          // First try to get all the month's data from Supabase
+          const supabaseData = await fetchWagesByMonth(year, month);
+          
+          // Convert to a map for easier lookup
+          const dataMap: Record<number, DailyWages> = {};
+          supabaseData.forEach(day => {
+            dataMap[day.day] = day;
+            
+            // Update the local cache
+            const key = `${day.year}-${day.month}-${day.day}`;
+            set(state => ({
+              wagesData: {
+                ...state.wagesData,
+                [key]: day
+              }
+            }));
+          });
+          
+          // Create the full month array, using Supabase data where available
+          for (let day = 1; day <= daysInMonth; day++) {
+            if (dataMap[day]) {
+              result.push(dataMap[day]);
+            } else {
+              const emptyDay = createEmptyDayData(year, month, day);
+              result.push(emptyDay);
+            }
+          }
+          
+          set({ isLoading: false });
+          return result;
+        } catch (error) {
+          console.error('Failed to fetch monthly wages', error);
+          set({ isLoading: false });
+          
+          // Fallback: Create empty data for the month
+          const daysInMonth = new Date(year, month, 0).getDate();
+          const result: DailyWages[] = [];
+          
+          for (let day = 1; day <= daysInMonth; day++) {
+            const emptyDay = createEmptyDayData(year, month, day);
+            result.push(emptyDay);
+          }
+          
+          return result;
+        }
+      },
+      
+      getWeekdayTotals: async (year: number, month: number) => {
+        const monthlyData = await get().getMonthlyWages(year, month);
         const weekdayTotals: Record<string, {
           fohWages: number;
           kitchenWages: number;

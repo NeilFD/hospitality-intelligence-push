@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWagesStore } from './WagesStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -22,8 +22,9 @@ interface VisibleSeries {
 
 export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
   const { getMonthlyWages, getWeekdayTotals } = useWagesStore();
-  const monthlyData = getMonthlyWages(year, month);
-  const weekdayTotals = getWeekdayTotals(year, month);
+  const [isLoading, setIsLoading] = useState(true);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [weekdayTotals, setWeekdayTotals] = useState<any>({});
   
   const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
     fohWages: true,
@@ -31,6 +32,25 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     totalWages: true,
     totalRevenue: true
   });
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getMonthlyWages(year, month);
+        setMonthlyData(data);
+        const totals = await getWeekdayTotals(year, month);
+        setWeekdayTotals(totals);
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+        toast.error('Failed to load analytics data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [year, month, getMonthlyWages, getWeekdayTotals]);
   
   const totals = monthlyData.reduce((acc, day) => {
     acc.fohWages += day.fohWages;
@@ -117,6 +137,16 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
       </div>
     );
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-20">
+          <div className="text-center text-muted-foreground">Loading analytics data...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (viewType === 'weekly') {
     return (
