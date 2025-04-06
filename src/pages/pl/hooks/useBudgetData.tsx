@@ -193,6 +193,14 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
         isHeader: false,
         isGrossProfit: true
       });
+
+      console.log("Added Beverage Gross Profit with value:", bevGrossProfitAmount);
+    } else {
+      console.log("Beverage Gross Profit check:", { 
+        hasBevRevenue: !!bevRevenueItem, 
+        hasBevCost: !!bevCostItem, 
+        alreadyHasGP: hasBevGrossProfit 
+      });
     }
     
     // Add existing profit items
@@ -314,4 +322,3 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
     processedBudgetData
   };
 }
-

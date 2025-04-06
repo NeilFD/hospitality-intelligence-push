@@ -122,8 +122,12 @@ export function PLReportTable({
                   let rowClassName = '';
                   if (isHighlighted && !isTotalAdmin) {
                     rowClassName = 'bg-[#48495e]/90 text-white font-bold';
-                  } else if (isGrossProfit) {
+                  } else if (isGrossProfit && !isFoodGrossProfit && !isBeverageGrossProfit) {
+                    // Only apply special styling to main gross profit rows, not Food/Beverage specific ones
                     rowClassName = 'font-semibold bg-purple-50/50';
+                  } else if (isFoodGrossProfit || isBeverageGrossProfit) {
+                    // Apply lighter styling to Food/Beverage Gross Profit rows
+                    rowClassName = 'bg-purple-50/30';
                   }
                   
                   return (
