@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useWagesStore } from './WagesStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -12,10 +13,24 @@ interface WagesAnalyticsProps {
   viewType: 'weekly' | 'trends';
 }
 
+interface VisibleSeries {
+  fohWages: boolean;
+  kitchenWages: boolean;
+  totalWages: boolean;
+  totalRevenue: boolean;
+}
+
 export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
   const { getMonthlyWages, getWeekdayTotals } = useWagesStore();
   const monthlyData = getMonthlyWages(year, month);
   const weekdayTotals = getWeekdayTotals(year, month);
+  
+  const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
+    fohWages: true,
+    kitchenWages: true,
+    totalWages: true,
+    totalRevenue: true
+  });
   
   const totals = monthlyData.reduce((acc, day) => {
     acc.fohWages += day.fohWages;
@@ -58,6 +73,42 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
       ? ((day.fohWages + day.kitchenWages) / (day.foodRevenue + day.bevRevenue)) * 100 
       : 0
   }));
+
+  // Custom Legend component that handles toggle functionality
+  const CustomLegend = (props: any) => {
+    const { payload } = props;
+    
+    if (!payload || payload.length === 0) return null;
+    
+    // Toggle visibility when clicking on a legend item
+    const toggleItem = (dataKey: keyof VisibleSeries) => {
+      setVisibleSeries(prev => ({
+        ...prev,
+        [dataKey]: !prev[dataKey]
+      }));
+    };
+    
+    return (
+      <div className="flex flex-wrap justify-center gap-4 pt-4">
+        {payload.map((entry: any, index: number) => {
+          const isActive = visibleSeries[entry.dataKey as keyof VisibleSeries];
+          return (
+            <div 
+              key={`item-${index}`}
+              className={`flex items-center gap-2 px-3 py-1 cursor-pointer rounded-md transition-all ${isActive ? 'opacity-100' : 'opacity-50'}`}
+              onClick={() => toggleItem(entry.dataKey as keyof VisibleSeries)}
+            >
+              <div 
+                className="w-3 h-3 rounded-sm" 
+                style={{ backgroundColor: entry.color }} 
+              />
+              <span>{entry.value}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   if (viewType === 'weekly') {
     return (
@@ -264,6 +315,7 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
       <Card>
         <CardHeader>
           <CardTitle>Daily Wage Trends</CardTitle>
+          <p className="text-sm text-muted-foreground">Click on legend items to toggle visibility</p>
         </CardHeader>
         <CardContent className="h-[500px] w-full">
           <ChartContainer
@@ -295,11 +347,42 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
                 tick={{ fontSize: 12 }}
               />
               <Tooltip />
-              <Legend wrapperStyle={{ paddingTop: 20, bottom: 0 }} />
-              <Bar yAxisId="left" dataKey="fohWages" name="FOH Wages" fill="#4f46e5" />
-              <Bar yAxisId="left" dataKey="kitchenWages" name="Kitchen Wages" fill="#059669" />
-              <Bar yAxisId="left" dataKey="totalWages" name="Total Wages" fill="#d97706" />
-              <Bar yAxisId="right" dataKey="totalRevenue" name="Revenue" fill="#0ea5e9" />
+              <Legend 
+                content={<CustomLegend />}
+                wrapperStyle={{ paddingTop: 20, bottom: 0 }}
+              />
+              {visibleSeries.fohWages && (
+                <Bar 
+                  yAxisId="left" 
+                  dataKey="fohWages" 
+                  name="FOH Wages" 
+                  fill="#4f46e5" 
+                />
+              )}
+              {visibleSeries.kitchenWages && (
+                <Bar 
+                  yAxisId="left" 
+                  dataKey="kitchenWages" 
+                  name="Kitchen Wages" 
+                  fill="#059669" 
+                />
+              )}
+              {visibleSeries.totalWages && (
+                <Bar 
+                  yAxisId="left" 
+                  dataKey="totalWages" 
+                  name="Total Wages" 
+                  fill="#d97706" 
+                />
+              )}
+              {visibleSeries.totalRevenue && (
+                <Bar 
+                  yAxisId="right" 
+                  dataKey="totalRevenue" 
+                  name="Revenue" 
+                  fill="#0ea5e9" 
+                />
+              )}
             </BarChart>
           </ChartContainer>
         </CardContent>
