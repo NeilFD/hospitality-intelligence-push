@@ -107,7 +107,7 @@ export function TrackerLineItem({
             <Button 
               variant="ghost" 
               size="sm"
-              className="h-8 px-2 mr-1 text-purple-600 hover:text-purple-800 hover:bg-purple-100"
+              className="h-8 px-2 mr-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100"
               onClick={handleOpenDailyInput}
             >
               <CalendarDays className="h-4 w-4" />
