@@ -16,6 +16,7 @@ interface ProcessedBudgetItem {
   isHighlighted?: boolean;
   isGrossProfit?: boolean;
   isOperatingProfit?: boolean;
+  tracking_type?: 'Discrete' | 'Pro-Rated';
 }
 
 export const useBudgetData = (year: number, month: number) => {
