@@ -5,4 +5,5 @@ export interface BudgetItem {
   budget: number;
   actual?: number;
   forecast?: number;
+  tracking_type?: 'Discrete' | 'Pro-Rated';
 }
