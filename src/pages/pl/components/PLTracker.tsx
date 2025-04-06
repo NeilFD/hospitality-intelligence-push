@@ -440,7 +440,13 @@ export function PLTracker({
                     {/* Percentage can be added here if needed */}
                   </TableCell>
                   <TableCell className="text-right font-bold">
-                    {/* Pro-rated budget field intentionally left empty as shown in screenshot */}
+                    {/* Pro-rated budget field for operating profit */}
+                    {formatCurrency(
+                      calculateProRatedBudget(
+                        trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted) || 
+                        { budget_amount: 0, tracking_type: 'Discrete' } as PLTrackerBudgetItem
+                      )
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-bold">
                     {formatCurrency(
@@ -467,7 +473,10 @@ export function PLTracker({
                   <TableCell className="text-right text-green-200 font-bold">
                     {formatCurrency(
                       (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.actual_amount || 0) - 
-                      (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.budget_amount || 0)
+                      calculateProRatedBudget(
+                        trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted) || 
+                        { budget_amount: 0, tracking_type: 'Discrete' } as PLTrackerBudgetItem
+                      )
                     )}
                   </TableCell>
                 </TableRow>
