@@ -9,6 +9,7 @@ import { PLReportTable } from './components/PLReportTable';
 import { DailySalesEntry } from './components/DailySalesEntry';
 import { VariableCosts } from './components/VariableCosts';
 import { useBudgetData } from './hooks/useBudgetData';
+import { PLTracker } from './components/PLTracker';
 
 // Sample chart data
 const chartData = [{
@@ -34,6 +35,7 @@ export default function PLDashboard() {
     month: 'long'
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
+  const [showTracker, setShowTracker] = useState<boolean>(false);
 
   const handleMonthChange = (value: string) => {
     const month = parseInt(value);
@@ -79,14 +81,27 @@ export default function PLDashboard() {
         />
       </div>
       
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        <PLReportTable 
-          isLoading={isLoading} 
-          processedBudgetData={processedBudgetData}
-          currentMonthName={currentMonthName}
-          currentYear={currentYear}
-        />
-      </div>
+      {showTracker ? (
+        <div className="grid grid-cols-1 gap-6 mb-6">
+          <PLTracker 
+            isLoading={isLoading}
+            processedBudgetData={processedBudgetData}
+            currentMonthName={currentMonthName}
+            currentYear={currentYear}
+            onClose={() => setShowTracker(false)}
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 mb-6">
+          <PLReportTable 
+            isLoading={isLoading} 
+            processedBudgetData={processedBudgetData}
+            currentMonthName={currentMonthName}
+            currentYear={currentYear}
+            onOpenTracker={() => setShowTracker(true)}
+          />
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <DailySalesEntry />

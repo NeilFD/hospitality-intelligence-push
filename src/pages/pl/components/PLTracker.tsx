@@ -113,7 +113,7 @@ export function PLTracker({
     setTrackedBudgetData(updatedData);
   };
 
-  // Calculate pro-rated budget amount
+  // Calculate pro-rated budget amount for a standard item
   const calculateProRatedBudget = (item: BudgetItem): number => {
     if (item.isHeader || item.tracking_type === 'Discrete') {
       return item.budget_amount;
@@ -121,6 +121,64 @@ export function PLTracker({
     
     // For pro-rated items, calculate based on the day of month
     return (item.budget_amount / daysInMonth) * dayOfMonth;
+  };
+  
+  // Calculate pro-rated budget for summary items (Turnover, Cost of Sales, etc.)
+  const calculateSummaryProRatedBudget = (item: BudgetItem): number => {
+    // For header items or gross profit/operating profit calculations, we need to recalculate
+    if (item.isHeader) {
+      return 0;
+    }
+    
+    // Check if this is a summary item that needs special handling
+    const isTurnover = item.name.toLowerCase().includes('turnover') || 
+                       item.name.toLowerCase() === 'turnover';
+                       
+    const isCostOfSales = item.name.toLowerCase().includes('cost of sales') &&
+                         !item.name.toLowerCase().includes('food') &&
+                         !item.name.toLowerCase().includes('beverage');
+                         
+    const isTotalAdmin = item.name.toLowerCase().includes('total admin');
+    
+    // If not a special summary item, use the standard calculation
+    if (!isTurnover && !isCostOfSales && !isTotalAdmin) {
+      return calculateProRatedBudget(item);
+    }
+    
+    // For summary items, recalculate based on their components
+    if (isTurnover) {
+      // Sum all revenue items that have been pro-rated
+      return trackedBudgetData
+        .filter(i => i.name.toLowerCase().includes('revenue') || 
+                   (i.name.toLowerCase().includes('turnover') && i.name.toLowerCase() !== 'turnover'))
+        .reduce((sum, i) => sum + calculateProRatedBudget(i), 0);
+    }
+    
+    if (isCostOfSales) {
+      // Sum all cost of sales items that have been pro-rated
+      return trackedBudgetData
+        .filter(i => (i.name.toLowerCase().includes('cost of sales') || 
+                     i.name.toLowerCase().includes('cos') ||
+                     i.category.toLowerCase().includes('cost of sales')) &&
+                     i.name !== item.name)
+        .reduce((sum, i) => sum + calculateProRatedBudget(i), 0);
+    }
+    
+    if (isTotalAdmin) {
+      // Sum all expense items that have been pro-rated
+      return trackedBudgetData
+        .filter(i => !i.name.toLowerCase().includes('revenue') && 
+                   !i.name.toLowerCase().includes('turnover') &&
+                   !i.name.toLowerCase().includes('cost of sales') &&
+                   !i.name.toLowerCase().includes('cos') &&
+                   !i.name.toLowerCase().includes('gross profit') &&
+                   !i.name.toLowerCase().includes('operating profit') &&
+                   !i.isHeader &&
+                   !i.name.toLowerCase().includes('total admin'))
+        .reduce((sum, i) => sum + calculateProRatedBudget(i), 0);
+    }
+    
+    return calculateProRatedBudget(item);
   };
 
   return (
@@ -167,7 +225,8 @@ export function PLTracker({
                     );
                   }
                   
-                  const proRatedBudget = calculateProRatedBudget(item);
+                  // Use appropriate calculation method based on whether this is a summary item
+                  const proRatedBudget = calculateSummaryProRatedBudget(item);
                   const actualAmount = item.actual_amount || 0;
                   const variance = actualAmount - proRatedBudget;
                   
