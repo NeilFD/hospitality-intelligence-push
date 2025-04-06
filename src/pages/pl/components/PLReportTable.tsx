@@ -58,9 +58,8 @@ export function PLReportTable({
     item.name !== 'Gross Profit' &&
     !item.name.toLowerCase().includes('total admin') &&
     !(item.name.toLowerCase() === 'total') &&
-    // Remove ADMIN EXPENSES header and Tavern row
-    !(item.name === 'ADMIN EXPENSES' && item.isHeader) &&
-    !(item.name === 'ADMIN EXPENSES')
+    // Only remove the ADMIN EXPENSES header at the top, not the admin expenses summation at the bottom
+    !(item.name === 'ADMIN EXPENSES' && item.isAdminHeader)
   );
   
   console.log("Display items:", displayItems.map(item => item.name));
