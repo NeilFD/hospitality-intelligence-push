@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/kitchen-service';
 import { supabase } from '@/lib/supabase';
+import { BudgetItem } from '@/utils/budget/types';
 
-interface BudgetItem {
+interface PLTrackerBudgetItem extends Omit<BudgetItem, 'tracking_type'> {
   id?: string;
   category: string;
   name: string;
@@ -27,7 +28,7 @@ interface BudgetItem {
 
 interface PLTrackerProps {
   isLoading: boolean;
-  processedBudgetData: BudgetItem[];
+  processedBudgetData: PLTrackerBudgetItem[];
   currentMonthName: string;
   currentYear: number;
   onClose: () => void;
@@ -48,7 +49,7 @@ export function PLTracker({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const loadTrackingSettings = async (items: BudgetItem[]) => {
+  const loadTrackingSettings = async (items: PLTrackerBudgetItem[]) => {
     try {
       const itemIds = items.filter(item => item.id).map(item => item.id);
       
@@ -118,7 +119,7 @@ export function PLTracker({
           
           return {
             ...item,
-            tracking_type: trackingType
+            tracking_type: item.tracking_type || trackingType
           };
         });
         
@@ -300,17 +301,13 @@ export function PLTracker({
     return calculateProRatedBudget(item);
   };
 
-  const shouldShowTrackingType = (item: BudgetItem): boolean => {
+  const shouldShowTrackingType = (item: PLTrackerBudgetItem): boolean => {
     const isSummaryItem = 
       item.isHeader || 
       item.isGrossProfit || 
       item.isOperatingProfit || 
       item.name.toLowerCase().includes('turnover') || 
-      item.name.toLowerCase() === 'turnover' || 
-      item.name.toLowerCase().includes('total admin') || 
-      (item.name.toLowerCase().includes('cost of sales') && 
-       !item.name.toLowerCase().includes('food') && 
-       !item.name.toLowerCase().includes('beverage'));
+      item.name.toLowerCase() === 'turnover';
     
     return !isSummaryItem;
   };

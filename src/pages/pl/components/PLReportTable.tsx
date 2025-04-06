@@ -65,7 +65,14 @@ export function PLReportTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {processedBudgetData.map((item, i) => {
+                {processedBudgetData
+                  // Filter out the rows that need to be removed
+                  .filter(item => 
+                    item.name !== 'Total Administrative Expenses' && 
+                    !(item.name === 'Total' || item.name === 'ADMINISTRATIVE EXPENSES') &&
+                    item.name !== 'Tavern'
+                  )
+                  .map((item, i) => {
                   if (item.isHeader) {
                     // Handle section headers
                     return (
