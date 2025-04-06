@@ -421,7 +421,7 @@ export function PLTracker({
                             step="0.01"
                             value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
                             onChange={(e) => updateManualActualAmount(i, e.target.value)}
-                            className="h-8 w-24 text-right"
+                            className="h-8 w-24 text-right ml-auto"
                           />
                         ) : (
                           formatCurrency(actualAmount)
@@ -434,7 +434,7 @@ export function PLTracker({
                           step="0.01"
                           value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
                           onChange={(e) => updateForecastAmount(i, e.target.value)}
-                          className="h-8 w-24 text-right"
+                          className="h-8 w-24 text-right ml-auto"
                         />
                       </TableCell>
                       <TableCell className={`text-right ${fontClass} ${
