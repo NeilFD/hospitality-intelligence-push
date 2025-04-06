@@ -54,14 +54,6 @@ export default function PLDashboard() {
       item.name.toLowerCase() !== 'tavern' 
     );
     
-    // Add section headers
-    const sections = [
-      { id: 'revenue-header', category: 'Revenue', name: 'REVENUE', isHeader: true },
-      { id: 'costs-header', category: 'COGS', name: 'COST OF GOODS SOLD', isHeader: true },
-      { id: 'gross-profit-header', category: 'Profit', name: 'GROSS PROFIT', isHeader: true },
-      { id: 'expenses-header', category: 'Expenses', name: 'OPERATING EXPENSES', isHeader: true }
-    ];
-    
     // Process the data to add headers and organize by category
     const processedData = [];
     
@@ -126,17 +118,107 @@ export default function PLDashboard() {
       forecast: 0
     });
     
-    // Add Gross Profit items
+    // Add Gross Profit items - make sure to include Food and Beverage-specific gross profits
     const profitItems = filteredItems.filter(item => 
       item.name.toLowerCase().includes('gross profit') || 
       item.name.toLowerCase().includes('profit/(loss)') ||
       item.category.toLowerCase().includes('profit')
     );
     
+    // Calculate Food Gross Profit if it doesn't exist
+    const foodRevenueItem = revenueItems.find(item => 
+      item.name.toLowerCase().includes('food') && 
+      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+    );
+    
+    const foodCostItem = cogsItems.find(item => 
+      item.name.toLowerCase().includes('food') && 
+      (item.name.toLowerCase().includes('cost') || item.name.toLowerCase().includes('cos'))
+    );
+    
+    const hasFoodGrossProfit = profitItems.some(item => 
+      item.name.toLowerCase().includes('food') && 
+      item.name.toLowerCase().includes('gross profit')
+    );
+    
+    // Add Food Gross Profit if food revenue and cost exist but gross profit doesn't
+    if (foodRevenueItem && foodCostItem && !hasFoodGrossProfit) {
+      const foodGrossProfitAmount = foodRevenueItem.budget_amount - foodCostItem.budget_amount;
+      const foodGrossProfitActual = 
+        (foodRevenueItem.actual_amount || 0) - (foodCostItem.actual_amount || 0);
+      const foodGrossProfitForecast = 
+        (foodRevenueItem.forecast_amount || foodRevenueItem.budget_amount) - 
+        (foodCostItem.forecast_amount || foodCostItem.budget_amount);
+      
+      const foodGPPercentage = foodRevenueItem.budget_amount !== 0 ? 
+        (foodGrossProfitAmount / foodRevenueItem.budget_amount) * 100 : 0;
+      
+      processedData.push({
+        id: 'food-gross-profit',
+        category: 'Food Gross Profit',
+        name: 'Food Gross Profit',
+        budget_amount: foodGrossProfitAmount,
+        actual_amount: foodGrossProfitActual,
+        forecast_amount: foodGrossProfitForecast,
+        budget_percentage: foodGPPercentage,
+        isHeader: false,
+        isGrossProfit: true
+      });
+    }
+    
+    // Calculate Beverage Gross Profit if it doesn't exist
+    const bevRevenueItem = revenueItems.find(item => 
+      (item.name.toLowerCase().includes('beverage') || 
+       item.name.toLowerCase().includes('drink') || 
+       item.name.toLowerCase().includes('bar')) && 
+      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+    );
+    
+    const bevCostItem = cogsItems.find(item => 
+      (item.name.toLowerCase().includes('beverage') || 
+       item.name.toLowerCase().includes('drink') || 
+       item.name.toLowerCase().includes('bar')) && 
+      (item.name.toLowerCase().includes('cost') || item.name.toLowerCase().includes('cos'))
+    );
+    
+    const hasBevGrossProfit = profitItems.some(item => 
+      (item.name.toLowerCase().includes('beverage') || 
+       item.name.toLowerCase().includes('drink') || 
+       item.name.toLowerCase().includes('bar')) && 
+      item.name.toLowerCase().includes('gross profit')
+    );
+    
+    // Add Beverage Gross Profit if beverage revenue and cost exist but gross profit doesn't
+    if (bevRevenueItem && bevCostItem && !hasBevGrossProfit) {
+      const bevGrossProfitAmount = bevRevenueItem.budget_amount - bevCostItem.budget_amount;
+      const bevGrossProfitActual = 
+        (bevRevenueItem.actual_amount || 0) - (bevCostItem.actual_amount || 0);
+      const bevGrossProfitForecast = 
+        (bevRevenueItem.forecast_amount || bevRevenueItem.budget_amount) - 
+        (bevCostItem.forecast_amount || bevCostItem.budget_amount);
+      
+      const bevGPPercentage = bevRevenueItem.budget_amount !== 0 ? 
+        (bevGrossProfitAmount / bevRevenueItem.budget_amount) * 100 : 0;
+      
+      processedData.push({
+        id: 'beverage-gross-profit',
+        category: 'Beverage Gross Profit',
+        name: 'Beverage Gross Profit',
+        budget_amount: bevGrossProfitAmount,
+        actual_amount: bevGrossProfitActual,
+        forecast_amount: bevGrossProfitForecast,
+        budget_percentage: bevGPPercentage,
+        isHeader: false,
+        isGrossProfit: true
+      });
+    }
+    
+    // Add existing profit items
     profitItems.forEach(item => {
       processedData.push({
         ...item,
-        isHeader: false
+        isHeader: false,
+        isGrossProfit: true
       });
     });
     
@@ -161,7 +243,10 @@ export default function PLDashboard() {
       !item.name.toLowerCase().includes('profit/(loss)') &&
       !item.category.toLowerCase().includes('revenue') &&
       !item.category.toLowerCase().includes('cost of sales') &&
-      !item.category.toLowerCase().includes('profit')
+      !item.category.toLowerCase().includes('profit') &&
+      // Exclude Total Admin Expenses and Operating Profit (they'll be added separately)
+      !item.name.toLowerCase().includes('total admin') &&
+      !item.name.toLowerCase().includes('operating profit')
     );
     
     expenseItems.forEach(item => {
@@ -170,6 +255,35 @@ export default function PLDashboard() {
         isHeader: false
       });
     });
+    
+    // Add Total Admin Expenses as a highlighted item
+    const totalAdminItem = filteredItems.find(item => 
+      item.name.toLowerCase().includes('total admin')
+    );
+    
+    if (totalAdminItem) {
+      processedData.push({
+        ...totalAdminItem,
+        isHeader: true,
+        name: 'TOTAL ADMIN EXPENSES',
+        category: 'Header'
+      });
+    }
+    
+    // Add Operating Profit as a highlighted item
+    const operatingProfitItem = filteredItems.find(item => 
+      item.name.toLowerCase().includes('operating profit')
+    );
+    
+    if (operatingProfitItem) {
+      processedData.push({
+        ...operatingProfitItem,
+        isHeader: true,
+        name: 'OPERATING PROFIT',
+        category: 'Header',
+        isOperatingProfit: true
+      });
+    }
     
     return processedData;
   }, [budgetItems]);
@@ -306,11 +420,18 @@ export default function PLDashboard() {
                   <TableBody>
                     {processedBudgetData.map((item, i) => {
                       if (item.isHeader) {
+                        // Handle section headers and important highlighted rows
+                        const isOperatingProfit = item.isOperatingProfit;
+                        const operatingProfitValue = isOperatingProfit ? item.actual_amount || 0 : 0;
+                        const operatingProfitColor = isOperatingProfit 
+                          ? (operatingProfitValue >= 0 ? 'bg-green-600/90 text-white' : 'bg-red-600/90 text-white')
+                          : 'bg-[#48495e]/90 text-white';
+                          
                         return (
-                          <TableRow key={i} className="bg-[#48495e]/90">
+                          <TableRow key={i} className={operatingProfitColor}>
                             <TableCell 
                               colSpan={6} 
-                              className="text-white font-bold text-sm tracking-wider py-2"
+                              className="font-bold text-sm tracking-wider py-2"
                             >
                               {item.name}
                             </TableCell>
@@ -333,12 +454,20 @@ export default function PLDashboard() {
                                                item.category.includes('Profit') ? forecastVariance > 0 : forecastVariance < 0;
                       
                       // Special styling for gross profit rows
-                      const isGrossProfit = item.name.toLowerCase().includes('gross profit') || 
-                                           item.name.toLowerCase().includes('profit/(loss)');
+                      const isGrossProfit = item.isGrossProfit || 
+                                          item.name.toLowerCase().includes('gross profit') || 
+                                          item.name.toLowerCase().includes('profit/(loss)');
                       
                       return (
                         <TableRow key={i} className={isGrossProfit ? 'font-semibold bg-purple-50/50' : ''}>
-                          <TableCell>{item.name}</TableCell>
+                          <TableCell>
+                            {item.name}
+                            {isGrossProfit && item.budget_percentage && (
+                              <span className="ml-2 text-xs text-gray-500">
+                                ({formatPercentage(item.budget_percentage)})
+                              </span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">{formatCurrency(item.budget_amount)}</TableCell>
                           <TableCell className="text-right">{formatCurrency(item.actual_amount || 0)}</TableCell>
                           <TableCell className={`text-right ${isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
