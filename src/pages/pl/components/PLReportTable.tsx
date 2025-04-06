@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -66,17 +65,16 @@ export function PLReportTable({
               </TableHeader>
               <TableBody>
                 {processedBudgetData
-                  // Remove the "Total" row, and other unwanted rows
                   .filter(item => 
                     item.name !== 'Total' && 
+                    item.name !== 'Total' &&
                     item.name !== 'Total Administrative Expenses' && 
                     item.name !== 'Total Admin expenses' && 
-                    !(item.name === 'Total' || item.name === 'ADMINISTRATIVE EXPENSES') &&
+                    item.name !== 'ADMINISTRATIVE EXPENSES' &&
                     item.name !== 'Tavern'
                   )
                   .map((item, i) => {
                   if (item.isHeader) {
-                    // Handle section headers
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
                         <TableCell 
@@ -92,21 +90,16 @@ export function PLReportTable({
                   const actualAmount = item.actual_amount || 0;
                   const variance = actualAmount - item.budget_amount;
                   
-                  // Determine styles based on item type
                   let rowClassName = '';
                   let fontClass = '';
                   
-                  // Special styling for gross profit rows
                   const isGrossProfit = item.name.toLowerCase().includes('gross profit') || 
                                         item.name.toLowerCase().includes('profit/(loss)');
                   
-                  // Special handling for Operating Profit row
                   const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
                   
-                  // Add special handling for Turnover row
                   const isTurnover = item.name.toLowerCase() === 'turnover';
                   
-                  // Apply styling based on row type
                   if (item.isHighlighted) {
                     rowClassName = 'bg-[#48495e]/90 text-white';
                   } else if (isGrossProfit || isTurnover) {
