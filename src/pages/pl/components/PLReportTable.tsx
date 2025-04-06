@@ -66,10 +66,7 @@ export function PLReportTable({
               <TableBody>
                 {processedBudgetData
                   .filter(item => 
-                    item.name !== 'Total' && 
-                    item.name !== 'Total' &&
-                    item.name !== 'Total Administrative Expenses' && 
-                    item.name !== 'Total Admin expenses' && 
+                    !item.name.toLowerCase().includes('total') && 
                     item.name !== 'ADMINISTRATIVE EXPENSES' &&
                     item.name !== 'Tavern'
                   )
