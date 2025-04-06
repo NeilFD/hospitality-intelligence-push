@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -110,7 +111,7 @@ export function TrackerLineItem({
               onClick={handleOpenDailyInput}
               className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
             >
-              <CalendarDays className="h-[18px] w-[18px]" />
+              <CalendarDays className="h-5 w-5" />
             </Button>
             <Input
               type="text"
