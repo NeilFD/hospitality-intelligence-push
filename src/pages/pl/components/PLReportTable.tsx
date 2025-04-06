@@ -37,8 +37,21 @@ export function PLReportTable({
 }: PLReportTableProps) {
   console.log("All budget data:", processedBudgetData.map(item => item.name));
 
+  // Important: Log all food and beverage gross profit items for debugging
+  const foodGpItems = processedBudgetData.filter(item => 
+    item.name.toLowerCase().includes('food') && 
+    item.name.toLowerCase().includes('gross profit')
+  );
+  
+  const beverageGpItems = processedBudgetData.filter(item => 
+    (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) && 
+    item.name.toLowerCase().includes('gross profit')
+  );
+  
+  console.log("Food GP items found:", foodGpItems.map(item => `${item.name}: £${item.budget_amount}`));
+  console.log("Beverage GP items found:", beverageGpItems.map(item => `${item.name}: £${item.budget_amount}`));
+
   // Filter items for display but exclude Total Gross Profit only
-  // Important: Do NOT filter out Food Gross Profit or Beverage Gross Profit
   const displayItems = processedBudgetData.filter(item => 
     !item.name.toLowerCase().includes('total') && 
     item.name !== 'ADMINISTRATIVE EXPENSES' &&
@@ -49,20 +62,19 @@ export function PLReportTable({
   
   console.log("Display items:", displayItems.map(item => item.name));
   
-  // Find Food and Beverage Gross Profit items directly from processedBudgetData (not from filtered displayItems)
-  // Check for exact matches and also try with lowercase comparisons
+  // Find Food and Beverage Gross Profit items directly from processedBudgetData
   const foodGrossProfitItem = processedBudgetData.find(item => 
-    item.name === 'Food Gross Profit' || 
-    item.name === 'Food GP' ||
-    item.name.toLowerCase() === 'food gross profit'
+    (item.name === 'Food Gross Profit' || 
+     item.name.toLowerCase() === 'food gross profit' ||
+     item.name === 'Food GP')
   );
   
   const beverageGrossProfitItem = processedBudgetData.find(item => 
-    item.name === 'Beverage Gross Profit' || 
-    item.name === 'Beverage GP' ||
-    item.name.toLowerCase() === 'beverage gross profit' ||
-    item.name.toLowerCase() === 'drink gross profit' ||
-    item.name.toLowerCase() === 'drinks gross profit'
+    (item.name === 'Beverage Gross Profit' || 
+     item.name.toLowerCase() === 'beverage gross profit' ||
+     item.name.toLowerCase() === 'drink gross profit' ||
+     item.name.toLowerCase() === 'drinks gross profit' ||
+     item.name === 'Beverage GP')
   );
 
   console.log("Food GP item found:", foodGrossProfitItem ? foodGrossProfitItem.name : "Not found");
@@ -108,6 +120,51 @@ export function PLReportTable({
     item.name === 'Gross Profit' || item.name.toLowerCase() === 'gross profit'
   );
 
+  // Create a helper function to render a budget item row
+  const renderBudgetItemRow = (item: BudgetItem, i: number, customClass: string = '') => {
+    const actualAmount = item.actual_amount || 0;
+    const variance = actualAmount - item.budget_amount;
+    
+    let rowClassName = customClass;
+    let fontClass = '';
+    
+    const isGrossProfit = item.isGrossProfit || 
+                         item.name.toLowerCase().includes('profit/(loss)');
+    
+    const isTurnover = item.name.toLowerCase() === 'turnover';
+    
+    if (item.isHighlighted) {
+      rowClassName = 'bg-[#48495e]/90 text-white';
+      fontClass = 'font-bold';
+    } else if (isGrossProfit || isTurnover) {
+      rowClassName = 'bg-purple-50/50';
+    }
+    
+    fontClass = item.isHighlighted || isTurnover || isGrossProfit ? 'font-bold' : '';
+    
+    return (
+      <TableRow key={i} className={rowClassName}>
+        <TableCell className={fontClass}>
+          {item.name}
+        </TableCell>
+        <TableCell className={`text-right ${fontClass}`}>
+          {formatCurrency(item.budget_amount)}
+        </TableCell>
+        <TableCell className="text-right">
+          {item.budget_percentage !== undefined ? `${(item.budget_percentage * 100).toFixed(2)}%` : ''}
+        </TableCell>
+        <TableCell className={`text-right ${fontClass}`}>
+          {formatCurrency(actualAmount)}
+        </TableCell>
+        <TableCell className={`text-right ${fontClass} ${
+          variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''
+        }`}>
+          {formatCurrency(variance)}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
@@ -140,15 +197,16 @@ export function PLReportTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {/* First render all regular items except Gross Profit items */}
+                {/* Render all items except special items which we'll handle separately */}
                 {displayItems.map((item, i) => {
                   // Skip Food and Beverage Gross Profit items as we'll render them separately
-                  if (item.name === 'Food Gross Profit' || item.name === 'Beverage Gross Profit' || 
-                      item.name === 'Food GP' || item.name === 'Beverage GP' ||
-                      item.name.toLowerCase() === 'food gross profit' || 
-                      item.name.toLowerCase() === 'beverage gross profit' ||
-                      item.name.toLowerCase() === 'drink gross profit' ||
-                      item.name.toLowerCase() === 'drinks gross profit') {
+                  if (
+                    item.name.toLowerCase().includes('food') && 
+                    item.name.toLowerCase().includes('gross profit') ||
+                    ((item.name.toLowerCase().includes('beverage') || 
+                      item.name.toLowerCase().includes('drink')) && 
+                     item.name.toLowerCase().includes('gross profit'))
+                  ) {
                     return null;
                   }
                   
@@ -165,76 +223,12 @@ export function PLReportTable({
                     );
                   }
                   
-                  const actualAmount = item.actual_amount || 0;
-                  const variance = actualAmount - item.budget_amount;
-                  
-                  let rowClassName = '';
-                  let fontClass = '';
-                  
-                  const isGrossProfit = item.isGrossProfit || 
-                                       item.name.toLowerCase().includes('profit/(loss)');
-                  
-                  const isTurnover = item.name.toLowerCase() === 'turnover';
-                  
-                  if (item.isHighlighted) {
-                    rowClassName = 'bg-[#48495e]/90 text-white';
-                    fontClass = 'font-bold';
-                  } else if (isGrossProfit || isTurnover) {
-                    rowClassName = 'bg-purple-50/50';
-                  }
-                  
-                  fontClass = item.isHighlighted || isTurnover || isGrossProfit ? 'font-bold' : '';
-                  
-                  return (
-                    <TableRow key={i} className={rowClassName}>
-                      <TableCell className={fontClass}>
-                        {item.name}
-                      </TableCell>
-                      <TableCell className={`text-right ${fontClass}`}>
-                        {formatCurrency(item.budget_amount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.budget_percentage !== undefined ? `${(item.budget_percentage * 100).toFixed(2)}%` : ''}
-                      </TableCell>
-                      <TableCell className={`text-right ${fontClass}`}>
-                        {formatCurrency(actualAmount)}
-                      </TableCell>
-                      <TableCell className={`text-right ${fontClass} ${
-                        variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''
-                      }`}>
-                        {formatCurrency(variance)}
-                      </TableCell>
-                    </TableRow>
-                  );
+                  return renderBudgetItemRow(item, i);
                 })}
                 
-                {/* Explicitly render the Food Gross Profit item if it exists */}
+                {/* Food Gross Profit row */}
                 {foodGrossProfitItem ? (
-                  <TableRow className="bg-purple-50/50">
-                    <TableCell className="font-semibold">
-                      {foodGrossProfitItem.name}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(foodGrossProfitItem.budget_amount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {foodGrossProfitItem.budget_percentage !== undefined 
-                        ? `${(foodGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
-                        : ''}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(foodGrossProfitItem.actual_amount || 0)}
-                    </TableCell>
-                    <TableCell className={`text-right font-semibold ${
-                      (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount > 0 
-                        ? 'text-green-600' 
-                        : (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount < 0 
-                          ? 'text-red-600' 
-                          : ''
-                    }`}>
-                      {formatCurrency((foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount)}
-                    </TableCell>
-                  </TableRow>
+                  renderBudgetItemRow(foodGrossProfitItem, 'food-gp', 'bg-purple-50/50')
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="text-amber-600 bg-amber-50 font-semibold text-center">
@@ -243,33 +237,9 @@ export function PLReportTable({
                   </TableRow>
                 )}
                 
-                {/* Explicitly render the Beverage Gross Profit item if it exists */}
+                {/* Beverage Gross Profit row */}
                 {beverageGrossProfitItem ? (
-                  <TableRow className="bg-purple-50/50">
-                    <TableCell className="font-semibold">
-                      {beverageGrossProfitItem.name}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(beverageGrossProfitItem.budget_amount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {beverageGrossProfitItem.budget_percentage !== undefined 
-                        ? `${(beverageGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
-                        : ''}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(beverageGrossProfitItem.actual_amount || 0)}
-                    </TableCell>
-                    <TableCell className={`text-right font-semibold ${
-                      (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount > 0 
-                        ? 'text-green-600' 
-                        : (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount < 0 
-                          ? 'text-red-600' 
-                          : ''
-                    }`}>
-                      {formatCurrency((beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount)}
-                    </TableCell>
-                  </TableRow>
+                  renderBudgetItemRow(beverageGrossProfitItem, 'bev-gp', 'bg-purple-50/50')
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="text-amber-600 bg-amber-50 font-semibold text-center">
@@ -368,4 +338,3 @@ export function PLReportTable({
     </Card>
   );
 }
-
