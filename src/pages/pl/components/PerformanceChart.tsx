@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
 import { Info, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 
@@ -140,8 +140,15 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
               <CartesianGrid 
                 vertical={false} 
                 horizontal={true} 
-                stroke="#E0E0E0" 
-                strokeDasharray="3 3" 
+                stroke="#48495e" 
+                strokeWidth={1.5}
+                strokeDasharray="0" 
+              />
+              <ReferenceLine 
+                y={0} 
+                stroke="#48495e" 
+                strokeWidth={2} 
+                isFront={true} 
               />
               <XAxis 
                 dataKey="name" 
