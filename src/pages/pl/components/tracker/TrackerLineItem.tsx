@@ -1,12 +1,10 @@
-
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/date-utils';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { DailyInputDrawer } from './DailyInputDrawer';
 import { CalendarDays } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TrackerLineItemProps {
   item: PLTrackerBudgetItem;
@@ -72,7 +70,7 @@ export function TrackerLineItem({
               isTurnover || 
               item.name.toLowerCase().includes('cost of sales') || 
               (isGrossProfit && !item.name.toLowerCase().includes('food gross profit') && 
-               !item.name.toLowerCase().includes('beverage gross profit')) ? 'font-bold' : '';
+               !item.name.toLowerCase().includes('beverage profit')) ? 'font-bold' : '';
   
   if (isOperatingProfit && !item.isHighlighted) {
     return null;
@@ -86,9 +84,6 @@ export function TrackerLineItem({
     updateDailyValues(index, dailyValues);
   };
 
-  // Always show calendar icon for revenue, sales, and other income items
-  const shouldShowCalendarIcon = true;
-  
   return (
     <TableRow className={rowClassName}>
       <TableCell className={fontClass}>
@@ -104,30 +99,22 @@ export function TrackerLineItem({
         {formatCurrency(proRatedBudget)}
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
-        {shouldShowCalendarIcon ? (
-          <div className="flex items-center justify-end gap-2">
-            <Button 
-              variant="outline"
-              size="icon"
-              onClick={handleOpenDailyInput}
-              className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
-            >
-              <CalendarDays className="h-5 w-5" />
-            </Button>
-            <Input
-              type="text"
-              value={formatCurrency(item.manually_entered_actual !== undefined ? item.manually_entered_actual : 0)}
-              className="h-9 w-24 text-right cursor-pointer bg-gray-50 border-purple-200 focus:border-purple-500"
-              onClick={handleOpenDailyInput}
-              readOnly
-            />
-          </div>
-        ) : (
-          formatCurrency(actualAmount)
-        )}
+        <div className="flex items-center justify-end gap-2">
+          <Button 
+            variant="outline"
+            size="icon"
+            onClick={handleOpenDailyInput}
+            className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
+          >
+            <CalendarDays className="h-5 w-5" />
+          </Button>
+          <span className="text-right">
+            {formatCurrency(actualAmount)}
+          </span>
+        </div>
       </TableCell>
       <TableCell className="text-right">
-        <Input
+        <input
           type="number"
           min="0"
           step="0.01"
