@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -11,13 +12,15 @@ import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/ki
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
 
+// Type definition that makes tracking_type required
 interface PLTrackerBudgetItem extends Omit<BudgetItem, 'budget'> {
   budget_amount: number;
+  tracking_type: 'Discrete' | 'Pro-Rated'; // Make tracking_type required
 }
 
 interface PLTrackerProps {
   isLoading: boolean;
-  processedBudgetData: PLTrackerBudgetItem[];
+  processedBudgetData: Omit<BudgetItem, 'budget'> & { budget_amount: number }[];
   currentMonthName: string;
   currentYear: number;
   onClose: () => void;
@@ -38,11 +41,16 @@ export function PLTracker({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const loadTrackingSettings = async (items: PLTrackerBudgetItem[]): Promise<PLTrackerBudgetItem[]> => {
+  const loadTrackingSettings = async (items: (Omit<BudgetItem, 'budget'> & { budget_amount: number })[]): Promise<PLTrackerBudgetItem[]> => {
     try {
       const itemIds = items.filter(item => item.id).map(item => item.id);
       
-      if (itemIds.length === 0) return items;
+      if (itemIds.length === 0) {
+        return items.map(item => ({
+          ...item,
+          tracking_type: 'Discrete' as const // Set default tracking type
+        }));
+      }
       
       const trackingData = await fetchBudgetItemTracking(itemIds as string[]);
       
@@ -59,14 +67,23 @@ export function PLTracker({
               tracking_type: trackingMap[item.id] as 'Discrete' | 'Pro-Rated'
             };
           }
-          return item;
+          return {
+            ...item,
+            tracking_type: 'Discrete' as const // Default tracking type
+          };
         });
       }
       
-      return items;
+      return items.map(item => ({
+        ...item,
+        tracking_type: 'Discrete' as const // Set default tracking type
+      }));
     } catch (error) {
       console.error('Error in loadTrackingSettings:', error);
-      return items;
+      return items.map(item => ({
+        ...item,
+        tracking_type: 'Discrete' as const // Set default tracking type on error
+      }));
     }
   };
 
@@ -109,10 +126,10 @@ export function PLTracker({
           return {
             ...item,
             tracking_type: item.tracking_type || trackingType
-          };
+          } as PLTrackerBudgetItem; // Cast to PLTrackerBudgetItem
         });
         
-        trackedData = await loadTrackingSettings(trackedData);
+        trackedData = await loadTrackingSettings(processedBudgetData);
         
         setTrackedBudgetData(trackedData);
         setHasUnsavedChanges(false);
