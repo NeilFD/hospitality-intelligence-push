@@ -280,10 +280,10 @@ export function PLTracker({
   };
 
   const getActualAmount = (item: PLTrackerBudgetItem): number => {
-    if (item.tracking_type === 'Pro-Rated') {
-      return calculateProRatedBudget(item);
-    } else {
+    if (item.tracking_type === 'Discrete') {
       return item.manually_entered_actual || 0;
+    } else {
+      return calculateProRatedBudget(item);
     }
   };
 
