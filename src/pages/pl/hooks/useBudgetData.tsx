@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchBudgetItems } from '@/utils/budget/api';
@@ -213,7 +214,17 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       forecast_amount: 0
     });
     
-    // Add expense items (everything else)
+    // Find Wages and Salaries item, and Other Staff Costs
+    const wagesItem = filteredItems.find(item => 
+      item.name.toLowerCase().includes('wages') && 
+      item.name.toLowerCase().includes('salaries')
+    );
+    
+    const otherStaffCostsItem = filteredItems.find(item => 
+      item.name.toLowerCase().includes('other staff costs')
+    );
+    
+    // Prepare expense items list, excluding items we handle specially
     const expenseItems = filteredItems.filter(item => 
       !item.name.toLowerCase().includes('revenue') && 
       !item.name.toLowerCase().includes('turnover') &&
@@ -224,17 +235,44 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
       !item.category.toLowerCase().includes('revenue') &&
       !item.category.toLowerCase().includes('cost of sales') &&
       !item.category.toLowerCase().includes('profit') &&
-      // Exclude Total Admin Expenses and Operating Profit (they'll be added separately)
+      // Exclude items we'll handle separately
       !item.name.toLowerCase().includes('total admin') &&
-      !item.name.toLowerCase().includes('operating profit')
+      !item.name.toLowerCase().includes('operating profit') &&
+      !item.name.toLowerCase().includes('other staff costs')
     );
     
+    // First add all expense items except Other Staff Costs
     expenseItems.forEach(item => {
       processedData.push({
         ...item,
         isHeader: false
       });
+      
+      // If this is the Wages and Salaries item, add Other Staff Costs right after it
+      if (wagesItem && 
+          item.name.toLowerCase() === wagesItem.name.toLowerCase() && 
+          otherStaffCostsItem) {
+        processedData.push({
+          ...otherStaffCostsItem,
+          isHeader: false
+        });
+      }
     });
+    
+    // If Wages and Salaries wasn't found but we have Other Staff Costs, add it at the beginning
+    if (!wagesItem && otherStaffCostsItem && expenseItems.length > 0) {
+      // Insert Other Staff Costs at the beginning of Operating Expenses section
+      const expensesHeaderIndex = processedData.findIndex(item => 
+        item.isHeader && item.name === 'OPERATING EXPENSES'
+      );
+      
+      if (expensesHeaderIndex !== -1) {
+        processedData.splice(expensesHeaderIndex + 1, 0, {
+          ...otherStaffCostsItem,
+          isHeader: false
+        });
+      }
+    }
     
     // Add Total Admin Expenses as a highlighted item
     const totalAdminItem = filteredItems.find(item => 
