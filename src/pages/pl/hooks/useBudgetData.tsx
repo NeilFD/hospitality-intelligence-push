@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
@@ -351,10 +350,10 @@ export const useBudgetData = (year: number, month: number) => {
       });
     }
     
+    // Add a filter to remove specific unwanted headers and rows
     result = result.filter(item => 
-      item.name.toLowerCase() !== 'total' && 
-      !item.name.toLowerCase().includes('total') &&
-      item.name !== 'Gross Profit'
+      item.name.toLowerCase() !== 'admin expenses' && 
+      item.name.toLowerCase() !== 'tavern'
     );
 
     return result;
