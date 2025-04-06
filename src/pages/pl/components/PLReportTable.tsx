@@ -121,7 +121,7 @@ export function PLReportTable({
   );
 
   // Create a helper function to render a budget item row
-  const renderBudgetItemRow = (item: BudgetItem, i: number, customClass: string = '') => {
+  const renderBudgetItemRow = (item: BudgetItem, i: number | string, customClass: string = '') => {
     const actualAmount = item.actual_amount || 0;
     const variance = actualAmount - item.budget_amount;
     
@@ -142,8 +142,11 @@ export function PLReportTable({
     
     fontClass = item.isHighlighted || isTurnover || isGrossProfit ? 'font-bold' : '';
     
+    // Generate a unique key based on the item name and index
+    const rowKey = typeof i === 'number' ? i : `${i}-${item.name.replace(/\s+/g, '-').toLowerCase()}`;
+    
     return (
-      <TableRow key={i} className={rowClassName}>
+      <TableRow key={rowKey} className={rowClassName}>
         <TableCell className={fontClass}>
           {item.name}
         </TableCell>
