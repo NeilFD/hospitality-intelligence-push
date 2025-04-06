@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableStickyHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -442,7 +441,7 @@ export function PLTracker({
                       <TableCell className="text-right">
                         {/* Forecast can be added here if needed */}
                       </TableCell>
-                      <TableCell className="text-right font-bold" className={`text-right font-bold ${
+                      <TableCell className={`text-right font-bold ${
                         adminVariance > 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {formatCurrency(adminVariance)}
