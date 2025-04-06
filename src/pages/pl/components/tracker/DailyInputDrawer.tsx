@@ -37,6 +37,9 @@ export function DailyInputDrawer({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   
+  // Create a ref for the content
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  
   // Load data only when the drawer opens
   useEffect(() => {
     if (isOpen) {
@@ -165,36 +168,6 @@ export function DailyInputDrawer({
     onSave(dailyInputs);
     onClose();
   };
-
-  // Create a ref for the content
-  const contentRef = React.useRef<HTMLDivElement>(null);
-
-  // Use an effect to add event handlers
-  React.useEffect(() => {
-    // Don't do anything if the drawer isn't open
-    if (!isOpen) return;
-    
-    const currentContentRef = contentRef.current;
-    
-    // Handler function to stop propagation
-    const stopPropagation = (e: Event) => {
-      e.stopPropagation();
-    };
-    
-    // Add listeners to current content if it exists
-    if (currentContentRef) {
-      currentContentRef.addEventListener('click', stopPropagation, true);
-      currentContentRef.addEventListener('mousedown', stopPropagation, true);
-    }
-    
-    // Cleanup function
-    return () => {
-      if (currentContentRef) {
-        currentContentRef.removeEventListener('click', stopPropagation, true);
-        currentContentRef.removeEventListener('mousedown', stopPropagation, true);
-      }
-    };
-  }, [isOpen]);
   
   if (!isOpen) {
     return null;
@@ -208,8 +181,9 @@ export function DailyInputDrawer({
       }}
     >
       <DrawerContent 
-        className="max-h-[90vh]"
+        className="max-h-[90vh] pointer-events-auto"
         ref={contentRef}
+        onClick={(e) => e.stopPropagation()}
       >
         <DrawerHeader>
           <div className="flex items-center">
@@ -238,6 +212,7 @@ export function DailyInputDrawer({
                     step="0.01" 
                     placeholder="0.00" 
                     className="w-full h-9 text-tavern-blue" 
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </div>
               ))}
@@ -253,13 +228,19 @@ export function DailyInputDrawer({
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              onClick={onClose} 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               className="flex-1"
             >
               Cancel
             </Button>
             <Button 
-              onClick={handleSave} 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSave();
+              }} 
               className="flex-1 bg-purple-600 hover:bg-purple-700"
               disabled={isSaving}
             >

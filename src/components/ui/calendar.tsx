@@ -14,37 +14,17 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  // Instead of using onMouseDown and onClick props directly on DayPicker,
-  // let's create a wrapper with the event handlers
+  // Use a ref for the calendar wrapper
   const calendarRef = React.useRef<HTMLDivElement>(null);
-  
-  React.useEffect(() => {
-    // Add global event handlers to stop propagation
-    const handleMouseDown = (e: MouseEvent) => {
-      if (calendarRef.current && calendarRef.current.contains(e.target as Node)) {
-        e.stopPropagation();
-      }
-    };
-    
-    const handleClick = (e: MouseEvent) => {
-      if (calendarRef.current && calendarRef.current.contains(e.target as Node)) {
-        e.stopPropagation();
-      }
-    };
-    
-    // Add event listeners to document
-    document.addEventListener('mousedown', handleMouseDown, true);
-    document.addEventListener('click', handleClick, true);
-    
-    // Cleanup
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown, true);
-      document.removeEventListener('click', handleClick, true);
-    };
-  }, []);
 
   return (
-    <div ref={calendarRef}>
+    <div 
+      ref={calendarRef}
+      className="relative"
+      // Add onClick and onMouseDown handlers directly to the div
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <DayPicker
         showOutsideDays={showOutsideDays}
         className={cn("p-3 pointer-events-auto", className)}

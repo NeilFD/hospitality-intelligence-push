@@ -79,7 +79,7 @@ export function TrackerLineItem({
   }
   
   const handleOpenDailyInput = (e: React.MouseEvent) => {
-    // Stop the event from propagating to prevent drawer issues
+    // Stop the event from propagating
     e.preventDefault();
     e.stopPropagation();
     setIsDailyInputOpen(true);
@@ -115,7 +115,10 @@ export function TrackerLineItem({
             size="icon"
             onClick={handleOpenDailyInput}
             className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
-            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             <CalendarDays className="h-5 w-5" />
           </Button>
@@ -132,6 +135,7 @@ export function TrackerLineItem({
           value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
           onChange={(e) => updateForecastAmount(index, e.target.value)}
           className="h-8 w-24 text-right ml-auto"
+          onClick={(e) => e.stopPropagation()}
         />
       </TableCell>
       <TableCell className={`text-right ${fontClass} ${
