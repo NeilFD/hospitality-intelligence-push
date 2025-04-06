@@ -243,26 +243,6 @@ export function PLReportTable({
                   </TableRow>
                 )}
                 
-                <TableRow className="bg-[#48495e]/90 text-white">
-                  <TableCell className="font-bold">
-                    Total Admin Expenses
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(totalAdminBudget)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {/* Percentage could be calculated if needed */}
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(totalAdminActual)}
-                  </TableCell>
-                  <TableCell className={`text-right font-bold ${
-                    totalAdminVariance > 0 ? 'text-green-200' : totalAdminVariance < 0 ? 'text-red-200' : ''
-                  }`}>
-                    {formatCurrency(totalAdminVariance)}
-                  </TableCell>
-                </TableRow>
-                
                 {operatingProfitItem && (
                   <TableRow className="bg-[#8B5CF6]/90 text-white">
                     <TableCell className="font-bold">
