@@ -17,7 +17,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-tavern-green/80",
         ghost: "hover:bg-tavern-green hover:text-white",
         link: "text-primary underline-offset-4 hover:underline hover:text-tavern-green",
-        nav: "border border-tavern-blue text-tavern-blue bg-white hover:bg-tavern-blue/10 focus:ring-2 focus:ring-tavern-blue shadow-sm",
+        nav: "border border-tavern-blue-dark text-tavern-blue-dark bg-white hover:bg-tavern-blue/10 focus:ring-2 focus:ring-tavern-blue shadow-sm",
       },
       size: {
         default: "h-10 px-4 py-2",
