@@ -35,17 +35,18 @@ export function PLReportTable({
   currentYear,
   onOpenTracker
 }: PLReportTableProps) {
-  // Find the indices for 'Wages and Salaries' and 'Hotel and travel' to get the range
+  // Filter items for display in the main table
   const displayItems = processedBudgetData
     .filter(item => 
       !item.name.toLowerCase().includes('total') && 
       item.name !== 'ADMINISTRATIVE EXPENSES' &&
       item.name !== 'Tavern' &&
       !item.name.toLowerCase().includes('operating profit') &&
-      // Removed this filter so Food & Beverage Gross Profit are included
-      // item.name !== 'Food Gross Profit' &&
-      // item.name !== 'Beverage Gross Profit'
-      true
+      // We need to exclude the Food & Beverage Gross Profit items here
+      // as we'll render them separately after the main table items
+      item.name !== 'Food Gross Profit' &&
+      item.name !== 'Beverage Gross Profit' &&
+      item.name !== 'Gross Profit'
     );
 
   // Determine if an item is an admin expense (not revenue, COS, etc.)
@@ -129,6 +130,7 @@ export function PLReportTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* Render the main display items */}
                 {displayItems.map((item, i) => {
                   if (item.isHeader) {
                     return (
@@ -185,14 +187,14 @@ export function PLReportTable({
                     </TableRow>
                   );
                 })}
-                
-                {/* Add Food Gross Profit row if it exists */}
+
+                {/* Always add Food Gross Profit row if it exists */}
                 {foodGrossProfitItem && (
                   <TableRow className="bg-purple-50/50">
-                    <TableCell>
+                    <TableCell className="font-semibold">
                       {foodGrossProfitItem.name}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right font-semibold">
                       {formatCurrency(foodGrossProfitItem.budget_amount)}
                     </TableCell>
                     <TableCell className="text-right">
@@ -200,10 +202,10 @@ export function PLReportTable({
                         ? `${(foodGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
                         : ''}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right font-semibold">
                       {formatCurrency(foodGrossProfitItem.actual_amount || 0)}
                     </TableCell>
-                    <TableCell className={`text-right ${
+                    <TableCell className={`text-right font-semibold ${
                       (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount > 0 
                         ? 'text-green-600' 
                         : (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount < 0 
@@ -215,13 +217,13 @@ export function PLReportTable({
                   </TableRow>
                 )}
                 
-                {/* Add Beverage Gross Profit row if it exists */}
+                {/* Always add Beverage Gross Profit row if it exists */}
                 {beverageGrossProfitItem && (
                   <TableRow className="bg-purple-50/50">
-                    <TableCell>
+                    <TableCell className="font-semibold">
                       {beverageGrossProfitItem.name}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right font-semibold">
                       {formatCurrency(beverageGrossProfitItem.budget_amount)}
                     </TableCell>
                     <TableCell className="text-right">
@@ -229,10 +231,10 @@ export function PLReportTable({
                         ? `${(beverageGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
                         : ''}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right font-semibold">
                       {formatCurrency(beverageGrossProfitItem.actual_amount || 0)}
                     </TableCell>
-                    <TableCell className={`text-right ${
+                    <TableCell className={`text-right font-semibold ${
                       (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount > 0 
                         ? 'text-green-600' 
                         : (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount < 0 
