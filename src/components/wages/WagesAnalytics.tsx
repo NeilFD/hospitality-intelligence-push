@@ -6,6 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFoo
 import { formatCurrency } from '@/lib/date-utils';
 import { ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { toast } from "sonner";
 
 interface WagesAnalyticsProps {
   year: number;
@@ -82,6 +83,15 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     
     // Toggle visibility when clicking on a legend item
     const toggleItem = (dataKey: keyof VisibleSeries) => {
+      // Count how many series are currently visible
+      const visibleCount = Object.values(visibleSeries).filter(Boolean).length;
+      
+      // If trying to hide the last visible item, show a message and return without changing state
+      if (visibleSeries[dataKey] && visibleCount <= 1) {
+        toast.info("At least one series must remain visible");
+        return;
+      }
+      
       setVisibleSeries(prev => ({
         ...prev,
         [dataKey]: !prev[dataKey]
