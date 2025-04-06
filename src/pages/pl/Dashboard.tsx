@@ -51,6 +51,8 @@ export default function PLDashboard() {
     isLoading,
     processedBudgetData
   } = useBudgetData(currentYear, currentMonth);
+  
+  console.log("Dashboard - processed budget data:", processedBudgetData.map(item => item.name));
 
   return (
     <div className="container py-8 text-[#48495e]">

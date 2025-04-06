@@ -35,19 +35,18 @@ export function PLReportTable({
   currentYear,
   onOpenTracker
 }: PLReportTableProps) {
-  // Filter items for display in the main table
-  const displayItems = processedBudgetData
-    .filter(item => 
-      !item.name.toLowerCase().includes('total') && 
-      item.name !== 'ADMINISTRATIVE EXPENSES' &&
-      item.name !== 'Tavern' &&
-      !item.name.toLowerCase().includes('operating profit') &&
-      // We need to exclude the Food & Beverage Gross Profit items here
-      // as we'll render them separately after the main table items
-      item.name !== 'Food Gross Profit' &&
-      item.name !== 'Beverage Gross Profit' &&
-      item.name !== 'Gross Profit'
-    );
+  console.log("All budget data:", processedBudgetData.map(item => item.name));
+
+  // Filter items for display in the main table but don't exclude GP items
+  const displayItems = processedBudgetData.filter(item => 
+    !item.name.toLowerCase().includes('total') && 
+    item.name !== 'ADMINISTRATIVE EXPENSES' &&
+    item.name !== 'Tavern' &&
+    !item.name.toLowerCase().includes('operating profit') &&
+    item.name !== 'Gross Profit'
+  );
+  
+  console.log("Display items:", displayItems.map(item => item.name));
 
   // Determine if an item is an admin expense (not revenue, COS, etc.)
   const isAdminExpense = (item: BudgetItem) => 
@@ -97,6 +96,10 @@ export function PLReportTable({
   const totalGrossProfitItem = processedBudgetData.find(item => 
     item.name === 'Gross Profit'
   );
+  
+  console.log("Food GP item:", foodGrossProfitItem);
+  console.log("Beverage GP item:", beverageGrossProfitItem);
+  console.log("Total GP item:", totalGrossProfitItem);
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
@@ -130,8 +133,13 @@ export function PLReportTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {/* Render the main display items */}
+                {/* Render all display items (including GP items) */}
                 {displayItems.map((item, i) => {
+                  // Skip the Food and Beverage Gross Profit items here as we'll render them separately
+                  if (item.name === 'Food Gross Profit' || item.name === 'Beverage Gross Profit') {
+                    return null;
+                  }
+                  
                   if (item.isHeader) {
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
@@ -187,12 +195,12 @@ export function PLReportTable({
                     </TableRow>
                   );
                 })}
-
-                {/* Always add Food Gross Profit row if it exists */}
+                
+                {/* EXPLICITLY add the Food Gross Profit row */}
                 {foodGrossProfitItem && (
                   <TableRow className="bg-purple-50/50">
                     <TableCell className="font-semibold">
-                      {foodGrossProfitItem.name}
+                      Food Gross Profit
                     </TableCell>
                     <TableCell className="text-right font-semibold">
                       {formatCurrency(foodGrossProfitItem.budget_amount)}
@@ -217,11 +225,11 @@ export function PLReportTable({
                   </TableRow>
                 )}
                 
-                {/* Always add Beverage Gross Profit row if it exists */}
+                {/* EXPLICITLY add the Beverage Gross Profit row */}
                 {beverageGrossProfitItem && (
                   <TableRow className="bg-purple-50/50">
                     <TableCell className="font-semibold">
-                      {beverageGrossProfitItem.name}
+                      Beverage Gross Profit
                     </TableCell>
                     <TableCell className="text-right font-semibold">
                       {formatCurrency(beverageGrossProfitItem.budget_amount)}
