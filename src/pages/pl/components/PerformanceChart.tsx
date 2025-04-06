@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip } from 'recharts';
-import { Info } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 
 interface ChartDataItem {
@@ -18,6 +18,7 @@ interface PerformanceChartProps {
   chartData: ChartDataItem[];
   currentMonthName: string;
   currentYear: number;
+  isLoading: boolean;
 }
 
 interface CustomTooltipProps {
@@ -52,7 +53,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   return null;
 }
 
-export function PerformanceChart({ chartData, currentMonthName, currentYear }: PerformanceChartProps) {
+export function PerformanceChart({ chartData, currentMonthName, currentYear, isLoading }: PerformanceChartProps) {
   // Add state to track visible series
   const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
     revenue: true,
@@ -119,27 +120,33 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear }: P
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <ChartContainer config={{
-          revenue: {
-            color: '#7E69AB' // Complementary purple
-          },
-          costs: {
-            color: '#A5C0E2' // Complementary blue
-          },
-          ebitda: {
-            color: '#6C7787' // Muted complementary color
-          }
-        }}>
-          <BarChart data={chartData}>
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend content={<CustomLegend />} />
-            {visibleSeries.revenue && <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />}
-            {visibleSeries.costs && <Bar dataKey="costs" name="Costs" fill="var(--color-costs)" />}
-            {visibleSeries.ebitda && <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />}
-          </BarChart>
-        </ChartContainer>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[300px]">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+          </div>
+        ) : (
+          <ChartContainer config={{
+            revenue: {
+              color: '#7E69AB' // Complementary purple
+            },
+            costs: {
+              color: '#A5C0E2' // Complementary blue
+            },
+            ebitda: {
+              color: '#6C7787' // Muted complementary color
+            }
+          }}>
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              {visibleSeries.revenue && <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />}
+              {visibleSeries.costs && <Bar dataKey="costs" name="Costs" fill="var(--color-costs)" />}
+              {visibleSeries.ebitda && <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />}
+            </BarChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

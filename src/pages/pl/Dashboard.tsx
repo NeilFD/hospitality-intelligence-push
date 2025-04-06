@@ -11,24 +11,6 @@ import { VariableCosts } from './components/VariableCosts';
 import { useBudgetData } from './hooks/useBudgetData';
 import { PLTracker } from './components/PLTracker';
 
-// Sample chart data
-const chartData = [{
-  name: 'Budget',
-  revenue: 73000,
-  costs: 56450,
-  ebitda: 16550
-}, {
-  name: 'MTD Actual',
-  revenue: 71000,
-  costs: 56000,
-  ebitda: 15000
-}, {
-  name: 'Forecast',
-  revenue: 75000,
-  costs: 58500,
-  ebitda: 16500
-}];
-
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
   const [currentMonthName, setCurrentMonthName] = useState<string>(new Date().toLocaleString('default', {
@@ -53,6 +35,37 @@ export default function PLDashboard() {
   } = useBudgetData(currentYear, currentMonth);
   
   console.log("Dashboard - processed budget data:", processedBudgetData.map(item => item.name));
+
+  // Calculate chart data from processed budget data
+  const turnoverItem = processedBudgetData.find(item => 
+    item.name.toLowerCase() === 'turnover' || item.name.toLowerCase() === 'revenue');
+  
+  const costOfSalesItem = processedBudgetData.find(item => 
+    item.name.toLowerCase() === 'cost of sales' || item.name.toLowerCase() === 'cos');
+  
+  const operatingProfitItem = processedBudgetData.find(item => 
+    item.name.toLowerCase().includes('operating profit') || item.name.toLowerCase().includes('ebitda'));
+
+  const chartData = [
+    {
+      name: 'Budget',
+      revenue: turnoverItem?.budget_amount || 0,
+      costs: costOfSalesItem?.budget_amount || 0,
+      ebitda: operatingProfitItem?.budget_amount || 0
+    },
+    {
+      name: 'MTD Actual',
+      revenue: turnoverItem?.actual_amount || 0,
+      costs: costOfSalesItem?.actual_amount || 0,
+      ebitda: operatingProfitItem?.actual_amount || 0
+    },
+    {
+      name: 'Forecast',
+      revenue: turnoverItem?.forecast_amount || turnoverItem?.budget_amount || 0,
+      costs: costOfSalesItem?.forecast_amount || costOfSalesItem?.budget_amount || 0,
+      ebitda: operatingProfitItem?.forecast_amount || operatingProfitItem?.budget_amount || 0
+    }
+  ];
 
   return (
     <div className="container py-8 text-[#48495e]">
@@ -80,6 +93,7 @@ export default function PLDashboard() {
           chartData={chartData} 
           currentMonthName={currentMonthName} 
           currentYear={currentYear} 
+          isLoading={isLoading}
         />
       </div>
       
