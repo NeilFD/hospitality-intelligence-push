@@ -371,9 +371,7 @@ export function PLTracker({
                   }
                   
                   const proRatedBudget = calculateSummaryProRatedBudget(item);
-                  const actualAmount = item.tracking_type === 'Discrete' 
-                    ? (item.manually_entered_actual || 0)
-                    : calculateProRatedBudget(item);
+                  const actualAmount = getActualAmount(item);
                   const variance = actualAmount - proRatedBudget;
                   
                   let rowClassName = '';
