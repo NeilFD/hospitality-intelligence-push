@@ -100,6 +100,17 @@ export function PLReportTable({
                   const isHighlighted = item.isHighlighted;
                   const isTotalAdmin = item.name.toLowerCase().includes('total admin');
                   
+                  // Add special handling for Turnover, Cost of Sales, and Gross Profit/(Loss) rows
+                  const isTurnover = item.name.toLowerCase().includes('turnover') || 
+                                    item.name.toLowerCase() === 'turnover';
+                  const isCostOfSales = item.name.toLowerCase().includes('cost of sales') || 
+                                      item.name.toLowerCase() === 'cost of sales';
+                  const isGrossProfitLoss = item.name.toLowerCase().includes('gross profit/(loss)');
+                  
+                  // Apply bold styling to specified rows
+                  const shouldBeBold = isHighlighted || isTotalAdmin || isTurnover || isCostOfSales || isGrossProfitLoss;
+                  const fontClass = shouldBeBold ? 'font-bold' : '';
+                  
                   // Determine row styling
                   let rowClassName = '';
                   if (isHighlighted && !isTotalAdmin) {
@@ -107,9 +118,6 @@ export function PLReportTable({
                   } else if (isGrossProfit) {
                     rowClassName = 'font-semibold bg-purple-50/50';
                   }
-                  
-                  // Apply bold to Total Admin row without dark background
-                  const fontClass = (isHighlighted || isTotalAdmin) ? 'font-bold' : '';
                   
                   return (
                     <TableRow key={i} className={rowClassName}>
