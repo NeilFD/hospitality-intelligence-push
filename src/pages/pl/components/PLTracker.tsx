@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableStickyHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -30,7 +31,7 @@ export function PLTracker({
   onClose
 }: PLTrackerProps) {
   const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
-  const [currentDate] = useState(new Date());
+  const [yesterdayDate, setYesterdayDate] = useState(new Date());
   const [daysInMonth, setDaysInMonth] = useState(0);
   const [dayOfMonth, setDayOfMonth] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -67,14 +68,21 @@ export function PLTracker({
   }, [processedBudgetData]);
 
   useEffect(() => {
+    // Set yesterday's date
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    setYesterdayDate(yesterday);
+    
     const year = currentYear;
     const month = new Date(`${currentMonthName} 1, ${currentYear}`).getMonth();
     
     const lastDay = new Date(year, month + 1, 0).getDate();
     setDaysInMonth(lastDay);
     
-    setDayOfMonth(Math.min(currentDate.getDate(), lastDay));
-  }, [currentMonthName, currentYear, currentDate]);
+    // Set day of month to yesterday's date
+    setDayOfMonth(Math.min(yesterday.getDate(), lastDay));
+  }, [currentMonthName, currentYear]);
 
   const updateForecastAmount = (index: number, value: string) => {
     const numericValue = value === '' ? undefined : parseFloat(value);
@@ -229,7 +237,7 @@ export function PLTracker({
       return trackedBudgetData.slice(wagesIndex, hotelTravelIndex + 1)
         .reduce((sum, item) => {
           if (!item.isHeader && item.budget_amount) {
-            return sum + (item.budget_amount || 0);
+            return sum + calculateProRatedBudget(item);
           }
           return sum;
         }, 0);
@@ -243,15 +251,17 @@ export function PLTracker({
         !item.name.toLowerCase().includes('cost of sales') &&
         !item.name.toLowerCase().includes('gross profit')
       )
-      .reduce((sum, item) => sum + (item.budget_amount || 0), 0);
+      .reduce((sum, item) => sum + calculateProRatedBudget(item), 0);
   };
   
-  const calculateOperatingProfit = (adminExpenses: number) => {
+  const calculateOperatingProfit = () => {
     const grossProfitItem = trackedBudgetData.find(item => 
       item.isHighlighted && item.name.toLowerCase().includes('gross profit'));
     
     if (grossProfitItem) {
-      return grossProfitItem.budget_amount - adminExpenses;
+      const grossProfit = calculateProRatedBudget(grossProfitItem);
+      const adminExpenses = calculateAdminExpenses();
+      return grossProfit - adminExpenses;
     }
     
     return 0;
@@ -275,7 +285,7 @@ export function PLTracker({
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
         <CardTitle>P&L Tracker - {currentMonthName} {currentYear}</CardTitle>
         <div className="flex items-center gap-2">
-          <div className="text-sm">Current Date: {currentDate.toLocaleDateString()}</div>
+          <div className="text-sm">Data through: {yesterdayDate.toLocaleDateString()} (Day {dayOfMonth} of {daysInMonth})</div>
           <Button 
             onClick={() => setShowSettings(true)} 
             variant="outline" 
@@ -401,8 +411,9 @@ export function PLTracker({
                 
                 {(() => {
                   const adminExpenses = calculateAdminExpenses();
-                  const adminActualAmount = 42875;
-                  const adminVariance = adminActualAmount - adminExpenses;
+                  const proRatedAdminExpenses = adminExpenses; // Already pro-rated by the calculation function
+                  const adminActualAmount = 42875; // Note: This should ideally be calculated from actual data
+                  const adminVariance = adminActualAmount - proRatedAdminExpenses;
                   
                   return (
                     <TableRow className="bg-purple-100/50 text-[#48495e]">
@@ -410,16 +421,16 @@ export function PLTracker({
                         ADMIN EXPENSES
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(42875)}
+                        {formatCurrency(adminExpenses)}
                       </TableCell>
                       <TableCell className="text-right">
                         {/* Percentage can be added here if needed */}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(42875)}
+                        {formatCurrency(proRatedAdminExpenses)}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(42875)}
+                        {formatCurrency(adminActualAmount)}
                       </TableCell>
                       <TableCell className="text-right">
                         {/* Forecast can be added here if needed */}
@@ -432,9 +443,10 @@ export function PLTracker({
                 })()}
                 
                 {(() => {
-                  const adminExpenses = 42875;
-                  const operatingProfit = -7712;
-                  const opVariance = 0;
+                  const operatingProfit = calculateOperatingProfit();
+                  const proRatedOperatingProfit = operatingProfit; // Already pro-rated
+                  const actualOperatingProfit = -7712; // Note: This should ideally be calculated from actual data
+                  const opVariance = actualOperatingProfit - proRatedOperatingProfit;
                   
                   return (
                     <TableRow className="bg-[#8B5CF6]/90 text-white">
@@ -448,10 +460,10 @@ export function PLTracker({
                         {/* Percentage can be added here if needed */}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(operatingProfit)}
+                        {formatCurrency(proRatedOperatingProfit)}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(operatingProfit)}
+                        {formatCurrency(actualOperatingProfit)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Input
