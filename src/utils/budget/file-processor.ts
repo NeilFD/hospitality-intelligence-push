@@ -1,3 +1,4 @@
+
 import { read, utils } from 'xlsx';
 import { BudgetItem } from './types';
 
@@ -146,6 +147,9 @@ export const processBudgetFile = async (
             const isTotalTurnover = lcFirstCell.includes('turnover') || lcFirstCell.includes('total sales') || lcFirstCell.includes('total revenue');
             const isFoodRevenue = lcFirstCell.includes('food') && (lcFirstCell.includes('revenue') || lcFirstCell.includes('sales'));
             const isBeverageRevenue = lcFirstCell.includes('beverage') || lcFirstCell.includes('drink') || lcFirstCell.includes('bar');
+            // Explicitly check for Food Gross Profit and Beverage Gross Profit
+            const isFoodGrossProfit = lcFirstCell.includes('food') && lcFirstCell.includes('gross profit');
+            const isBeverageGrossProfit = (lcFirstCell.includes('beverage') || lcFirstCell.includes('drink')) && lcFirstCell.includes('gross profit');
             
             // Skip year end calculations
             if (lcFirstCell.includes('year') && lcFirstCell.includes('end')) {
@@ -183,11 +187,23 @@ export const processBudgetFile = async (
                 }
               }
               
-              budgetItemsByMonth[month].push({
+              // Add to budget items
+              const budgetItem = {
                 category: currentCategory,
                 name: firstCellStr,
                 budget: budgetValue,
-              });
+              };
+              
+              // Special handling for Food and Beverage Gross Profit
+              if (isFoodGrossProfit) {
+                console.log(`Found Food Gross Profit for month ${month}: £${budgetValue}`);
+                budgetItem.name = "Food Gross Profit";
+              } else if (isBeverageGrossProfit) {
+                console.log(`Found Beverage Gross Profit for month ${month}: £${budgetValue}`);
+                budgetItem.name = "Beverage Gross Profit";
+              }
+              
+              budgetItemsByMonth[month].push(budgetItem);
               
               console.log(`Added budget item for month ${month}: ${firstCellStr} (${currentCategory}) - £${budgetValue}`);
               
@@ -286,3 +302,4 @@ const extractNumericValue = (cell: any): number | null => {
   
   return null;
 };
+

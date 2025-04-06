@@ -21,6 +21,23 @@ export const saveBudgetItems = async (
       
       console.log(`Saving ${budgetItems.length} budget items for month ${month}/${year}`);
       
+      // Log Food and Beverage Gross Profit items if present
+      const foodGP = budgetItems.find(item => 
+        item.name === 'Food Gross Profit' || 
+        item.name.toLowerCase() === 'food gross profit');
+      
+      const bevGP = budgetItems.find(item => 
+        item.name === 'Beverage Gross Profit' || 
+        item.name.toLowerCase() === 'beverage gross profit');
+      
+      if (foodGP) {
+        console.log(`Found Food Gross Profit item for month ${month}: £${foodGP.budget}`);
+      }
+      
+      if (bevGP) {
+        console.log(`Found Beverage Gross Profit item for month ${month}: £${bevGP.budget}`);
+      }
+      
       // First, delete any existing budget items for this year/month
       const { error: deleteError } = await supabase
         .from('budget_items')
