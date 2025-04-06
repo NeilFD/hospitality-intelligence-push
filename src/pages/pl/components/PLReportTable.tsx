@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -97,13 +98,22 @@ export function PLReportTable({
                   
                   // Special handling for highlighted rows (Total Admin and Operating Profit)
                   const isHighlighted = item.isHighlighted;
+                  const isTotalAdmin = item.name.toLowerCase().includes('total admin');
+                  
+                  // Determine row styling
+                  let rowClassName = '';
+                  if (isHighlighted && !isTotalAdmin) {
+                    rowClassName = 'bg-[#48495e]/90 text-white font-bold';
+                  } else if (isGrossProfit) {
+                    rowClassName = 'font-semibold bg-purple-50/50';
+                  }
+                  
+                  // Apply bold to Total Admin row without dark background
+                  const fontClass = (isHighlighted || isTotalAdmin) ? 'font-bold' : '';
                   
                   return (
-                    <TableRow key={i} className={
-                      isHighlighted ? 'bg-[#48495e]/90 text-white font-bold' : 
-                      isGrossProfit ? 'font-semibold bg-purple-50/50' : ''
-                    }>
-                      <TableCell className={`${isHighlighted ? 'font-bold' : ''}`}>
+                    <TableRow key={i} className={rowClassName}>
+                      <TableCell className={fontClass}>
                         {item.name}
                         {isGrossProfit && item.budget_percentage && !isHighlighted && (
                           <span className="ml-2 text-xs text-gray-500">
@@ -111,35 +121,35 @@ export function PLReportTable({
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className={`text-right ${
+                      <TableCell className={`text-right ${fontClass} ${
                         isHighlighted ? '' : 
                         (isOperatingProfit && item.budget_amount < 0 ? 'text-red-600' : 
                          isOperatingProfit && item.budget_amount > 0 ? 'text-green-600' : '')
                       }`}>
                         {formatCurrency(item.budget_amount)}
                       </TableCell>
-                      <TableCell className={`text-right ${
+                      <TableCell className={`text-right ${fontClass} ${
                         isHighlighted ? '' : 
                         (isOperatingProfit && (item.actual_amount || 0) < 0 ? 'text-red-600' : 
                          isOperatingProfit && (item.actual_amount || 0) > 0 ? 'text-green-600' : '')
                       }`}>
                         {formatCurrency(item.actual_amount || 0)}
                       </TableCell>
-                      <TableCell className={`text-right ${
+                      <TableCell className={`text-right ${fontClass} ${
                         isHighlighted ? '' : 
                         (isOperatingProfit ? (variance < 0 ? 'text-red-600' : 'text-green-600') : 
                          isPositiveVariance ? 'text-green-600' : 'text-red-600')
                       }`}>
                         {variance > 0 ? '+' : ''}{formatCurrency(variance)} ({formatPercentage(variancePercent)})
                       </TableCell>
-                      <TableCell className={`text-right ${
+                      <TableCell className={`text-right ${fontClass} ${
                         isHighlighted ? '' : 
                         (isOperatingProfit && (item.forecast_amount || item.budget_amount) < 0 ? 'text-red-600' : 
                          isOperatingProfit && (item.forecast_amount || item.budget_amount) > 0 ? 'text-green-600' : '')
                       }`}>
                         {formatCurrency(item.forecast_amount || item.budget_amount)}
                       </TableCell>
-                      <TableCell className={`text-right ${
+                      <TableCell className={`text-right ${fontClass} ${
                         isHighlighted ? '' : 
                         (isOperatingProfit ? (forecastVariance < 0 ? 'text-red-600' : 'text-green-600') : 
                          isPositiveForecast ? 'text-green-600' : 'text-red-600')
