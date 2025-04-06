@@ -43,6 +43,7 @@ export const useBudgetData = (year: number, month: number) => {
         
         // Process the budget data
         const processedData = processBudgetData(budgetData);
+        console.log("Processed budget data:", processedData.map(item => `${item.name} (${item.category})`));
         setProcessedBudgetData(processedData);
       } catch (err) {
         console.error('Unexpected error in useBudgetData:', err);
@@ -194,35 +195,37 @@ export const useBudgetData = (year: number, month: number) => {
       const beverageActualTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
       const beverageForecastTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
       
-      // Calculate Food Gross Profit
-      const foodGrossProfit = foodTurnover - foodCOS;
-      const foodGpPercentage = foodTurnover > 0 ? foodGrossProfit / foodTurnover : 0;
+      // Calculate Food Gross Profit - ensure this is explicitly named "Food Gross Profit"
+      if (foodRevenueItems.length > 0 && foodCosItems.length > 0) {
+        const foodGrossProfit = foodTurnover - foodCOS;
+        const foodGpPercentage = foodTurnover > 0 ? foodGrossProfit / foodTurnover : 0;
+        
+        result.push({
+          category: 'Summary',
+          name: 'Food Gross Profit',
+          budget_amount: foodGrossProfit,
+          budget_percentage: foodGpPercentage,
+          actual_amount: foodActualTurnover - foodActualCOS,
+          forecast_amount: foodForecastTurnover - foodForecastCOS,
+          isGrossProfit: true
+        });
+      }
       
-      // Calculate Beverage Gross Profit
-      const beverageGrossProfit = beverageTurnover - beverageCOS;
-      const beverageGpPercentage = beverageTurnover > 0 ? beverageGrossProfit / beverageTurnover : 0;
-      
-      // Add Food Gross Profit
-      result.push({
-        category: 'Summary',
-        name: 'Food Gross Profit',
-        budget_amount: foodGrossProfit,
-        budget_percentage: foodGpPercentage,
-        actual_amount: foodActualTurnover - foodActualCOS,
-        forecast_amount: foodForecastTurnover - foodForecastCOS,
-        isGrossProfit: true
-      });
-      
-      // Add Beverage Gross Profit
-      result.push({
-        category: 'Summary',
-        name: 'Beverage Gross Profit',
-        budget_amount: beverageGrossProfit,
-        budget_percentage: beverageGpPercentage,
-        actual_amount: beverageActualTurnover - beverageActualCOS,
-        forecast_amount: beverageForecastTurnover - beverageForecastCOS,
-        isGrossProfit: true
-      });
+      // Calculate Beverage Gross Profit - ensure this is explicitly named "Beverage Gross Profit"
+      if (beverageRevenueItems.length > 0 && beverageCosItems.length > 0) {
+        const beverageGrossProfit = beverageTurnover - beverageCOS;
+        const beverageGpPercentage = beverageTurnover > 0 ? beverageGrossProfit / beverageTurnover : 0;
+        
+        result.push({
+          category: 'Summary',
+          name: 'Beverage Gross Profit',
+          budget_amount: beverageGrossProfit,
+          budget_percentage: beverageGpPercentage,
+          actual_amount: beverageActualTurnover - beverageActualCOS,
+          forecast_amount: beverageForecastTurnover - beverageForecastCOS,
+          isGrossProfit: true
+        });
+      }
       
       // Calculate Total Gross Profit
       const turnoverItem = result.find(item => item.name === 'Turnover');
@@ -309,6 +312,12 @@ export const useBudgetData = (year: number, month: number) => {
         });
       }
     }
+    
+    // Debug: Log to check if Food and Beverage Gross Profit items are created
+    const foodGpItem = result.find(item => item.name === 'Food Gross Profit');
+    const bevGpItem = result.find(item => item.name === 'Beverage Gross Profit');
+    console.log("Food GP Item:", foodGpItem);
+    console.log("Beverage GP Item:", bevGpItem);
     
     return result;
   };

@@ -48,6 +48,18 @@ export function PLReportTable({
   );
   
   console.log("Display items:", displayItems.map(item => item.name));
+  
+  // Find Food and Beverage Gross Profit items directly from processedBudgetData (not from filtered displayItems)
+  const foodGrossProfitItem = processedBudgetData.find(item => 
+    item.name === 'Food Gross Profit'
+  );
+  
+  const beverageGrossProfitItem = processedBudgetData.find(item => 
+    item.name === 'Beverage Gross Profit'
+  );
+
+  console.log("Food GP item found:", !!foodGrossProfitItem);
+  console.log("Beverage GP item found:", !!beverageGrossProfitItem);
 
   // Determine if an item is an admin expense
   const isAdminExpense = (item: BudgetItem) => 
@@ -84,23 +96,10 @@ export function PLReportTable({
     item.name.toLowerCase().includes('operating profit')
   );
 
-  // Get the Food and Beverage Gross Profit items - used for separate rendering
-  const foodGrossProfitItem = processedBudgetData.find(item => 
-    item.name === 'Food Gross Profit' || item.name.toLowerCase() === 'food gross profit'
-  );
-  
-  const beverageGrossProfitItem = processedBudgetData.find(item => 
-    item.name === 'Beverage Gross Profit' || item.name.toLowerCase() === 'beverage gross profit'
-  );
-
   // Get the Total Gross Profit item
   const totalGrossProfitItem = processedBudgetData.find(item => 
     item.name === 'Gross Profit' || item.name.toLowerCase() === 'gross profit'
   );
-  
-  console.log("Food GP item:", foodGrossProfitItem);
-  console.log("Beverage GP item:", beverageGrossProfitItem);
-  console.log("Total GP item:", totalGrossProfitItem);
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
@@ -134,9 +133,13 @@ export function PLReportTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* First render all regular items except Gross Profit items */}
                 {displayItems.map((item, i) => {
-                  // We'll render ALL items in the displayItems array and handle special formatting
-                  // based on their properties
+                  // Skip Food and Beverage Gross Profit items as we'll render them separately
+                  if (item.name === 'Food Gross Profit' || item.name === 'Beverage Gross Profit') {
+                    return null;
+                  }
+                  
                   if (item.isHeader) {
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
@@ -157,9 +160,7 @@ export function PLReportTable({
                   let fontClass = '';
                   
                   const isGrossProfit = item.isGrossProfit || 
-                                       item.name.toLowerCase().includes('profit/(loss)') ||
-                                       item.name === 'Food Gross Profit' || 
-                                       item.name === 'Beverage Gross Profit';
+                                       item.name.toLowerCase().includes('profit/(loss)');
                   
                   const isTurnover = item.name.toLowerCase() === 'turnover';
                   
@@ -171,12 +172,6 @@ export function PLReportTable({
                   }
                   
                   fontClass = item.isHighlighted || isTurnover || isGrossProfit ? 'font-bold' : '';
-                  
-                  // For GP items add special styling
-                  if (item.name === 'Food Gross Profit' || item.name === 'Beverage Gross Profit') {
-                    rowClassName = 'bg-purple-50/50';
-                    fontClass = 'font-semibold';
-                  }
                   
                   return (
                     <TableRow key={i} className={rowClassName}>
@@ -200,6 +195,76 @@ export function PLReportTable({
                     </TableRow>
                   );
                 })}
+                
+                {/* Explicitly render the Food Gross Profit item if it exists */}
+                {foodGrossProfitItem ? (
+                  <TableRow className="bg-purple-50/50">
+                    <TableCell className="font-semibold">
+                      {foodGrossProfitItem.name}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(foodGrossProfitItem.budget_amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {foodGrossProfitItem.budget_percentage !== undefined 
+                        ? `${(foodGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
+                        : ''}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(foodGrossProfitItem.actual_amount || 0)}
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${
+                      (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount > 0 
+                        ? 'text-green-600' 
+                        : (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount < 0 
+                          ? 'text-red-600' 
+                          : ''
+                    }`}>
+                      {formatCurrency((foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount)}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-amber-600 bg-amber-50 font-semibold text-center">
+                      Food Gross Profit data not available
+                    </TableCell>
+                  </TableRow>
+                )}
+                
+                {/* Explicitly render the Beverage Gross Profit item if it exists */}
+                {beverageGrossProfitItem ? (
+                  <TableRow className="bg-purple-50/50">
+                    <TableCell className="font-semibold">
+                      {beverageGrossProfitItem.name}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(beverageGrossProfitItem.budget_amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {beverageGrossProfitItem.budget_percentage !== undefined 
+                        ? `${(beverageGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
+                        : ''}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(beverageGrossProfitItem.actual_amount || 0)}
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${
+                      (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount > 0 
+                        ? 'text-green-600' 
+                        : (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount < 0 
+                          ? 'text-red-600' 
+                          : ''
+                    }`}>
+                      {formatCurrency((beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount)}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-amber-600 bg-amber-50 font-semibold text-center">
+                      Beverage Gross Profit data not available
+                    </TableCell>
+                  </TableRow>
+                )}
                 
                 {/* Add Total Gross Profit row */}
                 {totalGrossProfitItem && (
