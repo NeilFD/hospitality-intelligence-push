@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { ProcessedBudgetItem } from '../../hooks/useBudgetData';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function useTrackerData(processedBudgetData: ProcessedBudgetItem[]) {
+  const { toast } = useToast();
   const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
