@@ -79,14 +79,15 @@ export function TrackerLineItem({
   }
   
   const handleOpenDailyInput = () => {
-    if (item.tracking_type === 'Discrete') {
-      setIsDailyInputOpen(true);
-    }
+    setIsDailyInputOpen(true);
   };
   
   const handleSaveDailyValues = (dailyValues: DayInput[]) => {
     updateDailyValues(index, dailyValues);
   };
+
+  // Always show calendar icon for revenue, sales, and other income items
+  const shouldShowCalendarIcon = true;
   
   return (
     <TableRow className={rowClassName}>
@@ -103,7 +104,7 @@ export function TrackerLineItem({
         {formatCurrency(proRatedBudget)}
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
-        {item.tracking_type === 'Discrete' ? (
+        {shouldShowCalendarIcon ? (
           <div className="flex items-center justify-end gap-2">
             <Button 
               variant="outline"
