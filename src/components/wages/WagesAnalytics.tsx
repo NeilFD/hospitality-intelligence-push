@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useWagesStore } from './WagesStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,18 +74,17 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
       : 0
   }));
 
-  // Custom Legend component that handles toggle functionality
-  const CustomLegend = (props: any) => {
-    const { payload } = props;
+  const CustomLegend = () => {
+    const allSeries = [
+      { dataKey: 'fohWages', value: 'FOH Wages', color: '#4f46e5' },
+      { dataKey: 'kitchenWages', value: 'Kitchen Wages', color: '#059669' },
+      { dataKey: 'totalWages', value: 'Total Wages', color: '#d97706' },
+      { dataKey: 'totalRevenue', value: 'Revenue', color: '#0ea5e9' }
+    ];
     
-    if (!payload || payload.length === 0) return null;
-    
-    // Toggle visibility when clicking on a legend item
     const toggleItem = (dataKey: keyof VisibleSeries) => {
-      // Count how many series are currently visible
       const visibleCount = Object.values(visibleSeries).filter(Boolean).length;
       
-      // If trying to hide the last visible item, show a message and return without changing state
       if (visibleSeries[dataKey] && visibleCount <= 1) {
         toast.info("At least one series must remain visible");
         return;
@@ -100,7 +98,7 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     
     return (
       <div className="flex flex-wrap justify-center gap-4 pt-4">
-        {payload.map((entry: any, index: number) => {
+        {allSeries.map((entry, index) => {
           const isActive = visibleSeries[entry.dataKey as keyof VisibleSeries];
           return (
             <div 
