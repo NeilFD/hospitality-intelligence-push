@@ -244,10 +244,10 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
     if (totalAdminItem) {
       processedData.push({
         ...totalAdminItem,
-        isHeader: false,  // Changed from true to false
-        isHighlighted: true,  // New property to differentiate special rows
-        name: 'TOTAL ADMIN EXPENSES',
-        category: 'Header'
+        isHeader: false,
+        isHighlighted: true,
+        name: 'Total Admin Expenses',
+        category: 'Expenses'
       });
     }
     
@@ -259,9 +259,9 @@ export function useBudgetData(currentYear: number, currentMonth: number) {
     if (operatingProfitItem) {
       processedData.push({
         ...operatingProfitItem,
-        isHeader: false,  // Changed from true to false
-        isHighlighted: true,  // New property for special highlighting
-        name: 'OPERATING PROFIT',
+        isHeader: false,
+        isHighlighted: true,
+        name: 'Operating Profit',
         category: 'Header',
         isOperatingProfit: true
       });
