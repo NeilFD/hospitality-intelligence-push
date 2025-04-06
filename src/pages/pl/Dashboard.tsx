@@ -264,7 +264,8 @@ export default function PLDashboard() {
     if (totalAdminItem) {
       processedData.push({
         ...totalAdminItem,
-        isHeader: true,
+        isHeader: false,  // Changed from true to false
+        isHighlighted: true,  // New property to differentiate special rows
         name: 'TOTAL ADMIN EXPENSES',
         category: 'Header'
       });
@@ -278,7 +279,8 @@ export default function PLDashboard() {
     if (operatingProfitItem) {
       processedData.push({
         ...operatingProfitItem,
-        isHeader: true,
+        isHeader: false,  // Changed from true to false
+        isHighlighted: true,  // New property for special highlighting
         name: 'OPERATING PROFIT',
         category: 'Header',
         isOperatingProfit: true
@@ -287,28 +289,6 @@ export default function PLDashboard() {
     
     return processedData;
   }, [budgetItems]);
-
-  const formatCurrency = (value: number): string => {
-    return `£${value.toLocaleString('en-GB', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    })}`;
-  };
-
-  const formatPercentage = (value: number): string => {
-    return `${value.toFixed(1)}%`;
-  };
-
-  const handleMonthChange = (value: string) => {
-    setCurrentMonth(parseInt(value));
-  };
-
-  useEffect(() => {
-    const monthName = new Date(currentYear, currentMonth - 1, 1).toLocaleString('default', {
-      month: 'long'
-    });
-    setCurrentMonthName(monthName);
-  }, [currentMonth, currentYear]);
 
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold text-purple-600 mb-6 text-center">P&L Tracker Dashboard</h1>
@@ -420,9 +400,7 @@ export default function PLDashboard() {
                   <TableBody>
                     {processedBudgetData.map((item, i) => {
                       if (item.isHeader) {
-                        // Handle section headers and important highlighted rows
-                        const isOperatingProfit = item.isOperatingProfit;
-                        
+                        // Handle section headers
                         return (
                           <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
                             <TableCell 
@@ -455,31 +433,58 @@ export default function PLDashboard() {
                                           item.name.toLowerCase().includes('profit/(loss)');
                       
                       // Special handling for Operating Profit row
-                      const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
+                      const isOperatingProfit = item.isOperatingProfit || 
+                                              item.name.toLowerCase().includes('operating profit');
+                      
+                      // Special handling for highlighted rows (Total Admin and Operating Profit)
+                      const isHighlighted = item.isHighlighted;
                       
                       return (
-                        <TableRow key={i} className={isGrossProfit ? 'font-semibold bg-purple-50/50' : ''}>
-                          <TableCell>
+                        <TableRow key={i} className={
+                          isHighlighted ? 'bg-[#48495e]/90 text-white' :
+                          isGrossProfit ? 'font-semibold bg-purple-50/50' : ''
+                        }>
+                          <TableCell className={isHighlighted ? 'font-bold text-sm tracking-wider py-2' : ''}>
                             {item.name}
-                            {isGrossProfit && item.budget_percentage && (
+                            {isGrossProfit && item.budget_percentage && !isHighlighted && (
                               <span className="ml-2 text-xs text-gray-500">
                                 ({formatPercentage(item.budget_percentage)})
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className={`text-right ${isOperatingProfit && item.budget_amount < 0 ? 'text-red-600' : isOperatingProfit && item.budget_amount > 0 ? 'text-green-600' : ''}`}>
+                          <TableCell className={`text-right ${
+                            isHighlighted ? '' : 
+                            (isOperatingProfit && item.budget_amount < 0 ? 'text-red-600' : 
+                             isOperatingProfit && item.budget_amount > 0 ? 'text-green-600' : '')
+                          }`}>
                             {formatCurrency(item.budget_amount)}
                           </TableCell>
-                          <TableCell className={`text-right ${isOperatingProfit && (item.actual_amount || 0) < 0 ? 'text-red-600' : isOperatingProfit && (item.actual_amount || 0) > 0 ? 'text-green-600' : ''}`}>
+                          <TableCell className={`text-right ${
+                            isHighlighted ? '' : 
+                            (isOperatingProfit && (item.actual_amount || 0) < 0 ? 'text-red-600' : 
+                             isOperatingProfit && (item.actual_amount || 0) > 0 ? 'text-green-600' : '')
+                          }`}>
                             {formatCurrency(item.actual_amount || 0)}
                           </TableCell>
-                          <TableCell className={`text-right ${isOperatingProfit ? (variance < 0 ? 'text-red-600' : 'text-green-600') : isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
+                          <TableCell className={`text-right ${
+                            isHighlighted ? '' : 
+                            (isOperatingProfit ? (variance < 0 ? 'text-red-600' : 'text-green-600') : 
+                             isPositiveVariance ? 'text-green-600' : 'text-red-600')
+                          }`}>
                             {variance > 0 ? '+' : ''}{formatCurrency(variance)} ({formatPercentage(variancePercent)})
                           </TableCell>
-                          <TableCell className={`text-right ${isOperatingProfit && (item.forecast_amount || item.budget_amount) < 0 ? 'text-red-600' : isOperatingProfit && (item.forecast_amount || item.budget_amount) > 0 ? 'text-green-600' : ''}`}>
+                          <TableCell className={`text-right ${
+                            isHighlighted ? '' : 
+                            (isOperatingProfit && (item.forecast_amount || item.budget_amount) < 0 ? 'text-red-600' : 
+                             isOperatingProfit && (item.forecast_amount || item.budget_amount) > 0 ? 'text-green-600' : '')
+                          }`}>
                             {formatCurrency(item.forecast_amount || item.budget_amount)}
                           </TableCell>
-                          <TableCell className={`text-right ${isOperatingProfit ? (forecastVariance < 0 ? 'text-red-600' : 'text-green-600') : isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
+                          <TableCell className={`text-right ${
+                            isHighlighted ? '' : 
+                            (isOperatingProfit ? (forecastVariance < 0 ? 'text-red-600' : 'text-green-600') : 
+                             isPositiveForecast ? 'text-green-600' : 'text-red-600')
+                          }`}>
                             {forecastVariance > 0 ? '+' : ''}{formatCurrency(forecastVariance)} ({formatPercentage(forecastVariancePercent)})
                           </TableCell>
                         </TableRow>
