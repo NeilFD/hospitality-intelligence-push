@@ -323,6 +323,12 @@ export function PLTracker({
                   
                   fontClass = item.isHighlighted || item.name.toLowerCase().includes('total admin') || isTurnover || item.name.toLowerCase().includes('cost of sales') || (isGrossProfit && !item.name.toLowerCase().includes('food gross profit') && !item.name.toLowerCase().includes('beverage gross profit')) ? 'font-bold' : '';
                   
+                  // Skip rendering the operating profit row that appears directly after admin expenses
+                  // We'll render it separately at the bottom
+                  if (isOperatingProfit && !item.isHighlighted) {
+                    return null;
+                  }
+                  
                   return (
                     <TableRow key={i} className={rowClassName}>
                       <TableCell className={fontClass}>
@@ -427,7 +433,7 @@ export function PLTracker({
                   </TableCell>
                   <TableCell className="text-right font-bold">
                     {formatCurrency(
-                      trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.budget_amount || 0
+                      trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.budget_amount || 0
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -438,7 +444,7 @@ export function PLTracker({
                   </TableCell>
                   <TableCell className="text-right font-bold">
                     {formatCurrency(
-                      trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.actual_amount || 0
+                      trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.actual_amount || 0
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -446,11 +452,11 @@ export function PLTracker({
                       type="number"
                       min="0"
                       step="0.01"
-                      value={trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.forecast_amount !== undefined 
-                        ? trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.forecast_amount 
+                      value={trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount !== undefined 
+                        ? trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount 
                         : ''}
                       onChange={(e) => {
-                        const opIndex = trackedBudgetData.findIndex(i => i.name.toLowerCase().includes('operating profit'));
+                        const opIndex = trackedBudgetData.findIndex(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted);
                         if (opIndex >= 0) {
                           updateForecastAmount(opIndex, e.target.value);
                         }
@@ -460,8 +466,8 @@ export function PLTracker({
                   </TableCell>
                   <TableCell className="text-right text-green-200 font-bold">
                     {formatCurrency(
-                      (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.actual_amount || 0) - 
-                      (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.budget_amount || 0)
+                      (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.actual_amount || 0) - 
+                      (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.budget_amount || 0)
                     )}
                   </TableCell>
                 </TableRow>
