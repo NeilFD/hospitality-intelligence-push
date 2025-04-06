@@ -4,6 +4,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2, BarChart2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/date-utils';
+import { fetchDailyValues } from '@/services/budget-service';
+import { useQuery } from '@tanstack/react-query';
 
 interface BudgetItem {
   id?: string;
@@ -37,12 +39,51 @@ export function PLReportTable({
 }: PLReportTableProps) {
   console.log("All budget data:", processedBudgetData.map(item => item.name));
 
-  const foodGpItems = processedBudgetData.filter(item => 
+  const currentMonth = new Date(`${currentMonthName} 1, ${currentYear}`).getMonth() + 1;
+
+  const { data: budgetItemsWithActuals } = useQuery({
+    queryKey: ['budget-daily-values', currentMonth, currentYear],
+    queryFn: async () => {
+      const itemsWithIds = processedBudgetData.filter(item => item.id);
+      
+      const updatedItems = [...processedBudgetData];
+      
+      await Promise.all(itemsWithIds.map(async (item, index) => {
+        if (item.id) {
+          try {
+            const dailyValues = await fetchDailyValues(item.id, currentMonth, currentYear);
+            
+            if (dailyValues && dailyValues.length > 0) {
+              const totalActual = dailyValues.reduce((sum, day) => 
+                sum + (day.value || 0), 0);
+              
+              const itemIndex = updatedItems.findIndex(i => i.id === item.id);
+              if (itemIndex >= 0) {
+                updatedItems[itemIndex] = {
+                  ...updatedItems[itemIndex],
+                  actual_amount: totalActual
+                };
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching daily values for ${item.name}:`, error);
+          }
+        }
+      }));
+      
+      return updatedItems;
+    },
+    enabled: !isLoading && processedBudgetData.some(item => item.id != null)
+  });
+
+  const displayData = budgetItemsWithActuals || processedBudgetData;
+  
+  const foodGpItems = displayData.filter(item => 
     item.name.toLowerCase().includes('food') && 
     item.name.toLowerCase().includes('gross profit')
   );
   
-  const beverageGpItems = processedBudgetData.filter(item => 
+  const beverageGpItems = displayData.filter(item => 
     (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) && 
     item.name.toLowerCase().includes('gross profit')
   );
@@ -50,7 +91,7 @@ export function PLReportTable({
   console.log("Food GP items found:", foodGpItems.map(item => `${item.name}: £${item.budget_amount}`));
   console.log("Beverage GP items found:", beverageGpItems.map(item => `${item.name}: £${item.budget_amount}`));
 
-  const displayItems = processedBudgetData.filter(item => 
+  const displayItems = displayData.filter(item => 
     !item.name.toLowerCase().includes('total gross profit') && 
     item.name !== 'ADMINISTRATIVE EXPENSES' &&
     item.name !== 'Tavern' &&
@@ -58,19 +99,18 @@ export function PLReportTable({
     item.name !== 'Gross Profit' &&
     !item.name.toLowerCase().includes('total admin') &&
     !(item.name.toLowerCase() === 'total') &&
-    // Only remove the ADMIN EXPENSES header at the top, not the admin expenses summation at the bottom
     !(item.name === 'ADMIN EXPENSES' && item.isAdminHeader)
   );
   
   console.log("Display items:", displayItems.map(item => item.name));
   
-  const foodGrossProfitItem = processedBudgetData.find(item => 
+  const foodGrossProfitItem = displayData.find(item => 
     (item.name === 'Food Gross Profit' || 
      item.name.toLowerCase() === 'food gross profit' ||
      item.name === 'Food GP')
   );
   
-  const beverageGrossProfitItem = processedBudgetData.find(item => 
+  const beverageGrossProfitItem = displayData.find(item => 
     (item.name === 'Beverage Gross Profit' || 
      item.name.toLowerCase() === 'beverage gross profit' ||
      item.name.toLowerCase() === 'drink gross profit' ||
@@ -81,7 +121,7 @@ export function PLReportTable({
   console.log("Food GP item found:", foodGrossProfitItem ? foodGrossProfitItem.name : "Not found");
   console.log("Beverage GP item found:", beverageGrossProfitItem ? beverageGrossProfitItem.name : "Not found");
 
-  const costOfSalesItem = processedBudgetData.find(item => 
+  const costOfSalesItem = displayData.find(item => 
     item.name.toLowerCase() === 'cost of sales' ||
     item.name.toLowerCase() === 'cos'
   );
@@ -112,11 +152,11 @@ export function PLReportTable({
   const totalAdminActual = targetAdminItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
   const totalAdminVariance = totalAdminActual - totalAdminBudget;
 
-  const operatingProfitItem = processedBudgetData.find(item => 
+  const operatingProfitItem = displayData.find(item => 
     item.name.toLowerCase().includes('operating profit')
   );
 
-  const totalGrossProfitItem = processedBudgetData.find(item => 
+  const totalGrossProfitItem = displayData.find(item => 
     item.name === 'Gross Profit' || item.name.toLowerCase() === 'gross profit'
   );
 
@@ -190,7 +230,7 @@ export function PLReportTable({
           <div className="flex justify-center items-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
           </div>
-        ) : processedBudgetData.length > 0 ? (
+        ) : displayData.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -207,7 +247,6 @@ export function PLReportTable({
                   if (item.isHeader) {
                     let headerClass = 'bg-[#48495e]/90 text-white';
                     
-                    // Use light purple for the Admin Expenses header
                     if (item.name === 'ADMIN EXPENSES' || item.isAdminHeader) {
                       headerClass = 'bg-purple-100 text-[#48495e]';
                     }
