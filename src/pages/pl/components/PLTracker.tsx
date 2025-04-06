@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { formatCurrency } from '@/lib/date-utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 interface BudgetItem {
   id?: string;
@@ -41,6 +42,8 @@ export function PLTracker({
   const [currentDate] = useState(new Date());
   const [daysInMonth, setDaysInMonth] = useState(0);
   const [dayOfMonth, setDayOfMonth] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const { toast } = useToast();
 
   // Initialize tracking types for each budget item
   useEffect(() => {
@@ -87,6 +90,7 @@ export function PLTracker({
       });
       
       setTrackedBudgetData(trackedData);
+      setHasUnsavedChanges(false);
     }
   }, [processedBudgetData]);
 
@@ -111,6 +115,26 @@ export function PLTracker({
       tracking_type: value
     };
     setTrackedBudgetData(updatedData);
+    setHasUnsavedChanges(true);
+  };
+
+  // Save tracking type settings
+  const saveTrackingSettings = () => {
+    // Here you would typically save the settings to a database
+    // For now, we'll just show a toast message
+    toast({
+      title: "Settings saved",
+      description: "Your tracking settings have been saved.",
+    });
+    setHasUnsavedChanges(false);
+    
+    // In a real implementation, you would save the data to your backend
+    // For example with Supabase:
+    // trackedBudgetData.forEach(async (item) => {
+    //   if (item.id) {
+    //     await updateBudgetItem(item.id, { tracking_type: item.tracking_type });
+    //   }
+    // });
   };
 
   // Calculate pro-rated budget amount for a standard item
@@ -233,6 +257,15 @@ export function PLTracker({
         <CardTitle>P&L Tracker - {currentMonthName} {currentYear}</CardTitle>
         <div className="flex items-center gap-2">
           <div className="text-sm">Current Date: {currentDate.toLocaleDateString()}</div>
+          <Button 
+            onClick={saveTrackingSettings} 
+            variant="outline" 
+            disabled={!hasUnsavedChanges}
+            className="flex items-center gap-2"
+          >
+            <Save size={16} />
+            Save Changes
+          </Button>
           <Button onClick={onClose} variant="outline">Close Tracker</Button>
         </div>
       </CardHeader>
