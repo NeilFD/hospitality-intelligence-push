@@ -5,8 +5,10 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/date-utils';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Loader2 } from 'lucide-react';
 import { DayInput } from '../types/PLTrackerTypes';
+import { fetchDailyValues, saveDailyValues } from '@/services/budget-service';
+import { useToast } from '@/hooks/use-toast';
 
 interface DailyInputDrawerProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ interface DailyInputDrawerProps {
   itemName: string;
   monthName: string;
   year: number;
+  budgetItemId?: string;
 }
 
 export function DailyInputDrawer({
@@ -25,33 +28,72 @@ export function DailyInputDrawer({
   initialValues,
   itemName,
   monthName,
-  year
+  year,
+  budgetItemId
 }: DailyInputDrawerProps) {
   const [dailyInputs, setDailyInputs] = useState<DayInput[]>([]);
   const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
-      const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(monthName);
-      const firstDayOfMonth = startOfMonth(new Date(year, monthIndex));
-      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      const loadData = async () => {
+        setIsLoading(true);
+        
+        const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(monthName);
+        const firstDayOfMonth = startOfMonth(new Date(year, monthIndex));
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
-      let days: DayInput[] = [];
-      for (let i = 0; i < daysInMonth; i++) {
-        const currentDate = addDays(firstDayOfMonth, i);
+        let days: DayInput[] = [];
+        
+        // If we have a budget item ID and it's a Supabase item, try to fetch stored values
+        if (budgetItemId) {
+          const dbValues = await fetchDailyValues(budgetItemId, monthIndex + 1, year);
+          
+          // Create days array with loaded values
+          for (let i = 0; i < daysInMonth; i++) {
+            const currentDate = addDays(firstDayOfMonth, i);
+            const dayOfMonth = currentDate.getDate();
+            
+            // Check if we have a stored value for this day
+            const storedValue = dbValues.find(item => item.day === dayOfMonth);
+            
+            // Check if we have an in-memory initial value for this day
+            const savedDay = initialValues.find(day => day.date.getDate() === currentDate.getDate() && day.date.getMonth() === currentDate.getMonth());
+            
+            // Priority: database value > in-memory value > null
+            const value = storedValue !== undefined ? storedValue.value : (savedDay ? savedDay.value : null);
+            
+            days.push({
+              date: currentDate,
+              value: value
+            });
+          }
+        } else {
+          // If no budget item ID, just use in-memory values
+          for (let i = 0; i < daysInMonth; i++) {
+            const currentDate = addDays(firstDayOfMonth, i);
+            const savedDay = initialValues.find(day => day.date.getDate() === currentDate.getDate() && day.date.getMonth() === currentDate.getMonth());
+            days.push({
+              date: currentDate,
+              value: savedDay ? savedDay.value : null
+            });
+          }
+        }
+        
+        setDailyInputs(days);
 
-        const savedDay = initialValues.find(day => day.date.getDate() === currentDate.getDate() && day.date.getMonth() === currentDate.getMonth());
-        days.push({
-          date: currentDate,
-          value: savedDay ? savedDay.value : null
-        });
-      }
-      setDailyInputs(days);
+        const calculatedTotal = days.reduce((sum, day) => sum + (day.value || 0), 0);
+        setTotal(calculatedTotal);
+        
+        setIsLoading(false);
+      };
 
-      const calculatedTotal = days.reduce((sum, day) => sum + (day.value || 0), 0);
-      setTotal(calculatedTotal);
+      loadData();
     }
-  }, [isOpen, monthName, year, initialValues]);
+  }, [isOpen, monthName, year, initialValues, budgetItemId]);
 
   const handleInputChange = (index: number, value: string) => {
     const numValue = value === '' ? null : parseFloat(value);
@@ -63,7 +105,40 @@ export function DailyInputDrawer({
     setTotal(newTotal);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (budgetItemId) {
+      setIsSaving(true);
+      
+      try {
+        // Save to Supabase
+        const monthIndex = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(monthName);
+        const success = await saveDailyValues(budgetItemId, dailyInputs, monthIndex + 1, year);
+        
+        if (success) {
+          toast({
+            title: "Success",
+            description: "Daily values saved successfully",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to save values to database",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error saving daily values:", error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    }
+    
+    // Also update in-memory state via callback
     onSave(dailyInputs);
     onClose();
   };
@@ -77,24 +152,30 @@ export function DailyInputDrawer({
           </div>
         </DrawerHeader>
         
-        <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="flex flex-col gap-3">
-            {dailyInputs.map((dayInput, index) => <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
-                <div className="font-medium text-tavern-blue">
-                  {format(dayInput.date, 'EEE, MMM d')}:
-                </div>
-                <Input 
-                  type="number" 
-                  value={dayInput.value !== null ? dayInput.value : ''} 
-                  onChange={e => handleInputChange(index, e.target.value)} 
-                  min="0" 
-                  step="0.01" 
-                  placeholder="0.00" 
-                  className="w-full h-9 text-tavern-blue" 
-                />
-              </div>)}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
-        </div>
+        ) : (
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div className="flex flex-col gap-3">
+              {dailyInputs.map((dayInput, index) => <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
+                  <div className="font-medium text-tavern-blue">
+                    {format(dayInput.date, 'EEE, MMM d')}:
+                  </div>
+                  <Input 
+                    type="number" 
+                    value={dayInput.value !== null ? dayInput.value : ''} 
+                    onChange={e => handleInputChange(index, e.target.value)} 
+                    min="0" 
+                    step="0.01" 
+                    placeholder="0.00" 
+                    className="w-full h-9 text-tavern-blue" 
+                  />
+                </div>)}
+            </div>
+          </div>
+        )}
         
         <DrawerFooter className="border-t">
           <div className="flex justify-between items-center w-full mb-4">
@@ -103,7 +184,14 @@ export function DailyInputDrawer({
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-            <Button onClick={handleSave} className="flex-1 bg-purple-600 hover:bg-purple-700">Save Values</Button>
+            <Button 
+              onClick={handleSave} 
+              className="flex-1 bg-purple-600 hover:bg-purple-700"
+              disabled={isSaving}
+            >
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Values
+            </Button>
           </div>
         </DrawerFooter>
       </DrawerContent>
