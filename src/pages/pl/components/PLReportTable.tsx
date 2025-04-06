@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -34,32 +33,7 @@ export function PLReportTable({
   currentYear,
   onOpenTracker
 }: PLReportTableProps) {
-  // Calculate total admin expenses
-  const adminExpenseItems = processedBudgetData.filter(item => 
-    !item.name.toLowerCase().includes('turnover') &&
-    !item.name.toLowerCase().includes('cost of sales') &&
-    !item.name.toLowerCase().includes('gross profit') &&
-    !item.name.toLowerCase().includes('operating profit') &&
-    !item.isHeader &&
-    !item.name.toLowerCase().includes('total') &&
-    item.category !== 'Revenue' &&
-    item.category !== 'Turnover' &&
-    item.category !== 'Cost of Sales' &&
-    item.category !== 'COS' &&
-    item.category !== 'Header' &&
-    item.category !== 'Summary'
-  );
-
-  const totalAdminBudget = adminExpenseItems.reduce((sum, item) => sum + item.budget_amount, 0);
-  const totalAdminActual = adminExpenseItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
-  const totalAdminVariance = totalAdminActual - totalAdminBudget;
-
-  // Separate operating profit items for proper ordering
-  const operatingProfitItem = processedBudgetData.find(item => 
-    item.name.toLowerCase().includes('operating profit')
-  );
-
-  // Filter out operating profit from main display items
+  // Find the indices for 'Wages and Salaries' and 'Hotel and travel' to get the range
   const displayItems = processedBudgetData
     .filter(item => 
       !item.name.toLowerCase().includes('total') && 
@@ -67,6 +41,41 @@ export function PLReportTable({
       item.name !== 'Tavern' &&
       !item.name.toLowerCase().includes('operating profit')
     );
+
+  // Determine if an item is an admin expense (not revenue, COS, etc.)
+  const isAdminExpense = (item: BudgetItem) => 
+    !item.name.toLowerCase().includes('turnover') &&
+    !item.name.toLowerCase().includes('cost of sales') &&
+    !item.name.toLowerCase().includes('gross profit') &&
+    !item.isHeader &&
+    !item.name.toLowerCase().includes('total') &&
+    item.category !== 'Revenue' &&
+    item.category !== 'Turnover' &&
+    item.category !== 'Cost of Sales' &&
+    item.category !== 'COS' &&
+    item.category !== 'Header' &&
+    item.category !== 'Summary';
+    
+  // Find Wages and Salaries index and Hotel and travel index
+  const wagesIndex = displayItems.findIndex(item => 
+    item.name.toLowerCase().includes('wages and salaries'));
+  const hotelTravelIndex = displayItems.findIndex(item => 
+    item.name.toLowerCase().includes('hotel and travel'));
+
+  // If found, extract just those items
+  const targetAdminItems = wagesIndex >= 0 && hotelTravelIndex >= 0 && hotelTravelIndex >= wagesIndex
+    ? displayItems.slice(wagesIndex, hotelTravelIndex + 1).filter(isAdminExpense)
+    : displayItems.filter(isAdminExpense);
+
+  // Calculate totals for the specific range
+  const totalAdminBudget = targetAdminItems.reduce((sum, item) => sum + item.budget_amount, 0);
+  const totalAdminActual = targetAdminItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
+  const totalAdminVariance = totalAdminActual - totalAdminBudget;
+
+  // Separate operating profit items for proper ordering
+  const operatingProfitItem = processedBudgetData.find(item => 
+    item.name.toLowerCase().includes('operating profit')
+  );
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
