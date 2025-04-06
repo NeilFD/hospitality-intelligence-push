@@ -11,7 +11,7 @@ import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/ki
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
 
-interface PLTrackerBudgetItem extends Omit<BudgetItem, 'tracking_type'> {
+interface PLTrackerBudgetItem {
   id?: string;
   category: string;
   name: string;
@@ -41,7 +41,7 @@ export function PLTracker({
   currentYear,
   onClose
 }: PLTrackerProps) {
-  const [trackedBudgetData, setTrackedBudgetData] = useState<BudgetItem[]>([]);
+  const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
   const [currentDate] = useState(new Date());
   const [daysInMonth, setDaysInMonth] = useState(0);
   const [dayOfMonth, setDayOfMonth] = useState(0);
@@ -218,7 +218,7 @@ export function PLTracker({
     }
   };
 
-  const calculateProRatedBudget = (item: BudgetItem): number => {
+  const calculateProRatedBudget = (item: PLTrackerBudgetItem): number => {
     if (item.isHeader || item.tracking_type === 'Discrete') {
       return item.budget_amount;
     }
@@ -226,7 +226,7 @@ export function PLTracker({
     return (item.budget_amount / daysInMonth) * dayOfMonth;
   };
   
-  const calculateSummaryProRatedBudget = (item: BudgetItem): number => {
+  const calculateSummaryProRatedBudget = (item: PLTrackerBudgetItem): number => {
     if (item.isHeader) {
       return 0;
     }
