@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -115,7 +114,6 @@ export function TrackerLineItem({
             </Button>
             <div 
               className="relative cursor-pointer"
-              onClick={handleOpenDailyInput}
             >
               <Input
                 type="number"
@@ -124,9 +122,9 @@ export function TrackerLineItem({
                 value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
                 onChange={(e) => updateManualActualAmount(index, e.target.value)}
                 className="h-8 w-24 text-right ml-auto cursor-pointer"
+                onClick={handleOpenDailyInput}
                 readOnly
               />
-              <div className="absolute inset-0" onClick={handleOpenDailyInput} />
             </div>
           </div>
         ) : (
