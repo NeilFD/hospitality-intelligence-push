@@ -80,7 +80,7 @@ export function DailyInputDrawer({
         <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="flex flex-col gap-3">
             {dailyInputs.map((dayInput, index) => <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
-                <div className="font-medium">
+                <div className="font-medium text-tavern-blue">
                   {format(dayInput.date, 'EEE, MMM d')}:
                 </div>
                 <Input 
@@ -98,7 +98,7 @@ export function DailyInputDrawer({
         
         <DrawerFooter className="border-t">
           <div className="flex justify-between items-center w-full mb-4">
-            <div className="font-semibold text-lg">Total:</div>
+            <div className="font-semibold text-lg text-tavern-blue">Total:</div>
             <div className="font-bold text-lg text-purple-700">{formatCurrency(total)}</div>
           </div>
           <div className="flex gap-2">
