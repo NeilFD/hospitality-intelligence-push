@@ -84,6 +84,16 @@ export const useBudgetData = (year: number, month: number) => {
       const otherRevenueItems = revenueItems.filter(item => 
         !foodRevenueItems.includes(item) && !beverageRevenueItems.includes(item));
       
+      // Calculate food turnover
+      const foodTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
+      const foodActualTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
+      const foodForecastTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
+      
+      // Calculate beverage turnover
+      const beverageTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
+      const beverageActualTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
+      const beverageForecastTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
+      
       // Add all revenue items
       revenueItems.forEach(item => {
         result.push({
@@ -101,16 +111,6 @@ export const useBudgetData = (year: number, month: number) => {
       const totalTurnover = revenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
       const totalActualTurnover = revenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
       const totalForecastTurnover = revenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
-      
-      // Calculate food turnover
-      const foodTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
-      const foodActualTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
-      const foodForecastTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
-      
-      // Calculate beverage turnover
-      const beverageTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
-      const beverageActualTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
-      const beverageForecastTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
       
       result.push({
         category: 'Summary',
@@ -138,6 +138,16 @@ export const useBudgetData = (year: number, month: number) => {
       const otherCosItems = cosItems.filter(item => 
         !foodCosItems.includes(item) && !beverageCosItems.includes(item));
       
+      // Calculate food COS
+      const foodCOS = foodCosItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
+      const foodActualCOS = foodCosItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
+      const foodForecastCOS = foodCosItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
+      
+      // Calculate beverage COS
+      const beverageCOS = beverageCosItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
+      const beverageActualCOS = beverageCosItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
+      const beverageForecastCOS = beverageCosItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
+      
       cosItems.forEach(item => {
         result.push({
           id: item.id,
@@ -155,16 +165,6 @@ export const useBudgetData = (year: number, month: number) => {
       const totalActualCOS = cosItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
       const totalForecastCOS = cosItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
       
-      // Calculate food COS
-      const foodCOS = foodCosItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
-      const foodActualCOS = foodCosItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
-      const foodForecastCOS = foodCosItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
-      
-      // Calculate beverage COS
-      const beverageCOS = beverageCosItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
-      const beverageActualCOS = beverageCosItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
-      const beverageForecastCOS = beverageCosItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
-      
       result.push({
         category: 'Summary',
         name: 'Cost of Sales',
@@ -174,55 +174,59 @@ export const useBudgetData = (year: number, month: number) => {
         isHighlighted: true
       });
       
-      // Calculate Gross Profit for Food
+      // Get turnover values for GP calculations
+      const revenueItems = categorizedItems['Revenue'] || categorizedItems['Turnover'] || [];
+      
+      // Separate food and beverage revenue items again to ensure we have them
+      const foodRevenueItems = revenueItems.filter(item => 
+        item.name.toLowerCase().includes('food'));
+      const beverageRevenueItems = revenueItems.filter(item => 
+        item.name.toLowerCase().includes('beverage') || 
+        item.name.toLowerCase().includes('drink') ||
+        item.name.toLowerCase().includes('bar'));
+      
+      // Make sure we have turnover values calculated
+      const foodTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
+      const foodActualTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
+      const foodForecastTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
+      
+      const beverageTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
+      const beverageActualTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
+      const beverageForecastTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
+      
+      // Calculate Food Gross Profit
+      const foodGrossProfit = foodTurnover - foodCOS;
+      const foodGpPercentage = foodTurnover > 0 ? foodGrossProfit / foodTurnover : 0;
+      
+      // Calculate Beverage Gross Profit
+      const beverageGrossProfit = beverageTurnover - beverageCOS;
+      const beverageGpPercentage = beverageTurnover > 0 ? beverageGrossProfit / beverageTurnover : 0;
+      
+      // Add Food Gross Profit
+      result.push({
+        category: 'Summary',
+        name: 'Food Gross Profit',
+        budget_amount: foodGrossProfit,
+        budget_percentage: foodGpPercentage,
+        actual_amount: foodActualTurnover - foodActualCOS,
+        forecast_amount: foodForecastTurnover - foodForecastCOS,
+        isGrossProfit: true
+      });
+      
+      // Add Beverage Gross Profit
+      result.push({
+        category: 'Summary',
+        name: 'Beverage Gross Profit',
+        budget_amount: beverageGrossProfit,
+        budget_percentage: beverageGpPercentage,
+        actual_amount: beverageActualTurnover - beverageActualCOS,
+        forecast_amount: beverageForecastTurnover - beverageForecastCOS,
+        isGrossProfit: true
+      });
+      
+      // Calculate Total Gross Profit
       const turnoverItem = result.find(item => item.name === 'Turnover');
       if (turnoverItem) {
-        // Get food revenue and COS values
-        const revenueItems = categorizedItems['Revenue'] || categorizedItems['Turnover'] || [];
-        const foodRevenueItems = revenueItems.filter(item => 
-          item.name.toLowerCase().includes('food'));
-        const foodTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
-        const foodActualTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
-        const foodForecastTurnover = foodRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
-        
-        // Calculate Food Gross Profit
-        const foodGrossProfit = foodTurnover - foodCOS;
-        const foodGpPercentage = foodTurnover > 0 ? foodGrossProfit / foodTurnover : 0;
-        
-        result.push({
-          category: 'Summary',
-          name: 'Food Gross Profit',
-          budget_amount: foodGrossProfit,
-          budget_percentage: foodGpPercentage,
-          actual_amount: foodActualTurnover - foodActualCOS,
-          forecast_amount: foodForecastTurnover - foodForecastCOS,
-          isGrossProfit: true
-        });
-        
-        // Get beverage revenue and COS values
-        const beverageRevenueItems = revenueItems.filter(item => 
-          item.name.toLowerCase().includes('beverage') || 
-          item.name.toLowerCase().includes('drink') ||
-          item.name.toLowerCase().includes('bar'));
-        const beverageTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
-        const beverageActualTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0);
-        const beverageForecastTurnover = beverageRevenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0);
-        
-        // Calculate Beverage Gross Profit
-        const beverageGrossProfit = beverageTurnover - beverageCOS;
-        const beverageGpPercentage = beverageTurnover > 0 ? beverageGrossProfit / beverageTurnover : 0;
-        
-        result.push({
-          category: 'Summary',
-          name: 'Beverage Gross Profit',
-          budget_amount: beverageGrossProfit,
-          budget_percentage: beverageGpPercentage,
-          actual_amount: beverageActualTurnover - beverageActualCOS,
-          forecast_amount: beverageForecastTurnover - beverageForecastCOS,
-          isGrossProfit: true
-        });
-        
-        // Calculate Total Gross Profit
         const grossProfit = turnoverItem.budget_amount - totalCOS;
         const gpPercentage = turnoverItem.budget_amount > 0 ? grossProfit / turnoverItem.budget_amount : 0;
         

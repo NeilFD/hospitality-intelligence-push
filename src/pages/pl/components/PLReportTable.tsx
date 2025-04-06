@@ -41,7 +41,9 @@ export function PLReportTable({
       !item.name.toLowerCase().includes('total') && 
       item.name !== 'ADMINISTRATIVE EXPENSES' &&
       item.name !== 'Tavern' &&
-      !item.name.toLowerCase().includes('operating profit')
+      !item.name.toLowerCase().includes('operating profit') &&
+      item.name !== 'Food Gross Profit' &&
+      item.name !== 'Beverage Gross Profit'
     );
 
   // Determine if an item is an admin expense (not revenue, COS, etc.)
@@ -86,6 +88,11 @@ export function PLReportTable({
   
   const beverageGrossProfitItem = processedBudgetData.find(item => 
     item.name === 'Beverage Gross Profit'
+  );
+
+  // Get the Total Gross Profit item
+  const totalGrossProfitItem = processedBudgetData.find(item => 
+    item.name === 'Gross Profit'
   );
 
   return (
@@ -176,6 +183,93 @@ export function PLReportTable({
                     </TableRow>
                   );
                 })}
+                
+                {/* Add Food Gross Profit row */}
+                {foodGrossProfitItem && (
+                  <TableRow className="bg-purple-50/50">
+                    <TableCell>
+                      {foodGrossProfitItem.name}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(foodGrossProfitItem.budget_amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {foodGrossProfitItem.budget_percentage !== undefined 
+                        ? `${(foodGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
+                        : ''}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(foodGrossProfitItem.actual_amount || 0)}
+                    </TableCell>
+                    <TableCell className={`text-right ${
+                      (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount > 0 
+                        ? 'text-green-600' 
+                        : (foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount < 0 
+                          ? 'text-red-600' 
+                          : ''
+                    }`}>
+                      {formatCurrency((foodGrossProfitItem.actual_amount || 0) - foodGrossProfitItem.budget_amount)}
+                    </TableCell>
+                  </TableRow>
+                )}
+                
+                {/* Add Beverage Gross Profit row */}
+                {beverageGrossProfitItem && (
+                  <TableRow className="bg-purple-50/50">
+                    <TableCell>
+                      {beverageGrossProfitItem.name}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(beverageGrossProfitItem.budget_amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {beverageGrossProfitItem.budget_percentage !== undefined 
+                        ? `${(beverageGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
+                        : ''}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(beverageGrossProfitItem.actual_amount || 0)}
+                    </TableCell>
+                    <TableCell className={`text-right ${
+                      (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount > 0 
+                        ? 'text-green-600' 
+                        : (beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount < 0 
+                          ? 'text-red-600' 
+                          : ''
+                    }`}>
+                      {formatCurrency((beverageGrossProfitItem.actual_amount || 0) - beverageGrossProfitItem.budget_amount)}
+                    </TableCell>
+                  </TableRow>
+                )}
+                
+                {/* Add Total Gross Profit row */}
+                {totalGrossProfitItem && (
+                  <TableRow className="bg-[#48495e]/90 text-white">
+                    <TableCell className="font-bold">
+                      {totalGrossProfitItem.name}
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {formatCurrency(totalGrossProfitItem.budget_amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {totalGrossProfitItem.budget_percentage !== undefined 
+                        ? `${(totalGrossProfitItem.budget_percentage * 100).toFixed(2)}%` 
+                        : ''}
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {formatCurrency(totalGrossProfitItem.actual_amount || 0)}
+                    </TableCell>
+                    <TableCell className={`text-right font-bold ${
+                      (totalGrossProfitItem.actual_amount || 0) - totalGrossProfitItem.budget_amount > 0 
+                        ? 'text-green-200' 
+                        : (totalGrossProfitItem.actual_amount || 0) - totalGrossProfitItem.budget_amount < 0 
+                          ? 'text-red-200' 
+                          : ''
+                    }`}>
+                      {formatCurrency((totalGrossProfitItem.actual_amount || 0) - totalGrossProfitItem.budget_amount)}
+                    </TableCell>
+                  </TableRow>
+                )}
                 
                 {/* Add Total Admin Expenses row before Operating Profit */}
                 <TableRow className="bg-[#48495e]/90 text-white">
