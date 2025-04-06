@@ -166,15 +166,36 @@ export function DailyInputDrawer({
     onClose();
   };
 
-  // Handle click events to prevent propagation
-  const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-  
-  const handleDrawerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
+  // Create a ref for the content
+  const contentRef = React.useRef<HTMLDivElement>(null);
 
+  // Use an effect to add event handlers
+  React.useEffect(() => {
+    // Don't do anything if the drawer isn't open
+    if (!isOpen) return;
+    
+    const currentContentRef = contentRef.current;
+    
+    // Handler function to stop propagation
+    const stopPropagation = (e: Event) => {
+      e.stopPropagation();
+    };
+    
+    // Add listeners to current content if it exists
+    if (currentContentRef) {
+      currentContentRef.addEventListener('click', stopPropagation, true);
+      currentContentRef.addEventListener('mousedown', stopPropagation, true);
+    }
+    
+    // Cleanup function
+    return () => {
+      if (currentContentRef) {
+        currentContentRef.removeEventListener('click', stopPropagation, true);
+        currentContentRef.removeEventListener('mousedown', stopPropagation, true);
+      }
+    };
+  }, [isOpen]);
+  
   if (!isOpen) {
     return null;
   }
@@ -185,13 +206,10 @@ export function DailyInputDrawer({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={handleDrawerClick}
     >
       <DrawerContent 
         className="max-h-[90vh]"
-        onClick={handleContentClick}
-        onMouseDown={(e) => e.stopPropagation()}
+        ref={contentRef}
       >
         <DrawerHeader>
           <div className="flex items-center">
@@ -205,9 +223,10 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]" onClick={(e) => e.stopPropagation()}>
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
             <div className="flex flex-col gap-3">
-              {dailyInputs.map((dayInput, index) => <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
+              {dailyInputs.map((dayInput, index) => (
+                <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
                   <div className="font-medium text-tavern-blue">
                     {format(dayInput.date, 'EEE, MMM d')}:
                   </div>
@@ -219,9 +238,9 @@ export function DailyInputDrawer({
                     step="0.01" 
                     placeholder="0.00" 
                     className="w-full h-9 text-tavern-blue" 
-                    onClick={(e) => e.stopPropagation()}
                   />
-                </div>)}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -234,19 +253,13 @@ export function DailyInputDrawer({
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }} 
+              onClick={onClose} 
               className="flex-1"
             >
               Cancel
             </Button>
             <Button 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSave();
-              }} 
+              onClick={handleSave} 
               className="flex-1 bg-purple-600 hover:bg-purple-700"
               disabled={isSaving}
             >
