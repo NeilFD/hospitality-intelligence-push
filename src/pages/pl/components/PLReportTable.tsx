@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -37,7 +36,6 @@ export function PLReportTable({
 }: PLReportTableProps) {
   console.log("All budget data:", processedBudgetData.map(item => item.name));
 
-  // Important: Log all food and beverage gross profit items for debugging
   const foodGpItems = processedBudgetData.filter(item => 
     item.name.toLowerCase().includes('food') && 
     item.name.toLowerCase().includes('gross profit')
@@ -51,7 +49,6 @@ export function PLReportTable({
   console.log("Food GP items found:", foodGpItems.map(item => `${item.name}: £${item.budget_amount}`));
   console.log("Beverage GP items found:", beverageGpItems.map(item => `${item.name}: £${item.budget_amount}`));
 
-  // Filter items for display but ensure we don't exclude Food GP and Beverage GP
   const displayItems = processedBudgetData.filter(item => 
     !item.name.toLowerCase().includes('total gross profit') && 
     item.name !== 'ADMINISTRATIVE EXPENSES' &&
@@ -62,7 +59,6 @@ export function PLReportTable({
   
   console.log("Display items:", displayItems.map(item => item.name));
   
-  // Find Food and Beverage Gross Profit items directly from processedBudgetData
   const foodGrossProfitItem = processedBudgetData.find(item => 
     (item.name === 'Food Gross Profit' || 
      item.name.toLowerCase() === 'food gross profit' ||
@@ -80,7 +76,11 @@ export function PLReportTable({
   console.log("Food GP item found:", foodGrossProfitItem ? foodGrossProfitItem.name : "Not found");
   console.log("Beverage GP item found:", beverageGrossProfitItem ? beverageGrossProfitItem.name : "Not found");
 
-  // Determine if an item is an admin expense
+  const costOfSalesItem = processedBudgetData.find(item => 
+    item.name.toLowerCase() === 'cost of sales' ||
+    item.name.toLowerCase() === 'cos'
+  );
+
   const isAdminExpense = (item: BudgetItem) => 
     !item.name.toLowerCase().includes('turnover') &&
     !item.name.toLowerCase().includes('cost of sales') &&
@@ -94,33 +94,27 @@ export function PLReportTable({
     item.category !== 'Header' &&
     item.category !== 'Summary';
     
-  // Find Wages and Salaries index and Hotel and travel index
   const wagesIndex = displayItems.findIndex(item => 
     item.name.toLowerCase().includes('wages and salaries'));
   const hotelTravelIndex = displayItems.findIndex(item => 
     item.name.toLowerCase().includes('hotel and travel'));
 
-  // If found, extract just those items
   const targetAdminItems = wagesIndex >= 0 && hotelTravelIndex >= 0 && hotelTravelIndex >= wagesIndex
     ? displayItems.slice(wagesIndex, hotelTravelIndex + 1).filter(isAdminExpense)
     : displayItems.filter(isAdminExpense);
 
-  // Calculate totals for the specific range
   const totalAdminBudget = targetAdminItems.reduce((sum, item) => sum + item.budget_amount, 0);
   const totalAdminActual = targetAdminItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
   const totalAdminVariance = totalAdminActual - totalAdminBudget;
 
-  // Separate operating profit items for proper ordering
   const operatingProfitItem = processedBudgetData.find(item => 
     item.name.toLowerCase().includes('operating profit')
   );
 
-  // Get the Total Gross Profit item
   const totalGrossProfitItem = processedBudgetData.find(item => 
     item.name === 'Gross Profit' || item.name.toLowerCase() === 'gross profit'
   );
 
-  // Create a helper function to render a budget item row
   const renderBudgetItemRow = (item: BudgetItem, i: number | string, customClass: string = '') => {
     const actualAmount = item.actual_amount || 0;
     const variance = actualAmount - item.budget_amount;
@@ -132,17 +126,21 @@ export function PLReportTable({
                          item.name.toLowerCase().includes('profit/(loss)');
     
     const isTurnover = item.name.toLowerCase() === 'turnover';
+    const isCostOfSales = item.name.toLowerCase() === 'cost of sales' || 
+                          item.name.toLowerCase() === 'cos';
     
     if (item.isHighlighted) {
       rowClassName = 'bg-[#48495e]/90 text-white';
       fontClass = 'font-bold';
     } else if (isGrossProfit || isTurnover) {
       rowClassName = 'bg-purple-50/50';
+    } else if (isCostOfSales) {
+      rowClassName = 'bg-purple-100/50';
+      fontClass = 'font-semibold';
     }
     
-    fontClass = item.isHighlighted || isTurnover || isGrossProfit ? 'font-bold' : '';
+    fontClass = item.isHighlighted || isTurnover || isGrossProfit || isCostOfSales ? 'font-bold' : '';
     
-    // Generate a unique key based on the item name and index
     const rowKey = typeof i === 'number' ? i : `${i}-${item.name.replace(/\s+/g, '-').toLowerCase()}`;
     
     return (
@@ -200,9 +198,7 @@ export function PLReportTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {/* Render all items except special items which we'll handle separately */}
                 {displayItems.map((item, i) => {
-                  // Don't skip Food and Beverage Gross Profit items anymore - we'll display them directly
                   if (item.isHeader) {
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
@@ -219,10 +215,6 @@ export function PLReportTable({
                   return renderBudgetItemRow(item, i);
                 })}
                 
-                {/* We'll skip rendering Food and Beverage GP items here since they should 
-                    already be included in the display items above */}
-                
-                {/* Add Total Gross Profit row */}
                 {totalGrossProfitItem && (
                   <TableRow className="bg-[#48495e]/90 text-white">
                     <TableCell className="font-bold">
@@ -251,7 +243,6 @@ export function PLReportTable({
                   </TableRow>
                 )}
                 
-                {/* Add Total Admin Expenses row before Operating Profit */}
                 <TableRow className="bg-[#48495e]/90 text-white">
                   <TableCell className="font-bold">
                     Total Admin Expenses
@@ -272,7 +263,6 @@ export function PLReportTable({
                   </TableCell>
                 </TableRow>
                 
-                {/* Display Operating Profit row after Total Admin Expenses */}
                 {operatingProfitItem && (
                   <TableRow className="bg-[#8B5CF6]/90 text-white">
                     <TableCell className="font-bold">
