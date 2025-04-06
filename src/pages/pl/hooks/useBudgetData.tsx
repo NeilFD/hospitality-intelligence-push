@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
 
-// Type for processed budget data that extends BudgetItem
-interface ProcessedBudgetItem extends Omit<BudgetItem, 'budget'> {
+// Type for processed budget data that extends BudgetItem but replaces budget with budget_amount
+export interface ProcessedBudgetItem extends Omit<BudgetItem, 'budget'> {
   budget_amount: number;
   actual_amount?: number;
   forecast_amount?: number;
@@ -77,20 +78,21 @@ export const useBudgetData = (year: number, month: number) => {
           id: item.id,
           category: item.category,
           name: item.name,
-          budget_amount: item.budget_amount,
-          actual_amount: item.actual_amount || 0,
-          forecast_amount: item.forecast_amount,
+          budget_amount: item.budget_amount || item.budget,
+          actual_amount: item.actual_amount || item.actual || 0,
+          forecast_amount: item.forecast_amount || item.forecast,
+          tracking_type: item.tracking_type,
         });
       });
       
       // Calculate total turnover
-      const totalTurnover = revenueItems.reduce((sum, item) => sum + item.budget_amount, 0);
+      const totalTurnover = revenueItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
       result.push({
         category: 'Summary',
         name: 'Turnover',
         budget_amount: totalTurnover,
-        actual_amount: revenueItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0),
-        forecast_amount: revenueItems.reduce((sum, item) => sum + (item.forecast_amount || 0), 0),
+        actual_amount: revenueItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0),
+        forecast_amount: revenueItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0),
         isHighlighted: true
       });
     }
@@ -105,20 +107,21 @@ export const useBudgetData = (year: number, month: number) => {
           id: item.id,
           category: item.category,
           name: item.name,
-          budget_amount: item.budget_amount,
-          actual_amount: item.actual_amount || 0,
-          forecast_amount: item.forecast_amount,
+          budget_amount: item.budget_amount || item.budget,
+          actual_amount: item.actual_amount || item.actual || 0,
+          forecast_amount: item.forecast_amount || item.forecast,
+          tracking_type: item.tracking_type,
         });
       });
       
       // Calculate total cost of sales
-      const totalCOS = cosItems.reduce((sum, item) => sum + item.budget_amount, 0);
+      const totalCOS = cosItems.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
       result.push({
         category: 'Summary',
         name: 'Cost of Sales',
         budget_amount: totalCOS,
-        actual_amount: cosItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0),
-        forecast_amount: cosItems.reduce((sum, item) => sum + (item.forecast_amount || 0), 0),
+        actual_amount: cosItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0),
+        forecast_amount: cosItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0),
         isHighlighted: true
       });
       
@@ -134,8 +137,8 @@ export const useBudgetData = (year: number, month: number) => {
           name: 'Gross Profit',
           budget_amount: grossProfit,
           budget_percentage: gpPercentage,
-          actual_amount: (turnoverItem.actual_amount || 0) - cosItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0),
-          forecast_amount: (turnoverItem.forecast_amount || 0) - cosItems.reduce((sum, item) => sum + (item.forecast_amount || 0), 0),
+          actual_amount: (turnoverItem.actual_amount || 0) - cosItems.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0),
+          forecast_amount: (turnoverItem.forecast_amount || 0) - cosItems.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0),
           isGrossProfit: true,
           isHighlighted: true
         });
@@ -165,24 +168,25 @@ export const useBudgetData = (year: number, month: number) => {
             id: item.id,
             category: item.category,
             name: item.name,
-            budget_amount: item.budget_amount,
-            actual_amount: item.actual_amount || 0,
-            forecast_amount: item.forecast_amount,
+            budget_amount: item.budget_amount || item.budget,
+            actual_amount: item.actual_amount || item.actual || 0,
+            forecast_amount: item.forecast_amount || item.forecast,
+            tracking_type: item.tracking_type,
           });
           
-          totalAdminBudget += item.budget_amount;
-          totalAdminActual += item.actual_amount || 0;
-          totalAdminForecast += item.forecast_amount || 0;
+          totalAdminBudget += item.budget_amount || item.budget;
+          totalAdminActual += item.actual_amount || item.actual || 0;
+          totalAdminForecast += item.forecast_amount || item.forecast || 0;
         });
         
         // Add category subtotal
-        const categoryTotal = items.reduce((sum, item) => sum + item.budget_amount, 0);
+        const categoryTotal = items.reduce((sum, item) => sum + (item.budget_amount || item.budget), 0);
         result.push({
           category: 'Summary',
           name: `Total ${category}`,
           budget_amount: categoryTotal,
-          actual_amount: items.reduce((sum, item) => sum + (item.actual_amount || 0), 0),
-          forecast_amount: items.reduce((sum, item) => sum + (item.forecast_amount || 0), 0),
+          actual_amount: items.reduce((sum, item) => sum + (item.actual_amount || item.actual || 0), 0),
+          forecast_amount: items.reduce((sum, item) => sum + (item.forecast_amount || item.forecast || 0), 0),
           isHighlighted: true
         });
       });

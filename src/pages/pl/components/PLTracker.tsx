@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -11,16 +10,15 @@ import { useToast } from '@/hooks/use-toast';
 import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/kitchen-service';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
+import { ProcessedBudgetItem } from '../hooks/useBudgetData';
 
-// Type definition that makes tracking_type required
-interface PLTrackerBudgetItem extends Omit<BudgetItem, 'budget'> {
-  budget_amount: number;
+interface PLTrackerBudgetItem extends ProcessedBudgetItem {
   tracking_type: 'Discrete' | 'Pro-Rated'; // Make tracking_type required
 }
 
 interface PLTrackerProps {
   isLoading: boolean;
-  processedBudgetData: Omit<BudgetItem, 'budget'> & { budget_amount: number }[];
+  processedBudgetData: ProcessedBudgetItem[];
   currentMonthName: string;
   currentYear: number;
   onClose: () => void;
@@ -41,7 +39,7 @@ export function PLTracker({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const loadTrackingSettings = async (items: (Omit<BudgetItem, 'budget'> & { budget_amount: number })[]): Promise<PLTrackerBudgetItem[]> => {
+  const loadTrackingSettings = async (items: ProcessedBudgetItem[]): Promise<PLTrackerBudgetItem[]> => {
     try {
       const itemIds = items.filter(item => item.id).map(item => item.id);
       
@@ -117,8 +115,8 @@ export function PLTracker({
           ];
           
           if (
-            proRatedCategories.includes(item.category) || 
-            proRatedNames.some(name => item.name.includes(name))
+            (item.category && proRatedCategories.includes(item.category)) || 
+            (item.name && proRatedNames.some(name => item.name.includes(name)))
           ) {
             trackingType = 'Pro-Rated';
           }
@@ -126,7 +124,7 @@ export function PLTracker({
           return {
             ...item,
             tracking_type: item.tracking_type || trackingType
-          } as PLTrackerBudgetItem; // Cast to PLTrackerBudgetItem
+          } as PLTrackerBudgetItem;
         });
         
         trackedData = await loadTrackingSettings(processedBudgetData);
