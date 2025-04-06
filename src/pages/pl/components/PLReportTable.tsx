@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -208,7 +207,7 @@ export function PLReportTable({
                     
                     // Use light purple for the Admin Expenses header
                     if (item.name === 'ADMIN EXPENSES' || item.isAdminHeader) {
-                      headerClass = 'bg-purple-300 text-[#48495e]';
+                      headerClass = 'bg-purple-100 text-[#48495e]';
                     }
                     
                     return (
@@ -253,6 +252,30 @@ export function PLReportTable({
                     </TableCell>
                   </TableRow>
                 )}
+                
+                <TableRow className="bg-purple-100 text-[#48495e]">
+                  <TableCell className="font-bold">
+                    ADMIN EXPENSES
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(totalAdminBudget)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {/* Percentage can be added here if needed */}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(totalAdminActual)}
+                  </TableCell>
+                  <TableCell className={`text-right font-bold ${
+                    totalAdminVariance > 0 
+                      ? 'text-green-600' 
+                      : totalAdminVariance < 0 
+                        ? 'text-red-600' 
+                        : ''
+                  }`}>
+                    {formatCurrency(totalAdminVariance)}
+                  </TableCell>
+                </TableRow>
                 
                 {operatingProfitItem && (
                   <TableRow className="bg-[#8B5CF6]/90 text-white">

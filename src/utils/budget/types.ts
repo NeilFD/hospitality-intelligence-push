@@ -11,6 +11,7 @@ export interface BudgetItem {
   forecast_amount?: number;
   budget_percentage?: number;
   isHeader?: boolean;
+  isAdminHeader?: boolean;
   isHighlighted?: boolean;
   isGrossProfit?: boolean;
   isOperatingProfit?: boolean;

@@ -8,6 +8,7 @@ export interface ProcessedBudgetItem extends Omit<BudgetItem, 'budget'> {
   budget_amount: number;
   actual_amount?: number;
   forecast_amount?: number;
+  isAdminHeader?: boolean; // Add this to match the BudgetItem
 }
 
 export const useBudgetData = (year: number, month: number) => {
