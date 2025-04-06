@@ -358,6 +358,113 @@ export function PLTracker({
                     </TableRow>
                   );
                 })}
+                
+                {/* Admin Expenses Summary Row - Styled as in screenshot */}
+                <TableRow className="bg-purple-100/50 text-[#48495e]">
+                  <TableCell className="font-bold">
+                    ADMIN EXPENSES
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(trackedBudgetData
+                      .filter(i => !i.name.toLowerCase().includes('revenue') && 
+                              !i.name.toLowerCase().includes('turnover') &&
+                              !i.name.toLowerCase().includes('cost of sales') &&
+                              !i.name.toLowerCase().includes('cos') &&
+                              !i.name.toLowerCase().includes('gross profit') &&
+                              !i.name.toLowerCase().includes('operating profit') &&
+                              !i.isHeader &&
+                              !i.name.toLowerCase().includes('total admin'))
+                      .reduce((sum, i) => sum + i.budget_amount, 0))}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {/* Percentage can be added here if needed */}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(trackedBudgetData
+                      .filter(i => !i.name.toLowerCase().includes('revenue') && 
+                              !i.name.toLowerCase().includes('turnover') &&
+                              !i.name.toLowerCase().includes('cost of sales') &&
+                              !i.name.toLowerCase().includes('cos') &&
+                              !i.name.toLowerCase().includes('gross profit') &&
+                              !i.name.toLowerCase().includes('operating profit') &&
+                              !i.isHeader &&
+                              !i.name.toLowerCase().includes('total admin'))
+                      .reduce((sum, i) => sum + calculateProRatedBudget(i), 0))}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(trackedBudgetData
+                      .filter(i => !i.name.toLowerCase().includes('revenue') && 
+                              !i.name.toLowerCase().includes('turnover') &&
+                              !i.name.toLowerCase().includes('cost of sales') &&
+                              !i.name.toLowerCase().includes('cos') &&
+                              !i.name.toLowerCase().includes('gross profit') &&
+                              !i.name.toLowerCase().includes('operating profit') &&
+                              !i.isHeader &&
+                              !i.name.toLowerCase().includes('total admin'))
+                      .reduce((sum, i) => sum + (i.actual_amount || 0), 0))}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {/* Forecast can be added here if needed */}
+                  </TableCell>
+                  <TableCell className="text-right text-red-600 font-bold">
+                    {formatCurrency(trackedBudgetData
+                      .filter(i => !i.name.toLowerCase().includes('revenue') && 
+                              !i.name.toLowerCase().includes('turnover') &&
+                              !i.name.toLowerCase().includes('cost of sales') &&
+                              !i.name.toLowerCase().includes('cos') &&
+                              !i.name.toLowerCase().includes('gross profit') &&
+                              !i.name.toLowerCase().includes('operating profit') &&
+                              !i.isHeader &&
+                              !i.name.toLowerCase().includes('total admin'))
+                      .reduce((sum, i) => sum + ((i.actual_amount || 0) - calculateProRatedBudget(i)), 0))}
+                  </TableCell>
+                </TableRow>
+                
+                {/* Operating Profit Row - Styled as in screenshot with purple background */}
+                <TableRow className="bg-[#8B5CF6]/90 text-white">
+                  <TableCell className="font-bold">
+                    Operating profit
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(
+                      trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.budget_amount || 0
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {/* Percentage can be added here if needed */}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {/* Pro-rated budget field intentionally left empty as shown in screenshot */}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(
+                      trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.actual_amount || 0
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.forecast_amount !== undefined 
+                        ? trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.forecast_amount 
+                        : ''}
+                      onChange={(e) => {
+                        const opIndex = trackedBudgetData.findIndex(i => i.name.toLowerCase().includes('operating profit'));
+                        if (opIndex >= 0) {
+                          updateForecastAmount(opIndex, e.target.value);
+                        }
+                      }}
+                      className="h-8 w-24 text-right"
+                    />
+                  </TableCell>
+                  <TableCell className="text-right text-green-200 font-bold">
+                    {formatCurrency(
+                      (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.actual_amount || 0) - 
+                      (trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit'))?.budget_amount || 0)
+                    )}
+                  </TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </div>
