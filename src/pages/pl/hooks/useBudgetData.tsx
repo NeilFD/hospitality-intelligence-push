@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/types/supabase-types';
@@ -157,7 +156,7 @@ export const useBudgetData = (year: number, month: number) => {
     );
     
     if (adminCategories.length > 0) {
-      // Removing the "ADMINISTRATIVE EXPENSES" header as requested
+      // Removing the "ADMINISTRATIVE EXPENSES" header and "Total Admin expenses" as requested
       
       let totalAdminBudget = 0;
       let totalAdminActual = 0;
@@ -196,7 +195,7 @@ export const useBudgetData = (year: number, month: number) => {
         });
       });
       
-      // Removed "Total Administrative Expenses" row as requested
+      // Removed "Total Administrative Expenses" and "Total Admin expenses" rows as requested
       
       // Calculate Operating Profit
       const grossProfitItem = result.find(item => item.name === 'Gross Profit');

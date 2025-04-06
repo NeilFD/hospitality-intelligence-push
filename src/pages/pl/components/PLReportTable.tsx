@@ -69,6 +69,7 @@ export function PLReportTable({
                   // Filter out the rows that need to be removed
                   .filter(item => 
                     item.name !== 'Total Administrative Expenses' && 
+                    item.name !== 'Total Admin expenses' && 
                     !(item.name === 'Total' || item.name === 'ADMINISTRATIVE EXPENSES') &&
                     item.name !== 'Tavern'
                   )
