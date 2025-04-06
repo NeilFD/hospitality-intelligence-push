@@ -422,13 +422,9 @@ export default function PLDashboard() {
                       if (item.isHeader) {
                         // Handle section headers and important highlighted rows
                         const isOperatingProfit = item.isOperatingProfit;
-                        const operatingProfitValue = isOperatingProfit ? item.actual_amount || 0 : 0;
-                        const operatingProfitColor = isOperatingProfit 
-                          ? (operatingProfitValue >= 0 ? 'bg-green-600/90 text-white' : 'bg-red-600/90 text-white')
-                          : 'bg-[#48495e]/90 text-white';
-                          
+                        
                         return (
-                          <TableRow key={i} className={operatingProfitColor}>
+                          <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
                             <TableCell 
                               colSpan={6} 
                               className="font-bold text-sm tracking-wider py-2"
@@ -458,6 +454,9 @@ export default function PLDashboard() {
                                           item.name.toLowerCase().includes('gross profit') || 
                                           item.name.toLowerCase().includes('profit/(loss)');
                       
+                      // Special handling for Operating Profit row
+                      const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
+                      
                       return (
                         <TableRow key={i} className={isGrossProfit ? 'font-semibold bg-purple-50/50' : ''}>
                           <TableCell>
@@ -468,13 +467,19 @@ export default function PLDashboard() {
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.budget_amount)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.actual_amount || 0)}</TableCell>
-                          <TableCell className={`text-right ${isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
+                          <TableCell className={`text-right ${isOperatingProfit && item.budget_amount < 0 ? 'text-red-600' : isOperatingProfit && item.budget_amount > 0 ? 'text-green-600' : ''}`}>
+                            {formatCurrency(item.budget_amount)}
+                          </TableCell>
+                          <TableCell className={`text-right ${isOperatingProfit && (item.actual_amount || 0) < 0 ? 'text-red-600' : isOperatingProfit && (item.actual_amount || 0) > 0 ? 'text-green-600' : ''}`}>
+                            {formatCurrency(item.actual_amount || 0)}
+                          </TableCell>
+                          <TableCell className={`text-right ${isOperatingProfit ? (variance < 0 ? 'text-red-600' : 'text-green-600') : isPositiveVariance ? 'text-green-600' : 'text-red-600'}`}>
                             {variance > 0 ? '+' : ''}{formatCurrency(variance)} ({formatPercentage(variancePercent)})
                           </TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.forecast_amount || item.budget_amount)}</TableCell>
-                          <TableCell className={`text-right ${isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
+                          <TableCell className={`text-right ${isOperatingProfit && (item.forecast_amount || item.budget_amount) < 0 ? 'text-red-600' : isOperatingProfit && (item.forecast_amount || item.budget_amount) > 0 ? 'text-green-600' : ''}`}>
+                            {formatCurrency(item.forecast_amount || item.budget_amount)}
+                          </TableCell>
+                          <TableCell className={`text-right ${isOperatingProfit ? (forecastVariance < 0 ? 'text-red-600' : 'text-green-600') : isPositiveForecast ? 'text-green-600' : 'text-red-600'}`}>
                             {forecastVariance > 0 ? '+' : ''}{formatCurrency(forecastVariance)} ({formatPercentage(forecastVariancePercent)})
                           </TableCell>
                         </TableRow>
@@ -584,4 +589,3 @@ const CustomTooltip = ({
   }
   return null;
 };
-
