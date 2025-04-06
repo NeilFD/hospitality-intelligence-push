@@ -51,9 +51,9 @@ export function PLReportTable({
   console.log("Food GP items found:", foodGpItems.map(item => `${item.name}: £${item.budget_amount}`));
   console.log("Beverage GP items found:", beverageGpItems.map(item => `${item.name}: £${item.budget_amount}`));
 
-  // Filter items for display but exclude Total Gross Profit only
+  // Filter items for display but ensure we don't exclude Food GP and Beverage GP
   const displayItems = processedBudgetData.filter(item => 
-    !item.name.toLowerCase().includes('total') && 
+    !item.name.toLowerCase().includes('total gross profit') && 
     item.name !== 'ADMINISTRATIVE EXPENSES' &&
     item.name !== 'Tavern' &&
     !item.name.toLowerCase().includes('operating profit') &&
@@ -202,17 +202,7 @@ export function PLReportTable({
               <TableBody>
                 {/* Render all items except special items which we'll handle separately */}
                 {displayItems.map((item, i) => {
-                  // Skip Food and Beverage Gross Profit items as we'll render them separately
-                  if (
-                    item.name.toLowerCase().includes('food') && 
-                    item.name.toLowerCase().includes('gross profit') ||
-                    ((item.name.toLowerCase().includes('beverage') || 
-                      item.name.toLowerCase().includes('drink')) && 
-                     item.name.toLowerCase().includes('gross profit'))
-                  ) {
-                    return null;
-                  }
-                  
+                  // Don't skip Food and Beverage Gross Profit items anymore - we'll display them directly
                   if (item.isHeader) {
                     return (
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
@@ -229,27 +219,8 @@ export function PLReportTable({
                   return renderBudgetItemRow(item, i);
                 })}
                 
-                {/* Food Gross Profit row */}
-                {foodGrossProfitItem ? (
-                  renderBudgetItemRow(foodGrossProfitItem, 'food-gp', 'bg-purple-50/50')
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-amber-600 bg-amber-50 font-semibold text-center">
-                      Food Gross Profit data not available
-                    </TableCell>
-                  </TableRow>
-                )}
-                
-                {/* Beverage Gross Profit row */}
-                {beverageGrossProfitItem ? (
-                  renderBudgetItemRow(beverageGrossProfitItem, 'bev-gp', 'bg-purple-50/50')
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-amber-600 bg-amber-50 font-semibold text-center">
-                      Beverage Gross Profit data not available
-                    </TableCell>
-                  </TableRow>
-                )}
+                {/* We'll skip rendering Food and Beverage GP items here since they should 
+                    already be included in the display items above */}
                 
                 {/* Add Total Gross Profit row */}
                 {totalGrossProfitItem && (
