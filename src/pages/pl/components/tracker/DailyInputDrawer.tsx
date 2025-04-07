@@ -37,11 +37,6 @@ export function DailyInputDrawer({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   
-  // Prevent background clicks from closing the drawer accidentally
-  const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-  
   // Load data only when the drawer opens
   useEffect(() => {
     if (isOpen) {
@@ -179,14 +174,14 @@ export function DailyInputDrawer({
   return (
     <Drawer 
       open={isOpen} 
-      modal={false} // Disable focus trap that causes flickering
+      modal={false}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
       <DrawerContent 
         className="max-h-[90vh] pointer-events-auto"
-        onClick={handleContentClick} // Prevent click propagation
+        onClick={(e) => e.stopPropagation()} // This alone is enough to stop accidental closure
       >
         <DrawerHeader>
           <div className="flex items-center">
@@ -200,34 +195,25 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div 
-            className="p-4 overflow-y-auto max-h-[calc(90vh-140px)] pointer-events-auto"
-            onClick={e => e.stopPropagation()}
-          >
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)] pointer-events-auto">
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => (
-                <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
+                <div 
+                  key={index} 
+                  className="grid grid-cols-[120px_1fr] gap-2 items-center"
+                >
                   <div className="font-medium text-tavern-blue">
                     {format(dayInput.date, 'EEE, MMM d')}:
                   </div>
-                  <div 
-                    tabIndex={-1} 
-                    className="pointer-events-auto"
-                    onClick={e => e.stopPropagation()} 
-                  >
-                    <Input 
-                      type="number" 
-                      value={dayInput.value !== null ? dayInput.value : ''} 
-                      onChange={e => handleInputChange(index, e.target.value)} 
-                      min="0" 
-                      step="0.01" 
-                      placeholder="0.00" 
-                      className="w-full h-9 text-tavern-blue pointer-events-auto"
-                      onClick={e => e.stopPropagation()}
-                      onFocus={e => e.stopPropagation()}
-                      tabIndex={0}
-                    />
-                  </div>
+                  <Input 
+                    type="number" 
+                    value={dayInput.value !== null ? dayInput.value : ''} 
+                    onChange={e => handleInputChange(index, e.target.value)} 
+                    min="0" 
+                    step="0.01" 
+                    placeholder="0.00" 
+                    className="w-full h-9 text-tavern-blue pointer-events-auto"
+                  />
                 </div>
               ))}
             </div>
