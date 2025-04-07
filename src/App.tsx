@@ -14,7 +14,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import PerformanceDashboard from '@/pages/performance/Dashboard';
 import ConversationHistory from '@/pages/performance/ConversationHistory';
-// Fix the import path - we're importing directly from the page file
+// Import WagesDashboard component directly from src/pages/wages/Dashboard
 import WagesDashboard from '@/pages/wages/WagesDashboard';
 
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
