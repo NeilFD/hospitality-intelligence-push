@@ -33,10 +33,10 @@ export default function PerformanceDashboard() {
       
       <Alert variant="default" className="mb-4">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Network Connectivity</AlertTitle>
+        <AlertTitle>Webhook Connection</AlertTitle>
         <AlertDescription>
-          Due to CORS restrictions, external API calls are simulated in this demo. In a production environment, 
-          use a backend proxy or server-side API to avoid these limitations.
+          The application is now configured to send webhook requests to n8n. 
+          Make sure your n8n webhook is properly set up with CORS allowed for this domain.
         </AlertDescription>
       </Alert>
       

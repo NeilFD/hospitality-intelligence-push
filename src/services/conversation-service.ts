@@ -78,35 +78,72 @@ export const deleteConversation = async (id: string): Promise<void> => {
   }
 };
 
-// Send webhook request (will be used for debugging)
+// Send webhook request to n8n
 export const sendWebhookRequest = async (webhookUrl: string, payload: any): Promise<any> => {
   try {
-    // In a production environment, this would be handled by a server-side proxy
-    // For the demo, we'll simulate a response
-    console.log(`[DEBUG] Would send payload to ${webhookUrl}:`, payload);
+    console.log(`Sending payload to webhook URL: ${webhookUrl}`);
     
-    // Store the test webhook attempt
+    // Store the conversation attempt in Supabase
     const { data: user } = await supabase.auth.getUser();
+    let conversationId = null;
     
     if (user && user.user) {
-      await supabase.from('ai_conversations').insert({
+      const { data, error } = await supabase.from('ai_conversations').insert({
         user_id: user.user.id,
-        query: `Test webhook to ${webhookUrl}`,
-        response: "Webhook test completed",
+        query: payload.query || `Webhook request to ${webhookUrl}`,
+        response: "Waiting for response...",
         payload: payload,
         timestamp: new Date().toISOString(),
         shared: false
-      });
+      }).select();
+      
+      if (error) {
+        console.error('Error storing conversation:', error);
+      } else if (data && data.length > 0) {
+        conversationId = data[0].id;
+      }
     }
     
-    // Return a simulated successful response
+    // Now actually send the request to the webhook
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    // Handle response
+    let responseData;
+    let responseText = await response.text();
+    
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (e) {
+      responseData = { 
+        raw: responseText,
+        status: response.status,
+        statusText: response.statusText
+      };
+    }
+    
+    // Update the conversation with the real response if we have an ID
+    if (conversationId) {
+      const responseMessage = responseData.response || 
+        responseData.message || 
+        responseData.raw || 
+        'Received response from webhook';
+        
+      await supabase
+        .from('ai_conversations')
+        .update({ response: responseMessage })
+        .eq('id', conversationId);
+    }
+    
     return {
-      success: true,
-      message: "Webhook test completed successfully (simulated in demo)",
-      data: {
-        processed: true,
-        timestamp: new Date().toISOString()
-      }
+      success: response.ok,
+      data: responseData,
+      status: response.status
     };
   } catch (error) {
     console.error('Error sending webhook request:', error);
@@ -117,4 +154,3 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
     };
   }
 };
-

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getUserConversations } from '@/services/conversation-service';
+import { getUserConversations, sendWebhookRequest } from '@/services/conversation-service';
 import { TavernLogo } from '@/components/TavernLogo';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Send } from 'lucide-react';
@@ -42,32 +42,16 @@ export default function ConversationDebug() {
     setSelectedPayload(payload);
     
     try {
-      console.log('Sending test payload to webhook:', payload);
+      // Use our updated sendWebhookRequest function
+      const response = await sendWebhookRequest(webhookUrl, payload);
       
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      console.log('Webhook test response:', response);
-      
-      const responseText = await response.text();
-      console.log('Webhook test response text:', responseText);
-      
-      if (response.ok) {
+      if (response.success) {
         toast.success('Webhook test sent successfully');
+        // Refresh the conversations list to show the updated response
+        const updatedConversations = await getUserConversations();
+        setConversations(updatedConversations);
       } else {
-        toast.error(`Webhook test failed: ${response.status} ${response.statusText}`);
-      }
-      
-      try {
-        const jsonData = JSON.parse(responseText);
-        console.log('Parsed response:', jsonData);
-      } catch (e) {
-        console.log('Response was not JSON:', e);
+        toast.error(`Webhook test failed: ${response.status || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error sending test webhook:', error);
