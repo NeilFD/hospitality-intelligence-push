@@ -69,7 +69,7 @@ export function TrackerLineItem({
   
   fontClass = item.isHighlighted || 
               item.name.toLowerCase().includes('total admin') || 
-              isTurnover || 
+              item.name.toLowerCase().includes('turnover') || 
               item.name.toLowerCase().includes('cost of sales') || 
               (isGrossProfit && !item.name.toLowerCase().includes('food gross profit') && 
                !item.name.toLowerCase().includes('beverage profit')) ? 'font-bold' : '';
@@ -108,12 +108,13 @@ export function TrackerLineItem({
         {formatCurrency(proRatedBudget)}
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 pointer-events-auto">
           <Button 
             variant="outline"
             size="icon"
             onClick={handleOpenDailyInput}
             className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100 pointer-events-auto"
+            type="button"
           >
             <CalendarDays className="h-5 w-5" />
           </Button>
