@@ -104,12 +104,14 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       }
     }
     
-    // Now actually send the request to the webhook
+    // Fix: Add proper CORS handling for the webhook request
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
+      mode: 'cors', // Explicitly set CORS mode
       body: JSON.stringify(payload)
     });
     
