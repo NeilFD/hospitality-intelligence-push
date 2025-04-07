@@ -25,12 +25,16 @@ export function formatDateForDisplay(date: Date): string {
   return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
 }
 
-// Get day name from date string (corrected version that uses the actual date)
+// Get day name from date string
 export function getDayName(dateStr: string): string {
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   // Make sure we have a valid date string format, and handle timezone issues
   const date = new Date(`${dateStr}T00:00:00`);
-  return dayNames[date.getDay()];
+  // JavaScript's getDay() returns 0 for Sunday, 1 for Monday, etc.
+  // We need to convert to our format where 0 is Monday, 1 is Tuesday, etc.
+  const jsDay = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const adjustedDay = jsDay === 0 ? 6 : jsDay - 1; // Convert to 0 = Monday, ..., 6 = Sunday
+  return dayNames[adjustedDay];
 }
 
 // Generate week dates for a given month
@@ -70,7 +74,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   return weeks;
 }
 
-// Create an empty week with daily records
+// Create an empty week with daily records, starting from Monday
 export function createEmptyWeek(
   startDate: string, 
   endDate: string, 
@@ -82,6 +86,9 @@ export function createEmptyWeek(
   // Create a stable date object with time set to midnight to avoid timezone issues
   const startDateObj = new Date(`${startDate}T00:00:00`);
   
+  // Create an array of day names with Monday first
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  
   // Loop through the 7 days of the week
   for (let i = 0; i < 7; i++) {
     // Clone the date for each day to avoid modifying the original
@@ -91,8 +98,11 @@ export function createEmptyWeek(
     // Format the date as YYYY-MM-DD string
     const dateString = formatDate(currentDate);
     
-    // Get day name from the current date object (0 = Sunday, 1 = Monday, etc.)
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][currentDate.getDay()];
+    // Get JavaScript day (0=Sunday, 1=Monday, ..., 6=Saturday)
+    const jsDay = currentDate.getDay();
+    // Convert to our day index (0=Monday, ..., 6=Sunday)
+    const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
+    const dayName = dayNames[dayIndex];
 
     const purchases: Record<string, number> = {};
     suppliers.forEach(supplier => {
@@ -126,7 +136,7 @@ export function getDayOfWeek(date: Date): number {
   return jsDay === 0 ? 6 : jsDay - 1;
 }
 
-// Get day name from day number
+// Get day name from day number (0-6, where 0 is Monday)
 export function getDayNameFromNumber(dayNumber: number): string {
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   return dayNames[dayNumber];

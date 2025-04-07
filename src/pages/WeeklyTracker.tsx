@@ -244,6 +244,7 @@ export default function WeeklyTracker() {
     );
   }
 
+  // Ensure the days are in the order: Monday to Sunday
   const sortedDays = [...weekRecord.days];
   
   const weeklyGP = calculateWeeklyGP();

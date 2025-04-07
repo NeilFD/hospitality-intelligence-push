@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useWagesStore } from './WagesStore';
-import { formatCurrency } from '@/lib/date-utils';
+import { formatCurrency, getDayNameFromNumber } from '@/lib/date-utils';
 import { toast } from "sonner";
 
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
@@ -49,7 +48,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     try {
       await setDailyWages(updatedDay);
       
-      // Update local state
       setMonthlyData(prevData => 
         prevData.map(d => d.day === day ? updatedDay : d)
       );
@@ -61,7 +59,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     }
   };
   
-  // Calculate monthly totals
   const totals = monthlyData.reduce((acc, day) => {
     acc.fohWages += day.fohWages;
     acc.kitchenWages += day.kitchenWages;
@@ -90,13 +87,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   const totalPercentage = totals.totalRevenue > 0 
     ? (totals.totalWages / totals.totalRevenue) * 100 
     : 0;
-
-  // Helper function to get day name from a Date object
-  const getDayName = (dateStr: string): string => {
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const date = new Date(`${dateStr}T00:00:00`);
-    return dayNames[date.getDay()];
-  };
 
   return (
     <Card>
@@ -131,10 +121,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             </TableHeader>
             <TableBody>
               {monthlyData.map((day) => {
-                // Create a proper date object using the day number from the month data
                 const dateObj = new Date(year, month - 1, day.day);
-                const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
+                const jsDay = dateObj.getDay();
+                const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
+                const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex];
                 const shortDayName = dayName.substring(0, 3);
+                
                 const totalDailyWages = day.fohWages + day.kitchenWages;
                 const totalDailyRevenue = day.foodRevenue + day.bevRevenue;
                 const fohPercent = totalDailyRevenue > 0 
