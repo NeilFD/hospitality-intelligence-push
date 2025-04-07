@@ -31,7 +31,7 @@ export default function PerformanceDashboard() {
         </div>
       </div>
       
-      <Alert variant="warning" className="mb-4">
+      <Alert variant="default" className="mb-4">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Network Connectivity</AlertTitle>
         <AlertDescription>
