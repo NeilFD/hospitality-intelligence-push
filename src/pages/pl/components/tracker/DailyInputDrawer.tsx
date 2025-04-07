@@ -174,6 +174,7 @@ export function DailyInputDrawer({
   return (
     <Drawer 
       open={isOpen} 
+      modal={false} // Disable focus trap that causes flickering
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -198,15 +199,17 @@ export function DailyInputDrawer({
                   <div className="font-medium text-tavern-blue">
                     {format(dayInput.date, 'EEE, MMM d')}:
                   </div>
-                  <Input 
-                    type="number" 
-                    value={dayInput.value !== null ? dayInput.value : ''} 
-                    onChange={e => handleInputChange(index, e.target.value)} 
-                    min="0" 
-                    step="0.01" 
-                    placeholder="0.00" 
-                    className="w-full h-9 text-tavern-blue pointer-events-auto"
-                  />
+                  <div tabIndex={-1}>
+                    <Input 
+                      type="number" 
+                      value={dayInput.value !== null ? dayInput.value : ''} 
+                      onChange={e => handleInputChange(index, e.target.value)} 
+                      min="0" 
+                      step="0.01" 
+                      placeholder="0.00" 
+                      className="w-full h-9 text-tavern-blue pointer-events-auto"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
