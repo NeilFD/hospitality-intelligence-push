@@ -1,4 +1,3 @@
-
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,7 +24,7 @@ export function formatDateForDisplay(date: Date): string {
   return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
 }
 
-// Get day name from date string
+// Get day name from date string (corrected version that uses the actual date)
 export function getDayName(dateStr: string): string {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const date = new Date(dateStr);
@@ -80,10 +79,10 @@ export function createEmptyWeek(
   const start = new Date(startDate);
 
   for (let i = 0; i < 7; i++) {
-    const currentDate = new Date(start.getTime()); // ✅ avoid mutation
-    currentDate.setDate(currentDate.getDate() + i); // ✅ correct date addition
+    const currentDate = new Date(start.getTime()); // avoid mutation
+    currentDate.setDate(currentDate.getDate() + i); // correct date addition
 
-    // Get day name directly from date
+    // Get day name directly from the date object
     const dateString = formatDate(currentDate);
     const dayOfWeek = getDayName(dateString);
 
