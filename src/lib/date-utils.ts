@@ -17,7 +17,7 @@ export function formatDate(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
-// Format date as DD/MM for display - showing the actual month the date belongs to
+// Format date as DD/MM for display - showing the actual day and month the date belongs to
 export function formatDateForDisplay(date: Date): string {
   // Create a new Date object to avoid timezone issues and ensure we're using local date
   const day = date.getDate();
