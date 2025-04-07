@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface TavernLogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export const TavernLogo: React.FC<TavernLogoProps> = ({
@@ -14,7 +14,8 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   const sizeClasses = {
     sm: 'h-8 w-8',
     md: 'h-12 w-12',
-    lg: 'h-16 w-16'
+    lg: 'h-20 w-20', // Increased from h-16 w-16
+    xl: 'h-24 w-24'  // Added new extra large size
   };
 
   return (
