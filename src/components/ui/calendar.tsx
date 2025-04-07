@@ -14,12 +14,31 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  // Create a ref for the calendar container to handle events
+  const calendarRef = React.useRef<HTMLDivElement>(null);
+  
+  // Add effect to handle clicks on the calendar
+  React.useEffect(() => {
+    const calendarElement = calendarRef.current;
+    if (!calendarElement) return;
+    
+    const handleClick = (e: MouseEvent) => {
+      e.stopPropagation();
+    };
+    
+    calendarElement.addEventListener('click', handleClick);
+    calendarElement.addEventListener('mousedown', handleClick);
+    
+    return () => {
+      calendarElement.removeEventListener('click', handleClick);
+      calendarElement.removeEventListener('mousedown', handleClick);
+    };
+  }, []);
+
   return (
     <div 
+      ref={calendarRef}
       className="relative"
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
     >
       <DayPicker
         showOutsideDays={showOutsideDays}

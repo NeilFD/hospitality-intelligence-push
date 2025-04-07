@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfMonth } from 'date-fns';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
@@ -38,6 +39,25 @@ export function DailyInputDrawer({
   
   // Create a ref for the content
   const contentRef = React.useRef<HTMLDivElement>(null);
+
+  // Add effect to handle all clicks inside the drawer
+  React.useEffect(() => {
+    if (!isOpen || !contentRef.current) return;
+    
+    const content = contentRef.current;
+    
+    const handleInteraction = (e: Event) => {
+      e.stopPropagation();
+    };
+    
+    content.addEventListener('click', handleInteraction, { capture: true });
+    content.addEventListener('mousedown', handleInteraction, { capture: true });
+    
+    return () => {
+      content.removeEventListener('click', handleInteraction, { capture: true });
+      content.removeEventListener('mousedown', handleInteraction, { capture: true });
+    };
+  }, [isOpen]);
   
   // Load data only when the drawer opens
   useEffect(() => {
@@ -172,10 +192,6 @@ export function DailyInputDrawer({
     return null;
   }
 
-  const handleInputContainerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <Drawer 
       open={isOpen} 
@@ -186,7 +202,6 @@ export function DailyInputDrawer({
       <DrawerContent 
         className="max-h-[90vh] pointer-events-auto"
         ref={contentRef}
-        onClick={(e) => e.stopPropagation()}
       >
         <DrawerHeader>
           <div className="flex items-center">
@@ -200,10 +215,10 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]" onClick={handleInputContainerClick}>
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => (
-                <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
                   <div className="font-medium text-tavern-blue">
                     {format(dayInput.date, 'EEE, MMM d')}:
                   </div>
@@ -214,9 +229,7 @@ export function DailyInputDrawer({
                     min="0" 
                     step="0.01" 
                     placeholder="0.00" 
-                    className="w-full h-9 text-tavern-blue" 
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
+                    className="w-full h-9 text-tavern-blue"
                   />
                 </div>
               ))}

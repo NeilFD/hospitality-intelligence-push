@@ -94,6 +94,11 @@ export function TrackerLineItem({
     handleCloseDailyInput();
   };
 
+  // Prevent event bubbling for input elements
+  const handleInputClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <TableRow className={rowClassName}>
       <TableCell className={fontClass}>
@@ -115,10 +120,6 @@ export function TrackerLineItem({
             size="icon"
             onClick={handleOpenDailyInput}
             className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
           >
             <CalendarDays className="h-5 w-5" />
           </Button>
@@ -135,8 +136,7 @@ export function TrackerLineItem({
           value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
           onChange={(e) => updateForecastAmount(index, e.target.value)}
           className="h-8 w-24 text-right ml-auto"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
+          onClick={handleInputClick}
         />
       </TableCell>
       <TableCell className={`text-right ${fontClass} ${
