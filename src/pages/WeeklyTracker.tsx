@@ -308,11 +308,9 @@ export default function WeeklyTracker() {
                       parseInt(dateParts[2]) // day
                     );
                     
-                    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                    
                     return (
                       <th key={index} className="table-header-day">
-                        {dayNames[index]}<br />
+                        {day.dayOfWeek}<br />
                         {formatDateForDisplay(dateObj)}
                       </th>
                     );
