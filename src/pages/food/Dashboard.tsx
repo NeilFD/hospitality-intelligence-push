@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { formatCurrency, formatPercentage, calculateGP } from '@/lib/date-utils';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
 
 export default function FoodDashboard() {
   const {
-    annualRecord,
     currentYear,
     currentMonth
   } = useStore();
@@ -21,59 +22,118 @@ export default function FoodDashboard() {
   const [currentMonthCost, setCurrentMonthCost] = useState(0);
   const [currentMonthGP, setCurrentMonthGP] = useState(0);
   
+  // Fetch tracker data from the database
+  const { data: trackerData, isLoading } = useQuery({
+    queryKey: ['tracker-data', currentYear, currentMonth, 'food'],
+    queryFn: async () => {
+      try {
+        return await fetchTrackerDataByMonth(currentYear, currentMonth, 'food');
+      } catch (error) {
+        console.error('Error fetching tracker data:', error);
+        return [];
+      }
+    }
+  });
+  
   useEffect(() => {
     let revenue = 0;
     let cost = 0;
-
     let monthRevenue = 0;
     let monthCost = 0;
     
-    // Log the annualRecord to debug
-    console.log("Annual Record:", annualRecord);
-    
-    if (annualRecord && annualRecord.months) {
-      annualRecord.months.forEach(month => {
-        if (month.weeks) {
-          month.weeks.forEach(week => {
-            if (week.days) {
-              week.days.forEach(day => {
-                // Add check for revenue property
-                if (day.revenue) {
-                  revenue += day.revenue;
-                }
-
-                // Add checks for purchases property
-                const dayPurchases = day.purchases ? 
-                  Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
-                cost += dayPurchases;
-
-                if (month.year === currentYear && month.month === currentMonth) {
-                  if (day.revenue) {
-                    monthRevenue += day.revenue;
-                  }
-                  monthCost += dayPurchases;
-                }
-              });
-            }
-          });
-        }
+    // If we have data from the tracker, use it
+    if (trackerData && trackerData.length > 0) {
+      const promises = trackerData.map(async (day) => {
+        // For each day, fetch all purchases and credit notes
+        const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+            'Content-Type': 'application/json'
+          },
+        });
+        
+        const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+            'Content-Type': 'application/json'
+          },
+        });
+        
+        const purchases = await purchasesResponse.json();
+        const creditNotes = await creditNotesResponse.json();
+        
+        const purchasesTotal = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + (cn.amount || 0), 0);
+        const dayCost = purchasesTotal - creditNotesTotal + (day.staff_food_allowance || 0);
+        
+        return {
+          revenue: day.revenue || 0,
+          cost: dayCost
+        };
       });
+      
+      Promise.all(promises)
+        .then(results => {
+          results.forEach(result => {
+            revenue += result.revenue;
+            cost += result.cost;
+            
+            // Current month data
+            monthRevenue += result.revenue;
+            monthCost += result.cost;
+          });
+          
+          setTotalRevenue(revenue);
+          setTotalCost(cost);
+          setGpPercentage(calculateGP(revenue, cost));
+          setCurrentMonthRevenue(monthRevenue);
+          setCurrentMonthCost(monthCost);
+          setCurrentMonthGP(calculateGP(monthRevenue, monthCost));
+        })
+        .catch(error => {
+          console.error("Error processing tracker data:", error);
+        });
+    } else {
+      // If no tracker data, fall back to the store data (original code)
+      const { annualRecord } = useStore.getState();
+      
+      console.log("No tracker data, using annual record:", annualRecord);
+      
+      if (annualRecord && annualRecord.months) {
+        annualRecord.months.forEach(month => {
+          if (month.weeks) {
+            month.weeks.forEach(week => {
+              if (week.days) {
+                week.days.forEach(day => {
+                  if (day.revenue) {
+                    revenue += day.revenue;
+                  }
+
+                  const dayPurchases = day.purchases ? 
+                    Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                  cost += dayPurchases;
+
+                  if (month.year === currentYear && month.month === currentMonth) {
+                    if (day.revenue) {
+                      monthRevenue += day.revenue;
+                    }
+                    monthCost += dayPurchases;
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+      
+      setTotalRevenue(revenue);
+      setTotalCost(cost);
+      setGpPercentage(calculateGP(revenue, cost));
+      setCurrentMonthRevenue(monthRevenue);
+      setCurrentMonthCost(monthCost);
+      setCurrentMonthGP(calculateGP(monthRevenue, monthCost));
     }
-    
-    console.log("Calculated values:", {
-      totalRevenue: revenue,
-      totalCost: cost,
-      monthRevenue,
-      monthCost
-    });
-    
-    setTotalRevenue(revenue);
-    setTotalCost(cost);
-    setGpPercentage(calculateGP(revenue, cost));
-    setCurrentMonthRevenue(monthRevenue);
-    setCurrentMonthCost(monthCost);
-    setCurrentMonthGP(calculateGP(monthRevenue, monthCost));
-  }, [annualRecord, currentYear, currentMonth]);
+  }, [trackerData, currentYear, currentMonth]);
 
   const getGpStatus = (gp: number, target: number) => {
     if (gp >= target) return 'good';
