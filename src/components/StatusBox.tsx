@@ -6,9 +6,16 @@ interface StatusBoxProps {
   value: string;
   status: 'good' | 'warning' | 'bad' | 'neutral';
   className?: string;
+  gpMode?: boolean; // New prop to handle GP% specific coloring
 }
 
-export default function StatusBox({ label, value, status, className }: StatusBoxProps) {
+export default function StatusBox({ 
+  label, 
+  value, 
+  status, 
+  className, 
+  gpMode = false 
+}: StatusBoxProps) {
   const statusClasses = {
     good: 'bg-tavern-green/10 backdrop-blur-sm text-[#48495E] border-tavern-green/30',
     warning: 'bg-tavern-amber/10 backdrop-blur-sm text-[#48495E] border-tavern-amber/30',
@@ -25,10 +32,30 @@ export default function StatusBox({ label, value, status, className }: StatusBox
     return 'text-lg sm:text-xl';
   };
 
+  // New method to determine color for GP% and Variance
+  const getGPStatus = () => {
+    if (!gpMode) return status;
+    
+    // Remove % sign and convert to number
+    const numValue = parseFloat(value.replace('%', ''));
+    
+    // For GP%, check if it's below the default target (which seems to be 70%)
+    if (label === 'Weekly GP %') {
+      return numValue < 70 ? 'bad' : 'good';
+    }
+    
+    // For Variance, check if it's negative
+    if (label === 'Variance') {
+      return numValue < 0 ? 'bad' : 'good';
+    }
+    
+    return status;
+  };
+
   return (
     <div className={cn(
       'rounded-xl p-4 flex flex-col items-center justify-center border shadow-sm glass-morphism h-28 min-w-[150px]',
-      statusClasses[status],
+      statusClasses[gpMode ? getGPStatus() : status],
       className
     )}>
       <h3 className="text-sm font-medium opacity-80 mb-1">{label}</h3>
@@ -41,3 +68,4 @@ export default function StatusBox({ label, value, status, className }: StatusBox
     </div>
   );
 }
+

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,7 +53,6 @@ export default function WeeklyTracker() {
   const [isDataChanged, setIsDataChanged] = useState(false);
   const [localWeekData, setLocalWeekData] = useState<DailyRecord[]>([]);
   
-  // Queries
   const { data: supabaseSuppliers, isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ['suppliers', moduleType],
     queryFn: async () => {
@@ -88,7 +86,6 @@ export default function WeeklyTracker() {
     }
   });
   
-  // Mutations
   const saveTrackerDataMutation = useMutation({
     mutationFn: async (data: {
       trackerId: string;
@@ -145,9 +142,7 @@ export default function WeeklyTracker() {
     mutationFn: async (days: DailyRecord[]) => {
       const promises = [];
       
-      // For each day, we need to save:
       for (const day of days) {
-        // First ensure tracker data exists for this day
         const trackerDataPayload: Omit<DbTrackerData, 'id' | 'created_at' | 'updated_at'> = {
           year: currentYear,
           month: currentMonth,
@@ -161,7 +156,6 @@ export default function WeeklyTracker() {
         
         const trackerData = await upsertTrackerData(trackerDataPayload);
         
-        // Then save all purchases for this day
         for (const [supplierId, amount] of Object.entries(day.purchases)) {
           if (amount > 0) {
             promises.push(upsertTrackerPurchase({
@@ -172,7 +166,6 @@ export default function WeeklyTracker() {
           }
         }
         
-        // And save all credit notes for this day
         day.creditNotes.forEach((amount, index) => {
           if (amount > 0) {
             promises.push(upsertTrackerCreditNote({
@@ -220,16 +213,12 @@ export default function WeeklyTracker() {
     }
   }, [supabaseSuppliers, isLoadingSuppliers, monthRecord]);
   
-  // Setup initial week data
   useEffect(() => {
     if (!weekRecord) return;
     
-    // Initialize with data from the local state
     let initialData = [...weekRecord.days];
     
-    // If we have tracker data from Supabase, integrate it
     if (trackerData && trackerData.length > 0) {
-      // We'll get purchases and credit notes for each day
       const promises = trackerData.map(async (day) => {
         const purchases = await fetchTrackerPurchases(day.id);
         const creditNotes = await fetchTrackerCreditNotes(day.id);
@@ -237,27 +226,21 @@ export default function WeeklyTracker() {
       });
       
       Promise.all(promises).then((results) => {
-        // Update local data with Supabase data
         const updatedDays = initialData.map(localDay => {
-          // Find matching day from Supabase
           const dayResult = results.find(r => r.day.date === localDay.date);
           
           if (dayResult) {
-            // Create a new purchases record
             const updatedPurchases = { ...localDay.purchases };
             
-            // Update purchases from Supabase data
             dayResult.purchases.forEach(purchase => {
               updatedPurchases[purchase.supplier_id] = purchase.amount;
             });
             
-            // Update credit notes from Supabase data
             const updatedCreditNotes = [...localDay.creditNotes];
             dayResult.creditNotes.forEach(note => {
               updatedCreditNotes[note.credit_index] = note.amount;
             });
             
-            // Return updated day with Supabase data
             return {
               ...localDay,
               revenue: dayResult.day.revenue || 0,
@@ -469,7 +452,8 @@ export default function WeeklyTracker() {
         <StatusBox 
           label="Weekly GP %" 
           value={formatPercentage(calculateWeeklyGP())} 
-          status={gpStatus} 
+          status="neutral" 
+          gpMode={true}
         />
         <StatusBox 
           label="GP Target" 
@@ -479,7 +463,8 @@ export default function WeeklyTracker() {
         <StatusBox 
           label="Variance" 
           value={`${gpDifference >= 0 ? '+' : ''}${formatPercentage(gpDifference)}`} 
-          status={gpStatus} 
+          status="neutral" 
+          gpMode={true}
         />
       </div>
       
