@@ -52,6 +52,16 @@ export default function StatusBox({
     return status;
   };
 
+  // New method to get text color based on status
+  const getTextColor = () => {
+    const calculatedStatus = gpMode ? getGPStatus() : status;
+    switch (calculatedStatus) {
+      case 'good': return 'text-green-600';
+      case 'bad': return 'text-red-600';
+      default: return 'text-[#48495E]';
+    }
+  };
+
   return (
     <div className={cn(
       'rounded-xl p-4 flex flex-col items-center justify-center border shadow-sm glass-morphism h-28 min-w-[150px]',
@@ -61,7 +71,8 @@ export default function StatusBox({
       <h3 className="text-sm font-medium opacity-80 mb-1">{label}</h3>
       <p className={cn(
         'font-bold truncate w-full text-center',
-        getFontSize()
+        getFontSize(),
+        getTextColor()
       )}>
         {value}
       </p>
