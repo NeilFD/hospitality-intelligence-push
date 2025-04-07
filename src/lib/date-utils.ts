@@ -78,16 +78,20 @@ export function createEmptyWeek(
   suppliers: Supplier[]
 ): WeeklyRecord {
   const days: DailyRecord[] = [];
-  // Parse the start date string to a Date object
-  const start = new Date(`${startDate}T00:00:00`);
-
+  
+  // Create a stable date object with time set to midnight to avoid timezone issues
+  const startDateObj = new Date(`${startDate}T00:00:00`);
+  
+  // Loop through the 7 days of the week
   for (let i = 0; i < 7; i++) {
-    const currentDate = new Date(start.getTime()); // avoid mutation
-    currentDate.setDate(currentDate.getDate() + i); // correct date addition
-
-    // Format the date string correctly for the day
+    // Clone the date for each day to avoid modifying the original
+    const currentDate = new Date(startDateObj);
+    currentDate.setDate(startDateObj.getDate() + i);
+    
+    // Format the date as YYYY-MM-DD string
     const dateString = formatDate(currentDate);
-    // Get day name directly from the currentDate object to ensure accuracy
+    
+    // Get day name from the current date object (0 = Sunday, 1 = Monday, etc.)
     const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][currentDate.getDay()];
 
     const purchases: Record<string, number> = {};

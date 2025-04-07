@@ -91,6 +91,13 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     ? (totals.totalWages / totals.totalRevenue) * 100 
     : 0;
 
+  // Helper function to get day name from a Date object
+  const getDayName = (dateStr: string): string => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const date = new Date(`${dateStr}T00:00:00`);
+    return dayNames[date.getDay()];
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -124,7 +131,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             </TableHeader>
             <TableBody>
               {monthlyData.map((day) => {
-                // Get correct day name from full JS Date object
+                // Create a proper date object using the day number from the month data
                 const dateObj = new Date(year, month - 1, day.day);
                 const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
                 const shortDayName = dayName.substring(0, 3);

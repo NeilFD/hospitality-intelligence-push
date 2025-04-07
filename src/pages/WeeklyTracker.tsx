@@ -10,8 +10,7 @@ import {
   formatCurrency, 
   formatPercentage, 
   getMonthName,
-  formatDateForDisplay,
-  getDayName
+  formatDateForDisplay
 } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import StatusBox from '@/components/StatusBox';
@@ -301,14 +300,13 @@ export default function WeeklyTracker() {
               <thead>
                 <tr>
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
-                  {sortedDays.map((day, dayIndex) => {
+                  {sortedDays.map((day, index) => {
                     const dateObj = new Date(`${day.date}T00:00:00`);
-                    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
                     const displayDate = formatDateForDisplay(dateObj);
                     
                     return (
-                      <th key={dayIndex} className="table-header-day">
-                        {dayName}<br />
+                      <th key={index} className="table-header-day">
+                        {day.dayOfWeek}<br />
                         {displayDate}
                       </th>
                     );
