@@ -136,6 +136,7 @@ export function TrackerLineItem({
           onChange={(e) => updateForecastAmount(index, e.target.value)}
           className="h-8 w-24 text-right ml-auto"
           onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         />
       </TableCell>
       <TableCell className={`text-right ${fontClass} ${

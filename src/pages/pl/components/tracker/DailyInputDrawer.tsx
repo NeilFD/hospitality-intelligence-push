@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfMonth } from 'date-fns';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
@@ -173,6 +172,10 @@ export function DailyInputDrawer({
     return null;
   }
 
+  const handleInputContainerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <Drawer 
       open={isOpen} 
@@ -197,10 +200,10 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]" onClick={handleInputContainerClick}>
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => (
-                <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
+                <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center" onClick={(e) => e.stopPropagation()}>
                   <div className="font-medium text-tavern-blue">
                     {format(dayInput.date, 'EEE, MMM d')}:
                   </div>
@@ -213,6 +216,7 @@ export function DailyInputDrawer({
                     placeholder="0.00" 
                     className="w-full h-9 text-tavern-blue" 
                     onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
                   />
                 </div>
               ))}
