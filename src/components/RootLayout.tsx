@@ -1,6 +1,7 @@
 
 import { Outlet } from "react-router-dom";
 import Layout from "@/components/Layout";
+import React from "react";
 
 interface RootLayoutProps {
   children?: React.ReactNode;
