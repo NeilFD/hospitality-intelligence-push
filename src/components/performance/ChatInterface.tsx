@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -186,6 +187,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       const response = await sendWebhookRequest(webhookUrl, payload);
       console.log('Got response:', response);
       
+      // Handle response based on type - with no error popup
       if (response.success) {
         // Extract response text from the webhook response
         const aiResponse = response.data?.response || 
@@ -200,22 +202,20 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         
         setMessages(prev => [...prev, newMessage]);
       } else {
-        const errorMessage = `Failed to get a response: ${response.status || 'Unknown error'}`;
-        toast.error(errorMessage);
+        // For failures, just log the error and show a simple message with no popup
+        console.error("Failed webhook request:", response.status, response.message);
         
         setMessages(prev => [...prev, {
-          text: "I'm sorry, I encountered an issue while processing your request. Please try again later.",
+          text: "I'm having trouble connecting to my analysis engine right now. Please try again later.",
           isUser: false,
           timestamp: new Date()
         }]);
       }
     } catch (error) {
       console.error('Error querying the AI:', error);
-      const errorStr = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-      toast.error("Failed to connect to AI service. Please try again later.");
       
       setMessages(prev => [...prev, {
-        text: "I'm sorry, I encountered an issue while processing your request. Please try again later.",
+        text: "I'm having trouble connecting to my analysis engine right now. Please try again later.",
         isUser: false,
         timestamp: new Date()
       }]);

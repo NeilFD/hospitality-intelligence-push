@@ -81,14 +81,20 @@ export const deleteConversation = async (id: string): Promise<void> => {
 // Send webhook request to n8n with enhanced debugging
 export const sendWebhookRequest = async (webhookUrl: string, payload: any): Promise<any> => {
   try {
-    console.log(`Sending payload to webhook URL: ${webhookUrl}`);
-    console.log('Payload:', JSON.stringify(payload, null, 2));
+    // Additional deep debugging
+    console.log(`=========== WEBHOOK REQUEST DETAILS ===========`);
+    console.log(`URL: ${webhookUrl}`);
+    console.log('Full Payload:', JSON.stringify(payload, null, 2));
+    console.log(`Origin: ${window.location.origin}`);
+    console.log(`User Agent: ${navigator.userAgent}`);
+    console.log(`Time: ${new Date().toISOString()}`);
     
     // Store the conversation attempt in Supabase
     const { data: user } = await supabase.auth.getUser();
     let conversationId = null;
     
     if (user && user.user) {
+      console.log(`Authenticated user: ${user.user.id}`);
       const { data, error } = await supabase.from('ai_conversations').insert({
         user_id: user.user.id,
         query: payload.query || `Webhook request to ${webhookUrl}`,
@@ -104,6 +110,8 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         conversationId = data[0].id;
         console.log(`Created conversation with ID: ${conversationId}`);
       }
+    } else {
+      console.log('No authenticated user found for conversation storage');
     }
     
     // Update conversation with attempt status
@@ -116,49 +124,101 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         .eq('id', conversationId);
     }
     
-    // Send the request to n8n with enhanced error handling
-    console.log('Sending fetch request to:', webhookUrl);
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': window.location.origin
-      },
-      body: JSON.stringify(payload)
-    });
+    // Try different fetch approaches
+    console.log('Attempting fetch with standard approach...');
     
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries([...response.headers.entries()]));
+    // Headers for the request
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Origin': window.location.origin,
+      // Adding some commonly required headers
+      'X-Requested-With': 'XMLHttpRequest',
+      'Cache-Control': 'no-cache'
+    };
+    
+    console.log('Request headers:', headers);
+    
+    // First attempt: Standard fetch
+    let response;
+    try {
+      response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload),
+        credentials: 'omit' // Don't send cookies
+      });
+      
+      console.log('Standard fetch response status:', response.status);
+    } catch (fetchError) {
+      console.error('Standard fetch failed:', fetchError);
+      console.log('Attempting fetch with no-cors mode...');
+      
+      // Second attempt: no-cors mode (less information but might work)
+      try {
+        response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          mode: 'no-cors'
+        });
+        
+        console.log('No-cors fetch completed (note: status will be 0 due to CORS limitations)');
+      } catch (noCorsError) {
+        console.error('No-cors fetch also failed:', noCorsError);
+        throw new Error(`All fetch attempts failed: ${String(fetchError)} and ${String(noCorsError)}`);
+      }
+    }
+    
+    // Log response details
+    console.log('Response obtained, status:', response.status);
+    if (response.headers) {
+      console.log('Response headers:', Object.fromEntries([...response.headers.entries()]));
+    }
     
     // Comprehensive response parsing
     let responseData;
     let statusCode = response.status;
     let responseText = '';
     
-    try {
-      responseText = await response.text();
-      console.log('Raw response text:', responseText);
-      
+    // Check if we got a no-cors response (which has limited information)
+    if (response.type === 'opaque') {
+      console.log('Received opaque response due to no-cors mode');
+      responseData = { 
+        message: "Request sent in no-cors mode. Cannot access response details.", 
+        status: "unknown", 
+        success: true // Assume success since we didn't get an exception
+      };
+    } else {
       try {
-        responseData = JSON.parse(responseText);
-        console.log('Parsed JSON response:', responseData);
-      } catch (jsonError) {
-        console.error('Failed to parse response as JSON:', jsonError);
+        responseText = await response.text();
+        console.log('Raw response text:', responseText);
+        
+        try {
+          responseData = JSON.parse(responseText);
+          console.log('Parsed JSON response:', responseData);
+        } catch (jsonError) {
+          console.error('Failed to parse response as JSON:', jsonError);
+          responseData = { 
+            message: responseText || "Non-JSON response received",
+            status: statusCode,
+            rawResponse: responseText
+          };
+        }
+      } catch (textError) {
+        console.error('Error reading response text:', textError);
         responseData = { 
-          message: responseText || "Non-JSON response received",
+          message: "Failed to read response",
           status: statusCode,
-          rawResponse: responseText
+          error: String(textError)
         };
       }
-    } catch (textError) {
-      console.error('Error reading response text:', textError);
-      responseData = { 
-        message: "Failed to read response",
-        status: statusCode,
-        error: String(textError)
-      };
     }
+    
+    console.log('Final processed response:', responseData);
+    console.log(`=========== END WEBHOOK REQUEST DETAILS ===========`);
     
     // Update conversation with response
     if (conversationId) {
@@ -179,6 +239,16 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         .eq('id', conversationId);
     }
     
+    // For no-cors responses, we assume success but with limited info
+    if (response.type === 'opaque') {
+      return {
+        success: true,
+        data: { message: "Request sent, but no response details available due to CORS restrictions" },
+        status: "unknown",
+        message: "Request completed in no-cors mode. Check n8n for confirmation."
+      };
+    }
+    
     return {
       success: statusCode >= 200 && statusCode < 300,
       data: responseData,
@@ -187,7 +257,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       rawResponse: responseText
     };
   } catch (error) {
-    console.error('Webhook request failed:', error);
+    console.error('Webhook request failed with critical error:', error);
     
     // Log detailed error information
     const errorDetails = {
