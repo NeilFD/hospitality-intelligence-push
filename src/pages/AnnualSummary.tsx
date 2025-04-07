@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -29,6 +29,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { useQuery } from '@tanstack/react-query';
+import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
 
 interface AnnualSummaryProps {
   modulePrefix?: string;
@@ -49,8 +51,177 @@ export default function AnnualSummary({
   const pageTitle = modulePrefix ? `${modulePrefix} Annual Summary` : "Annual Summary";
   const annualRecord = useStore(state => state.annualRecord);
   const isMobile = useIsMobile();
+  const currentYear = annualRecord.year;
   
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [annualTotals, setAnnualTotals] = useState({
+    revenue: 0,
+    purchases: 0,
+    grossProfit: 0,
+    gpPercentage: 0,
+    averageTargetGP: 0
+  });
+  
+  const fetchAndUpdateData = async () => {
+    const months = [];
+    const defaultTarget = getDefaultTargetGP();
+    
+    let totalRevenue = 0;
+    let totalPurchases = 0;
+    let totalTargets = 0;
+    let monthsWithData = 0;
+    
+    for (let i = 0; i < 12; i++) {
+      const monthNumber = i + 1;
+      const monthName = new Date(2023, i, 1).toLocaleString('default', { month: 'short' });
+      
+      try {
+        const trackerData = await fetchTrackerDataByMonth(currentYear, monthNumber, moduleType);
+        
+        if (trackerData && trackerData.length > 0) {
+          console.log(`Found ${trackerData.length} tracker days for month ${monthNumber}`);
+          
+          let monthRevenue = 0;
+          let monthCost = 0;
+          
+          for (const day of trackerData) {
+            monthRevenue += day.revenue || 0;
+            
+            const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+                'Content-Type': 'application/json'
+              },
+            });
+            
+            const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+                'Content-Type': 'application/json'
+              },
+            });
+            
+            const purchases = await purchasesResponse.json();
+            const creditNotes = await creditNotesResponse.json();
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + (cn.amount || 0), 0);
+            const dayCost = purchasesTotal - creditNotesTotal + (day.staff_food_allowance || 0);
+            
+            monthCost += dayCost;
+          }
+          
+          const grossProfit = monthRevenue - monthCost;
+          const gpPercentage = monthRevenue > 0 ? (grossProfit / monthRevenue) * 100 : 0;
+          
+          const monthRecord = annualRecord.months.find(
+            m => m.month === monthNumber && m.year === currentYear
+          );
+          
+          const target = monthRecord ? parseFloat((monthRecord.gpTarget * 100).toFixed(2)) : defaultTarget;
+          
+          months.push({
+            name: monthName,
+            month: monthNumber,
+            revenue: monthRevenue,
+            purchases: monthCost,
+            grossProfit,
+            gpPercentage: parseFloat(gpPercentage.toFixed(2)),
+            target
+          });
+          
+          totalRevenue += monthRevenue;
+          totalPurchases += monthCost;
+          totalTargets += target;
+          monthsWithData++;
+          
+          console.log(`Month ${monthName}: Revenue ${monthRevenue}, Cost ${monthCost}, GP% ${gpPercentage.toFixed(2)}%`);
+        } else {
+          const monthRecord = annualRecord.months.find(
+            m => m.month === monthNumber && m.year === currentYear
+          );
+          
+          if (monthRecord) {
+            let monthRevenue = 0;
+            let monthCost = 0;
+            
+            monthRecord.weeks.forEach(week => {
+              week.days.forEach(day => {
+                monthRevenue += day.revenue || 0;
+                
+                const dayPurchases = day.purchases ? 
+                  Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                monthCost += dayPurchases;
+                
+                monthCost -= day.creditNotes.reduce((sum, amount) => sum + amount, 0);
+              });
+            });
+            
+            const grossProfit = monthRevenue - monthCost;
+            const gpPercentage = monthRevenue > 0 ? (grossProfit / monthRevenue) * 100 : 0;
+            const target = parseFloat((monthRecord.gpTarget * 100).toFixed(2));
+            
+            months.push({
+              name: monthName,
+              month: monthNumber,
+              revenue: monthRevenue,
+              purchases: monthCost,
+              grossProfit,
+              gpPercentage: parseFloat(gpPercentage.toFixed(2)),
+              target
+            });
+            
+            totalRevenue += monthRevenue;
+            totalPurchases += monthCost;
+            totalTargets += target;
+            monthsWithData++;
+          } else {
+            months.push({
+              name: monthName,
+              month: monthNumber,
+              revenue: 0,
+              purchases: 0,
+              grossProfit: 0,
+              gpPercentage: 0,
+              target: defaultTarget
+            });
+            
+            totalTargets += defaultTarget;
+            monthsWithData++;
+          }
+        }
+      } catch (error) {
+        console.error(`Error processing month ${monthNumber}:`, error);
+        
+        months.push({
+          name: monthName,
+          month: monthNumber,
+          revenue: 0,
+          purchases: 0,
+          grossProfit: 0,
+          gpPercentage: 0,
+          target: defaultTarget
+        });
+        
+        totalTargets += defaultTarget;
+        monthsWithData++;
+      }
+    }
+    
+    const totalGrossProfit = totalRevenue - totalPurchases;
+    const totalGpPercentage = totalRevenue > 0 ? (totalGrossProfit / totalRevenue) * 100 : 0;
+    const averageTargetGP = monthsWithData > 0 ? totalTargets / monthsWithData : defaultTarget;
+    
+    setMonthlyData(months);
+    setAnnualTotals({
+      revenue: totalRevenue,
+      purchases: totalPurchases,
+      grossProfit: totalGrossProfit,
+      gpPercentage: parseFloat(totalGpPercentage.toFixed(2)),
+      averageTargetGP: parseFloat(averageTargetGP.toFixed(2))
+    });
+  };
   
   const getDefaultTargetGP = () => {
     const existingMonths = annualRecord.months.filter(m => m.year === annualRecord.year);
@@ -61,86 +232,9 @@ export default function AnnualSummary({
     return 70;
   };
   
-  const monthlyData = React.useMemo(() => {
-    const months = [];
-    const defaultTarget = getDefaultTargetGP();
-    
-    for (let i = 0; i < 12; i++) {
-      const monthNumber = i + 1;
-      const monthName = new Date(2023, i, 1).toLocaleString('default', { month: 'short' });
-      
-      const monthRecord = annualRecord.months.find(
-        m => m.month === monthNumber && m.year === annualRecord.year
-      );
-      
-      if (monthRecord) {
-        let totalRevenue = 0;
-        let totalPurchases = 0;
-        
-        monthRecord.weeks.forEach(week => {
-          week.days.forEach(day => {
-            totalRevenue += day.revenue;
-            
-            Object.values(day.purchases).forEach(amount => {
-              totalPurchases += amount;
-            });
-            
-            totalPurchases -= day.creditNotes.reduce((sum, amount) => sum + amount, 0);
-          });
-        });
-        
-        const grossProfit = totalRevenue - totalPurchases;
-        const gpPercentage = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
-        
-        months.push({
-          name: monthName,
-          month: monthNumber,
-          revenue: totalRevenue,
-          purchases: totalPurchases,
-          grossProfit,
-          gpPercentage: parseFloat(gpPercentage.toFixed(2)),
-          target: parseFloat((monthRecord.gpTarget * 100).toFixed(2))
-        });
-      } else {
-        months.push({
-          name: monthName,
-          month: monthNumber,
-          revenue: 0,
-          purchases: 0,
-          grossProfit: 0,
-          gpPercentage: 0,
-          target: defaultTarget
-        });
-      }
-    }
-    
-    return months;
-  }, [annualRecord]);
-  
-  const annualTotals = React.useMemo(() => {
-    const totals = {
-      revenue: 0,
-      purchases: 0,
-      grossProfit: 0,
-      gpPercentage: 0,
-      averageTargetGP: 0
-    };
-    
-    if (monthlyData.length > 0) {
-      totals.revenue = monthlyData.reduce((sum, month) => sum + month.revenue, 0);
-      totals.purchases = monthlyData.reduce((sum, month) => sum + month.purchases, 0);
-      totals.grossProfit = totals.revenue - totals.purchases;
-      totals.gpPercentage = totals.revenue > 0 
-        ? parseFloat(((totals.grossProfit / totals.revenue) * 100).toFixed(2))
-        : 0;
-      
-      totals.averageTargetGP = parseFloat(
-        (monthlyData.reduce((sum, month) => sum + month.target, 0) / monthlyData.length).toFixed(2)
-      );
-    }
-    
-    return totals;
-  }, [monthlyData]);
+  useEffect(() => {
+    fetchAndUpdateData();
+  }, [currentYear, moduleType, annualRecord]);
   
   const chartConfig = {
     revenue: {
