@@ -100,8 +100,8 @@ export function createEmptyWeek(
   return {
     id: uuidv4(),
     weekNumber,
-    startDate: formatDate(start),
-    endDate: formatDate(new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000)), // 6 days after start
+    startDate,
+    endDate,
     days,
   };
 }
