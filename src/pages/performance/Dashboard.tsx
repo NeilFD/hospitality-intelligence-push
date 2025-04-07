@@ -20,7 +20,7 @@ export default function PerformanceDashboard() {
               <span>Chat History</span>
             </Link>
           </Button>
-          <TavernLogo size="3xl" className="hidden md:block" />
+          <TavernLogo size="md" className="hidden md:block" />
         </div>
       </div>
       

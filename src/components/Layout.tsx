@@ -140,7 +140,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const Sidebar = <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
-        <TavernLogo size="sm" className="mb-3" />
+        <TavernLogo size="md" className="mb-3" />
         {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Tracker</p>}
       </div>
       <Separator className="bg-tavern-blue-light/20" />
@@ -210,7 +210,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="flex-1 overflow-auto pt-16">
             <div className="absolute top-4 left-0 right-0 flex justify-between px-4">
               <div className="w-8"></div>
-              <TavernLogo size="sm" />
+              <TavernLogo size="md" />
               {isAuthenticated && <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
@@ -253,7 +253,7 @@ const Layout = ({ children }: LayoutProps) => {
               <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-gray-800">
                 {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
-              <TavernLogo size="sm" />
+              <TavernLogo size="lg" />
               
               {isAuthenticated && <DropdownMenu>
                   <DropdownMenuTrigger asChild>
