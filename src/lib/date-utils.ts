@@ -19,10 +19,13 @@ export function formatDate(date: Date): string {
 
 // Format date as DD/MM for display - showing the actual day and month the date belongs to
 export function formatDateForDisplay(date: Date): string {
-  // Create a new Date object to avoid timezone issues and ensure we're using local date
-  const day = date.getDate();
-  const month = date.getMonth() + 1; // JavaScript months are 0-based
-  return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
+  // Ensure we're working with a date object
+  const dateObj = new Date(date);
+  const day = dateObj.getDate();
+  const month = dateObj.getMonth() + 1; // JavaScript months are 0-based
+  
+  // Format as DD/MM
+  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
 }
 
 // Get day name from date string
