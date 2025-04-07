@@ -14,8 +14,24 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import PerformanceDashboard from '@/pages/performance/Dashboard';
 import ConversationHistory from '@/pages/performance/ConversationHistory';
-// Import WagesDashboard component directly from src/pages/wages/Dashboard
 import WagesDashboard from '@/pages/wages/WagesDashboard';
+import NotFound from '@/pages/NotFound';
+import Index from '@/pages/Index';
+
+// Food pages
+import FoodDashboard from '@/pages/food/Dashboard';
+import FoodMonthSummary from '@/pages/food/MonthSummary';
+import FoodAnnualSummary from '@/pages/food/AnnualSummary';
+import FoodInputSettings from '@/pages/food/InputSettings';
+
+// Beverage pages
+import BeverageDashboard from '@/pages/beverage/Dashboard';
+import BeverageMonthSummary from '@/pages/beverage/MonthSummary';
+import BeverageAnnualSummary from '@/pages/beverage/AnnualSummary';
+import BeverageInputSettings from '@/pages/beverage/InputSettings';
+
+// P&L pages
+import PLDashboard from '@/pages/pl/Dashboard';
 
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -31,27 +47,73 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <RequireAuth><RootLayout /></RequireAuth>,
+    errorElement: <NotFound />,
     children: [
       {
         path: "/",
-        element: <Dashboard />
+        element: <Index />
       },
       {
         path: "/profile",
         element: <Profile />
       },
+      // Food module routes
+      {
+        path: "/food/dashboard",
+        element: <FoodDashboard />
+      },
+      {
+        path: "/food/month/:year/:month",
+        element: <FoodMonthSummary />
+      },
+      {
+        path: "/food/annual-summary",
+        element: <FoodAnnualSummary />
+      },
+      {
+        path: "/food/input-settings",
+        element: <FoodInputSettings />
+      },
+      // Beverage module routes
+      {
+        path: "/beverage/dashboard",
+        element: <BeverageDashboard />
+      },
+      {
+        path: "/beverage/month/:year/:month",
+        element: <BeverageMonthSummary />
+      },
+      {
+        path: "/beverage/annual-summary",
+        element: <BeverageAnnualSummary />
+      },
+      {
+        path: "/beverage/input-settings",
+        element: <BeverageInputSettings />
+      },
+      // P&L module routes
+      {
+        path: "/pl/dashboard",
+        element: <PLDashboard />
+      },
+      // Performance module routes
       {
         path: "/performance/dashboard",
         element: <PerformanceDashboard />
       },
       {
+        path: "/performance/conversation-history",
+        element: <ConversationHistory />
+      },
+      // Wages module routes
+      {
         path: "/wages/dashboard",
         element: <WagesDashboard />
       },
       {
-        path: "/performance/conversation-history",
-        element: <RequireAuth><ConversationHistory /></RequireAuth>
-      },
+        path: "*",
+        element: <NotFound />
+      }
     ]
   },
   {
