@@ -300,12 +300,16 @@ export default function WeeklyTracker() {
               <thead>
                 <tr>
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
-                  {sortedDays.map((day, index) => (
-                    <th key={index} className="table-header-day">
-                      {day.dayOfWeek}<br />
-                      {day.date.split('-')[2]}/{day.date.split('-')[1]}
-                    </th>
-                  ))}
+                  {sortedDays.map((day, index) => {
+                    const dateObj = new Date(`${day.date}T00:00:00`);
+                    
+                    return (
+                      <th key={index} className="table-header-day">
+                        {day.dayOfWeek}<br />
+                        {formatDateForDisplay(dateObj)}
+                      </th>
+                    );
+                  })}
                   <th className="table-header rounded-tr-lg">Weekly Total</th>
                 </tr>
               </thead>
