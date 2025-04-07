@@ -27,21 +27,46 @@ export default function FoodDashboard() {
 
     let monthRevenue = 0;
     let monthCost = 0;
-    annualRecord.months.forEach(month => {
-      month.weeks.forEach(week => {
-        week.days.forEach(day => {
-          revenue += day.revenue;
+    
+    // Log the annualRecord to debug
+    console.log("Annual Record:", annualRecord);
+    
+    if (annualRecord && annualRecord.months) {
+      annualRecord.months.forEach(month => {
+        if (month.weeks) {
+          month.weeks.forEach(week => {
+            if (week.days) {
+              week.days.forEach(day => {
+                // Add check for revenue property
+                if (day.revenue) {
+                  revenue += day.revenue;
+                }
 
-          const dayPurchases = Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0);
-          cost += dayPurchases;
+                // Add checks for purchases property
+                const dayPurchases = day.purchases ? 
+                  Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                cost += dayPurchases;
 
-          if (month.year === currentYear && month.month === currentMonth) {
-            monthRevenue += day.revenue;
-            monthCost += dayPurchases;
-          }
-        });
+                if (month.year === currentYear && month.month === currentMonth) {
+                  if (day.revenue) {
+                    monthRevenue += day.revenue;
+                  }
+                  monthCost += dayPurchases;
+                }
+              });
+            }
+          });
+        }
       });
+    }
+    
+    console.log("Calculated values:", {
+      totalRevenue: revenue,
+      totalCost: cost,
+      monthRevenue,
+      monthCost
     });
+    
     setTotalRevenue(revenue);
     setTotalCost(cost);
     setGpPercentage(calculateGP(revenue, cost));
@@ -87,6 +112,7 @@ export default function FoodDashboard() {
               value={formatPercentage(currentMonthGP)} 
               status={getGpStatus(currentMonthGP, 0.68)} 
               className="w-full h-24" 
+              gpMode={true}
             />
             <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark rounded-lg shadow-sm transition-all duration-300">
               <Link to={`/food/month/${currentYear}/${currentMonth}`}>
@@ -122,6 +148,7 @@ export default function FoodDashboard() {
               value={formatPercentage(gpPercentage)} 
               status={getGpStatus(gpPercentage, 0.68)} 
               className="w-full h-24" 
+              gpMode={true}
             />
             <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white rounded-lg shadow-sm transition-all duration-300">
               <Link to="/food/annual-summary">
