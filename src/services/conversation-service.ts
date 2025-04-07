@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface Conversation {
@@ -104,43 +103,52 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       }
     }
     
-    // Send the request to n8n with proper headers
+    // Send the request to n8n with comprehensive error handling
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': '*/*'
+        'Accept': 'application/json'
       },
       body: JSON.stringify(payload)
     });
     
-    // Process the response properly
+    // Comprehensive response parsing
     let responseData;
     let statusCode = response.status;
     
     try {
-      // Try to parse JSON response if available
-      const textResponse = await response.text();
-      responseData = textResponse ? JSON.parse(textResponse) : { message: "No content returned" };
+      responseData = await response.json();
     } catch (parseError) {
-      console.log('Response is not JSON, using raw response');
-      responseData = { 
-        message: "Received non-JSON response from webhook", 
-        status: statusCode
-      };
+      console.error('Error parsing JSON response:', parseError);
+      
+      // Fallback to text if JSON parsing fails
+      try {
+        const textResponse = await response.text();
+        responseData = { 
+          message: textResponse || "Non-JSON response received",
+          status: statusCode
+        };
+      } catch (textError) {
+        console.error('Error reading response text:', textError);
+        responseData = { 
+          message: "Failed to read response",
+          status: statusCode
+        };
+      }
     }
     
-    // Format a meaningful response message
-    const responseMessage = responseData?.response || 
-                           responseData?.message || 
-                           responseData?.content ||
-                           `Request processed with status: ${statusCode}`;
-    
-    // Update the stored conversation with the actual response
+    // Update conversation with response
     if (conversationId) {
       await supabase
         .from('ai_conversations')
-        .update({ response: responseMessage })
+        .update({ 
+          response: JSON.stringify(responseData),
+          payload: {
+            ...payload,
+            responseStatus: statusCode
+          }
+        })
         .eq('id', conversationId);
     }
     
@@ -148,13 +156,13 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       success: statusCode >= 200 && statusCode < 300,
       data: responseData,
       status: statusCode,
-      message: responseMessage
+      message: responseData?.message || `Request processed with status: ${statusCode}`
     };
   } catch (error) {
-    console.error('Error sending webhook request:', error);
+    console.error('Webhook request failed:', error);
     return {
       success: false,
-      message: "Error sending webhook request",
+      message: "Webhook request failed",
       error: String(error)
     };
   }

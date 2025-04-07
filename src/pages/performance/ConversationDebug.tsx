@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ export default function ConversationDebug() {
   const [conversations, setConversations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPayload, setSelectedPayload] = useState<any>(null);
-  const [webhookUrl, setWebhookUrl] = useState('https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee');
+  const [webhookUrl, setWebhookUrl] = useState('https://neilfd.app.n8n.cloud/webhook-test/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee');
   const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => {
@@ -42,12 +41,10 @@ export default function ConversationDebug() {
     setSelectedPayload(payload);
     
     try {
-      // Use our updated sendWebhookRequest function
       const response = await sendWebhookRequest(webhookUrl, payload);
       
       if (response.success) {
         toast.success('Webhook test sent successfully');
-        // Refresh the conversations list to show the updated response
         const updatedConversations = await getUserConversations();
         setConversations(updatedConversations);
       } else {
