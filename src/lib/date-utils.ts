@@ -20,9 +20,8 @@ export function formatDate(date: Date): string {
 // Format date as DD/MM for display - showing the actual month the date belongs to
 export function formatDateForDisplay(date: Date): string {
   // Create a new Date object to avoid timezone issues and ensure we're using local date
-  const d = new Date(date);
-  const day = d.getDate();
-  const month = d.getMonth() + 1; // JavaScript months are 0-based
+  const day = date.getDate();
+  const month = date.getMonth() + 1; // JavaScript months are 0-based
   return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
 }
 
