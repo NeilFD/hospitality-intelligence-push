@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface Conversation {
@@ -90,7 +91,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       const { data, error } = await supabase.from('ai_conversations').insert({
         user_id: user.user.id,
         query: payload.query || `Webhook request to ${webhookUrl}`,
-        response: "Waiting for response...",
+        response: "Processing request...",
         payload: payload,
         timestamp: new Date().toISOString(),
         shared: false
@@ -103,42 +104,51 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       }
     }
     
-    // Use no-cors mode to avoid CORS preflight issues
-    // This is a workaround for situations where the server doesn't support CORS properly
+    // Send the request to n8n with proper headers
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': '*/*'
       },
-      mode: 'no-cors', // Use no-cors mode to bypass CORS issues
       body: JSON.stringify(payload)
     });
     
-    // When using no-cors, we won't get a proper response object we can work with
-    // So we need to handle this case specially
+    // Process the response properly
     let responseData;
+    let statusCode = response.status;
     
-    // With no-cors mode, we can't actually read the response, so we'll create a placeholder
-    responseData = {
-      success: true, // Assume success since we can't determine otherwise
-      message: "Webhook triggered. Check n8n for execution results.",
-      status: "unknown"
-    };
+    try {
+      // Try to parse JSON response if available
+      const textResponse = await response.text();
+      responseData = textResponse ? JSON.parse(textResponse) : { message: "No content returned" };
+    } catch (parseError) {
+      console.log('Response is not JSON, using raw response');
+      responseData = { 
+        message: "Received non-JSON response from webhook", 
+        status: statusCode
+      };
+    }
     
-    // Update the conversation with a user-friendly message
+    // Format a meaningful response message
+    const responseMessage = responseData?.response || 
+                           responseData?.message || 
+                           responseData?.content ||
+                           `Request processed with status: ${statusCode}`;
+    
+    // Update the stored conversation with the actual response
     if (conversationId) {
       await supabase
         .from('ai_conversations')
-        .update({ 
-          response: "Webhook request sent to n8n. Please check your n8n dashboard for execution results." 
-        })
+        .update({ response: responseMessage })
         .eq('id', conversationId);
     }
     
     return {
-      success: true,
+      success: statusCode >= 200 && statusCode < 300,
       data: responseData,
-      status: 'sent'
+      status: statusCode,
+      message: responseMessage
     };
   } catch (error) {
     console.error('Error sending webhook request:', error);
