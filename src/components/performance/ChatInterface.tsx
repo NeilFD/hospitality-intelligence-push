@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -45,7 +44,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   const location = useLocation();
   
   // Explicitly set the webhook URL here
-  const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee";
+  const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/74046e2b-f868-43ec-9343-c1e7ca6d803c";
 
   // Function to get annual summary data
   const getAnnualSummaryData = () => {

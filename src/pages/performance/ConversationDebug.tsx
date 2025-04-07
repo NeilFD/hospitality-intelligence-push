@@ -12,8 +12,7 @@ export default function ConversationDebug() {
   const [conversations, setConversations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPayload, setSelectedPayload] = useState<any>(null);
-  // Set the webhook URL explicitly
-  const [webhookUrl, setWebhookUrl] = useState('https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee');
+  const [webhookUrl, setWebhookUrl] = useState('https://neilfd.app.n8n.cloud/webhook/74046e2b-f868-43ec-9343-c1e7ca6d803c');
   const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => {
