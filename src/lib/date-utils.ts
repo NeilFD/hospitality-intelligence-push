@@ -25,6 +25,13 @@ export function formatDateForDisplay(date: Date): string {
   return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
 }
 
+// Get day name from date string
+export function getDayName(dateStr: string): string {
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const date = new Date(dateStr);
+  return dayNames[date.getDay()];
+}
+
 // Generate week dates for a given month
 export function generateWeekDates(year: number, month: number): WeekDates[] {
   const firstDay = getFirstDayOfMonth(year, month);
@@ -76,8 +83,9 @@ export function createEmptyWeek(
     const currentDate = new Date(start.getTime()); // ✅ avoid mutation
     currentDate.setDate(currentDate.getDate() + i); // ✅ correct date addition
 
-    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const dayOfWeek = dayNames[i];
+    // Get day name directly from date
+    const dateString = formatDate(currentDate);
+    const dayOfWeek = getDayName(dateString);
 
     const purchases: Record<string, number> = {};
     suppliers.forEach(supplier => {
@@ -85,7 +93,7 @@ export function createEmptyWeek(
     });
 
     days.push({
-      date: formatDate(currentDate),
+      date: dateString,
       dayOfWeek,
       revenue: 0,
       purchases,
@@ -112,7 +120,7 @@ export function getDayOfWeek(date: Date): number {
 }
 
 // Get day name from day number
-export function getDayName(dayNumber: number): string {
+export function getDayNameFromNumber(dayNumber: number): string {
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   return dayNames[dayNumber];
 }

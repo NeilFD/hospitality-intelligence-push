@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useWagesStore } from './WagesStore';
-import { formatCurrency } from '@/lib/date-utils';
-import { ChartBar, DollarSign, Percent } from 'lucide-react';
+import { formatCurrency, getDayName } from '@/lib/date-utils';
 import { toast } from "sonner";
 
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
@@ -35,7 +34,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     const currentDay = monthlyData.find(d => d.day === day) || {
       year, month, day,
       date: new Date(year, month - 1, day).toISOString().split('T')[0],
-      dayOfWeek: new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'long' }),
+      dayOfWeek: getDayName(new Date(year, month - 1, day).toISOString().split('T')[0]),
       fohWages: 0,
       kitchenWages: 0,
       foodRevenue: 0,
@@ -98,7 +97,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         <CardTitle className="flex items-center justify-between">
           <span>Monthly Wages Tracker</span>
           <div className="flex items-center gap-2">
-            <ChartBar className="h-5 w-5 text-muted-foreground" />
             <span className="text-muted-foreground text-sm">
               Total Wages: {formatCurrency(totals.totalWages)} ({totalPercentage.toFixed(1)}%)
             </span>
@@ -126,6 +124,9 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             </TableHeader>
             <TableBody>
               {monthlyData.map((day) => {
+                // Get correct day name from date string
+                const dayName = getDayName(day.date);
+                const shortDayName = dayName.substring(0, 3);
                 const totalDailyWages = day.fohWages + day.kitchenWages;
                 const totalDailyRevenue = day.foodRevenue + day.bevRevenue;
                 const fohPercent = totalDailyRevenue > 0 
@@ -141,7 +142,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                 return (
                   <TableRow key={day.day}>
                     <TableCell className="font-medium">
-                      {day.dayOfWeek.substring(0, 3)}, {day.day}
+                      {shortDayName}, {day.day}
                     </TableCell>
                     <TableCell>
                       <Input
