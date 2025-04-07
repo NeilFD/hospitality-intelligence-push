@@ -244,7 +244,6 @@ export default function WeeklyTracker() {
     );
   }
 
-  // Ensure the days are in the order: Monday to Sunday
   const sortedDays = [...weekRecord.days];
   
   const weeklyGP = calculateWeeklyGP();
@@ -301,17 +300,12 @@ export default function WeeklyTracker() {
               <thead>
                 <tr>
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
-                  {sortedDays.map((day, index) => {
-                    const dateObj = new Date(`${day.date}T00:00:00`);
-                    const displayDate = formatDateForDisplay(dateObj);
-                    
-                    return (
-                      <th key={index} className="table-header-day">
-                        {day.dayOfWeek}<br />
-                        {displayDate}
-                      </th>
-                    );
-                  })}
+                  {sortedDays.map((day, index) => (
+                    <th key={index} className="table-header-day">
+                      {day.dayOfWeek}<br />
+                      {day.date.split('-')[2]}/{day.date.split('-')[1]}
+                    </th>
+                  ))}
                   <th className="table-header rounded-tr-lg">Weekly Total</th>
                 </tr>
               </thead>
