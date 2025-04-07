@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Share2 } from 'lucide-react';
+import { Send, Bot, User, Share2, AlertTriangle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { useWagesStore } from '@/components/wages/WagesStore';
@@ -17,6 +18,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Message {
   text: string;
@@ -42,6 +50,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   const { getMonthlyWages, getWeekdayTotals } = useWagesStore();
   const { user } = useAuthStore();
   const location = useLocation();
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   
   // Default webhook URL for n8n
   const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee";
@@ -177,12 +186,15 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setErrorDetails(null);
     
     try {
       const payload = await preparePayload();
+      console.log('Sending request with payload:', payload);
       
-      // Send the actual webhook request instead of simulating
+      // Send the actual webhook request
       const response = await sendWebhookRequest(webhookUrl, payload);
+      console.log('Got response:', response);
       
       if (response.success) {
         // Extract response text from the webhook response
@@ -201,6 +213,14 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         const errorMessage = `Failed to get a response: ${response.status || 'Unknown error'}`;
         toast.error(errorMessage);
         
+        // Store detailed error information for debugging
+        setErrorDetails(JSON.stringify({
+          status: response.status,
+          message: response.message,
+          rawResponse: response.rawResponse,
+          errorDetails: response.errorDetails
+        }, null, 2));
+        
         setMessages(prev => [...prev, {
           text: "I'm sorry, I encountered an issue while processing your request. Please try again later.",
           isUser: false,
@@ -209,7 +229,9 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       }
     } catch (error) {
       console.error('Error querying the AI:', error);
+      const errorStr = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
       toast.error("Failed to connect to AI service. Please try again later.");
+      setErrorDetails(errorStr);
       
       setMessages(prev => [...prev, {
         text: "I'm sorry, I encountered an issue while processing your request. Please try again later.",
@@ -239,6 +261,17 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-tavern-blue to-tavern-blue-dark">
         <Bot className="text-white" />
         <h3 className="font-semibold text-white">Cleo - Performance Assistant</h3>
+        {errorDetails && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="ml-auto text-white hover:bg-tavern-blue-dark"
+            onClick={() => setErrorDetails(null)}
+          >
+            <AlertTriangle className="h-4 w-4 mr-1" />
+            View Error Details
+          </Button>
+        )}
       </div>
       
       <ScrollArea className="flex-1 h-64 p-4 overflow-y-auto bg-white/80 backdrop-blur-sm">
@@ -321,6 +354,43 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           <Send className="h-5 w-5" />
         </Button>
       </form>
+      
+      {/* Error details dialog */}
+      <Dialog open={!!errorDetails} onOpenChange={(open) => !open && setErrorDetails(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Webhook Error Details
+            </DialogTitle>
+            <DialogDescription>
+              Technical information about the webhook request failure
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <h4 className="font-medium mb-2">Request URL:</h4>
+            <div className="bg-gray-100 p-2 rounded text-sm mb-4 overflow-auto">
+              {webhookUrl}
+            </div>
+            
+            <h4 className="font-medium mb-2">Error Information:</h4>
+            <pre className="bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap overflow-auto max-h-[300px]">
+              {errorDetails}
+            </pre>
+            
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm">
+              <p className="font-medium text-amber-800 mb-1">Troubleshooting Tips:</p>
+              <ul className="list-disc pl-5 space-y-1 text-amber-700">
+                <li>Check if n8n is running and accessible from this domain</li>
+                <li>Verify CORS settings in your n8n webhook configuration</li>
+                <li>Ensure the webhook URL is correct and active</li>
+                <li>Check network settings and firewall rules</li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
