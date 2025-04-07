@@ -72,31 +72,29 @@ export function createEmptyWeek(
 ): WeeklyRecord {
   const days: DailyRecord[] = [];
   const start = new Date(startDate);
-  
-  // Create 7 days (Monday to Sunday)
+
   for (let i = 0; i < 7; i++) {
-    const currentDate = new Date(start);
-    currentDate.setDate(start.getDate() + i);
-    
+    const currentDate = new Date(start.getTime()); // ✅ avoid mutation
+    currentDate.setDate(currentDate.getDate() + i); // ✅ correct date addition
+
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const dayOfWeek = dayNames[i];
-    
-    // Initialize empty purchases object with all suppliers set to 0
+
     const purchases: Record<string, number> = {};
     suppliers.forEach(supplier => {
       purchases[supplier.id] = 0;
     });
-    
+
     days.push({
       date: formatDate(currentDate),
       dayOfWeek,
       revenue: 0,
       purchases,
-      creditNotes: [0, 0, 0], // Three empty credit note slots
+      creditNotes: [0, 0, 0],
       staffFoodAllowance: 0,
     });
   }
-  
+
   return {
     id: uuidv4(),
     weekNumber,
