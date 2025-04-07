@@ -129,8 +129,8 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             </TableHeader>
             <TableBody>
               {monthlyData.map((day) => {
-                // Get day name and format it correctly (Monday first)
-                const dateObj = new Date(year, month - 1, day.day);
+                // Get day name and format it correctly (Monday first) using UTC
+                const dateObj = new Date(Date.UTC(year, month - 1, day.day));
                 const jsDay = dateObj.getDay(); // 0=Sunday, 1=Monday, etc.
                 const adjustedDayIndex = jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Monday, ..., 6=Sunday
                 const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

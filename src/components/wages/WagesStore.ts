@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages } from '@/services/wages-service';
@@ -33,7 +34,8 @@ interface WagesStore {
 }
 
 const createEmptyDayData = (year: number, month: number, day: number): DailyWages => {
-  const date = new Date(year, month - 1, day);
+  // Create date with UTC to avoid timezone issues
+  const date = new Date(Date.UTC(year, month - 1, day));
   const jsDay = date.getDay(); // 0=Sunday, 1=Monday, etc.
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   // Convert to our format (0=Monday, ..., 6=Sunday)

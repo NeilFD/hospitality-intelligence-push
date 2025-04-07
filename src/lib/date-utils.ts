@@ -4,12 +4,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Get the first day of the month
 export function getFirstDayOfMonth(year: number, month: number): Date {
-  return new Date(year, month - 1, 1);
+  return new Date(Date.UTC(year, month - 1, 1));
 }
 
 // Get the last day of the month
 export function getLastDayOfMonth(year: number, month: number): Date {
-  return new Date(year, month, 0);
+  return new Date(Date.UTC(year, month, 0));
 }
 
 // Format date as YYYY-MM-DD
@@ -19,11 +19,9 @@ export function formatDate(date: Date): string {
 
 // Format date as DD/MM for display - showing the actual day and month the date belongs to
 export function formatDateForDisplay(date: Date): string {
-  // Create a new date object to ensure consistent behavior
-  const dateObj = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  
-  const day = dateObj.getDate();
-  const month = dateObj.getMonth() + 1; // JavaScript months are 0-based
+  // Create a new date object with UTC handling to avoid timezone shifts
+  const day = date.getDate();
+  const month = date.getMonth() + 1; // JavaScript months are 0-based
   
   // Format as DD/MM
   return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
@@ -33,7 +31,7 @@ export function formatDateForDisplay(date: Date): string {
 export function getDayName(dateStr: string): string {
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   // Make sure we have a valid date string format, and handle timezone issues
-  const date = new Date(`${dateStr}T00:00:00`);
+  const date = new Date(`${dateStr}T12:00:00Z`);
   // JavaScript's getDay() returns 0 for Sunday, 1 for Monday, etc.
   // We need to convert to our format where 0 is Monday, 1 is Tuesday, etc.
   const jsDay = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
@@ -43,18 +41,23 @@ export function getDayName(dateStr: string): string {
 
 // Generate week dates for a given month
 export function generateWeekDates(year: number, month: number): WeekDates[] {
-  const firstDay = getFirstDayOfMonth(year, month);
-  const lastDay = getLastDayOfMonth(year, month);
+  // For week 1 of a month, we need to find the Monday that either:
+  // 1. Is the first day of the month, OR
+  // 2. Is the Monday before the first day of the month
+  
+  // Get the first day of the month with UTC to avoid timezone issues
+  const firstDay = new Date(Date.UTC(year, month - 1, 1));
+  const lastDay = new Date(Date.UTC(year, month, 0));
   
   // Calculate the Monday that starts the week containing the first day of the month
   let firstMonday = new Date(firstDay);
-  const dayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
   
-  // If not Monday (1), go back to the previous Monday
-  if (dayOfWeek !== 1) {
-    // If Sunday (0), go back 6 days, otherwise go back (dayOfWeek - 1) days
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    firstMonday.setDate(firstDay.getDate() - daysToSubtract);
+  // If the month doesn't start on Monday (day 1), go back to the previous Monday
+  if (firstDayOfWeek !== 1) {
+    // If it's Sunday (0), go back 6 days, otherwise go back (dayOfWeek - 1) days
+    const daysToSubtract = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    firstMonday.setUTCDate(firstDay.getUTCDate() - daysToSubtract);
   }
   
   const weeks: WeekDates[] = [];
@@ -63,7 +66,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   // Generate weeks until we pass the end of the month
   while (currentWeekStart <= lastDay) {
     const currentWeekEnd = new Date(currentWeekStart);
-    currentWeekEnd.setDate(currentWeekEnd.getDate() + 6); // Sunday (6 days after Monday)
+    currentWeekEnd.setUTCDate(currentWeekEnd.getUTCDate() + 6); // Sunday (6 days after Monday)
     
     weeks.push({
       startDate: formatDate(currentWeekStart),
@@ -72,7 +75,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
     
     // Move to next Monday
     currentWeekStart = new Date(currentWeekEnd);
-    currentWeekStart.setDate(currentWeekStart.getDate() + 1);
+    currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() + 1);
   }
   
   return weeks;
@@ -88,7 +91,7 @@ export function createEmptyWeek(
   const days: DailyRecord[] = [];
   
   // Create a date object from the start date (Monday)
-  const startDateObj = new Date(`${startDate}T00:00:00`);
+  const startDateObj = new Date(`${startDate}T12:00:00Z`);
   
   // Create an array of day names with Monday first
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -97,7 +100,7 @@ export function createEmptyWeek(
   for (let i = 0; i < 7; i++) {
     // Clone the date for each day to avoid modifying the original
     const currentDate = new Date(startDateObj);
-    currentDate.setDate(startDateObj.getDate() + i);
+    currentDate.setUTCDate(startDateObj.getUTCDate() + i);
     
     // Format the date as YYYY-MM-DD string
     const dateString = formatDate(currentDate);
