@@ -77,3 +77,44 @@ export const deleteConversation = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+// Send webhook request (will be used for debugging)
+export const sendWebhookRequest = async (webhookUrl: string, payload: any): Promise<any> => {
+  try {
+    // In a production environment, this would be handled by a server-side proxy
+    // For the demo, we'll simulate a response
+    console.log(`[DEBUG] Would send payload to ${webhookUrl}:`, payload);
+    
+    // Store the test webhook attempt
+    const { data: user } = await supabase.auth.getUser();
+    
+    if (user && user.user) {
+      await supabase.from('ai_conversations').insert({
+        user_id: user.user.id,
+        query: `Test webhook to ${webhookUrl}`,
+        response: "Webhook test completed",
+        payload: payload,
+        timestamp: new Date().toISOString(),
+        shared: false
+      });
+    }
+    
+    // Return a simulated successful response
+    return {
+      success: true,
+      message: "Webhook test completed successfully (simulated in demo)",
+      data: {
+        processed: true,
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('Error sending webhook request:', error);
+    return {
+      success: false,
+      message: "Error sending webhook request",
+      error: String(error)
+    };
+  }
+};
+

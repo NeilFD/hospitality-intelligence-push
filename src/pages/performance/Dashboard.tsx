@@ -6,7 +6,8 @@ import KeyInsights from '@/components/performance/KeyInsights';
 import AnalyticsModules from '@/components/performance/AnalyticsModules';
 import { TavernLogo } from '@/components/TavernLogo';
 import { Link } from 'react-router-dom';
-import { History, Bug } from 'lucide-react';
+import { History, Bug, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function PerformanceDashboard() {
   return (
@@ -29,6 +30,15 @@ export default function PerformanceDashboard() {
           <TavernLogo size="md" className="hidden md:block" />
         </div>
       </div>
+      
+      <Alert variant="warning" className="mb-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Network Connectivity</AlertTitle>
+        <AlertDescription>
+          Due to CORS restrictions, external API calls are simulated in this demo. In a production environment, 
+          use a backend proxy or server-side API to avoid these limitations.
+        </AlertDescription>
+      </Alert>
       
       <Card className="overflow-hidden border-none shadow-lg rounded-xl bg-gradient-to-br from-white to-gray-50">
         <ChatInterface className="w-full" />
