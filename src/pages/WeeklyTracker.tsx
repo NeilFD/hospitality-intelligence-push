@@ -244,42 +244,7 @@ export default function WeeklyTracker() {
     );
   }
 
-  const customOrderDays = () => {
-    const days = [...weekRecord.days];
-    
-    const containsApril1st = days.some(day => {
-      const dateParts = day.date.split('-');
-      const month = parseInt(dateParts[1]);
-      const dayOfMonth = parseInt(dateParts[2]);
-      return month === 4 && dayOfMonth === 1; // April 1st
-    });
-    
-    if (containsApril1st) {
-      const april1stIndex = days.findIndex(day => {
-        const dateParts = day.date.split('-');
-        const month = parseInt(dateParts[1]);
-        const dayOfMonth = parseInt(dateParts[2]);
-        return month === 4 && dayOfMonth === 1; // April 1st
-      });
-      
-      if (april1stIndex !== 1) {
-        const rotationAmount = (april1stIndex - 1 + 7) % 7;
-        
-        if (rotationAmount > 0) {
-          const rotated = [...days];
-          for (let i = 0; i < rotationAmount; i++) {
-            const first = rotated.shift();
-            if (first) rotated.push(first);
-          }
-          return rotated;
-        }
-      }
-    }
-    
-    return days;
-  };
-  
-  const sortedDays = customOrderDays();
+  const sortedDays = [...weekRecord.days];
   
   const weeklyGP = calculateWeeklyGP();
   const gpTarget = monthlySettings?.gp_target || monthRecord.gpTarget;
