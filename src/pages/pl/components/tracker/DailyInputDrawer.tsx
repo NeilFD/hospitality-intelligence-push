@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfMonth } from 'date-fns';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
@@ -40,7 +39,7 @@ export function DailyInputDrawer({
   // Create a ref for the content
   const contentRef = React.useRef<HTMLDivElement>(null);
 
-  // Add effect to handle all clicks inside the drawer
+  // Add effect to handle all interactions inside the drawer
   React.useEffect(() => {
     if (!isOpen || !contentRef.current) return;
     
@@ -50,12 +49,22 @@ export function DailyInputDrawer({
       e.stopPropagation();
     };
     
-    content.addEventListener('click', handleInteraction, { capture: true });
-    content.addEventListener('mousedown', handleInteraction, { capture: true });
+    // Use capture phase to intercept events before they bubble
+    const options = { capture: true };
+    
+    // Handle all possible events that might cause flickering
+    content.addEventListener('click', handleInteraction, options);
+    content.addEventListener('mousedown', handleInteraction, options);
+    content.addEventListener('mouseup', handleInteraction, options);
+    content.addEventListener('touchstart', handleInteraction, options);
+    content.addEventListener('touchend', handleInteraction, options);
     
     return () => {
-      content.removeEventListener('click', handleInteraction, { capture: true });
-      content.removeEventListener('mousedown', handleInteraction, { capture: true });
+      content.removeEventListener('click', handleInteraction, options);
+      content.removeEventListener('mousedown', handleInteraction, options);
+      content.removeEventListener('mouseup', handleInteraction, options);
+      content.removeEventListener('touchstart', handleInteraction, options);
+      content.removeEventListener('touchend', handleInteraction, options);
     };
   }, [isOpen]);
   
@@ -188,6 +197,12 @@ export function DailyInputDrawer({
     onClose();
   };
   
+  // Function to handle and stop event propagation
+  const stopPropagation = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+  };
+  
+  // Early return for closed drawer
   if (!isOpen) {
     return null;
   }
@@ -202,8 +217,11 @@ export function DailyInputDrawer({
       <DrawerContent 
         className="max-h-[90vh] pointer-events-auto"
         ref={contentRef}
+        onClick={stopPropagation}
+        onMouseDown={stopPropagation}
+        onTouchStart={stopPropagation}
       >
-        <DrawerHeader>
+        <DrawerHeader onClick={stopPropagation}>
           <div className="flex items-center">
             <CalendarDays className="mr-2 h-5 w-5 text-purple-600" />
             <DrawerTitle className="text-slate-900">{itemName} - Daily Inputs</DrawerTitle>
@@ -215,7 +233,7 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]" onClick={stopPropagation}>
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => (
                 <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
@@ -226,6 +244,8 @@ export function DailyInputDrawer({
                     type="number" 
                     value={dayInput.value !== null ? dayInput.value : ''} 
                     onChange={e => handleInputChange(index, e.target.value)} 
+                    onClick={stopPropagation}
+                    onMouseDown={stopPropagation}
                     min="0" 
                     step="0.01" 
                     placeholder="0.00" 
@@ -237,7 +257,7 @@ export function DailyInputDrawer({
           </div>
         )}
         
-        <DrawerFooter className="border-t">
+        <DrawerFooter className="border-t" onClick={stopPropagation}>
           <div className="flex justify-between items-center w-full mb-4">
             <div className="font-semibold text-lg text-tavern-blue">Total:</div>
             <div className="font-bold text-lg text-purple-700">{formatCurrency(total)}</div>

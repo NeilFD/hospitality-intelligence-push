@@ -22,23 +22,37 @@ function Calendar({
     const calendarElement = calendarRef.current;
     if (!calendarElement) return;
     
-    const handleClick = (e: MouseEvent) => {
+    const handleEvent = (e: Event) => {
+      // Prevent event from propagating to parent elements
       e.stopPropagation();
     };
     
-    calendarElement.addEventListener('click', handleClick);
-    calendarElement.addEventListener('mousedown', handleClick);
+    // Capture all relevant events that could cause flickering
+    calendarElement.addEventListener('click', handleEvent, { capture: true });
+    calendarElement.addEventListener('mousedown', handleEvent, { capture: true });
+    calendarElement.addEventListener('mouseup', handleEvent, { capture: true });
+    calendarElement.addEventListener('touchstart', handleEvent, { capture: true });
+    calendarElement.addEventListener('touchend', handleEvent, { capture: true });
     
     return () => {
-      calendarElement.removeEventListener('click', handleClick);
-      calendarElement.removeEventListener('mousedown', handleClick);
+      // Clean up all event listeners
+      calendarElement.removeEventListener('click', handleEvent, { capture: true });
+      calendarElement.removeEventListener('mousedown', handleEvent, { capture: true });
+      calendarElement.removeEventListener('mouseup', handleEvent, { capture: true });
+      calendarElement.removeEventListener('touchstart', handleEvent, { capture: true });
+      calendarElement.removeEventListener('touchend', handleEvent, { capture: true });
     };
   }, []);
 
   return (
     <div 
       ref={calendarRef}
-      className="relative"
+      className="relative z-50"
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
     >
       <DayPicker
         showOutsideDays={showOutsideDays}

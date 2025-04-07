@@ -79,7 +79,7 @@ export function TrackerLineItem({
   }
   
   const handleOpenDailyInput = (e: React.MouseEvent) => {
-    // Stop the event from propagating
+    // Stop all event propagation
     e.preventDefault();
     e.stopPropagation();
     setIsDailyInputOpen(true);
@@ -94,8 +94,8 @@ export function TrackerLineItem({
     handleCloseDailyInput();
   };
 
-  // Prevent event bubbling for input elements
-  const handleInputClick = (e: React.MouseEvent) => {
+  // Prevent event bubbling for all interactive elements
+  const stopPropagation = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
   };
 
@@ -119,6 +119,8 @@ export function TrackerLineItem({
             variant="outline"
             size="icon"
             onClick={handleOpenDailyInput}
+            onMouseDown={stopPropagation}
+            onTouchStart={stopPropagation}
             className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
           >
             <CalendarDays className="h-5 w-5" />
@@ -135,8 +137,10 @@ export function TrackerLineItem({
           step="0.01"
           value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
           onChange={(e) => updateForecastAmount(index, e.target.value)}
+          onClick={stopPropagation}
+          onMouseDown={stopPropagation}
+          onTouchStart={stopPropagation}
           className="h-8 w-24 text-right ml-auto"
-          onClick={handleInputClick}
         />
       </TableCell>
       <TableCell className={`text-right ${fontClass} ${

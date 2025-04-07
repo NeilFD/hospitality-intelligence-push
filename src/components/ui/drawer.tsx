@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
@@ -35,22 +36,75 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DrawerPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
-        className
-      )}
-      {...props}
-    >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
-      {children}
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-))
+>(({ className, children, ...props }, ref) => {
+  // Create an additional ref for event handling
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
+  
+  // Combine the forwarded ref with our local ref
+  const setRefs = React.useCallback(
+    (element: HTMLDivElement | null) => {
+      // Update our local ref
+      contentRef.current = element;
+      
+      // Forward the ref
+      if (typeof ref === 'function') {
+        ref(element);
+      } else if (ref) {
+        ref.current = element;
+      }
+    },
+    [ref]
+  );
+  
+  // Add effect for event handling
+  React.useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+    
+    const handleEvent = (e: Event) => {
+      e.stopPropagation();
+    };
+    
+    // Capture phase ensures we handle events before they propagate
+    element.addEventListener('click', handleEvent, { capture: true });
+    element.addEventListener('mousedown', handleEvent, { capture: true });
+    element.addEventListener('mouseup', handleEvent, { capture: true });
+    element.addEventListener('touchstart', handleEvent, { capture: true });
+    element.addEventListener('touchend', handleEvent, { capture: true });
+    
+    return () => {
+      element.removeEventListener('click', handleEvent, { capture: true });
+      element.removeEventListener('mousedown', handleEvent, { capture: true });
+      element.removeEventListener('mouseup', handleEvent, { capture: true });
+      element.removeEventListener('touchstart', handleEvent, { capture: true });
+      element.removeEventListener('touchend', handleEvent, { capture: true });
+    };
+  }, []);
+
+  const stopPropagation = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <DrawerPortal>
+      <DrawerOverlay />
+      <DrawerPrimitive.Content
+        ref={setRefs}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+          className
+        )}
+        {...props}
+        onClick={stopPropagation}
+        onMouseDown={stopPropagation}
+        onTouchStart={stopPropagation}
+      >
+        <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+        {children}
+      </DrawerPrimitive.Content>
+    </DrawerPortal>
+  )
+})
 DrawerContent.displayName = "DrawerContent"
 
 const DrawerHeader = ({
