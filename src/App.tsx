@@ -14,6 +14,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import PerformanceDashboard from '@/pages/performance/Dashboard';
 import ConversationHistory from '@/pages/performance/ConversationHistory';
+import ConversationDebug from '@/pages/performance/ConversationDebug';
 import WagesDashboard from '@/pages/wages/WagesDashboard';
 import NotFound from '@/pages/NotFound';
 import Index from '@/pages/Index';
@@ -107,6 +108,10 @@ const router = createBrowserRouter([
       {
         path: "/performance/conversation-history",
         element: <ConversationHistory />
+      },
+      {
+        path: "/performance/debug",
+        element: <ConversationDebug />
       },
       // Wages module routes
       {

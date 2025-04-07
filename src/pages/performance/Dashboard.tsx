@@ -6,7 +6,7 @@ import KeyInsights from '@/components/performance/KeyInsights';
 import AnalyticsModules from '@/components/performance/AnalyticsModules';
 import { TavernLogo } from '@/components/TavernLogo';
 import { Link } from 'react-router-dom';
-import { History } from 'lucide-react';
+import { History, Bug } from 'lucide-react';
 
 export default function PerformanceDashboard() {
   return (
@@ -18,6 +18,12 @@ export default function PerformanceDashboard() {
             <Link to="/performance/conversation-history">
               <History className="h-4 w-4" />
               <span>Chat History</span>
+            </Link>
+          </Button>
+          <Button variant="outline" className="hidden sm:flex items-center gap-2" asChild>
+            <Link to="/performance/debug">
+              <Bug className="h-4 w-4" />
+              <span>Debug</span>
             </Link>
           </Button>
           <TavernLogo size="md" className="hidden md:block" />

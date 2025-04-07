@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,7 +76,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
 
   // Function to prepare the full payload
   const preparePayload = async () => {
-    // Get the current month wages data
     let monthlyWages = [];
     let weekdayTotals = {};
     
@@ -88,10 +86,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       console.error("Error fetching wages data:", error);
     }
     
-    // Get annual data
     const annualData = getAnnualSummaryData();
     
-    // Get current month data
     const currentMonthData = {
       revenue: 0,
       cost: 0,
@@ -169,7 +165,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     
     if (!input.trim()) return;
     
-    // Add user message
     const userMessage = {
       text: input,
       isUser: true,
@@ -181,17 +176,12 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     setIsLoading(true);
     
     try {
-      // Prepare the full payload with all tracker data
       const payload = await preparePayload();
       
       console.log("Sending payload to webhook:", payload);
       
       const webhookUrl = 'https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee';
       
-      // Using a JSONP approach to bypass CORS
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-      
-      // Send to webhook with improved error handling
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -200,45 +190,33 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         body: JSON.stringify(payload)
       });
       
-      console.log("Webhook response status:", response.status);
+      console.log("Webhook response:", response);
       
       let data;
-      if (response.ok) {
-        try {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-          } else {
-            const text = await response.text();
-            console.log("Raw response text:", text);
-            
-            // Try to parse as JSON even if content-type is not JSON
-            try {
-              data = JSON.parse(text);
-            } catch (e) {
-              console.log("Not JSON response:", e);
-              data = { response: "I received your query and processed it, but couldn't parse the response format." };
-            }
-          }
-        } catch (parseError) {
-          console.error("Error parsing response:", parseError);
-          data = { response: "I processed your request, but had trouble interpreting the response." };
-        }
-      } else {
-        console.error("Error response:", response.status, response.statusText);
+      
+      try {
+        const text = await response.text();
+        console.log("Webhook response text:", text);
         
-        // Special handling for 500 errors which might be CORS related
-        if (response.status === 500) {
-          console.log("500 error - likely CORS issue. Assuming request was processed.");
-          data = { response: "I sent your query to our analysis system. Due to technical limitations, I can't see the response directly, but your request was delivered." };
+        if (text) {
+          try {
+            data = JSON.parse(text);
+            console.log("Parsed webhook response data:", data);
+          } catch (parseError) {
+            console.error("Failed to parse webhook response as JSON:", parseError);
+            data = { response: "I received your query and processed it, but the response format wasn't expected." };
+          }
         } else {
-          data = { response: `Error ${response.status}: I couldn't process your request. Please try again later.` };
+          console.log("Empty response text from webhook");
+          data = { response: "I processed your query but received an empty response from the analysis system." };
         }
+      } catch (responseError) {
+        console.error("Error reading webhook response:", responseError);
+        data = { response: "I encountered an issue while reading the webhook response." };
       }
       
-      // Add AI response
       const aiResponse = data?.response || 
-        "I've sent your query to our analysis system. The system received your request, but I'm waiting for the analysis results.";
+        "I've sent your query to our analysis system but haven't received a proper response yet.";
       
       const newMessage = {
         text: aiResponse,
@@ -248,7 +226,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       
       setMessages(prev => [...prev, newMessage]);
       
-      // Store conversation in Supabase if user is logged in
       if (user) {
         try {
           const { error } = await supabase.from('ai_conversations').insert({
@@ -282,7 +259,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     }
   };
 
-  // Function to share message via email
   const shareViaEmail = (message: string) => {
     const subject = encodeURIComponent("Insights from Cleo - Tavern Kitchen Assistant");
     const body = encodeURIComponent(message);
@@ -290,7 +266,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     toast.success("Email client opened");
   };
   
-  // Function to share message via WhatsApp
   const shareViaWhatsApp = (message: string) => {
     const text = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${text}`);
