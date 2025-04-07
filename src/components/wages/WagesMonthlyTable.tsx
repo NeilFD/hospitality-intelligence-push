@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useWagesStore } from './WagesStore';
-import { formatCurrency, getDayName } from '@/lib/date-utils';
+import { formatCurrency } from '@/lib/date-utils';
 import { toast } from "sonner";
 
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
@@ -123,8 +124,9 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             </TableHeader>
             <TableBody>
               {monthlyData.map((day) => {
-                // Get correct day name from date string
-                const dayName = getDayName(day.date);
+                // Get correct day name from full JS Date object
+                const dateObj = new Date(year, month - 1, day.day);
+                const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()];
                 const shortDayName = dayName.substring(0, 3);
                 const totalDailyWages = day.fohWages + day.kitchenWages;
                 const totalDailyRevenue = day.foodRevenue + day.bevRevenue;

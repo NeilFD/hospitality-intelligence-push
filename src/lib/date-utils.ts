@@ -1,3 +1,4 @@
+
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,7 +28,8 @@ export function formatDateForDisplay(date: Date): string {
 // Get day name from date string (corrected version that uses the actual date)
 export function getDayName(dateStr: string): string {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const date = new Date(dateStr);
+  // Make sure we have a valid date string format, and handle timezone issues
+  const date = new Date(`${dateStr}T00:00:00`);
   return dayNames[date.getDay()];
 }
 
@@ -76,15 +78,17 @@ export function createEmptyWeek(
   suppliers: Supplier[]
 ): WeeklyRecord {
   const days: DailyRecord[] = [];
-  const start = new Date(startDate);
+  // Parse the start date string to a Date object
+  const start = new Date(`${startDate}T00:00:00`);
 
   for (let i = 0; i < 7; i++) {
     const currentDate = new Date(start.getTime()); // avoid mutation
     currentDate.setDate(currentDate.getDate() + i); // correct date addition
 
-    // Get day name directly from the date object
+    // Format the date string correctly for the day
     const dateString = formatDate(currentDate);
-    const dayOfWeek = getDayName(dateString);
+    // Get day name directly from the currentDate object to ensure accuracy
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][currentDate.getDay()];
 
     const purchases: Record<string, number> = {};
     suppliers.forEach(supplier => {
@@ -93,7 +97,7 @@ export function createEmptyWeek(
 
     days.push({
       date: dateString,
-      dayOfWeek,
+      dayOfWeek: dayName,
       revenue: 0,
       purchases,
       creditNotes: [0, 0, 0],
