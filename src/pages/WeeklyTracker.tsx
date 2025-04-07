@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useStore, useMonthRecord } from '@/lib/store';
 import { 
   calculateGP, 
@@ -14,13 +15,24 @@ import {
 } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import StatusBox from '@/components/StatusBox';
-import { useQuery } from '@tanstack/react-query';
-import { fetchSuppliers, fetchMonthlySettings } from '@/services/kitchen-service';
-import { Supplier, ModuleType } from '@/types/kitchen-ledger';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  fetchSuppliers, 
+  fetchMonthlySettings, 
+  fetchTrackerDataByWeek, 
+  fetchTrackerPurchases, 
+  fetchTrackerCreditNotes,
+  upsertTrackerData,
+  upsertTrackerPurchase,
+  upsertTrackerCreditNote
+} from '@/services/kitchen-service';
+import { Supplier, ModuleType, DailyRecord } from '@/types/kitchen-ledger';
+import { DbTrackerData } from '@/types/supabase-types';
 
 export default function WeeklyTracker() {
   const { year: yearParam, month: monthParam, week: weekParam } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const [currentYear, setCurrentYear] = useState<number>(
     yearParam ? parseInt(yearParam) : new Date().getFullYear()
@@ -39,7 +51,10 @@ export default function WeeklyTracker() {
   const monthRecord = useMonthRecord(currentYear, currentMonth, moduleType);
   const weekRecord = monthRecord.weeks.find(w => w.weekNumber === currentWeek);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isDataChanged, setIsDataChanged] = useState(false);
+  const [localWeekData, setLocalWeekData] = useState<DailyRecord[]>([]);
   
+  // Queries
   const { data: supabaseSuppliers, isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ['suppliers', moduleType],
     queryFn: async () => {
@@ -58,6 +73,130 @@ export default function WeeklyTracker() {
         console.error('Error fetching monthly settings:', error);
         return null;
       }
+    }
+  });
+
+  const { data: trackerData, isLoading: isLoadingTrackerData } = useQuery({
+    queryKey: ['tracker-data', currentYear, currentMonth, currentWeek, moduleType],
+    queryFn: async () => {
+      try {
+        return await fetchTrackerDataByWeek(currentYear, currentMonth, currentWeek, moduleType);
+      } catch (error) {
+        console.error('Error fetching tracker data:', error);
+        return [];
+      }
+    }
+  });
+  
+  // Mutations
+  const saveTrackerDataMutation = useMutation({
+    mutationFn: async (data: {
+      trackerId: string;
+      dayIndex: number;
+      field: 'revenue' | 'staff_food_allowance';
+      value: number;
+    }) => {
+      const { trackerId, field, value } = data;
+      return await upsertTrackerData({ 
+        id: trackerId,
+        [field]: value
+      } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tracker-data', currentYear, currentMonth, currentWeek, moduleType] });
+    }
+  });
+
+  const savePurchaseMutation = useMutation({
+    mutationFn: async (data: {
+      trackerId: string;
+      supplierId: string;
+      amount: number;
+    }) => {
+      return await upsertTrackerPurchase({
+        tracker_data_id: data.trackerId,
+        supplier_id: data.supplierId,
+        amount: data.amount
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tracker-purchases'] });
+    }
+  });
+
+  const saveCreditNoteMutation = useMutation({
+    mutationFn: async (data: {
+      trackerId: string;
+      creditIndex: number;
+      amount: number;
+    }) => {
+      return await upsertTrackerCreditNote({
+        tracker_data_id: data.trackerId,
+        credit_index: data.creditIndex,
+        amount: data.amount
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tracker-credit-notes'] });
+    }
+  });
+
+  const saveAllDataMutation = useMutation({
+    mutationFn: async (days: DailyRecord[]) => {
+      const promises = [];
+      
+      // For each day, we need to save:
+      for (const day of days) {
+        // First ensure tracker data exists for this day
+        const trackerDataPayload: Omit<DbTrackerData, 'id' | 'created_at' | 'updated_at'> = {
+          year: currentYear,
+          month: currentMonth,
+          week_number: currentWeek,
+          date: day.date,
+          day_of_week: day.dayOfWeek,
+          module_type: moduleType,
+          revenue: day.revenue,
+          staff_food_allowance: day.staffFoodAllowance
+        };
+        
+        const trackerData = await upsertTrackerData(trackerDataPayload);
+        
+        // Then save all purchases for this day
+        for (const [supplierId, amount] of Object.entries(day.purchases)) {
+          if (amount > 0) {
+            promises.push(upsertTrackerPurchase({
+              tracker_data_id: trackerData.id,
+              supplier_id: supplierId,
+              amount
+            }));
+          }
+        }
+        
+        // And save all credit notes for this day
+        day.creditNotes.forEach((amount, index) => {
+          if (amount > 0) {
+            promises.push(upsertTrackerCreditNote({
+              tracker_data_id: trackerData.id,
+              credit_index: index,
+              amount
+            }));
+          }
+        });
+      }
+      
+      await Promise.all(promises);
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tracker-data'] });
+      queryClient.invalidateQueries({ queryKey: ['tracker-purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['tracker-credit-notes'] });
+      setIsDataChanged(false);
+      toast.success("All changes saved successfully!");
+    },
+    onError: (error) => {
+      console.error('Failed to save data:', error);
+      toast.error("Failed to save data. Please try again.");
     }
   });
   
@@ -81,6 +220,63 @@ export default function WeeklyTracker() {
     }
   }, [supabaseSuppliers, isLoadingSuppliers, monthRecord]);
   
+  // Setup initial week data
+  useEffect(() => {
+    if (!weekRecord) return;
+    
+    // Initialize with data from the local state
+    let initialData = [...weekRecord.days];
+    
+    // If we have tracker data from Supabase, integrate it
+    if (trackerData && trackerData.length > 0) {
+      // We'll get purchases and credit notes for each day
+      const promises = trackerData.map(async (day) => {
+        const purchases = await fetchTrackerPurchases(day.id);
+        const creditNotes = await fetchTrackerCreditNotes(day.id);
+        return { day, purchases, creditNotes };
+      });
+      
+      Promise.all(promises).then((results) => {
+        // Update local data with Supabase data
+        const updatedDays = initialData.map(localDay => {
+          // Find matching day from Supabase
+          const dayResult = results.find(r => r.day.date === localDay.date);
+          
+          if (dayResult) {
+            // Create a new purchases record
+            const updatedPurchases = { ...localDay.purchases };
+            
+            // Update purchases from Supabase data
+            dayResult.purchases.forEach(purchase => {
+              updatedPurchases[purchase.supplier_id] = purchase.amount;
+            });
+            
+            // Update credit notes from Supabase data
+            const updatedCreditNotes = [...localDay.creditNotes];
+            dayResult.creditNotes.forEach(note => {
+              updatedCreditNotes[note.credit_index] = note.amount;
+            });
+            
+            // Return updated day with Supabase data
+            return {
+              ...localDay,
+              revenue: dayResult.day.revenue || 0,
+              purchases: updatedPurchases,
+              creditNotes: updatedCreditNotes,
+              staffFoodAllowance: dayResult.day.staff_food_allowance || 0
+            };
+          }
+          
+          return localDay;
+        });
+        
+        setLocalWeekData(updatedDays);
+      });
+    } else {
+      setLocalWeekData(initialData);
+    }
+  }, [weekRecord, trackerData]);
+  
   const handleInputChange = (
     dayIndex: number,
     field: 'revenue' | 'purchases' | 'creditNotes' | 'staffFoodAllowance',
@@ -88,7 +284,7 @@ export default function WeeklyTracker() {
     supplierId?: string,
     creditIndex?: number
   ) => {
-    if (!weekRecord) return;
+    if (!localWeekData) return;
     
     const numericValue = value === '' ? 0 : parseFloat(value);
     
@@ -97,72 +293,52 @@ export default function WeeklyTracker() {
       return;
     }
     
-    console.log(`Updating ${field} for day ${dayIndex} with value: ${numericValue}`);
+    setIsDataChanged(true);
     
-    useStore.setState(state => {
-      const updatedMonths = state.annualRecord.months.map(month => {
-        if (month.year === currentYear && month.month === currentMonth) {
-          const updatedWeeks = month.weeks.map(week => {
-            if (week.weekNumber === currentWeek) {
-              const updatedDays = [...week.days];
-              
-              if (field === 'revenue') {
-                updatedDays[dayIndex] = {
-                  ...updatedDays[dayIndex],
-                  revenue: numericValue
-                };
-              } else if (field === 'purchases' && supplierId) {
-                updatedDays[dayIndex] = {
-                  ...updatedDays[dayIndex],
-                  purchases: {
-                    ...updatedDays[dayIndex].purchases,
-                    [supplierId]: numericValue
-                  }
-                };
-              } else if (field === 'creditNotes' && typeof creditIndex === 'number') {
-                const updatedCreditNotes = [...updatedDays[dayIndex].creditNotes];
-                updatedCreditNotes[creditIndex] = numericValue;
-                
-                updatedDays[dayIndex] = {
-                  ...updatedDays[dayIndex],
-                  creditNotes: updatedCreditNotes
-                };
-              } else if (field === 'staffFoodAllowance') {
-                updatedDays[dayIndex] = {
-                  ...updatedDays[dayIndex],
-                  staffFoodAllowance: numericValue
-                };
-              }
-              
-              return {
-                ...week,
-                days: updatedDays
-              };
-            }
-            return week;
-          });
-          
-          return {
-            ...month,
-            weeks: updatedWeeks
-          };
-        }
-        return month;
-      });
+    setLocalWeekData(prevData => {
+      const updatedDays = [...prevData];
       
-      return {
-        ...state,
-        annualRecord: {
-          ...state.annualRecord,
-          months: updatedMonths
-        }
-      };
+      if (field === 'revenue') {
+        updatedDays[dayIndex] = {
+          ...updatedDays[dayIndex],
+          revenue: numericValue
+        };
+      } else if (field === 'purchases' && supplierId) {
+        updatedDays[dayIndex] = {
+          ...updatedDays[dayIndex],
+          purchases: {
+            ...updatedDays[dayIndex].purchases,
+            [supplierId]: numericValue
+          }
+        };
+      } else if (field === 'creditNotes' && typeof creditIndex === 'number') {
+        const updatedCreditNotes = [...updatedDays[dayIndex].creditNotes];
+        updatedCreditNotes[creditIndex] = numericValue;
+        
+        updatedDays[dayIndex] = {
+          ...updatedDays[dayIndex],
+          creditNotes: updatedCreditNotes
+        };
+      } else if (field === 'staffFoodAllowance') {
+        updatedDays[dayIndex] = {
+          ...updatedDays[dayIndex],
+          staffFoodAllowance: numericValue
+        };
+      }
+      
+      return updatedDays;
     });
   };
   
+  const handleSaveAllData = () => {
+    if (localWeekData.length > 0) {
+      saveAllDataMutation.mutate(localWeekData);
+    }
+  };
+  
   const calculateDailyCost = (dayIndex: number) => {
-    if (!weekRecord) return 0;
-    const day = weekRecord.days[dayIndex];
+    if (!localWeekData || dayIndex >= localWeekData.length) return 0;
+    const day = localWeekData[dayIndex];
     
     const purchasesTotal = Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
     const creditNotesTotal = day.creditNotes.reduce((sum, amount) => sum + amount, 0);
@@ -171,50 +347,50 @@ export default function WeeklyTracker() {
   };
   
   const calculateDailyGP = (dayIndex: number) => {
-    if (!weekRecord) return 0;
-    const day = weekRecord.days[dayIndex];
+    if (!localWeekData || dayIndex >= localWeekData.length) return 0;
+    const day = localWeekData[dayIndex];
     const dailyCost = calculateDailyCost(dayIndex);
     
     return calculateGP(day.revenue, dailyCost);
   };
   
   const calculateSupplierTotal = (supplierId: string) => {
-    if (!weekRecord) return 0;
+    if (!localWeekData) return 0;
     
-    return weekRecord.days.reduce((sum, day) => {
+    return localWeekData.reduce((sum, day) => {
       return sum + (day.purchases[supplierId] || 0);
     }, 0);
   };
   
   const calculateCreditNotesTotal = () => {
-    if (!weekRecord) return 0;
+    if (!localWeekData) return 0;
     
-    return weekRecord.days.reduce((sum, day) => {
+    return localWeekData.reduce((sum, day) => {
       return sum + day.creditNotes.reduce((creditSum, credit) => creditSum + credit, 0);
     }, 0);
   };
   
   const calculateTotalPurchases = (dayIndex?: number) => {
-    if (!weekRecord) return 0;
+    if (!localWeekData) return 0;
     
     if (typeof dayIndex === 'number') {
-      const day = weekRecord.days[dayIndex];
+      const day = localWeekData[dayIndex];
       return Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
     }
     
-    return weekRecord.days.reduce((sum, day) => {
+    return localWeekData.reduce((sum, day) => {
       return sum + Object.values(day.purchases).reduce((purchaseSum, amount) => purchaseSum + amount, 0);
     }, 0);
   };
   
   const calculateTotalStaffAllowance = () => {
-    if (!weekRecord) return 0;
+    if (!localWeekData) return 0;
     
-    return weekRecord.days.reduce((sum, day) => sum + day.staffFoodAllowance, 0);
+    return localWeekData.reduce((sum, day) => sum + day.staffFoodAllowance, 0);
   };
   
   const calculateTotalFoodCost = () => {
-    if (!weekRecord) return 0;
+    if (!localWeekData) return 0;
     
     const totalPurchases = calculateTotalPurchases();
     const totalCreditNotes = calculateCreditNotesTotal();
@@ -224,9 +400,9 @@ export default function WeeklyTracker() {
   };
   
   const calculateTotalRevenue = () => {
-    if (!weekRecord) return 0;
+    if (!localWeekData) return 0;
     
-    return weekRecord.days.reduce((sum, day) => sum + day.revenue, 0);
+    return localWeekData.reduce((sum, day) => sum + day.revenue, 0);
   };
   
   const calculateWeeklyGP = () => {
@@ -236,15 +412,18 @@ export default function WeeklyTracker() {
     return calculateGP(totalRevenue, totalFoodCost);
   };
 
-  if (!weekRecord) {
+  const isLoading = isLoadingSuppliers || isLoadingSettings || isLoadingTrackerData || 
+                   saveAllDataMutation.isPending;
+
+  if (!weekRecord || !localWeekData || localWeekData.length === 0) {
     return (
       <div className="container py-6">
-        <p>Week not found.</p>
+        <p>Week not found or data is loading...</p>
       </div>
     );
   }
 
-  const sortedDays = [...weekRecord.days];
+  const sortedDays = [...localWeekData];
   
   const weeklyGP = calculateWeeklyGP();
   const gpTarget = monthlySettings?.gp_target || monthRecord.gpTarget;
@@ -261,7 +440,7 @@ export default function WeeklyTracker() {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => navigate(`/month/${currentYear}/${currentMonth}`)}
+            onClick={() => navigate(`/${moduleType}/month/${currentYear}/${currentMonth}`)}
             className="rounded-full shadow-sm hover:shadow transition-all duration-200"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -270,6 +449,20 @@ export default function WeeklyTracker() {
             Week {currentWeek} Tracker - {getMonthName(currentMonth)} {currentYear}
           </h1>
         </div>
+        
+        <Button 
+          variant="default" 
+          onClick={handleSaveAllData} 
+          disabled={!isDataChanged || isLoading}
+          className="flex items-center gap-2"
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {isLoading ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -320,7 +513,6 @@ export default function WeeklyTracker() {
                   <tr key={supplier.id}>
                     <td className="table-cell text-left font-medium">{supplier.name}</td>
                     {sortedDays.map((day, dayIndex) => {
-                      const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                       const value = day.purchases[supplier.id];
                       
                       return (
@@ -331,7 +523,7 @@ export default function WeeklyTracker() {
                             step="0.01"
                             value={value || ''} 
                             onChange={(e) => handleInputChange(
-                              originalDayIndex, 
+                              dayIndex, 
                               'purchases', 
                               e.target.value, 
                               supplier.id
@@ -350,11 +542,9 @@ export default function WeeklyTracker() {
                 <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-medium">Total Purchases</td>
                   {sortedDays.map((day, dayIndex) => {
-                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
-                    
                     return (
                       <td key={dayIndex} className="table-cell table-row-totals">
-                        {formatCurrency(calculateTotalPurchases(originalDayIndex))}
+                        {formatCurrency(calculateTotalPurchases(dayIndex))}
                       </td>
                     );
                   })}
@@ -369,7 +559,6 @@ export default function WeeklyTracker() {
                       Credit note {creditIndex + 1}
                     </td>
                     {sortedDays.map((day, dayIndex) => {
-                      const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                       const value = day.creditNotes[creditIndex];
                       
                       return (
@@ -380,7 +569,7 @@ export default function WeeklyTracker() {
                             step="0.01"
                             value={value || ''} 
                             onChange={(e) => handleInputChange(
-                              originalDayIndex, 
+                              dayIndex, 
                               'creditNotes', 
                               e.target.value, 
                               undefined, 
@@ -398,7 +587,6 @@ export default function WeeklyTracker() {
                 <tr>
                   <td className="table-cell text-left font-medium">Staff Food Allowance</td>
                   {sortedDays.map((day, dayIndex) => {
-                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     const value = day.staffFoodAllowance;
                     
                     return (
@@ -409,7 +597,7 @@ export default function WeeklyTracker() {
                           step="0.01"
                           value={value || ''} 
                           onChange={(e) => handleInputChange(
-                            originalDayIndex, 
+                            dayIndex, 
                             'staffFoodAllowance', 
                             e.target.value
                           )}
@@ -426,11 +614,9 @@ export default function WeeklyTracker() {
                 <tr className="border-t border-tavern-blue/20">
                   <td className="table-cell text-left font-semibold">Daily Total Food Cost</td>
                   {sortedDays.map((day, dayIndex) => {
-                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
-                    
                     return (
                       <td key={dayIndex} className="table-cell table-row-totals font-semibold">
-                        {formatCurrency(calculateDailyCost(originalDayIndex))}
+                        {formatCurrency(calculateDailyCost(dayIndex))}
                       </td>
                     );
                   })}
@@ -442,7 +628,6 @@ export default function WeeklyTracker() {
                 <tr className="border-t-2 border-tavern-blue/30">
                   <td className="table-cell text-left font-semibold">Daily Net Food Revenue</td>
                   {sortedDays.map((day, dayIndex) => {
-                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     const value = day.revenue;
                     
                     return (
@@ -453,7 +638,7 @@ export default function WeeklyTracker() {
                           step="0.01"
                           value={value || ''} 
                           onChange={(e) => handleInputChange(
-                            originalDayIndex, 
+                            dayIndex, 
                             'revenue', 
                             e.target.value
                           )}
@@ -470,8 +655,7 @@ export default function WeeklyTracker() {
                 <tr>
                   <td className="table-cell text-left font-semibold rounded-bl-lg">GP % Daily</td>
                   {sortedDays.map((day, dayIndex) => {
-                    const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
-                    const dailyGP = calculateDailyGP(originalDayIndex);
+                    const dailyGP = calculateDailyGP(dayIndex);
                     const gpStatus = 
                       dailyGP >= gpTarget ? 'status-good' : 
                       dailyGP >= gpTarget - 0.02 ? 'status-warning' : 

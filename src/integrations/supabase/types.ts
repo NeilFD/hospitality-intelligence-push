@@ -392,6 +392,125 @@ export type Database = {
         }
         Relationships: []
       }
+      tracker_credit_notes: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_index: number
+          id: string
+          tracker_data_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          credit_index: number
+          id?: string
+          tracker_data_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_index?: number
+          id?: string
+          tracker_data_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracker_credit_notes_tracker_data_id_fkey"
+            columns: ["tracker_data_id"]
+            isOneToOne: false
+            referencedRelation: "tracker_data"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracker_data: {
+        Row: {
+          created_at: string
+          date: string
+          day_of_week: string
+          id: string
+          module_type: Database["public"]["Enums"]["module_type"]
+          month: number
+          revenue: number | null
+          staff_food_allowance: number | null
+          updated_at: string
+          week_number: number
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          day_of_week: string
+          id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
+          month: number
+          revenue?: number | null
+          staff_food_allowance?: number | null
+          updated_at?: string
+          week_number: number
+          year: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          day_of_week?: string
+          id?: string
+          module_type?: Database["public"]["Enums"]["module_type"]
+          month?: number
+          revenue?: number | null
+          staff_food_allowance?: number | null
+          updated_at?: string
+          week_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      tracker_purchases: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          supplier_id: string
+          tracker_data_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          supplier_id: string
+          tracker_data_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          supplier_id?: string
+          tracker_data_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracker_purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracker_purchases_tracker_data_id_fkey"
+            columns: ["tracker_data_id"]
+            isOneToOne: false
+            referencedRelation: "tracker_data"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wages: {
         Row: {
           bev_revenue: number

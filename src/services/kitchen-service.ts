@@ -7,7 +7,10 @@ import {
   DbCreditNote,
   DbMonthlySettings,
   DbBudgetItem,
-  DbBudgetItemTracking
+  DbBudgetItemTracking,
+  DbTrackerData,
+  DbTrackerPurchase,
+  DbTrackerCreditNote
 } from '@/types/supabase-types';
 import { ModuleType } from '@/types/kitchen-ledger';
 
@@ -142,12 +145,10 @@ export const fetchMonthlySettings = async (year: number, month: number, moduleTy
     .single();
   
   if (error && error.code !== 'PGRST116') {
-    // PGRST116 is the error code for no rows returned by the query
     throw error;
   }
 
   if (!data) {
-    // Create default settings if none exist
     return createMonthlySettings({
       year,
       month,
@@ -343,4 +344,132 @@ export const deleteCreditNote = async (id: string) => {
     .eq('id', id);
   
   if (error) throw error;
+};
+
+// Tracker Data
+export const fetchTrackerDataByWeek = async (year: number, month: number, weekNumber: number, moduleType: ModuleType = 'food') => {
+  const { data, error } = await supabase
+    .from('tracker_data')
+    .select('*')
+    .eq('year', year)
+    .eq('month', month)
+    .eq('week_number', weekNumber)
+    .eq('module_type', moduleType)
+    .order('date');
+  
+  if (error) throw error;
+  return data;
+};
+
+export const fetchTrackerDataByMonth = async (year: number, month: number, moduleType: ModuleType = 'food') => {
+  const { data, error } = await supabase
+    .from('tracker_data')
+    .select('*')
+    .eq('year', year)
+    .eq('month', month)
+    .eq('module_type', moduleType)
+    .order('date');
+  
+  if (error) throw error;
+  return data;
+};
+
+export const upsertTrackerData = async (trackerData: Omit<DbTrackerData, 'id' | 'created_at' | 'updated_at'>) => {
+  const { data, error } = await supabase
+    .from('tracker_data')
+    .upsert(trackerData, { 
+      onConflict: 'year,month,week_number,date,module_type',
+      ignoreDuplicates: false 
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+};
+
+// Tracker Purchases
+export const fetchTrackerPurchases = async (trackerDataId: string) => {
+  const { data, error } = await supabase
+    .from('tracker_purchases')
+    .select('*')
+    .eq('tracker_data_id', trackerDataId);
+  
+  if (error) throw error;
+  return data;
+};
+
+export const upsertTrackerPurchase = async (purchase: Omit<DbTrackerPurchase, 'id' | 'created_at' | 'updated_at'>) => {
+  const { data: existingPurchase, error: fetchError } = await supabase
+    .from('tracker_purchases')
+    .select('id')
+    .eq('tracker_data_id', purchase.tracker_data_id)
+    .eq('supplier_id', purchase.supplier_id)
+    .maybeSingle();
+  
+  if (fetchError) throw fetchError;
+  
+  if (existingPurchase) {
+    const { data, error } = await supabase
+      .from('tracker_purchases')
+      .update({ amount: purchase.amount })
+      .eq('id', existingPurchase.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await supabase
+      .from('tracker_purchases')
+      .insert(purchase)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+};
+
+// Tracker Credit Notes
+export const fetchTrackerCreditNotes = async (trackerDataId: string) => {
+  const { data, error } = await supabase
+    .from('tracker_credit_notes')
+    .select('*')
+    .eq('tracker_data_id', trackerDataId);
+  
+  if (error) throw error;
+  return data;
+};
+
+export const upsertTrackerCreditNote = async (creditNote: Omit<DbTrackerCreditNote, 'id' | 'created_at' | 'updated_at'>) => {
+  const { data: existingCreditNote, error: fetchError } = await supabase
+    .from('tracker_credit_notes')
+    .select('id')
+    .eq('tracker_data_id', creditNote.tracker_data_id)
+    .eq('credit_index', creditNote.credit_index)
+    .maybeSingle();
+  
+  if (fetchError) throw fetchError;
+  
+  if (existingCreditNote) {
+    const { data, error } = await supabase
+      .from('tracker_credit_notes')
+      .update({ amount: creditNote.amount })
+      .eq('id', existingCreditNote.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await supabase
+      .from('tracker_credit_notes')
+      .insert(creditNote)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
 };

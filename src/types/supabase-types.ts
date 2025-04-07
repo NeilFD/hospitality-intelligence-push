@@ -1,4 +1,3 @@
-
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -174,7 +173,7 @@ export interface Database {
           created_by: string | null;
           created_at: string;
           updated_at: string;
-          module_type: ModuleType; // Added module_type field here
+          module_type: ModuleType;
         };
         Insert: {
           id?: string;
@@ -184,7 +183,7 @@ export interface Database {
           cost_target?: number | null;
           staff_food_allowance?: number | null;
           created_by?: string | null;
-          module_type?: ModuleType; // Added module_type field here
+          module_type?: ModuleType;
         };
         Update: {
           id?: string;
@@ -194,7 +193,7 @@ export interface Database {
           cost_target?: number | null;
           staff_food_allowance?: number | null;
           created_by?: string | null;
-          module_type?: ModuleType; // Added module_type field here
+          module_type?: ModuleType;
         };
       };
       budget_items: {
@@ -258,6 +257,99 @@ export interface Database {
           updated_at?: string;
         };
       };
+      tracker_data: {
+        Row: {
+          id: string;
+          year: number;
+          month: number;
+          week_number: number;
+          date: string;
+          day_of_week: string;
+          module_type: ModuleType;
+          revenue: number | null;
+          staff_food_allowance: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          year: number;
+          month: number;
+          week_number: number;
+          date: string;
+          day_of_week: string;
+          module_type?: ModuleType;
+          revenue?: number | null;
+          staff_food_allowance?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          year?: number;
+          month?: number;
+          week_number?: number;
+          date?: string;
+          day_of_week?: string;
+          module_type?: ModuleType;
+          revenue?: number | null;
+          staff_food_allowance?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      tracker_purchases: {
+        Row: {
+          id: string;
+          tracker_data_id: string;
+          supplier_id: string;
+          amount: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tracker_data_id: string;
+          supplier_id: string;
+          amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tracker_data_id?: string;
+          supplier_id?: string;
+          amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      tracker_credit_notes: {
+        Row: {
+          id: string;
+          tracker_data_id: string;
+          credit_index: number;
+          amount: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tracker_data_id: string;
+          credit_index: number;
+          amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tracker_data_id?: string;
+          credit_index?: number;
+          amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -271,7 +363,6 @@ export interface Database {
   };
 }
 
-// Define each type explicitly without circular references
 export type DbBudgetItem = Database['public']['Tables']['budget_items']['Row'];
 export type DbBudgetItemTracking = Database['public']['Tables']['budget_item_tracking']['Row'];
 export type DbSupplier = Database['public']['Tables']['suppliers']['Row'];
@@ -281,6 +372,9 @@ export type DbPurchase = Database['public']['Tables']['purchases']['Row'];
 export type DbCreditNote = Database['public']['Tables']['credit_notes']['Row'];
 export type DbMonthlySettings = Database['public']['Tables']['monthly_settings']['Row'];
 export type DbProfile = Database['public']['Tables']['profiles']['Row'];
+export type DbTrackerData = Database['public']['Tables']['tracker_data']['Row'];
+export type DbTrackerPurchase = Database['public']['Tables']['tracker_purchases']['Row'];
+export type DbTrackerCreditNote = Database['public']['Tables']['tracker_credit_notes']['Row'];
 
 export interface BudgetItem {
   id: string;
