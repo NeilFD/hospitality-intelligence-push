@@ -37,6 +37,11 @@ export function DailyInputDrawer({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   
+  // Prevent background clicks from closing the drawer accidentally
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
   // Load data only when the drawer opens
   useEffect(() => {
     if (isOpen) {
@@ -179,7 +184,10 @@ export function DailyInputDrawer({
         if (!open) onClose();
       }}
     >
-      <DrawerContent className="max-h-[90vh] pointer-events-auto">
+      <DrawerContent 
+        className="max-h-[90vh] pointer-events-auto"
+        onClick={handleContentClick} // Prevent click propagation
+      >
         <DrawerHeader>
           <div className="flex items-center">
             <CalendarDays className="mr-2 h-5 w-5 text-purple-600" />
@@ -192,14 +200,21 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)] pointer-events-auto">
+          <div 
+            className="p-4 overflow-y-auto max-h-[calc(90vh-140px)] pointer-events-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => (
                 <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
                   <div className="font-medium text-tavern-blue">
                     {format(dayInput.date, 'EEE, MMM d')}:
                   </div>
-                  <div tabIndex={-1}>
+                  <div 
+                    tabIndex={-1} 
+                    className="pointer-events-auto"
+                    onClick={e => e.stopPropagation()} 
+                  >
                     <Input 
                       type="number" 
                       value={dayInput.value !== null ? dayInput.value : ''} 
@@ -208,6 +223,9 @@ export function DailyInputDrawer({
                       step="0.01" 
                       placeholder="0.00" 
                       className="w-full h-9 text-tavern-blue pointer-events-auto"
+                      onClick={e => e.stopPropagation()}
+                      onFocus={e => e.stopPropagation()}
+                      tabIndex={0}
                     />
                   </div>
                 </div>
@@ -226,6 +244,7 @@ export function DailyInputDrawer({
               variant="outline" 
               onClick={onClose} 
               className="flex-1"
+              type="button"
             >
               Cancel
             </Button>
@@ -233,6 +252,7 @@ export function DailyInputDrawer({
               onClick={handleSave} 
               className="flex-1 bg-purple-600 hover:bg-purple-700"
               disabled={isSaving}
+              type="button"
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Values
