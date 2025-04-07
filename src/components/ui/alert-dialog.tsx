@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
@@ -17,10 +16,11 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
     ref={ref}
   />
 ))
@@ -49,7 +49,24 @@ const AlertDialogContent = React.forwardRef<
     [ref]
   );
   
-  // Add effect for comprehensive event handling
+  // Create a React.MutableRefObject from the refs to avoid type errors
+  const combinedRef = React.useMemo(() => ({
+    get current() {
+      return contentRef.current;
+    },
+    set current(value) {
+      contentRef.current = value;
+      if (ref) {
+        if (typeof ref === 'function') {
+          ref(value);
+        } else {
+          ref.current = value;
+        }
+      }
+    }
+  }), [ref]);
+  
+  // Use mutation observer to ensure event handlers are applied to dynamically added elements
   React.useEffect(() => {
     const element = contentRef.current;
     if (!element) return;
@@ -57,40 +74,72 @@ const AlertDialogContent = React.forwardRef<
     // Create a function that stops all events
     const stopAllEvents = (e: Event) => {
       e.stopPropagation();
+      e.stopImmediatePropagation();
       if (e.cancelable) {
         e.preventDefault();
       }
     };
     
-    // List of all events we need to capture
-    const eventTypes = [
-      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
-      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
-    ];
+    // Function to add event listeners to an element and all its children
+    const addEventListenersDeep = (el: Element) => {
+      // List of all events we want to stop
+      const events = [
+        'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+        'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup',
+        'wheel', 'contextmenu'
+      ];
+      
+      // Add listeners for all events with capture phase
+      events.forEach(eventType => {
+        el.addEventListener(eventType, stopAllEvents, { capture: true });
+      });
+      
+      // Process all children recursively
+      Array.from(el.children).forEach(child => {
+        addEventListenersDeep(child);
+      });
+    };
     
-    // Add listeners for all events with capture phase
-    eventTypes.forEach(eventType => {
-      element.addEventListener(eventType, stopAllEvents, { capture: true });
+    // Add event listeners to the alert dialog content and all its children
+    addEventListenersDeep(element);
+    
+    // Create and configure the MutationObserver
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === 1) { // ELEMENT_NODE
+              addEventListenersDeep(node as Element);
+            }
+          });
+        }
+      });
+    });
+    
+    // Start observing
+    observer.observe(element, { 
+      childList: true,
+      subtree: true
     });
     
     return () => {
-      // Clean up all event listeners
-      eventTypes.forEach(eventType => {
-        element.removeEventListener(eventType, stopAllEvents, { capture: true });
-      });
+      observer.disconnect();
     };
   }, []);
   
-  // Event handler function for React synthetic events
+  // Event handler function
   const stopPropagation = React.useCallback((e: React.SyntheticEvent) => {
     e.stopPropagation();
+    if (e.nativeEvent.cancelable) {
+      e.preventDefault();
+    }
   }, []);
   
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
-        ref={setRefs}
+        ref={combinedRef}
         className={cn(
           "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg pointer-events-auto",
           className
@@ -103,6 +152,14 @@ const AlertDialogContent = React.forwardRef<
         onTouchEnd={stopPropagation}
         onPointerDown={stopPropagation}
         onPointerUp={stopPropagation}
+        style={{ 
+          isolation: 'isolate', 
+          pointerEvents: 'auto',
+          touchAction: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+          ...props.style
+        }}
       />
     </AlertDialogPortal>
   )
@@ -119,6 +176,7 @@ const AlertDialogHeader = ({
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 )
 AlertDialogHeader.displayName = "AlertDialogHeader"
@@ -133,6 +191,7 @@ const AlertDialogFooter = ({
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 )
 AlertDialogFooter.displayName = "AlertDialogFooter"
@@ -145,6 +204,7 @@ const AlertDialogTitle = React.forwardRef<
     ref={ref}
     className={cn("text-lg font-semibold", className)}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
 AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName
@@ -157,10 +217,10 @@ const AlertDialogDescription = React.forwardRef<
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
-AlertDialogDescription.displayName =
-  AlertDialogPrimitive.Description.displayName
+AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName
 
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
@@ -170,6 +230,12 @@ const AlertDialogAction = React.forwardRef<
     ref={ref}
     className={cn(buttonVariants(), className)}
     {...props}
+    onClick={(e) => {
+      e.stopPropagation();
+      if (props.onClick) {
+        props.onClick(e);
+      }
+    }}
   />
 ))
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
@@ -186,6 +252,12 @@ const AlertDialogCancel = React.forwardRef<
       className
     )}
     {...props}
+    onClick={(e) => {
+      e.stopPropagation();
+      if (props.onClick) {
+        props.onClick(e);
+      }
+    }}
   />
 ))
 AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName

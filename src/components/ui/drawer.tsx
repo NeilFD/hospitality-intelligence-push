@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
@@ -29,6 +28,7 @@ const DrawerOverlay = React.forwardRef<
     ref={ref}
     className={cn("fixed inset-0 z-50 bg-black/80", className)}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
@@ -55,8 +55,25 @@ const DrawerContent = React.forwardRef<
     },
     [ref]
   );
+
+  // Create a React.MutableRefObject from the refs to avoid type errors
+  const combinedRef = React.useMemo(() => ({
+    get current() {
+      return contentRef.current;
+    },
+    set current(value) {
+      contentRef.current = value;
+      if (ref) {
+        if (typeof ref === 'function') {
+          ref(value);
+        } else {
+          ref.current = value;
+        }
+      }
+    }
+  }), [ref]);
   
-  // Add effect for comprehensive event handling
+  // Use mutation observer to ensure event handlers are applied to dynamically added elements
   React.useEffect(() => {
     const element = contentRef.current;
     if (!element) return;
@@ -64,42 +81,74 @@ const DrawerContent = React.forwardRef<
     // Create a function that stops all events
     const stopAllEvents = (e: Event) => {
       e.stopPropagation();
+      e.stopImmediatePropagation();
       if (e.cancelable) {
         e.preventDefault();
       }
     };
     
-    // List of all events we need to capture
-    const eventTypes = [
-      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
-      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
-    ];
+    // Function to add event listeners to an element and all its children
+    const addEventListenersDeep = (el: Element) => {
+      // List of all events we want to stop
+      const events = [
+        'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+        'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup',
+        'wheel', 'contextmenu'
+      ];
+      
+      // Add listeners for all events with capture phase
+      events.forEach(eventType => {
+        el.addEventListener(eventType, stopAllEvents, { capture: true });
+      });
+      
+      // Process all children recursively
+      Array.from(el.children).forEach(child => {
+        addEventListenersDeep(child);
+      });
+    };
     
-    // Add listeners for all events with capture phase
-    eventTypes.forEach(eventType => {
-      element.addEventListener(eventType, stopAllEvents, { capture: true });
+    // Add event listeners to the drawer content and all its children
+    addEventListenersDeep(element);
+    
+    // Create and configure the MutationObserver
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === 1) { // ELEMENT_NODE
+              addEventListenersDeep(node as Element);
+            }
+          });
+        }
+      });
+    });
+    
+    // Start observing
+    observer.observe(element, { 
+      childList: true,
+      subtree: true
     });
     
     return () => {
-      // Clean up all event listeners
-      eventTypes.forEach(eventType => {
-        element.removeEventListener(eventType, stopAllEvents, { capture: true });
-      });
+      observer.disconnect();
     };
   }, []);
 
-  // Event handler functions
+  // Synthetic event handlers for React events
   const stopPropagation = React.useCallback((e: React.SyntheticEvent) => {
     e.stopPropagation();
+    if (e.nativeEvent.cancelable) {
+      e.preventDefault();
+    }
   }, []);
 
   return (
     <DrawerPortal>
       <DrawerOverlay />
       <DrawerPrimitive.Content
-        ref={setRefs}
+        ref={combinedRef}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background pointer-events-auto",
           className
         )}
         {...props}
@@ -110,6 +159,14 @@ const DrawerContent = React.forwardRef<
         onTouchEnd={stopPropagation}
         onPointerDown={stopPropagation}
         onPointerUp={stopPropagation}
+        style={{ 
+          isolation: 'isolate', 
+          pointerEvents: 'auto', 
+          touchAction: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+          ...props.style
+        }}
       >
         <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
         {children}
@@ -126,6 +183,7 @@ const DrawerHeader = ({
   <div
     className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 )
 DrawerHeader.displayName = "DrawerHeader"
@@ -137,6 +195,7 @@ const DrawerFooter = ({
   <div
     className={cn("mt-auto flex flex-col gap-2 p-4", className)}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 )
 DrawerFooter.displayName = "DrawerFooter"
@@ -152,6 +211,7 @@ const DrawerTitle = React.forwardRef<
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName
@@ -164,6 +224,7 @@ const DrawerDescription = React.forwardRef<
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
 DrawerDescription.displayName = DrawerPrimitive.Description.displayName

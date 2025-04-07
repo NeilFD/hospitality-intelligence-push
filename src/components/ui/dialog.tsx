@@ -23,6 +23,7 @@ const DialogOverlay = React.forwardRef<
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
@@ -46,42 +47,86 @@ const DialogContent = React.forwardRef<
     [ref]
   );
   
+  const combinedRef = React.useMemo(() => ({
+    get current() {
+      return contentRef.current;
+    },
+    set current(value) {
+      contentRef.current = value;
+      if (ref) {
+        if (typeof ref === 'function') {
+          ref(value);
+        } else {
+          ref.current = value;
+        }
+      }
+    }
+  }), [ref]);
+  
   React.useEffect(() => {
     const element = contentRef.current;
     if (!element) return;
     
     const stopAllEvents = (e: Event) => {
       e.stopPropagation();
+      e.stopImmediatePropagation();
       if (e.cancelable) {
         e.preventDefault();
       }
     };
     
-    const eventTypes = [
-      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
-      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
-    ];
+    const addEventListenersDeep = (el: Element) => {
+      const events = [
+        'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+        'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup',
+        'wheel', 'contextmenu'
+      ];
+      
+      events.forEach(eventType => {
+        el.addEventListener(eventType, stopAllEvents, { capture: true });
+      });
+      
+      Array.from(el.children).forEach(child => {
+        addEventListenersDeep(child);
+      });
+    };
     
-    eventTypes.forEach(eventType => {
-      element.addEventListener(eventType, stopAllEvents, { capture: true });
+    addEventListenersDeep(element);
+    
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === 1) {
+              addEventListenersDeep(node as Element);
+            }
+          });
+        }
+      });
+    });
+    
+    observer.observe(element, { 
+      childList: true,
+      subtree: true
     });
     
     return () => {
-      eventTypes.forEach(eventType => {
-        element.removeEventListener(eventType, stopAllEvents, { capture: true });
-      });
+      observer.disconnect();
     };
   }, []);
   
   const stopPropagation = React.useCallback((e: React.SyntheticEvent) => {
     e.stopPropagation();
+    if (e.nativeEvent.cancelable) {
+      e.preventDefault();
+    }
   }, []);
-
+  
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
-        ref={setRefs}
+        ref={combinedRef}
         className={cn(
           "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg pointer-events-auto",
           className
@@ -94,6 +139,14 @@ const DialogContent = React.forwardRef<
         onTouchEnd={stopPropagation}
         onPointerDown={stopPropagation}
         onPointerUp={stopPropagation}
+        style={{ 
+          isolation: 'isolate', 
+          pointerEvents: 'auto',
+          touchAction: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+          ...props.style
+        }}
       >
         {children}
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
@@ -116,6 +169,7 @@ const DialogHeader = ({
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 )
 DialogHeader.displayName = "DialogHeader"
@@ -130,6 +184,7 @@ const DialogFooter = ({
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 )
 DialogFooter.displayName = "DialogFooter"
@@ -145,6 +200,7 @@ const DialogTitle = React.forwardRef<
       className
     )}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
 DialogTitle.displayName = DialogPrimitive.Title.displayName
@@ -157,6 +213,7 @@ const DialogDescription = React.forwardRef<
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}
     {...props}
+    onClick={e => e.stopPropagation()}
   />
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName

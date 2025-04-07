@@ -14,35 +14,52 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  // Create a ref for the calendar container to handle events
+  // Create a ref to access the DOM element
   const calendarRef = React.useRef<HTMLDivElement>(null);
   
-  // Using a more comprehensive approach to prevent event propagation
+  // Completely isolate the calendar component from any parent events
   React.useEffect(() => {
-    const calendarElement = calendarRef.current;
-    if (!calendarElement) return;
+    const calendar = calendarRef.current;
+    if (!calendar) return;
     
-    // Create a function that stops all events from propagating
-    const stopAllEvents = (e: Event) => {
+    // Function to completely stop event propagation
+    const isolateEvents = (e: Event) => {
       e.stopPropagation();
-      e.preventDefault();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      e.stopImmediatePropagation();
     };
     
-    // List of all events we need to capture
-    const eventTypes = [
-      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
-      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
+    // Add event listeners for all possible interactive events
+    const events = [
+      'click', 'mousedown', 'mouseup', 'mousemove',
+      'touchstart', 'touchend', 'touchmove',
+      'pointerdown', 'pointerup', 'pointermove',
+      'wheel', 'contextmenu'
     ];
     
-    // Add listeners for all events with capture phase
-    eventTypes.forEach(eventType => {
-      calendarElement.addEventListener(eventType, stopAllEvents, { capture: true });
+    events.forEach(event => {
+      calendar.addEventListener(event, isolateEvents, { capture: true });
+      
+      // Also add listeners to all child elements
+      const childElements = calendar.querySelectorAll('*');
+      childElements.forEach(element => {
+        element.addEventListener(event, isolateEvents, { capture: true });
+      });
     });
     
-    // Cleanup function
     return () => {
-      eventTypes.forEach(eventType => {
-        calendarElement.removeEventListener(eventType, stopAllEvents, { capture: true });
+      if (!calendar) return;
+      
+      events.forEach(event => {
+        calendar.removeEventListener(event, isolateEvents, { capture: true });
+        
+        // Clean up child element listeners
+        const childElements = calendar.querySelectorAll('*');
+        childElements.forEach(element => {
+          element.removeEventListener(event, isolateEvents, { capture: true });
+        });
       });
     };
   }, []);
@@ -50,14 +67,18 @@ function Calendar({
   return (
     <div 
       ref={calendarRef}
-      className="relative z-50 pointer-events-auto"
-      onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      onMouseUp={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-      onTouchEnd={(e) => e.stopPropagation()}
-      onPointerDown={(e) => e.stopPropagation()}
-      onPointerUp={(e) => e.stopPropagation()}
+      className={cn("relative z-50", className)}
+      // Add all React synthetic event handlers as well
+      onClick={e => { e.stopPropagation(); e.preventDefault(); }}
+      onMouseDown={e => { e.stopPropagation(); e.preventDefault(); }}
+      onMouseUp={e => { e.stopPropagation(); e.preventDefault(); }}
+      onTouchStart={e => { e.stopPropagation(); e.preventDefault(); }}
+      onTouchEnd={e => { e.stopPropagation(); e.preventDefault(); }}
+      onTouchMove={e => { e.stopPropagation(); e.preventDefault(); }}
+      onPointerDown={e => { e.stopPropagation(); e.preventDefault(); }}
+      onPointerUp={e => { e.stopPropagation(); e.preventDefault(); }}
+      onPointerMove={e => { e.stopPropagation(); e.preventDefault(); }}
+      style={{ pointerEvents: 'auto', isolation: 'isolate' }}
     >
       <DayPicker
         showOutsideDays={showOutsideDays}
