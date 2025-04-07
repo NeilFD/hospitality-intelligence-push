@@ -14,21 +14,56 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  // Create a ref to access the DOM element
+  const calendarRef = React.useRef<HTMLDivElement>(null);
+
+  // Effect to add event listeners to the calendar container
+  React.useEffect(() => {
+    const calendarElement = calendarRef.current;
+    if (!calendarElement) return;
+    
+    // Handler to stop all events
+    const stopEvents = (e: Event) => {
+      e.stopPropagation();
+      if (e.cancelable) e.preventDefault();
+    };
+    
+    // List of all events we want to capture and stop
+    const eventTypes = [
+      'mousedown', 'mouseup', 'click', 
+      'pointerdown', 'pointerup', 'pointermove',
+      'touchstart', 'touchend', 'touchmove',
+      'wheel', 'contextmenu'
+    ];
+    
+    // Add event listeners for each event type in the capture phase
+    eventTypes.forEach(eventType => {
+      calendarElement.addEventListener(eventType, stopEvents, { capture: true });
+    });
+    
+    // Cleanup function to remove event listeners
+    return () => {
+      eventTypes.forEach(eventType => {
+        calendarElement.removeEventListener(eventType, stopEvents, { capture: true });
+      });
+    };
+  }, []); // Empty dependency array means this effect runs once after mount
+
   return (
     <div 
-      className={cn("relative isolate", className)}
+      ref={calendarRef}
+      className={cn("relative", className)}
       style={{
         isolation: 'isolate',
         touchAction: 'none',
         pointerEvents: 'auto',
-        zIndex: 999
+        zIndex: 999,
+        position: 'relative'
       }}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       <DayPicker
         showOutsideDays={showOutsideDays}
