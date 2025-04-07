@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages } from '@/services/wages-service';
@@ -35,14 +34,17 @@ interface WagesStore {
 
 const createEmptyDayData = (year: number, month: number, day: number): DailyWages => {
   const date = new Date(year, month - 1, day);
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const jsDay = date.getDay(); // 0=Sunday, 1=Monday, etc.
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  // Convert to our format (0=Monday, ..., 6=Sunday)
+  const adjustedDayIndex = jsDay === 0 ? 6 : jsDay - 1;
   
   return {
     year,
     month,
     day,
     date: date.toISOString().split('T')[0],
-    dayOfWeek: dayNames[date.getDay()],
+    dayOfWeek: dayNames[adjustedDayIndex],
     fohWages: 0,
     kitchenWages: 0,
     foodRevenue: 0,
@@ -166,7 +168,7 @@ export const useWagesStore = create<WagesStore>()(
           count: number;
         }> = {};
         
-        // Initialize data structure
+        // Initialize data structure with Monday first
         ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].forEach(day => {
           weekdayTotals[day] = {
             fohWages: 0,

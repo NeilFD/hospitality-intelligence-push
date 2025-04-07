@@ -31,10 +31,17 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   
   const handleInputChange = async (day: number, field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
+    
+    // Convert the day to proper day of week
+    const dateObj = new Date(year, month - 1, day);
+    const dayOfWeek = dateObj.getDay();
+    // Convert JS day (0=Sunday, 1=Monday) to our format (0=Monday, 6=Sunday)
+    const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    
     const currentDay = monthlyData.find(d => d.day === day) || {
       year, month, day,
       date: new Date(year, month - 1, day).toISOString().split('T')[0],
-      dayOfWeek: getDayNameFromNumber(new Date(year, month - 1, day).getDay() === 0 ? 6 : new Date(year, month - 1, day).getDay() - 1),
+      dayOfWeek: getDayNameFromNumber(adjustedDayIndex),
       fohWages: 0,
       kitchenWages: 0,
       foodRevenue: 0,
@@ -122,10 +129,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             </TableHeader>
             <TableBody>
               {monthlyData.map((day) => {
+                // Get day name and format it correctly (Monday first)
                 const dateObj = new Date(year, month - 1, day.day);
-                const jsDay = dateObj.getDay();
-                const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
-                const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex];
+                const jsDay = dateObj.getDay(); // 0=Sunday, 1=Monday, etc.
+                const adjustedDayIndex = jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Monday, ..., 6=Sunday
+                const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const dayName = dayNames[adjustedDayIndex];
                 const shortDayName = dayName.substring(0, 3);
                 
                 const totalDailyWages = day.fohWages + day.kitchenWages;

@@ -83,13 +83,13 @@ export function createEmptyWeek(
 ): WeeklyRecord {
   const days: DailyRecord[] = [];
   
-  // Create a stable date object with time set to midnight to avoid timezone issues
+  // Create a date object from the start date (Monday)
   const startDateObj = new Date(`${startDate}T00:00:00`);
   
   // Create an array of day names with Monday first
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   
-  // Loop through the 7 days of the week
+  // Loop through the 7 days of the week (from Monday to Sunday)
   for (let i = 0; i < 7; i++) {
     // Clone the date for each day to avoid modifying the original
     const currentDate = new Date(startDateObj);
@@ -98,11 +98,8 @@ export function createEmptyWeek(
     // Format the date as YYYY-MM-DD string
     const dateString = formatDate(currentDate);
     
-    // Get JavaScript day (0=Sunday, 1=Monday, ..., 6=Saturday)
-    const jsDay = currentDate.getDay();
-    // Convert to our day index (0=Monday, ..., 6=Sunday)
-    const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
-    const dayName = dayNames[dayIndex];
+    // Each day is sequential from Monday (i=0) to Sunday (i=6)
+    const dayName = dayNames[i];
 
     const purchases: Record<string, number> = {};
     suppliers.forEach(supplier => {
