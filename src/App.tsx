@@ -33,6 +33,9 @@ import BeverageInputSettings from '@/pages/beverage/InputSettings';
 // P&L pages
 import PLDashboard from '@/pages/pl/Dashboard';
 
+// Import React Query dependencies
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
 
@@ -126,10 +129,15 @@ const router = createBrowserRouter([
   },
 ]);
 
+// Create a client
+const queryClient = new QueryClient();
+
 function App() {
   return (
     <React.StrictMode>
-      <RouterProvider router={router} />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
     </React.StrictMode>
   );
 }
