@@ -34,3 +34,4 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
     </div>
   );
 };
+
