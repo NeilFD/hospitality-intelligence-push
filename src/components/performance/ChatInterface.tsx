@@ -184,6 +184,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       // Prepare the full payload with all tracker data
       const payload = await preparePayload();
       
+      console.log("Sending payload to webhook:", payload);
+      
       // Send to webhook
       const response = await fetch('https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee', {
         method: 'POST',
@@ -194,7 +196,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to get a response');
+        throw new Error(`Failed to get a response: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
@@ -212,16 +214,28 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       
       // Store conversation in Supabase if user is logged in
       if (user) {
-        await supabase.from('ai_conversations').insert({
-          user_id: user.id,
-          query: input,
-          response: aiResponse,
-          payload: payload,
-          timestamp: new Date().toISOString()
-        });
+        try {
+          const { error } = await supabase.from('ai_conversations').insert({
+            user_id: user.id,
+            query: input,
+            response: aiResponse,
+            payload: payload,
+            timestamp: new Date().toISOString(),
+            shared: false
+          });
+          
+          if (error) {
+            console.error("Error storing conversation:", error);
+            toast.error("Failed to save conversation history");
+          }
+        } catch (storageError) {
+          console.error("Exception storing conversation:", storageError);
+        }
       }
     } catch (error) {
       console.error('Error querying the AI:', error);
+      toast.error("Failed to connect to AI service. Please try again later.");
+      
       setMessages(prev => [...prev, {
         text: "I'm sorry, I encountered an issue while processing your request. Please try again later.",
         isUser: false,

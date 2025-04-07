@@ -15,9 +15,17 @@ export interface Conversation {
 
 // Get conversations for the current user
 export const getUserConversations = async (): Promise<Conversation[]> => {
+  const { data: user } = await supabase.auth.getUser();
+  
+  if (!user || !user.user) {
+    console.error('No authenticated user found');
+    return [];
+  }
+  
   const { data, error } = await supabase
     .from('ai_conversations')
     .select('*')
+    .eq('user_id', user.user.id)
     .order('timestamp', { ascending: false });
     
   if (error) {
