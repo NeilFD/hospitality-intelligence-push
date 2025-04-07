@@ -69,6 +69,24 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     navigate(`/${moduleType}/month/${year}/${month}`);
   };
   
+  // Function to generate all weeks for the current month
+  const generateAllWeeksForMonth = (): WeekSummary[] => {
+    // Get the number of weeks in the month
+    const totalWeeks = 5; // Most months have 4-5 weeks
+    const allWeeks: WeekSummary[] = [];
+    
+    for (let i = 1; i <= totalWeeks; i++) {
+      allWeeks.push({
+        weekNumber: i,
+        revenue: 0,
+        costs: 0,
+        gp: 0
+      });
+    }
+    
+    return allWeeks;
+  };
+  
   // Calculate summary data from tracker data or fall back to local store
   useEffect(() => {
     const calculateFromTrackerData = async () => {
@@ -83,18 +101,14 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         let monthCost = 0;
         const weekSummaries: Record<number, WeekSummary> = {};
         
+        // Initialize week summaries for all weeks of the month
+        const allWeeks = generateAllWeeksForMonth();
+        allWeeks.forEach(week => {
+          weekSummaries[week.weekNumber] = week;
+        });
+        
         // Process each tracker day
         for (const day of trackerData) {
-          // Initialize week summary if not exists
-          if (!weekSummaries[day.week_number]) {
-            weekSummaries[day.week_number] = {
-              weekNumber: day.week_number,
-              revenue: 0,
-              costs: 0,
-              gp: 0
-            };
-          }
-          
           // Add revenue to week and month totals
           const revenue = Number(day.revenue) || 0;
           weekSummaries[day.week_number].revenue += revenue;
@@ -147,6 +161,12 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     const calculateFromLocalStore = () => {
       // Create a mapping of week numbers to week data objects for proper processing
       const weekMap: Record<number, WeekSummary> = {};
+      
+      // Initialize all weeks in the month
+      const allWeeks = generateAllWeeksForMonth();
+      allWeeks.forEach(week => {
+        weekMap[week.weekNumber] = week;
+      });
       
       // Process each week in the month record
       monthRecord.weeks.forEach(week => {
