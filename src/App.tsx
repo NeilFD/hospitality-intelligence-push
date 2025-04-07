@@ -1,101 +1,133 @@
+import React from 'react';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Route,
+  Navigate
+} from "react-router-dom";
+import { useAuthStore } from '@/services/auth-service';
+import RootLayout from '@/components/RootLayout';
+import Dashboard from '@/pages/Dashboard';
+import Settings from '@/pages/Settings';
+import Profile from '@/pages/Profile';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import KitchenLedger from '@/pages/kitchen-ledger/KitchenLedger';
+import Suppliers from '@/pages/kitchen-ledger/Suppliers';
+import MonthlySettings from '@/pages/kitchen-ledger/MonthlySettings';
+import Budget from '@/pages/budget/Budget';
+import BudgetSettings from '@/pages/budget/BudgetSettings';
+import AnnualSummary from '@/pages/AnnualSummary';
+import MonthDetails from '@/pages/MonthDetails';
+import PerformanceDashboard from '@/pages/performance/Dashboard';
+import ConversationHistory from '@/pages/performance/ConversationHistory';
+import PlAnalysis from '@/pages/performance/PlAnalysis';
+import WageOptimization from '@/pages/performance/WageOptimization';
+import FbAnalysis from '@/pages/performance/FbAnalysis';
+import DataExplorer from '@/pages/performance/DataExplorer';
+import WagesDashboard from '@/pages/wages/WagesDashboard';
 
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
-import Layout from "./components/Layout";
-import Dashboard from "./pages/Dashboard";
-import InputSettings from "./pages/InputSettings";
-import MonthSummary from "./pages/MonthSummary";
-import WeeklyTracker from "./pages/WeeklyTracker";
-import AnnualSummary from "./pages/AnnualSummary";
-import Profile from "./pages/Profile";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import NotFound from "./pages/NotFound";
-import RequireAuth from "./components/auth/RequireAuth";
-import { useAuthStore } from "./services/auth-service";
-import Index from "./pages/Index";
-import { Toaster } from "@/components/ui/toaster";
+const RequireAuth = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useAuthStore();
 
-import FoodDashboard from "./pages/food/Dashboard";
-import FoodInputSettings from "./pages/food/InputSettings";
-import FoodMonthSummary from "./pages/food/MonthSummary";
-import FoodAnnualSummary from "./pages/food/AnnualSummary";
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a loading spinner
+  }
 
-import BeverageDashboard from "./pages/beverage/Dashboard";
-import BeverageInputSettings from "./pages/beverage/InputSettings";
-import BeverageMonthSummary from "./pages/beverage/MonthSummary";
-import BeverageAnnualSummary from "./pages/beverage/AnnualSummary";
-
-import PLDashboard from "./pages/pl/Dashboard";
-import BudgetInput from "./pages/pl/BudgetInput";
-import WagesDashboard from "./pages/wages/Dashboard";
-import PerformanceDashboard from "./pages/performance/Dashboard";
-
-const queryClient = new QueryClient();
-
-const App = () => {
-  const { loadUser } = useAuthStore();
-  
-  // Load user when app starts up
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              {/* Index redirects to current default module */}
-              <Route index element={<RequireAuth><Index /></RequireAuth>} />
-              
-              {/* Legacy routes - will be redirected or removed */}
-              <Route path="/input-settings" element={<RequireAuth><Navigate to="/food/input-settings" replace /></RequireAuth>} />
-              <Route path="/month/:year/:month" element={<RequireAuth><Navigate to="/food/month/:year/:month" replace /></RequireAuth>} />
-              <Route path="/week/:year/:month/:week" element={<RequireAuth><WeeklyTracker /></RequireAuth>} />
-              <Route path="/annual-summary" element={<RequireAuth><Navigate to="/food/annual-summary" replace /></RequireAuth>} />
-
-              {/* P&L Tracker Module */}
-              <Route path="/pl/dashboard" element={<RequireAuth><PLDashboard /></RequireAuth>} />
-              <Route path="/pl/budget" element={<RequireAuth><BudgetInput /></RequireAuth>} />
-              
-              {/* Wages Tracker Module */}
-              <Route path="/wages/dashboard" element={<RequireAuth><WagesDashboard /></RequireAuth>} />
-              
-              {/* Food Tracker Module */}
-              <Route path="/food/dashboard" element={<RequireAuth><FoodDashboard /></RequireAuth>} />
-              <Route path="/food/input-settings" element={<RequireAuth><FoodInputSettings /></RequireAuth>} />
-              <Route path="/food/month/:year/:month" element={<RequireAuth><FoodMonthSummary /></RequireAuth>} />
-              <Route path="/food/week/:year/:month/:week" element={<RequireAuth><WeeklyTracker /></RequireAuth>} />
-              <Route path="/food/annual-summary" element={<RequireAuth><FoodAnnualSummary /></RequireAuth>} />
-              
-              {/* Beverage Tracker Module */}
-              <Route path="/beverage/dashboard" element={<RequireAuth><BeverageDashboard /></RequireAuth>} />
-              <Route path="/beverage/input-settings" element={<RequireAuth><BeverageInputSettings /></RequireAuth>} />
-              <Route path="/beverage/month/:year/:month" element={<RequireAuth><BeverageMonthSummary /></RequireAuth>} />
-              <Route path="/beverage/week/:year/:month/:week" element={<RequireAuth><WeeklyTracker /></RequireAuth>} />
-              <Route path="/beverage/annual-summary" element={<RequireAuth><BeverageAnnualSummary /></RequireAuth>} />
-              
-              {/* Performance and Analysis Module */}
-              <Route path="/performance/dashboard" element={<RequireAuth><PerformanceDashboard /></RequireAuth>} />
-              
-              {/* Profile and Auth routes */}
-              <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              {/* Error routes */}
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-          <Toaster />
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
+  return isAuthenticated ? (children) : <Navigate to="/login" />;
 };
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RequireAuth><RootLayout /></RequireAuth>,
+    children: [
+      {
+        path: "/",
+        element: <Dashboard />
+      },
+      {
+        path: "/settings",
+        element: <Settings />
+      },
+      {
+        path: "/profile",
+        element: <Profile />
+      },
+      {
+        path: "/kitchen-ledger",
+        element: <KitchenLedger />
+      },
+      {
+        path: "/kitchen-ledger/suppliers",
+        element: <Suppliers />
+      },
+      {
+        path: "/kitchen-ledger/monthly-settings",
+        element: <MonthlySettings />
+      },
+      {
+        path: "/budget",
+        element: <Budget />
+      },
+      {
+        path: "/budget/settings",
+        element: <BudgetSettings />
+      },
+      {
+        path: "/annual-summary",
+        element: <AnnualSummary />
+      },
+      {
+        path: "/month/:year/:month",
+        element: <MonthDetails />
+      },
+       {
+        path: "/performance/dashboard",
+        element: <PerformanceDashboard />
+      },
+      {
+        path: "/performance/pl-analysis",
+        element: <PlAnalysis />
+      },
+      {
+        path: "/performance/wage-optimization",
+        element: <WageOptimization />
+      },
+      {
+        path: "/performance/fb-analysis",
+        element: <FbAnalysis />
+      },
+      {
+        path: "/performance/data-explorer",
+        element: <DataExplorer />
+      },
+      {
+        path: "/wages/dashboard",
+        element: <WagesDashboard />
+      },
+      {
+        path: "/performance/conversation-history",
+        element: <RequireAuth><ConversationHistory /></RequireAuth>
+      },
+    ]
+  },
+  {
+    path: "/login",
+    element: <Login />
+  },
+  {
+    path: "/register",
+    element: <Register />
+  },
+]);
+
+function App() {
+  return (
+    <React.StrictMode>
+      <RouterProvider router={router} />
+    </React.StrictMode>
+  );
+}
 
 export default App;

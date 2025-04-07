@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json | null
+          query: string
+          response: string | null
+          shared: boolean | null
+          timestamp: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          query: string
+          response?: string | null
+          shared?: boolean | null
+          timestamp?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          query?: string
+          response?: string | null
+          shared?: boolean | null
+          timestamp?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       budget_item_daily_values: {
         Row: {
           budget_item_id: string
