@@ -14,63 +14,11 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  // Create a ref to access the calendar container DOM element
-  const calendarRef = React.useRef<HTMLDivElement>(null);
-  
-  // Effect to completely isolate the calendar from parent events
-  React.useEffect(() => {
-    const calendarElement = calendarRef.current;
-    if (!calendarElement) return;
-    
-    // Function to completely stop event propagation
-    const isolateEvents = (e: Event) => {
-      e.stopPropagation();
-      if (e.cancelable) e.preventDefault();
-      // Ensure the event is completely stopped
-      e.stopImmediatePropagation();
-    };
-    
-    // Comprehensive list of all possible events that might cause issues
-    const eventTypes = [
-      'mousedown', 'mouseup', 'mousemove', 'click', 'dblclick',
-      'touchstart', 'touchend', 'touchmove', 'touchcancel',
-      'pointerdown', 'pointerup', 'pointermove', 'pointercancel',
-      'wheel', 'contextmenu', 'focus', 'blur'
-    ];
-    
-    // Add event listeners for all event types in the capture phase
-    eventTypes.forEach(eventType => {
-      calendarElement.addEventListener(eventType, isolateEvents, { 
-        capture: true,  // Capture phase to intercept events before they reach children
-        passive: false  // Allow preventDefault to be called
-      });
-    });
-    
-    return () => {
-      // Clean up all event listeners
-      eventTypes.forEach(eventType => {
-        calendarElement.removeEventListener(eventType, isolateEvents, { 
-          capture: true 
-        });
-      });
-    };
-  }, []);
-  
   return (
-    <div 
-      ref={calendarRef}
-      className={cn("relative", className)}
-      style={{
-        isolation: 'isolate', // CSS isolation
-        touchAction: 'none',  // Prevent default touch actions
-        pointerEvents: 'auto', // Ensure pointer events work inside
-        position: 'fixed',    // Fixed position to prevent parent scrolling issues
-        zIndex: 9999,        // Ensure it's above everything else
-      }}
-    >
+    <div className={cn("p-3", className)}>
       <DayPicker
         showOutsideDays={showOutsideDays}
-        className={cn("p-3", className)}
+        className={cn("", className)}
         classNames={{
           months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
           month: "space-y-4",
