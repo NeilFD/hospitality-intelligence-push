@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { formatCurrency, formatPercentage, calculateGP } from '@/lib/date-utils';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTrackerDataByMonth, fetchTrackerPurchases, fetchTrackerCreditNotes } from '@/services/kitchen-service';
+import { supabase } from '@/lib/supabase';
 
 export default function BeverageDashboard() {
   const {
@@ -21,34 +24,116 @@ export default function BeverageDashboard() {
   const [currentMonthCost, setCurrentMonthCost] = useState(0);
   const [currentMonthGP, setCurrentMonthGP] = useState(0);
   
+  // Fetch tracker data for the current month
+  const { data: trackerData, isLoading: isLoadingTracker } = useQuery({
+    queryKey: ['tracker-data', currentYear, currentMonth, 'beverage'],
+    queryFn: async () => {
+      return await fetchTrackerDataByMonth(currentYear, currentMonth, 'beverage');
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Calculate values based on tracker data from Supabase
   useEffect(() => {
-    let revenue = 0;
-    let cost = 0;
+    const calculateFromTrackerData = async () => {
+      if (!trackerData || trackerData.length === 0) {
+        // Fall back to local store data if no tracker data
+        calculateFromLocalStore();
+        return;
+      }
 
-    let monthRevenue = 0;
-    let monthCost = 0;
-    annualRecord.months.forEach(month => {
-      month.weeks.forEach(week => {
-        week.days.forEach(day => {
-          revenue += day.revenue;
-
-          const dayPurchases = Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0);
-          cost += dayPurchases;
-
-          if (month.year === currentYear && month.month === currentMonth) {
-            monthRevenue += day.revenue;
-            monthCost += dayPurchases;
+      try {
+        let monthRev = 0;
+        let monthCost = 0;
+        
+        // Process each tracker day
+        for (const day of trackerData) {
+          monthRev += Number(day.revenue) || 0;
+          
+          // Fetch purchases for this tracker day
+          const purchases = await fetchTrackerPurchases(day.id);
+          const dayPurchases = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
+          monthCost += dayPurchases;
+          
+          // Fetch credit notes for this tracker day
+          const creditNotes = await fetchTrackerCreditNotes(day.id);
+          const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount), 0);
+          monthCost -= dayCreditNotes; // Subtract credit notes from cost
+        }
+        
+        setCurrentMonthRevenue(monthRev);
+        setCurrentMonthCost(monthCost);
+        setCurrentMonthGP(calculateGP(monthRev, monthCost));
+        
+        // Calculate annual totals
+        let annualRevenue = 0;
+        let annualCost = 0;
+        
+        // Fetch data for all months in the current year
+        for (let month = 1; month <= 12; month++) {
+          const monthData = await fetchTrackerDataByMonth(currentYear, month, 'beverage');
+          
+          for (const day of monthData) {
+            annualRevenue += Number(day.revenue) || 0;
+            
+            // Fetch purchases for this tracker day
+            const purchases = await fetchTrackerPurchases(day.id);
+            const dayPurchases = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
+            annualCost += dayPurchases;
+            
+            // Fetch credit notes for this tracker day
+            const creditNotes = await fetchTrackerCreditNotes(day.id);
+            const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount), 0);
+            annualCost -= dayCreditNotes; // Subtract credit notes from cost
           }
+        }
+        
+        setTotalRevenue(annualRevenue);
+        setTotalCost(annualCost);
+        setGpPercentage(calculateGP(annualRevenue, annualCost));
+        
+      } catch (error) {
+        console.error("Error calculating from tracker data:", error);
+        // Fall back to local store data if there was an error
+        calculateFromLocalStore();
+      }
+    };
+    
+    // Fallback to local store data if needed
+    const calculateFromLocalStore = () => {
+      let revenue = 0;
+      let cost = 0;
+      let monthRevenue = 0;
+      let monthCost = 0;
+      
+      annualRecord.months.forEach(month => {
+        month.weeks.forEach(week => {
+          week.days.forEach(day => {
+            revenue += day.revenue;
+
+            const dayPurchases = Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0);
+            cost += dayPurchases;
+
+            if (month.year === currentYear && month.month === currentMonth) {
+              monthRevenue += day.revenue;
+              monthCost += dayPurchases;
+            }
+          });
         });
       });
-    });
-    setTotalRevenue(revenue);
-    setTotalCost(cost);
-    setGpPercentage(calculateGP(revenue, cost));
-    setCurrentMonthRevenue(monthRevenue);
-    setCurrentMonthCost(monthCost);
-    setCurrentMonthGP(calculateGP(monthRevenue, monthCost));
-  }, [annualRecord, currentYear, currentMonth]);
+      
+      setTotalRevenue(revenue);
+      setTotalCost(cost);
+      setGpPercentage(calculateGP(revenue, cost));
+      setCurrentMonthRevenue(monthRevenue);
+      setCurrentMonthCost(monthCost);
+      setCurrentMonthGP(calculateGP(monthRevenue, monthCost));
+    };
+
+    // Execute the calculations
+    calculateFromTrackerData();
+    
+  }, [trackerData, annualRecord, currentYear, currentMonth]);
 
   const getGpStatus = (gp: number, target: number) => {
     if (gp >= target) return 'good';
@@ -85,7 +170,8 @@ export default function BeverageDashboard() {
             <StatusBox 
               label="GP Percentage" 
               value={formatPercentage(currentMonthGP)} 
-              status={getGpStatus(currentMonthGP, 0.68)} 
+              status={getGpStatus(currentMonthGP, 0.68)}
+              gpMode={true} 
               className="w-full h-24" 
             />
             <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark rounded-lg shadow-sm transition-all duration-300">
@@ -120,7 +206,8 @@ export default function BeverageDashboard() {
             <StatusBox 
               label="GP Percentage" 
               value={formatPercentage(gpPercentage)} 
-              status={getGpStatus(gpPercentage, 0.68)} 
+              status={getGpStatus(gpPercentage, 0.68)}
+              gpMode={true} 
               className="w-full h-24" 
             />
             <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white rounded-lg shadow-sm transition-all duration-300">
