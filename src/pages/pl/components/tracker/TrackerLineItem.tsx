@@ -113,7 +113,7 @@ export function TrackerLineItem({
             variant="outline"
             size="icon"
             onClick={handleOpenDailyInput}
-            className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100"
+            className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100 pointer-events-auto"
           >
             <CalendarDays className="h-5 w-5" />
           </Button>
@@ -129,7 +129,7 @@ export function TrackerLineItem({
           step="0.01"
           value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
           onChange={(e) => updateForecastAmount(index, e.target.value)}
-          className="h-8 w-24 text-right ml-auto"
+          className="h-8 w-24 text-right ml-auto pointer-events-auto"
           onClick={e => e.stopPropagation()}
         />
       </TableCell>

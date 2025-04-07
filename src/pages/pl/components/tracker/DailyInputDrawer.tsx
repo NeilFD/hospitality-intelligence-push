@@ -171,7 +171,6 @@ export function DailyInputDrawer({
     return null;
   }
 
-  // We add a stacking context with a high z-index to ensure calendar doesn't flicker
   return (
     <Drawer 
       open={isOpen} 
@@ -179,7 +178,7 @@ export function DailyInputDrawer({
         if (!open) onClose();
       }}
     >
-      <DrawerContent className="max-h-[90vh]">
+      <DrawerContent className="max-h-[90vh] pointer-events-auto">
         <DrawerHeader>
           <div className="flex items-center">
             <CalendarDays className="mr-2 h-5 w-5 text-purple-600" />
@@ -192,7 +191,7 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]" style={{ isolation: 'isolate' }}>
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)] pointer-events-auto">
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => (
                 <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
@@ -206,7 +205,7 @@ export function DailyInputDrawer({
                     min="0" 
                     step="0.01" 
                     placeholder="0.00" 
-                    className="w-full h-9 text-tavern-blue"
+                    className="w-full h-9 text-tavern-blue pointer-events-auto"
                   />
                 </div>
               ))}
