@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfMonth } from 'date-fns';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
@@ -35,38 +36,6 @@ export function DailyInputDrawer({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  
-  // Create a ref for the content
-  const contentRef = React.useRef<HTMLDivElement>(null);
-
-  // Add effect to handle all interactions inside the drawer
-  React.useEffect(() => {
-    if (!isOpen || !contentRef.current) return;
-    
-    const content = contentRef.current;
-    
-    const handleInteraction = (e: Event) => {
-      e.stopPropagation();
-    };
-    
-    // Use capture phase to intercept events before they bubble
-    const options = { capture: true };
-    
-    // Handle all possible events that might cause flickering
-    content.addEventListener('click', handleInteraction, options);
-    content.addEventListener('mousedown', handleInteraction, options);
-    content.addEventListener('mouseup', handleInteraction, options);
-    content.addEventListener('touchstart', handleInteraction, options);
-    content.addEventListener('touchend', handleInteraction, options);
-    
-    return () => {
-      content.removeEventListener('click', handleInteraction, options);
-      content.removeEventListener('mousedown', handleInteraction, options);
-      content.removeEventListener('mouseup', handleInteraction, options);
-      content.removeEventListener('touchstart', handleInteraction, options);
-      content.removeEventListener('touchend', handleInteraction, options);
-    };
-  }, [isOpen]);
   
   // Load data only when the drawer opens
   useEffect(() => {
@@ -196,12 +165,7 @@ export function DailyInputDrawer({
     onSave(dailyInputs);
     onClose();
   };
-  
-  // Function to handle and stop event propagation
-  const stopPropagation = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-  };
-  
+
   // Early return for closed drawer
   if (!isOpen) {
     return null;
@@ -214,14 +178,8 @@ export function DailyInputDrawer({
         if (!open) onClose();
       }}
     >
-      <DrawerContent 
-        className="max-h-[90vh] pointer-events-auto"
-        ref={contentRef}
-        onClick={stopPropagation}
-        onMouseDown={stopPropagation}
-        onTouchStart={stopPropagation}
-      >
-        <DrawerHeader onClick={stopPropagation}>
+      <DrawerContent className="max-h-[90vh]">
+        <DrawerHeader>
           <div className="flex items-center">
             <CalendarDays className="mr-2 h-5 w-5 text-purple-600" />
             <DrawerTitle className="text-slate-900">{itemName} - Daily Inputs</DrawerTitle>
@@ -233,7 +191,7 @@ export function DailyInputDrawer({
             <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]" onClick={stopPropagation}>
+          <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
             <div className="flex flex-col gap-3">
               {dailyInputs.map((dayInput, index) => (
                 <div key={index} className="grid grid-cols-[120px_1fr] gap-2 items-center">
@@ -244,8 +202,6 @@ export function DailyInputDrawer({
                     type="number" 
                     value={dayInput.value !== null ? dayInput.value : ''} 
                     onChange={e => handleInputChange(index, e.target.value)} 
-                    onClick={stopPropagation}
-                    onMouseDown={stopPropagation}
                     min="0" 
                     step="0.01" 
                     placeholder="0.00" 
@@ -257,7 +213,7 @@ export function DailyInputDrawer({
           </div>
         )}
         
-        <DrawerFooter className="border-t" onClick={stopPropagation}>
+        <DrawerFooter className="border-t">
           <div className="flex justify-between items-center w-full mb-4">
             <div className="font-semibold text-lg text-tavern-blue">Total:</div>
             <div className="font-bold text-lg text-purple-700">{formatCurrency(total)}</div>
@@ -265,19 +221,13 @@ export function DailyInputDrawer({
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
+              onClick={onClose} 
               className="flex-1"
             >
               Cancel
             </Button>
             <Button 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSave();
-              }} 
+              onClick={handleSave} 
               className="flex-1 bg-purple-600 hover:bg-purple-700"
               disabled={isSaving}
             >
