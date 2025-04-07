@@ -7,10 +7,9 @@ export function useDateCalculations(currentMonthName: string, currentYear: numbe
   const [dayOfMonth, setDayOfMonth] = useState(0);
 
   useEffect(() => {
-    // Create yesterday's date
+    // Create yesterday's date with explicit year, month, day to avoid timezone issues
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     setYesterdayDate(yesterday);
     
     // Calculate month number from name (0-based)
@@ -18,7 +17,7 @@ export function useDateCalculations(currentMonthName: string, currentYear: numbe
                         'July', 'August', 'September', 'October', 'November', 'December'];
     const month = monthNames.findIndex(name => name === currentMonthName);
     
-    // Get days in month
+    // Get days in month - ensure we use the actual month number (0-based index)
     const lastDay = new Date(currentYear, month + 1, 0).getDate();
     setDaysInMonth(lastDay);
     

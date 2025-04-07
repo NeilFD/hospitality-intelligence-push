@@ -19,8 +19,9 @@ export function formatDate(date: Date): string {
 
 // Format date as DD/MM for display - showing the actual day and month the date belongs to
 export function formatDateForDisplay(date: Date): string {
-  // Ensure we're working with a date object
-  const dateObj = new Date(date);
+  // Create a new date object to ensure consistent behavior
+  const dateObj = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
   const day = dateObj.getDate();
   const month = dateObj.getMonth() + 1; // JavaScript months are 0-based
   

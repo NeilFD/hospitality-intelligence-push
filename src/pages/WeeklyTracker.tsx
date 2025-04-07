@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -301,7 +302,10 @@ export default function WeeklyTracker() {
                 <tr>
                   <th className="table-header rounded-tl-lg">Supplier Name</th>
                   {sortedDays.map((day, index) => {
-                    const dateObj = new Date(`${day.date}T12:00:00Z`);
+                    // Create a date object with year, month, day explicitly to avoid timezone issues
+                    // The date string format is YYYY-MM-DD
+                    const dateParts = day.date.split('-').map(part => parseInt(part));
+                    const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
                     
                     return (
                       <th key={index} className="table-header-day">
