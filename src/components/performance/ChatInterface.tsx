@@ -186,23 +186,40 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       
       console.log("Sending payload to webhook:", payload);
       
-      // Send to webhook
+      // Send to webhook with proper headers and handling
       const response = await fetch('https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin,
         },
         body: JSON.stringify(payload),
+        // Remove mode: 'no-cors' to get a proper response
       });
       
       if (!response.ok) {
         throw new Error(`Failed to get a response: ${response.status} ${response.statusText}`);
       }
       
-      const data = await response.json();
+      // Parse JSON only if we have a valid response
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const textResponse = await response.text();
+        try {
+          // Attempt to parse as JSON anyway
+          data = JSON.parse(textResponse);
+        } catch (e) {
+          console.log("Response is not JSON:", textResponse);
+          data = { response: "I processed your request, but got a non-JSON response." };
+        }
+      }
       
       // Add AI response
-      const aiResponse = data.response || "I'm processing your request. I'll have an answer shortly.";
+      const aiResponse = data?.response || "I'm processing your request. I'll have an answer shortly.";
       
       const newMessage = {
         text: aiResponse,
