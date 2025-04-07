@@ -186,40 +186,47 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       
       console.log("Sending payload to webhook:", payload);
       
-      // Send to webhook with proper headers and handling
-      const response = await fetch('https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee', {
+      const webhookUrl = 'https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee';
+      
+      // Send to webhook with improved error handling
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': window.location.origin,
+          'Accept': 'application/json'
         },
-        body: JSON.stringify(payload),
-        // Remove mode: 'no-cors' to get a proper response
+        body: JSON.stringify(payload)
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to get a response: ${response.status} ${response.statusText}`);
-      }
+      // Log response for debugging
+      console.log("Webhook response status:", response.status);
       
-      // Parse JSON only if we have a valid response
       let data;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        const textResponse = await response.text();
-        try {
-          // Attempt to parse as JSON anyway
-          data = JSON.parse(textResponse);
-        } catch (e) {
-          console.log("Response is not JSON:", textResponse);
-          data = { response: "I processed your request, but got a non-JSON response." };
+      let responseText = '';
+      
+      try {
+        responseText = await response.text();
+        console.log("Raw webhook response:", responseText);
+        
+        if (responseText) {
+          try {
+            data = JSON.parse(responseText);
+            console.log("Parsed response data:", data);
+          } catch (parseError) {
+            console.error("Failed to parse response as JSON:", parseError);
+            data = { response: "I received your request, but couldn't parse the response." };
+          }
+        } else {
+          console.log("Empty response from webhook");
+          data = { response: "I've received your request, but got no content in the response." };
         }
+      } catch (readError) {
+        console.error("Error reading response:", readError);
+        data = { response: "I encountered an issue while processing your request." };
       }
       
       // Add AI response
-      const aiResponse = data?.response || "I'm processing your request. I'll have an answer shortly.";
+      const aiResponse = data?.response || "I processed your request, but couldn't get a proper response.";
       
       const newMessage = {
         text: aiResponse,
