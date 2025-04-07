@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,7 +51,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   const location = useLocation();
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   
-  // Default webhook URL for n8n
+  // Explicitly set the webhook URL here
   const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/8ba16b2c-84dc-4a7c-b1cd-7c018d4042ee";
 
   // Function to get annual summary data
