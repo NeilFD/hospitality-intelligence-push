@@ -25,7 +25,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
         <img 
           src="/lovable-uploads/e551531e-e30f-49d3-8197-b94fe8312491.png" 
           alt="The Tavern Logo" 
-          className="object-cover w-full h-full"
+          className="object-contain w-full h-full" 
         />
       </div>
     </div>
