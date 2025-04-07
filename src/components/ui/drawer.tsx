@@ -37,10 +37,10 @@ const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  // Create an additional ref for event handling
+  // Create a ref for event handling
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   
-  // Combine the forwarded ref with our local ref
+  // Merge refs
   const setRefs = React.useCallback(
     (element: HTMLDivElement | null) => {
       // Update our local ref
@@ -56,34 +56,42 @@ const DrawerContent = React.forwardRef<
     [ref]
   );
   
-  // Add effect for event handling
+  // Add effect for comprehensive event handling
   React.useEffect(() => {
     const element = contentRef.current;
     if (!element) return;
     
-    const handleEvent = (e: Event) => {
+    // Create a function that stops all events
+    const stopAllEvents = (e: Event) => {
       e.stopPropagation();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
     };
     
-    // Capture phase ensures we handle events before they propagate
-    element.addEventListener('click', handleEvent, { capture: true });
-    element.addEventListener('mousedown', handleEvent, { capture: true });
-    element.addEventListener('mouseup', handleEvent, { capture: true });
-    element.addEventListener('touchstart', handleEvent, { capture: true });
-    element.addEventListener('touchend', handleEvent, { capture: true });
+    // List of all events we need to capture
+    const eventTypes = [
+      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
+    ];
+    
+    // Add listeners for all events with capture phase
+    eventTypes.forEach(eventType => {
+      element.addEventListener(eventType, stopAllEvents, { capture: true });
+    });
     
     return () => {
-      element.removeEventListener('click', handleEvent, { capture: true });
-      element.removeEventListener('mousedown', handleEvent, { capture: true });
-      element.removeEventListener('mouseup', handleEvent, { capture: true });
-      element.removeEventListener('touchstart', handleEvent, { capture: true });
-      element.removeEventListener('touchend', handleEvent, { capture: true });
+      // Clean up all event listeners
+      eventTypes.forEach(eventType => {
+        element.removeEventListener(eventType, stopAllEvents, { capture: true });
+      });
     };
   }, []);
 
-  const stopPropagation = (e: React.SyntheticEvent) => {
+  // Event handler functions
+  const stopPropagation = React.useCallback((e: React.SyntheticEvent) => {
     e.stopPropagation();
-  };
+  }, []);
 
   return (
     <DrawerPortal>
@@ -97,7 +105,11 @@ const DrawerContent = React.forwardRef<
         {...props}
         onClick={stopPropagation}
         onMouseDown={stopPropagation}
+        onMouseUp={stopPropagation}
         onTouchStart={stopPropagation}
+        onTouchEnd={stopPropagation}
+        onPointerDown={stopPropagation}
+        onPointerUp={stopPropagation}
       >
         <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
         {children}

@@ -17,42 +17,47 @@ function Calendar({
   // Create a ref for the calendar container to handle events
   const calendarRef = React.useRef<HTMLDivElement>(null);
   
-  // Add effect to handle clicks on the calendar
+  // Using a more comprehensive approach to prevent event propagation
   React.useEffect(() => {
     const calendarElement = calendarRef.current;
     if (!calendarElement) return;
     
-    const handleEvent = (e: Event) => {
-      // Prevent event from propagating to parent elements
+    // Create a function that stops all events from propagating
+    const stopAllEvents = (e: Event) => {
       e.stopPropagation();
+      e.preventDefault();
     };
     
-    // Capture all relevant events that could cause flickering
-    calendarElement.addEventListener('click', handleEvent, { capture: true });
-    calendarElement.addEventListener('mousedown', handleEvent, { capture: true });
-    calendarElement.addEventListener('mouseup', handleEvent, { capture: true });
-    calendarElement.addEventListener('touchstart', handleEvent, { capture: true });
-    calendarElement.addEventListener('touchend', handleEvent, { capture: true });
+    // List of all events we need to capture
+    const eventTypes = [
+      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
+    ];
     
+    // Add listeners for all events with capture phase
+    eventTypes.forEach(eventType => {
+      calendarElement.addEventListener(eventType, stopAllEvents, { capture: true });
+    });
+    
+    // Cleanup function
     return () => {
-      // Clean up all event listeners
-      calendarElement.removeEventListener('click', handleEvent, { capture: true });
-      calendarElement.removeEventListener('mousedown', handleEvent, { capture: true });
-      calendarElement.removeEventListener('mouseup', handleEvent, { capture: true });
-      calendarElement.removeEventListener('touchstart', handleEvent, { capture: true });
-      calendarElement.removeEventListener('touchend', handleEvent, { capture: true });
+      eventTypes.forEach(eventType => {
+        calendarElement.removeEventListener(eventType, stopAllEvents, { capture: true });
+      });
     };
   }, []);
 
   return (
     <div 
       ref={calendarRef}
-      className="relative z-50"
+      className="relative z-50 pointer-events-auto"
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
     >
       <DayPicker
         showOutsideDays={showOutsideDays}

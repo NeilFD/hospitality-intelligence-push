@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
@@ -32,63 +31,69 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  // Create a ref to handle event propagation
-  const contentRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
   
-  // Merge refs
-  const mergedRef = (node: HTMLDivElement) => {
-    // Set the ref from forwardRef
-    if (typeof ref === 'function') {
-      ref(node);
-    } else if (ref) {
-      ref.current = node;
-    }
-    // Set our local ref
-    if (contentRef.current) {
-      contentRef.current = node;
-    }
-  };
+  const setRefs = React.useCallback(
+    (element: HTMLDivElement | null) => {
+      contentRef.current = element;
+      
+      if (typeof ref === 'function') {
+        ref(element);
+      } else if (ref) {
+        ref.current = element;
+      }
+    },
+    [ref]
+  );
+  
+  React.useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+    
+    const stopAllEvents = (e: Event) => {
+      e.stopPropagation();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+    
+    const eventTypes = [
+      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
+    ];
+    
+    eventTypes.forEach(eventType => {
+      element.addEventListener(eventType, stopAllEvents, { capture: true });
+    });
+    
+    return () => {
+      eventTypes.forEach(eventType => {
+        element.removeEventListener(eventType, stopAllEvents, { capture: true });
+      });
+    };
+  }, []);
+  
+  const stopPropagation = React.useCallback((e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  }, []);
 
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
-        ref={mergedRef}
+        ref={setRefs}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg pointer-events-auto",
           className
         )}
         {...props}
-        onMouseDown={(e) => {
-          // Don't propagate if the target is the content or its children
-          if (e.target === e.currentTarget) {
-            e.stopPropagation();
-          }
-          // Call original onMouseDown if provided
-          if (props.onMouseDown) {
-            props.onMouseDown(e);
-          }
-        }}
-        onMouseUp={(e) => {
-          // Don't propagate if the target is the content or its children
-          if (e.target === e.currentTarget) {
-            e.stopPropagation();
-          }
-          // Call original onMouseUp if provided
-          if (props.onMouseUp) {
-            props.onMouseUp(e);
-          }
-        }}
-        onClick={(e) => {
-          // Don't propagate if the target is the content or its children
-          if (e.target === e.currentTarget) {
-            e.stopPropagation();
-          }
-          // Call original onClick if provided
-          if (props.onClick) {
-            props.onClick(e);
-          }
-        }}
+        onClick={stopPropagation}
+        onMouseDown={stopPropagation}
+        onMouseUp={stopPropagation}
+        onTouchStart={stopPropagation}
+        onTouchEnd={stopPropagation}
+        onPointerDown={stopPropagation}
+        onPointerUp={stopPropagation}
       >
         {children}
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
@@ -99,7 +104,7 @@ const DialogContent = React.forwardRef<
     </DialogPortal>
   )
 })
-DialogContent.displayName = "DialogContent"
+DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({
   className,

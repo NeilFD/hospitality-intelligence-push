@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
@@ -28,19 +29,84 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <AlertDialogPortal>
-    <AlertDialogOverlay />
-    <AlertDialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-        className
-      )}
-      {...props}
-    />
-  </AlertDialogPortal>
-))
+>(({ className, ...props }, ref) => {
+  // Create a ref for event handling
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
+  
+  // Merge refs
+  const setRefs = React.useCallback(
+    (element: HTMLDivElement | null) => {
+      // Update our local ref
+      contentRef.current = element;
+      
+      // Forward the ref
+      if (typeof ref === 'function') {
+        ref(element);
+      } else if (ref) {
+        ref.current = element;
+      }
+    },
+    [ref]
+  );
+  
+  // Add effect for comprehensive event handling
+  React.useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+    
+    // Create a function that stops all events
+    const stopAllEvents = (e: Event) => {
+      e.stopPropagation();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+    
+    // List of all events we need to capture
+    const eventTypes = [
+      'click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+      'touchmove', 'mousemove', 'pointermove', 'pointerdown', 'pointerup'
+    ];
+    
+    // Add listeners for all events with capture phase
+    eventTypes.forEach(eventType => {
+      element.addEventListener(eventType, stopAllEvents, { capture: true });
+    });
+    
+    return () => {
+      // Clean up all event listeners
+      eventTypes.forEach(eventType => {
+        element.removeEventListener(eventType, stopAllEvents, { capture: true });
+      });
+    };
+  }, []);
+  
+  // Event handler function for React synthetic events
+  const stopPropagation = React.useCallback((e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  }, []);
+  
+  return (
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Content
+        ref={setRefs}
+        className={cn(
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg pointer-events-auto",
+          className
+        )}
+        {...props}
+        onClick={stopPropagation}
+        onMouseDown={stopPropagation}
+        onMouseUp={stopPropagation}
+        onTouchStart={stopPropagation}
+        onTouchEnd={stopPropagation}
+        onPointerDown={stopPropagation}
+        onPointerUp={stopPropagation}
+      />
+    </AlertDialogPortal>
+  )
+})
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName
 
 const AlertDialogHeader = ({
