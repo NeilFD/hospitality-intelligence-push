@@ -117,7 +117,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           monthCost += netDayCosts;
         }
         
-        // Calculate GP for each week
+        // Calculate GP for each week and create week array
         const weeklyDataArray = Object.values(weekSummaries).map(week => {
           week.gp = calculateGP(week.revenue, week.costs);
           return week;
@@ -145,7 +145,11 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     
     // Fallback to local store data if needed
     const calculateFromLocalStore = () => {
-      const localWeeklyData = monthRecord.weeks.map(week => {
+      // Create a mapping of week numbers to week data objects for proper processing
+      const weekMap: Record<number, WeekSummary> = {};
+      
+      // Process each week in the month record
+      monthRecord.weeks.forEach(week => {
         const weekRevenue = week.days.reduce((sum, day) => sum + day.revenue, 0);
         
         const weekCosts = week.days.reduce((sum, day) => {
@@ -156,13 +160,17 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         
         const weekGp = calculateGP(weekRevenue, weekCosts);
         
-        return {
+        // Store week data in the map using the week number as key
+        weekMap[week.weekNumber] = {
           weekNumber: week.weekNumber,
           revenue: weekRevenue,
           costs: weekCosts,
           gp: weekGp
         };
       });
+      
+      // Convert the map to an array and sort by week number
+      const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
       
       const localTotalRevenue = monthRecord.weeks.reduce((sum, week) => {
         const weekRevenue = week.days.reduce((daySum, day) => daySum + day.revenue, 0);
