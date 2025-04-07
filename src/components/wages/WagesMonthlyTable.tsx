@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -33,7 +34,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     const currentDay = monthlyData.find(d => d.day === day) || {
       year, month, day,
       date: new Date(year, month - 1, day).toISOString().split('T')[0],
-      dayOfWeek: getDayName(new Date(year, month - 1, day).toISOString().split('T')[0]),
+      dayOfWeek: getDayNameFromNumber(new Date(year, month - 1, day).getDay() === 0 ? 6 : new Date(year, month - 1, day).getDay() - 1),
       fohWages: 0,
       kitchenWages: 0,
       foodRevenue: 0,
