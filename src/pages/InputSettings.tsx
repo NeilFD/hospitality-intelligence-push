@@ -54,7 +54,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     queryKey: ['monthly-settings', currentYear, currentMonth, moduleType],
     queryFn: async () => {
       try {
-        const settings = await fetchMonthlySettings(currentYear, currentMonth);
+        const settings = await fetchMonthlySettings(currentYear, currentMonth, moduleType);
         return settings;
       } catch (error) {
         console.error('Error fetching monthly settings:', error);
