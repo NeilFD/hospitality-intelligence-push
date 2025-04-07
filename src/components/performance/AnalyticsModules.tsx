@@ -9,50 +9,60 @@ export default function AnalyticsModules() {
     {
       title: "P&L Analysis",
       description: "Financial performance forecasting, expense pattern detection, and category breakdowns.",
-      icon: <CircleDollarSign className="h-10 w-10 text-tavern-blue opacity-80" />,
+      icon: <CircleDollarSign className="h-10 w-10 text-white" />,
       path: "/performance/pl-analysis",
-      color: "bg-gradient-to-br from-blue-50 to-blue-100"
+      color: "from-blue-600 to-indigo-700",
+      hover: "from-blue-700 to-indigo-800"
     },
     {
       title: "Wage Optimization",
       description: "Labor efficiency analysis, wage-to-revenue ratio insights, and predictive scheduling.",
-      icon: <User className="h-10 w-10 text-orange-500 opacity-80" />,
+      icon: <User className="h-10 w-10 text-white" />,
       path: "/performance/wage-optimization",
-      color: "bg-gradient-to-br from-orange-50 to-orange-100"
+      color: "from-orange-500 to-amber-600",
+      hover: "from-orange-600 to-amber-700"
     },
     {
       title: "Food & Beverage Analysis",
       description: "GP performance insights, supplier analysis, and inventory optimization.",
-      icon: <BarChart className="h-10 w-10 text-green-600 opacity-80" />,
+      icon: <BarChart className="h-10 w-10 text-white" />,
       path: "/performance/fb-analysis",
-      color: "bg-gradient-to-br from-green-50 to-green-100"
+      color: "from-green-600 to-emerald-700",
+      hover: "from-green-700 to-emerald-800"
     },
     {
       title: "Data Explorer",
       description: "Custom data exploration with natural language queries and advanced data visualizations.",
-      icon: <Bot className="h-10 w-10 text-purple-600 opacity-80" />,
+      icon: <Bot className="h-10 w-10 text-white" />,
       path: "/performance/data-explorer",
-      color: "bg-gradient-to-br from-purple-50 to-purple-100"
+      color: "from-purple-600 to-violet-700",
+      hover: "from-purple-700 to-violet-800"
     }
   ];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-tavern-blue">Analytics Modules</h2>
+      <h2 className="text-2xl font-semibold text-tavern-blue flex items-center gap-2">
+        <TrendingUp className="h-6 w-6" />
+        Analytics Modules
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {modules.map((module, index) => (
-          <Card key={index} className={`shadow-md border-tavern-blue-light/20 hover:shadow-lg transition-all duration-300 overflow-hidden ${module.color}`}>
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <div>
+          <Card 
+            key={index} 
+            className="rounded-xl overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+          >
+            <CardHeader className={`bg-gradient-to-br ${module.color} text-white p-6`}>
+              <div className="flex justify-between items-center">
                 <CardTitle className="text-lg font-semibold">{module.title}</CardTitle>
+                {module.icon}
               </div>
-              {module.icon}
             </CardHeader>
-            <CardContent>
-              <CardDescription className="mb-4 text-sm min-h-[60px]">
+            <CardContent className="p-6">
+              <CardDescription className="mb-6 text-sm min-h-[80px] text-gray-600">
                 {module.description}
               </CardDescription>
-              <Button asChild variant="outline" className="w-full justify-between border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white">
+              <Button asChild className={`w-full justify-between bg-gradient-to-r ${module.color} hover:bg-gradient-to-r hover:${module.hover} text-white shadow-sm`}>
                 <Link to={module.path}>
                   Explore <ArrowRight className="h-4 w-4" />
                 </Link>

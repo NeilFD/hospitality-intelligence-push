@@ -82,13 +82,13 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   };
 
   return (
-    <div className={`flex flex-col rounded-xl border border-tavern-blue-light/20 overflow-hidden bg-white ${className}`}>
-      <div className="flex items-center gap-2 p-3 bg-tavern-blue-light/10 border-b border-tavern-blue-light/20">
-        <Bot className="text-tavern-blue" />
-        <h3 className="font-semibold text-tavern-blue-dark">Cleo - Performance Assistant</h3>
+    <div className={`flex flex-col rounded-xl overflow-hidden shadow-inner ${className}`}>
+      <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-tavern-blue to-tavern-blue-dark">
+        <Bot className="text-white" />
+        <h3 className="font-semibold text-white">Cleo - Performance Assistant</h3>
       </div>
       
-      <ScrollArea className="flex-1 h-64 p-4 overflow-y-auto">
+      <ScrollArea className="flex-1 h-64 p-4 overflow-y-auto bg-white/80 backdrop-blur-sm">
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div 
@@ -98,10 +98,10 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
               {!message.isUser && <Bot className="h-6 w-6 mt-1 text-tavern-blue flex-shrink-0" />}
               
               <div 
-                className={`rounded-lg p-3 max-w-[80%] ${
+                className={`rounded-lg p-3 max-w-[80%] shadow-sm ${
                   message.isUser 
-                    ? 'bg-tavern-blue text-white' 
-                    : 'bg-gray-100 text-tavern-blue-dark'
+                    ? 'bg-gradient-to-r from-tavern-blue to-tavern-blue-dark text-white' 
+                    : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100 text-tavern-blue-dark'
                 }`}
               >
                 <p className="text-sm">{message.text}</p>
@@ -117,7 +117,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           {isLoading && (
             <div className="flex justify-start gap-2">
               <Bot className="h-6 w-6 mt-1 text-tavern-blue flex-shrink-0" />
-              <div className="bg-gray-100 rounded-lg p-3">
+              <div className="bg-gray-50 rounded-lg p-3 shadow-sm border border-gray-100">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 bg-tavern-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                   <span className="w-2 h-2 bg-tavern-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
@@ -129,18 +129,18 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         </div>
       </ScrollArea>
       
-      <form onSubmit={handleSubmit} className="p-3 border-t border-tavern-blue-light/20 flex gap-2">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-gray-100 bg-white flex gap-2">
         <Input
           placeholder="Ask about your business performance..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading}
-          className="flex-1"
+          className="flex-1 bg-gray-50 border-gray-200 focus:border-tavern-blue focus:ring-tavern-blue"
         />
         <Button 
           type="submit" 
           disabled={isLoading || !input.trim()} 
-          className="bg-tavern-blue hover:bg-tavern-blue-dark"
+          className="bg-tavern-blue hover:bg-tavern-blue-dark shadow-sm"
         >
           <Send className="h-5 w-5" />
         </Button>

@@ -136,24 +136,31 @@ export default function KeyInsights() {
   };
   
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-tavern-blue">Key Insights for Current Month</h2>
+    <div className="space-y-5">
+      <h2 className="text-2xl font-semibold text-tavern-blue flex items-center gap-2">
+        <TrendingUp className="h-6 w-6" />
+        Key Insights
+      </h2>
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="shadow-md border-tavern-blue-light/20">
-          <CardHeader className="pb-2">
+        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
+          <CardHeader className="pb-2 border-b border-gray-100">
             <CardTitle className="text-lg font-medium flex items-center justify-between">
               <span>Monthly Revenue</span>
               {monthlyRevenue > 0 && <TrendingUp className="h-5 w-5 text-green-500" />}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(monthlyRevenue)}</div>
-            <div className="text-muted-foreground mt-1">Cost: {formatCurrency(monthlyCosts)}</div>
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-tavern-blue">{formatCurrency(monthlyRevenue)}</div>
+            <div className="text-muted-foreground mt-1 flex items-center gap-1">
+              <span className="text-gray-500">Cost:</span> 
+              <span className="font-medium">{formatCurrency(monthlyCosts)}</span>
+            </div>
           </CardContent>
         </Card>
         
-        <Card className="shadow-md border-tavern-blue-light/20">
-          <CardHeader className="pb-2">
+        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
+          <CardHeader className="pb-2 border-b border-gray-100">
             <CardTitle className="text-lg font-medium flex items-center justify-between">
               <span>Gross Profit</span>
               {gpTrend >= 0 ? 
@@ -162,30 +169,48 @@ export default function KeyInsights() {
               }
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatPercentage(currentMonthGP)}</div>
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-tavern-blue">{formatPercentage(currentMonthGP)}</div>
             <div className={`flex items-center mt-1 ${gpTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {gpTrend >= 0 ? 
                 <ArrowUp className="h-4 w-4 mr-1" /> : 
                 <ArrowDown className="h-4 w-4 mr-1" />
               }
-              <span>{Math.abs(gpTrendPercentage).toFixed(1)}% vs. last month</span>
+              <span className="font-medium">{Math.abs(gpTrendPercentage).toFixed(1)}% vs. last month</span>
             </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50 md:col-span-1 row-span-1">
+          <CardHeader className="pb-2 border-b border-gray-100">
+            <CardTitle className="text-lg font-medium">Current Performance</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 flex flex-col justify-center h-full">
+            <div className={`text-xl font-bold ${currentMonthGP >= 0.7 ? 'text-green-500' : currentMonthGP >= 0.65 ? 'text-amber-500' : 'text-red-500'}`}>
+              {currentMonthGP >= 0.7 ? 'Excellent' : currentMonthGP >= 0.65 ? 'Good' : 'Needs Improvement'}
+            </div>
+            <p className="text-gray-500 text-sm mt-2">
+              {currentMonthGP >= 0.7 ? 
+                'Your business is performing above target levels.' : 
+                currentMonthGP >= 0.65 ? 
+                'Your business is meeting expected performance levels.' : 
+                'Your business is currently performing below target levels.'}
+            </p>
           </CardContent>
         </Card>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-md border-tavern-blue-light/20">
-          <CardHeader>
+        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
+          <CardHeader className="border-b border-gray-100">
             <CardTitle>Weekly Revenue</CardTitle>
           </CardHeader>
-          <CardContent className="h-64">
+          <CardContent className="p-6 h-64">
             <ChartContainer config={chartConfig} className="h-full">
               <BarChart data={revenueData}>
                 <XAxis dataKey="week" />
                 <YAxis />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -193,16 +218,16 @@ export default function KeyInsights() {
           </CardContent>
         </Card>
         
-        <Card className="shadow-md border-tavern-blue-light/20">
-          <CardHeader>
+        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
+          <CardHeader className="border-b border-gray-100">
             <CardTitle>Weekly GP %</CardTitle>
           </CardHeader>
-          <CardContent className="h-64">
+          <CardContent className="p-6 h-64">
             <ChartContainer config={chartConfig} className="h-full">
               <LineChart data={gpData}>
                 <XAxis dataKey="week" />
                 <YAxis />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Line 
                   type="monotone" 
@@ -210,7 +235,7 @@ export default function KeyInsights() {
                   stroke="var(--color-gp)" 
                   strokeWidth={2} 
                   dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
+                  activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
                 />
               </LineChart>
             </ChartContainer>
