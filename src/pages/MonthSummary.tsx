@@ -14,10 +14,19 @@ import {
 } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
 import { ModuleType } from '@/types/kitchen-ledger';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTrackerDataByMonth, fetchTrackerPurchases, fetchTrackerCreditNotes } from '@/services/kitchen-service';
 
 interface MonthSummaryProps {
   modulePrefix?: string;
   moduleType?: ModuleType;
+}
+
+interface WeekSummary {
+  weekNumber: number;
+  revenue: number;
+  costs: number;
+  gp: number;
 }
 
 export default function MonthSummary({ modulePrefix = "", moduleType = "food" }: MonthSummaryProps) {
@@ -33,6 +42,19 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
   );
   
   const monthRecord = useMonthRecord(currentYear, currentMonth, moduleType);
+  const [weeklyData, setWeeklyData] = useState<WeekSummary[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalCosts, setTotalCosts] = useState(0);
+  const [gpPercentage, setGpPercentage] = useState(0);
+  
+  // Fetch tracker data from Supabase
+  const { data: trackerData, isLoading: isLoadingTracker } = useQuery({
+    queryKey: ['tracker-data', currentYear, currentMonth, moduleType],
+    queryFn: async () => {
+      return await fetchTrackerDataByMonth(currentYear, currentMonth, moduleType);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
   
   useEffect(() => {
     if (yearParam && monthParam) {
@@ -47,21 +69,126 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     navigate(`/${moduleType}/month/${year}/${month}`);
   };
   
-  const totalRevenue = monthRecord.weeks.reduce((sum, week) => {
-    const weekRevenue = week.days.reduce((daySum, day) => daySum + day.revenue, 0);
-    return sum + weekRevenue;
-  }, 0);
+  // Calculate summary data from tracker data or fall back to local store
+  useEffect(() => {
+    const calculateFromTrackerData = async () => {
+      if (!trackerData || trackerData.length === 0) {
+        // Fall back to local store if no tracker data
+        calculateFromLocalStore();
+        return;
+      }
+
+      try {
+        let monthRev = 0;
+        let monthCost = 0;
+        const weekSummaries: Record<number, WeekSummary> = {};
+        
+        // Process each tracker day
+        for (const day of trackerData) {
+          // Initialize week summary if not exists
+          if (!weekSummaries[day.week_number]) {
+            weekSummaries[day.week_number] = {
+              weekNumber: day.week_number,
+              revenue: 0,
+              costs: 0,
+              gp: 0
+            };
+          }
+          
+          // Add revenue to week and month totals
+          const revenue = Number(day.revenue) || 0;
+          weekSummaries[day.week_number].revenue += revenue;
+          monthRev += revenue;
+          
+          // Fetch purchases for this tracker day
+          const purchases = await fetchTrackerPurchases(day.id);
+          const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
+          
+          // Fetch credit notes for this tracker day
+          const creditNotes = await fetchTrackerCreditNotes(day.id);
+          const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount), 0);
+          
+          // Staff food allowance
+          const staffFood = Number(day.staff_food_allowance) || 0;
+          
+          // Calculate net costs (purchases - credit notes + staff food)
+          const netDayCosts = dayCosts - dayCreditNotes + staffFood;
+          weekSummaries[day.week_number].costs += netDayCosts;
+          monthCost += netDayCosts;
+        }
+        
+        // Calculate GP for each week
+        const weeklyDataArray = Object.values(weekSummaries).map(week => {
+          week.gp = calculateGP(week.revenue, week.costs);
+          return week;
+        });
+        
+        // Sort by week number
+        weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
+        
+        setWeeklyData(weeklyDataArray);
+        setTotalRevenue(monthRev);
+        setTotalCosts(monthCost);
+        setGpPercentage(calculateGP(monthRev, monthCost));
+        
+      } catch (error) {
+        console.error("Error calculating from tracker data:", error);
+        // Fall back to local store on error
+        calculateFromLocalStore();
+        toast({
+          title: "Error loading tracker data",
+          description: "Falling back to local data",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    // Fallback to local store data if needed
+    const calculateFromLocalStore = () => {
+      const localWeeklyData = monthRecord.weeks.map(week => {
+        const weekRevenue = week.days.reduce((sum, day) => sum + day.revenue, 0);
+        
+        const weekCosts = week.days.reduce((sum, day) => {
+          const dayCosts = Object.values(day.purchases).reduce((purchaseSum, amount) => purchaseSum + amount, 0);
+          const creditNotes = day.creditNotes.reduce((creditSum, credit) => creditSum + credit, 0);
+          return sum + dayCosts - creditNotes + day.staffFoodAllowance;
+        }, 0);
+        
+        const weekGp = calculateGP(weekRevenue, weekCosts);
+        
+        return {
+          weekNumber: week.weekNumber,
+          revenue: weekRevenue,
+          costs: weekCosts,
+          gp: weekGp
+        };
+      });
+      
+      const localTotalRevenue = monthRecord.weeks.reduce((sum, week) => {
+        const weekRevenue = week.days.reduce((daySum, day) => daySum + day.revenue, 0);
+        return sum + weekRevenue;
+      }, 0);
+      
+      const localTotalCosts = monthRecord.weeks.reduce((sum, week) => {
+        const weekCosts = week.days.reduce((daySum, day) => {
+          const dayCosts = Object.values(day.purchases).reduce((purchaseSum, amount) => purchaseSum + amount, 0);
+          const creditNotes = day.creditNotes.reduce((creditSum, credit) => creditSum + credit, 0);
+          return daySum + dayCosts - creditNotes + day.staffFoodAllowance;
+        }, 0);
+        return sum + weekCosts;
+      }, 0);
+      
+      setWeeklyData(localWeeklyData);
+      setTotalRevenue(localTotalRevenue);
+      setTotalCosts(localTotalCosts);
+      setGpPercentage(calculateGP(localTotalRevenue, localTotalCosts));
+    };
+
+    // Execute the calculations
+    calculateFromTrackerData();
+    
+  }, [trackerData, monthRecord, currentYear, currentMonth, toast]);
   
-  const totalCosts = monthRecord.weeks.reduce((sum, week) => {
-    const weekCosts = week.days.reduce((daySum, day) => {
-      const dayCosts = Object.values(day.purchases).reduce((purchaseSum, amount) => purchaseSum + amount, 0);
-      const creditNotes = day.creditNotes.reduce((creditSum, credit) => creditSum + credit, 0);
-      return daySum + dayCosts - creditNotes + day.staffFoodAllowance;
-    }, 0);
-    return sum + weekCosts;
-  }, 0);
-  
-  const gpPercentage = calculateGP(totalRevenue, totalCosts);
   const gpDifference = gpPercentage - monthRecord.gpTarget;
   const gpStatus = 
     gpDifference >= 0.02 ? 'good' : 
@@ -74,25 +201,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     spendDifference >= 0 ? 'good' : 
     spendDifference >= -targetSpend * 0.05 ? 'warning' : 
     'bad';
-
-  const weeklyData = monthRecord.weeks.map(week => {
-    const weekRevenue = week.days.reduce((sum, day) => sum + day.revenue, 0);
-    
-    const weekCosts = week.days.reduce((sum, day) => {
-      const dayCosts = Object.values(day.purchases).reduce((purchaseSum, amount) => purchaseSum + amount, 0);
-      const creditNotes = day.creditNotes.reduce((creditSum, credit) => creditSum + credit, 0);
-      return sum + dayCosts - creditNotes + day.staffFoodAllowance;
-    }, 0);
-    
-    const weekGp = calculateGP(weekRevenue, weekCosts);
-    
-    return {
-      weekNumber: week.weekNumber,
-      revenue: weekRevenue,
-      costs: weekCosts,
-      gp: weekGp
-    };
-  });
 
   const pageTitle = modulePrefix ? `${modulePrefix} Monthly Summary` : "Monthly Summary";
   const costLabel = moduleType === 'food' ? 'Food Costs' : moduleType === 'beverage' ? 'Beverage Costs' : 'Costs';
@@ -151,57 +259,63 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           <CardTitle>Weekly Breakdown</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="overflow-x-auto rounded-lg">
-            <table className="w-full border-collapse rounded-lg overflow-hidden">
-              <thead>
-                <tr>
-                  <th className="table-header rounded-tl-lg">Week</th>
-                  <th className="table-header">Revenue</th>
-                  <th className="table-header">{costLabel}</th>
-                  <th className="table-header">GP %</th>
-                  <th className="table-header rounded-tr-lg">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {weeklyData.map((week) => (
-                  <tr key={week.weekNumber}>
-                    <td className="table-cell">Week {week.weekNumber}</td>
-                    <td className="table-cell">{formatCurrency(week.revenue)}</td>
-                    <td className="table-cell">{formatCurrency(week.costs)}</td>
-                    <td className={`table-cell ${
-                      week.gp >= monthRecord.gpTarget ? 'text-tavern-green' : 
-                      week.gp >= monthRecord.gpTarget - 0.03 ? 'text-tavern-amber' : 
-                      'text-tavern-red'
-                    }`}>
-                      {formatPercentage(week.gp)}
-                    </td>
-                    <td className="table-cell">
-                      <Button variant="outline" size="sm" asChild className="rounded-full shadow-sm hover:shadow transition-all">
-                        <Link to={`/${moduleType}/week/${currentYear}/${currentMonth}/${week.weekNumber}`}>
-                          Dive In
-                        </Link>
-                      </Button>
-                    </td>
+          {isLoadingTracker ? (
+            <div className="py-10 text-center text-muted-foreground">Loading tracker data...</div>
+          ) : weeklyData.length === 0 ? (
+            <div className="py-10 text-center text-muted-foreground">No weekly data available</div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg">
+              <table className="w-full border-collapse rounded-lg overflow-hidden">
+                <thead>
+                  <tr>
+                    <th className="table-header rounded-tl-lg">Week</th>
+                    <th className="table-header">Revenue</th>
+                    <th className="table-header">{costLabel}</th>
+                    <th className="table-header">GP %</th>
+                    <th className="table-header rounded-tr-lg">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td className="table-header rounded-bl-lg">Total</td>
-                  <td className="table-header">{formatCurrency(totalRevenue)}</td>
-                  <td className="table-header">{formatCurrency(totalCosts)}</td>
-                  <td className={`table-header ${
-                    gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light/50' : 
-                    gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber/50' : 
-                    'bg-tavern-blue-light/50 text-tavern-blue-dark'
-                  } backdrop-blur-sm`}>
-                    {formatPercentage(gpPercentage)}
-                  </td>
-                  <td className="table-header rounded-br-lg"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {weeklyData.map((week) => (
+                    <tr key={week.weekNumber}>
+                      <td className="table-cell">Week {week.weekNumber}</td>
+                      <td className="table-cell">{formatCurrency(week.revenue)}</td>
+                      <td className="table-cell">{formatCurrency(week.costs)}</td>
+                      <td className={`table-cell ${
+                        week.gp >= monthRecord.gpTarget ? 'text-tavern-green' : 
+                        week.gp >= monthRecord.gpTarget - 0.03 ? 'text-tavern-amber' : 
+                        'text-tavern-red'
+                      }`}>
+                        {formatPercentage(week.gp)}
+                      </td>
+                      <td className="table-cell">
+                        <Button variant="outline" size="sm" asChild className="rounded-full shadow-sm hover:shadow transition-all">
+                          <Link to={`/${moduleType}/week/${currentYear}/${currentMonth}/${week.weekNumber}`}>
+                            Dive In
+                          </Link>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td className="table-header rounded-bl-lg">Total</td>
+                    <td className="table-header">{formatCurrency(totalRevenue)}</td>
+                    <td className="table-header">{formatCurrency(totalCosts)}</td>
+                    <td className={`table-header ${
+                      gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light/50' : 
+                      gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber/50' : 
+                      'bg-tavern-blue-light/50 text-tavern-blue-dark'
+                    } backdrop-blur-sm`}>
+                      {formatPercentage(gpPercentage)}
+                    </td>
+                    <td className="table-header rounded-br-lg"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
