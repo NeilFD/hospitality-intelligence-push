@@ -14,6 +14,9 @@ import {
 } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import StatusBox from '@/components/StatusBox';
+import { useQuery } from '@tanstack/react-query';
+import { fetchSuppliers, fetchMonthlySettings } from '@/services/kitchen-service';
+import { Supplier, ModuleType } from '@/types/kitchen-ledger';
 
 export default function WeeklyTracker() {
   const { year: yearParam, month: monthParam, week: weekParam } = useParams();
@@ -28,9 +31,35 @@ export default function WeeklyTracker() {
   const [currentWeek, setCurrentWeek] = useState<number>(
     weekParam ? parseInt(weekParam) : 1
   );
+
+  const path = window.location.pathname;
+  const moduleType: ModuleType = path.includes('/food/') ? 'food' : 
+                              path.includes('/beverage/') ? 'beverage' : 'food';
   
-  const monthRecord = useMonthRecord(currentYear, currentMonth);
+  const monthRecord = useMonthRecord(currentYear, currentMonth, moduleType);
   const weekRecord = monthRecord.weeks.find(w => w.weekNumber === currentWeek);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  
+  const { data: supabaseSuppliers, isLoading: isLoadingSuppliers } = useQuery({
+    queryKey: ['suppliers', moduleType],
+    queryFn: async () => {
+      const data = await fetchSuppliers(moduleType);
+      return data;
+    }
+  });
+  
+  const { data: monthlySettings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['monthly-settings', currentYear, currentMonth, moduleType],
+    queryFn: async () => {
+      try {
+        const settings = await fetchMonthlySettings(currentYear, currentMonth, moduleType);
+        return settings;
+      } catch (error) {
+        console.error('Error fetching monthly settings:', error);
+        return null;
+      }
+    }
+  });
   
   useEffect(() => {
     if (yearParam && monthParam && weekParam) {
@@ -39,6 +68,18 @@ export default function WeeklyTracker() {
       setCurrentWeek(parseInt(weekParam));
     }
   }, [yearParam, monthParam, weekParam]);
+  
+  useEffect(() => {
+    if (!isLoadingSuppliers && supabaseSuppliers && supabaseSuppliers.length > 0) {
+      const mappedSuppliers = supabaseSuppliers.map(s => ({
+        id: s.id,
+        name: s.name
+      }));
+      setSuppliers(mappedSuppliers);
+    } else {
+      setSuppliers([...monthRecord.suppliers]);
+    }
+  }, [supabaseSuppliers, isLoadingSuppliers, monthRecord]);
   
   const handleInputChange = (
     dayIndex: number,
@@ -241,7 +282,8 @@ export default function WeeklyTracker() {
   const sortedDays = customOrderDays();
   
   const weeklyGP = calculateWeeklyGP();
-  const gpDifference = weeklyGP - monthRecord.gpTarget;
+  const gpTarget = monthlySettings?.gp_target || monthRecord.gpTarget;
+  const gpDifference = weeklyGP - gpTarget;
   const gpStatus = 
     gpDifference >= 0.02 ? 'good' : 
     gpDifference >= -0.02 ? 'warning' : 
@@ -273,7 +315,7 @@ export default function WeeklyTracker() {
         />
         <StatusBox 
           label="GP Target" 
-          value={formatPercentage(monthRecord.gpTarget)} 
+          value={formatPercentage(gpTarget)} 
           status="neutral" 
         />
         <StatusBox 
@@ -314,7 +356,7 @@ export default function WeeklyTracker() {
                 </tr>
               </thead>
               <tbody>
-                {monthRecord.suppliers.map(supplier => (
+                {suppliers.map(supplier => (
                   <tr key={supplier.id}>
                     <td className="table-cell text-left font-medium">{supplier.name}</td>
                     {sortedDays.map((day, dayIndex) => {
@@ -471,8 +513,8 @@ export default function WeeklyTracker() {
                     const originalDayIndex = weekRecord.days.findIndex(d => d.date === day.date);
                     const dailyGP = calculateDailyGP(originalDayIndex);
                     const gpStatus = 
-                      dailyGP >= monthRecord.gpTarget ? 'status-good' : 
-                      dailyGP >= monthRecord.gpTarget - 0.02 ? 'status-warning' : 
+                      dailyGP >= gpTarget ? 'status-good' : 
+                      dailyGP >= gpTarget - 0.02 ? 'status-warning' : 
                       'status-bad';
                     
                     return (
@@ -482,8 +524,8 @@ export default function WeeklyTracker() {
                     );
                   })}
                   <td className={`table-cell font-bold rounded-br-lg ${
-                    weeklyGP >= monthRecord.gpTarget ? 'status-good' : 
-                    weeklyGP >= monthRecord.gpTarget - 0.02 ? 'status-warning' : 
+                    weeklyGP >= gpTarget ? 'status-good' : 
+                    weeklyGP >= gpTarget - 0.02 ? 'status-warning' : 
                     'status-bad'
                   }`}>
                     {formatPercentage(weeklyGP)}
