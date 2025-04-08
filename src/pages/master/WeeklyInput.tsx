@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -115,16 +116,43 @@ const WeeklyInput = () => {
             onValueChange={setActiveDay}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50">
+            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50 py-2">
               {records.map((day) => (
                 <TabsTrigger 
                   key={day.date} 
                   value={day.date} 
-                  className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-tavern-green"
+                  className={`
+                    relative 
+                    group 
+                    data-[state=active]:text-tavern-green 
+                    transition-colors 
+                    duration-200 
+                    hover:bg-gray-100
+                  `}
                 >
-                  <div className="text-center">
-                    <div className="font-medium text-xs">{format(new Date(day.date), 'EEE')}</div>
-                    <div className="text-xl">{format(new Date(day.date), 'd')}</div>
+                  <div className="text-center relative z-10">
+                    <div className="font-medium text-xs opacity-70 group-data-[state=active]:opacity-100">
+                      {format(new Date(day.date), 'EEE')}
+                    </div>
+                    <div className="text-xl font-semibold relative">
+                      {format(new Date(day.date), 'd')}
+                      <span 
+                        className="
+                          absolute 
+                          bottom-0 
+                          left-1/2 
+                          transform 
+                          -translate-x-1/2 
+                          w-8 
+                          h-1 
+                          bg-tavern-green 
+                          opacity-0 
+                          group-data-[state=active]:opacity-100 
+                          transition-opacity 
+                          duration-200
+                        "
+                      />
+                    </div>
                   </div>
                 </TabsTrigger>
               ))}
@@ -149,3 +177,4 @@ const WeeklyInput = () => {
 };
 
 export default WeeklyInput;
+
