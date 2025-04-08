@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   createBrowserRouter,
@@ -18,6 +17,7 @@ import ConversationDebug from '@/pages/performance/ConversationDebug';
 import WagesDashboard from '@/pages/wages/WagesDashboard';
 import NotFound from '@/pages/NotFound';
 import Index from '@/pages/Index';
+import RequireAuth from '@/components/auth/RequireAuth';
 
 // Food pages
 import FoodDashboard from '@/pages/food/Dashboard';
@@ -36,16 +36,6 @@ import PLDashboard from '@/pages/pl/Dashboard';
 
 // Import React Query dependencies
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const RequireAuth = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
-
-  if (isLoading) {
-    return <div>Loading...</div>; // Or a loading spinner
-  }
-
-  return isAuthenticated ? (children) : <Navigate to="/login" />;
-};
 
 const router = createBrowserRouter([
   {

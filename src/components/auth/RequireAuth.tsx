@@ -12,6 +12,7 @@ export default function RequireAuth({ children }: RequireAuthProps) {
   const location = useLocation();
   
   useEffect(() => {
+    // If we're not authenticated and not already loading, try to load the user
     if (!isAuthenticated && !isLoading) {
       loadUser();
     }

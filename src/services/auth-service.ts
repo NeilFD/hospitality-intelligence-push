@@ -21,7 +21,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
-  isLoading: false,
+  isLoading: true, // Start with loading true so we can check for existing session
   error: null,
   isAuthenticated: false,
   
@@ -117,6 +117,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false 
       });
     } catch (error: any) {
+      console.error('Failed to load user:', error);
       set({
         user: null,
         profile: null,
@@ -155,6 +156,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   clearError: () => set({ error: null })
 }));
+
+// Initialize auth state on store creation
+// This will check for existing session on app load
+useAuthStore.getState().loadUser();
 
 // Setup auth state change listener
 supabase.auth.onAuthStateChange((event, session) => {
