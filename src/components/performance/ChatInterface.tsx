@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,12 +23,32 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
-  conversationId?: string; // Added field to store conversation ID
+  conversationId?: string;
 }
 
 interface ChatInterfaceProps {
   className?: string;
 }
+
+// Function to serialize dates properly for storage
+const serializeMessages = (messages: Message[]): string => {
+  return JSON.stringify(messages, (key, value) => {
+    if (key === 'timestamp' && value instanceof Date) {
+      return { __type: 'Date', value: value.toISOString() };
+    }
+    return value;
+  });
+};
+
+// Function to deserialize dates when retrieving from storage
+const deserializeMessages = (serialized: string): Message[] => {
+  return JSON.parse(serialized, (key, value) => {
+    if (value && typeof value === 'object' && value.__type === 'Date') {
+      return new Date(value.value);
+    }
+    return value;
+  });
+};
 
 export default function ChatInterface({ className }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
@@ -47,6 +67,28 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   
   // Explicitly set the webhook URL here
   const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/74046e2b-f868-43ec-9343-c1e7ca6d803c";
+
+  // Load messages from local storage when the component mounts
+  useEffect(() => {
+    const storedMessages = localStorage.getItem('chatMessages');
+    if (storedMessages) {
+      try {
+        const parsedMessages = deserializeMessages(storedMessages);
+        setMessages(parsedMessages);
+      } catch (error) {
+        console.error('Error parsing stored messages:', error);
+        // If there's an error parsing, don't override the default welcome message
+      }
+    }
+  }, []);
+
+  // Save messages to local storage whenever they change
+  useEffect(() => {
+    // Don't save if we only have the initial welcome message
+    if (messages.length > 1 || (messages.length === 1 && messages[0].isUser)) {
+      localStorage.setItem('chatMessages', serializeMessages(messages));
+    }
+  }, [messages]);
 
   // Function to get annual summary data
   const getAnnualSummaryData = () => {
@@ -270,7 +312,9 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
                 >
                   <p className="text-sm">{message.text}</p>
                   <p className="text-xs mt-1 opacity-70">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {message.timestamp instanceof Date 
+                      ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
 
