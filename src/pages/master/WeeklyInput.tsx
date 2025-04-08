@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -128,14 +127,29 @@ const WeeklyInput = () => {
                     transition-colors 
                     duration-200 
                     hover:bg-gray-100
+                    flex 
+                    flex-col 
+                    items-center 
+                    justify-center
+                    py-2
                   `}
                 >
-                  <div className="text-center relative z-10">
-                    <div className="font-medium text-xs opacity-70 group-data-[state=active]:opacity-100">
+                  <div className="text-center relative z-10 w-full">
+                    <div className="font-medium text-xs opacity-70 group-data-[state=active]:opacity-100 mb-1">
                       {format(new Date(day.date), 'EEE')}
                     </div>
-                    <div className="text-xl font-semibold relative">
-                      {format(new Date(day.date), 'd')}
+                    <div className="text-xl font-semibold relative inline-block">
+                      <span className={`
+                        px-2 
+                        py-1 
+                        rounded-md 
+                        group-data-[state=active]:bg-tavern-green/10
+                        group-data-[state=active]:text-tavern-green
+                        transition-all 
+                        duration-200
+                      `}>
+                        {format(new Date(day.date), 'd')}
+                      </span>
                       <span 
                         className="
                           absolute 
@@ -177,4 +191,3 @@ const WeeklyInput = () => {
 };
 
 export default WeeklyInput;
-
