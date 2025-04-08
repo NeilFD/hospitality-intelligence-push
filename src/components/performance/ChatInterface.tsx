@@ -29,7 +29,6 @@ interface ChatInterfaceProps {
   className?: string;
 }
 
-// Function to serialize dates properly for storage
 const serializeMessages = (messages: Message[]): string => {
   return JSON.stringify(messages, (key, value) => {
     if (key === 'timestamp' && value instanceof Date) {
@@ -39,7 +38,6 @@ const serializeMessages = (messages: Message[]): string => {
   });
 };
 
-// Function to deserialize dates when retrieving from storage
 const deserializeMessages = (serialized: string): Message[] => {
   return JSON.parse(serialized, (key, value) => {
     if (value && typeof value === 'object' && value.__type === 'Date') {
@@ -49,19 +47,39 @@ const deserializeMessages = (serialized: string): Message[] => {
   });
 };
 
-// Helper to ensure we have a valid Date object
 const ensureDate = (dateInput: any): Date => {
   if (dateInput instanceof Date) {
     return dateInput;
   }
   
   try {
-    // Try to parse string date if it's not already a Date
     return new Date(dateInput);
   } catch (e) {
-    // Fallback to current date if parsing fails
     return new Date();
   }
+};
+
+const extractAIResponse = (response: any): string => {
+  if (response?.data?.output) {
+    return response.data.output;
+  }
+  if (response?.data?.response) {
+    return response.data.response;
+  }
+  if (response?.data?.message) {
+    return response.data.message;
+  }
+  if (response?.output) {
+    return response.output;
+  }
+  if (response?.response) {
+    return response.response;
+  }
+  if (response?.message) {
+    return response.message;
+  }
+  
+  return "I've processed your request but couldn't generate a proper response. Please try again.";
 };
 
 export default function ChatInterface({ className }: ChatInterfaceProps) {
@@ -79,10 +97,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   const { user } = useAuthStore();
   const location = useLocation();
   
-  // Explicitly set the webhook URL here
   const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/74046e2b-f868-43ec-9343-c1e7ca6d803c";
 
-  // Load messages from local storage when the component mounts
   useEffect(() => {
     const storedMessages = localStorage.getItem('chatMessages');
     if (storedMessages) {
@@ -91,20 +107,16 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         setMessages(parsedMessages);
       } catch (error) {
         console.error('Error parsing stored messages:', error);
-        // If there's an error parsing, don't override the default welcome message
       }
     }
   }, []);
 
-  // Save messages to local storage whenever they change
   useEffect(() => {
-    // Don't save if we only have the initial welcome message
     if (messages.length > 1 || (messages.length === 1 && messages[0].isUser)) {
       localStorage.setItem('chatMessages', serializeMessages(messages));
     }
   }, [messages]);
 
-  // Function to get annual summary data
   const getAnnualSummaryData = () => {
     let revenue = 0;
     let cost = 0;
@@ -135,7 +147,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     };
   };
 
-  // Function to prepare the full payload
   const preparePayload = async () => {
     let monthlyWages = [];
     let weekdayTotals = {};
@@ -241,38 +252,31 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       const payload = await preparePayload();
       console.log('Sending request with payload:', payload);
       
-      // Send the actual webhook request
       const response = await sendWebhookRequest(webhookUrl, payload);
       console.log('Got response:', response);
       
-      // Get the conversation ID from the response if available
       const conversationId = response.conversationId || null;
       
-      // Handle response based on type
       if (response.success) {
-        // Extract response text from the webhook response - prefer data.response over data.message
-        const aiResponse = response.data?.response || 
-                           response.data?.message || 
-                           response.data?.output || 
-                           "I've processed your query but couldn't generate a proper analysis. Please try with more specific details.";
+        const aiResponse = extractAIResponse(response);
+        console.log('Extracted AI response:', aiResponse);
         
         const newMessage = {
           text: aiResponse,
           isUser: false,
           timestamp: new Date(),
-          conversationId: conversationId // Store the conversation ID
+          conversationId: conversationId
         };
         
         setMessages(prev => [...prev, newMessage]);
       } else {
-        // For failures, log the error and show a simple message
         console.error("Failed webhook request:", response.status, response.message);
         
         setMessages(prev => [...prev, {
           text: "I'm having trouble connecting to my analysis engine right now. Please try again later.",
           isUser: false,
           timestamp: new Date(),
-          conversationId: conversationId // Store the conversation ID even for error messages
+          conversationId: conversationId
         }]);
       }
     } catch (error) {

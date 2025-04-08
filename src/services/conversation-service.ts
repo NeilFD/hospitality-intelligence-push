@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface Conversation {
@@ -237,11 +236,11 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       let responseForStorage = "";
       
       // Try to get the most appropriate response content
-      if (responseData.output) {
+      if (responseData?.output) {
         responseForStorage = responseData.output;
-      } else if (responseData.response) {
+      } else if (responseData?.response) {
         responseForStorage = responseData.response;
-      } else if (responseData.message) {
+      } else if (responseData?.message) {
         responseForStorage = responseData.message;
       } else if (typeof responseData === 'string') {
         responseForStorage = responseData;
@@ -269,25 +268,23 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         data: { message: "Request sent, but no response details available due to CORS restrictions" },
         status: "unknown",
         message: "Request completed in no-cors mode. Check n8n for confirmation.",
-        conversationId: conversationId // Include the conversation ID in the response
+        conversationId: conversationId
       };
     }
     
-    // For successful responses, extract and prioritize the actual AI response
+    // Return more raw response data to make troubleshooting easier
     if (statusCode >= 200 && statusCode < 300) {
-      // Look for the output property first (this is where n8n usually puts AI responses)
-      const aiResponse = responseData?.output || responseData?.response || responseData?.message;
-      
+      // Include the raw response text and parsed data for easier debugging
       return {
         success: true,
-        data: {
-          ...(responseData || {}),
-          response: aiResponse // Ensure the response is available under data.response
-        },
+        data: responseData, // Return the full parsed data object
         status: statusCode,
         message: `Request processed successfully`,
         rawResponse: responseText,
-        conversationId: conversationId
+        conversationId: conversationId,
+        // Make response directly available at the top level for easier access
+        output: responseData?.output,
+        response: responseData?.response || responseData?.message
       };
     }
     
