@@ -195,7 +195,13 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     
     const annualData = getAnnualSummaryData();
     
-    const currentMonthData = {
+    const foodMonthData = {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
+    };
+    
+    const bevMonthData = {
       revenue: 0,
       cost: 0,
       gpPercentage: 0
@@ -211,21 +217,55 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           if (week.days) {
             week.days.forEach(day => {
               if (day.revenue) {
-                currentMonthData.revenue += day.revenue;
+                foodMonthData.revenue += day.revenue;
               }
               
               const dayPurchases = day.purchases ? 
                 Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
-              currentMonthData.cost += dayPurchases;
+              foodMonthData.cost += dayPurchases;
             });
           }
         });
         
-        currentMonthData.gpPercentage = calculateGP(
-          currentMonthData.revenue, 
-          currentMonthData.cost
+        foodMonthData.gpPercentage = calculateGP(
+          foodMonthData.revenue, 
+          foodMonthData.cost
         );
       }
+    }
+    
+    try {
+      if (window.bevStore) {
+        const bevData = window.bevStore.getState().annualRecord;
+        if (bevData && bevData.months) {
+          const bevMonth = bevData.months.find(
+            m => m.year === currentYear && m.month === currentMonth
+          );
+          
+          if (bevMonth && bevMonth.weeks) {
+            bevMonth.weeks.forEach(week => {
+              if (week.days) {
+                week.days.forEach(day => {
+                  if (day.revenue) {
+                    bevMonthData.revenue += day.revenue;
+                  }
+                  
+                  const dayPurchases = day.purchases ? 
+                    Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                  bevMonthData.cost += dayPurchases;
+                });
+              }
+            });
+            
+            bevMonthData.gpPercentage = calculateGP(
+              bevMonthData.revenue, 
+              bevMonthData.cost
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching beverage data:", error);
     }
     
     return {
@@ -240,16 +280,26 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           year: currentYear,
           month: currentMonth,
           monthToDate: {
-            revenue: currentMonthData.revenue,
-            purchases: currentMonthData.cost,
-            gpPercentage: currentMonthData.gpPercentage,
-            costPercentage: 100 - currentMonthData.gpPercentage
+            revenue: foodMonthData.revenue,
+            purchases: foodMonthData.cost,
+            gpPercentage: foodMonthData.gpPercentage,
+            costPercentage: 100 - foodMonthData.gpPercentage
           },
           annual: {
             revenue: annualData.totalRevenue,
             purchases: annualData.totalCost,
             gpPercentage: annualData.gpPercentage,
             costPercentage: 100 - annualData.gpPercentage
+          }
+        },
+        beverage: {
+          year: currentYear,
+          month: currentMonth,
+          monthToDate: {
+            revenue: bevMonthData.revenue,
+            purchases: bevMonthData.cost,
+            gpPercentage: bevMonthData.gpPercentage,
+            costPercentage: 100 - bevMonthData.gpPercentage
           }
         },
         wages: {
