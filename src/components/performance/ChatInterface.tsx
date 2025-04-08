@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -117,6 +117,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   const { getMonthlyWages, getWeekdayTotals } = useWagesStore();
   const { user } = useAuthStore();
   const location = useLocation();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/74046e2b-f868-43ec-9343-c1e7ca6d803c";
 
@@ -137,6 +138,19 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       localStorage.setItem('chatMessages', serializeMessages(messages));
     }
   }, [messages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  };
 
   const getAnnualSummaryData = () => {
     let revenue = 0;
@@ -327,7 +341,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         <h3 className="font-semibold text-white">Cleo - Performance Assistant</h3>
       </div>
       
-      <ScrollArea className="flex-1 h-64 p-4 overflow-y-auto bg-white/80 backdrop-blur-sm">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 h-64 p-4 overflow-y-auto bg-white/80 backdrop-blur-sm">
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div 
