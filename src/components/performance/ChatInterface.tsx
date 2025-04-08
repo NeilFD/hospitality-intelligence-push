@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  conversationId?: string; // Added field to store conversation ID
 }
 
 interface ChatInterfaceProps {
@@ -158,7 +160,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       conversationHistory: messages.map(msg => ({
         role: msg.isUser ? "user" : "assistant",
         content: msg.text,
-        timestamp: msg.timestamp.toISOString()
+        timestamp: msg.timestamp.toISOString(),
+        conversationId: msg.conversationId // Include conversation ID if available
       }))
     };
   };
@@ -186,6 +189,9 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       const response = await sendWebhookRequest(webhookUrl, payload);
       console.log('Got response:', response);
       
+      // Get the conversation ID from the response if available
+      const conversationId = response.conversationId || null;
+      
       // Handle response based on type - with no error popup
       if (response.success) {
         // Extract response text from the webhook response
@@ -196,7 +202,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         const newMessage = {
           text: aiResponse,
           isUser: false,
-          timestamp: new Date()
+          timestamp: new Date(),
+          conversationId: conversationId // Store the conversation ID
         };
         
         setMessages(prev => [...prev, newMessage]);
@@ -207,7 +214,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         setMessages(prev => [...prev, {
           text: "I'm having trouble connecting to my analysis engine right now. Please try again later.",
           isUser: false,
-          timestamp: new Date()
+          timestamp: new Date(),
+          conversationId: conversationId // Store the conversation ID even for error messages
         }]);
       }
     } catch (error) {

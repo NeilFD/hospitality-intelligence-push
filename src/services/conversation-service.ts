@@ -109,6 +109,12 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       } else if (data && data.length > 0) {
         conversationId = data[0].id;
         console.log(`Created conversation with ID: ${conversationId}`);
+        
+        // Update the payload to include the conversation ID
+        payload = {
+          ...payload,
+          conversationId: conversationId
+        };
       }
     } else {
       console.log('No authenticated user found for conversation storage');
@@ -245,7 +251,8 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         success: true,
         data: { message: "Request sent, but no response details available due to CORS restrictions" },
         status: "unknown",
-        message: "Request completed in no-cors mode. Check n8n for confirmation."
+        message: "Request completed in no-cors mode. Check n8n for confirmation.",
+        conversationId: conversationId // Include the conversation ID in the response
       };
     }
     
@@ -254,7 +261,8 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       data: responseData,
       status: statusCode,
       message: responseData?.message || `Request processed with status: ${statusCode}`,
-      rawResponse: responseText
+      rawResponse: responseText,
+      conversationId: conversationId // Include the conversation ID in the response
     };
   } catch (error) {
     console.error('Webhook request failed with critical error:', error);
