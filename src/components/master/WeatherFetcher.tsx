@@ -86,25 +86,25 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
   }, [date, onWeatherFetched, loading]);
 
   return (
-    <Card className="bg-gray-50">
-      <CardContent className="pt-4">
+    <Card className="bg-gray-50 border">
+      <CardContent className="pt-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <CloudSun className="h-6 w-6 text-blue-500" />
-          <div className="flex-grow">
+          <div>
             <h4 className="text-sm font-medium">Weather Data for {date}</h4>
             <p className="text-xs text-muted-foreground">GL50 3DN (Cheltenham)</p>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchWeather}
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            {loading ? "Loading..." : "Fetch Weather"}
-          </Button>
         </div>
-        {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={fetchWeather}
+          disabled={loading}
+          className="whitespace-nowrap"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+          {loading ? "Loading..." : "Fetch Weather"}
+        </Button>
       </CardContent>
     </Card>
   );

@@ -39,11 +39,11 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
 
   return (
     <div className="p-4 md:p-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>{modulePrefix} Weekly Tracker - Week {weekNumber}, {month}/{year}</CardTitle>
+      <Card className="border shadow-sm">
+        <CardHeader className="bg-gray-50 border-b pb-4">
+          <CardTitle className="text-xl">{modulePrefix} Weekly Tracker - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <p>Weekly tracking data will be displayed here.</p>
           {/* Implement weekly tracking UI here */}
         </CardContent>

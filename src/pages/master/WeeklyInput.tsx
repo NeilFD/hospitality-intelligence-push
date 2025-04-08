@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -63,9 +62,11 @@ const WeeklyInput = () => {
         }
         
         setRecords(days);
-        // Set the first day as active
-        if (days.length > 0 && !activeDay) {
-          setActiveDay(days[0].date);
+        // Set the first day as active if no active day, or keep current if valid
+        if (days.length > 0) {
+          if (!activeDay || !days.some(day => day.date === activeDay)) {
+            setActiveDay(days[0].date);
+          }
         }
       }
     } catch (error) {
@@ -109,27 +110,33 @@ const WeeklyInput = () => {
   
   return (
     <div className="p-4 md:p-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
+      <Card className="border shadow-md">
+        <CardHeader className="bg-gray-50 border-b pb-4">
+          <CardTitle className="text-2xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Tabs 
             value={activeDay} 
             onValueChange={setActiveDay}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-7">
+            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50">
               {records.map((day) => (
-                <TabsTrigger key={day.date} value={day.date}>
-                  {format(new Date(day.date), 'EEE')}<br />
-                  {format(new Date(day.date), 'd')}
+                <TabsTrigger 
+                  key={day.date} 
+                  value={day.date} 
+                  className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-tavern-green"
+                >
+                  <div className="text-center">
+                    <div className="font-medium">{format(new Date(day.date), 'EEE')}</div>
+                    <div className="text-xl">{format(new Date(day.date), 'd')}</div>
+                  </div>
                 </TabsTrigger>
               ))}
             </TabsList>
             
             {records.map((day) => (
-              <TabsContent key={day.date} value={day.date}>
+              <TabsContent key={day.date} value={day.date} className="p-4">
                 <DailyRecordForm 
                   key={day.date}
                   date={day.date}
@@ -146,4 +153,4 @@ const WeeklyInput = () => {
   );
 };
 
-export default React.memo(WeeklyInput);
+export default WeeklyInput;
