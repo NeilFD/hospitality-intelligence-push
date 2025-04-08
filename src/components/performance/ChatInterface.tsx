@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -252,6 +253,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       }
     }
     
+    // Check if we have tracker data for food and use it if available
     if (foodTrackerData && foodTrackerData.length > 0) {
       const trackerRevenue = foodTrackerData.reduce((sum, day) => {
         return sum + (day.revenue || 0);
@@ -342,6 +344,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       console.warn("Beverage store not found in window object");
     }
     
+    // Check if we have tracker data for beverage and use it if available
     if (bevTrackerData && bevTrackerData.length > 0) {
       const trackerRevenue = bevTrackerData.reduce((sum, day) => {
         return sum + (day.revenue || 0);
