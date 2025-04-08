@@ -9,6 +9,7 @@ import { MasterDailyRecord } from '@/types/master-record-types';
 import DailyRecordForm from '@/components/master/DailyRecordForm';
 import { generateWeekDates } from '@/lib/date-utils';
 import { toast } from 'sonner';
+
 const WeeklyInput = () => {
   const params = useParams<{
     year: string;
@@ -26,6 +27,7 @@ const WeeklyInput = () => {
     startDate: '',
     endDate: ''
   }, [weekDates, weekNumber]);
+
   const loadRecords = useCallback(async () => {
     setLoading(true);
     try {
@@ -74,9 +76,11 @@ const WeeklyInput = () => {
       setLoading(false);
     }
   }, [year, month, weekNumber, weekDates, activeDay]);
+
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
+
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
       const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & {
@@ -89,12 +93,14 @@ const WeeklyInput = () => {
       toast.error('Failed to save daily record');
     }
   }, []);
+
   if (loading) {
     return <div className="p-8">
         <Skeleton className="h-12 w-3/4 mb-4" />
         <Skeleton className="h-64 w-full" />
       </div>;
   }
+
   return <div className="p-4 md:p-8">
       <Card className="border shadow-md">
         <CardHeader className="bg-gray-50 border-b pb-4">
@@ -114,7 +120,8 @@ const WeeklyInput = () => {
                     flex-col 
                     items-center 
                     justify-center
-                    py-2
+                    py-4
+                    -mb-2
                   `}>
                   <div className="text-center relative z-10 w-full">
                     <div className="font-medium text-xs opacity-70 group-data-[state=active]:opacity-100 mb-1">
@@ -122,11 +129,11 @@ const WeeklyInput = () => {
                     </div>
                     <div className="text-xl font-semibold relative inline-block">
                       <span className={`
-                        px-2 
-                        py-1 
+                        px-3
+                        py-2
                         rounded-md 
                         inline-block
-                        min-w-[40px]
+                        min-w-[48px]
                         text-center
                         bg-gray-100
                         group-data-[state=active]:bg-tavern-green/10
@@ -161,4 +168,5 @@ const WeeklyInput = () => {
       </Card>
     </div>;
 };
+
 export default WeeklyInput;
