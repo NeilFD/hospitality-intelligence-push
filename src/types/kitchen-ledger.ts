@@ -1,4 +1,3 @@
-
 export interface Supplier {
   id: string;
   name: string;
@@ -46,7 +45,7 @@ export interface AnnualRecord {
   months: MonthlyRecord[];
 }
 
-export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance';
+export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master';
 
 export interface Module {
   id: string;
