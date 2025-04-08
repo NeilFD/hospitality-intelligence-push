@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getMonthName } from '@/lib/date-utils';
 import { useStore } from '@/lib/store';
 
@@ -63,31 +63,35 @@ export default function MonthSelector({
   };
   
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-2 w-full justify-center">
       <Button
         variant="outline"
         size="icon"
         onClick={handlePreviousMonth}
+        className="hover:bg-gray-100"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
       
-      <div className="flex space-x-2">
-        <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
-          <SelectTrigger className="w-[110px]">
-            <SelectValue placeholder="Month" />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-              <SelectItem key={month} value={month.toString()}>
-                {getMonthName(month)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-gray-500" />
+          <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
+            <SelectTrigger className="w-[120px] bg-white border-gray-300">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                <SelectItem key={month} value={month.toString()}>
+                  {getMonthName(month)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
         <Select value={currentYear.toString()} onValueChange={handleYearChange}>
-          <SelectTrigger className="w-[90px]">
+          <SelectTrigger className="w-[90px] bg-white border-gray-300">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
@@ -104,6 +108,7 @@ export default function MonthSelector({
         variant="outline"
         size="icon"
         onClick={handleNextMonth}
+        className="hover:bg-gray-100"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
