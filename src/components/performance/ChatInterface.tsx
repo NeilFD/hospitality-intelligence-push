@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +47,21 @@ const deserializeMessages = (serialized: string): Message[] => {
     }
     return value;
   });
+};
+
+// Helper to ensure we have a valid Date object
+const ensureDate = (dateInput: any): Date => {
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+  
+  try {
+    // Try to parse string date if it's not already a Date
+    return new Date(dateInput);
+  } catch (e) {
+    // Fallback to current date if parsing fails
+    return new Date();
+  }
 };
 
 export default function ChatInterface({ className }: ChatInterfaceProps) {
@@ -202,8 +216,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       conversationHistory: messages.map(msg => ({
         role: msg.isUser ? "user" : "assistant",
         content: msg.text,
-        timestamp: msg.timestamp.toISOString(),
-        conversationId: msg.conversationId // Include conversation ID if available
+        timestamp: ensureDate(msg.timestamp).toISOString(),
+        conversationId: msg.conversationId
       }))
     };
   };
