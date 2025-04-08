@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
@@ -24,12 +25,14 @@ import FoodDashboard from '@/pages/food/Dashboard';
 import FoodMonthSummary from '@/pages/food/MonthSummary';
 import FoodAnnualSummary from '@/pages/food/AnnualSummary';
 import FoodInputSettings from '@/pages/food/InputSettings';
+import FoodWeeklyTracker from '@/pages/food/WeeklyTracker';
 
 // Beverage pages
 import BeverageDashboard from '@/pages/beverage/Dashboard';
 import BeverageMonthSummary from '@/pages/beverage/MonthSummary';
 import BeverageAnnualSummary from '@/pages/beverage/AnnualSummary';
 import BeverageInputSettings from '@/pages/beverage/InputSettings';
+import BeverageWeeklyTracker from '@/pages/beverage/WeeklyTracker';
 
 // P&L pages
 import PLDashboard from '@/pages/pl/Dashboard';
@@ -61,6 +64,10 @@ const router = createBrowserRouter([
         element: <FoodMonthSummary />
       },
       {
+        path: "/food/week/:year/:month/:week",
+        element: <FoodWeeklyTracker />
+      },
+      {
         path: "/food/annual-summary",
         element: <FoodAnnualSummary />
       },
@@ -76,6 +83,10 @@ const router = createBrowserRouter([
       {
         path: "/beverage/month/:year/:month",
         element: <BeverageMonthSummary />
+      },
+      {
+        path: "/beverage/week/:year/:month/:week",
+        element: <BeverageWeeklyTracker />
       },
       {
         path: "/beverage/annual-summary",
