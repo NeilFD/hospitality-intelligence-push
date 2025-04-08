@@ -60,23 +60,44 @@ const ensureDate = (dateInput: any): Date => {
 };
 
 const extractAIResponse = (response: any): string => {
+  if (response?.data?.[0]?.output) {
+    return response.data[0].output;
+  }
+  
   if (response?.data?.output) {
     return response.data.output;
   }
-  if (response?.data?.response) {
-    return response.data.response;
+  
+  if (Array.isArray(response?.data) && response.data.length > 0) {
+    const firstItem = response.data[0];
+    if (firstItem.output) return firstItem.output;
+    if (firstItem.response) return firstItem.response;
+    if (firstItem.message) return firstItem.message;
   }
-  if (response?.data?.message) {
-    return response.data.message;
-  }
+  
   if (response?.output) {
     return response.output;
   }
+  
   if (response?.response) {
     return response.response;
   }
+  
   if (response?.message) {
     return response.message;
+  }
+  
+  if (response?.rawResponse) {
+    try {
+      const parsedResponse = JSON.parse(response.rawResponse);
+      if (Array.isArray(parsedResponse) && parsedResponse.length > 0) {
+        if (parsedResponse[0].output) return parsedResponse[0].output;
+      } else if (parsedResponse.output) {
+        return parsedResponse.output;
+      }
+    } catch (e) {
+      return response.rawResponse.substring(0, 1000);
+    }
   }
   
   return "I've processed your request but couldn't generate a proper response. Please try again.";
@@ -257,28 +278,22 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       
       const conversationId = response.conversationId || null;
       
-      if (response.success) {
-        const aiResponse = extractAIResponse(response);
-        console.log('Extracted AI response:', aiResponse);
-        
-        const newMessage = {
-          text: aiResponse,
-          isUser: false,
-          timestamp: new Date(),
-          conversationId: conversationId
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
-      } else {
-        console.error("Failed webhook request:", response.status, response.message);
-        
-        setMessages(prev => [...prev, {
-          text: "I'm having trouble connecting to my analysis engine right now. Please try again later.",
-          isUser: false,
-          timestamp: new Date(),
-          conversationId: conversationId
-        }]);
+      let aiResponseText = extractAIResponse(response);
+      console.log('Extracted AI response:', aiResponseText);
+      
+      if (!aiResponseText || aiResponseText === "undefined" || aiResponseText === "[object Object]") {
+        console.error("Failed to extract valid response text from webhook response");
+        aiResponseText = "I'm having trouble processing your request right now. Please try again later.";
       }
+      
+      const newMessage = {
+        text: aiResponseText,
+        isUser: false,
+        timestamp: new Date(),
+        conversationId: conversationId
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
     } catch (error) {
       console.error('Error querying the AI:', error);
       

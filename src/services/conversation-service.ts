@@ -235,8 +235,10 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       // Extract the actual response text for storage
       let responseForStorage = "";
       
-      // Try to get the most appropriate response content
-      if (responseData?.output) {
+      // Try to get the most appropriate response content for storage
+      if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].output) {
+        responseForStorage = responseData[0].output;
+      } else if (responseData?.output) {
         responseForStorage = responseData.output;
       } else if (responseData?.response) {
         responseForStorage = responseData.response;
@@ -273,27 +275,10 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
     }
     
     // Return more raw response data to make troubleshooting easier
-    if (statusCode >= 200 && statusCode < 300) {
-      // Include the raw response text and parsed data for easier debugging
-      return {
-        success: true,
-        data: responseData, // Return the full parsed data object
-        status: statusCode,
-        message: `Request processed successfully`,
-        rawResponse: responseText,
-        conversationId: conversationId,
-        // Make response directly available at the top level for easier access
-        output: responseData?.output,
-        response: responseData?.response || responseData?.message
-      };
-    }
-    
-    // For error responses
     return {
-      success: false,
+      success: statusCode >= 200 && statusCode < 300,
       data: responseData,
       status: statusCode,
-      message: responseData?.message || `Request failed with status: ${statusCode}`,
       rawResponse: responseText,
       conversationId: conversationId
     };
