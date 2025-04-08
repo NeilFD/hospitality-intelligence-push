@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CloudSun, Loader2 } from 'lucide-react';
@@ -15,7 +15,9 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWeather = async () => {
+  const fetchWeather = useCallback(async () => {
+    if (loading) return; // Prevent multiple concurrent requests
+    
     setLoading(true);
     setError(null);
     
@@ -82,7 +84,7 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
     } finally {
       setLoading(false);
     }
-  };
+  }, [date, onWeatherFetched, loading]);
 
   return (
     <Card className="bg-gray-50">
@@ -109,4 +111,5 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
   );
 };
 
-export default WeatherFetcher;
+// Memoize the component to prevent unnecessary re-renders
+export default memo(WeatherFetcher);
