@@ -20,7 +20,6 @@ const WeeklyInput = () => {
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
   
-  // Generate date range for the week - memoized
   const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
   const currentWeek = useMemo(() => weekDates[weekNumber - 1] || { startDate: '', endDate: '' }, [weekDates, weekNumber]);
   
@@ -29,7 +28,6 @@ const WeeklyInput = () => {
     try {
       const fetchedRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
       
-      // Generate a record for each day in the week
       if (weekNumber <= weekDates.length) {
         const { startDate, endDate } = weekDates[weekNumber - 1];
         const start = new Date(startDate);
@@ -43,7 +41,6 @@ const WeeklyInput = () => {
           if (existingRecord) {
             days.push(existingRecord);
           } else {
-            // Create placeholder records for days without data
             days.push({
               id: '',
               date: dateStr,
@@ -62,7 +59,6 @@ const WeeklyInput = () => {
         }
         
         setRecords(days);
-        // Set the first day as active if no active day, or keep current if valid
         if (days.length > 0) {
           if (!activeDay || !days.some(day => day.date === activeDay)) {
             setActiveDay(days[0].date);
@@ -85,7 +81,6 @@ const WeeklyInput = () => {
     try {
       const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & { date: string });
       
-      // Update records in state without causing full re-render
       setRecords(prev => 
         prev.map(record => 
           record.date === updatedRecord.date ? updatedRecord : record
@@ -128,7 +123,7 @@ const WeeklyInput = () => {
                   className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-tavern-green"
                 >
                   <div className="text-center">
-                    <div className="font-medium">{format(new Date(day.date), 'EEE')}</div>
+                    <div className="font-medium text-xs">{format(new Date(day.date), 'EEE')}</div>
                     <div className="text-xl">{format(new Date(day.date), 'd')}</div>
                   </div>
                 </TabsTrigger>
