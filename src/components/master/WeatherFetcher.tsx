@@ -3,15 +3,12 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CloudSun, Loader2 } from 'lucide-react';
+import { WeatherData } from '@/types/master-record-types';
+import { toast } from 'sonner';
 
 interface WeatherFetcherProps {
   date: string;
-  onWeatherFetched: (weatherData: {
-    description: string;
-    temperature: number;
-    precipitation: number;
-    windSpeed: number;
-  }) => void;
+  onWeatherFetched: (weatherData: WeatherData) => void;
 }
 
 const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched }) => {
@@ -23,25 +20,65 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
     setError(null);
     
     try {
-      // This is a mock implementation - in a real app, you would call a weather API
-      // Example using Open-Meteo (which is free and doesn't require API key)
-      // You would add actual implementation using fetch() here
+      // Convert date to format required by the weather API
+      const dateObj = new Date(date);
       
-      // For now, we'll just simulate a weather response
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Open-Meteo API for historical weather data for Cheltenham (GL50 3DN)
+      // Coordinates for GL50 3DN: 51.9002, -2.0731
+      const latitude = 51.9002;
+      const longitude = -2.0731;
       
-      // Mock weather data
-      const mockWeatherData = {
-        description: "Partly Cloudy",
-        temperature: 18.5,
-        precipitation: 0.2,
-        windSpeed: 12.4
+      // Fetch historical weather data for the specific date
+      const response = await fetch(
+        `https://archive-api.open-meteo.com/v1/archive?` +
+        `latitude=${latitude}&longitude=${longitude}` +
+        `&start_date=${date}&end_date=${date}` +
+        `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max` +
+        `&timezone=Europe/London`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Weather API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Process the weather data
+      const avgTemp = (data.daily.temperature_2m_max[0] + data.daily.temperature_2m_min[0]) / 2;
+      const precipitation = data.daily.precipitation_sum[0] || 0;
+      const windSpeed = data.daily.wind_speed_10m_max[0] || 0;
+      
+      // Determine weather description based on conditions
+      let description = "Clear";
+      if (precipitation > 5) {
+        description = "Heavy Rain";
+      } else if (precipitation > 1) {
+        description = "Light Rain";
+      } else if (precipitation > 0) {
+        description = "Drizzle";
+      } else if (windSpeed > 30) {
+        description = "Windy";
+      } else if (avgTemp > 25) {
+        description = "Hot";
+      } else if (avgTemp < 5) {
+        description = "Cold";
+      } else {
+        description = "Mild";
+      }
+      
+      const weatherData: WeatherData = {
+        description: description,
+        temperature: avgTemp,
+        precipitation: precipitation,
+        windSpeed: windSpeed
       };
       
-      onWeatherFetched(mockWeatherData);
+      onWeatherFetched(weatherData);
+      toast.success("Weather data fetched successfully!");
     } catch (err) {
-      setError('Failed to fetch weather data. Please try again.');
       console.error('Weather fetch error:', err);
+      setError('Failed to fetch weather data. Please try again.');
+      toast.error("Failed to fetch weather data");
     } finally {
       setLoading(false);
     }
@@ -54,7 +91,7 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
           <CloudSun className="h-6 w-6 text-blue-500" />
           <div className="flex-grow">
             <h4 className="text-sm font-medium">Weather Data for {date}</h4>
-            <p className="text-xs text-muted-foreground">GL50 3DN</p>
+            <p className="text-xs text-muted-foreground">GL50 3DN (Cheltenham)</p>
           </div>
           <Button 
             variant="outline" 
