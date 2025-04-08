@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+// Define the bevStore interface to make TypeScript happy
+interface BevStore {
+  getState: () => {
+    annualRecord: {
+      months: Array<{
+        year: number;
+        month: number;
+        weeks: Array<{
+          days: Array<{
+            revenue?: number;
+            purchases?: Record<string, number>;
+          }>;
+        }>;
+      }>;
+    };
+  };
+}
+
+// Extend the Window interface to include our bevStore
+declare global {
+  interface Window {
+    bevStore?: BevStore;
+  }
+}
 
 interface Message {
   text: string;
@@ -246,13 +272,16 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
             bevMonth.weeks.forEach(week => {
               if (week.days) {
                 week.days.forEach(day => {
-                  if (day.revenue) {
-                    bevMonthData.revenue += day.revenue;
+                  if (day.revenue !== undefined) {
+                    bevMonthData.revenue += Number(day.revenue);
                   }
                   
-                  const dayPurchases = day.purchases ? 
-                    Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
-                  bevMonthData.cost += dayPurchases;
+                  if (day.purchases) {
+                    const dayPurchases = Object.values(day.purchases).reduce(
+                      (sum, amount) => sum + Number(amount), 0
+                    );
+                    bevMonthData.cost += dayPurchases;
+                  }
                 });
               }
             });
