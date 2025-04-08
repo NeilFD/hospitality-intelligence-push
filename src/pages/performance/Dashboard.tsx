@@ -1,4 +1,3 @@
-
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ChatInterface from '@/components/performance/ChatInterface';
@@ -10,9 +9,10 @@ import { History, Bug, AlertTriangle, InfoIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
-
 export default function PerformanceDashboard() {
-  const { annualRecord } = useStore();
+  const {
+    annualRecord
+  } = useStore();
   const [hasFoodData, setHasFoodData] = useState(false);
   const [hasBevData, setHasBevData] = useState(false);
 
@@ -70,9 +70,7 @@ export default function PerformanceDashboard() {
       }
     }
   }, [annualRecord]);
-
-  return (
-    <div className="container max-w-7xl py-6 space-y-6">
+  return <div className="container max-w-7xl py-6 space-y-6">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-tavern-blue">Performance & Analysis</h1>
         <div className="flex items-center gap-4">
@@ -92,16 +90,7 @@ export default function PerformanceDashboard() {
         </div>
       </div>
       
-      <Alert variant="default" className="mb-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Webhook Connection Status</AlertTitle>
-        <AlertDescription>
-          The application is configured to send webhook requests to n8n with all available data.
-          {!hasFoodData && <p className="text-amber-600 mt-1">⚠️ Food data appears to be empty or incomplete.</p>}
-          {!hasBevData && <p className="text-amber-600 mt-1">⚠️ Beverage data appears to be empty or not available.</p>}
-          {(hasFoodData && hasBevData) && <p className="text-emerald-600 mt-1">✅ All data sources are available and will be included in the analysis.</p>}
-        </AlertDescription>
-      </Alert>
+      
       
       <Card className="overflow-hidden border-none shadow-lg rounded-xl bg-gradient-to-br from-white to-gray-50">
         <ChatInterface className="w-full" />
@@ -110,6 +99,5 @@ export default function PerformanceDashboard() {
       <KeyInsights />
       
       <AnalyticsModules />
-    </div>
-  );
+    </div>;
 }
