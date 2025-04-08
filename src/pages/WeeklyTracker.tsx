@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMonthRecord, useWeekRecord } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +11,13 @@ interface WeeklyTrackerProps {
   moduleType: ModuleType;
 }
 
-const WeeklyTracker = ({ modulePrefix, moduleType }: WeeklyTrackerProps) => {
+const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerProps) => {
   const params = useParams<{ year: string; month: string; week: string }>();
   const [loading, setLoading] = useState(true);
   
-  const year = params.year ? parseInt(params.year, 10) : new Date().getFullYear();
-  const month = params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1;
-  const weekNumber = params.week ? parseInt(params.week, 10) : 1;
+  const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
+  const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
+  const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
   
   const monthRecord = useMonthRecord(year, month, moduleType);
   const weekRecord = useWeekRecord(year, month, weekNumber);
@@ -49,6 +50,8 @@ const WeeklyTracker = ({ modulePrefix, moduleType }: WeeklyTrackerProps) => {
       </Card>
     </div>
   );
-};
+});
+
+WeeklyTracker.displayName = 'WeeklyTracker';
 
 export default WeeklyTracker;

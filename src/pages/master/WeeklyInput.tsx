@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,74 +17,74 @@ const WeeklyInput = () => {
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [activeDay, setActiveDay] = useState<string>('');
   
-  const year = params.year ? parseInt(params.year, 10) : new Date().getFullYear();
-  const month = params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1;
-  const weekNumber = params.week ? parseInt(params.week, 10) : 1;
+  const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
+  const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
+  const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
   
-  // Generate date range for the week
-  const weekDates = generateWeekDates(year, month);
-  const currentWeek = weekDates[weekNumber - 1] || { startDate: '', endDate: '' };
+  // Generate date range for the week - memoized
+  const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
+  const currentWeek = useMemo(() => weekDates[weekNumber - 1] || { startDate: '', endDate: '' }, [weekDates, weekNumber]);
   
-  useEffect(() => {
-    const loadRecords = async () => {
-      setLoading(true);
-      try {
-        const fetchedRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
+  const loadRecords = useCallback(async () => {
+    setLoading(true);
+    try {
+      const fetchedRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
+      
+      // Generate a record for each day in the week
+      if (weekNumber <= weekDates.length) {
+        const { startDate, endDate } = weekDates[weekNumber - 1];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const days = [];
         
-        // Generate a record for each day in the week
-        if (weekNumber <= weekDates.length) {
-          const { startDate, endDate } = weekDates[weekNumber - 1];
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          const days = [];
+        for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+          const dateStr = format(day, 'yyyy-MM-dd');
+          const existingRecord = fetchedRecords.find(r => r.date === dateStr);
           
-          for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            const existingRecord = fetchedRecords.find(r => r.date === dateStr);
-            
-            if (existingRecord) {
-              days.push(existingRecord);
-            } else {
-              // Create placeholder records for days without data
-              days.push({
-                id: '',
-                date: dateStr,
-                dayOfWeek: format(day, 'EEEE'),
-                year,
-                month,
-                weekNumber,
-                foodRevenue: 0,
-                beverageRevenue: 0,
-                totalRevenue: 0,
-                lunchCovers: 0,
-                dinnerCovers: 0,
-                totalCovers: 0
-              });
-            }
-          }
-          
-          setRecords(days);
-          // Set the first day as active
-          if (days.length > 0 && !activeDay) {
-            setActiveDay(days[0].date);
+          if (existingRecord) {
+            days.push(existingRecord);
+          } else {
+            // Create placeholder records for days without data
+            days.push({
+              id: '',
+              date: dateStr,
+              dayOfWeek: format(day, 'EEEE'),
+              year,
+              month,
+              weekNumber,
+              foodRevenue: 0,
+              beverageRevenue: 0,
+              totalRevenue: 0,
+              lunchCovers: 0,
+              dinnerCovers: 0,
+              totalCovers: 0
+            });
           }
         }
-      } catch (error) {
-        console.error('Error loading weekly records:', error);
-        toast.error('Failed to load weekly records');
-      } finally {
-        setLoading(false);
+        
+        setRecords(days);
+        // Set the first day as active
+        if (days.length > 0 && !activeDay) {
+          setActiveDay(days[0].date);
+        }
       }
-    };
-    
-    loadRecords();
-  }, [year, month, weekNumber, weekDates]);
+    } catch (error) {
+      console.error('Error loading weekly records:', error);
+      toast.error('Failed to load weekly records');
+    } finally {
+      setLoading(false);
+    }
+  }, [year, month, weekNumber, weekDates, activeDay]);
   
-  const handleSaveDailyRecord = async (data: Partial<MasterDailyRecord>) => {
+  useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
+  
+  const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
       const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & { date: string });
       
-      // Update records in state
+      // Update records in state without causing full re-render
       setRecords(prev => 
         prev.map(record => 
           record.date === updatedRecord.date ? updatedRecord : record
@@ -96,7 +96,7 @@ const WeeklyInput = () => {
       console.error('Error saving daily record:', error);
       toast.error('Failed to save daily record');
     }
-  };
+  }, []);
   
   if (loading) {
     return (
@@ -131,6 +131,7 @@ const WeeklyInput = () => {
             {records.map((day) => (
               <TabsContent key={day.date} value={day.date}>
                 <DailyRecordForm 
+                  key={day.date}
                   date={day.date}
                   dayOfWeek={day.dayOfWeek}
                   initialData={day}
@@ -145,4 +146,4 @@ const WeeklyInput = () => {
   );
 };
 
-export default WeeklyInput;
+export default React.memo(WeeklyInput);

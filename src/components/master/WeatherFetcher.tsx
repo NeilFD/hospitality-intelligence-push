@@ -76,7 +76,6 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
       };
       
       onWeatherFetched(weatherData);
-      toast.success("Weather data fetched successfully!");
     } catch (err) {
       console.error('Weather fetch error:', err);
       setError('Failed to fetch weather data. Please try again.');

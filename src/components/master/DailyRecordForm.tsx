@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,30 +17,32 @@ interface DailyRecordFormProps {
   onSave: (data: Partial<MasterDailyRecord>) => Promise<void>;
 }
 
-const DailyRecordForm: React.FC<DailyRecordFormProps> = ({ 
+const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({ 
   date, 
   dayOfWeek, 
   initialData = {}, 
   onSave 
 }) => {
+  const defaultValues = useMemo(() => ({
+    date,
+    dayOfWeek,
+    foodRevenue: initialData.foodRevenue || 0,
+    beverageRevenue: initialData.beverageRevenue || 0,
+    lunchCovers: initialData.lunchCovers || 0,
+    dinnerCovers: initialData.dinnerCovers || 0,
+    weatherDescription: initialData.weatherDescription || '',
+    temperature: initialData.temperature || 0,
+    precipitation: initialData.precipitation || 0,
+    windSpeed: initialData.windSpeed || 0,
+    localEvents: initialData.localEvents || '',
+    operationsNotes: initialData.operationsNotes || '',
+  }), [date, dayOfWeek, initialData]);
+
   const form = useForm<Partial<MasterDailyRecord>>({
-    defaultValues: {
-      date,
-      dayOfWeek,
-      foodRevenue: initialData.foodRevenue || 0,
-      beverageRevenue: initialData.beverageRevenue || 0,
-      lunchCovers: initialData.lunchCovers || 0,
-      dinnerCovers: initialData.dinnerCovers || 0,
-      weatherDescription: initialData.weatherDescription || '',
-      temperature: initialData.temperature || 0,
-      precipitation: initialData.precipitation || 0,
-      windSpeed: initialData.windSpeed || 0,
-      localEvents: initialData.localEvents || '',
-      operationsNotes: initialData.operationsNotes || '',
-    }
+    defaultValues
   });
 
-  const handleWeatherFetched = (weatherData: {
+  const handleWeatherFetched = useCallback((weatherData: {
     description: string;
     temperature: number;
     precipitation: number;
@@ -51,9 +53,9 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = ({
     form.setValue('precipitation', weatherData.precipitation);
     form.setValue('windSpeed', weatherData.windSpeed);
     toast.success('Weather data fetched successfully');
-  };
+  }, [form]);
 
-  const handleSubmit = async (data: Partial<MasterDailyRecord>) => {
+  const handleSubmit = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
       await onSave(data);
       toast.success('Daily record saved successfully');
@@ -61,7 +63,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = ({
       console.error('Error saving daily record:', error);
       toast.error('Failed to save daily record');
     }
-  };
+  }, [onSave]);
 
   return (
     <Form {...form}>
@@ -264,6 +266,8 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = ({
       </form>
     </Form>
   );
-};
+});
+
+DailyRecordForm.displayName = 'DailyRecordForm';
 
 export default DailyRecordForm;
