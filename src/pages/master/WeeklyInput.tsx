@@ -9,35 +9,38 @@ import { MasterDailyRecord } from '@/types/master-record-types';
 import DailyRecordForm from '@/components/master/DailyRecordForm';
 import { generateWeekDates } from '@/lib/date-utils';
 import { toast } from 'sonner';
-
 const WeeklyInput = () => {
-  const params = useParams<{ year: string; month: string; week: string }>();
+  const params = useParams<{
+    year: string;
+    month: string;
+    week: string;
+  }>();
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [activeDay, setActiveDay] = useState<string>('');
-  
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
-  
   const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
-  const currentWeek = useMemo(() => weekDates[weekNumber - 1] || { startDate: '', endDate: '' }, [weekDates, weekNumber]);
-  
+  const currentWeek = useMemo(() => weekDates[weekNumber - 1] || {
+    startDate: '',
+    endDate: ''
+  }, [weekDates, weekNumber]);
   const loadRecords = useCallback(async () => {
     setLoading(true);
     try {
       const fetchedRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
-      
       if (weekNumber <= weekDates.length) {
-        const { startDate, endDate } = weekDates[weekNumber - 1];
+        const {
+          startDate,
+          endDate
+        } = weekDates[weekNumber - 1];
         const start = new Date(startDate);
         const end = new Date(endDate);
         const days = [];
-        
         for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
           const dateStr = format(day, 'yyyy-MM-dd');
           const existingRecord = fetchedRecords.find(r => r.date === dateStr);
-          
           if (existingRecord) {
             days.push(existingRecord);
           } else {
@@ -57,7 +60,6 @@ const WeeklyInput = () => {
             });
           }
         }
-        
         setRecords(days);
         if (days.length > 0) {
           if (!activeDay || !days.some(day => day.date === activeDay)) {
@@ -72,55 +74,36 @@ const WeeklyInput = () => {
       setLoading(false);
     }
   }, [year, month, weekNumber, weekDates, activeDay]);
-  
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
-  
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
-      const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & { date: string });
-      
-      setRecords(prev => 
-        prev.map(record => 
-          record.date === updatedRecord.date ? updatedRecord : record
-        )
-      );
-      
+      const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & {
+        date: string;
+      });
+      setRecords(prev => prev.map(record => record.date === updatedRecord.date ? updatedRecord : record));
       toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
     } catch (error) {
       console.error('Error saving daily record:', error);
       toast.error('Failed to save daily record');
     }
   }, []);
-  
   if (loading) {
-    return (
-      <div className="p-8">
+    return <div className="p-8">
         <Skeleton className="h-12 w-3/4 mb-4" />
         <Skeleton className="h-64 w-full" />
-      </div>
-    );
+      </div>;
   }
-  
-  return (
-    <div className="p-4 md:p-8">
+  return <div className="p-4 md:p-8">
       <Card className="border shadow-md">
         <CardHeader className="bg-gray-50 border-b pb-4">
           <CardTitle className="text-2xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Tabs 
-            value={activeDay} 
-            onValueChange={setActiveDay}
-            className="w-full"
-          >
+          <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
             <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50 py-2">
-              {records.map((day) => (
-                <TabsTrigger 
-                  key={day.date} 
-                  value={day.date} 
-                  className={`
+              {records.map(day => <TabsTrigger key={day.date} value={day.date} className={`
                     relative 
                     group 
                     data-[state=active]:text-tavern-green 
@@ -132,8 +115,7 @@ const WeeklyInput = () => {
                     items-center 
                     justify-center
                     py-2
-                  `}
-                >
+                  `}>
                   <div className="text-center relative z-10 w-full">
                     <div className="font-medium text-xs opacity-70 group-data-[state=active]:opacity-100 mb-1">
                       {format(new Date(day.date), 'EEE')}
@@ -152,8 +134,7 @@ const WeeklyInput = () => {
                       `}>
                         {format(new Date(day.date), 'd')}
                       </span>
-                      <span 
-                        className="
+                      <span className="
                           absolute 
                           bottom-0 
                           left-1/2 
@@ -166,30 +147,18 @@ const WeeklyInput = () => {
                           group-data-[state=active]:opacity-100 
                           transition-opacity 
                           duration-200
-                        "
-                      />
+                        " />
                     </div>
                   </div>
-                </TabsTrigger>
-              ))}
+                </TabsTrigger>)}
             </TabsList>
             
-            {records.map((day) => (
-              <TabsContent key={day.date} value={day.date} className="p-4">
-                <DailyRecordForm 
-                  key={day.date}
-                  date={day.date}
-                  dayOfWeek={day.dayOfWeek}
-                  initialData={day}
-                  onSave={handleSaveDailyRecord}
-                />
-              </TabsContent>
-            ))}
+            {records.map(day => <TabsContent key={day.date} value={day.date} className="p-4 bg-gray-100">
+                <DailyRecordForm key={day.date} date={day.date} dayOfWeek={day.dayOfWeek} initialData={day} onSave={handleSaveDailyRecord} />
+              </TabsContent>)}
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default WeeklyInput;
