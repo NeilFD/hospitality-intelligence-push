@@ -45,6 +45,16 @@ export default function FoodDashboard() {
     if (trackerData && trackerData.length > 0) {
       console.log("Processing food tracker data:", trackerData.length, "records");
       
+      // First, calculate the total revenue from tracker data
+      trackerData.forEach(day => {
+        if (day.revenue) {
+          monthRevenue += Number(day.revenue);
+          console.log(`Day ${day.date}: Revenue = ${day.revenue || 0}`);
+        }
+      });
+      
+      console.log("Total month revenue from tracker data:", monthRevenue);
+      
       const promises = trackerData.map(async (day) => {
         // For each day, fetch all purchases and credit notes
         const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
@@ -72,7 +82,7 @@ export default function FoodDashboard() {
         console.log(`Day ${day.date}: Revenue = ${day.revenue || 0}, Cost = ${dayCost}`);
         
         return {
-          revenue: day.revenue || 0,
+          revenue: Number(day.revenue) || 0,
           cost: dayCost
         };
       });
@@ -83,8 +93,7 @@ export default function FoodDashboard() {
             revenue += result.revenue;
             cost += result.cost;
             
-            // Current month data
-            monthRevenue += result.revenue;
+            // Current month data totals already calculated from tracker data
             monthCost += result.cost;
           });
           

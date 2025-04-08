@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -439,6 +440,36 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     const bevData = getCompleteBevData(currentYear, currentMonth);
     
     const deepCopyFoodData = annualRecord ? JSON.parse(JSON.stringify(annualRecord)) : null;
+    
+    // Update food data with tracker data if available
+    if (foodTrackerData && foodTrackerData.length > 0 && deepCopyFoodData && deepCopyFoodData.months) {
+      console.log("Updating deepCopyFoodData with tracker data");
+      
+      const currentMonthData = deepCopyFoodData.months.find(
+        m => m.year === currentYear && m.month === currentMonth
+      );
+      
+      if (currentMonthData) {
+        const trackerDataByDate = {};
+        foodTrackerData.forEach(day => {
+          trackerDataByDate[day.date] = day;
+        });
+        
+        if (currentMonthData.weeks) {
+          currentMonthData.weeks.forEach(week => {
+            if (week.days) {
+              week.days.forEach(day => {
+                const trackerDay = trackerDataByDate[day.date];
+                if (trackerDay) {
+                  day.revenue = trackerDay.revenue || 0;
+                  console.log(`Updated food day ${day.date} revenue to ${day.revenue}`);
+                }
+              });
+            }
+          });
+        }
+      }
+    }
     
     let deepCopyBevData = null;
     try {
