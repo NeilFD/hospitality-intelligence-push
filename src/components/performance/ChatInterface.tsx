@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -324,15 +325,26 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       console.error("Error fetching wages data:", error);
     }
     
+    // Get complete food data
     const foodAnnualData = getCompleteAnnualData();
     const foodMonthData = getCompleteMonthData(currentYear, currentMonth);
     
+    // Get complete beverage data
     const bevData = getCompleteBevData(currentYear, currentMonth);
     
+    // Deep copy the raw data to ensure we don't modify the original objects
+    const deepCopyFoodData = annualRecord ? JSON.parse(JSON.stringify(annualRecord)) : null;
+    const deepCopyBevData = window.bevStore ? JSON.parse(JSON.stringify(window.bevStore.getState().annualRecord)) : null;
+    
+    // Log all the data for debugging
+    console.log("*** WEBHOOK PAYLOAD DEBUG ***");
     console.log("Food Annual Data:", foodAnnualData);
     console.log("Food Month Data:", foodMonthData);
     console.log("Beverage Data:", bevData);
+    console.log("Raw Food Data:", deepCopyFoodData);
+    console.log("Raw Beverage Data:", deepCopyBevData); 
     console.log("Wages Data:", { monthlyWages, weekdayTotals });
+    console.log("*** END WEBHOOK PAYLOAD DEBUG ***");
     
     return {
       query: input,
@@ -357,7 +369,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
             gpPercentage: foodAnnualData.gpPercentage,
             costPercentage: 100 - foodAnnualData.gpPercentage
           },
-          rawData: annualRecord
+          rawData: deepCopyFoodData
         },
         beverage: {
           year: currentYear,
@@ -374,14 +386,14 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
             gpPercentage: bevData.annual.gpPercentage,
             costPercentage: 100 - bevData.annual.gpPercentage
           },
-          rawData: window.bevStore ? window.bevStore.getState().annualRecord : null
+          rawData: deepCopyBevData
         },
         wages: {
           year: currentYear,
           month: currentMonth,
           daily: monthlyWages,
           weeklyAnalysis: weekdayTotals,
-          allWages: await getMonthlyWages(currentYear, currentMonth)
+          allWages: monthlyWages
         }
       },
       conversationHistory: messages.map(msg => ({

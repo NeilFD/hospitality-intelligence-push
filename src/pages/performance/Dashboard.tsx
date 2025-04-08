@@ -1,3 +1,4 @@
+
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ChatInterface from '@/components/performance/ChatInterface';
@@ -9,6 +10,7 @@ import { History, Bug, AlertTriangle, InfoIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
+
 export default function PerformanceDashboard() {
   const {
     annualRecord
@@ -26,7 +28,7 @@ export default function PerformanceDashboard() {
           for (const week of month.weeks) {
             if (week.days) {
               for (const day of week.days) {
-                if (day.revenue > 0) {
+                if (day.revenue && Number(day.revenue) > 0) {
                   hasData = true;
                   break;
                 }
@@ -63,13 +65,18 @@ export default function PerformanceDashboard() {
             }
           }
           setHasBevData(hasData);
+          console.log("Beverage data status:", hasData ? "Available" : "Not available or empty");
         }
       } catch (error) {
         console.error("Error checking beverage data:", error);
         setHasBevData(false);
       }
+    } else {
+      console.log("Beverage store not found in window object");
+      setHasBevData(false);
     }
   }, [annualRecord]);
+
   return <div className="container max-w-7xl py-6 space-y-6">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-tavern-blue">Performance & Analysis</h1>
@@ -90,7 +97,16 @@ export default function PerformanceDashboard() {
         </div>
       </div>
       
-      
+      {(!hasFoodData && !hasBevData) && (
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Data Availability Warning</AlertTitle>
+          <AlertDescription>
+            No food or beverage data found for analysis. The AI assistant may have limited insights to offer.
+            Please ensure you have entered data in the Food Tracker and Beverage Tracker.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Card className="overflow-hidden border-none shadow-lg rounded-xl bg-gradient-to-br from-white to-gray-50">
         <ChatInterface className="w-full" />
