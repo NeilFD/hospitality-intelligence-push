@@ -248,6 +248,75 @@ export type Database = {
           },
         ]
       }
+      master_daily_records: {
+        Row: {
+          beverage_revenue: number | null
+          created_at: string
+          date: string
+          day_of_week: string
+          dinner_covers: number | null
+          food_revenue: number | null
+          id: string
+          local_events: string | null
+          lunch_covers: number | null
+          month: number
+          operations_notes: string | null
+          precipitation: number | null
+          temperature: number | null
+          total_covers: number | null
+          total_revenue: number | null
+          updated_at: string
+          weather_description: string | null
+          week_number: number
+          wind_speed: number | null
+          year: number
+        }
+        Insert: {
+          beverage_revenue?: number | null
+          created_at?: string
+          date: string
+          day_of_week: string
+          dinner_covers?: number | null
+          food_revenue?: number | null
+          id?: string
+          local_events?: string | null
+          lunch_covers?: number | null
+          month: number
+          operations_notes?: string | null
+          precipitation?: number | null
+          temperature?: number | null
+          total_covers?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+          weather_description?: string | null
+          week_number: number
+          wind_speed?: number | null
+          year: number
+        }
+        Update: {
+          beverage_revenue?: number | null
+          created_at?: string
+          date?: string
+          day_of_week?: string
+          dinner_covers?: number | null
+          food_revenue?: number | null
+          id?: string
+          local_events?: string | null
+          lunch_covers?: number | null
+          month?: number
+          operations_notes?: string | null
+          precipitation?: number | null
+          temperature?: number | null
+          total_covers?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+          weather_description?: string | null
+          week_number?: number
+          wind_speed?: number | null
+          year?: number
+        }
+        Relationships: []
+      }
       modules: {
         Row: {
           created_at: string

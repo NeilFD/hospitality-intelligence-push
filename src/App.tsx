@@ -37,6 +37,11 @@ import BeverageWeeklyTracker from '@/pages/beverage/WeeklyTracker';
 // P&L pages
 import PLDashboard from '@/pages/pl/Dashboard';
 
+// Master Records pages
+import MasterDashboard from '@/pages/master/Dashboard';
+import MasterMonthSummary from '@/pages/master/MonthSummary';
+import MasterWeeklyInput from '@/pages/master/WeeklyInput';
+
 // Import React Query dependencies
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -100,6 +105,19 @@ const router = createBrowserRouter([
       {
         path: "/pl/dashboard",
         element: <PLDashboard />
+      },
+      // Master Records module routes
+      {
+        path: "/master/dashboard",
+        element: <MasterDashboard />
+      },
+      {
+        path: "/master/month/:year/:month",
+        element: <MasterMonthSummary />
+      },
+      {
+        path: "/master/week/:year/:month/:week",
+        element: <MasterWeeklyInput />
       },
       // Performance module routes
       {
