@@ -6,10 +6,71 @@ import KeyInsights from '@/components/performance/KeyInsights';
 import AnalyticsModules from '@/components/performance/AnalyticsModules';
 import { TavernLogo } from '@/components/TavernLogo';
 import { Link } from 'react-router-dom';
-import { History, Bug, AlertTriangle } from 'lucide-react';
+import { History, Bug, AlertTriangle, InfoIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useStore } from '@/lib/store';
+import { useState, useEffect } from 'react';
 
 export default function PerformanceDashboard() {
+  const { annualRecord } = useStore();
+  const [hasFoodData, setHasFoodData] = useState(false);
+  const [hasBevData, setHasBevData] = useState(false);
+
+  // Check if we have food and beverage data
+  useEffect(() => {
+    // Check food data
+    if (annualRecord && annualRecord.months && annualRecord.months.length > 0) {
+      let hasData = false;
+      for (const month of annualRecord.months) {
+        if (month.weeks) {
+          for (const week of month.weeks) {
+            if (week.days) {
+              for (const day of week.days) {
+                if (day.revenue > 0) {
+                  hasData = true;
+                  break;
+                }
+              }
+              if (hasData) break;
+            }
+          }
+          if (hasData) break;
+        }
+      }
+      setHasFoodData(hasData);
+    }
+
+    // Check beverage data
+    if (window.bevStore) {
+      try {
+        const bevData = window.bevStore.getState().annualRecord;
+        if (bevData && bevData.months && bevData.months.length > 0) {
+          let hasData = false;
+          for (const month of bevData.months) {
+            if (month.weeks) {
+              for (const week of month.weeks) {
+                if (week.days) {
+                  for (const day of week.days) {
+                    if (day.revenue && Number(day.revenue) > 0) {
+                      hasData = true;
+                      break;
+                    }
+                  }
+                  if (hasData) break;
+                }
+              }
+              if (hasData) break;
+            }
+          }
+          setHasBevData(hasData);
+        }
+      } catch (error) {
+        console.error("Error checking beverage data:", error);
+        setHasBevData(false);
+      }
+    }
+  }, [annualRecord]);
+
   return (
     <div className="container max-w-7xl py-6 space-y-6">
       <div className="flex items-center justify-between mb-2">
@@ -33,10 +94,12 @@ export default function PerformanceDashboard() {
       
       <Alert variant="default" className="mb-4">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Webhook Connection</AlertTitle>
+        <AlertTitle>Webhook Connection Status</AlertTitle>
         <AlertDescription>
-          The application is now configured to send webhook requests to n8n. 
-          Make sure your n8n webhook is properly set up with CORS allowed for this domain.
+          The application is configured to send webhook requests to n8n with all available data.
+          {!hasFoodData && <p className="text-amber-600 mt-1">⚠️ Food data appears to be empty or incomplete.</p>}
+          {!hasBevData && <p className="text-amber-600 mt-1">⚠️ Beverage data appears to be empty or not available.</p>}
+          {(hasFoodData && hasBevData) && <p className="text-emerald-600 mt-1">✅ All data sources are available and will be included in the analysis.</p>}
         </AlertDescription>
       </Alert>
       

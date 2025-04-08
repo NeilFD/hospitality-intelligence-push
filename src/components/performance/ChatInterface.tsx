@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Define the bevStore interface to make TypeScript happy
 interface BevStore {
   getState: () => {
     annualRecord: {
@@ -37,7 +35,6 @@ interface BevStore {
   };
 }
 
-// Extend the Window interface to include our bevStore
 declare global {
   interface Window {
     bevStore?: BevStore;
@@ -178,9 +175,12 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     }
   };
 
-  const getAnnualSummaryData = () => {
-    let revenue = 0;
-    let cost = 0;
+  const getCompleteAnnualData = () => {
+    let annualData = {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
+    };
     
     if (annualRecord && annualRecord.months) {
       annualRecord.months.forEach(month => {
@@ -188,24 +188,129 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           month.weeks.forEach(week => {
             if (week.days) {
               week.days.forEach(day => {
-                if (day.revenue) {
-                  revenue += day.revenue;
+                if (day.revenue !== undefined) {
+                  annualData.revenue += Number(day.revenue);
                 }
+                
                 const dayPurchases = day.purchases ? 
                   Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
-                cost += dayPurchases;
+                annualData.cost += dayPurchases;
               });
             }
           });
         }
       });
+      
+      annualData.gpPercentage = calculateGP(annualData.revenue, annualData.cost);
     }
     
-    return {
-      totalRevenue: revenue,
-      totalCost: cost,
-      gpPercentage: calculateGP(revenue, cost)
+    return annualData;
+  };
+
+  const getCompleteMonthData = (year: number, month: number) => {
+    let monthData = {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
     };
+    
+    if (annualRecord && annualRecord.months) {
+      const thisMonth = annualRecord.months.find(
+        m => m.year === year && m.month === month
+      );
+      
+      if (thisMonth && thisMonth.weeks) {
+        thisMonth.weeks.forEach(week => {
+          if (week.days) {
+            week.days.forEach(day => {
+              if (day.revenue !== undefined) {
+                monthData.revenue += Number(day.revenue);
+              }
+              
+              const dayPurchases = day.purchases ? 
+                Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+              monthData.cost += dayPurchases;
+            });
+          }
+        });
+        
+        monthData.gpPercentage = calculateGP(monthData.revenue, monthData.cost);
+      }
+    }
+    
+    return monthData;
+  };
+
+  const getCompleteBevData = (year: number, month: number) => {
+    let annualData = {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
+    };
+    
+    let monthData = {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
+    };
+    
+    if (window.bevStore) {
+      const bevData = window.bevStore.getState().annualRecord;
+      
+      if (bevData && bevData.months) {
+        bevData.months.forEach(m => {
+          if (m.weeks) {
+            m.weeks.forEach(week => {
+              if (week.days) {
+                week.days.forEach(day => {
+                  if (day.revenue !== undefined) {
+                    annualData.revenue += Number(day.revenue);
+                  }
+                  
+                  if (day.purchases) {
+                    const dayPurchases = Object.values(day.purchases).reduce(
+                      (sum, amount) => sum + Number(amount), 0
+                    );
+                    annualData.cost += dayPurchases;
+                  }
+                });
+              }
+            });
+          }
+        });
+        
+        annualData.gpPercentage = calculateGP(annualData.revenue, annualData.cost);
+        
+        const bevMonth = bevData.months.find(
+          m => m.year === year && m.month === month
+        );
+        
+        if (bevMonth && bevMonth.weeks) {
+          bevMonth.weeks.forEach(week => {
+            if (week.days) {
+              week.days.forEach(day => {
+                if (day.revenue !== undefined) {
+                  monthData.revenue += Number(day.revenue);
+                }
+                
+                if (day.purchases) {
+                  const dayPurchases = Object.values(day.purchases).reduce(
+                    (sum, amount) => sum + Number(amount), 0
+                  );
+                  monthData.cost += dayPurchases;
+                }
+              });
+            }
+          });
+          
+          monthData.gpPercentage = calculateGP(monthData.revenue, monthData.cost);
+        }
+      }
+    } else {
+      console.warn("Beverage store not found in window object");
+    }
+    
+    return { annual: annualData, monthToDate: monthData };
   };
 
   const preparePayload = async () => {
@@ -219,83 +324,15 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       console.error("Error fetching wages data:", error);
     }
     
-    const annualData = getAnnualSummaryData();
+    const foodAnnualData = getCompleteAnnualData();
+    const foodMonthData = getCompleteMonthData(currentYear, currentMonth);
     
-    const foodMonthData = {
-      revenue: 0,
-      cost: 0,
-      gpPercentage: 0
-    };
+    const bevData = getCompleteBevData(currentYear, currentMonth);
     
-    const bevMonthData = {
-      revenue: 0,
-      cost: 0,
-      gpPercentage: 0
-    };
-    
-    if (annualRecord && annualRecord.months) {
-      const thisMonth = annualRecord.months.find(
-        m => m.year === currentYear && m.month === currentMonth
-      );
-      
-      if (thisMonth && thisMonth.weeks) {
-        thisMonth.weeks.forEach(week => {
-          if (week.days) {
-            week.days.forEach(day => {
-              if (day.revenue) {
-                foodMonthData.revenue += day.revenue;
-              }
-              
-              const dayPurchases = day.purchases ? 
-                Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
-              foodMonthData.cost += dayPurchases;
-            });
-          }
-        });
-        
-        foodMonthData.gpPercentage = calculateGP(
-          foodMonthData.revenue, 
-          foodMonthData.cost
-        );
-      }
-    }
-    
-    try {
-      if (window.bevStore) {
-        const bevData = window.bevStore.getState().annualRecord;
-        if (bevData && bevData.months) {
-          const bevMonth = bevData.months.find(
-            m => m.year === currentYear && m.month === currentMonth
-          );
-          
-          if (bevMonth && bevMonth.weeks) {
-            bevMonth.weeks.forEach(week => {
-              if (week.days) {
-                week.days.forEach(day => {
-                  if (day.revenue !== undefined) {
-                    bevMonthData.revenue += Number(day.revenue);
-                  }
-                  
-                  if (day.purchases) {
-                    const dayPurchases = Object.values(day.purchases).reduce(
-                      (sum, amount) => sum + Number(amount), 0
-                    );
-                    bevMonthData.cost += dayPurchases;
-                  }
-                });
-              }
-            });
-            
-            bevMonthData.gpPercentage = calculateGP(
-              bevMonthData.revenue, 
-              bevMonthData.cost
-            );
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching beverage data:", error);
-    }
+    console.log("Food Annual Data:", foodAnnualData);
+    console.log("Food Month Data:", foodMonthData);
+    console.log("Beverage Data:", bevData);
+    console.log("Wages Data:", { monthlyWages, weekdayTotals });
     
     return {
       query: input,
@@ -315,27 +352,36 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
             costPercentage: 100 - foodMonthData.gpPercentage
           },
           annual: {
-            revenue: annualData.totalRevenue,
-            purchases: annualData.totalCost,
-            gpPercentage: annualData.gpPercentage,
-            costPercentage: 100 - annualData.gpPercentage
-          }
+            revenue: foodAnnualData.revenue,
+            purchases: foodAnnualData.cost,
+            gpPercentage: foodAnnualData.gpPercentage,
+            costPercentage: 100 - foodAnnualData.gpPercentage
+          },
+          rawData: annualRecord
         },
         beverage: {
           year: currentYear,
           month: currentMonth,
           monthToDate: {
-            revenue: bevMonthData.revenue,
-            purchases: bevMonthData.cost,
-            gpPercentage: bevMonthData.gpPercentage,
-            costPercentage: 100 - bevMonthData.gpPercentage
-          }
+            revenue: bevData.monthToDate.revenue,
+            purchases: bevData.monthToDate.cost,
+            gpPercentage: bevData.monthToDate.gpPercentage,
+            costPercentage: 100 - bevData.monthToDate.gpPercentage
+          },
+          annual: {
+            revenue: bevData.annual.revenue,
+            purchases: bevData.annual.cost,
+            gpPercentage: bevData.annual.gpPercentage,
+            costPercentage: 100 - bevData.annual.gpPercentage
+          },
+          rawData: window.bevStore ? window.bevStore.getState().annualRecord : null
         },
         wages: {
           year: currentYear,
           month: currentMonth,
           daily: monthlyWages,
-          weeklyAnalysis: weekdayTotals
+          weeklyAnalysis: weekdayTotals,
+          allWages: await getMonthlyWages(currentYear, currentMonth)
         }
       },
       conversationHistory: messages.map(msg => ({
