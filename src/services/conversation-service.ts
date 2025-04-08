@@ -205,6 +205,11 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         try {
           responseData = JSON.parse(responseText);
           console.log('Parsed JSON response:', responseData);
+          
+          // Extract output from n8n response if available (this is the AI response)
+          if (responseData.output) {
+            console.log('Found output in response:', responseData.output);
+          }
         } catch (jsonError) {
           console.error('Failed to parse response as JSON:', jsonError);
           responseData = { 
@@ -228,9 +233,21 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
     
     // Update conversation with response
     if (conversationId) {
-      const responseForStorage = typeof responseData === 'object' 
-        ? JSON.stringify(responseData)
-        : String(responseData);
+      // Extract the actual response text for storage
+      let responseForStorage = "";
+      
+      // Try to get the most appropriate response content
+      if (responseData.output) {
+        responseForStorage = responseData.output;
+      } else if (responseData.response) {
+        responseForStorage = responseData.response;
+      } else if (responseData.message) {
+        responseForStorage = responseData.message;
+      } else if (typeof responseData === 'string') {
+        responseForStorage = responseData;
+      } else {
+        responseForStorage = JSON.stringify(responseData);
+      }
         
       await supabase
         .from('ai_conversations')
@@ -256,13 +273,32 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       };
     }
     
+    // For successful responses, extract and prioritize the actual AI response
+    if (statusCode >= 200 && statusCode < 300) {
+      // Look for the output property first (this is where n8n usually puts AI responses)
+      const aiResponse = responseData?.output || responseData?.response || responseData?.message;
+      
+      return {
+        success: true,
+        data: {
+          ...(responseData || {}),
+          response: aiResponse // Ensure the response is available under data.response
+        },
+        status: statusCode,
+        message: `Request processed successfully`,
+        rawResponse: responseText,
+        conversationId: conversationId
+      };
+    }
+    
+    // For error responses
     return {
-      success: statusCode >= 200 && statusCode < 300,
+      success: false,
       data: responseData,
       status: statusCode,
-      message: responseData?.message || `Request processed with status: ${statusCode}`,
+      message: responseData?.message || `Request failed with status: ${statusCode}`,
       rawResponse: responseText,
-      conversationId: conversationId // Include the conversation ID in the response
+      conversationId: conversationId
     };
   } catch (error) {
     console.error('Webhook request failed with critical error:', error);

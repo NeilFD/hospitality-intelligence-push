@@ -234,11 +234,12 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       // Get the conversation ID from the response if available
       const conversationId = response.conversationId || null;
       
-      // Handle response based on type - with no error popup
+      // Handle response based on type
       if (response.success) {
-        // Extract response text from the webhook response
+        // Extract response text from the webhook response - prefer data.response over data.message
         const aiResponse = response.data?.response || 
                            response.data?.message || 
+                           response.data?.output || 
                            "I've processed your query but couldn't generate a proper analysis. Please try with more specific details.";
         
         const newMessage = {
@@ -250,7 +251,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         
         setMessages(prev => [...prev, newMessage]);
       } else {
-        // For failures, just log the error and show a simple message with no popup
+        // For failures, log the error and show a simple message
         console.error("Failed webhook request:", response.status, response.message);
         
         setMessages(prev => [...prev, {
@@ -310,7 +311,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
                       : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100 text-tavern-blue-dark'
                   }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                   <p className="text-xs mt-1 opacity-70">
                     {message.timestamp instanceof Date 
                       ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
