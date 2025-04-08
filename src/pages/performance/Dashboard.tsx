@@ -10,18 +10,49 @@ import { History, Bug, AlertTriangle, InfoIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
 
 export default function PerformanceDashboard() {
   const {
-    annualRecord
+    annualRecord,
+    currentYear,
+    currentMonth
   } = useStore();
   const [hasFoodData, setHasFoodData] = useState(false);
   const [hasBevData, setHasBevData] = useState(false);
 
+  // Query for food tracker data
+  const { data: foodTrackerData } = useQuery({
+    queryKey: ['tracker-data', currentYear, currentMonth, 'food'],
+    queryFn: () => fetchTrackerDataByMonth(currentYear, currentMonth, 'food'),
+    staleTime: 10 * 60 * 1000 // 10 minutes
+  });
+
+  // Query for beverage tracker data
+  const { data: bevTrackerData } = useQuery({
+    queryKey: ['tracker-data', currentYear, currentMonth, 'beverage'],
+    queryFn: () => fetchTrackerDataByMonth(currentYear, currentMonth, 'beverage'),
+    staleTime: 10 * 60 * 1000 // 10 minutes
+  });
+
   // Check if we have food and beverage data
   useEffect(() => {
-    // Check food data
-    if (annualRecord && annualRecord.months && annualRecord.months.length > 0) {
+    // Check food data from tracker first
+    if (foodTrackerData && foodTrackerData.length > 0) {
+      let hasData = false;
+      for (const day of foodTrackerData) {
+        if (day.revenue && Number(day.revenue) > 0) {
+          hasData = true;
+          break;
+        }
+      }
+      
+      console.log("Food tracker data status:", hasData ? "Available" : "Not available or empty");
+      setHasFoodData(hasData);
+    } 
+    // If no tracker data, fall back to store data
+    else if (annualRecord && annualRecord.months && annualRecord.months.length > 0) {
       let hasData = false;
       for (const month of annualRecord.months) {
         if (month.weeks) {
@@ -42,8 +73,21 @@ export default function PerformanceDashboard() {
       setHasFoodData(hasData);
     }
 
-    // Check beverage data
-    if (window.bevStore) {
+    // Check beverage data from tracker first
+    if (bevTrackerData && bevTrackerData.length > 0) {
+      let hasData = false;
+      for (const day of bevTrackerData) {
+        if (day.revenue && Number(day.revenue) > 0) {
+          hasData = true;
+          break;
+        }
+      }
+      
+      console.log("Beverage tracker data status:", hasData ? "Available" : "Not available or empty");
+      setHasBevData(hasData);
+    }
+    // If no tracker data, fall back to checking bevStore
+    else if (window.bevStore) {
       try {
         const bevData = window.bevStore.getState().annualRecord;
         if (bevData && bevData.months && bevData.months.length > 0) {
@@ -65,7 +109,7 @@ export default function PerformanceDashboard() {
             }
           }
           setHasBevData(hasData);
-          console.log("Beverage data status:", hasData ? "Available" : "Not available or empty");
+          console.log("Beverage store data status:", hasData ? "Available" : "Not available or empty");
         }
       } catch (error) {
         console.error("Error checking beverage data:", error);
@@ -75,7 +119,7 @@ export default function PerformanceDashboard() {
       console.log("Beverage store not found in window object");
       setHasBevData(false);
     }
-  }, [annualRecord]);
+  }, [annualRecord, foodTrackerData, bevTrackerData]);
 
   return <div className="container max-w-7xl py-6 space-y-6">
       <div className="flex items-center justify-between mb-2">

@@ -43,6 +43,8 @@ export default function FoodDashboard() {
     
     // If we have data from the tracker, use it
     if (trackerData && trackerData.length > 0) {
+      console.log("Processing food tracker data:", trackerData.length, "records");
+      
       const promises = trackerData.map(async (day) => {
         // For each day, fetch all purchases and credit notes
         const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
@@ -66,6 +68,9 @@ export default function FoodDashboard() {
         const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + (cn.amount || 0), 0);
         const dayCost = purchasesTotal - creditNotesTotal + (day.staff_food_allowance || 0);
         
+        // Log each day's revenue for debugging
+        console.log(`Day ${day.date}: Revenue = ${day.revenue || 0}, Cost = ${dayCost}`);
+        
         return {
           revenue: day.revenue || 0,
           cost: dayCost
@@ -82,6 +87,9 @@ export default function FoodDashboard() {
             monthRevenue += result.revenue;
             monthCost += result.cost;
           });
+          
+          console.log("Total food revenue from tracker:", monthRevenue);
+          console.log("Total food cost from tracker:", monthCost);
           
           setTotalRevenue(revenue);
           setTotalCost(cost);

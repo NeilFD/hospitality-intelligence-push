@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -229,6 +228,48 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       gpPercentage: 0
     };
     
+    if (foodTrackerData && foodTrackerData.length > 0) {
+      console.log("Using food tracker data for month analysis:", foodTrackerData.length, "records");
+      
+      const trackerRevenue = foodTrackerData.reduce((sum, day) => {
+        console.log(`Day ${day.date}: Revenue = ${day.revenue || 0}`);
+        return sum + (day.revenue || 0);
+      }, 0);
+      
+      let totalCost = 0;
+      
+      if (annualRecord && annualRecord.months) {
+        const thisMonth = annualRecord.months.find(
+          m => m.year === year && m.month === month
+        );
+        
+        if (thisMonth && thisMonth.weeks) {
+          thisMonth.weeks.forEach(week => {
+            if (week.days) {
+              week.days.forEach(day => {
+                const dayPurchases = day.purchases ? 
+                  Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                
+                const creditNotes = day.creditNotes ? 
+                  day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
+                
+                totalCost += dayPurchases - creditNotes + (day.staffFoodAllowance || 0);
+              });
+            }
+          });
+        }
+      }
+      
+      console.log("Food tracker month total revenue:", trackerRevenue);
+      console.log("Food cost (from store):", totalCost);
+      
+      monthData.revenue = trackerRevenue;
+      monthData.cost = totalCost;
+      monthData.gpPercentage = calculateGP(trackerRevenue, totalCost);
+      
+      return monthData;
+    }
+    
     if (annualRecord && annualRecord.months) {
       const thisMonth = annualRecord.months.find(
         m => m.year === year && m.month === month
@@ -253,21 +294,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       }
     }
     
-    // Check if we have tracker data for food and use it if available
-    if (foodTrackerData && foodTrackerData.length > 0) {
-      const trackerRevenue = foodTrackerData.reduce((sum, day) => {
-        return sum + (day.revenue || 0);
-      }, 0);
-      
-      console.log("Food tracker data found:", foodTrackerData.length, "records, total revenue:", trackerRevenue);
-      if (trackerRevenue > 0) {
-        monthData.revenue = trackerRevenue;
-        monthData.gpPercentage = calculateGP(trackerRevenue, monthData.cost);
-      }
-    } else {
-      console.log("No food tracker data found for", year, month);
-    }
-    
     return monthData;
   };
 
@@ -283,6 +309,55 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       cost: 0,
       gpPercentage: 0
     };
+    
+    if (bevTrackerData && bevTrackerData.length > 0) {
+      console.log("Using beverage tracker data for analysis:", bevTrackerData.length, "records");
+      
+      const trackerRevenue = bevTrackerData.reduce((sum, day) => {
+        console.log(`Bev day ${day.date}: Revenue = ${day.revenue || 0}`);
+        return sum + (day.revenue || 0);
+      }, 0);
+      
+      let totalCost = 0;
+      if (window.bevStore) {
+        try {
+          const bevData = window.bevStore.getState().annualRecord;
+          if (bevData && bevData.months) {
+            const bevMonth = bevData.months.find(
+              m => m.year === year && m.month === month
+            );
+            
+            if (bevMonth && bevMonth.weeks) {
+              bevMonth.weeks.forEach(week => {
+                if (week.days) {
+                  week.days.forEach(day => {
+                    if (day.purchases) {
+                      const dayPurchases = Object.values(day.purchases).reduce(
+                        (sum, amount) => sum + Number(amount), 0
+                      );
+                      totalCost += dayPurchases;
+                    }
+                  });
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error extracting cost data from bevStore:", error);
+        }
+      }
+      
+      console.log("Beverage tracker month total revenue:", trackerRevenue);
+      console.log("Beverage cost (from store if available):", totalCost);
+      
+      monthData.revenue = trackerRevenue;
+      monthData.cost = totalCost;
+      monthData.gpPercentage = calculateGP(trackerRevenue, totalCost);
+      
+      annualData = { ...monthData };
+      
+      return { annual: annualData, monthToDate: monthData };
+    }
     
     if (window.bevStore) {
       try {
@@ -344,21 +419,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       console.warn("Beverage store not found in window object");
     }
     
-    // Check if we have tracker data for beverage and use it if available
-    if (bevTrackerData && bevTrackerData.length > 0) {
-      const trackerRevenue = bevTrackerData.reduce((sum, day) => {
-        return sum + (day.revenue || 0);
-      }, 0);
-      
-      console.log("Beverage tracker data found:", bevTrackerData.length, "records, total revenue:", trackerRevenue);
-      if (trackerRevenue > 0) {
-        monthData.revenue = trackerRevenue;
-        monthData.gpPercentage = calculateGP(trackerRevenue, monthData.cost);
-      }
-    } else {
-      console.log("No beverage tracker data found for", year, month);
-    }
-    
     return { annual: annualData, monthToDate: monthData };
   };
 
@@ -384,6 +444,35 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     try {
       if (window.bevStore) {
         deepCopyBevData = JSON.parse(JSON.stringify(window.bevStore.getState().annualRecord));
+        
+        if (bevTrackerData && bevTrackerData.length > 0 && deepCopyBevData && deepCopyBevData.months) {
+          console.log("Updating deepCopyBevData with tracker data");
+          
+          const currentMonthData = deepCopyBevData.months.find(
+            m => m.year === currentYear && m.month === currentMonth
+          );
+          
+          if (currentMonthData) {
+            const trackerDataByDate = {};
+            bevTrackerData.forEach(day => {
+              trackerDataByDate[day.date] = day;
+            });
+            
+            if (currentMonthData.weeks) {
+              currentMonthData.weeks.forEach(week => {
+                if (week.days) {
+                  week.days.forEach(day => {
+                    const trackerDay = trackerDataByDate[day.date];
+                    if (trackerDay) {
+                      day.revenue = trackerDay.revenue || 0;
+                      console.log(`Updated beverage day ${day.date} revenue to ${day.revenue}`);
+                    }
+                  });
+                }
+              });
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Error copying beverage data:", error);
