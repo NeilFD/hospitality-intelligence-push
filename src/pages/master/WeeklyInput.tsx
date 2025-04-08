@@ -140,13 +140,16 @@ const WeeklyInput = () => {
                     </div>
                     <div className="text-xl font-semibold relative inline-block">
                       <span className={`
-                        px-2 
+                        px-3 
                         py-1 
                         rounded-md 
                         group-data-[state=active]:bg-tavern-green/10
                         group-data-[state=active]:text-tavern-green
                         transition-all 
                         duration-200
+                        inline-block
+                        min-w-[40px]
+                        text-center
                       `}>
                         {format(new Date(day.date), 'd')}
                       </span>
