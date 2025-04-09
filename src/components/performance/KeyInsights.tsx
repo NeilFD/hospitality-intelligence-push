@@ -6,7 +6,12 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { TrendingUp, TrendingDown, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import { fetchTrackerDataByMonth, getTrackerSummaryByMonth } from '@/services/kitchen-service';
+import { 
+  fetchTrackerDataByMonth, 
+  getTrackerSummaryByMonth,
+  fetchTrackerPurchases,
+  fetchTrackerCreditNotes 
+} from '@/services/kitchen-service';
 
 interface WeeklySummary {
   week: string;
@@ -30,31 +35,27 @@ export default function KeyInsights() {
   const [gpData, setGpData] = useState<WeeklySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get previous month data for comparison
   const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-  // Query for food tracker summary
   const { 
     data: foodSummary,
     isLoading: isFoodLoading 
   } = useQuery<TrackerSummary>({
     queryKey: ['tracker-summary', currentYear, currentMonth, 'food'],
     queryFn: () => getTrackerSummaryByMonth(currentYear, currentMonth, 'food'),
-    staleTime: 10 * 60 * 1000 // 10 minutes
+    staleTime: 10 * 60 * 1000
   });
 
-  // Query for beverage tracker summary
   const { 
     data: bevSummary,
     isLoading: isBevLoading 
   } = useQuery<TrackerSummary>({
     queryKey: ['tracker-summary', currentYear, currentMonth, 'beverage'],
     queryFn: () => getTrackerSummaryByMonth(currentYear, currentMonth, 'beverage'),
-    staleTime: 10 * 60 * 1000 // 10 minutes
+    staleTime: 10 * 60 * 1000
   });
 
-  // Query for previous month food and beverage summaries for comparison
   const { data: prevFoodSummary } = useQuery<TrackerSummary>({
     queryKey: ['tracker-summary', prevYear, prevMonth, 'food'],
     queryFn: () => getTrackerSummaryByMonth(prevYear, prevMonth, 'food'),
@@ -67,14 +68,12 @@ export default function KeyInsights() {
     staleTime: 10 * 60 * 1000
   });
 
-  // Query for food tracker data for weekly charts
   const { data: foodTrackerData } = useQuery({
     queryKey: ['tracker-data', currentYear, currentMonth, 'food'],
     queryFn: () => fetchTrackerDataByMonth(currentYear, currentMonth, 'food'),
     staleTime: 10 * 60 * 1000
   });
 
-  // Query for beverage tracker data for weekly charts
   const { data: bevTrackerData } = useQuery({
     queryKey: ['tracker-data', currentYear, currentMonth, 'beverage'],
     queryFn: () => fetchTrackerDataByMonth(currentYear, currentMonth, 'beverage'),
@@ -84,25 +83,20 @@ export default function KeyInsights() {
   useEffect(() => {
     setIsLoading(isFoodLoading || isBevLoading);
     
-    // Process weekly data when tracker data is available
     if (foodTrackerData && bevTrackerData) {
       processWeeklyData();
     }
   }, [foodTrackerData, bevTrackerData, isFoodLoading, isBevLoading]);
 
-  // Function to process weekly data from trackers
   const processWeeklyData = async () => {
     try {
-      // Create week maps for food and beverage data
       const foodWeekMap: Record<string, { revenue: number, cost: number }> = {};
       const bevWeekMap: Record<string, { revenue: number, cost: number }> = {};
       
-      // Process food data by week
       if (foodTrackerData && foodTrackerData.length > 0) {
         for (const day of foodTrackerData) {
           if (!day.date) continue;
           
-          // Determine the week
           const date = new Date(day.date);
           const weekOfMonth = Math.ceil(date.getDate() / 7);
           const weekKey = `Week ${weekOfMonth}`;
@@ -111,27 +105,22 @@ export default function KeyInsights() {
             foodWeekMap[weekKey] = { revenue: 0, cost: 0 };
           }
           
-          // Add revenue
           foodWeekMap[weekKey].revenue += Number(day.revenue) || 0;
           
-          // Get purchases and credit notes for this day
           const purchases = await fetchTrackerPurchases(day.id);
           const creditNotes = await fetchTrackerCreditNotes(day.id);
           
           const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
           const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
           
-          // Calculate cost
           foodWeekMap[weekKey].cost += purchasesTotal - creditNotesTotal + (Number(day.staff_food_allowance) || 0);
         }
       }
       
-      // Process beverage data by week
       if (bevTrackerData && bevTrackerData.length > 0) {
         for (const day of bevTrackerData) {
           if (!day.date) continue;
           
-          // Determine the week
           const date = new Date(day.date);
           const weekOfMonth = Math.ceil(date.getDate() / 7);
           const weekKey = `Week ${weekOfMonth}`;
@@ -140,42 +129,35 @@ export default function KeyInsights() {
             bevWeekMap[weekKey] = { revenue: 0, cost: 0 };
           }
           
-          // Add revenue
           bevWeekMap[weekKey].revenue += Number(day.revenue) || 0;
           
-          // Get purchases and credit notes for this day
           const purchases = await fetchTrackerPurchases(day.id);
           const creditNotes = await fetchTrackerCreditNotes(day.id);
           
           const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
           const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
           
-          // Calculate cost
           bevWeekMap[weekKey].cost += purchasesTotal - creditNotesTotal + (Number(day.staff_food_allowance) || 0);
         }
       }
       
-      // Combine data and create chart datasets
       const allWeekKeys = new Set([...Object.keys(foodWeekMap), ...Object.keys(bevWeekMap)]);
       
       const weeklyRevenueData: WeeklySummary[] = [];
       const weeklyGpData: WeeklySummary[] = [];
       
-      // Sort weeks by number
       const sortedWeeks = Array.from(allWeekKeys).sort((a, b) => {
         const aNum = parseInt(a.replace('Week ', ''));
         const bNum = parseInt(b.replace('Week ', ''));
         return aNum - bNum;
       });
       
-      // Create data for charts
       sortedWeeks.forEach(week => {
         const foodRevenue = foodWeekMap[week]?.revenue || 0;
         const foodCost = foodWeekMap[week]?.cost || 0;
         const bevRevenue = bevWeekMap[week]?.revenue || 0;
         const bevCost = bevWeekMap[week]?.cost || 0;
         
-        // Calculate GP percentages
         const foodGP = foodRevenue > 0 ? ((foodRevenue - foodCost) / foodRevenue) * 100 : 0;
         const bevGP = bevRevenue > 0 ? ((bevRevenue - bevCost) / bevRevenue) * 100 : 0;
         const combinedRevenue = foodRevenue + bevRevenue;
@@ -183,7 +165,6 @@ export default function KeyInsights() {
           ? ((combinedRevenue - (foodCost + bevCost)) / combinedRevenue) * 100 
           : 0;
         
-        // Add to revenue data
         weeklyRevenueData.push({
           week,
           foodRevenue,
@@ -194,7 +175,6 @@ export default function KeyInsights() {
           combinedGP
         });
         
-        // Add to GP data
         weeklyGpData.push({
           week,
           foodRevenue,
@@ -206,21 +186,17 @@ export default function KeyInsights() {
         });
       });
       
-      // Update state with processed data
       setRevenueData(weeklyRevenueData);
       setGpData(weeklyGpData);
-      
     } catch (error) {
       console.error("Error processing weekly data:", error);
     }
   };
 
-  // Compute combined values
   const combinedRevenue = (foodSummary?.revenue || 0) + (bevSummary?.revenue || 0);
   const combinedCost = (foodSummary?.cost || 0) + (bevSummary?.cost || 0);
   const combinedGP = combinedRevenue > 0 ? (combinedRevenue - combinedCost) / combinedRevenue : 0;
   
-  // Compute previous month's combined values for comparison
   const prevCombinedGP = prevFoodSummary && prevBevSummary
     ? ((prevFoodSummary.revenue + prevBevSummary.revenue) > 0
       ? ((prevFoodSummary.revenue + prevBevSummary.revenue) - (prevFoodSummary.cost + prevBevSummary.cost)) / 
@@ -228,7 +204,6 @@ export default function KeyInsights() {
       : 0)
     : 0;
   
-  // Calculate GP trend
   const gpTrend = combinedGP - prevCombinedGP;
   const gpTrendPercentage = prevCombinedGP ? (gpTrend / prevCombinedGP) * 100 : 0;
 
