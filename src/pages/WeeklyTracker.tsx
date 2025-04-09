@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -46,24 +45,18 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     const loadTrackerData = async () => {
       setLoading(true);
       try {
-        // Load suppliers first
         const suppliersData = await fetchSuppliers(moduleType);
         setSuppliers(suppliersData.map(s => ({ id: s.id, name: s.name })));
         
-        // Load tracker data for the week
         const data = await fetchTrackerDataByWeek(year, month, weekNumber, moduleType);
         console.info(`Processing ${moduleType} tracker data: ${data.length} records`);
         
-        // Create a map to store purchase data by tracker data ID
         const purchasesByTrackerId: Record<string, Record<string, number>> = {};
         const creditNotesByTrackerId: Record<string, number[]> = {};
         
-        // Fetch purchases for all tracker data items
         for (const item of data) {
-          // Log revenue for debugging
           console.info(`Day ${item.date}: Revenue = ${item.revenue}`);
           
-          // Fetch purchases for this tracker data item
           const purchases = await fetchTrackerPurchases(item.id);
           purchasesByTrackerId[item.id] = {};
           
@@ -71,12 +64,10 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
             purchasesByTrackerId[item.id][purchase.supplier_id] = purchase.amount;
           }
           
-          // Fetch credit notes for this tracker data item
           const creditNotes = await fetchTrackerCreditNotes(item.id);
           creditNotesByTrackerId[item.id] = creditNotes.map(cn => cn.amount);
         }
         
-        // Transform data to our component's format with purchases and credit notes
         const formattedData = data.map(item => ({
           id: item.id,
           date: item.date,
@@ -124,7 +115,6 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     return (calculateGrossProfit(day) / day.revenue) * 100;
   };
 
-  // Handle input changes
   const handleRevenueChange = (dayId: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     setTrackerData(prev => prev.map(day => 
@@ -200,9 +190,7 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     setSaving(true);
     try {
       for (const day of trackerData) {
-        // Update tracker data
         await upsertTrackerData({
-          id: day.id,
           year,
           month,
           week_number: weekNumber,
@@ -213,7 +201,6 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
           staff_food_allowance: day.staffFoodAllowance
         });
         
-        // Update purchases
         for (const [supplierId, amount] of Object.entries(day.purchases)) {
           await upsertTrackerPurchase({
             tracker_data_id: day.id,
@@ -222,7 +209,6 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
           });
         }
         
-        // Update credit notes
         for (let i = 0; i < day.creditNotes.length; i++) {
           await upsertTrackerCreditNote({
             tracker_data_id: day.id,
@@ -288,7 +274,6 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                           />
                         </div>
                         
-                        {/* Purchases by supplier */}
                         <div className="space-y-1">
                           <h4 className="text-xs font-medium text-gray-500">Purchases:</h4>
                           {suppliers.map(supplier => (
@@ -308,7 +293,6 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                           </div>
                         </div>
                         
-                        {/* Credit Notes */}
                         <div className="space-y-1">
                           <div className="flex justify-between items-center">
                             <h4 className="text-xs font-medium text-gray-500">Credit Notes:</h4>
@@ -350,7 +334,6 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                           )}
                         </div>
                         
-                        {/* Staff Food Allowance */}
                         <div className="flex justify-between text-sm items-center">
                           <span className="text-gray-600">Staff Food:</span>
                           <Input 
@@ -361,13 +344,11 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                           />
                         </div>
                         
-                        {/* Net Cost */}
                         <div className="flex justify-between text-sm font-medium border-t border-gray-200 pt-2">
                           <span>Net Cost:</span>
                           <span>£{calculateCost(day).toFixed(2)}</span>
                         </div>
                         
-                        {/* GP and Percentage */}
                         <div className="space-y-1 border-t border-gray-200 pt-2">
                           <div className="flex justify-between text-sm font-medium">
                             <span>Gross Profit:</span>
