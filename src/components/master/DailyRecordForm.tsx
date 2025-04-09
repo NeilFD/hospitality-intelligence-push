@@ -1,4 +1,3 @@
-
 import React, { useMemo, useCallback, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -189,17 +188,13 @@ const PDFDocument = ({
 
 const styles = StyleSheet.create({
   page: {
-    padding: 0,
-    margin: 0,
-    fontFamily: 'Helvetica',
-    backgroundColor: '#FFFFFF'
+    backgroundColor: '#FFFFFF',
+    padding: 30
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
-    paddingHorizontal: 10,
-    paddingTop: 10
+    marginBottom: 20,
   },
   logo: {
     width: 40,
@@ -213,27 +208,25 @@ const styles = StyleSheet.create({
   },
   dateContainer: {
     alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 10
+    marginBottom: 20,
   },
   reportTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 2
+    marginBottom: 5
   },
   date: {
     fontSize: 12,
     color: '#555555'
   },
   section: {
-    marginBottom: 10,
-    paddingHorizontal: 10
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     paddingBottom: 3,
-    marginBottom: 4,
+    marginBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#48495E',
     color: '#48495E'
@@ -242,7 +235,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     marginTop: 6,
-    marginBottom: 2
+    marginBottom: 4
   },
   table: {
     display: 'flex',
@@ -252,11 +245,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
-    paddingVertical: 2
+    paddingVertical: 4
   },
   tableCol: {
     flex: 1,
-    padding: 2
+    padding: 3
   },
   tableHeader: {
     fontSize: 10,
@@ -265,25 +258,25 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     fontSize: 11,
-    paddingTop: 1
+    paddingTop: 2
   },
   noteContainer: {
-    marginBottom: 6
+    marginBottom: 8
   },
   noteTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    marginBottom: 1
+    marginBottom: 2
   },
   note: {
     fontSize: 10,
     backgroundColor: '#F5F5F5',
-    padding: 4,
+    padding: 5,
     borderRadius: 3
   },
   footer: {
     position: 'absolute',
-    bottom: 10,
+    bottom: 20,
     left: 0,
     right: 0,
     textAlign: 'center',
@@ -302,6 +295,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
   const defaultValues = useMemo(() => ({
     date,
@@ -325,22 +319,27 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     eveningKitchenTeam: initialData.eveningKitchenTeam || '',
     eveningKitchenManager: initialData.eveningKitchenManager || ''
   }), [date, dayOfWeek, initialData]);
+  
   const form = useForm<Partial<MasterDailyRecord>>({
     defaultValues
   });
+  
   const totalRevenue = useMemo(() => {
     const foodRev = form.watch('foodRevenue') || 0;
     const bevRev = form.watch('beverageRevenue') || 0;
     return foodRev + bevRev;
   }, [form.watch('foodRevenue'), form.watch('beverageRevenue')]);
+  
   const totalCovers = useMemo(() => {
     const lunch = form.watch('lunchCovers') || 0;
     const dinner = form.watch('dinnerCovers') || 0;
     return lunch + dinner;
   }, [form.watch('lunchCovers'), form.watch('dinnerCovers')]);
+  
   const averageCoverSpend = useMemo(() => {
     return totalCovers > 0 ? totalRevenue / totalCovers : 0;
   }, [totalRevenue, totalCovers]);
+  
   const handleWeatherFetched = useCallback((weatherData: {
     description: string;
     temperature: number;
@@ -353,6 +352,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     form.setValue('windSpeed', weatherData.windSpeed);
     toast.success('Weather data fetched successfully');
   }, [form]);
+  
   const handleSubmit = useCallback(async (data: Partial<MasterDailyRecord>) => {
     setIsSaving(true);
     try {
@@ -368,6 +368,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       setIsSaving(false);
     }
   }, [onSave, date]);
+  
   const handleEmailClick = useCallback(async () => {
     setIsPdfDialogOpen(true);
     setIsGeneratingPdf(true);
@@ -375,6 +376,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       const formData = form.getValues();
       const pdfDoc = <PDFDocument data={formData} />;
       const blob = await pdf(pdfDoc).toBlob();
+      setPdfBlob(blob);
       const dataUrl = URL.createObjectURL(blob);
       setPdfUrl(dataUrl);
     } catch (error) {
@@ -384,20 +386,32 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       setIsGeneratingPdf(false);
     }
   }, [form]);
+  
   const handleSendEmail = useCallback(() => {
-    if (pdfUrl) {
+    if (pdfBlob) {
       const formattedDate = format(new Date(date), 'MMMM d, yyyy');
+      const reportFileName = `Daily_Record_Report_${format(new Date(date), 'yyyy-MM-dd')}.pdf`;
+      
+      const fileURL = URL.createObjectURL(pdfBlob);
+      const tempLink = document.createElement('a');
+      tempLink.href = fileURL;
+      tempLink.setAttribute('download', reportFileName);
+      tempLink.click();
+      
       const subject = `Daily Record Report - ${formattedDate}`;
       const body = `Please find attached the daily record report for ${formattedDate}.`;
       const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
       window.open(mailtoLink, '_blank');
+      
       setIsPdfDialogOpen(false);
       setPdfUrl(null);
-      toast.success('Email prepared successfully', {
-        description: 'The report has been attached to a new email'
+      toast.success('Report downloaded and email prepared', {
+        description: 'Please attach the downloaded file to the email'
       });
     }
-  }, [pdfUrl, date]);
+  }, [pdfBlob, date]);
+  
   return <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)}>
