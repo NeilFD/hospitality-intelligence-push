@@ -1,3 +1,4 @@
+
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -77,7 +78,7 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
-  // New approach to filter out the Total row that follows Gross Profit
+  // Filter out the "Total" row that appears after Gross Profit
   const filteredBudgetData = React.useMemo(() => {
     // Handle empty data case
     if (!processedBudgetData || processedBudgetData.length === 0) {
@@ -85,41 +86,48 @@ export function PLReportTable({
     }
     
     // Create a deep copy to prevent modifying the original array
-    const workingData = JSON.parse(JSON.stringify(processedBudgetData));
+    const data = JSON.parse(JSON.stringify(processedBudgetData));
     
-    // Find the index of any row containing "Gross Profit"
-    let grossProfitIndex = -1;
-    for (let i = 0; i < workingData.length; i++) {
-      const item = workingData[i];
-      if (item && item.name && 
-          (item.name.includes("Gross Profit") || 
-           item.name.includes("Gross profit") || 
-           item.name.includes("gross profit"))) {
-        grossProfitIndex = i;
-        break;
+    // Find all "Gross Profit" related rows
+    const grossProfitRows = data
+      .map((item: any, index: number) => {
+        if (item && item.name && 
+            (item.name.toLowerCase().includes("gross profit") || 
+             item.name.toLowerCase().includes("gross profit/(loss)"))) {
+          return index;
+        }
+        return -1;
+      })
+      .filter((index: number) => index !== -1);
+    
+    // For each gross profit row, check if the next row is "Total"
+    let rowsToRemove: number[] = [];
+    
+    grossProfitRows.forEach((gpIndex: number) => {
+      if (gpIndex >= 0 && gpIndex < data.length - 1) {
+        const nextRow = data[gpIndex + 1];
+        if (nextRow && nextRow.name && 
+           (nextRow.name === "Total" || 
+            nextRow.name === "total" || 
+            nextRow.name === "TOTAL" ||
+            nextRow.name.trim() === "Total ")) {
+          rowsToRemove.push(gpIndex + 1);
+        }
       }
-    }
+    });
     
-    console.log("Gross Profit index:", grossProfitIndex);
+    // Remove the rows in reverse order to avoid index shifting
+    rowsToRemove.sort((a, b) => b - a).forEach(index => {
+      console.log(`Removing row at index ${index}: "${data[index]?.name}"`);
+      data.splice(index, 1);
+    });
     
-    // If we found a gross profit row, check the next row
-    if (grossProfitIndex >= 0 && grossProfitIndex < workingData.length - 1) {
-      const nextRow = workingData[grossProfitIndex + 1];
-      console.log("Row after Gross Profit:", nextRow);
-      
-      // If the next row is "Total", remove it
-      if (nextRow && nextRow.name && 
-         (nextRow.name === "Total" || nextRow.name === "total" || nextRow.name === "TOTAL")) {
-        console.log("Found Total row at index:", grossProfitIndex + 1);
-        // Remove this one row
-        workingData.splice(grossProfitIndex + 1, 1);
-      }
-    }
-    
-    // Also log the first few rows to see what we have
-    console.log("First 10 rows:", workingData.slice(0, 10).map(r => r?.name));
-    
-    return workingData;
+    // Remove any row that is just "Total" with no other context
+    return data.filter((item: any) => {
+      if (!item || !item.name) return true;
+      const name = item.name.trim().toLowerCase();
+      return name !== "total";
+    });
   }, [processedBudgetData]);
 
   const renderTableContent = () => {
