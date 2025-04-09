@@ -62,12 +62,14 @@ export function PLTracker({
   const calculateActualAmount = (item: PLTrackerBudgetItem): number => {
     // For pro-rated items, explicitly calculate based on current day
     if (item.tracking_type === 'Pro-Rated') {
-      // Check if there's a manual actual amount set
-      if (item.actual_amount && Number(item.actual_amount) > 0) {
-        return Number(item.actual_amount);
+      // If there's a manual actual amount set greater than 0, use that
+      // Otherwise always calculate the pro-rated value
+      const manualActual = Number(item.actual_amount || 0);
+      if (manualActual > 0 && !item.name.toLowerCase().includes('marketing')) {
+        return manualActual;
       }
       
-      // Otherwise calculate pro-rated value
+      // Calculate pro-rated value
       return (item.budget_amount / daysInMonth) * dayOfMonth;
     }
     
