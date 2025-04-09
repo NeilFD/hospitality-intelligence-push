@@ -70,14 +70,14 @@ export function TrackerLineItem({
                  item.name.toLowerCase() === 'salaries';
   
   // Determine if item should have read-only actual values
-  const isReadOnlyActual = isRevenue || isCOS || isWages;
+  const isReadOnlyActual = isRevenue || isCOS || isWages || isGrossProfit;
   
   let rowClassName = '';
   let fontClass = '';
   
   if (item.isHighlighted && !item.name.toLowerCase().includes('total admin')) {
     rowClassName = 'bg-[#48495e]/90 text-white font-bold';
-  } else if ((isGrossProfit && !item.name.toLowerCase().includes('food gross profit') && !item.name.toLowerCase().includes('beverage gross profit')) || isTurnover) {
+  } else if ((isGrossProfit) || isTurnover) {
     rowClassName = 'font-semibold bg-purple-50/50';
   }
   
@@ -85,8 +85,7 @@ export function TrackerLineItem({
               item.name.toLowerCase().includes('total admin') || 
               item.name.toLowerCase().includes('turnover') || 
               item.name.toLowerCase().includes('cost of sales') || 
-              (isGrossProfit && !item.name.toLowerCase().includes('food gross profit') && 
-               !item.name.toLowerCase().includes('beverage profit')) ? 'font-bold' : '';
+              isGrossProfit ? 'font-bold' : '';
   
   if (isOperatingProfit && !item.isHighlighted) {
     return null;
@@ -107,6 +106,22 @@ export function TrackerLineItem({
     handleCloseDailyInput();
   };
 
+  // Calculate percentage for gross profit items
+  let percentageDisplay = '';
+  if (isGrossProfit && item.name.toLowerCase().includes('food')) {
+    // Get the food sales item
+    const foodRevenue = actualAmount > 0 && typeof actualAmount === 'number' ? 
+      ((actualAmount / (item.actual_amount || 1)) * 100).toFixed(2) : '0.00';
+    percentageDisplay = `${foodRevenue}%`;
+  } else if (isGrossProfit && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink'))) {
+    // Get the beverage sales item
+    const beverageRevenue = actualAmount > 0 && typeof actualAmount === 'number' ? 
+      ((actualAmount / (item.actual_amount || 1)) * 100).toFixed(2) : '0.00';
+    percentageDisplay = `${beverageRevenue}%`;
+  } else if (item.budget_percentage !== undefined) {
+    percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
+  }
+
   return (
     <TableRow className={rowClassName}>
       <TableCell className={fontClass}>
@@ -116,7 +131,7 @@ export function TrackerLineItem({
         {formatCurrency(item.budget_amount)}
       </TableCell>
       <TableCell className="text-right">
-        {item.budget_percentage !== undefined ? `${(item.budget_percentage * 100).toFixed(2)}%` : ''}
+        {percentageDisplay}
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
         {formatCurrency(proRatedBudget)}

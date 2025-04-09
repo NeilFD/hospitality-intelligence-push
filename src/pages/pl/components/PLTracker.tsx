@@ -84,14 +84,35 @@ export function PLTracker({
         item.name.toLowerCase().includes('beverage cos') ||
         item.name.toLowerCase().includes('drinks cost of sales') ||
         item.name.toLowerCase().includes('drinks cos') ||
+        item.name.toLowerCase().includes('bev cos') ||
         ((item.name.toLowerCase().includes('beverage') || 
-          item.name.toLowerCase().includes('drink')) &&
+          item.name.toLowerCase().includes('drink') ||
+          item.name.toLowerCase().includes('bev')) &&
          item.category.toLowerCase().includes('cost of sales'))) {
       return item.actual_amount || 0;
     }
     
     if ((item.name.toLowerCase() === 'cost of sales' || 
          item.name.toLowerCase() === 'cos') && 
+        !item.name.toLowerCase().includes('food') &&
+        !item.name.toLowerCase().includes('beverage') &&
+        !item.name.toLowerCase().includes('drink') &&
+        !item.name.toLowerCase().includes('bev')) {
+      return item.actual_amount || 0;
+    }
+    
+    // For gross profit calculations
+    if (item.name.toLowerCase().includes('food gross profit')) {
+      return item.actual_amount || 0;
+    }
+    
+    if (item.name.toLowerCase().includes('beverage gross profit') || 
+        item.name.toLowerCase().includes('drinks gross profit')) {
+      return item.actual_amount || 0;
+    }
+    
+    if ((item.name.toLowerCase() === 'gross profit' || 
+         item.name.toLowerCase() === 'gross profit/(loss)') && 
         !item.name.toLowerCase().includes('food') &&
         !item.name.toLowerCase().includes('beverage') &&
         !item.name.toLowerCase().includes('drink')) {

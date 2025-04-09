@@ -6,8 +6,8 @@ import { Link } from 'react-router-dom';
 import { MonthYearSelector } from './components/MonthYearSelector';
 import { PerformanceChart } from './components/PerformanceChart';
 import { PLReportTable } from './components/PLReportTable';
-import { useBudgetData } from './hooks/useBudgetData';
 import { PLTracker } from './components/PLTracker';
+import { useBudgetData } from './hooks/useBudgetData';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
@@ -63,13 +63,18 @@ export default function PLDashboard() {
   
   const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
   
+  console.log("Dashboard - Food COS:", foodCOSData);
+  console.log("Dashboard - Beverage COS:", beverageCOSData);
+  console.log("Dashboard - Revenue Data:", masterRevenueData);
+  
   // Update the processedBudgetData with master record revenue data, COS, and wages data
   const updatedBudgetData = processedBudgetData.map(item => {
     if (masterRevenueData && !isLoading) {
       // Update food revenue item
       if (item.name.toLowerCase().includes('food sales') || 
           item.name.toLowerCase().includes('food revenue')) {
-        return { ...item, actual_amount: masterRevenueData.foodRevenue };
+        const foodRevenue = masterRevenueData.foodRevenue || 0;
+        return { ...item, actual_amount: foodRevenue };
       }
       
       // Update beverage revenue item
@@ -77,13 +82,15 @@ export default function PLDashboard() {
           item.name.toLowerCase().includes('beverage revenue') || 
           item.name.toLowerCase().includes('drink sales') ||
           item.name.toLowerCase().includes('drinks revenue')) {
-        return { ...item, actual_amount: masterRevenueData.beverageRevenue };
+        const beverageRevenue = masterRevenueData.beverageRevenue || 0;
+        return { ...item, actual_amount: beverageRevenue };
       }
       
       // Update total revenue/turnover
       if (item.name.toLowerCase().includes('turnover') || 
           item.name.toLowerCase().includes('total revenue')) {
-        return { ...item, actual_amount: masterRevenueData.totalRevenue };
+        const totalRevenue = masterRevenueData.totalRevenue || 0;
+        return { ...item, actual_amount: totalRevenue };
       }
 
       // Update food COS
@@ -99,8 +106,10 @@ export default function PLDashboard() {
           item.name.toLowerCase().includes('beverage cos') ||
           item.name.toLowerCase().includes('drinks cost of sales') ||
           item.name.toLowerCase().includes('drinks cos') ||
+          item.name.toLowerCase().includes('bev cos') || // Added this match
           ((item.name.toLowerCase().includes('beverage') || 
-            item.name.toLowerCase().includes('drink')) && 
+            item.name.toLowerCase().includes('drink') || 
+            item.name.toLowerCase().includes('bev')) && // Added this match
            item.category.toLowerCase().includes('cost of sales'))) {
         return { ...item, actual_amount: beverageCOSData || 0 };
       }
@@ -110,8 +119,38 @@ export default function PLDashboard() {
           item.name.toLowerCase() === 'cos') && 
           !item.name.toLowerCase().includes('food') &&
           !item.name.toLowerCase().includes('beverage') &&
-          !item.name.toLowerCase().includes('drink')) {
+          !item.name.toLowerCase().includes('drink') &&
+          !item.name.toLowerCase().includes('bev')) {
         return { ...item, actual_amount: (foodCOSData || 0) + (beverageCOSData || 0) };
+      }
+      
+      // Update Food Gross Profit
+      if (item.name.toLowerCase().includes('food gross profit')) {
+        const foodRevenue = masterRevenueData.foodRevenue || 0;
+        const foodCOS = foodCOSData || 0;
+        const foodGP = foodRevenue - foodCOS;
+        return { ...item, actual_amount: foodGP };
+      }
+      
+      // Update Beverage Gross Profit
+      if (item.name.toLowerCase().includes('beverage gross profit') || 
+          item.name.toLowerCase().includes('drinks gross profit')) {
+        const beverageRevenue = masterRevenueData.beverageRevenue || 0;
+        const beverageCOS = beverageCOSData || 0;
+        const beverageGP = beverageRevenue - beverageCOS;
+        return { ...item, actual_amount: beverageGP };
+      }
+      
+      // Update Total Gross Profit
+      if ((item.name.toLowerCase() === 'gross profit' || 
+           item.name.toLowerCase() === 'gross profit/(loss)') && 
+          !item.name.toLowerCase().includes('food') &&
+          !item.name.toLowerCase().includes('beverage') &&
+          !item.name.toLowerCase().includes('drink')) {
+        const totalRevenue = masterRevenueData.totalRevenue || 0;
+        const totalCOS = (foodCOSData || 0) + (beverageCOSData || 0);
+        const totalGP = totalRevenue - totalCOS;
+        return { ...item, actual_amount: totalGP };
       }
 
       // Update wages

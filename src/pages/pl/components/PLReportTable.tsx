@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -35,10 +36,22 @@ export function PLReportTable({
   currentYear,
   onOpenTracker
 }: PLReportTableProps) {
-  console.log("All budget data:", processedBudgetData.map(item => item.name));
+  console.log("All budget data:", processedBudgetData.map(item => `${item.name}: £${item.actual_amount || 0}`));
 
   const displayData = processedBudgetData;
   
+  // Find the food and beverage revenue items
+  const foodRevenueItem = displayData.find(item => 
+    (item.name.toLowerCase().includes('food sales') || 
+     item.name.toLowerCase().includes('food revenue')));
+  
+  const beverageRevenueItem = displayData.find(item => 
+    (item.name.toLowerCase().includes('beverage sales') || 
+     item.name.toLowerCase().includes('beverage revenue') ||
+     item.name.toLowerCase().includes('drink sales') ||
+     item.name.toLowerCase().includes('drinks revenue')));
+  
+  // Check for gross profit items
   const foodGpItems = displayData.filter(item => 
     item.name.toLowerCase().includes('food') && 
     item.name.toLowerCase().includes('gross profit')
@@ -49,8 +62,8 @@ export function PLReportTable({
     item.name.toLowerCase().includes('gross profit')
   );
   
-  console.log("Food GP items found:", foodGpItems.map(item => `${item.name}: £${item.budget_amount}`));
-  console.log("Beverage GP items found:", beverageGpItems.map(item => `${item.name}: £${item.budget_amount}`));
+  console.log("Food GP items found:", foodGpItems.map(item => `${item.name}: £${item.actual_amount || 0}`));
+  console.log("Beverage GP items found:", beverageGpItems.map(item => `${item.name}: £${item.actual_amount || 0}`));
 
   const displayItems = displayData.filter(item => 
     !item.name.toLowerCase().includes('total gross profit') && 
@@ -63,7 +76,7 @@ export function PLReportTable({
     !(item.name === 'ADMIN EXPENSES' && item.isAdminHeader)
   );
   
-  console.log("Display items:", displayItems.map(item => item.name));
+  console.log("Display items:", displayItems.map(item => `${item.name}: £${item.actual_amount || 0}`));
   
   const foodGrossProfitItem = displayData.find(item => 
     (item.name === 'Food Gross Profit' || 
@@ -79,12 +92,16 @@ export function PLReportTable({
      item.name === 'Beverage GP')
   );
 
-  console.log("Food GP item found:", foodGrossProfitItem ? foodGrossProfitItem.name : "Not found");
-  console.log("Beverage GP item found:", beverageGrossProfitItem ? beverageGrossProfitItem.name : "Not found");
+  console.log("Food GP item found:", foodGrossProfitItem ? `${foodGrossProfitItem.name}: £${foodGrossProfitItem.actual_amount || 0}` : "Not found");
+  console.log("Beverage GP item found:", beverageGrossProfitItem ? `${beverageGrossProfitItem.name}: £${beverageGrossProfitItem.actual_amount || 0}` : "Not found");
 
   const costOfSalesItem = displayData.find(item => 
-    item.name.toLowerCase() === 'cost of sales' ||
-    item.name.toLowerCase() === 'cos'
+    (item.name.toLowerCase() === 'cost of sales' ||
+    item.name.toLowerCase() === 'cos') &&
+    !item.name.toLowerCase().includes('food') &&
+    !item.name.toLowerCase().includes('beverage') &&
+    !item.name.toLowerCase().includes('drink') &&
+    !item.name.toLowerCase().includes('bev')
   );
 
   const isAdminExpense = (item: BudgetItem) => 
@@ -118,8 +135,14 @@ export function PLReportTable({
   );
 
   const totalGrossProfitItem = displayData.find(item => 
-    item.name === 'Gross Profit' || item.name.toLowerCase() === 'gross profit'
+    item.name === 'Gross Profit' || 
+    item.name.toLowerCase() === 'gross profit' || 
+    item.name.toLowerCase() === 'gross profit/(loss)'
   );
+
+  console.log("Total Gross Profit Item:", totalGrossProfitItem ? 
+    `${totalGrossProfitItem.name}: Budget £${totalGrossProfitItem.budget_amount} Actual £${totalGrossProfitItem.actual_amount || 0}` : 
+    "Not found");
 
   const renderBudgetItemRow = (item: BudgetItem, i: number | string, customClass: string = '') => {
     const actualAmount = item.actual_amount || 0;
@@ -129,6 +152,7 @@ export function PLReportTable({
     let fontClass = '';
     
     const isGrossProfit = item.isGrossProfit || 
+                         item.name.toLowerCase().includes('gross profit') ||
                          item.name.toLowerCase().includes('profit/(loss)');
     
     const isTurnover = item.name.toLowerCase() === 'turnover';
@@ -148,6 +172,20 @@ export function PLReportTable({
     fontClass = item.isHighlighted || isTurnover || isGrossProfit || isCostOfSales ? 'font-bold' : '';
     
     const rowKey = typeof i === 'number' ? i : `${i}-${item.name.replace(/\s+/g, '-').toLowerCase()}`;
+
+    // Calculate percentage for gross profit items
+    let percentageDisplay = '';
+    if (isGrossProfit && item.name.toLowerCase().includes('food') && foodRevenueItem && foodRevenueItem.actual_amount) {
+      const foodRevenue = foodRevenueItem.actual_amount;
+      const percentage = foodRevenue > 0 ? ((actualAmount / foodRevenue) * 100).toFixed(2) : "0.00";
+      percentageDisplay = `${percentage}%`;
+    } else if (isGrossProfit && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) && beverageRevenueItem && beverageRevenueItem.actual_amount) {
+      const beverageRevenue = beverageRevenueItem.actual_amount;
+      const percentage = beverageRevenue > 0 ? ((actualAmount / beverageRevenue) * 100).toFixed(2) : "0.00";
+      percentageDisplay = `${percentage}%`;
+    } else if (item.budget_percentage !== undefined) {
+      percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
+    }
     
     return (
       <TableRow key={rowKey} className={rowClassName}>
@@ -158,7 +196,7 @@ export function PLReportTable({
           {formatCurrency(item.budget_amount)}
         </TableCell>
         <TableCell className="text-right">
-          {item.budget_percentage !== undefined ? `${(item.budget_percentage * 100).toFixed(2)}%` : ''}
+          {percentageDisplay}
         </TableCell>
         <TableCell className={`text-right ${fontClass}`}>
           {formatCurrency(actualAmount)}
