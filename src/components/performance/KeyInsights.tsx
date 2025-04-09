@@ -192,11 +192,24 @@ export default function KeyInsights() {
         });
       }
       
-      // Calculate gross profits
-      const currentFoodGP = calculateGP(foodRev, foodCost);
-      const currentBevGP = calculateGP(bevRev, bevCost);
-      const combinedCurrentGP = calculateGP(foodRev + bevRev, foodCost + bevCost);
-      const prevCombinedGP = calculateGP(prevFoodRev + prevBevRev, prevFoodCost + prevBevCost);
+      // Calculate gross profits correctly
+      const currentFoodGP = foodRev > 0 ? (foodRev - foodCost) / foodRev : 0;
+      const currentBevGP = bevRev > 0 ? (bevRev - bevCost) / bevRev : 0;
+      const combinedCurrentGP = (foodRev + bevRev) > 0 ? 
+        ((foodRev + bevRev) - (foodCost + bevCost)) / (foodRev + bevRev) : 0;
+        
+      const prevCombinedGP = (prevFoodRev + prevBevRev) > 0 ? 
+        ((prevFoodRev + prevBevRev) - (prevFoodCost + prevBevCost)) / (prevFoodRev + prevBevRev) : 0;
+      
+      console.log("GP Calculations:", {
+        foodRevenue: foodRev,
+        foodCosts: foodCost,
+        foodGP: currentFoodGP,
+        beverageRevenue: bevRev,
+        beverageCosts: bevCost, 
+        beverageGP: currentBevGP,
+        combinedGP: combinedCurrentGP
+      });
       
       // Set state values
       setFoodGP(currentFoodGP);
@@ -217,7 +230,13 @@ export default function KeyInsights() {
     
     const processWeeklyData = () => {
       // Create map for weekly data
-      const weekMap: Record<string, { revenue: number, foodCost: number, bevCost: number, foodRevenue: number, bevRevenue: number }> = {};
+      const weekMap: Record<string, { 
+        revenue: number, 
+        foodCost: number, 
+        bevCost: number, 
+        foodRevenue: number, 
+        bevRevenue: number 
+      }> = {};
       
       // Process food data by week
       if (foodTrackerData) {
@@ -312,15 +331,20 @@ export default function KeyInsights() {
       }));
       
       const weeklyGP = sortedWeeks.map(([week, data]) => {
-        const foodGP = calculateGP(data.foodRevenue, data.foodCost);
-        const bevGP = calculateGP(data.bevRevenue, data.bevCost);
-        const combinedGP = calculateGP(data.foodRevenue + data.bevRevenue, data.foodCost + data.bevCost);
+        // Calculate GP percentages correctly
+        const foodGP = data.foodRevenue > 0 ? 
+          ((data.foodRevenue - data.foodCost) / data.foodRevenue) * 100 : 0;
+        const bevGP = data.bevRevenue > 0 ? 
+          ((data.bevRevenue - data.bevCost) / data.bevRevenue) * 100 : 0;
+        const combinedGP = (data.foodRevenue + data.bevRevenue) > 0 ? 
+          (((data.foodRevenue + data.bevRevenue) - (data.foodCost + data.bevCost)) / 
+          (data.foodRevenue + data.bevRevenue)) * 100 : 0;
         
         return {
           week,
-          foodGP: foodGP * 100, // Convert to percentage for better visualization
-          bevGP: bevGP * 100,
-          combinedGP: combinedGP * 100
+          foodGP,
+          bevGP,
+          combinedGP
         };
       });
       
@@ -415,9 +439,9 @@ export default function KeyInsights() {
               }
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold text-tavern-blue">{formatPercentage(combinedGP)}</div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-tavern-blue mb-2">{formatPercentage(combinedGP)}</div>
+            <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="flex flex-col">
                 <span className="text-gray-500 text-sm">Food GP:</span>
                 <span className="font-medium">{formatPercentage(foodGP)}</span>
@@ -445,7 +469,7 @@ export default function KeyInsights() {
           <CardHeader className="pb-2 border-b border-gray-100">
             <CardTitle className="text-lg font-medium">Current Performance</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 flex flex-col justify-center">
+          <CardContent className="p-4 flex flex-col justify-center h-[calc(100%_-_3.5rem)]">
             <div className={`text-lg font-bold ${combinedGP >= 0.7 ? 'text-green-500' : combinedGP >= 0.65 ? 'text-amber-500' : 'text-red-500'}`}>
               {combinedGP >= 0.7 ? 'Excellent' : combinedGP >= 0.65 ? 'Good' : 'Needs Improvement'}
             </div>
@@ -518,6 +542,15 @@ export default function KeyInsights() {
                       dataKey="bevGP" 
                       name="Beverage GP" 
                       stroke="var(--color-bevGP)" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="combinedGP" 
+                      name="Combined GP" 
+                      stroke="var(--color-combinedGP)" 
                       strokeWidth={2} 
                       dot={{ r: 4 }}
                       activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
