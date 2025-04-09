@@ -1,5 +1,5 @@
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import WeatherFetcher from './WeatherFetcher';
 import { toast } from 'sonner';
+import { CheckCircle2 } from 'lucide-react';
 
 interface DailyRecordFormProps {
   date: string;
@@ -23,6 +24,8 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   initialData = {}, 
   onSave 
 }) => {
+  const [isSaving, setIsSaving] = useState(false);
+  
   const defaultValues = useMemo(() => ({
     date,
     dayOfWeek,
@@ -56,14 +59,20 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   }, [form]);
 
   const handleSubmit = useCallback(async (data: Partial<MasterDailyRecord>) => {
+    setIsSaving(true);
     try {
       await onSave(data);
-      toast.success('Daily record saved successfully');
+      toast.success('Daily record saved successfully', {
+        description: `Record for ${date} has been updated`,
+        icon: <CheckCircle2 className="text-green-500" />
+      });
     } catch (error) {
       console.error('Error saving daily record:', error);
       toast.error('Failed to save daily record');
+    } finally {
+      setIsSaving(false);
     }
-  }, [onSave]);
+  }, [onSave, date]);
 
   return (
     <Form {...form}>
@@ -262,7 +271,14 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
             </div>
           </CardContent>
           <CardFooter className="py-2 px-4 flex justify-end">
-            <Button type="submit" size="sm">Save</Button>
+            <Button 
+              type="submit" 
+              size="sm" 
+              disabled={isSaving}
+              className="min-w-[100px]"
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
           </CardFooter>
         </Card>
       </form>

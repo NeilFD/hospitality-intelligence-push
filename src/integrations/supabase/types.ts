@@ -833,6 +833,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      sync_master_records_to_vectors: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
