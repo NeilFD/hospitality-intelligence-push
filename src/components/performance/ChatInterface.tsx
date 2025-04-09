@@ -87,21 +87,19 @@ const ensureDate = (dateInput: any): Date => {
 const extractAIResponse = (response: any): string => {
   console.log('Raw webhook response:', response);
   
-  // Check if response is an array with a single object containing a 'response' key
   if (Array.isArray(response) && response.length > 0 && response[0].response) {
     let responseText = response[0].response.trim();
     
-    // Remove excess newline characters and replace multiple newlines with a single newline
     responseText = responseText
-      .replace(/\n{2,}/g, '\n')  // Replace multiple consecutive newlines with a single newline
-      .replace(/^\s+|\s+$/g, '')  // Trim leading and trailing whitespace
-      .replace(/\n\s+/g, '\n')  // Remove indentation after newlines
-      .replace(/\\n/g, '\n')  // Replace escaped newlines with actual newlines
-      .replace(/\\[\[\]\(\)]/g, '')  // Remove escaped brackets/parentheses
-      .replace(/\\\[|\\\]/g, '')  // Remove LaTeX-style brackets
-      .replace(/\\text\{([^}]+)\}/g, '$1')  // Clean up LaTeX text commands
-      .replace(/\\approx/g, '≈')  // Replace LaTeX approx with symbol
-      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');  // Convert LaTeX fractions to simple notation
+      .replace(/\n{2,}/g, '\n')
+      .replace(/^\s+|\s+$/g, '')
+      .replace(/\n\s+/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\[\[\]\(\)]/g, '')
+      .replace(/\\\[|\\\]/g, '')
+      .replace(/\\text\{([^}]+)\}/g, '$1')
+      .replace(/\\approx/g, '≈')
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');
     
     return responseText;
   }
@@ -680,8 +678,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   return (
     <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
       <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
-        <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm animate-float">
-          <Sparkles className="text-white h-5 w-5" />
+        <div className="p-2 bg-tavern-blue/20 rounded-full backdrop-blur-sm animate-float">
+          <Sparkles className="text-tavern-blue-dark h-5 w-5" />
         </div>
         <h3 className="font-semibold text-tavern-blue-dark text-lg">Cleo - Performance Assistant</h3>
       </div>
@@ -695,8 +693,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
               style={{animationDelay: `${index * 0.05}s`}}
             >
               {!message.isUser && 
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pastel-blue to-pastel-purple flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
-                  <BotIcon className="h-4 w-4 text-white" />
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-tavern-blue-light/80 to-tavern-blue/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
+                  <BotIcon className="h-4 w-4 text-tavern-blue-dark" />
                 </div>
               }
               
@@ -748,13 +746,13 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           
           {isLoading && (
             <div className="flex justify-start gap-2 animate-pulse">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pastel-blue to-pastel-purple flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
-                <BotIcon className="h-4 w-4 text-white" />
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-tavern-blue-light/80 to-tavern-blue/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
+                <BotIcon className="h-4 w-4 text-tavern-blue-dark" />
               </div>
               <div className="frost-panel rounded-2xl rounded-tl-sm p-4 flex gap-2 min-w-[100px]">
-                <span className="w-2 h-2 bg-pastel-purple rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                <span className="w-2 h-2 bg-pastel-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-2 h-2 bg-pastel-purple rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                <span className="w-2 h-2 bg-tavern-blue-light rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                <span className="w-2 h-2 bg-tavern-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                <span className="w-2 h-2 bg-tavern-blue-light rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
               </div>
             </div>
           )}
@@ -767,14 +765,14 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading}
-          className="flex-1 glass-input text-tavern-blue shadow-inner focus:shadow-none"
+          className="flex-1 glass-input text-tavern-blue-dark shadow-inner focus:shadow-none"
         />
         <Button 
           type="submit" 
           disabled={isLoading || !input.trim()} 
           className="send-button shadow-glass text-white"
         >
-          <SendHorizonal className="h-5 w-5" />
+          <SendHorizonal className="h-5 w-5 text-white" />
         </Button>
       </form>
     </div>
