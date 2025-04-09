@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,55 +25,93 @@ export default function LoginForm() {
     }
   };
 
+  const inputVariants = {
+    focus: { scale: 1.02, boxShadow: "0 0 0 2px rgba(165, 192, 226, 0.5)" },
+  };
+
   return (
-    <Card className="max-w-md mx-auto mt-8">
-      <CardHeader>
-        <CardTitle className="text-center">Login to The Tavern</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-100 text-red-800 p-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          
-          <Button type="submit" className="w-full" disabled={isLoading}>
+    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-xl">
+      <motion.h1 
+        className="text-3xl font-bold text-white text-center mb-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        Login to The Tavern
+      </motion.h1>
+      
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <motion.div 
+            className="bg-red-400/20 backdrop-blur-sm text-white p-4 rounded-xl text-sm border border-red-400/30"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {error}
+          </motion.div>
+        )}
+        
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-white/90">Email</Label>
+          <motion.div whileHover="focus" whileFocus="focus">
+            <motion.div variants={inputVariants}>
+              <Input 
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 transition-all duration-300"
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-white/90">Password</Label>
+          <motion.div whileHover="focus" whileFocus="focus">
+            <motion.div variants={inputVariants}>
+              <Input 
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 transition-all duration-300"
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+        
+        <motion.div 
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="pt-2"
+        >
+          <Button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-tavern-green/90 to-tavern-blue-light/90 text-white hover:from-tavern-green hover:to-tavern-blue-light hover:shadow-lg transition-all duration-300"
+            disabled={isLoading}
+          >
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
-          
-          <p className="text-center text-sm text-gray-500">
-            Don't have an account?{' '}
-            <Button variant="link" className="p-0" onClick={() => navigate('/register')}>
-              Register
-            </Button>
+        </motion.div>
+        
+        <div className="flex items-center justify-center space-x-1 pt-2">
+          <p className="text-center text-sm text-white/70">
+            Don't have an account?
           </p>
-        </form>
-      </CardContent>
-    </Card>
+          <Button 
+            variant="link" 
+            className="p-0 text-tavern-green-light hover:text-white"
+            onClick={() => navigate('/register')}
+          >
+            Register
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }
