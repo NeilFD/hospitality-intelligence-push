@@ -15,19 +15,17 @@ import { Loader2 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { TavernLogo } from '@/components/TavernLogo';
-
 interface DailyRecordFormProps {
   date: string;
   dayOfWeek: string;
   initialData?: Partial<MasterDailyRecord>;
   onSave: (data: Partial<MasterDailyRecord>) => Promise<void>;
 }
-
-const PDFDocument = ({ data }) => {
+const PDFDocument = ({
+  data
+}) => {
   const logoPath = "/lovable-uploads/e551531e-e30f-49d3-8197-b94fe8312491.png";
-
-  return (
-    <Document>
+  return <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Image src={logoPath} style={styles.logo} />
@@ -169,46 +167,44 @@ const PDFDocument = ({ data }) => {
         
         <Text style={styles.footer}>Generated on {format(new Date(), 'MMMM d, yyyy')} at {format(new Date(), 'HH:mm')}</Text>
       </Page>
-    </Document>
-  );
+    </Document>;
 };
-
 const styles = StyleSheet.create({
   page: {
     padding: 30,
     fontFamily: 'Helvetica',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF'
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 10
   },
   logo: {
     width: 40,
-    height: 40,
+    height: 40
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginLeft: 10,
-    color: '#48495E',
+    color: '#48495E'
   },
   dateContainer: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 15
   },
   reportTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 4
   },
   date: {
     fontSize: 12,
-    color: '#555555',
+    color: '#555555'
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 15
   },
   sectionTitle: {
     fontSize: 14,
@@ -217,50 +213,50 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#48495E',
-    color: '#48495E',
+    color: '#48495E'
   },
   subSectionTitle: {
     fontSize: 12,
     fontWeight: 'bold',
     marginTop: 8,
-    marginBottom: 4,
+    marginBottom: 4
   },
   table: {
     display: 'flex',
-    width: '100%',
+    width: '100%'
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
-    paddingVertical: 4,
+    paddingVertical: 4
   },
   tableCol: {
     flex: 1,
-    padding: 3,
+    padding: 3
   },
   tableHeader: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#666666',
+    color: '#666666'
   },
   tableCell: {
     fontSize: 11,
-    paddingTop: 2,
+    paddingTop: 2
   },
   noteContainer: {
-    marginBottom: 8,
+    marginBottom: 8
   },
   noteTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 2
   },
   note: {
     fontSize: 10,
     backgroundColor: '#F5F5F5',
     padding: 5,
-    borderRadius: 3,
+    borderRadius: 3
   },
   footer: {
     position: 'absolute',
@@ -269,22 +265,20 @@ const styles = StyleSheet.create({
     right: 0,
     textAlign: 'center',
     fontSize: 8,
-    color: '#999999',
+    color: '#999999'
   }
 });
-
-const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({ 
-  date, 
-  dayOfWeek, 
-  initialData = {}, 
-  onSave 
+const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
+  date,
+  dayOfWeek,
+  initialData = {},
+  onSave
 }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
-  
   const defaultValues = useMemo(() => ({
     date,
     dayOfWeek,
@@ -305,29 +299,24 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     eveningFohTeam: initialData.eveningFohTeam || '',
     eveningFohManager: initialData.eveningFohManager || '',
     eveningKitchenTeam: initialData.eveningKitchenTeam || '',
-    eveningKitchenManager: initialData.eveningKitchenManager || '',
+    eveningKitchenManager: initialData.eveningKitchenManager || ''
   }), [date, dayOfWeek, initialData]);
-
   const form = useForm<Partial<MasterDailyRecord>>({
     defaultValues
   });
-
   const totalRevenue = useMemo(() => {
     const foodRev = form.watch('foodRevenue') || 0;
     const bevRev = form.watch('beverageRevenue') || 0;
     return foodRev + bevRev;
   }, [form.watch('foodRevenue'), form.watch('beverageRevenue')]);
-
   const totalCovers = useMemo(() => {
     const lunch = form.watch('lunchCovers') || 0;
     const dinner = form.watch('dinnerCovers') || 0;
     return lunch + dinner;
   }, [form.watch('lunchCovers'), form.watch('dinnerCovers')]);
-
   const averageCoverSpend = useMemo(() => {
     return totalCovers > 0 ? totalRevenue / totalCovers : 0;
   }, [totalRevenue, totalCovers]);
-
   const handleWeatherFetched = useCallback((weatherData: {
     description: string;
     temperature: number;
@@ -340,7 +329,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     form.setValue('windSpeed', weatherData.windSpeed);
     toast.success('Weather data fetched successfully');
   }, [form]);
-
   const handleSubmit = useCallback(async (data: Partial<MasterDailyRecord>) => {
     setIsSaving(true);
     try {
@@ -356,11 +344,9 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       setIsSaving(false);
     }
   }, [onSave, date]);
-  
   const handleEmailClick = useCallback(async () => {
     setIsPdfDialogOpen(true);
     setIsGeneratingPdf(true);
-    
     try {
       const formData = form.getValues();
       const pdfDoc = <PDFDocument data={formData} />;
@@ -374,28 +360,21 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       setIsGeneratingPdf(false);
     }
   }, [form]);
-  
   const handleSendEmail = useCallback(() => {
     if (pdfUrl) {
       const formattedDate = format(new Date(date), 'MMMM d, yyyy');
       const subject = `Daily Record Report - ${formattedDate}`;
       const body = `Please find attached the daily record report for ${formattedDate}.`;
-      
       const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      
       window.open(mailtoLink, '_blank');
-      
       setIsPdfDialogOpen(false);
       setPdfUrl(null);
-      
       toast.success('Email prepared successfully', {
         description: 'The report has been attached to a new email'
       });
     }
   }, [pdfUrl, date]);
-
-  return (
-    <>
+  return <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)}>
           <Card className="border-0 shadow-none">
@@ -404,87 +383,45 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
             </CardHeader>
             <CardContent className="space-y-4 px-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <FormField
-                  control={form.control}
-                  name="foodRevenue"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="foodRevenue" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Food Revenue (£)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number"
-                          step="0.01" 
-                          placeholder="0.00"
-                          className="h-8 text-sm"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
+                        <Input type="number" step="0.01" placeholder="0.00" className="h-8 text-sm" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="beverageRevenue"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="beverageRevenue" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Beverage Revenue (£)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          placeholder="0.00"
-                          className="h-8 text-sm"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
+                        <Input type="number" step="0.01" placeholder="0.00" className="h-8 text-sm" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="lunchCovers"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="lunchCovers" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Lunch Covers</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0"
-                          className="h-8 text-sm"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
+                        <Input type="number" placeholder="0" className="h-8 text-sm" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="dinnerCovers"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="dinnerCovers" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Dinner Covers</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0"
-                          className="h-8 text-sm"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
+                        <Input type="number" placeholder="0" className="h-8 text-sm" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded-md">
@@ -508,282 +445,159 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Day FOH</h4>
                     <div className="space-y-3">
-                      <FormField
-                        control={form.control}
-                        name="dayFohManager"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="dayFohManager" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Manager</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Manager name"
-                                className="h-8 text-sm"
-                                {...field}
-                              />
+                              <Input placeholder="Manager name" className="h-8 text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                       
-                      <FormField
-                        control={form.control}
-                        name="dayFohTeam"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="dayFohTeam" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Team members</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Team members and their roles"
-                                className="min-h-[60px] text-sm"
-                                {...field}
-                              />
+                              <Textarea placeholder="Team members and their roles" className="min-h-[60px] text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                     </div>
                   </div>
                   
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Day Kitchen</h4>
                     <div className="space-y-3">
-                      <FormField
-                        control={form.control}
-                        name="dayKitchenManager"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="dayKitchenManager" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Manager</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Manager name"
-                                className="h-8 text-sm"
-                                {...field}
-                              />
+                              <Input placeholder="Manager name" className="h-8 text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                       
-                      <FormField
-                        control={form.control}
-                        name="dayKitchenTeam"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="dayKitchenTeam" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Team members</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Team members and their roles"
-                                className="min-h-[60px] text-sm"
-                                {...field}
-                              />
+                              <Textarea placeholder="Team members and their roles" className="min-h-[60px] text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                     </div>
                   </div>
                   
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Evening FOH</h4>
                     <div className="space-y-3">
-                      <FormField
-                        control={form.control}
-                        name="eveningFohManager"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="eveningFohManager" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Manager</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Manager name"
-                                className="h-8 text-sm"
-                                {...field}
-                              />
+                              <Input placeholder="Manager name" className="h-8 text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                       
-                      <FormField
-                        control={form.control}
-                        name="eveningFohTeam"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="eveningFohTeam" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Team members</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Team members and their roles"
-                                className="min-h-[60px] text-sm"
-                                {...field}
-                              />
+                              <Textarea placeholder="Team members and their roles" className="min-h-[60px] text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                     </div>
                   </div>
                   
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Evening Kitchen</h4>
                     <div className="space-y-3">
-                      <FormField
-                        control={form.control}
-                        name="eveningKitchenManager"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="eveningKitchenManager" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Manager</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Manager name"
-                                className="h-8 text-sm"
-                                {...field}
-                              />
+                              <Input placeholder="Manager name" className="h-8 text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                       
-                      <FormField
-                        control={form.control}
-                        name="eveningKitchenTeam"
-                        render={({ field }) => (
-                          <FormItem>
+                      <FormField control={form.control} name="eveningKitchenTeam" render={({
+                      field
+                    }) => <FormItem>
                             <FormLabel className="text-xs">Team members</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="Team members and their roles"
-                                className="min-h-[60px] text-sm"
-                                {...field}
-                              />
+                              <Textarea placeholder="Team members and their roles" className="min-h-[60px] text-sm" {...field} />
                             </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                     </div>
                   </div>
                 </div>
               </div>
               
-              <WeatherFetcher 
-                date={date}
-                onWeatherFetched={handleWeatherFetched}
-              />
+              <WeatherFetcher date={date} onWeatherFetched={handleWeatherFetched} />
               
               <div className="grid grid-cols-3 gap-3 mt-2">
-                <FormField
-                  control={form.control}
-                  name="weatherDescription"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="weatherDescription" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Weather</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="Description"
-                          className="h-8 text-sm"
-                          {...field}
-                        />
+                        <Input placeholder="Description" className="h-8 text-sm" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="temperature"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="temperature" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Temperature (°C)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0"
-                          className="h-8 text-sm"
-                          {...field}
-                          onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) || 0))}
-                        />
+                        <Input type="number" placeholder="0" className="h-8 text-sm" {...field} onChange={e => field.onChange(Math.round(parseFloat(e.target.value) || 0))} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="windSpeed"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="windSpeed" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Wind Speed (km/h)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.1"
-                          placeholder="0.0"
-                          className="h-8 text-sm"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
+                        <Input type="number" step="0.1" placeholder="0.0" className="h-8 text-sm" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="localEvents"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="localEvents" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Local Events</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Local events info"
-                          className="min-h-[60px] text-sm"
-                          {...field}
-                        />
+                        <Textarea placeholder="Local events info" className="min-h-[60px] text-sm" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={form.control}
-                  name="operationsNotes"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="operationsNotes" render={({
+                field
+              }) => <FormItem>
                       <FormLabel className="text-xs font-medium">Operations Notes</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Operations notes"
-                          className="min-h-[60px] text-sm"
-                          {...field}
-                        />
+                        <Textarea placeholder="Operations notes" className="min-h-[60px] text-sm" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
               </div>
             </CardContent>
             <CardFooter className="py-2 px-4 flex justify-end gap-2">
-              <Button 
-                type="button" 
-                size="sm" 
-                variant="outline"
-                onClick={handleEmailClick}
-                className="flex gap-2 items-center"
-              >
+              <Button type="button" size="sm" variant="outline" onClick={handleEmailClick} className="flex gap-2 items-center">
                 <Mail className="h-4 w-4" />
                 Email
               </Button>
-              <Button 
-                type="submit" 
-                size="sm" 
-                disabled={isSaving}
-                className="min-w-[100px]"
-              >
+              <Button type="submit" size="sm" disabled={isSaving} className="min-w-[100px]">
                 {isSaving ? 'Saving...' : 'Save'}
               </Button>
             </CardFooter>
@@ -794,19 +608,16 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       <Dialog open={isPdfDialogOpen} onOpenChange={setIsPdfDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Daily Record Report</DialogTitle>
+            <DialogTitle className="text-slate-900">Daily Record Report</DialogTitle>
             <DialogDescription>
               Review the report before sending it via email
             </DialogDescription>
           </DialogHeader>
           
-          {isGeneratingPdf ? (
-            <div className="flex items-center justify-center py-12">
+          {isGeneratingPdf ? <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-tavern-blue" />
               <span className="ml-2 text-tavern-blue">Generating PDF...</span>
-            </div>
-          ) : (
-            <>
+            </div> : <>
               <div className="mt-4 border rounded-md p-2 bg-white">
                 <div ref={pdfRef} className="p-8 bg-white">
                   <div className="text-center mb-8">
@@ -906,31 +717,18 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                 </div>
               </div>
               
-              {pdfUrl && (
-                <iframe 
-                  src={pdfUrl} 
-                  className="w-full h-[500px] border rounded mt-4" 
-                  title="PDF Preview"
-                />
-              )}
-            </>
-          )}
+              {pdfUrl && <iframe src={pdfUrl} className="w-full h-[500px] border rounded mt-4" title="PDF Preview" />}
+            </>}
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPdfDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleSendEmail}
-              disabled={!pdfUrl || isGeneratingPdf}
-            >
+            <Button onClick={handleSendEmail} disabled={!pdfUrl || isGeneratingPdf}>
               Send Email
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
-  );
+    </>;
 });
-
 DailyRecordForm.displayName = 'DailyRecordForm';
-
 export default DailyRecordForm;
