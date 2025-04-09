@@ -15,12 +15,14 @@ import { Loader2 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { TavernLogo } from '@/components/TavernLogo';
+
 interface DailyRecordFormProps {
   date: string;
   dayOfWeek: string;
   initialData?: Partial<MasterDailyRecord>;
   onSave: (data: Partial<MasterDailyRecord>) => Promise<void>;
 }
+
 const PDFDocument = ({
   data
 }) => {
@@ -70,6 +72,17 @@ const PDFDocument = ({
               <View style={styles.tableCol}>
                 <Text style={styles.tableHeader}>Total Covers:</Text>
                 <Text style={styles.tableCell}>{(data.lunchCovers || 0) + (data.dinnerCovers || 0)}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Average Spend/Cover:</Text>
+                <Text style={styles.tableCell}>
+                  £{((data.lunchCovers || 0) + (data.dinnerCovers || 0)) > 0 
+                    ? (((data.foodRevenue || 0) + (data.beverageRevenue || 0)) / ((data.lunchCovers || 0) + (data.dinnerCovers || 0))).toFixed(2) 
+                    : '0.00'}
+                </Text>
               </View>
             </View>
           </View>
@@ -169,16 +182,17 @@ const PDFDocument = ({
       </Page>
     </Document>;
 };
+
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 10,
     fontFamily: 'Helvetica',
     backgroundColor: '#FFFFFF'
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10
+    marginBottom: 5
   },
   logo: {
     width: 40,
@@ -192,25 +206,25 @@ const styles = StyleSheet.create({
   },
   dateContainer: {
     alignItems: 'center',
-    marginBottom: 15
+    marginBottom: 10
   },
   reportTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4
+    marginBottom: 2
   },
   date: {
     fontSize: 12,
     color: '#555555'
   },
   section: {
-    marginBottom: 15
+    marginBottom: 10
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    paddingBottom: 5,
-    marginBottom: 6,
+    paddingBottom: 3,
+    marginBottom: 4,
     borderBottomWidth: 1,
     borderBottomColor: '#48495E',
     color: '#48495E'
@@ -218,8 +232,8 @@ const styles = StyleSheet.create({
   subSectionTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 4
+    marginTop: 6,
+    marginBottom: 2
   },
   table: {
     display: 'flex',
@@ -229,11 +243,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
-    paddingVertical: 4
+    paddingVertical: 2
   },
   tableCol: {
     flex: 1,
-    padding: 3
+    padding: 2
   },
   tableHeader: {
     fontSize: 10,
@@ -242,25 +256,25 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     fontSize: 11,
-    paddingTop: 2
+    paddingTop: 1
   },
   noteContainer: {
-    marginBottom: 8
+    marginBottom: 6
   },
   noteTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    marginBottom: 2
+    marginBottom: 1
   },
   note: {
     fontSize: 10,
     backgroundColor: '#F5F5F5',
-    padding: 5,
+    padding: 4,
     borderRadius: 3
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 10,
     left: 0,
     right: 0,
     textAlign: 'center',
@@ -268,6 +282,7 @@ const styles = StyleSheet.create({
     color: '#999999'
   }
 });
+
 const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   date,
   dayOfWeek,
@@ -730,5 +745,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       </Dialog>
     </>;
 });
+
 DailyRecordForm.displayName = 'DailyRecordForm';
 export default DailyRecordForm;
