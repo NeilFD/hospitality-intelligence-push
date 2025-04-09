@@ -189,15 +189,17 @@ const PDFDocument = ({
 
 const styles = StyleSheet.create({
   page: {
-    padding: 10,
-    paddingTop: 10,
+    padding: 0,
+    margin: 0,
     fontFamily: 'Helvetica',
     backgroundColor: '#FFFFFF'
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5
+    marginBottom: 5,
+    paddingHorizontal: 10,
+    paddingTop: 10
   },
   logo: {
     width: 40,
@@ -211,7 +213,8 @@ const styles = StyleSheet.create({
   },
   dateContainer: {
     alignItems: 'center',
-    marginBottom: 10
+    marginBottom: 10,
+    paddingHorizontal: 10
   },
   reportTitle: {
     fontSize: 18,
@@ -223,7 +226,8 @@ const styles = StyleSheet.create({
     color: '#555555'
   },
   section: {
-    marginBottom: 10
+    marginBottom: 10,
+    paddingHorizontal: 10
   },
   sectionTitle: {
     fontSize: 14,
