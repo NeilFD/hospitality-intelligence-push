@@ -1,4 +1,3 @@
-
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -21,7 +20,6 @@ export function PLReportTable({
   currentYear,
   onOpenTracker,
 }: PLReportTableProps) {
-  // Helper function to determine font class based on item name
   const getFontClass = (name: string) => {
     const lowercaseName = name.toLowerCase();
     if (
@@ -40,7 +38,6 @@ export function PLReportTable({
     return "";
   };
 
-  // Helper function to determine if an item should display percentage
   const shouldShowPercentage = (item: any) => {
     const lowercaseName = item.name.toLowerCase();
     return (
@@ -51,7 +48,6 @@ export function PLReportTable({
     );
   };
 
-  // Helper function to calculate percentage display
   const getPercentageDisplay = (item: any) => {
     const lowercaseName = item.name.toLowerCase();
     const turnover = processedBudgetData.find(
@@ -62,11 +58,9 @@ export function PLReportTable({
     
     let percentage = 0;
     
-    // For gross profit items, calculate percentage of revenue
     if (lowercaseName.includes("gross profit")) {
       percentage = (item.actual_amount / turnover) * 100;
     } 
-    // For wages, calculate percentage of turnover
     else if (
       lowercaseName === "wages and salaries" ||
       lowercaseName === "wages" ||
@@ -78,17 +72,13 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
-  // Filter out the "Total" row that appears after Gross Profit
   const filteredBudgetData = React.useMemo(() => {
-    // Handle empty data case
     if (!processedBudgetData || processedBudgetData.length === 0) {
       return [];
     }
     
-    // Create a deep copy to prevent modifying the original array
     const data = JSON.parse(JSON.stringify(processedBudgetData));
     
-    // Find all "Gross Profit" related rows
     const grossProfitRows = data
       .map((item: any, index: number) => {
         if (item && item.name && 
@@ -100,7 +90,6 @@ export function PLReportTable({
       })
       .filter((index: number) => index !== -1);
     
-    // For each gross profit row, check if the next row is "Total"
     let rowsToRemove: number[] = [];
     
     grossProfitRows.forEach((gpIndex: number) => {
@@ -116,13 +105,26 @@ export function PLReportTable({
       }
     });
     
-    // Remove the rows in reverse order to avoid index shifting
+    let lastTotalAdminExpensesIndex = -1;
+    for (let i = data.length - 1; i >= 0; i--) {
+      const item = data[i];
+      if (item && item.name && 
+          item.name.trim().toLowerCase() === "total admin expenses") {
+        lastTotalAdminExpensesIndex = i;
+        break;
+      }
+    }
+    
+    if (lastTotalAdminExpensesIndex !== -1) {
+      rowsToRemove.push(lastTotalAdminExpensesIndex);
+      console.log(`Found the last Total Admin expenses at index ${lastTotalAdminExpensesIndex}`);
+    }
+    
     rowsToRemove.sort((a, b) => b - a).forEach(index => {
       console.log(`Removing row at index ${index}: "${data[index]?.name}"`);
       data.splice(index, 1);
     });
     
-    // Remove any row that is just "Total" with no other context
     return data.filter((item: any) => {
       if (!item || !item.name) return true;
       const name = item.name.trim().toLowerCase();
