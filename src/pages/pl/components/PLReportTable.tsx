@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -38,6 +39,10 @@ export function PLReportTable({
   // Find the food and beverage revenue items
   const foodRevenueItem = displayData.find(item => item.name.toLowerCase().includes('food sales') || item.name.toLowerCase().includes('food revenue'));
   const beverageRevenueItem = displayData.find(item => item.name.toLowerCase().includes('beverage sales') || item.name.toLowerCase().includes('beverage revenue') || item.name.toLowerCase().includes('drink sales') || item.name.toLowerCase().includes('drinks revenue'));
+  const turnoverItem = displayData.find(item => item.name.toLowerCase() === 'turnover' || item.name.toLowerCase() === 'revenue');
+  
+  // Find the wages item
+  const wagesItem = displayData.find(item => item.name.toLowerCase().includes('wages and salaries') || item.name.toLowerCase() === 'wages' || item.name.toLowerCase() === 'salaries');
 
   // Check for gross profit items
   const foodGpItems = displayData.filter(item => item.name.toLowerCase().includes('food') && item.name.toLowerCase().includes('gross profit'));
@@ -61,6 +66,7 @@ export function PLReportTable({
   const operatingProfitItem = displayData.find(item => item.name.toLowerCase().includes('operating profit'));
   const totalGrossProfitItem = displayData.find(item => item.name === 'Gross Profit' || item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)');
   console.log("Total Gross Profit Item:", totalGrossProfitItem ? `${totalGrossProfitItem.name}: Budget £${totalGrossProfitItem.budget_amount} Actual £${totalGrossProfitItem.actual_amount || 0}` : "Not found");
+  
   const renderBudgetItemRow = (item: BudgetItem, i: number | string, customClass: string = '') => {
     const actualAmount = item.actual_amount || 0;
     const variance = actualAmount - item.budget_amount;
@@ -69,6 +75,8 @@ export function PLReportTable({
     const isGrossProfit = item.isGrossProfit || item.name.toLowerCase().includes('gross profit') || item.name.toLowerCase().includes('profit/(loss)');
     const isTurnover = item.name.toLowerCase() === 'turnover';
     const isCostOfSales = item.name.toLowerCase() === 'cost of sales' || item.name.toLowerCase() === 'cos';
+    const isWages = item.name.toLowerCase().includes('wages and salaries') || item.name.toLowerCase() === 'wages' || item.name.toLowerCase() === 'salaries';
+    
     if (item.isHighlighted) {
       rowClassName = 'bg-[#48495e]/90 text-white';
       fontClass = 'font-bold';
@@ -94,6 +102,23 @@ export function PLReportTable({
     } else if (item.budget_percentage !== undefined) {
       percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
     }
+    
+    // Calculate wages as percentage of turnover
+    let actualPercentageDisplay = '';
+    if (isWages && turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0) {
+      const wagesPercentage = (actualAmount / turnoverItem.actual_amount * 100).toFixed(2);
+      actualPercentageDisplay = `${wagesPercentage}%`;
+    } else if (isGrossProfit && totalGrossProfitItem && turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0) {
+      const gpPercentage = (actualAmount / turnoverItem.actual_amount * 100).toFixed(2);
+      actualPercentageDisplay = `${gpPercentage}%`;
+    } else if (isGrossProfit && item.name.toLowerCase().includes('food') && foodRevenueItem && foodRevenueItem.actual_amount && foodRevenueItem.actual_amount > 0) {
+      const foodGPPercentage = (actualAmount / foodRevenueItem.actual_amount * 100).toFixed(2);
+      actualPercentageDisplay = `${foodGPPercentage}%`;
+    } else if (isGrossProfit && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) && beverageRevenueItem && beverageRevenueItem.actual_amount && beverageRevenueItem.actual_amount > 0) {
+      const beverageGPPercentage = (actualAmount / beverageRevenueItem.actual_amount * 100).toFixed(2);
+      actualPercentageDisplay = `${beverageGPPercentage}%`;
+    }
+    
     return <TableRow key={rowKey} className={rowClassName}>
         <TableCell className={fontClass}>
           {item.name}
@@ -104,8 +129,13 @@ export function PLReportTable({
         <TableCell className="text-right">
           {percentageDisplay}
         </TableCell>
-        <TableCell className={`text-right ${fontClass}`}>
-          {formatCurrency(actualAmount)}
+        <TableCell className={`text-right ${fontClass} flex items-center justify-end gap-2`}>
+          <span>{formatCurrency(actualAmount)}</span>
+          {actualPercentageDisplay && (
+            <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">
+              {actualPercentageDisplay}
+            </span>
+          )}
         </TableCell>
         <TableCell className={`text-right ${fontClass} ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''}`}>
           {formatCurrency(variance)}
@@ -160,8 +190,13 @@ export function PLReportTable({
                     <TableCell className="text-right">
                       {totalGrossProfitItem.budget_percentage !== undefined ? `${(totalGrossProfitItem.budget_percentage * 100).toFixed(2)}%` : ''}
                     </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {formatCurrency(totalGrossProfitItem.actual_amount || 0)}
+                    <TableCell className={`text-right font-bold flex items-center justify-end gap-2`}>
+                      <span>{formatCurrency(totalGrossProfitItem.actual_amount || 0)}</span>
+                      {turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0 && (
+                        <span className="text-xs bg-gray-200/80 px-1.5 py-0.5 rounded text-gray-100">
+                          {((totalGrossProfitItem.actual_amount || 0) / turnoverItem.actual_amount * 100).toFixed(2)}%
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className={`text-right font-bold ${(totalGrossProfitItem.actual_amount || 0) - totalGrossProfitItem.budget_amount > 0 ? 'text-green-200' : (totalGrossProfitItem.actual_amount || 0) - totalGrossProfitItem.budget_amount < 0 ? 'text-red-200' : ''}`}>
                       {formatCurrency((totalGrossProfitItem.actual_amount || 0) - totalGrossProfitItem.budget_amount)}
@@ -178,8 +213,13 @@ export function PLReportTable({
                   <TableCell className="text-right">
                     {/* Percentage can be added here if needed */}
                   </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(totalAdminActual)}
+                  <TableCell className="text-right font-bold flex items-center justify-end gap-2">
+                    <span>{formatCurrency(totalAdminActual)}</span>
+                    {turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0 && (
+                      <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">
+                        {(totalAdminActual / turnoverItem.actual_amount * 100).toFixed(2)}%
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className={`text-right font-bold ${totalAdminVariance > 0 ? 'text-green-600' : totalAdminVariance < 0 ? 'text-red-600' : ''}`}>
                     {formatCurrency(totalAdminVariance)}
@@ -196,8 +236,13 @@ export function PLReportTable({
                     <TableCell className="text-right">
                       {operatingProfitItem.budget_percentage !== undefined ? `${(operatingProfitItem.budget_percentage * 100).toFixed(2)}%` : ''}
                     </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {formatCurrency(operatingProfitItem.actual_amount || 0)}
+                    <TableCell className="text-right font-bold flex items-center justify-end gap-2">
+                      <span>{formatCurrency(operatingProfitItem.actual_amount || 0)}</span>
+                      {turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0 && (
+                        <span className="text-xs bg-gray-200/80 px-1.5 py-0.5 rounded text-gray-100">
+                          {((operatingProfitItem.actual_amount || 0) / turnoverItem.actual_amount * 100).toFixed(2)}%
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className={`text-right font-bold ${(operatingProfitItem.actual_amount || 0) - operatingProfitItem.budget_amount > 0 ? 'text-green-200' : (operatingProfitItem.actual_amount || 0) - operatingProfitItem.budget_amount < 0 ? 'text-red-200' : ''}`}>
                       {formatCurrency((operatingProfitItem.actual_amount || 0) - operatingProfitItem.budget_amount)}
