@@ -1,3 +1,4 @@
+
 import React, { useMemo, useCallback, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +28,9 @@ const PDFDocument = ({
   data
 }) => {
   const logoPath = "/lovable-uploads/e551531e-e30f-49d3-8197-b94fe8312491.png";
-  return <Document>
+  
+  return (
+    <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Image src={logoPath} style={styles.logo} />
@@ -180,12 +183,14 @@ const PDFDocument = ({
         
         <Text style={styles.footer}>Generated on {format(new Date(), 'MMMM d, yyyy')} at {format(new Date(), 'HH:mm')}</Text>
       </Page>
-    </Document>;
+    </Document>
+  );
 };
 
 const styles = StyleSheet.create({
   page: {
     padding: 10,
+    paddingTop: 10,
     fontFamily: 'Helvetica',
     backgroundColor: '#FFFFFF'
   },
