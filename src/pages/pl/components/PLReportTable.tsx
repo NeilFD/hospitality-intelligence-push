@@ -79,11 +79,28 @@ export function PLReportTable({
 
   // Filter out the 'Total' row between Gross Profit and Wages and Salaries
   const filteredBudgetData = processedBudgetData.filter(item => {
-    const lowercaseName = item.name.toLowerCase();
-    // Explicitly exclude the total row we want to remove
-    return !(lowercaseName === 'total' && 
-             item.category && 
-             item.category.toLowerCase().includes('gross profit'));
+    // More specific check to identify and remove only the total row between Gross Profit and Wages
+    if (item.name === 'Total' || item.name === 'TOTAL') {
+      // If the previous item in the array is Gross Profit/Loss and next item is Wages, exclude this total row
+      const itemIndex = processedBudgetData.findIndex(i => i.id === item.id || 
+                                                    (i.name === item.name && i.category === item.category));
+      
+      if (itemIndex > 0 && itemIndex < processedBudgetData.length - 1) {
+        const prevItem = processedBudgetData[itemIndex - 1];
+        const nextItem = processedBudgetData[itemIndex + 1];
+        
+        const isPrevGrossProfit = prevItem.name.toLowerCase().includes('gross profit') || 
+                                 prevItem.name.toLowerCase().includes('profit/(loss)');
+        
+        const isNextWages = nextItem.name.toLowerCase().includes('wages') || 
+                           nextItem.name.toLowerCase().includes('salaries');
+        
+        if (isPrevGrossProfit && isNextWages) {
+          return false; // Exclude this total row
+        }
+      }
+    }
+    return true; // Keep all other rows
   });
 
   const renderTableContent = () => {
