@@ -1,10 +1,9 @@
-
+import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
-import React from "react";
 
 type PLReportTableProps = {
   isLoading: boolean;
@@ -138,13 +137,12 @@ export function PLReportTable({
       const fontClass = getFontClass(item.name);
       const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
       
-      // Check if this is a row that needs highlighting
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 
         item.name.toLowerCase() === "total revenue" ||
         (item.name.toLowerCase().includes("gross profit") && 
          !item.name.toLowerCase().includes("food") && 
-         !item.name.toLowerCase().includes("beverage") &&
+         !item.name.toLowerCase().includes("beverage") && 
          !item.name.toLowerCase().includes("drink")) ||
         item.name.toLowerCase() === "total admin expenses" ||
         item.name.toLowerCase().includes("operating profit") ||
@@ -155,22 +153,26 @@ export function PLReportTable({
       
       const highlightClass = shouldHighlight ? "bg-purple-50" : "";
       
+      const boldValueClass = (shouldHighlight && item.name.toLowerCase().includes("cost of sales")) 
+        ? "font-bold" 
+        : "";
+      
       return (
         <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
           <TableCell className={`${fontClass}`}>{item.name}</TableCell>
-          <TableCell className={`text-right ${fontClass}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(item.budget_amount)}
           </TableCell>
-          <TableCell className={`text-right ${fontClass}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(item.actual_amount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
             {percentageDisplay ? percentageDisplay : ""}
           </TableCell>
-          <TableCell className={`text-right ${fontClass}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(item.forecast_amount || item.budget_amount)}
           </TableCell>
-          <TableCell className={`text-right ${fontClass}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(
               (item.forecast_amount || item.budget_amount) - item.actual_amount
             )}
