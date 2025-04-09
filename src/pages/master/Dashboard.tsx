@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { generateWeekDates } from '@/lib/date-utils';
+
 const MasterDashboard = () => {
   const navigate = useNavigate();
 
@@ -63,7 +64,7 @@ const MasterDashboard = () => {
       <Card className="mb-6 border-tavern-blue/10">
         <CardHeader className="pb-3 border-b">
           <div className="flex items-center justify-between">
-            <CardTitle>Date Navigation</CardTitle>
+            <CardTitle>Daily Info</CardTitle>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="icon" onClick={goToPreviousMonth} className="h-8 w-8">
                 <ChevronLeft className="h-4 w-4" />
