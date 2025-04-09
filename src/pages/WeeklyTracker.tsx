@@ -1,18 +1,28 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save, Trash2, Info } from 'lucide-react';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { 
   Table, TableHeader, TableBody, TableHead, 
   TableRow, TableCell, TableStickyHeader 
 } from '@/components/ui/table';
-import { fetchTrackerDataByWeek, fetchSuppliers, fetchTrackerPurchases, fetchTrackerCreditNotes, upsertTrackerData, upsertTrackerPurchase, upsertTrackerCreditNote } from '@/services/kitchen-service';
+import { 
+  fetchTrackerDataByWeek, 
+  fetchSuppliers, 
+  fetchTrackerPurchases, 
+  fetchTrackerCreditNotes, 
+  upsertTrackerData, 
+  upsertTrackerPurchase, 
+  upsertTrackerCreditNote 
+} from '@/services/kitchen-service';
+import { fetchMasterDailyRecordsForWeek } from '@/services/master-record-service';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TrackerData {
   id: string;
@@ -40,59 +50,99 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
   const [saving, setSaving] = useState(false);
   const [trackerData, setTrackerData] = useState<TrackerData[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [masterRecords, setMasterRecords] = useState<Record<string, {
+    foodRevenue: number;
+    beverageRevenue: number;
+  }>>({});
   
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
   
+  const loadMasterRecords = useCallback(async () => {
+    try {
+      const records = await fetchMasterDailyRecordsForWeek(year, month, weekNumber);
+      const recordMap: Record<string, { foodRevenue: number; beverageRevenue: number }> = {};
+      
+      records.forEach(record => {
+        recordMap[record.date] = {
+          foodRevenue: record.foodRevenue || 0,
+          beverageRevenue: record.beverageRevenue || 0
+        };
+      });
+      
+      setMasterRecords(recordMap);
+    } catch (error) {
+      console.error('Error loading master records:', error);
+      toast.error('Failed to load revenue data from master records');
+    }
+  }, [year, month, weekNumber]);
+
   useEffect(() => {
-    const loadTrackerData = async () => {
-      setLoading(true);
-      try {
-        const suppliersData = await fetchSuppliers(moduleType);
-        setSuppliers(suppliersData.map(s => ({ id: s.id, name: s.name })));
+    loadMasterRecords();
+  }, [loadMasterRecords]);
+
+  const loadTrackerData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const suppliersData = await fetchSuppliers(moduleType);
+      setSuppliers(suppliersData.map(s => ({ id: s.id, name: s.name })));
+      
+      const data = await fetchTrackerDataByWeek(year, month, weekNumber, moduleType);
+      console.info(`Processing ${moduleType} tracker data: ${data.length} records`);
+      
+      const purchasesByTrackerId: Record<string, Record<string, number>> = {};
+      const creditNotesByTrackerId: Record<string, number[]> = {};
+      
+      for (const item of data) {
+        console.info(`Day ${item.date}: Revenue = ${item.revenue}`);
         
-        const data = await fetchTrackerDataByWeek(year, month, weekNumber, moduleType);
-        console.info(`Processing ${moduleType} tracker data: ${data.length} records`);
+        const purchases = await fetchTrackerPurchases(item.id);
+        purchasesByTrackerId[item.id] = {};
         
-        const purchasesByTrackerId: Record<string, Record<string, number>> = {};
-        const creditNotesByTrackerId: Record<string, number[]> = {};
-        
-        for (const item of data) {
-          console.info(`Day ${item.date}: Revenue = ${item.revenue}`);
-          
-          const purchases = await fetchTrackerPurchases(item.id);
-          purchasesByTrackerId[item.id] = {};
-          
-          for (const purchase of purchases) {
-            purchasesByTrackerId[item.id][purchase.supplier_id] = purchase.amount;
-          }
-          
-          const creditNotes = await fetchTrackerCreditNotes(item.id);
-          creditNotesByTrackerId[item.id] = creditNotes.map(cn => cn.amount);
+        for (const purchase of purchases) {
+          purchasesByTrackerId[item.id][purchase.supplier_id] = purchase.amount;
         }
         
-        const formattedData = data.map(item => ({
+        const creditNotes = await fetchTrackerCreditNotes(item.id);
+        creditNotesByTrackerId[item.id] = creditNotes.map(cn => cn.amount);
+      }
+      
+      const formattedData = data.map(item => {
+        const masterRecord = masterRecords[item.date] || { foodRevenue: 0, beverageRevenue: 0 };
+        let revenue = 0;
+        
+        if (moduleType === 'food') {
+          revenue = masterRecord.foodRevenue;
+        } else if (moduleType === 'beverage') {
+          revenue = masterRecord.beverageRevenue;
+        }
+        
+        return {
           id: item.id,
           date: item.date,
           dayOfWeek: item.day_of_week,
-          revenue: item.revenue || 0,
+          revenue: revenue,
           purchases: purchasesByTrackerId[item.id] || {},
           creditNotes: creditNotesByTrackerId[item.id] || [],
           staffFoodAllowance: item.staff_food_allowance || 0
-        }));
-        
-        setTrackerData(formattedData);
-      } catch (error) {
-        console.error(`Error loading ${moduleType} tracker data:`, error);
-        toast.error(`Failed to load ${moduleType} tracker data`);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadTrackerData();
-  }, [year, month, weekNumber, moduleType]);
+        };
+      });
+      
+      setTrackerData(formattedData);
+    } catch (error) {
+      console.error(`Error loading ${moduleType} tracker data:`, error);
+      toast.error(`Failed to load ${moduleType} tracker data`);
+    } finally {
+      setLoading(false);
+    }
+  }, [year, month, weekNumber, moduleType, masterRecords]);
+
+  useEffect(() => {
+    if (Object.keys(masterRecords).length > 0) {
+      loadTrackerData();
+    }
+  }, [loadTrackerData, masterRecords]);
 
   const calculateTotalPurchases = (day: TrackerData) => {
     return Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
@@ -121,18 +171,6 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
 
   const calculateWeeklyTotalForSupplier = (supplierId: string) => {
     return trackerData.reduce((sum, day) => sum + (day.purchases[supplierId] || 0), 0);
-  };
-
-  const calculateTotalForDay = (dayIndex: number) => {
-    if (!trackerData[dayIndex]) return 0;
-    return calculateTotalPurchases(trackerData[dayIndex]);
-  };
-
-  const handleRevenueChange = (dayId: string, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setTrackerData(prev => prev.map(day => 
-      day.id === dayId ? { ...day, revenue: numValue } : day
-    ));
   };
 
   const handlePurchaseChange = (dayId: string, supplierId: string, value: string) => {
@@ -296,15 +334,22 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
 
               <TableBody>
                 <TableRow className="bg-blue-50">
-                  <TableCell className="font-medium">Daily Net Revenue</TableCell>
+                  <TableCell className="font-medium flex justify-between items-center">
+                    <span>Daily Net Revenue</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-gray-500" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Revenue data is synchronized from Master Input records</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
                   {trackerData.map(day => (
-                    <TableCell key={`revenue-${day.id}`} className="p-0">
-                      <Input
-                        type="number"
-                        value={day.revenue}
-                        onChange={(e) => handleRevenueChange(day.id, e.target.value)}
-                        className="border-0 text-right h-8"
-                      />
+                    <TableCell key={`revenue-${day.id}`} className="text-right">
+                      £{day.revenue.toFixed(2)}
                     </TableCell>
                   ))}
                   <TableCell className="text-right font-medium bg-gray-100">

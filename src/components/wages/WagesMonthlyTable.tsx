@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { useWagesStore } from './WagesStore';
 import { formatCurrency, getDayNameFromNumber } from '@/lib/date-utils';
 import { toast } from "sonner";
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { fetchMasterRecordsByMonth } from '@/services/master-record-service';
 
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
   const [isLoading, setIsLoading] = React.useState(true);
@@ -16,8 +19,36 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const data = await getMonthlyWages(year, month);
-        setMonthlyData(data);
+        const wagesData = await getMonthlyWages(year, month);
+        
+        // Fetch master records to get revenue data
+        const masterRecords = await fetchMasterRecordsByMonth(year, month);
+        const masterRecordsByDate: Record<string, { foodRevenue: number; beverageRevenue: number }> = {};
+        
+        masterRecords.forEach(record => {
+          masterRecordsByDate[record.date] = {
+            foodRevenue: record.foodRevenue || 0,
+            beverageRevenue: record.beverageRevenue || 0
+          };
+        });
+        
+        // Update wages data with master record revenue
+        const updatedWagesData = wagesData.map(day => {
+          const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.day.toString().padStart(2, '0')}`;
+          const masterRecord = masterRecordsByDate[dateStr];
+          
+          if (masterRecord) {
+            return {
+              ...day,
+              foodRevenue: masterRecord.foodRevenue,
+              bevRevenue: masterRecord.beverageRevenue
+            };
+          }
+          
+          return day;
+        });
+        
+        setMonthlyData(updatedWagesData);
       } catch (error) {
         console.error('Error fetching wages data:', error);
         toast.error('Failed to load wages data');
@@ -30,6 +61,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   }, [year, month, getMonthlyWages]);
   
   const handleInputChange = async (day: number, field: string, value: string) => {
+    // Only allow changes to wages fields, not revenue fields
+    if (field === 'foodRevenue' || field === 'bevRevenue') {
+      toast.info('Revenue data can only be changed in the Master Input module');
+      return;
+    }
+    
     const numValue = parseFloat(value) || 0;
     
     // Convert the day to proper day of week
@@ -119,8 +156,32 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                 <TableHead>FOH Wages</TableHead>
                 <TableHead>Kitchen Wages</TableHead>
                 <TableHead>Total Wages</TableHead>
-                <TableHead>Food Revenue</TableHead>
-                <TableHead>Bev Revenue</TableHead>
+                <TableHead className="flex items-center gap-1">
+                  Food Revenue
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-gray-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Revenue data is synchronized from Master Input records</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead className="flex items-center gap-1">
+                  Bev Revenue
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-gray-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Revenue data is synchronized from Master Input records</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
                 <TableHead>Total Revenue</TableHead>
                 <TableHead>FOH %</TableHead>
                 <TableHead>Kitchen %</TableHead>
@@ -176,7 +237,8 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         type="number"
                         value={day.foodRevenue || ''}
                         onChange={(e) => handleInputChange(day.day, 'foodRevenue', e.target.value)}
-                        className="w-24"
+                        className="w-24 bg-gray-50"
+                        readOnly
                       />
                     </TableCell>
                     <TableCell>
@@ -184,7 +246,8 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         type="number"
                         value={day.bevRevenue || ''}
                         onChange={(e) => handleInputChange(day.day, 'bevRevenue', e.target.value)}
-                        className="w-24"
+                        className="w-24 bg-gray-50"
+                        readOnly
                       />
                     </TableCell>
                     <TableCell>{formatCurrency(totalDailyRevenue)}</TableCell>

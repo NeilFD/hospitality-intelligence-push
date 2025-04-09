@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import { generateWeekDates } from '@/lib/date-utils';
@@ -45,6 +44,57 @@ export const fetchMasterWeeklyRecords = async (
   if (error) throw error;
   
   return data.map(mapDbRecordToMasterDailyRecord);
+};
+
+// New function to fetch master records with food and beverage revenue for the food/beverage trackers
+export const fetchMasterDailyRecordsForWeek = async (
+  year: number,
+  month: number,
+  weekNumber: number
+): Promise<Array<{ date: string; foodRevenue: number; beverageRevenue: number }>> => {
+  const weekDates = generateWeekDates(year, month);
+  
+  if (weekNumber > weekDates.length) {
+    return [];
+  }
+  
+  const { startDate, endDate } = weekDates[weekNumber - 1];
+  
+  const { data, error } = await supabase
+    .from('master_daily_records')
+    .select('date, food_revenue, beverage_revenue')
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date');
+  
+  if (error) throw error;
+  
+  return data.map(record => ({
+    date: record.date,
+    foodRevenue: record.food_revenue || 0,
+    beverageRevenue: record.beverage_revenue || 0
+  }));
+};
+
+// New function to fetch master records with just food and beverage revenue for the wages table
+export const fetchMasterRecordsByMonth = async (
+  year: number,
+  month: number
+): Promise<Array<{ date: string; foodRevenue: number; beverageRevenue: number }>> => {
+  const { data, error } = await supabase
+    .from('master_daily_records')
+    .select('date, food_revenue, beverage_revenue')
+    .eq('year', year)
+    .eq('month', month)
+    .order('date');
+  
+  if (error) throw error;
+  
+  return data.map(record => ({
+    date: record.date,
+    foodRevenue: record.food_revenue || 0,
+    beverageRevenue: record.beverage_revenue || 0
+  }));
 };
 
 // Fetch master daily records for a month
