@@ -101,20 +101,29 @@ const WeeklyInput = () => {
       </div>;
   }
 
-  return <div className="p-4 md:p-8">
+  return (
+    <div className="p-4 md:p-8">
       <Card className="border shadow-md">
         <CardHeader className="bg-gray-50 border-b pb-4">
           <CardTitle className="text-2xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
         
-        <div className="pt-4 pb-2 px-4 bg-white border-b">
-          <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
-            <TabsList className="grid grid-cols-7 rounded-md bg-gray-50 p-1">
+        <div className="space-y-4 p-4">
+          <Tabs 
+            value={activeDay} 
+            onValueChange={setActiveDay} 
+            className="w-full space-y-4"
+          >
+            <TabsList className="grid grid-cols-7 gap-2 bg-gray-100 p-2 rounded-md">
               {records.map(day => (
                 <TabsTrigger 
                   key={day.date} 
                   value={day.date} 
-                  className="flex flex-col items-center justify-center py-2 gap-1 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                  className="flex flex-col items-center justify-center p-2 rounded-md 
+                    hover:bg-gray-200 
+                    data-[state=active]:bg-white 
+                    data-[state=active]:shadow-sm 
+                    transition-colors"
                 >
                   <span className="text-xs opacity-70">{format(new Date(day.date), 'EEE')}</span>
                   <span className="text-lg font-semibold">{format(new Date(day.date), 'd')}</span>
@@ -122,23 +131,26 @@ const WeeklyInput = () => {
               ))}
             </TabsList>
             
-            <div className="mt-4">
-              {records.map(day => (
-                <TabsContent key={day.date} value={day.date} className="p-1 bg-gray-100 rounded-md">
-                  <DailyRecordForm 
-                    key={day.date} 
-                    date={day.date} 
-                    dayOfWeek={day.dayOfWeek} 
-                    initialData={day} 
-                    onSave={handleSaveDailyRecord} 
-                  />
-                </TabsContent>
-              ))}
-            </div>
+            {records.map(day => (
+              <TabsContent 
+                key={day.date} 
+                value={day.date} 
+                className="mt-4 p-2 bg-gray-50 rounded-md"
+              >
+                <DailyRecordForm 
+                  key={day.date} 
+                  date={day.date} 
+                  dayOfWeek={day.dayOfWeek} 
+                  initialData={day} 
+                  onSave={handleSaveDailyRecord} 
+                />
+              </TabsContent>
+            ))}
           </Tabs>
         </div>
       </Card>
-    </div>;
+    </div>
+  );
 };
 
 export default WeeklyInput;
