@@ -66,6 +66,35 @@ export const upsertDailyValue = async (
   }
 };
 
+export const saveDailyValues = async (
+  budgetItemId: string,
+  dailyValues: DayInput[],
+  month: number,
+  year: number
+): Promise<boolean> => {
+  try {
+    console.log(`Saving ${dailyValues.length} daily values for item: ${budgetItemId}, month: ${month}, year: ${year}`);
+    
+    // Process all daily values
+    for (const dayInput of dailyValues) {
+      // Skip if the value is null
+      if (dayInput.value === null) {
+        continue;
+      }
+      
+      const day = dayInput.date.getDate();
+      
+      // Upsert each daily value
+      await upsertDailyValue(budgetItemId, year, month, day, dayInput.value);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving daily values:', error);
+    return false;
+  }
+};
+
 export const fetchFoodCOSForMonth = async (year: number, month: number): Promise<number> => {
   try {
     // Fetch all tracker_data entries for the given month and year for food module
