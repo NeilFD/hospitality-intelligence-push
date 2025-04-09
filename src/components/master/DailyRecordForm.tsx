@@ -1,3 +1,4 @@
+
 import React, { useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,24 +68,24 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <Card className="mb-6 border shadow-sm">
-          <CardHeader className="bg-gray-50 border-b pb-3">
-            <CardTitle className="text-xl">Daily Record - {date} ({dayOfWeek})</CardTitle>
+        <Card className="border-0 shadow-none">
+          <CardHeader className="pt-3 pb-2 px-4">
+            <CardTitle className="text-base font-medium">{date} ({dayOfWeek})</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="space-y-4 px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <FormField
                 control={form.control}
                 name="foodRevenue"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium">Food Revenue (£)</FormLabel>
+                    <FormLabel className="text-xs font-medium">Food Revenue (£)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
                         step="0.01" 
                         placeholder="0.00"
-                        className="bg-gray-50 focus:bg-white"
+                        className="h-8 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
@@ -99,13 +100,13 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                 name="beverageRevenue"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium">Beverage Revenue (£)</FormLabel>
+                    <FormLabel className="text-xs font-medium">Beverage Revenue (£)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         step="0.01"
                         placeholder="0.00"
-                        className="bg-gray-50 focus:bg-white"
+                        className="h-8 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
@@ -114,20 +115,18 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                   </FormItem>
                 )}
               />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
               <FormField
                 control={form.control}
                 name="lunchCovers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium">Lunch Covers</FormLabel>
+                    <FormLabel className="text-xs font-medium">Lunch Covers</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         placeholder="0"
-                        className="bg-gray-50 focus:bg-white"
+                        className="h-8 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
@@ -142,12 +141,12 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                 name="dinnerCovers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium">Dinner Covers</FormLabel>
+                    <FormLabel className="text-xs font-medium">Dinner Covers</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         placeholder="0"
-                        className="bg-gray-50 focus:bg-white"
+                        className="h-8 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
@@ -163,17 +162,17 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
               onWeatherFetched={handleWeatherFetched}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-3 gap-3 mt-2">
               <FormField
                 control={form.control}
                 name="weatherDescription"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium">Weather</FormLabel>
+                    <FormLabel className="text-xs font-medium">Weather</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Weather description"
-                        className="bg-gray-50 focus:bg-white"
+                        placeholder="Description"
+                        className="h-8 text-sm"
                         {...field}
                       />
                     </FormControl>
@@ -187,12 +186,12 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                 name="temperature"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium">Temperature (°C)</FormLabel>
+                    <FormLabel className="text-xs font-medium">Temperature (°C)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         placeholder="0"
-                        className="bg-gray-50 focus:bg-white"
+                        className="h-8 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) || 0))}
                       />
@@ -207,13 +206,13 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                 name="windSpeed"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium">Wind Speed (km/h)</FormLabel>
+                    <FormLabel className="text-xs font-medium">Wind Speed (km/h)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         step="0.1"
                         placeholder="0.0"
-                        className="bg-gray-50 focus:bg-white"
+                        className="h-8 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
@@ -224,44 +223,46 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
               />
             </div>
             
-            <FormField
-              control={form.control}
-              name="localEvents"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-medium">Local Goings On</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter information about local events, festivals, etc."
-                      className="min-h-[80px] bg-gray-50 focus:bg-white"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="operationsNotes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-medium">Daily Operations Report</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter operational notes, issues, or highlights for the day"
-                      className="min-h-[120px] bg-gray-50 focus:bg-white"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="localEvents"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-medium">Local Events</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Local events info"
+                        className="min-h-[60px] text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="operationsNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-medium">Operations Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Operations notes"
+                        className="min-h-[60px] text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
-          <CardFooter className="bg-gray-50 border-t pt-4">
-            <Button type="submit" className="ml-auto">Save Daily Record</Button>
+          <CardFooter className="py-2 px-4 flex justify-end">
+            <Button type="submit" size="sm">Save</Button>
           </CardFooter>
         </Card>
       </form>

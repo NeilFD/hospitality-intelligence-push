@@ -19,6 +19,7 @@ const WeeklyInput = () => {
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [activeDay, setActiveDay] = useState<string>('');
+  
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
@@ -96,42 +97,40 @@ const WeeklyInput = () => {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <Skeleton className="h-12 w-3/4 mb-4" />
-        <Skeleton className="h-64 w-full" />
+      <div className="p-4">
+        <Skeleton className="h-8 w-3/4 mb-2" />
+        <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8">
-      <Card className="border shadow-md">
-        <CardHeader className="bg-gray-50 border-b pb-4">
-          <CardTitle className="text-2xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
+    <div className="p-2 md:p-4">
+      <Card className="border shadow-sm">
+        <CardHeader className="bg-gray-50 border-b py-2 px-4">
+          <CardTitle className="text-lg md:text-xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
         
-        <div className="p-4">
+        <CardContent className="p-0">
           <Tabs 
             value={activeDay} 
             onValueChange={setActiveDay} 
             className="w-full"
           >
-            <TabsList className="grid grid-cols-7 gap-2 mb-4 bg-gray-100 p-2 rounded-md">
-              {records.map(day => (
-                <TabsTrigger 
-                  key={day.date} 
-                  value={day.date} 
-                  className="flex flex-col items-center justify-center p-2 rounded-md 
-                    hover:bg-gray-200 
-                    data-[state=active]:bg-white 
-                    data-[state=active]:shadow-sm 
-                    transition-colors"
-                >
-                  <span className="text-xs opacity-70">{format(new Date(day.date), 'EEE')}</span>
-                  <span className="text-lg font-semibold">{format(new Date(day.date), 'd')}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="border-b bg-gray-50">
+              <TabsList className="grid grid-cols-7 h-auto bg-transparent">
+                {records.map(day => (
+                  <TabsTrigger 
+                    key={day.date} 
+                    value={day.date} 
+                    className="flex flex-col py-1 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none"
+                  >
+                    <span className="text-xs opacity-80">{format(new Date(day.date), 'EEE')}</span>
+                    <span className="text-base font-semibold">{format(new Date(day.date), 'd')}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
             
             {records.map(day => (
               <TabsContent 
@@ -149,7 +148,7 @@ const WeeklyInput = () => {
               </TabsContent>
             ))}
           </Tabs>
-        </div>
+        </CardContent>
       </Card>
     </div>
   );
