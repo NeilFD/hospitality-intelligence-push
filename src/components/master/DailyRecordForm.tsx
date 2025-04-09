@@ -1,4 +1,3 @@
-
 import React, { useMemo, useCallback, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,7 @@ import { CheckCircle2, Mail } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { useReactToPdf } from 'react-to-pdf';
+import { usePDF } from 'react-to-pdf';
 
 interface DailyRecordFormProps {
   date: string;
@@ -34,7 +33,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
   
-  const { toPDF, targetRef } = useReactToPdf({
+  const { toPDF } = usePDF({
     filename: `daily-record-${date}.pdf`,
     page: {
       format: 'A4',
@@ -56,7 +55,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     windSpeed: initialData.windSpeed || 0,
     localEvents: initialData.localEvents || '',
     operationsNotes: initialData.operationsNotes || '',
-    // Team fields
     dayFohTeam: initialData.dayFohTeam || '',
     dayFohManager: initialData.dayFohManager || '',
     dayKitchenTeam: initialData.dayKitchenTeam || '',
@@ -71,7 +69,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     defaultValues
   });
 
-  // Calculate derived values
   const totalRevenue = useMemo(() => {
     const foodRev = form.watch('foodRevenue') || 0;
     const bevRev = form.watch('beverageRevenue') || 0;
@@ -121,15 +118,18 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     setIsPdfDialogOpen(true);
     setIsGeneratingPdf(true);
     
-    // Generate PDF
     setTimeout(() => {
       if (pdfRef.current) {
-        toPDF(pdfRef.current, {
-          onCompleted: (dataUrl) => {
+        toPDF(pdfRef.current)
+          .then((dataUrl) => {
             setPdfUrl(dataUrl);
             setIsGeneratingPdf(false);
-          }
-        });
+          })
+          .catch((error) => {
+            console.error("Error generating PDF:", error);
+            setIsGeneratingPdf(false);
+            toast.error("Could not generate PDF");
+          });
       } else {
         setIsGeneratingPdf(false);
         toast.error("Could not generate PDF");
@@ -138,19 +138,15 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   }, [toPDF]);
   
   const handleSendEmail = useCallback(() => {
-    // Create and send email with PDF attachment
     if (pdfUrl) {
       const formattedDate = format(new Date(date), 'MMMM d, yyyy');
       const subject = `Daily Record Report - ${formattedDate}`;
       const body = `Please find attached the daily record report for ${formattedDate}.`;
       
-      // Create email with attachment
       const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       
-      // Open mail client
       window.open(mailtoLink, '_blank');
       
-      // Close dialog
       setIsPdfDialogOpen(false);
       setPdfUrl(null);
       
@@ -253,7 +249,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                 />
               </div>
 
-              {/* Display calculated values */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded-md">
                 <div>
                   <span className="text-xs font-medium block text-gray-600">Total Revenue (£)</span>
@@ -269,11 +264,9 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                 </div>
               </div>
               
-              {/* Team on duty section */}
               <div className="mt-4">
                 <h3 className="text-sm font-semibold mb-3">Team on Duty</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
-                  {/* Day FOH */}
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Day FOH</h4>
                     <div className="space-y-3">
@@ -313,7 +306,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                     </div>
                   </div>
                   
-                  {/* Day Kitchen */}
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Day Kitchen</h4>
                     <div className="space-y-3">
@@ -353,7 +345,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                     </div>
                   </div>
                   
-                  {/* Evening FOH */}
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Evening FOH</h4>
                     <div className="space-y-3">
@@ -393,7 +384,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                     </div>
                   </div>
                   
-                  {/* Evening Kitchen */}
                   <div className="border rounded-md p-3">
                     <h4 className="text-xs font-medium text-gray-600 mb-2">Evening Kitchen</h4>
                     <div className="space-y-3">
@@ -563,7 +553,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
         </form>
       </Form>
       
-      {/* PDF Dialog */}
       <Dialog open={isPdfDialogOpen} onOpenChange={setIsPdfDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
@@ -581,8 +570,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
           ) : (
             <>
               <div className="mt-4 border rounded-md p-2 bg-white">
-                <div ref={targetRef} className="p-8 bg-white">
-                  {/* PDF Content */}
+                <div ref={pdfRef} className="p-8 bg-white">
                   <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold">Daily Record Report</h1>
                     <p className="text-gray-500">{format(new Date(date), 'MMMM d, yyyy')} ({dayOfWeek})</p>
