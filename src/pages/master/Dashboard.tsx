@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { generateWeekDates } from '@/lib/date-utils';
-
 const MasterDashboard = () => {
   const navigate = useNavigate();
 
@@ -49,7 +48,7 @@ const MasterDashboard = () => {
   return <div className="p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Master Input Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-800">Master Input Dashboard</h1>
           <p className="text-muted-foreground">
             Central data management for revenue, covers, weather, and operational notes
           </p>
