@@ -20,6 +20,11 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         return;
       }
       
+      // Get the current month and year for daily values
+      const currentDate = new Date();
+      const month = currentDate.getMonth() + 1; // 1-based
+      const year = currentDate.getFullYear();
+      
       // Create a copy of the budget data with tracking information
       const trackedData: PLTrackerBudgetItem[] = await Promise.all(processedBudgetData.map(async (item) => {
         // Default to discrete tracking for simplicity
@@ -27,13 +32,10 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         
         // Fetch daily values if the item has an ID
         let dailyValues: DayInput[] = [];
+        let actualAmount = item.actual_amount || 0;
+        
         if (item.id) {
           try {
-            // Get the current month and year
-            const currentDate = new Date();
-            const month = currentDate.getMonth() + 1; // 1-based
-            const year = currentDate.getFullYear();
-            
             // Fetch daily values from Supabase
             const dbValues = await fetchDailyValues(item.id, month, year);
             
@@ -51,8 +53,10 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
               // Calculate the total value from daily values
               const totalValue = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
               
-              // Update the actual_amount
-              item.actual_amount = totalValue;
+              // Only update actual_amount for Discrete tracking items
+              if (trackingType === 'Discrete') {
+                actualAmount = totalValue;
+              }
             }
           } catch (error) {
             console.error(`Error fetching daily values for item ${item.name}:`, error);
@@ -62,7 +66,8 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         return {
           ...item,
           tracking_type: trackingType,
-          daily_values: dailyValues
+          daily_values: dailyValues,
+          actual_amount: actualAmount
         };
       }));
       

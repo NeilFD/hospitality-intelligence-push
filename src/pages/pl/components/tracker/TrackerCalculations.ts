@@ -94,6 +94,9 @@ export function getActualAmount(
   calculateProRatedBudget: (item: PLTrackerBudgetItem) => number
 ): number {
   if (item.tracking_type === 'Discrete') {
+    if (item.daily_values && item.daily_values.length > 0) {
+      return item.daily_values.reduce((sum, day) => sum + (day.value || 0), 0);
+    }
     return item.manually_entered_actual || 0;
   } else {
     return calculateProRatedBudget(item);
