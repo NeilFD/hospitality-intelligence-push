@@ -12,9 +12,9 @@ import { CheckCircle2, Mail } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-// Remove the problematic usePDF import
 import { pdf } from '@react-pdf/renderer';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { TavernLogo } from '@/components/TavernLogo';
 
 interface DailyRecordFormProps {
   date: string;
@@ -23,121 +23,253 @@ interface DailyRecordFormProps {
   onSave: (data: Partial<MasterDailyRecord>) => Promise<void>;
 }
 
-// Create PDF document component
-const PDFDocument = ({ data }) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.section}>
-        <Text style={styles.title}>Daily Record Report</Text>
-        <Text style={styles.subtitle}>{format(new Date(data.date), 'MMMM d, yyyy')} ({data.dayOfWeek})</Text>
-        
-        <View style={styles.group}>
-          <Text style={styles.heading}>Revenue & Covers</Text>
-          <View style={styles.row}>
-            <View style={styles.col}>
-              <Text style={styles.label}>Food Revenue:</Text>
-              <Text>£{data.foodRevenue?.toFixed(2) || '0.00'}</Text>
-            </View>
-            <View style={styles.col}>
-              <Text style={styles.label}>Beverage Revenue:</Text>
-              <Text>£{data.beverageRevenue?.toFixed(2) || '0.00'}</Text>
-            </View>
-          </View>
-          <View style={styles.row}>
-            <View style={styles.col}>
-              <Text style={styles.label}>Lunch Covers:</Text>
-              <Text>{data.lunchCovers || '0'}</Text>
-            </View>
-            <View style={styles.col}>
-              <Text style={styles.label}>Dinner Covers:</Text>
-              <Text>{data.dinnerCovers || '0'}</Text>
-            </View>
-          </View>
-          <View style={styles.row}>
-            <View style={styles.col}>
-              <Text style={styles.label}>Total Revenue:</Text>
-              <Text>£{((data.foodRevenue || 0) + (data.beverageRevenue || 0)).toFixed(2)}</Text>
-            </View>
-            <View style={styles.col}>
-              <Text style={styles.label}>Total Covers:</Text>
-              <Text>{(data.lunchCovers || 0) + (data.dinnerCovers || 0)}</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.group}>
-          <Text style={styles.heading}>Weather Conditions</Text>
-          <View style={styles.row}>
-            <View style={styles.col}>
-              <Text style={styles.label}>Description:</Text>
-              <Text>{data.weatherDescription || 'Not recorded'}</Text>
-            </View>
-            <View style={styles.col}>
-              <Text style={styles.label}>Temperature:</Text>
-              <Text>{data.temperature || 0}°C</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.group}>
-          <Text style={styles.heading}>Additional Information</Text>
-          <Text style={styles.label}>Local Events:</Text>
-          <Text style={styles.note}>{data.localEvents || 'None recorded'}</Text>
-          <Text style={styles.label}>Operations Notes:</Text>
-          <Text style={styles.note}>{data.operationsNotes || 'None recorded'}</Text>
-        </View>
-      </View>
-    </Page>
-  </Document>
-);
+const PDFDocument = ({ data }) => {
+  const logoPath = "/lovable-uploads/e551531e-e30f-49d3-8197-b94fe8312491.png";
 
-// Define styles for PDF
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Image src={logoPath} style={styles.logo} />
+          <Text style={styles.title}>The Tavern</Text>
+        </View>
+        
+        <View style={styles.dateContainer}>
+          <Text style={styles.reportTitle}>Daily Record Report</Text>
+          <Text style={styles.date}>{format(new Date(data.date), 'MMMM d, yyyy')} ({data.dayOfWeek})</Text>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Revenue & Covers</Text>
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Food Revenue:</Text>
+                <Text style={styles.tableCell}>£{data.foodRevenue?.toFixed(2) || '0.00'}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Beverage Revenue:</Text>
+                <Text style={styles.tableCell}>£{data.beverageRevenue?.toFixed(2) || '0.00'}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Lunch Covers:</Text>
+                <Text style={styles.tableCell}>{data.lunchCovers || '0'}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Dinner Covers:</Text>
+                <Text style={styles.tableCell}>{data.dinnerCovers || '0'}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Total Revenue:</Text>
+                <Text style={styles.tableCell}>£{((data.foodRevenue || 0) + (data.beverageRevenue || 0)).toFixed(2)}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Total Covers:</Text>
+                <Text style={styles.tableCell}>{(data.lunchCovers || 0) + (data.dinnerCovers || 0)}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Team on Duty</Text>
+          
+          <Text style={styles.subSectionTitle}>Day Service</Text>
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>FOH Manager:</Text>
+                <Text style={styles.tableCell}>{data.dayFohManager || 'Not specified'}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Kitchen Manager:</Text>
+                <Text style={styles.tableCell}>{data.dayKitchenManager || 'Not specified'}</Text>
+              </View>
+            </View>
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>FOH Team:</Text>
+                <Text style={styles.tableCell}>{data.dayFohTeam || 'Not specified'}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Kitchen Team:</Text>
+                <Text style={styles.tableCell}>{data.dayKitchenTeam || 'Not specified'}</Text>
+              </View>
+            </View>
+          </View>
+          
+          <Text style={styles.subSectionTitle}>Evening Service</Text>
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>FOH Manager:</Text>
+                <Text style={styles.tableCell}>{data.eveningFohManager || 'Not specified'}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Kitchen Manager:</Text>
+                <Text style={styles.tableCell}>{data.eveningKitchenManager || 'Not specified'}</Text>
+              </View>
+            </View>
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>FOH Team:</Text>
+                <Text style={styles.tableCell}>{data.eveningFohTeam || 'Not specified'}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Kitchen Team:</Text>
+                <Text style={styles.tableCell}>{data.eveningKitchenTeam || 'Not specified'}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Weather Conditions</Text>
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Description:</Text>
+                <Text style={styles.tableCell}>{data.weatherDescription || 'Not recorded'}</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Temperature:</Text>
+                <Text style={styles.tableCell}>{data.temperature}°C</Text>
+              </View>
+            </View>
+            <View style={styles.tableRow}>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Wind Speed:</Text>
+                <Text style={styles.tableCell}>{data.windSpeed} km/h</Text>
+              </View>
+              <View style={styles.tableCol}>
+                <Text style={styles.tableHeader}>Precipitation:</Text>
+                <Text style={styles.tableCell}>{data.precipitation || '0'} mm</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Additional Information</Text>
+          <View style={styles.noteContainer}>
+            <Text style={styles.noteTitle}>Local Events:</Text>
+            <Text style={styles.note}>{data.localEvents || 'None recorded'}</Text>
+          </View>
+          <View style={styles.noteContainer}>
+            <Text style={styles.noteTitle}>Operations Notes:</Text>
+            <Text style={styles.note}>{data.operationsNotes || 'None recorded'}</Text>
+          </View>
+        </View>
+        
+        <Text style={styles.footer}>Generated on {format(new Date(), 'MMMM d, yyyy')} at {format(new Date(), 'HH:mm')}</Text>
+      </Page>
+    </Document>
+  );
+};
+
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 30,
     fontFamily: 'Helvetica',
+    backgroundColor: '#FFFFFF',
   },
-  section: {
-    margin: 10,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  logo: {
+    width: 40,
+    height: 40,
   },
   title: {
-    fontSize: 24,
-    textAlign: 'center',
-    marginBottom: 6,
+    fontSize: 20,
     fontWeight: 'bold',
+    marginLeft: 10,
+    color: '#48495E',
   },
-  subtitle: {
+  dateContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  reportTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  date: {
+    fontSize: 12,
+    color: '#555555',
+  },
+  section: {
+    marginBottom: 15,
+  },
+  sectionTitle: {
     fontSize: 14,
-    textAlign: 'center',
-    color: '#555',
-    marginBottom: 20,
-  },
-  heading: {
-    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
     paddingBottom: 5,
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#48495E',
+    color: '#48495E',
   },
-  group: {
-    marginBottom: 20,
+  subSectionTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 4,
   },
-  row: {
+  table: {
+    display: 'flex',
+    width: '100%',
+  },
+  tableRow: {
     flexDirection: 'row',
-    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingVertical: 4,
   },
-  col: {
+  tableCol: {
     flex: 1,
+    padding: 3,
   },
-  label: {
+  tableHeader: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#666666',
+  },
+  tableCell: {
+    fontSize: 11,
+    paddingTop: 2,
+  },
+  noteContainer: {
+    marginBottom: 8,
+  },
+  noteTitle: {
+    fontSize: 10,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   note: {
-    backgroundColor: '#f5f5f5',
+    fontSize: 10,
+    backgroundColor: '#F5F5F5',
     padding: 5,
-    marginBottom: 10,
+    borderRadius: 3,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 8,
+    color: '#999999',
   }
 });
 
@@ -230,7 +362,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     setIsGeneratingPdf(true);
     
     try {
-      // Generate PDF using @react-pdf/renderer
       const formData = form.getValues();
       const pdfDoc = <PDFDocument data={formData} />;
       const blob = await pdf(pdfDoc).toBlob();
