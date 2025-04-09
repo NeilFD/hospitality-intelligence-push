@@ -90,10 +90,12 @@ export function PLReportTable({
             {formatCurrency(item.budget_amount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
-            {formatCurrency(item.actual_amount)}
-            {percentageDisplay && (
-              <span className="text-xs text-gray-500 ml-1">({percentageDisplay})</span>
-            )}
+            <div className="flex items-center justify-end whitespace-nowrap">
+              <span>{formatCurrency(item.actual_amount)}</span>
+              {percentageDisplay && (
+                <span className="text-gray-500 ml-1 mr-2">({percentageDisplay})</span>
+              )}
+            </div>
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
             {formatCurrency(item.forecast_amount || item.budget_amount)}
