@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -5,8 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 import { ModuleType } from '@/types/kitchen-ledger';
+import { 
+  Table, TableHeader, TableBody, TableHead, 
+  TableRow, TableCell, TableStickyHeader 
+} from '@/components/ui/table';
 import { fetchTrackerDataByWeek, fetchSuppliers, fetchTrackerPurchases, fetchTrackerCreditNotes, upsertTrackerData, upsertTrackerPurchase, upsertTrackerCreditNote } from '@/services/kitchen-service';
 import { toast } from 'sonner';
 
@@ -115,6 +120,15 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     return (calculateGrossProfit(day) / day.revenue) * 100;
   };
 
+  const calculateWeeklyTotalForSupplier = (supplierId: string) => {
+    return trackerData.reduce((sum, day) => sum + (day.purchases[supplierId] || 0), 0);
+  };
+
+  const calculateTotalForDay = (dayIndex: number) => {
+    if (!trackerData[dayIndex]) return 0;
+    return calculateTotalPurchases(trackerData[dayIndex]);
+  };
+
   const handleRevenueChange = (dayId: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     setTrackerData(prev => prev.map(day => 
@@ -160,29 +174,12 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     ));
   };
 
-  const handleAddCreditNote = (dayId: string) => {
+  const handleAddCreditNote = () => {
     setTrackerData(prev => prev.map(day => {
-      if (day.id === dayId) {
-        return {
-          ...day,
-          creditNotes: [...day.creditNotes, 0]
-        };
-      }
-      return day;
-    }));
-  };
-
-  const handleRemoveCreditNote = (dayId: string, index: number) => {
-    setTrackerData(prev => prev.map(day => {
-      if (day.id === dayId) {
-        const updatedCreditNotes = [...day.creditNotes];
-        updatedCreditNotes.splice(index, 1);
-        return {
-          ...day,
-          creditNotes: updatedCreditNotes
-        };
-      }
-      return day;
+      return {
+        ...day,
+        creditNotes: [...day.creditNotes, 0]
+      };
     }));
   };
 
@@ -227,6 +224,26 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     }
   };
 
+  const calculateWeeklyTotals = () => {
+    const totalRevenue = trackerData.reduce((sum, day) => sum + day.revenue, 0);
+    const totalPurchases = trackerData.reduce((sum, day) => sum + calculateTotalPurchases(day), 0);
+    const totalCredits = trackerData.reduce((sum, day) => sum + calculateTotalCreditNotes(day), 0);
+    const totalStaffFood = trackerData.reduce((sum, day) => sum + day.staffFoodAllowance, 0);
+    const totalCost = totalPurchases - totalCredits + totalStaffFood;
+    const grossProfit = totalRevenue - totalCost;
+    const gpPercentage = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+
+    return {
+      totalRevenue,
+      totalPurchases,
+      totalCredits,
+      totalStaffFood,
+      totalCost,
+      grossProfit,
+      gpPercentage
+    };
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -236,8 +253,10 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     );
   }
 
+  const weeklyTotals = calculateWeeklyTotals();
+
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4">
       <Card className="border shadow-sm">
         <CardHeader className="bg-gray-50 border-b pb-4 flex flex-row items-center justify-between">
           <CardTitle className="text-xl">{modulePrefix} Weekly Tracker - Week {weekNumber}, {month}/{year}</CardTitle>
@@ -250,169 +269,178 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-0 overflow-x-auto">
           {trackerData.length > 0 ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {trackerData.map(day => (
-                  <Card key={day.date} className="shadow-sm">
-                    <CardHeader className="py-3 px-4 bg-gray-50">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-sm font-medium">{format(new Date(day.date), 'EEEE')}</h3>
-                        <span className="text-xs text-gray-500">{format(new Date(day.date), 'MMM d')}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="py-3 px-4">
-                      <div className="space-y-3">
-                        <div className="flex justify-between font-medium items-center">
-                          <span className="text-sm">Revenue:</span>
-                          <Input 
-                            type="number" 
-                            value={day.revenue} 
-                            onChange={(e) => handleRevenueChange(day.id, e.target.value)} 
-                            className="max-w-[120px] h-8 text-right"
-                          />
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <h4 className="text-xs font-medium text-gray-500">Purchases:</h4>
-                          {suppliers.map(supplier => (
-                            <div key={supplier.id} className="flex justify-between text-sm items-center">
-                              <span className="text-gray-600">{supplier.name}:</span>
-                              <Input 
-                                type="number" 
-                                value={day.purchases[supplier.id] || 0}
-                                onChange={(e) => handlePurchaseChange(day.id, supplier.id, e.target.value)} 
-                                className="max-w-[120px] h-8 text-right"
-                              />
-                            </div>
-                          ))}
-                          <div className="flex justify-between text-sm font-medium pt-1 border-t border-gray-100">
-                            <span>Total Purchases:</span>
-                            <span>£{calculateTotalPurchases(day).toFixed(2)}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center">
-                            <h4 className="text-xs font-medium text-gray-500">Credit Notes:</h4>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-6 w-6 p-0" 
-                              onClick={() => handleAddCreditNote(day.id)}
-                            >
-                              <Plus size={14} />
-                            </Button>
-                          </div>
-                          {day.creditNotes.map((amount, index) => (
-                            <div key={index} className="flex justify-between text-sm items-center">
-                              <div className="flex items-center gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-600" 
-                                  onClick={() => handleRemoveCreditNote(day.id, index)}
-                                >
-                                  <Trash2 size={14} />
-                                </Button>
-                                <span className="text-gray-600">Credit Note {index + 1}:</span>
-                              </div>
-                              <Input 
-                                type="number" 
-                                value={amount}
-                                onChange={(e) => handleCreditNoteChange(day.id, index, e.target.value)} 
-                                className="max-w-[120px] h-8 text-right"
-                              />
-                            </div>
-                          ))}
-                          {day.creditNotes.length > 0 && (
-                            <div className="flex justify-between text-sm font-medium pt-1 border-t border-gray-100">
-                              <span>Total Credits:</span>
-                              <span>£{calculateTotalCreditNotes(day).toFixed(2)}</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex justify-between text-sm items-center">
-                          <span className="text-gray-600">Staff Food:</span>
-                          <Input 
-                            type="number" 
-                            value={day.staffFoodAllowance}
-                            onChange={(e) => handleStaffFoodChange(day.id, e.target.value)} 
-                            className="max-w-[120px] h-8 text-right"
-                          />
-                        </div>
-                        
-                        <div className="flex justify-between text-sm font-medium border-t border-gray-200 pt-2">
-                          <span>Net Cost:</span>
-                          <span>£{calculateCost(day).toFixed(2)}</span>
-                        </div>
-                        
-                        <div className="space-y-1 border-t border-gray-200 pt-2">
-                          <div className="flex justify-between text-sm font-medium">
-                            <span>Gross Profit:</span>
-                            <span>£{calculateGrossProfit(day).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm font-medium">
-                            <span>GP %:</span>
-                            <span className={`${calculateGPPercentage(day) >= 65 ? 'text-green-600' : 'text-red-600'}`}>
-                              {calculateGPPercentage(day).toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+            <Table>
+              <TableStickyHeader>
+                <TableRow className="bg-gray-100 border-b">
+                  <TableHead className="w-[200px] font-bold">Week {weekNumber}</TableHead>
+                  {trackerData.map((day, index) => (
+                    <TableHead key={day.id} className="text-center min-w-[120px] font-medium">
+                      {format(new Date(day.date), 'EEEE')}
+                      <br />
+                      <span className="text-xs text-gray-500">{format(new Date(day.date), 'dd/MM/yyyy')}</span>
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-center bg-gray-200 font-bold">Weekly Total</TableHead>
+                </TableRow>
+              </TableStickyHeader>
+
+              <TableBody>
+                <TableRow className="bg-blue-50">
+                  <TableCell className="font-medium">Daily Net Revenue</TableCell>
+                  {trackerData.map(day => (
+                    <TableCell key={`revenue-${day.id}`} className="p-0">
+                      <Input
+                        type="number"
+                        value={day.revenue}
+                        onChange={(e) => handleRevenueChange(day.id, e.target.value)}
+                        className="border-0 text-right h-8"
+                      />
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-medium bg-gray-100">
+                    £{weeklyTotals.totalRevenue.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+
+                {/* Supplier rows */}
+                {suppliers.map(supplier => (
+                  <TableRow key={supplier.id}>
+                    <TableCell className="font-medium">{supplier.name}</TableCell>
+                    {trackerData.map(day => (
+                      <TableCell key={`${supplier.id}-${day.id}`} className="p-0">
+                        <Input
+                          type="number"
+                          value={day.purchases[supplier.id] || 0}
+                          onChange={(e) => handlePurchaseChange(day.id, supplier.id, e.target.value)}
+                          className="border-0 text-right h-8"
+                        />
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right font-medium bg-gray-100">
+                      £{calculateWeeklyTotalForSupplier(supplier.id).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-medium mb-3">Weekly Summary</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Total Revenue:</span>
-                    <span className="font-medium">£{trackerData.reduce((sum, day) => sum + day.revenue, 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Purchases:</span>
-                    <span className="font-medium">
-                      £{trackerData.reduce((sum, day) => sum + calculateTotalPurchases(day), 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Credit Notes:</span>
-                    <span className="font-medium">
-                      £{trackerData.reduce((sum, day) => sum + calculateTotalCreditNotes(day), 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t border-gray-200 pt-2 mt-2">
-                    <span>Net Cost:</span>
-                    <span className="font-medium">
-                      £{trackerData.reduce((sum, day) => sum + calculateCost(day), 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Gross Profit:</span>
-                    <span className="font-medium">
-                      £{trackerData.reduce((sum, day) => sum + calculateGrossProfit(day), 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Average GP %:</span>
-                    <span className="font-medium">
-                      {(() => {
-                        const totalRevenue = trackerData.reduce((sum, day) => sum + day.revenue, 0);
-                        const totalGP = trackerData.reduce((sum, day) => sum + calculateGrossProfit(day), 0);
-                        if (totalRevenue === 0) return '0.0%';
-                        const gpPercentage = (totalGP / totalRevenue) * 100;
-                        return `${gpPercentage.toFixed(1)}%`;
-                      })()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+
+                {/* Total purchases row */}
+                <TableRow className="bg-gray-100 font-medium">
+                  <TableCell>Total Purchases</TableCell>
+                  {trackerData.map((day, index) => (
+                    <TableCell key={`total-purchases-${day.id}`} className="text-right">
+                      £{calculateTotalPurchases(day).toFixed(2)}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-bold bg-gray-200">
+                    £{weeklyTotals.totalPurchases.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+
+                {/* Credit notes rows */}
+                {[...Array(Math.max(...trackerData.map(d => d.creditNotes.length), 1))].map((_, index) => (
+                  <TableRow key={`credit-note-${index}`} className="text-red-600">
+                    <TableCell className="font-medium flex items-center justify-between">
+                      Credit note {index + 1}
+                      {index === 0 && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleAddCreditNote}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Plus size={14} />
+                        </Button>
+                      )}
+                    </TableCell>
+                    {trackerData.map(day => (
+                      <TableCell key={`credit-${day.id}-${index}`} className="p-0">
+                        {day.creditNotes[index] !== undefined ? (
+                          <Input
+                            type="number"
+                            value={day.creditNotes[index]}
+                            onChange={(e) => handleCreditNoteChange(day.id, index, e.target.value)}
+                            className="border-0 text-right h-8 text-red-600"
+                          />
+                        ) : (
+                          <Input
+                            type="number"
+                            value={0}
+                            disabled
+                            className="border-0 text-right h-8 bg-gray-50"
+                          />
+                        )}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right font-medium bg-gray-100 text-red-600">
+                      £{trackerData.reduce((sum, day) => sum + (day.creditNotes[index] || 0), 0).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {/* Staff food allowance */}
+                <TableRow className="bg-blue-50">
+                  <TableCell className="font-medium">Staff Food Allowance</TableCell>
+                  {trackerData.map(day => (
+                    <TableCell key={`staff-food-${day.id}`} className="p-0">
+                      <Input
+                        type="number"
+                        value={day.staffFoodAllowance}
+                        onChange={(e) => handleStaffFoodChange(day.id, e.target.value)}
+                        className="border-0 text-right h-8"
+                      />
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-medium bg-gray-100">
+                    £{weeklyTotals.totalStaffFood.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+
+                {/* Daily total food cost */}
+                <TableRow className="bg-gray-200 font-medium">
+                  <TableCell>Daily Total Food Cost</TableCell>
+                  {trackerData.map(day => (
+                    <TableCell key={`cost-${day.id}`} className="text-right">
+                      £{calculateCost(day).toFixed(2)}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-bold bg-gray-300">
+                    £{weeklyTotals.totalCost.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+
+                {/* Gross profit */}
+                <TableRow className="bg-blue-100">
+                  <TableCell className="font-medium">Gross Profit</TableCell>
+                  {trackerData.map(day => (
+                    <TableCell key={`gp-${day.id}`} className="text-right">
+                      £{calculateGrossProfit(day).toFixed(2)}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-bold bg-blue-200">
+                    £{weeklyTotals.grossProfit.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+
+                {/* GP percentage */}
+                <TableRow className="bg-blue-100">
+                  <TableCell className="font-medium">GP Percentage</TableCell>
+                  {trackerData.map(day => (
+                    <TableCell 
+                      key={`gp-pct-${day.id}`} 
+                      className={`text-right ${calculateGPPercentage(day) >= 65 ? 'text-green-600' : 'text-red-600'}`}
+                    >
+                      {calculateGPPercentage(day).toFixed(1)}%
+                    </TableCell>
+                  ))}
+                  <TableCell 
+                    className={`text-right font-bold bg-blue-200 ${weeklyTotals.gpPercentage >= 65 ? 'text-green-600' : 'text-red-600'}`}
+                  >
+                    {weeklyTotals.gpPercentage.toFixed(1)}%
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">No tracker data available for this week.</p>
