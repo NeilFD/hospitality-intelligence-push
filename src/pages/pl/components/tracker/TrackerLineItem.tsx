@@ -68,9 +68,6 @@ export function TrackerLineItem({
                  item.name.toLowerCase() === 'wages' ||
                  item.name.toLowerCase() === 'salaries';
   
-  // All items now have read-only actual values
-  const isReadOnlyActual = true;
-  
   let rowClassName = '';
   let fontClass = '';
   
