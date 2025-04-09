@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,7 @@ export function PLReportTable({
              lowercaseName.includes("drink gross profit")) {
       const beverageRevenueItems = processedBudgetData.filter(
         i => (i.name.toLowerCase().includes("beverage") || 
-              i.name.toLowerCase().includes("drink") ||
+              i.name.toLowerCase().includes("drink") || 
               i.name.toLowerCase().includes("bar")) && 
              (i.name.toLowerCase().includes("revenue") || i.name.toLowerCase().includes("sales"))
       );
@@ -207,6 +208,11 @@ export function PLReportTable({
 
   const renderTableContent = () => {
     return filteredBudgetData.map((item, index) => {
+      // Skip rendering if this is a header item with zero budget amount
+      if (item.category === "header" && item.budget_amount === 0) {
+        return null;
+      }
+      
       const fontClass = getFontClass(item.name);
       const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
       
