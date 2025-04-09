@@ -68,8 +68,8 @@ export function TrackerLineItem({
                  item.name.toLowerCase() === 'wages' ||
                  item.name.toLowerCase() === 'salaries';
   
-  // Determine if item should have read-only actual values
-  const isReadOnlyActual = isRevenue || isCOS || isWages || isGrossProfit || item.tracking_type === 'Pro-Rated';
+  // All items now have read-only actual values
+  const isReadOnlyActual = true;
   
   let rowClassName = '';
   let fontClass = '';
@@ -136,8 +136,8 @@ export function TrackerLineItem({
         {formatCurrency(proRatedBudget)}
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
-        <div className="flex items-center justify-end gap-2 pointer-events-auto">
-          {!isReadOnlyActual && item.tracking_type !== 'Pro-Rated' ? (
+        <div className="flex items-center justify-end gap-2">
+          {item.tracking_type === 'Discrete' && !isRevenue && !isCOS && !isWages && !isGrossProfit ? (
             <Button 
               variant="outline"
               size="icon"

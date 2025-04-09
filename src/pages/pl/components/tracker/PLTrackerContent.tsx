@@ -79,12 +79,6 @@ export function PLTrackerContent({
     return item.name.toLowerCase().includes('gross profit');
   };
 
-  // Determine if an item should have read-only actual values
-  const isReadOnlyActual = (item: PLTrackerBudgetItem) => {
-    return isRevenueItem(item) || isCOSItem(item) || isWagesItem(item) || 
-           isGrossProfitItem(item) || item.tracking_type === 'Pro-Rated';
-  };
-
   return (
     <>
       <div className="p-4 overflow-x-auto">
@@ -125,8 +119,6 @@ export function PLTrackerContent({
                     </TableRow>
                   );
                 } else {
-                  const readOnlyActual = isReadOnlyActual(item);
-                  
                   return (
                     <TableRow key={item.id || index} className="border-t border-gray-100">
                       <TableCell className="text-left text-slate-800">{item.name}</TableCell>
@@ -136,10 +128,12 @@ export function PLTrackerContent({
                       </TableCell>
                       <TableCell className="text-right">{formatCurrency(proRatedBudget)}</TableCell>
                       <TableCell className="text-right">
-                        {readOnlyActual || item.tracking_type === 'Pro-Rated' ? (
-                          <div className="text-right">{formatCurrency(actualAmount)}</div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2">
+                          {item.tracking_type === 'Discrete' && 
+                           !isRevenueItem(item) && 
+                           !isCOSItem(item) && 
+                           !isWagesItem(item) && 
+                           !isGrossProfitItem(item) ? (
                             <Button 
                               variant="ghost" 
                               size="icon" 
@@ -149,16 +143,9 @@ export function PLTrackerContent({
                             >
                               <Calendar className="h-4 w-4 text-purple-600" />
                             </Button>
-                            <Input 
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
-                              onChange={(e) => updateManualActualAmount(itemIndex, e.target.value)}
-                              className="w-24 ml-auto text-right"
-                            />
-                          </div>
-                        )}
+                          ) : null}
+                          <span>{formatCurrency(actualAmount)}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <Input 
