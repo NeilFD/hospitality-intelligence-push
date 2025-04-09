@@ -144,6 +144,7 @@ export function PLTrackerContent({
                               <Calendar className="h-4 w-4 text-purple-600" />
                             </Button>
                           ) : null}
+                          {/* Display the calculated actual amount, no input boxes */}
                           <span>{formatCurrency(actualAmount)}</span>
                         </div>
                       </TableCell>

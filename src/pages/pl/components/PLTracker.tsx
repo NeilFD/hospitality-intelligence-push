@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -59,12 +58,17 @@ export function PLTracker({
     setShowSettings(false);
   };
 
-  // Calculate actual amounts for all items
-  const calculateActualAmount = (item: PLTrackerBudgetItem) => {
-    // For pro-rated items, use pro-rated calculation
+  // Calculate actual amounts for all items with proper pro-rating 
+  const calculateActualAmount = (item: PLTrackerBudgetItem): number => {
+    // For pro-rated items, explicitly calculate based on current day
     if (item.tracking_type === 'Pro-Rated') {
-      const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
-      return proRatedActual;
+      // Check if there's a manual actual amount set
+      if (item.actual_amount && Number(item.actual_amount) > 0) {
+        return Number(item.actual_amount);
+      }
+      
+      // Otherwise calculate pro-rated value
+      return (item.budget_amount / daysInMonth) * dayOfMonth;
     }
     
     // For all other items, use getActualAmount function

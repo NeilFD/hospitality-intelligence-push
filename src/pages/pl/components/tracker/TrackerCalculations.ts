@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -108,18 +107,12 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   
   // For pro-rated items, calculate the pro-rated amount based on the current day of month
   if (item.tracking_type === 'Pro-Rated') {
-    // Use actual_amount if available, otherwise calculate from budget
+    // If there's an actual_amount set, use it
     const actualAmount = Number(item.actual_amount || 0);
     
-    // If there's no actual amount set, use the pro-rated budget
-    if (actualAmount === 0) {
-      const currentDate = new Date();
-      const dayOfMonth = currentDate.getDate();
-      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-      
-      return item.budget_amount / daysInMonth * dayOfMonth;
-    }
-    
+    // If there's no actual amount set, we need to calculate the pro-rated value
+    // but we can't do that here as we don't have access to days in month and day of month
+    // This will be calculated in the PLTracker component
     return actualAmount;
   }
 
