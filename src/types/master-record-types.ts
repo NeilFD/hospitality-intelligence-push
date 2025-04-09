@@ -23,6 +23,7 @@ export interface MasterDailyRecord {
   lunchCovers: number;
   dinnerCovers: number;
   totalCovers: number;
+  averageCoverSpend?: number;
   
   // Weather data
   weatherDescription?: string;

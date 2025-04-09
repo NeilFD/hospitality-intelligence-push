@@ -250,6 +250,7 @@ export type Database = {
       }
       master_daily_records: {
         Row: {
+          average_cover_spend: number | null
           beverage_revenue: number | null
           created_at: string
           date: string
@@ -272,6 +273,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          average_cover_spend?: number | null
           beverage_revenue?: number | null
           created_at?: string
           date: string
@@ -294,6 +296,7 @@ export type Database = {
           year: number
         }
         Update: {
+          average_cover_spend?: number | null
           beverage_revenue?: number | null
           created_at?: string
           date?: string

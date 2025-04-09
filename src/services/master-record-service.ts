@@ -96,6 +96,9 @@ export const upsertMasterDailyRecord = async (
   const dinnerCovers = record.dinnerCovers || 0;
   const totalCovers = lunchCovers + dinnerCovers;
   
+  // Calculate average cover spend
+  const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
+  
   const dbRecord = {
     date: record.date,
     day_of_week: dayOfWeek,
@@ -110,6 +113,7 @@ export const upsertMasterDailyRecord = async (
     lunch_covers: lunchCovers,
     dinner_covers: dinnerCovers,
     total_covers: totalCovers,
+    average_cover_spend: averageCoverSpend,
     
     weather_description: record.weatherDescription,
     temperature: record.temperature,
@@ -151,6 +155,7 @@ const mapDbRecordToMasterDailyRecord = (data: any): MasterDailyRecord => {
     lunchCovers: data.lunch_covers,
     dinnerCovers: data.dinner_covers,
     totalCovers: data.total_covers,
+    averageCoverSpend: data.average_cover_spend,
     
     weatherDescription: data.weather_description,
     temperature: data.temperature,
