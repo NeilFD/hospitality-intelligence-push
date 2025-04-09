@@ -77,30 +77,36 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
-  // Filter out the 'Total' row between Gross Profit and Wages and Salaries
+  // Filter out the unwanted Total row that appears between Gross Profit and Wages and Salaries
   const filteredBudgetData = processedBudgetData.filter(item => {
-    // More specific check to identify and remove only the total row between Gross Profit and Wages
+    // First check if it's a Total row
     if (item.name === 'Total' || item.name === 'TOTAL') {
-      // If the previous item in the array is Gross Profit/Loss and next item is Wages, exclude this total row
-      const itemIndex = processedBudgetData.findIndex(i => i.id === item.id || 
-                                                    (i.name === item.name && i.category === item.category));
+      // Find position of this item in the original array
+      const index = processedBudgetData.findIndex(i => i === item);
       
-      if (itemIndex > 0 && itemIndex < processedBudgetData.length - 1) {
-        const prevItem = processedBudgetData[itemIndex - 1];
-        const nextItem = processedBudgetData[itemIndex + 1];
+      if (index > 0 && index < processedBudgetData.length - 1) {
+        // Get adjacent items
+        const prevItem = processedBudgetData[index - 1];
+        const nextItem = processedBudgetData[index + 1];
         
-        const isPrevGrossProfit = prevItem.name.toLowerCase().includes('gross profit') || 
-                                 prevItem.name.toLowerCase().includes('profit/(loss)');
+        // Check if previous item is Gross Profit/(Loss)
+        const isPrevGrossProfit = 
+          prevItem.name.toLowerCase().includes('gross profit') || 
+          prevItem.name.toLowerCase().includes('profit/(loss)');
         
-        const isNextWages = nextItem.name.toLowerCase().includes('wages') || 
-                           nextItem.name.toLowerCase().includes('salaries');
+        // Check if next item is Wages and Salaries
+        const isNextWages = 
+          nextItem.name.toLowerCase().includes('wages') || 
+          nextItem.name.toLowerCase().includes('salaries');
         
+        // If this Total is between Gross Profit and Wages, exclude it
         if (isPrevGrossProfit && isNextWages) {
-          return false; // Exclude this total row
+          return false;
         }
       }
     }
-    return true; // Keep all other rows
+    
+    return true;
   });
 
   const renderTableContent = () => {
