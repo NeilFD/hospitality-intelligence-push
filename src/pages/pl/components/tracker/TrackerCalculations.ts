@@ -105,12 +105,6 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
       item.isOperatingProfit) {
     return Number(item.actual_amount) || 0;
   }
-  
-  // For pro-rated items, this will be handled by the calculateActualAmount function in PLTracker.tsx
-  if (item.tracking_type === 'Pro-Rated') {
-    // Return the actual_amount but note that this will be overridden in PLTracker.tsx
-    return Number(item.actual_amount || 0);
-  }
 
   if (item.tracking_type === 'Discrete') {
     if (item.daily_values && item.daily_values.length > 0) {
@@ -119,6 +113,12 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     }
     // Use manually entered actual or actual_amount
     return Number(item.manually_entered_actual) || Number(item.actual_amount) || 0;
+  }
+  
+  // Pro-rated items are handled directly in PLTracker.tsx calculateActualAmount function
+  // Here we just pass back the actual_amount if it exists
+  if (item.tracking_type === 'Pro-Rated') {
+    return Number(item.actual_amount) || 0;
   }
   
   // Fallback to actual_amount or 0
