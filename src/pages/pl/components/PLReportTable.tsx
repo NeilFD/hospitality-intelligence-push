@@ -147,7 +147,11 @@ export function PLReportTable({
          !item.name.toLowerCase().includes("beverage") &&
          !item.name.toLowerCase().includes("drink")) ||
         item.name.toLowerCase() === "total admin expenses" ||
-        item.name.toLowerCase().includes("operating profit");
+        item.name.toLowerCase().includes("operating profit") ||
+        (item.name.toLowerCase().includes("cost of sales") && 
+         !item.name.toLowerCase().includes("food") && 
+         !item.name.toLowerCase().includes("beverage") && 
+         !item.name.toLowerCase().includes("drink"));
       
       const highlightClass = shouldHighlight ? "bg-purple-50" : "";
       
