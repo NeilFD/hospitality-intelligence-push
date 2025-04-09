@@ -1,16 +1,16 @@
-import { Card } from '@/components/ui/card';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import ChatInterface from '@/components/performance/ChatInterface';
-import KeyInsights from '@/components/performance/KeyInsights';
-import AnalyticsModules from '@/components/performance/AnalyticsModules';
-import { TavernLogo } from '@/components/TavernLogo';
 import { Link } from 'react-router-dom';
-import { History, AlertTriangle, Info, Sparkles } from 'lucide-react';
+import { History, AlertTriangle, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
+import ChatInterface from '@/components/performance/ChatInterface';
+import KeyInsights from '@/components/performance/KeyInsights';
+import AnalyticsModules from '@/components/performance/AnalyticsModules';
+import { TavernLogo } from '@/components/TavernLogo';
 
 export default function PerformanceDashboard() {
   const {
@@ -125,20 +125,17 @@ export default function PerformanceDashboard() {
   return <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gradient-to-br from-pastel-purple to-pastel-blue rounded-lg shadow-glass">
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className="p-1.5 bg-gradient-to-br from-tavern-blue/60 to-tavern-blue-dark/80 rounded-lg shadow-glass">
+            <Sparkles className="h-5 w-5 text-white/90" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-tavern-blue via-tavern-blue-dark to-tavern-blue bg-clip-text text-transparent">Performance & Analysis</h1>
         </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" className="hidden sm:flex items-center gap-2 glass-button" asChild>
             <Link to="/performance/conversation-history">
-              <History className="h-4 w-4" />
+              <History className="h-4 w-4 text-tavern-blue-dark" />
               <span>Chat History</span>
             </Link>
-          </Button>
-          <Button variant="outline" className="hidden sm:flex items-center gap-2 glass-button" asChild>
-            
           </Button>
           <TavernLogo size="md" className="hidden md:block animate-float" />
         </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -770,7 +771,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         <Button 
           type="submit" 
           disabled={isLoading || !input.trim()} 
-          className="send-button shadow-glass text-white"
+          className="send-button shadow-glass bg-gradient-to-r from-tavern-blue-light/80 to-tavern-blue/90 text-white"
         >
           <SendHorizonal className="h-5 w-5 text-white" />
         </Button>
