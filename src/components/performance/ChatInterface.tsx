@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,92 +84,36 @@ const ensureDate = (dateInput: any): Date => {
   }
 };
 
+// Simply pass through the complete response without filtering
 const extractAIResponse = (response: any): string => {
-  console.log('Extracting AI response from:', response);
+  console.log('Raw webhook response:', response);
   
-  // Check for output field in the response data
+  // If we have response.data.json.body (from the screenshot), return that content
+  if (response?.data?.json?.body) {
+    return JSON.stringify(response.data.json.body);
+  }
+  
+  // For raw response text
+  if (response?.rawResponse) {
+    return response.rawResponse;
+  }
+  
+  // If there's a direct output field
   if (response?.data?.output) {
-    console.log('Found output directly in response.data:', response.data.output);
     return response.data.output;
   }
   
-  // Check for output in first item of array
+  // If there's array data
   if (Array.isArray(response?.data) && response.data.length > 0) {
-    if (response.data[0].output) {
-      console.log('Found output in first array item:', response.data[0].output);
-      return response.data[0].output;
-    }
+    return JSON.stringify(response.data[0]);
   }
   
-  // Check for raw response string that might contain output
-  if (response?.rawResponse) {
-    try {
-      // Try parsing the rawResponse if it's a JSON string
-      const parsedRaw = JSON.parse(response.rawResponse);
-      
-      // Check for output in parsed raw response
-      if (parsedRaw.output) {
-        console.log('Found output in parsed rawResponse:', parsedRaw.output);
-        return parsedRaw.output;
-      }
-      
-      // Check for output in first array item of parsed raw response
-      if (Array.isArray(parsedRaw) && parsedRaw.length > 0 && parsedRaw[0].output) {
-        console.log('Found output in first item of parsed rawResponse:', parsedRaw[0].output);
-        return parsedRaw[0].output;
-      }
-      
-      // If we have something that looks like valid text but not in output field
-      if (typeof parsedRaw === 'string' && parsedRaw.length > 0) {
-        console.log('Using parsedRaw as string:', parsedRaw);
-        return parsedRaw;
-      }
-    } catch (e) {
-      // If it's not JSON, use the raw response text directly
-      console.log('Raw response is not JSON, using as-is');
-      return response.rawResponse;
-    }
+  // Return the entire response stringified as fallback
+  if (response) {
+    return JSON.stringify(response);
   }
   
-  // Check n8n specific formats shown in the screenshot
-  if (response?.data?.json?.body?.query) {
-    console.log('Found n8n format response with query:', response.data.json.body.query);
-    return response.data.json.body.query;
-  }
-  
-  // Look for typical AI response formats
-  const possibleResponseProperties = [
-    'response',
-    'message',
-    'answer',
-    'text',
-    'content'
-  ];
-  
-  // Check response.data for any of the possible properties
-  if (response?.data) {
-    for (const prop of possibleResponseProperties) {
-      if (response.data[prop]) {
-        console.log(`Found response in data.${prop}:`, response.data[prop]);
-        return response.data[prop];
-      }
-    }
-    
-    // If response.data is a string, use it directly
-    if (typeof response.data === 'string') {
-      console.log('Using response.data as string:', response.data);
-      return response.data;
-    }
-  }
-  
-  // Last resort: try to use any text content from the response
-  if (response?.message) {
-    console.log('Using response.message:', response.message);
-    return response.message;
-  }
-  
-  console.error('Could not extract a valid response from:', response);
-  return "I've processed your request but couldn't generate a proper response. Please try again.";
+  return "No response data received from webhook.";
 };
 
 export default function ChatInterface({ className }: ChatInterfaceProps) {
