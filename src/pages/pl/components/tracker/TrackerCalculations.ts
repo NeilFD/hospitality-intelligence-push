@@ -115,12 +115,17 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return Number(item.manually_entered_actual) || Number(item.actual_amount) || 0;
   }
   
-  // Pro-rated items are handled directly in PLTracker.tsx calculateActualAmount function
+  // Pro-rated items should return their pro-rated actual, which will be calculated in PLTracker.tsx
   // Here we just pass back the actual_amount if it exists
-  if (item.tracking_type === 'Pro-Rated') {
-    return Number(item.actual_amount) || 0;
-  }
-  
-  // Fallback to actual_amount or 0
   return Number(item.actual_amount) || 0;
+}
+
+// New function to calculate pro-rated actual amount
+export function calculateProRatedActual(
+  item: PLTrackerBudgetItem,
+  daysInMonth: number,
+  dayOfMonth: number
+): number {
+  // For pro-rated items, we calculate based on the proportion of the month
+  return (item.budget_amount / daysInMonth) * dayOfMonth;
 }

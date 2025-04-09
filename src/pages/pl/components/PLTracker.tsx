@@ -8,7 +8,7 @@ import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
 import { PLTrackerSettings } from './PLTrackerSettings';
-import { calculateProRatedBudget, getActualAmount } from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount, calculateProRatedActual } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -63,11 +63,8 @@ export function PLTracker({
   const calculateActualAmount = (item: PLTrackerBudgetItem): number => {
     // For pro-rated items, explicitly calculate based on current day
     if (item.tracking_type === 'Pro-Rated') {
-      // Always calculate the pro-rated value based on the day of month
-      console.log(`Pro-rating ${item.name}: ${item.budget_amount} / ${daysInMonth} * ${dayOfMonth}`);
-      const proRatedValue = (item.budget_amount / daysInMonth) * dayOfMonth;
-      console.log(`Result: ${proRatedValue}`);
-      return proRatedValue;
+      // Calculate the pro-rated value based on the proportion of the month completed
+      return calculateProRatedActual(item, daysInMonth, dayOfMonth);
     }
     
     // For all other items, use getActualAmount function
