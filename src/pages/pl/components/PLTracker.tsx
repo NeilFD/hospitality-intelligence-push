@@ -59,6 +59,14 @@ export function PLTracker({
     setShowSettings(false);
   };
 
+  // Calculate actual amounts for pro-rated items
+  const calculateActualForProRatedItem = (item: PLTrackerBudgetItem) => {
+    if (item.tracking_type === 'Pro-Rated') {
+      return (item.budget_amount / daysInMonth) * dayOfMonth;
+    }
+    return getActualAmount(item);
+  };
+
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       {showSettings ? (
@@ -94,7 +102,7 @@ export function PLTracker({
             updateManualActualAmount={updateManualActualAmount}
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
-            getActualAmount={item => getActualAmount(item)}
+            getActualAmount={calculateActualForProRatedItem}
             calculateProRatedBudget={(item) => calculateProRatedBudget(item, daysInMonth, dayOfMonth)}
             currentMonthName={currentMonthName}
             currentYear={currentYear}

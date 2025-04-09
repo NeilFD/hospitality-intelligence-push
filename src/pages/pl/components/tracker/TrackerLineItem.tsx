@@ -137,7 +137,7 @@ export function TrackerLineItem({
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
         <div className="flex items-center justify-end gap-2 pointer-events-auto">
-          {!isReadOnlyActual ? (
+          {!isReadOnlyActual && item.tracking_type !== 'Pro-Rated' ? (
             <Button 
               variant="outline"
               size="icon"

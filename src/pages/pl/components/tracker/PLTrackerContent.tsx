@@ -136,7 +136,7 @@ export function PLTrackerContent({
                       </TableCell>
                       <TableCell className="text-right">{formatCurrency(proRatedBudget)}</TableCell>
                       <TableCell className="text-right">
-                        {readOnlyActual ? (
+                        {readOnlyActual || item.tracking_type === 'Pro-Rated' ? (
                           <div className="text-right">{formatCurrency(actualAmount)}</div>
                         ) : (
                           <div className="flex items-center justify-end gap-2">
