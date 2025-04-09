@@ -121,7 +121,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
-      name: module.name,
+      name: module.type === 'master' ? 'Daily Info' : module.name,
       path: `/${module.type}/dashboard`,
       icon: getModuleIcon(module.type),
       type: module.type
