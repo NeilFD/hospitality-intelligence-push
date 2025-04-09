@@ -77,41 +77,49 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
-  // Remove the Total row that appears after Gross Profit and before Wages
-  // Using direct array manipulation for more reliability
+  // New approach to filter out the Total row that follows Gross Profit
   const filteredBudgetData = React.useMemo(() => {
-    // First make sure we have data to process
+    // Handle empty data case
     if (!processedBudgetData || processedBudgetData.length === 0) {
       return [];
     }
-
-    // Copy the original array to avoid modifying the source data
-    let result = [...processedBudgetData];
     
-    // Find the Gross Profit row
-    const grossProfitIndex = result.findIndex(
-      item => item.name?.toLowerCase().includes("gross profit")
-    );
+    // Create a deep copy to prevent modifying the original array
+    const workingData = JSON.parse(JSON.stringify(processedBudgetData));
     
-    // If we can't find Gross Profit, return the original data
-    if (grossProfitIndex === -1) {
-      return result;
+    // Find the index of any row containing "Gross Profit"
+    let grossProfitIndex = -1;
+    for (let i = 0; i < workingData.length; i++) {
+      const item = workingData[i];
+      if (item && item.name && 
+          (item.name.includes("Gross Profit") || 
+           item.name.includes("Gross profit") || 
+           item.name.includes("gross profit"))) {
+        grossProfitIndex = i;
+        break;
+      }
     }
     
-    // Look at the next row and check if it's a Total row
-    const nextIndex = grossProfitIndex + 1;
-    if (
-      nextIndex < result.length && 
-      result[nextIndex] && 
-      result[nextIndex].name && 
-      result[nextIndex].name.toLowerCase() === "total"
-    ) {
-      // Remove this Total row
-      console.log("Found and removing Total row at index:", nextIndex);
-      result.splice(nextIndex, 1);
+    console.log("Gross Profit index:", grossProfitIndex);
+    
+    // If we found a gross profit row, check the next row
+    if (grossProfitIndex >= 0 && grossProfitIndex < workingData.length - 1) {
+      const nextRow = workingData[grossProfitIndex + 1];
+      console.log("Row after Gross Profit:", nextRow);
+      
+      // If the next row is "Total", remove it
+      if (nextRow && nextRow.name && 
+         (nextRow.name === "Total" || nextRow.name === "total" || nextRow.name === "TOTAL")) {
+        console.log("Found Total row at index:", grossProfitIndex + 1);
+        // Remove this one row
+        workingData.splice(grossProfitIndex + 1, 1);
+      }
     }
     
-    return result;
+    // Also log the first few rows to see what we have
+    console.log("First 10 rows:", workingData.slice(0, 10).map(r => r?.name));
+    
+    return workingData;
   }, [processedBudgetData]);
 
   const renderTableContent = () => {
