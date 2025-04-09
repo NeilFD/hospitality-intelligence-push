@@ -142,8 +142,10 @@ export function PLReportTable({
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 
         item.name.toLowerCase() === "total revenue" ||
-        item.name.toLowerCase().includes("gross profit/(loss)") ||
-        item.name.toLowerCase().includes("gross profit") ||
+        (item.name.toLowerCase().includes("gross profit") && 
+         !item.name.toLowerCase().includes("food") && 
+         !item.name.toLowerCase().includes("beverage") &&
+         !item.name.toLowerCase().includes("drink")) ||
         item.name.toLowerCase() === "total admin expenses" ||
         item.name.toLowerCase().includes("operating profit");
       
