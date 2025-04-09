@@ -50,26 +50,66 @@ export function PLReportTable({
 
   const getPercentageDisplay = (item: any) => {
     const lowercaseName = item.name.toLowerCase();
-    const turnover = processedBudgetData.find(
-      i => i.name.toLowerCase() === "turnover" || i.name.toLowerCase() === "total revenue"
-    )?.actual_amount || 0;
     
-    if (turnover === 0) return null;
-    
-    let percentage = 0;
-    
-    if (lowercaseName.includes("gross profit")) {
-      percentage = (item.actual_amount / turnover) * 100;
+    if (lowercaseName.includes("food gross profit")) {
+      const foodRevenueItems = processedBudgetData.filter(
+        i => i.name.toLowerCase().includes("food") && 
+             (i.name.toLowerCase().includes("revenue") || i.name.toLowerCase().includes("sales"))
+      );
+      
+      const foodRevenue = foodRevenueItems.reduce(
+        (sum, item) => sum + (item.actual_amount || 0), 0
+      );
+      
+      if (foodRevenue > 0) {
+        return formatPercentage((item.actual_amount / foodRevenue));
+      }
+      return formatPercentage(0);
     } 
+    else if (lowercaseName.includes("beverage gross profit") || 
+             lowercaseName.includes("drink gross profit")) {
+      const beverageRevenueItems = processedBudgetData.filter(
+        i => (i.name.toLowerCase().includes("beverage") || 
+              i.name.toLowerCase().includes("drink") ||
+              i.name.toLowerCase().includes("bar")) && 
+             (i.name.toLowerCase().includes("revenue") || i.name.toLowerCase().includes("sales"))
+      );
+      
+      const beverageRevenue = beverageRevenueItems.reduce(
+        (sum, item) => sum + (item.actual_amount || 0), 0
+      );
+      
+      if (beverageRevenue > 0) {
+        return formatPercentage((item.actual_amount / beverageRevenue));
+      }
+      return formatPercentage(0);
+    }
+    else if (lowercaseName === "gross profit" || 
+             lowercaseName === "gross profit/(loss)") {
+      const turnover = processedBudgetData.find(
+        i => i.name.toLowerCase() === "turnover" || i.name.toLowerCase() === "total revenue"
+      )?.actual_amount || 0;
+      
+      if (turnover > 0) {
+        return formatPercentage((item.actual_amount / turnover));
+      }
+      return formatPercentage(0);
+    }
     else if (
       lowercaseName === "wages and salaries" ||
       lowercaseName === "wages" ||
       lowercaseName === "salaries"
     ) {
-      percentage = (item.actual_amount / turnover) * 100;
+      const turnover = processedBudgetData.find(
+        i => i.name.toLowerCase() === "turnover" || i.name.toLowerCase() === "total revenue"
+      )?.actual_amount || 0;
+      
+      if (turnover > 0) {
+        return formatPercentage((item.actual_amount / turnover));
+      }
     }
     
-    return formatPercentage(percentage / 100);
+    return null;
   };
 
   const filteredBudgetData = React.useMemo(() => {
