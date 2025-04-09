@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -89,16 +88,14 @@ export function calculateSummaryProRatedBudget(
   return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
 }
 
-export function getActualAmount(
-  item: PLTrackerBudgetItem, 
-  calculateProRatedBudget: (item: PLTrackerBudgetItem) => number
-): number {
+export function getActualAmount(item: PLTrackerBudgetItem): number {
   if (item.tracking_type === 'Discrete') {
     if (item.daily_values && item.daily_values.length > 0) {
       return item.daily_values.reduce((sum, day) => sum + (day.value || 0), 0);
     }
     return item.manually_entered_actual || 0;
   } else {
-    return calculateProRatedBudget(item);
+    // For Pro-Rated items, the actual amount is calculated elsewhere
+    return item.actual_amount || 0;
   }
 }

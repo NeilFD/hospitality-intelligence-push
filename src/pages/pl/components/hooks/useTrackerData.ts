@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { useToast } from '@/hooks/use-toast';
@@ -27,14 +26,14 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       
       // Create a copy of the budget data with tracking information
       const trackedData: PLTrackerBudgetItem[] = await Promise.all(processedBudgetData.map(async (item) => {
-        // Default to discrete tracking for simplicity
+        // Ensure tracking_type is defined
         const trackingType = item.tracking_type || 'Discrete';
         
-        // Fetch daily values if the item has an ID
+        // Fetch daily values if the item has an ID and is a discrete tracking item
         let dailyValues: DayInput[] = [];
         let actualAmount = item.actual_amount || 0;
         
-        if (item.id) {
+        if (item.id && trackingType === 'Discrete') {
           try {
             // Fetch daily values from Supabase
             const dbValues = await fetchDailyValues(item.id, month, year);
@@ -53,7 +52,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
               // Calculate the total value from daily values
               const totalValue = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
               
-              // Only update actual_amount for Discrete tracking items
+              // Update actual_amount for Discrete tracking items
               if (trackingType === 'Discrete') {
                 actualAmount = totalValue;
               }

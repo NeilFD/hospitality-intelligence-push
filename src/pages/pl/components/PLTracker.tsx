@@ -8,7 +8,7 @@ import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
 import { PLTrackerSettings } from './PLTrackerSettings';
-import { calculateProRatedBudget } from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount as getBaseActualAmount } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -29,7 +29,6 @@ export function PLTracker({
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
   // Convert ProcessedBudgetItem to PLTrackerBudgetItem to ensure tracking_type is defined
-  // The processedBudgetData now already includes the actual revenue, COS and wages values
   const processedDataWithTrackingType = processedBudgetData.map(item => ({
     ...item,
     tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined
@@ -52,101 +51,51 @@ export function PLTracker({
   );
   
   const getActualAmount = (item: PLTrackerBudgetItem) => {
-    // First priority: Check if it's a revenue or COS or wages item that should get data from other trackers
-    if (item.name.toLowerCase().includes('food revenue') || 
-        item.name.toLowerCase().includes('food sales')) {
-      // Use the actual amount from master records for food revenue
-      return item.actual_amount || 0;
+    // First check if it's a Pro-Rated item, if so return the pro-rated budget value
+    if (item.tracking_type === 'Pro-Rated') {
+      return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
     }
     
-    if (item.name.toLowerCase().includes('beverage revenue') || 
+    // For revenue, COS, and other special items, check if preloaded actual_amount exists
+    if (item.name.toLowerCase().includes('food revenue') || 
+        item.name.toLowerCase().includes('food sales') ||
+        item.name.toLowerCase().includes('beverage revenue') || 
         item.name.toLowerCase().includes('beverage sales') || 
         item.name.toLowerCase().includes('drink sales') ||
-        item.name.toLowerCase().includes('drinks revenue')) {
-      // Use the actual amount from master records for beverage revenue
-      return item.actual_amount || 0;
-    }
-    
-    if (item.name.toLowerCase() === 'turnover' || 
-        item.name.toLowerCase().includes('total revenue')) {
-      // Use the actual amount from master records for total revenue
-      return item.actual_amount || 0;
-    }
-    
-    // For food and beverage COS
-    if (item.name.toLowerCase().includes('food cost of sales') ||
+        item.name.toLowerCase().includes('drinks revenue') ||
+        item.name.toLowerCase() === 'turnover' || 
+        item.name.toLowerCase().includes('total revenue') ||
+        item.name.toLowerCase().includes('food cost of sales') ||
         item.name.toLowerCase().includes('food cos') ||
-        (item.name.toLowerCase().includes('food') && 
-         item.category.toLowerCase().includes('cost of sales'))) {
-      return item.actual_amount || 0;
-    }
-    
-    if (item.name.toLowerCase().includes('beverage cost of sales') ||
+        item.name.toLowerCase().includes('beverage cost of sales') ||
         item.name.toLowerCase().includes('beverage cos') ||
         item.name.toLowerCase().includes('drinks cost of sales') ||
         item.name.toLowerCase().includes('drinks cos') ||
-        item.name.toLowerCase().includes('bev cos') ||
-        ((item.name.toLowerCase().includes('beverage') || 
-          item.name.toLowerCase().includes('drink') ||
-          item.name.toLowerCase().includes('bev')) &&
-         item.category.toLowerCase().includes('cost of sales'))) {
-      return item.actual_amount || 0;
-    }
-    
-    if ((item.name.toLowerCase() === 'cost of sales' || 
-         item.name.toLowerCase() === 'cos') && 
-        !item.name.toLowerCase().includes('food') &&
-        !item.name.toLowerCase().includes('beverage') &&
-        !item.name.toLowerCase().includes('drink') &&
-        !item.name.toLowerCase().includes('bev')) {
-      return item.actual_amount || 0;
-    }
-    
-    // For gross profit calculations
-    if (item.name.toLowerCase().includes('food gross profit')) {
-      return item.actual_amount || 0;
-    }
-    
-    if (item.name.toLowerCase().includes('beverage gross profit') || 
-        item.name.toLowerCase().includes('drinks gross profit')) {
-      return item.actual_amount || 0;
-    }
-    
-    if ((item.name.toLowerCase() === 'gross profit' || 
-         item.name.toLowerCase() === 'gross profit/(loss)') && 
-        !item.name.toLowerCase().includes('food') &&
-        !item.name.toLowerCase().includes('beverage') &&
-        !item.name.toLowerCase().includes('drink')) {
-      return item.actual_amount || 0;
-    }
-    
-    // For wages
-    if (item.name.toLowerCase().includes('wages and salaries') ||
+        item.name.toLowerCase().includes('food gross profit') ||
+        item.name.toLowerCase().includes('beverage gross profit') || 
+        item.name.toLowerCase().includes('drinks gross profit') ||
+        item.name.toLowerCase() === 'gross profit' || 
+        item.name.toLowerCase() === 'gross profit/(loss)' ||
+        item.name.toLowerCase().includes('wages and salaries') ||
         item.name.toLowerCase() === 'wages' ||
         item.name.toLowerCase() === 'salaries') {
       return item.actual_amount || 0;
     }
     
-    // For other items, use either manual entry, daily values sum, or pro-rated budget based on tracking type
-    if (item.manually_entered_actual !== undefined) {
-      return item.manually_entered_actual;
-    }
-    
-    // For discrete tracking type, use the sum of daily values if available, otherwise return 0
+    // For Discrete items, use either manual entry or daily values
     if (item.tracking_type === 'Discrete') {
-      // If daily values exist, calculate the sum
+      if (item.manually_entered_actual !== undefined) {
+        return item.manually_entered_actual;
+      }
+      
       if (item.daily_values && item.daily_values.length > 0) {
         return item.daily_values.reduce((sum, day) => sum + (day.value || 0), 0);
       }
-      return 0; // No daily values for a Discrete item means 0
+      
+      return 0; // No values found
     }
     
-    // For Pro-Rated tracking type, calculate the pro-rated budget value
-    if (item.tracking_type === 'Pro-Rated') {
-      return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
-    }
-    
-    // Fallback to actual_amount if it exists, otherwise 0
+    // Default fallback
     return item.actual_amount || 0;
   };
   

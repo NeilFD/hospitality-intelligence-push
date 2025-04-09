@@ -8,7 +8,6 @@ import { DailyInputDrawer } from './DailyInputDrawer';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { formatCurrency } from '@/lib/date-utils';
 import { TrackerSummaryRows } from './TrackerSummaryRows';
-import { getActualAmount } from './TrackerCalculations';
 
 interface PLTrackerContentProps {
   isLoading: boolean;
@@ -78,7 +77,7 @@ export function PLTrackerContent({
 
   // Determine if an item should have read-only actual values
   const isReadOnlyActual = (item: PLTrackerBudgetItem) => {
-    return isRevenueItem(item) || isCOSItem(item) || isWagesItem(item);
+    return isRevenueItem(item) || isCOSItem(item) || isWagesItem(item) || item.tracking_type === 'Pro-Rated';
   };
 
   return (
@@ -109,9 +108,7 @@ export function PLTrackerContent({
               {filteredBudgetData.map((item, index) => {
                 const itemIndex = trackedBudgetData.findIndex(i => i.id === item.id);
                 const proRatedBudget = calculateProRatedBudget(item);
-                const actualAmount = item.tracking_type === 'Pro-Rated' 
-                  ? proRatedBudget 
-                  : getActualAmount(item);
+                const actualAmount = getActualAmount(item);
                 const variance = actualAmount - proRatedBudget;
                 
                 if (item.isHeader) {
@@ -124,7 +121,6 @@ export function PLTrackerContent({
                   );
                 } else {
                   const readOnlyActual = isReadOnlyActual(item);
-                  const isProRated = item.tracking_type === 'Pro-Rated';
                   
                   return (
                     <TableRow key={item.id || index} className="border-t border-gray-100">
@@ -136,8 +132,6 @@ export function PLTrackerContent({
                       <TableCell className="text-right">{formatCurrency(proRatedBudget)}</TableCell>
                       <TableCell className="text-right">
                         {readOnlyActual ? (
-                          <div className="text-right">{formatCurrency(actualAmount)}</div>
-                        ) : isProRated ? (
                           <div className="text-right">{formatCurrency(actualAmount)}</div>
                         ) : (
                           <div className="flex items-center justify-end gap-2">
