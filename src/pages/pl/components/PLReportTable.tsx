@@ -1,4 +1,3 @@
-
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -80,13 +79,11 @@ export function PLReportTable({
 
   // Filter out the 'Total' row between Gross Profit and Wages and Salaries
   const filteredBudgetData = processedBudgetData.filter(item => {
-    // Check if the item is the Total row we want to filter out
-    // It typically appears between Gross Profit and Wages
     const lowercaseName = item.name.toLowerCase();
-    return lowercaseName !== 'total' || 
-           (lowercaseName === 'total' && 
-            item.category && 
-            !item.category.toLowerCase().includes('expense'));
+    // Explicitly exclude the total row we want to remove
+    return !(lowercaseName === 'total' && 
+             item.category && 
+             item.category.toLowerCase().includes('gross profit'));
   });
 
   const renderTableContent = () => {
