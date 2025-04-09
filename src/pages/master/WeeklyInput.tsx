@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -108,7 +109,7 @@ const WeeklyInput = () => {
         </CardHeader>
         <CardContent className="p-0">
           <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
-            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50 py-3 -mt-2 mb-6">
+            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50 py-3 -mt-16 mb-6">
               {records.map(day => <TabsTrigger key={day.date} value={day.date} className={`
                     relative 
                     group 
