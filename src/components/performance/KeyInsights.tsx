@@ -13,10 +13,16 @@ export default function KeyInsights() {
   const { annualRecord, currentYear, currentMonth } = useStore();
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [gpData, setGpData] = useState<any[]>([]);
+  const [foodGP, setFoodGP] = useState(0);
+  const [beverageGP, setBeverageGP] = useState(0);
+  const [combinedGP, setCombinedGP] = useState(0);
+  const [foodRevenue, setFoodRevenue] = useState(0);
+  const [foodCosts, setFoodCosts] = useState(0);
+  const [beverageRevenue, setBeverageRevenue] = useState(0);
+  const [beverageCosts, setBeverageCosts] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalCosts, setTotalCosts] = useState(0);
   const [previousMonthGP, setPreviousMonthGP] = useState(0);
-  const [currentMonthGP, setCurrentMonthGP] = useState(0);
-  const [monthlyRevenue, setMonthlyRevenue] = useState(0);
-  const [monthlyCosts, setMonthlyCosts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Query for food tracker data
@@ -71,111 +77,139 @@ export default function KeyInsights() {
       });
       
       // Current month calculations
-      let foodRevenue = 0;
-      let foodCosts = 0;
-      let bevRevenue = 0;
-      let bevCosts = 0;
+      let foodRev = 0;
+      let foodCost = 0;
+      let bevRev = 0;
+      let bevCost = 0;
       
       // Process current month's food data
       if (foodTrackerData && foodTrackerData.length > 0) {
         foodTrackerData.forEach(day => {
-          foodRevenue += Number(day.revenue) || 0;
+          const dayRevenue = Number(day.revenue) || 0;
+          foodRev += dayRevenue;
           
           // Calculate costs
-          const dayCosts = Object.values(day.purchases || {}).reduce(
-            (sum, amount) => sum + Number(amount || 0), 
-            0
-          );
-          const creditNotes = day.creditNotes?.reduce(
-            (sum, credit) => sum + Number(credit || 0), 
-            0
-          ) || 0;
+          let dayCosts = 0;
+          if (day.purchases) {
+            Object.values(day.purchases).forEach(amount => {
+              dayCosts += Number(amount) || 0;
+            });
+          }
           
-          foodCosts += dayCosts - creditNotes + (Number(day.staffFoodAllowance) || 0);
+          let creditTotal = 0;
+          if (day.creditNotes && Array.isArray(day.creditNotes)) {
+            day.creditNotes.forEach(credit => {
+              creditTotal += Number(credit) || 0;
+            });
+          }
+          
+          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
+          foodCost += dayCosts - creditTotal + staffFoodAllowance;
         });
       }
       
       // Process current month's beverage data
       if (bevTrackerData && bevTrackerData.length > 0) {
         bevTrackerData.forEach(day => {
-          bevRevenue += Number(day.revenue) || 0;
+          const dayRevenue = Number(day.revenue) || 0;
+          bevRev += dayRevenue;
           
           // Calculate costs
-          const dayCosts = Object.values(day.purchases || {}).reduce(
-            (sum, amount) => sum + Number(amount || 0), 
-            0
-          );
-          const creditNotes = day.creditNotes?.reduce(
-            (sum, credit) => sum + Number(credit || 0), 
-            0
-          ) || 0;
+          let dayCosts = 0;
+          if (day.purchases) {
+            Object.values(day.purchases).forEach(amount => {
+              dayCosts += Number(amount) || 0;
+            });
+          }
           
-          bevCosts += dayCosts - creditNotes + (Number(day.staffFoodAllowance) || 0);
+          let creditTotal = 0;
+          if (day.creditNotes && Array.isArray(day.creditNotes)) {
+            day.creditNotes.forEach(credit => {
+              creditTotal += Number(credit) || 0;
+            });
+          }
+          
+          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
+          bevCost += dayCosts - creditTotal + staffFoodAllowance;
         });
       }
       
       // Previous month calculations
-      let prevFoodRevenue = 0;
-      let prevFoodCosts = 0;
-      let prevBevRevenue = 0;
-      let prevBevCosts = 0;
+      let prevFoodRev = 0;
+      let prevFoodCost = 0;
+      let prevBevRev = 0;
+      let prevBevCost = 0;
       
       // Process previous month's food data
       if (prevFoodData && prevFoodData.length > 0) {
         prevFoodData.forEach(day => {
-          prevFoodRevenue += Number(day.revenue) || 0;
+          const dayRevenue = Number(day.revenue) || 0;
+          prevFoodRev += dayRevenue;
           
           // Calculate costs
-          const dayCosts = Object.values(day.purchases || {}).reduce(
-            (sum, amount) => sum + Number(amount || 0), 
-            0
-          );
-          const creditNotes = day.creditNotes?.reduce(
-            (sum, credit) => sum + Number(credit || 0), 
-            0
-          ) || 0;
+          let dayCosts = 0;
+          if (day.purchases) {
+            Object.values(day.purchases).forEach(amount => {
+              dayCosts += Number(amount) || 0;
+            });
+          }
           
-          prevFoodCosts += dayCosts - creditNotes + (Number(day.staffFoodAllowance) || 0);
+          let creditTotal = 0;
+          if (day.creditNotes && Array.isArray(day.creditNotes)) {
+            day.creditNotes.forEach(credit => {
+              creditTotal += Number(credit) || 0;
+            });
+          }
+          
+          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
+          prevFoodCost += dayCosts - creditTotal + staffFoodAllowance;
         });
       }
       
       // Process previous month's beverage data
       if (prevBevData && prevBevData.length > 0) {
         prevBevData.forEach(day => {
-          prevBevRevenue += Number(day.revenue) || 0;
+          const dayRevenue = Number(day.revenue) || 0;
+          prevBevRev += dayRevenue;
           
           // Calculate costs
-          const dayCosts = Object.values(day.purchases || {}).reduce(
-            (sum, amount) => sum + Number(amount || 0), 
-            0
-          );
-          const creditNotes = day.creditNotes?.reduce(
-            (sum, credit) => sum + Number(credit || 0), 
-            0
-          ) || 0;
+          let dayCosts = 0;
+          if (day.purchases) {
+            Object.values(day.purchases).forEach(amount => {
+              dayCosts += Number(amount) || 0;
+            });
+          }
           
-          prevBevCosts += dayCosts - creditNotes + (Number(day.staffFoodAllowance) || 0);
+          let creditTotal = 0;
+          if (day.creditNotes && Array.isArray(day.creditNotes)) {
+            day.creditNotes.forEach(credit => {
+              creditTotal += Number(credit) || 0;
+            });
+          }
+          
+          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
+          prevBevCost += dayCosts - creditTotal + staffFoodAllowance;
         });
       }
       
-      // Total for this month
-      const totalRevenue = foodRevenue + bevRevenue;
-      const totalCosts = foodCosts + bevCosts;
+      // Calculate gross profits
+      const currentFoodGP = calculateGP(foodRev, foodCost);
+      const currentBevGP = calculateGP(bevRev, bevCost);
+      const combinedCurrentGP = calculateGP(foodRev + bevRev, foodCost + bevCost);
+      const prevCombinedGP = calculateGP(prevFoodRev + prevBevRev, prevFoodCost + prevBevCost);
       
-      // Total for previous month
-      const prevTotalRevenue = prevFoodRevenue + prevBevRevenue;
-      const prevTotalCosts = prevFoodCosts + prevBevCosts;
+      // Set state values
+      setFoodGP(currentFoodGP);
+      setBeverageGP(currentBevGP);
+      setCombinedGP(combinedCurrentGP);
+      setPreviousMonthGP(prevCombinedGP);
       
-      setMonthlyRevenue(totalRevenue);
-      setMonthlyCosts(totalCosts);
-      
-      // Calculate GP for this month
-      const currGP = calculateGP(totalRevenue, totalCosts);
-      setCurrentMonthGP(currGP);
-      
-      // Calculate GP for previous month
-      const prevGP = calculateGP(prevTotalRevenue, prevTotalCosts);
-      setPreviousMonthGP(prevGP);
+      setFoodRevenue(foodRev);
+      setFoodCosts(foodCost);
+      setBeverageRevenue(bevRev);
+      setBeverageCosts(bevCost);
+      setTotalRevenue(foodRev + bevRev);
+      setTotalCosts(foodCost + bevCost);
       
       // Weekly data processing
       processWeeklyData();
@@ -183,7 +217,7 @@ export default function KeyInsights() {
     
     const processWeeklyData = () => {
       // Create map for weekly data
-      const weekMap: Record<string, { revenue: number, costs: number }> = {};
+      const weekMap: Record<string, { revenue: number, foodCost: number, bevCost: number, foodRevenue: number, bevRevenue: number }> = {};
       
       // Process food data by week
       if (foodTrackerData) {
@@ -196,22 +230,30 @@ export default function KeyInsights() {
           const weekKey = `Week ${weekOfMonth}`;
           
           if (!weekMap[weekKey]) {
-            weekMap[weekKey] = { revenue: 0, costs: 0 };
+            weekMap[weekKey] = { revenue: 0, foodCost: 0, bevCost: 0, foodRevenue: 0, bevRevenue: 0 };
           }
           
-          weekMap[weekKey].revenue += Number(day.revenue) || 0;
+          const dayRevenue = Number(day.revenue) || 0;
+          weekMap[weekKey].revenue += dayRevenue;
+          weekMap[weekKey].foodRevenue += dayRevenue;
           
           // Calculate costs
-          const dayCosts = Object.values(day.purchases || {}).reduce(
-            (sum, amount) => sum + Number(amount || 0), 
-            0
-          );
-          const creditNotes = day.creditNotes?.reduce(
-            (sum, credit) => sum + Number(credit || 0), 
-            0
-          ) || 0;
+          let dayCosts = 0;
+          if (day.purchases) {
+            Object.values(day.purchases).forEach(amount => {
+              dayCosts += Number(amount) || 0;
+            });
+          }
           
-          weekMap[weekKey].costs += dayCosts - creditNotes + (Number(day.staffFoodAllowance) || 0);
+          let creditTotal = 0;
+          if (day.creditNotes && Array.isArray(day.creditNotes)) {
+            day.creditNotes.forEach(credit => {
+              creditTotal += Number(credit) || 0;
+            });
+          }
+          
+          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
+          weekMap[weekKey].foodCost += dayCosts - creditTotal + staffFoodAllowance;
         });
       }
       
@@ -226,22 +268,30 @@ export default function KeyInsights() {
           const weekKey = `Week ${weekOfMonth}`;
           
           if (!weekMap[weekKey]) {
-            weekMap[weekKey] = { revenue: 0, costs: 0 };
+            weekMap[weekKey] = { revenue: 0, foodCost: 0, bevCost: 0, foodRevenue: 0, bevRevenue: 0 };
           }
           
-          weekMap[weekKey].revenue += Number(day.revenue) || 0;
+          const dayRevenue = Number(day.revenue) || 0;
+          weekMap[weekKey].revenue += dayRevenue;
+          weekMap[weekKey].bevRevenue += dayRevenue;
           
           // Calculate costs
-          const dayCosts = Object.values(day.purchases || {}).reduce(
-            (sum, amount) => sum + Number(amount || 0), 
-            0
-          );
-          const creditNotes = day.creditNotes?.reduce(
-            (sum, credit) => sum + Number(credit || 0), 
-            0
-          ) || 0;
+          let dayCosts = 0;
+          if (day.purchases) {
+            Object.values(day.purchases).forEach(amount => {
+              dayCosts += Number(amount) || 0;
+            });
+          }
           
-          weekMap[weekKey].costs += dayCosts - creditNotes + (Number(day.staffFoodAllowance) || 0);
+          let creditTotal = 0;
+          if (day.creditNotes && Array.isArray(day.creditNotes)) {
+            day.creditNotes.forEach(credit => {
+              creditTotal += Number(credit) || 0;
+            });
+          }
+          
+          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
+          weekMap[weekKey].bevCost += dayCosts - creditTotal + staffFoodAllowance;
         });
       }
       
@@ -256,14 +306,21 @@ export default function KeyInsights() {
       // Convert to arrays for charts
       const weeklyRevenue = sortedWeeks.map(([week, data]) => ({
         week,
-        revenue: data.revenue
+        revenue: data.revenue,
+        foodRevenue: data.foodRevenue,
+        bevRevenue: data.bevRevenue
       }));
       
       const weeklyGP = sortedWeeks.map(([week, data]) => {
-        const gp = calculateGP(data.revenue, data.costs);
+        const foodGP = calculateGP(data.foodRevenue, data.foodCost);
+        const bevGP = calculateGP(data.bevRevenue, data.bevCost);
+        const combinedGP = calculateGP(data.foodRevenue + data.bevRevenue, data.foodCost + data.bevCost);
+        
         return {
           week,
-          gp: gp * 100 // Convert to percentage for better visualization
+          foodGP: foodGP * 100, // Convert to percentage for better visualization
+          bevGP: bevGP * 100,
+          combinedGP: combinedGP * 100
         };
       });
       
@@ -277,12 +334,16 @@ export default function KeyInsights() {
   }, [foodTrackerData, bevTrackerData, prevFoodData, prevBevData, isFoodLoading, isBevLoading]);
   
   // Calculate GP trend
-  const gpTrend = currentMonthGP - previousMonthGP;
+  const gpTrend = combinedGP - previousMonthGP;
   const gpTrendPercentage = previousMonthGP ? (gpTrend / previousMonthGP) * 100 : 0;
 
   const chartConfig = {
     revenue: { color: "#344861", label: "Revenue" },
-    gp: { color: "#16A34A", label: "Gross Profit %" },
+    foodRevenue: { color: "#16A34A", label: "Food Revenue" },
+    bevRevenue: { color: "#2563EB", label: "Beverage Revenue" },
+    foodGP: { color: "#16A34A", label: "Food GP %" },
+    bevGP: { color: "#2563EB", label: "Beverage GP %" },
+    combinedGP: { color: "#9333EA", label: "Combined GP %" }
   };
   
   if (isLoading) {
@@ -320,14 +381,26 @@ export default function KeyInsights() {
           <CardHeader className="pb-2 border-b border-gray-100">
             <CardTitle className="text-lg font-medium flex items-center justify-between">
               <span>Monthly Revenue</span>
-              {monthlyRevenue > 0 && <TrendingUp className="h-5 w-5 text-green-500" />}
+              {totalRevenue > 0 && <TrendingUp className="h-5 w-5 text-green-500" />}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="text-3xl font-bold text-tavern-blue">{formatCurrency(monthlyRevenue)}</div>
-            <div className="text-muted-foreground mt-1 flex items-center gap-1">
-              <span className="text-gray-500">Cost:</span> 
-              <span className="font-medium">{formatCurrency(monthlyCosts)}</span>
+            <div className="text-3xl font-bold text-tavern-blue">{formatCurrency(totalRevenue)}</div>
+            <div className="mt-2 space-y-1">
+              <div className="text-muted-foreground flex items-center gap-1">
+                <span className="text-gray-500">Total Cost:</span>
+                <span className="font-medium">{formatCurrency(totalCosts)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <div className="flex flex-col">
+                  <span className="text-gray-500">Food:</span> 
+                  <span className="font-medium">{formatCurrency(foodRevenue)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-500">Beverage:</span> 
+                  <span className="font-medium">{formatCurrency(beverageRevenue)}</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -343,14 +416,24 @@ export default function KeyInsights() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="text-3xl font-bold text-tavern-blue">{formatPercentage(currentMonthGP)}</div>
-            <div className={`flex items-center mt-1 ${gpTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <div className="text-3xl font-bold text-tavern-blue">{formatPercentage(combinedGP)}</div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="flex flex-col">
+                <span className="text-gray-500 text-sm">Food GP:</span>
+                <span className="font-medium">{formatPercentage(foodGP)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-500 text-sm">Beverage GP:</span>
+                <span className="font-medium">{formatPercentage(beverageGP)}</span>
+              </div>
+            </div>
+            <div className={`flex items-center mt-2 text-xs ${gpTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {gpTrend >= 0 ? 
-                <ArrowUp className="h-4 w-4 mr-1" /> : 
-                <ArrowDown className="h-4 w-4 mr-1" />
+                <ArrowUp className="h-3 w-3 mr-1" /> : 
+                <ArrowDown className="h-3 w-3 mr-1" />
               }
               {isNaN(gpTrendPercentage) || !isFinite(gpTrendPercentage) ? (
-                <span className="font-medium">No previous month data</span>
+                <span className="font-medium">No previous data</span>
               ) : (
                 <span className="font-medium">{Math.abs(gpTrendPercentage).toFixed(1)}% vs. last month</span>
               )}
@@ -362,16 +445,16 @@ export default function KeyInsights() {
           <CardHeader className="pb-2 border-b border-gray-100">
             <CardTitle className="text-lg font-medium">Current Performance</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 flex flex-col justify-center h-full">
-            <div className={`text-xl font-bold ${currentMonthGP >= 0.7 ? 'text-green-500' : currentMonthGP >= 0.65 ? 'text-amber-500' : 'text-red-500'}`}>
-              {currentMonthGP >= 0.7 ? 'Excellent' : currentMonthGP >= 0.65 ? 'Good' : 'Needs Improvement'}
+          <CardContent className="p-6 flex flex-col justify-center">
+            <div className={`text-lg font-bold ${combinedGP >= 0.7 ? 'text-green-500' : combinedGP >= 0.65 ? 'text-amber-500' : 'text-red-500'}`}>
+              {combinedGP >= 0.7 ? 'Excellent' : combinedGP >= 0.65 ? 'Good' : 'Needs Improvement'}
             </div>
-            <p className="text-gray-500 text-sm mt-2">
-              {currentMonthGP >= 0.7 ? 
-                'Your business is performing above target levels.' : 
-                currentMonthGP >= 0.65 ? 
-                'Your business is meeting expected performance levels.' : 
-                'Your business is currently performing below target levels.'}
+            <p className="text-gray-500 text-sm mt-1">
+              {combinedGP >= 0.7 ? 
+                'Your business is performing above target.' : 
+                combinedGP >= 0.65 ? 
+                'Your business is meeting expected levels.' : 
+                'Your business is below target levels.'}
             </p>
           </CardContent>
         </Card>
@@ -382,20 +465,23 @@ export default function KeyInsights() {
           <CardHeader className="border-b border-gray-100">
             <CardTitle>Weekly Revenue</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 h-64">
+          <CardContent className="p-4 h-72">
             {revenueData.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-500">
                 No data available for this month
               </div>
             ) : (
               <ChartContainer config={chartConfig} className="h-full">
-                <BarChart data={revenueData}>
-                  <XAxis dataKey="week" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                <ResponsiveContainer>
+                  <BarChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                    <XAxis dataKey="week" />
+                    <YAxis />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="foodRevenue" name="Food" fill="var(--color-foodRevenue)" stackId="a" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="bevRevenue" name="Beverage" fill="var(--color-bevRevenue)" stackId="a" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </ChartContainer>
             )}
           </CardContent>
@@ -405,27 +491,39 @@ export default function KeyInsights() {
           <CardHeader className="border-b border-gray-100">
             <CardTitle>Weekly GP %</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 h-64">
+          <CardContent className="p-4 h-72">
             {gpData.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-500">
                 No data available for this month
               </div>
             ) : (
               <ChartContainer config={chartConfig} className="h-full">
-                <LineChart data={gpData}>
-                  <XAxis dataKey="week" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="gp" 
-                    stroke="var(--color-gp)" 
-                    strokeWidth={2} 
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
-                  />
-                </LineChart>
+                <ResponsiveContainer>
+                  <LineChart data={gpData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                    <XAxis dataKey="week" />
+                    <YAxis />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="foodGP" 
+                      name="Food GP" 
+                      stroke="var(--color-foodGP)" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="bevGP" 
+                      name="Beverage GP" 
+                      stroke="var(--color-bevGP)" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </ChartContainer>
             )}
           </CardContent>
