@@ -9,7 +9,6 @@ import { MasterDailyRecord } from '@/types/master-record-types';
 import DailyRecordForm from '@/components/master/DailyRecordForm';
 import { generateWeekDates } from '@/lib/date-utils';
 import { toast } from 'sonner';
-
 const WeeklyInput = () => {
   const params = useParams<{
     year: string;
@@ -19,7 +18,6 @@ const WeeklyInput = () => {
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [activeDay, setActiveDay] = useState<string>('');
-  
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
@@ -28,7 +26,6 @@ const WeeklyInput = () => {
     startDate: '',
     endDate: ''
   }, [weekDates, weekNumber]);
-
   const loadRecords = useCallback(async () => {
     setLoading(true);
     try {
@@ -77,11 +74,9 @@ const WeeklyInput = () => {
       setLoading(false);
     }
   }, [year, month, weekNumber, weekDates, activeDay]);
-
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
-
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
       const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & {
@@ -94,64 +89,35 @@ const WeeklyInput = () => {
       toast.error('Failed to save daily record');
     }
   }, []);
-
   if (loading) {
-    return (
-      <div className="p-4">
+    return <div className="p-4">
         <Skeleton className="h-8 w-3/4 mb-2" />
         <Skeleton className="h-48 w-full" />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="p-2 md:p-4">
+  return <div className="p-2 md:p-4">
       <Card className="border shadow-sm">
         <CardHeader className="bg-gray-50 border-b py-2 px-4">
           <CardTitle className="text-lg md:text-xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
         
         <CardContent className="p-0">
-          <Tabs 
-            value={activeDay} 
-            onValueChange={setActiveDay} 
-            className="w-full"
-          >
+          <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
             <div className="border-b bg-gray-50">
               <TabsList className="grid grid-cols-7 h-auto bg-transparent">
-                {records.map(day => (
-                  <TabsTrigger 
-                    key={day.date} 
-                    value={day.date} 
-                    className="flex flex-col py-1 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none"
-                  >
+                {records.map(day => <TabsTrigger key={day.date} value={day.date} className="flex flex-col py-1 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none text-gray-900">
                     <span className="text-xs opacity-80">{format(new Date(day.date), 'EEE')}</span>
                     <span className="text-base font-semibold">{format(new Date(day.date), 'd')}</span>
-                  </TabsTrigger>
-                ))}
+                  </TabsTrigger>)}
               </TabsList>
             </div>
             
-            {records.map(day => (
-              <TabsContent 
-                key={day.date} 
-                value={day.date} 
-                className="mt-0 p-0"
-              >
-                <DailyRecordForm 
-                  key={day.date} 
-                  date={day.date} 
-                  dayOfWeek={day.dayOfWeek} 
-                  initialData={day} 
-                  onSave={handleSaveDailyRecord} 
-                />
-              </TabsContent>
-            ))}
+            {records.map(day => <TabsContent key={day.date} value={day.date} className="mt-0 p-0">
+                <DailyRecordForm key={day.date} date={day.date} dayOfWeek={day.dayOfWeek} initialData={day} onSave={handleSaveDailyRecord} />
+              </TabsContent>)}
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default WeeklyInput;
