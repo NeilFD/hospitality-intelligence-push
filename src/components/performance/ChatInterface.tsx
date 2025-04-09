@@ -95,7 +95,13 @@ const extractAIResponse = (response: any): string => {
     responseText = responseText
       .replace(/\n{2,}/g, '\n')  // Replace multiple consecutive newlines with a single newline
       .replace(/^\s+|\s+$/g, '')  // Trim leading and trailing whitespace
-      .replace(/\n\s+/g, '\n');  // Remove indentation after newlines
+      .replace(/\n\s+/g, '\n')  // Remove indentation after newlines
+      .replace(/\\n/g, '\n')  // Replace escaped newlines with actual newlines
+      .replace(/\\[\[\]\(\)]/g, '')  // Remove escaped brackets/parentheses
+      .replace(/\\\[|\\\]/g, '')  // Remove LaTeX-style brackets
+      .replace(/\\text\{([^}]+)\}/g, '$1')  // Clean up LaTeX text commands
+      .replace(/\\approx/g, '≈')  // Replace LaTeX approx with symbol
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');  // Convert LaTeX fractions to simple notation
     
     return responseText;
   }
