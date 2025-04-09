@@ -1,5 +1,5 @@
 
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import WeatherFetcher from './WeatherFetcher';
 import { toast } from 'sonner';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Mail } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { format } from 'date-fns';
+import { Loader2 } from 'lucide-react';
+import { useReactToPdf } from 'react-to-pdf';
 
 interface DailyRecordFormProps {
   date: string;
@@ -25,6 +29,19 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   onSave 
 }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
+  
+  const { toPDF, targetRef } = useReactToPdf({
+    filename: `daily-record-${date}.pdf`,
+    page: {
+      format: 'A4',
+      orientation: 'portrait',
+      margin: '10mm'
+    }
+  });
   
   const defaultValues = useMemo(() => ({
     date,
@@ -39,7 +56,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     windSpeed: initialData.windSpeed || 0,
     localEvents: initialData.localEvents || '',
     operationsNotes: initialData.operationsNotes || '',
-    // New team fields
+    // Team fields
     dayFohTeam: initialData.dayFohTeam || '',
     dayFohManager: initialData.dayFohManager || '',
     dayKitchenTeam: initialData.dayKitchenTeam || '',
@@ -99,398 +116,592 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
       setIsSaving(false);
     }
   }, [onSave, date]);
+  
+  const handleEmailClick = useCallback(() => {
+    setIsPdfDialogOpen(true);
+    setIsGeneratingPdf(true);
+    
+    // Generate PDF
+    setTimeout(() => {
+      if (pdfRef.current) {
+        toPDF(pdfRef.current, {
+          onCompleted: (dataUrl) => {
+            setPdfUrl(dataUrl);
+            setIsGeneratingPdf(false);
+          }
+        });
+      } else {
+        setIsGeneratingPdf(false);
+        toast.error("Could not generate PDF");
+      }
+    }, 500);
+  }, [toPDF]);
+  
+  const handleSendEmail = useCallback(() => {
+    // Create and send email with PDF attachment
+    if (pdfUrl) {
+      const formattedDate = format(new Date(date), 'MMMM d, yyyy');
+      const subject = `Daily Record Report - ${formattedDate}`;
+      const body = `Please find attached the daily record report for ${formattedDate}.`;
+      
+      // Create email with attachment
+      const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
+      // Open mail client
+      window.open(mailtoLink, '_blank');
+      
+      // Close dialog
+      setIsPdfDialogOpen(false);
+      setPdfUrl(null);
+      
+      toast.success('Email prepared successfully', {
+        description: 'The report has been attached to a new email'
+      });
+    }
+  }, [pdfUrl, date]);
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <Card className="border-0 shadow-none">
-          <CardHeader className="pt-3 pb-2 px-4">
-            <CardTitle className="text-base font-medium">{date} ({dayOfWeek})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <FormField
-                control={form.control}
-                name="foodRevenue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Food Revenue (£)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        step="0.01" 
-                        placeholder="0.00"
-                        className="h-8 text-sm"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="beverageRevenue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Beverage Revenue (£)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        placeholder="0.00"
-                        className="h-8 text-sm"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="lunchCovers"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Lunch Covers</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0"
-                        className="h-8 text-sm"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="dinnerCovers"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Dinner Covers</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0"
-                        className="h-8 text-sm"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <Card className="border-0 shadow-none">
+            <CardHeader className="pt-3 pb-2 px-4">
+              <CardTitle className="text-base font-medium">{date} ({dayOfWeek})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 px-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <FormField
+                  control={form.control}
+                  name="foodRevenue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Food Revenue (£)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          step="0.01" 
+                          placeholder="0.00"
+                          className="h-8 text-sm"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="beverageRevenue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Beverage Revenue (£)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00"
+                          className="h-8 text-sm"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="lunchCovers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Lunch Covers</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0"
+                          className="h-8 text-sm"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="dinnerCovers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Dinner Covers</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0"
+                          className="h-8 text-sm"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            {/* Display calculated values */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded-md">
-              <div>
-                <span className="text-xs font-medium block text-gray-600">Total Revenue (£)</span>
-                <span className="text-base font-semibold">{totalRevenue.toFixed(2)}</span>
-              </div>
-              <div>
-                <span className="text-xs font-medium block text-gray-600">Total Covers</span>
-                <span className="text-base font-semibold">{totalCovers}</span>
-              </div>
-              <div>
-                <span className="text-xs font-medium block text-gray-600">Average Spend/Cover (£)</span>
-                <span className="text-base font-semibold">{averageCoverSpend.toFixed(2)}</span>
-              </div>
-            </div>
-            
-            {/* Team on duty section */}
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold mb-3">Team on Duty</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
-                {/* Day FOH */}
-                <div className="border rounded-md p-3">
-                  <h4 className="text-xs font-medium text-gray-600 mb-2">Day FOH</h4>
-                  <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="dayFohManager"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Manager</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Manager name"
-                              className="h-8 text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="dayFohTeam"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Team members</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Team members and their roles"
-                              className="min-h-[60px] text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+              {/* Display calculated values */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded-md">
+                <div>
+                  <span className="text-xs font-medium block text-gray-600">Total Revenue (£)</span>
+                  <span className="text-base font-semibold">{totalRevenue.toFixed(2)}</span>
                 </div>
-                
-                {/* Day Kitchen */}
-                <div className="border rounded-md p-3">
-                  <h4 className="text-xs font-medium text-gray-600 mb-2">Day Kitchen</h4>
-                  <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="dayKitchenManager"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Manager</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Manager name"
-                              className="h-8 text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="dayKitchenTeam"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Team members</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Team members and their roles"
-                              className="min-h-[60px] text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                <div>
+                  <span className="text-xs font-medium block text-gray-600">Total Covers</span>
+                  <span className="text-base font-semibold">{totalCovers}</span>
                 </div>
-                
-                {/* Evening FOH */}
-                <div className="border rounded-md p-3">
-                  <h4 className="text-xs font-medium text-gray-600 mb-2">Evening FOH</h4>
-                  <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="eveningFohManager"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Manager</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Manager name"
-                              className="h-8 text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="eveningFohTeam"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Team members</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Team members and their roles"
-                              className="min-h-[60px] text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-                
-                {/* Evening Kitchen */}
-                <div className="border rounded-md p-3">
-                  <h4 className="text-xs font-medium text-gray-600 mb-2">Evening Kitchen</h4>
-                  <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="eveningKitchenManager"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Manager</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Manager name"
-                              className="h-8 text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="eveningKitchenTeam"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Team members</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Team members and their roles"
-                              className="min-h-[60px] text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                <div>
+                  <span className="text-xs font-medium block text-gray-600">Average Spend/Cover (£)</span>
+                  <span className="text-base font-semibold">{averageCoverSpend.toFixed(2)}</span>
                 </div>
               </div>
-            </div>
-            
-            <WeatherFetcher 
-              date={date}
-              onWeatherFetched={handleWeatherFetched}
-            />
-            
-            <div className="grid grid-cols-3 gap-3 mt-2">
-              <FormField
-                control={form.control}
-                name="weatherDescription"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Weather</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Description"
-                        className="h-8 text-sm"
-                        {...field}
+              
+              {/* Team on duty section */}
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold mb-3">Team on Duty</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
+                  {/* Day FOH */}
+                  <div className="border rounded-md p-3">
+                    <h4 className="text-xs font-medium text-gray-600 mb-2">Day FOH</h4>
+                    <div className="space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="dayFohManager"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Manager</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Manager name"
+                                className="h-8 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                      
+                      <FormField
+                        control={form.control}
+                        name="dayFohTeam"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Team members</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Team members and their roles"
+                                className="min-h-[60px] text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Day Kitchen */}
+                  <div className="border rounded-md p-3">
+                    <h4 className="text-xs font-medium text-gray-600 mb-2">Day Kitchen</h4>
+                    <div className="space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="dayKitchenManager"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Manager</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Manager name"
+                                className="h-8 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="dayKitchenTeam"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Team members</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Team members and their roles"
+                                className="min-h-[60px] text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Evening FOH */}
+                  <div className="border rounded-md p-3">
+                    <h4 className="text-xs font-medium text-gray-600 mb-2">Evening FOH</h4>
+                    <div className="space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="eveningFohManager"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Manager</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Manager name"
+                                className="h-8 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="eveningFohTeam"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Team members</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Team members and their roles"
+                                className="min-h-[60px] text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Evening Kitchen */}
+                  <div className="border rounded-md p-3">
+                    <h4 className="text-xs font-medium text-gray-600 mb-2">Evening Kitchen</h4>
+                    <div className="space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="eveningKitchenManager"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Manager</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Manager name"
+                                className="h-8 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="eveningKitchenTeam"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Team members</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Team members and their roles"
+                                className="min-h-[60px] text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <WeatherFetcher 
+                date={date}
+                onWeatherFetched={handleWeatherFetched}
               />
               
-              <FormField
-                control={form.control}
-                name="temperature"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Temperature (°C)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0"
-                        className="h-8 text-sm"
-                        {...field}
-                        onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) || 0))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-3 gap-3 mt-2">
+                <FormField
+                  control={form.control}
+                  name="weatherDescription"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Weather</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Description"
+                          className="h-8 text-sm"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="temperature"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Temperature (°C)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0"
+                          className="h-8 text-sm"
+                          {...field}
+                          onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) || 0))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="windSpeed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Wind Speed (km/h)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.1"
+                          placeholder="0.0"
+                          className="h-8 text-sm"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
-              <FormField
-                control={form.control}
-                name="windSpeed"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Wind Speed (km/h)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.1"
-                        placeholder="0.0"
-                        className="h-8 text-sm"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="localEvents"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Local Events</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Local events info"
+                          className="min-h-[60px] text-sm"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="operationsNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Operations Notes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Operations notes"
+                          className="min-h-[60px] text-sm"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="py-2 px-4 flex justify-end gap-2">
+              <Button 
+                type="button" 
+                size="sm" 
+                variant="outline"
+                onClick={handleEmailClick}
+                className="flex gap-2 items-center"
+              >
+                <Mail className="h-4 w-4" />
+                Email
+              </Button>
+              <Button 
+                type="submit" 
+                size="sm" 
+                disabled={isSaving}
+                className="min-w-[100px]"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
+      
+      {/* PDF Dialog */}
+      <Dialog open={isPdfDialogOpen} onOpenChange={setIsPdfDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Daily Record Report</DialogTitle>
+            <DialogDescription>
+              Review the report before sending it via email
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isGeneratingPdf ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-tavern-blue" />
+              <span className="ml-2 text-tavern-blue">Generating PDF...</span>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <FormField
-                control={form.control}
-                name="localEvents"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Local Events</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Local events info"
-                        className="min-h-[60px] text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          ) : (
+            <>
+              <div className="mt-4 border rounded-md p-2 bg-white">
+                <div ref={targetRef} className="p-8 bg-white">
+                  {/* PDF Content */}
+                  <div className="text-center mb-8">
+                    <h1 className="text-2xl font-bold">Daily Record Report</h1>
+                    <p className="text-gray-500">{format(new Date(date), 'MMMM d, yyyy')} ({dayOfWeek})</p>
+                  </div>
+                  
+                  <div className="mb-8">
+                    <h2 className="text-xl font-semibold border-b pb-2 mb-4">Revenue & Covers</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="font-medium">Food Revenue:</p>
+                        <p className="text-lg">£{form.getValues('foodRevenue')?.toFixed(2) || '0.00'}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Beverage Revenue:</p>
+                        <p className="text-lg">£{form.getValues('beverageRevenue')?.toFixed(2) || '0.00'}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Lunch Covers:</p>
+                        <p className="text-lg">{form.getValues('lunchCovers') || '0'}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Dinner Covers:</p>
+                        <p className="text-lg">{form.getValues('dinnerCovers') || '0'}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Total Revenue:</p>
+                        <p className="text-lg font-semibold">£{totalRevenue.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Total Covers:</p>
+                        <p className="text-lg font-semibold">{totalCovers}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Average Spend/Cover:</p>
+                        <p className="text-lg font-semibold">£{averageCoverSpend.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-8">
+                    <h2 className="text-xl font-semibold border-b pb-2 mb-4">Team on Duty</h2>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="font-semibold mb-2">Day FOH</h3>
+                        <p className="mb-1"><span className="font-medium">Manager:</span> {form.getValues('dayFohManager') || 'Not specified'}</p>
+                        <p><span className="font-medium">Team:</span> {form.getValues('dayFohTeam') || 'Not specified'}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-2">Day Kitchen</h3>
+                        <p className="mb-1"><span className="font-medium">Manager:</span> {form.getValues('dayKitchenManager') || 'Not specified'}</p>
+                        <p><span className="font-medium">Team:</span> {form.getValues('dayKitchenTeam') || 'Not specified'}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-2">Evening FOH</h3>
+                        <p className="mb-1"><span className="font-medium">Manager:</span> {form.getValues('eveningFohManager') || 'Not specified'}</p>
+                        <p><span className="font-medium">Team:</span> {form.getValues('eveningFohTeam') || 'Not specified'}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-2">Evening Kitchen</h3>
+                        <p className="mb-1"><span className="font-medium">Manager:</span> {form.getValues('eveningKitchenManager') || 'Not specified'}</p>
+                        <p><span className="font-medium">Team:</span> {form.getValues('eveningKitchenTeam') || 'Not specified'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-8">
+                    <h2 className="text-xl font-semibold border-b pb-2 mb-4">Weather Conditions</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="font-medium">Description:</p>
+                        <p>{form.getValues('weatherDescription') || 'Not recorded'}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Temperature:</p>
+                        <p>{form.getValues('temperature')}°C</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Wind Speed:</p>
+                        <p>{form.getValues('windSpeed')} km/h</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h2 className="text-xl font-semibold border-b pb-2 mb-4">Additional Information</h2>
+                    <div className="mb-4">
+                      <p className="font-medium mb-1">Local Events:</p>
+                      <p className="bg-gray-50 p-3 rounded">{form.getValues('localEvents') || 'None recorded'}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">Operations Notes:</p>
+                      <p className="bg-gray-50 p-3 rounded">{form.getValues('operationsNotes') || 'None recorded'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
-              <FormField
-                control={form.control}
-                name="operationsNotes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium">Operations Notes</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Operations notes"
-                        className="min-h-[60px] text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="py-2 px-4 flex justify-end">
+              {pdfUrl && (
+                <iframe 
+                  src={pdfUrl} 
+                  className="w-full h-[500px] border rounded mt-4" 
+                  title="PDF Preview"
+                />
+              )}
+            </>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPdfDialogOpen(false)}>Cancel</Button>
             <Button 
-              type="submit" 
-              size="sm" 
-              disabled={isSaving}
-              className="min-w-[100px]"
+              onClick={handleSendEmail}
+              disabled={!pdfUrl || isGeneratingPdf}
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              Send Email
             </Button>
-          </CardFooter>
-        </Card>
-      </form>
-    </Form>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 });
 

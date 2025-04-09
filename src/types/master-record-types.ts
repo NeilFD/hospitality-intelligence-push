@@ -1,5 +1,4 @@
 
-
 export interface WeatherData {
   description: string;
   temperature: number;
@@ -59,4 +58,3 @@ export interface MasterMonthlyRecord {
   month: number;
   weeks: MasterWeeklyRecord[];
 }
-
