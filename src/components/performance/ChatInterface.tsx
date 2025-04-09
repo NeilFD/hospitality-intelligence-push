@@ -89,7 +89,15 @@ const extractAIResponse = (response: any): string => {
   
   // Check if response is an array with a single object containing a 'response' key
   if (Array.isArray(response) && response.length > 0 && response[0].response) {
-    return response[0].response.trim();
+    let responseText = response[0].response.trim();
+    
+    // Remove excess newline characters and replace multiple newlines with a single newline
+    responseText = responseText
+      .replace(/\n{2,}/g, '\n')  // Replace multiple consecutive newlines with a single newline
+      .replace(/^\s+|\s+$/g, '')  // Trim leading and trailing whitespace
+      .replace(/\n\s+/g, '\n');  // Remove indentation after newlines
+    
+    return responseText;
   }
   
   let responseText = "";
