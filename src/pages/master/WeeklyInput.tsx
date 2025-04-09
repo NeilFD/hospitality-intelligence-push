@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -118,8 +117,6 @@ const WeeklyInput = () => {
                     value={day.date} 
                     className="flex flex-col py-1 
                       data-[state=active]:bg-tavern-blue/10 
-                      data-[state=active]:border-b-2 
-                      data-[state=active]:border-tavern-blue 
                       rounded-none 
                       text-gray-700
                       data-[state=active]:text-tavern-blue-dark
@@ -135,7 +132,8 @@ const WeeklyInput = () => {
                       after:scale-x-0
                       after:transition-transform
                       after:duration-300
-                      data-[state=active]:after:scale-x-100"
+                      data-[state=active]:after:scale-x-100
+                      data-[state=active]:border-b-0"
                   >
                     <span className="text-xs opacity-80">{format(new Date(day.date), 'EEE')}</span>
                     <span className="text-base font-semibold">{format(new Date(day.date), 'd')}</span>
