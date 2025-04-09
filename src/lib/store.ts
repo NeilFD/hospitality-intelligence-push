@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -43,8 +44,8 @@ const createInitialMonth = (year: number, month: number, moduleType: ModuleType 
     weeks: weekDates.map((dates, index) => 
       createEmptyWeek(dates.startDate, dates.endDate, index + 1, initialSuppliers)
     ),
-    gpTarget: 0.7, // Changed from 0.68 to 0.7 (70%)
-    costTarget: 0.3, // Changed from 0.32 to 0.3 (30%)
+    gpTarget: 0.7, // 70%
+    costTarget: 0.3, // 30%
     staffFoodAllowance: 0,
     suppliers: [...initialSuppliers]
   };
@@ -64,11 +65,57 @@ const createInitialState = (): AppState => {
   };
 };
 
+// Add a rehydration handler to ensure all required modules are present
+const handleRehydratedState = (state: AppState): AppState => {
+  // Make a copy of the state to avoid mutations
+  const newState = { ...state };
+  
+  // Ensure all default modules exist
+  if (!newState.modules || newState.modules.length === 0) {
+    console.log("No modules found, initializing with defaults");
+    newState.modules = defaultModules;
+  } else {
+    // Check for each required module and add if missing
+    const moduleTypes = newState.modules.map(m => m.type);
+    
+    defaultModules.forEach(defaultModule => {
+      if (!moduleTypes.includes(defaultModule.type)) {
+        console.log(`Adding missing module: ${defaultModule.name}`);
+        newState.modules.push({ ...defaultModule });
+      }
+    });
+    
+    // Ensure module IDs are unique
+    newState.modules = newState.modules.map((module, index) => ({
+      ...module,
+      id: String(index + 1)
+    }));
+  }
+  
+  // Ensure we have an annual record
+  if (!newState.annualRecord) {
+    console.log("No annual record found, creating initial record");
+    newState.annualRecord = {
+      year: currentYear,
+      months: [createInitialMonth(currentYear, currentMonth)]
+    };
+  }
+  
+  console.log("Store rehydrated with state:", newState);
+  return newState;
+};
+
 export const useStore = create<AppState>()(
   persist(
     () => createInitialState(),
     {
       name: 'tavern-kitchen-ledger',
+      onRehydrateStorage: () => (state) => {
+        console.log("Rehydrating store...");
+        if (state) {
+          return handleRehydratedState(state);
+        }
+      }
     }
   )
 );
