@@ -1,4 +1,3 @@
-
 import React, { useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +30,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     lunchCovers: initialData.lunchCovers || 0,
     dinnerCovers: initialData.dinnerCovers || 0,
     weatherDescription: initialData.weatherDescription || '',
-    temperature: initialData.temperature || 0,
+    temperature: Math.round(initialData.temperature || 0),
     precipitation: initialData.precipitation || 0,
     windSpeed: initialData.windSpeed || 0,
     localEvents: initialData.localEvents || '',
@@ -49,7 +48,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     windSpeed: number;
   }) => {
     form.setValue('weatherDescription', weatherData.description);
-    form.setValue('temperature', weatherData.temperature);
+    form.setValue('temperature', Math.round(weatherData.temperature));
     form.setValue('precipitation', weatherData.precipitation);
     form.setValue('windSpeed', weatherData.windSpeed);
     toast.success('Weather data fetched successfully');
@@ -73,7 +72,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
             <CardTitle className="text-xl">Daily Record - {date} ({dayOfWeek})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
-            {/* Revenue Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -118,7 +116,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
               />
             </div>
             
-            {/* Covers Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -161,7 +158,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
               />
             </div>
             
-            {/* Weather Section */}
             <WeatherFetcher 
               date={date}
               onWeatherFetched={handleWeatherFetched}
@@ -195,11 +191,10 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                     <FormControl>
                       <Input 
                         type="number" 
-                        step="0.1"
-                        placeholder="0.0"
+                        placeholder="0"
                         className="bg-gray-50 focus:bg-white"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => field.onChange(Math.round(parseFloat(e.target.value) || 0))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -229,7 +224,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
               />
             </div>
             
-            {/* Context Section */}
             <FormField
               control={form.control}
               name="localEvents"

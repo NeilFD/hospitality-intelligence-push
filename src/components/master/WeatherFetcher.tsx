@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,7 +45,7 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
       const data = await response.json();
       
       // Process the weather data
-      const avgTemp = (data.daily.temperature_2m_max[0] + data.daily.temperature_2m_min[0]) / 2;
+      const avgTemp = Math.round((data.daily.temperature_2m_max[0] + data.daily.temperature_2m_min[0]) / 2);
       const precipitation = data.daily.precipitation_sum[0] || 0;
       const windSpeed = data.daily.wind_speed_10m_max[0] || 0;
       
@@ -110,5 +109,4 @@ const WeatherFetcher: React.FC<WeatherFetcherProps> = ({ date, onWeatherFetched 
   );
 };
 
-// Memoize the component to prevent unnecessary re-renders
 export default memo(WeatherFetcher);
