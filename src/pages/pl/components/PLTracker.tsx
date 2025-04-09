@@ -8,7 +8,7 @@ import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
 import { PLTrackerSettings } from './PLTrackerSettings';
-import { calculateProRatedBudget, getActualAmount } from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -95,7 +95,16 @@ export function PLTracker({
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
             getActualAmount={getActualAmount}
-            calculateProRatedBudget={(item) => calculateProRatedBudget(item, daysInMonth, dayOfMonth)}
+            calculateProRatedBudget={(item) => {
+              // For summary items, use calculateSummaryProRatedBudget
+              if (item.isGrossProfit || item.isOperatingProfit || 
+                  item.name.toLowerCase().includes('total') ||
+                  item.name.toLowerCase() === 'turnover') {
+                return calculateSummaryProRatedBudget(item, daysInMonth, dayOfMonth, trackedBudgetData);
+              }
+              // For regular items, use the standard calculation
+              return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
+            }}
             currentMonthName={currentMonthName}
             currentYear={currentYear}
           />
