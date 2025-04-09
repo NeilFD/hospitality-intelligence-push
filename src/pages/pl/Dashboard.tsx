@@ -48,29 +48,32 @@ export default function PLDashboard() {
   const updatedBudgetData = processedBudgetData.map(item => {
     if (masterRevenueData && !isLoading) {
       // Update food revenue item
-      if (item.name.toLowerCase() === 'food sales' || 
-          item.name.toLowerCase() === 'food revenue') {
+      if (item.name.toLowerCase().includes('food sales') || 
+          item.name.toLowerCase().includes('food revenue')) {
         return { ...item, actual_amount: masterRevenueData.foodRevenue };
       }
       
       // Update beverage revenue item
-      if (item.name.toLowerCase() === 'beverage sales' || 
-          item.name.toLowerCase() === 'beverage revenue' || 
-          item.name.toLowerCase() === 'drink sales' ||
-          item.name.toLowerCase() === 'drinks revenue') {
+      if (item.name.toLowerCase().includes('beverage sales') || 
+          item.name.toLowerCase().includes('beverage revenue') || 
+          item.name.toLowerCase().includes('drink sales') ||
+          item.name.toLowerCase().includes('drinks revenue')) {
         return { ...item, actual_amount: masterRevenueData.beverageRevenue };
       }
       
       // Update total revenue/turnover
-      if (item.name.toLowerCase() === 'turnover' || 
-          item.name.toLowerCase() === 'total revenue') {
+      if (item.name.toLowerCase().includes('turnover') || 
+          item.name.toLowerCase().includes('total revenue')) {
         return { ...item, actual_amount: masterRevenueData.totalRevenue };
       }
     }
     return item;
   });
   
-  console.log("Dashboard - processed budget data:", updatedBudgetData.map(item => item.name));
+  console.log("Dashboard - processed budget data:", updatedBudgetData.map(item => ({
+    name: item.name,
+    actualAmount: item.actual_amount
+  })));
 
   // Calculate chart data from processed budget data
   const turnoverItem = updatedBudgetData.find(item => item.name.toLowerCase() === 'turnover' || item.name.toLowerCase() === 'revenue');

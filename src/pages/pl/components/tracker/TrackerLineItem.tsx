@@ -57,6 +57,10 @@ export function TrackerLineItem({
   
   const isTurnover = item.name.toLowerCase().includes('turnover') || 
                     item.name.toLowerCase() === 'turnover';
+                    
+  const isRevenue = item.name.toLowerCase().includes('revenue') || 
+                   item.name.toLowerCase().includes('sales') ||
+                   isTurnover;
   
   let rowClassName = '';
   let fontClass = '';
@@ -109,15 +113,17 @@ export function TrackerLineItem({
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
         <div className="flex items-center justify-end gap-2 pointer-events-auto">
-          <Button 
-            variant="outline"
-            size="icon"
-            onClick={handleOpenDailyInput}
-            className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100 pointer-events-auto"
-            type="button"
-          >
-            <CalendarDays className="h-5 w-5" />
-          </Button>
+          {!isRevenue && (
+            <Button 
+              variant="outline"
+              size="icon"
+              onClick={handleOpenDailyInput}
+              className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100 pointer-events-auto"
+              type="button"
+            >
+              <CalendarDays className="h-5 w-5" />
+            </Button>
+          )}
           <span className="text-right">
             {formatCurrency(actualAmount)}
           </span>

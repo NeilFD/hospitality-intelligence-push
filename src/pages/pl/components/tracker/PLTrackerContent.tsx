@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,13 @@ export function PLTrackerContent({
       updateDailyValues(selectedItemIndex, dailyValues);
     }
   };
+  
+  // Helper function to check if an item is a revenue item
+  const isRevenueItem = (item: PLTrackerBudgetItem) => {
+    return item.name.toLowerCase().includes('revenue') ||
+           item.name.toLowerCase().includes('sales') ||
+           item.name.toLowerCase() === 'turnover';
+  };
 
   return (
     <>
@@ -67,14 +75,16 @@ export function PLTrackerContent({
                 <TableHead className="text-left font-bold text-slate-800">Line Item</TableHead>
                 <TableHead className="text-right font-semibold text-slate-700">Budget</TableHead>
                 <TableHead className="text-right font-semibold text-slate-700">
-                  Actual<br /><span className="text-xs">({dayOfMonth} days so far)</span>
+                  %
                 </TableHead>
                 <TableHead className="text-right font-semibold text-slate-700">
                   Pro-Rated Budget<br /><span className="text-xs">(Day {dayOfMonth} of {daysInMonth})</span>
                 </TableHead>
-                <TableHead className="text-right font-semibold text-slate-700">Variance</TableHead>
+                <TableHead className="text-right font-semibold text-slate-700">
+                  Actual<br /><span className="text-xs">({dayOfMonth} days so far)</span>
+                </TableHead>
                 <TableHead className="text-right font-semibold text-slate-700">Forecast</TableHead>
-                <TableHead className="text-center font-semibold text-slate-700">Daily Input</TableHead>
+                <TableHead className="text-right font-semibold text-slate-700">Variance</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -93,23 +103,40 @@ export function PLTrackerContent({
                     </TableRow>
                   );
                 } else {
+                  const isRevenue = isRevenueItem(item);
+                  
                   return (
                     <TableRow key={item.id} className="border-t border-gray-100">
                       <TableCell className="text-left text-slate-800">{item.name}</TableCell>
                       <TableCell className="text-right">{formatCurrency(item.budget_amount)}</TableCell>
                       <TableCell className="text-right">
-                        <Input 
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
-                          onChange={(e) => updateManualActualAmount(itemIndex, e.target.value)}
-                          className="w-24 ml-auto text-right"
-                        />
+                        {item.budget_percentage !== undefined ? `${(item.budget_percentage * 100).toFixed(2)}%` : ''}
                       </TableCell>
                       <TableCell className="text-right">{formatCurrency(proRatedBudget)}</TableCell>
-                      <TableCell className={`text-right ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''}`}>
-                        {formatCurrency(variance)}
+                      <TableCell className="text-right">
+                        {isRevenue ? (
+                          <div className="text-right">{formatCurrency(actualAmount)}</div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleOpenDailyInput(itemIndex)}
+                              title="Open Daily Input"
+                              className="h-8 w-8"
+                            >
+                              <Calendar className="h-4 w-4 text-purple-600" />
+                            </Button>
+                            <Input 
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.manually_entered_actual !== undefined ? item.manually_entered_actual : ''}
+                              onChange={(e) => updateManualActualAmount(itemIndex, e.target.value)}
+                              className="w-24 ml-auto text-right"
+                            />
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Input 
@@ -121,15 +148,8 @@ export function PLTrackerContent({
                           className="w-24 ml-auto text-right"
                         />
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleOpenDailyInput(itemIndex)}
-                          title="Open Daily Input"
-                        >
-                          <Calendar className="h-4 w-4 text-purple-600" />
-                        </Button>
+                      <TableCell className={`text-right ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''}`}>
+                        {formatCurrency(variance)}
                       </TableCell>
                     </TableRow>
                   );

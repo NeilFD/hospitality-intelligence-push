@@ -51,6 +51,28 @@ export function PLTracker({
   );
   
   const getActualAmount = (item: PLTrackerBudgetItem) => {
+    // First priority: Check if it's a special revenue item that should get data from master records
+    if (item.name.toLowerCase().includes('food revenue') || 
+        item.name.toLowerCase().includes('food sales')) {
+      // Use the actual amount from master records for food revenue
+      return item.actual_amount || 0;
+    }
+    
+    if (item.name.toLowerCase().includes('beverage revenue') || 
+        item.name.toLowerCase().includes('beverage sales') || 
+        item.name.toLowerCase().includes('drink sales') ||
+        item.name.toLowerCase().includes('drinks revenue')) {
+      // Use the actual amount from master records for beverage revenue
+      return item.actual_amount || 0;
+    }
+    
+    if (item.name.toLowerCase() === 'turnover' || 
+        item.name.toLowerCase().includes('total revenue')) {
+      // Use the actual amount from master records for total revenue
+      return item.actual_amount || 0;
+    }
+    
+    // For other items, use manual entry or tracking type logic
     if (item.manually_entered_actual !== undefined) {
       return item.manually_entered_actual;
     }
