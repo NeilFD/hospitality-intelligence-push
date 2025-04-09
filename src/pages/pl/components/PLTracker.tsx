@@ -8,7 +8,7 @@ import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
 import { PLTrackerSettings } from './PLTrackerSettings';
-import { calculateProRatedBudget, getActualAmount, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -59,11 +59,15 @@ export function PLTracker({
     setShowSettings(false);
   };
 
-  // Calculate actual amounts for pro-rated items
-  const calculateActualForProRatedItem = (item: PLTrackerBudgetItem) => {
+  // Calculate actual amounts for all items
+  const calculateActualAmount = (item: PLTrackerBudgetItem) => {
+    // For pro-rated items, use pro-rated calculation
     if (item.tracking_type === 'Pro-Rated') {
-      return (item.budget_amount / daysInMonth) * dayOfMonth;
+      const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
+      return proRatedActual;
     }
+    
+    // For all other items, use getActualAmount function
     return getActualAmount(item);
   };
 
@@ -102,7 +106,7 @@ export function PLTracker({
             updateManualActualAmount={updateManualActualAmount}
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
-            getActualAmount={calculateActualForProRatedItem}
+            getActualAmount={calculateActualAmount}
             calculateProRatedBudget={(item) => calculateProRatedBudget(item, daysInMonth, dayOfMonth)}
             currentMonthName={currentMonthName}
             currentYear={currentYear}
