@@ -13,12 +13,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ModuleType } from "@/types/kitchen-ledger";
 import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
-
 interface LayoutProps {
   children: ReactNode;
 }
-
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({
+  children
+}: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,24 +39,20 @@ const Layout = ({ children }: LayoutProps) => {
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
-
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-
   const handleLogout = async () => {
     await logout();
     toast.success('You have been logged out');
     navigate('/login');
   };
-
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-
   const getModuleIcon = (type: ModuleType) => {
     switch (type) {
       case 'food':
@@ -73,7 +69,6 @@ const Layout = ({ children }: LayoutProps) => {
         return <ChartBar className="mr-2 h-4 w-4" />;
     }
   };
-
   const getModuleNavItems = useMemo(() => {
     switch (currentModule) {
       case 'food':
@@ -118,7 +113,6 @@ const Layout = ({ children }: LayoutProps) => {
         return [];
     }
   }, [currentModule, currentYear, currentMonth]);
-
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
       name: module.type === 'master' ? 'Daily Info' : module.name,
@@ -127,21 +121,17 @@ const Layout = ({ children }: LayoutProps) => {
       type: module.type
     }));
   }, [sortedModules]);
-
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
-
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-
   if (isAuthPage) {
     return <>{children}</>;
   }
-
   const Sidebar = <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="md" className="mb-3" />
-        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Kitchen Tracker</p>}
+        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Pub Tracker</p>}
       </div>
       <Separator className="bg-tavern-blue-light/20" />
       
@@ -185,7 +175,6 @@ const Layout = ({ children }: LayoutProps) => {
         {!sidebarCollapsed && <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>}
       </div>
     </div>;
-
   const ProfileAvatar = () => <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-tavern-blue text-white">
         {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
@@ -194,7 +183,6 @@ const Layout = ({ children }: LayoutProps) => {
           {profile.first_name || 'User'}
         </span>}
     </div>;
-
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -291,5 +279,4 @@ const Layout = ({ children }: LayoutProps) => {
         </>}
     </div>;
 };
-
 export default Layout;
