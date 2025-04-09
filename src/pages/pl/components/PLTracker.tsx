@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -63,7 +62,7 @@ export function PLTracker({
   const calculateActualAmount = (item: PLTrackerBudgetItem): number => {
     // For pro-rated items, explicitly calculate based on current day
     if (item.tracking_type === 'Pro-Rated') {
-      // Calculate the pro-rated value based on the proportion of the month completed
+      // Simply use the same calculation as the pro-rated budget
       return calculateProRatedActual(item, daysInMonth, dayOfMonth);
     }
     
