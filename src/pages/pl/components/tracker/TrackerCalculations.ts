@@ -127,7 +127,7 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     const proRatedActual = calculateProRatedActual(item, daysInMonth, dayOfMonth);
     console.log(`Pro-Rated actual for ${item.name}:`, proRatedActual);
     
-    // We return the pro-rated value as the actual amount for Pro-Rated items
+    // Return the pro-rated calculation as the actual value for pro-rated items
     return proRatedActual;
   }
   
@@ -157,3 +157,4 @@ export function calculateProRatedActual(
   });
   return proRatedActual;
 }
+

@@ -109,7 +109,8 @@ export function PLTrackerContent({
                 const itemIndex = trackedBudgetData.findIndex(i => i.id === item.id);
                 const proRatedBudget = calculateProRatedBudget(item);
                 
-                // Make sure we're always using getActualAmount for all items
+                // Make sure we're getting the actual amount correctly for all item types
+                // For pro-rated items, this will be the pro-rated calculation
                 const actualAmount = getActualAmount(item);
                 const variance = actualAmount - proRatedBudget;
                 
@@ -160,3 +161,4 @@ export function PLTrackerContent({
     </>
   );
 }
+
