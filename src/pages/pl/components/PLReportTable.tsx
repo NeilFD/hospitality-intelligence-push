@@ -1,3 +1,4 @@
+
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -77,35 +78,32 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
-  // Filter out the unwanted Total row that appears between Gross Profit and Wages and Salaries
-  const filteredBudgetData = processedBudgetData.filter(item => {
-    // First check if it's a Total row
-    if (item.name === 'Total' || item.name === 'TOTAL') {
-      // Find position of this item in the original array
-      const index = processedBudgetData.findIndex(i => i === item);
-      
-      if (index > 0 && index < processedBudgetData.length - 1) {
-        // Get adjacent items
-        const prevItem = processedBudgetData[index - 1];
-        const nextItem = processedBudgetData[index + 1];
-        
-        // Check if previous item is Gross Profit/(Loss)
-        const isPrevGrossProfit = 
-          prevItem.name.toLowerCase().includes('gross profit') || 
-          prevItem.name.toLowerCase().includes('profit/(loss)');
-        
-        // Check if next item is Wages and Salaries
-        const isNextWages = 
-          nextItem.name.toLowerCase().includes('wages') || 
-          nextItem.name.toLowerCase().includes('salaries');
-        
-        // If this Total is between Gross Profit and Wages, exclude it
-        if (isPrevGrossProfit && isNextWages) {
-          return false;
-        }
-      }
+  // Find indices we need
+  let grossProfitIndex = -1;
+  let wagesIndex = -1;
+  
+  // Identify the positions of Gross Profit and Wages rows
+  processedBudgetData.forEach((item, index) => {
+    if (item.name && item.name.toLowerCase().includes("gross profit")) {
+      grossProfitIndex = index;
     }
-    
+    if (
+      item.name && 
+      (item.name.toLowerCase().includes("wages") || 
+       item.name.toLowerCase().includes("salaries"))
+    ) {
+      if (wagesIndex === -1) wagesIndex = index;
+    }
+  });
+  
+  // Filter out the unwanted Total row
+  const filteredBudgetData = processedBudgetData.filter((item, index) => {
+    // Check if this is a Total row between Gross Profit and Wages
+    if ((item.name === "Total" || item.name === "TOTAL") && 
+        index > grossProfitIndex && 
+        index < wagesIndex) {
+      return false;
+    }
     return true;
   });
 
