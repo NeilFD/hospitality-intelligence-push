@@ -227,7 +227,7 @@ const ChartTooltipContent = React.forwardRef<
                     )}
                     <div
                       className={cn(
-                        "flex flex-1 justify-between leading-none text-[#344861]", // Updated text color to dark blue
+                        "flex flex-1 justify-between leading-none text-[#344861]", // Ensured dark blue text color
                         nestLabel ? "items-end" : "items-center"
                       )}
                     >
