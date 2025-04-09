@@ -60,9 +60,12 @@ export function PLTracker({
 
   // Calculate actual amounts for all items with proper pro-rating 
   const calculateActualAmount = (item: PLTrackerBudgetItem): number => {
+    console.log(`PLTracker calculating actual for ${item.name}:`, {
+      tracking_type: item.tracking_type
+    });
+    
     // For pro-rated items, explicitly calculate based on current day
     if (item.tracking_type === 'Pro-Rated') {
-      // Simply use the same calculation as the pro-rated budget
       return calculateProRatedActual(item, daysInMonth, dayOfMonth);
     }
     

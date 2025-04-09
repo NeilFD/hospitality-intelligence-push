@@ -6,6 +6,12 @@ export function calculateProRatedBudget(
   daysInMonth: number, 
   dayOfMonth: number
 ): number {
+  console.log(`Calculating pro-rated budget for ${item.name}:`, {
+    budget: item.budget_amount,
+    daysInMonth,
+    dayOfMonth,
+    result: (item.budget_amount / daysInMonth) * dayOfMonth
+  });
   return (item.budget_amount / daysInMonth) * dayOfMonth;
 }
 
@@ -90,15 +96,21 @@ export function calculateSummaryProRatedBudget(
 }
 
 export function getActualAmount(item: PLTrackerBudgetItem): number {
+  console.log(`Getting actual amount for ${item.name}:`, {
+    tracking_type: item.tracking_type,
+    actual_amount: item.actual_amount,
+    budget_amount: item.budget_amount
+  });
+  
   // Check if item is a summary or special item with preloaded actual_amount
   if (item.name.toLowerCase().includes('turnover') || 
       item.name.toLowerCase().includes('revenue') ||
       item.name.toLowerCase().includes('sales') ||
       item.name.toLowerCase().includes('cost of sales') ||
       item.name.toLowerCase().includes('cos') ||
-      item.name.toLowerCase() === 'gross profit' ||
-      item.name.toLowerCase() === 'gross profit/(loss)' ||
-      item.name.toLowerCase() === 'operating profit' ||
+      item.name.toLowerCase().includes('gross profit') ||
+      item.name.toLowerCase().includes('gross profit/(loss)') ||
+      item.name.toLowerCase().includes('operating profit') ||
       item.name.toLowerCase().includes('wages') ||
       item.name.toLowerCase().includes('salary') ||
       item.isGrossProfit ||
@@ -115,17 +127,21 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return Number(item.manually_entered_actual) || Number(item.actual_amount) || 0;
   }
   
-  // Pro-rated items should return their pro-rated actual, which will be calculated in PLTracker.tsx
-  // Here we just pass back the actual_amount if it exists
+  // Pro-rated items should use pro-rated actual calculation
   return Number(item.actual_amount) || 0;
 }
 
-// Updated function to calculate pro-rated actual amount
 export function calculateProRatedActual(
   item: PLTrackerBudgetItem,
   daysInMonth: number,
   dayOfMonth: number
 ): number {
-  // For pro-rated items, simply duplicate the pro-rated budget
-  return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
+  const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
+  console.log(`Calculating pro-rated actual for ${item.name}:`, {
+    budget: item.budget_amount,
+    daysInMonth,
+    dayOfMonth,
+    result: proRatedActual
+  });
+  return proRatedActual;
 }
