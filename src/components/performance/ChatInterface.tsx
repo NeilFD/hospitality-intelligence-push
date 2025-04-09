@@ -86,46 +86,90 @@ const ensureDate = (dateInput: any): Date => {
 };
 
 const extractAIResponse = (response: any): string => {
-  if (response?.data?.[0]?.output) {
-    return response.data[0].output;
-  }
+  console.log('Extracting AI response from:', response);
   
+  // Check for output field in the response data
   if (response?.data?.output) {
+    console.log('Found output directly in response.data:', response.data.output);
     return response.data.output;
   }
   
+  // Check for output in first item of array
   if (Array.isArray(response?.data) && response.data.length > 0) {
-    const firstItem = response.data[0];
-    if (firstItem.output) return firstItem.output;
-    if (firstItem.response) return firstItem.response;
-    if (firstItem.message) return firstItem.message;
-  }
-  
-  if (response?.output) {
-    return response.output;
-  }
-  
-  if (response?.response) {
-    return response.response;
-  }
-  
-  if (response?.message) {
-    return response.message;
-  }
-  
-  if (response?.rawResponse) {
-    try {
-      const parsedResponse = JSON.parse(response.rawResponse);
-      if (Array.isArray(parsedResponse) && parsedResponse.length > 0) {
-        if (parsedResponse[0].output) return parsedResponse[0].output;
-      } else if (parsedResponse.output) {
-        return parsedResponse.output;
-      }
-    } catch (e) {
-      return response.rawResponse.substring(0, 1000);
+    if (response.data[0].output) {
+      console.log('Found output in first array item:', response.data[0].output);
+      return response.data[0].output;
     }
   }
   
+  // Check for raw response string that might contain output
+  if (response?.rawResponse) {
+    try {
+      // Try parsing the rawResponse if it's a JSON string
+      const parsedRaw = JSON.parse(response.rawResponse);
+      
+      // Check for output in parsed raw response
+      if (parsedRaw.output) {
+        console.log('Found output in parsed rawResponse:', parsedRaw.output);
+        return parsedRaw.output;
+      }
+      
+      // Check for output in first array item of parsed raw response
+      if (Array.isArray(parsedRaw) && parsedRaw.length > 0 && parsedRaw[0].output) {
+        console.log('Found output in first item of parsed rawResponse:', parsedRaw[0].output);
+        return parsedRaw[0].output;
+      }
+      
+      // If we have something that looks like valid text but not in output field
+      if (typeof parsedRaw === 'string' && parsedRaw.length > 0) {
+        console.log('Using parsedRaw as string:', parsedRaw);
+        return parsedRaw;
+      }
+    } catch (e) {
+      // If it's not JSON, use the raw response text directly
+      console.log('Raw response is not JSON, using as-is');
+      return response.rawResponse;
+    }
+  }
+  
+  // Check n8n specific formats shown in the screenshot
+  if (response?.data?.json?.body?.query) {
+    console.log('Found n8n format response with query:', response.data.json.body.query);
+    return response.data.json.body.query;
+  }
+  
+  // Look for typical AI response formats
+  const possibleResponseProperties = [
+    'response',
+    'message',
+    'answer',
+    'text',
+    'content'
+  ];
+  
+  // Check response.data for any of the possible properties
+  if (response?.data) {
+    for (const prop of possibleResponseProperties) {
+      if (response.data[prop]) {
+        console.log(`Found response in data.${prop}:`, response.data[prop]);
+        return response.data[prop];
+      }
+    }
+    
+    // If response.data is a string, use it directly
+    if (typeof response.data === 'string') {
+      console.log('Using response.data as string:', response.data);
+      return response.data;
+    }
+  }
+  
+  // Last resort: try to use any text content from the response
+  if (response?.message) {
+    console.log('Using response.message:', response.message);
+    return response.message;
+  }
+  
+  console.error('Could not extract a valid response from:', response);
   return "I've processed your request but couldn't generate a proper response. Please try again.";
 };
 
