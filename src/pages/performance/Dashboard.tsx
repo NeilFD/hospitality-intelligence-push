@@ -1,4 +1,3 @@
-
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ChatInterface from '@/components/performance/ChatInterface';
@@ -12,7 +11,6 @@ import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
-
 export default function PerformanceDashboard() {
   const {
     annualRecord,
@@ -23,14 +21,18 @@ export default function PerformanceDashboard() {
   const [hasBevData, setHasBevData] = useState(false);
 
   // Query for food tracker data
-  const { data: foodTrackerData } = useQuery({
+  const {
+    data: foodTrackerData
+  } = useQuery({
     queryKey: ['tracker-data', currentYear, currentMonth, 'food'],
     queryFn: () => fetchTrackerDataByMonth(currentYear, currentMonth, 'food'),
     staleTime: 10 * 60 * 1000 // 10 minutes
   });
 
   // Query for beverage tracker data
-  const { data: bevTrackerData } = useQuery({
+  const {
+    data: bevTrackerData
+  } = useQuery({
     queryKey: ['tracker-data', currentYear, currentMonth, 'beverage'],
     queryFn: () => fetchTrackerDataByMonth(currentYear, currentMonth, 'beverage'),
     staleTime: 10 * 60 * 1000 // 10 minutes
@@ -47,10 +49,9 @@ export default function PerformanceDashboard() {
           break;
         }
       }
-      
       console.log("Food tracker data status:", hasData ? "Available" : "Not available or empty");
       setHasFoodData(hasData);
-    } 
+    }
     // If no tracker data, fall back to store data
     else if (annualRecord && annualRecord.months && annualRecord.months.length > 0) {
       let hasData = false;
@@ -82,7 +83,6 @@ export default function PerformanceDashboard() {
           break;
         }
       }
-      
       console.log("Beverage tracker data status:", hasData ? "Available" : "Not available or empty");
       setHasBevData(hasData);
     }
@@ -120,7 +120,6 @@ export default function PerformanceDashboard() {
       setHasBevData(false);
     }
   }, [annualRecord, foodTrackerData, bevTrackerData]);
-
   return <div className="container max-w-7xl py-6 space-y-6">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-tavern-blue">Performance & Analysis</h1>
@@ -132,25 +131,20 @@ export default function PerformanceDashboard() {
             </Link>
           </Button>
           <Button variant="outline" className="hidden sm:flex items-center gap-2" asChild>
-            <Link to="/performance/debug">
-              <Bug className="h-4 w-4" />
-              <span>Debug</span>
-            </Link>
+            
           </Button>
           <TavernLogo size="md" className="hidden md:block" />
         </div>
       </div>
       
-      {(!hasFoodData && !hasBevData) && (
-        <Alert variant="default">
+      {!hasFoodData && !hasBevData && <Alert variant="default">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Data Availability Warning</AlertTitle>
           <AlertDescription>
             No food or beverage data found for analysis. The AI assistant may have limited insights to offer.
             Please ensure you have entered data in the Food Tracker and Beverage Tracker.
           </AlertDescription>
-        </Alert>
-      )}
+        </Alert>}
       
       <Card className="overflow-hidden border-none shadow-lg rounded-xl bg-gradient-to-br from-white to-gray-50">
         <ChatInterface className="w-full" />
