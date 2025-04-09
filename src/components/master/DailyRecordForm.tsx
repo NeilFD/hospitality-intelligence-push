@@ -12,7 +12,9 @@ import { CheckCircle2, Mail } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { usePDF } from 'react-to-pdf';
+// Remove the problematic usePDF import
+import { pdf } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 interface DailyRecordFormProps {
   date: string;
@@ -20,6 +22,124 @@ interface DailyRecordFormProps {
   initialData?: Partial<MasterDailyRecord>;
   onSave: (data: Partial<MasterDailyRecord>) => Promise<void>;
 }
+
+// Create PDF document component
+const PDFDocument = ({ data }) => (
+  <Document>
+    <Page size="A4" style={styles.page}>
+      <View style={styles.section}>
+        <Text style={styles.title}>Daily Record Report</Text>
+        <Text style={styles.subtitle}>{format(new Date(data.date), 'MMMM d, yyyy')} ({data.dayOfWeek})</Text>
+        
+        <View style={styles.group}>
+          <Text style={styles.heading}>Revenue & Covers</Text>
+          <View style={styles.row}>
+            <View style={styles.col}>
+              <Text style={styles.label}>Food Revenue:</Text>
+              <Text>£{data.foodRevenue?.toFixed(2) || '0.00'}</Text>
+            </View>
+            <View style={styles.col}>
+              <Text style={styles.label}>Beverage Revenue:</Text>
+              <Text>£{data.beverageRevenue?.toFixed(2) || '0.00'}</Text>
+            </View>
+          </View>
+          <View style={styles.row}>
+            <View style={styles.col}>
+              <Text style={styles.label}>Lunch Covers:</Text>
+              <Text>{data.lunchCovers || '0'}</Text>
+            </View>
+            <View style={styles.col}>
+              <Text style={styles.label}>Dinner Covers:</Text>
+              <Text>{data.dinnerCovers || '0'}</Text>
+            </View>
+          </View>
+          <View style={styles.row}>
+            <View style={styles.col}>
+              <Text style={styles.label}>Total Revenue:</Text>
+              <Text>£{((data.foodRevenue || 0) + (data.beverageRevenue || 0)).toFixed(2)}</Text>
+            </View>
+            <View style={styles.col}>
+              <Text style={styles.label}>Total Covers:</Text>
+              <Text>{(data.lunchCovers || 0) + (data.dinnerCovers || 0)}</Text>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.group}>
+          <Text style={styles.heading}>Weather Conditions</Text>
+          <View style={styles.row}>
+            <View style={styles.col}>
+              <Text style={styles.label}>Description:</Text>
+              <Text>{data.weatherDescription || 'Not recorded'}</Text>
+            </View>
+            <View style={styles.col}>
+              <Text style={styles.label}>Temperature:</Text>
+              <Text>{data.temperature || 0}°C</Text>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.group}>
+          <Text style={styles.heading}>Additional Information</Text>
+          <Text style={styles.label}>Local Events:</Text>
+          <Text style={styles.note}>{data.localEvents || 'None recorded'}</Text>
+          <Text style={styles.label}>Operations Notes:</Text>
+          <Text style={styles.note}>{data.operationsNotes || 'None recorded'}</Text>
+        </View>
+      </View>
+    </Page>
+  </Document>
+);
+
+// Define styles for PDF
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+  },
+  section: {
+    margin: 10,
+  },
+  title: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 6,
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#555',
+    marginBottom: 20,
+  },
+  heading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingBottom: 5,
+  },
+  group: {
+    marginBottom: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  col: {
+    flex: 1,
+  },
+  label: {
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  note: {
+    backgroundColor: '#f5f5f5',
+    padding: 5,
+    marginBottom: 10,
+  }
+});
 
 const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({ 
   date, 
@@ -32,15 +152,6 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
-  
-  const { toPDF } = usePDF({
-    filename: `daily-record-${date}.pdf`,
-    page: {
-      format: 'A4',
-      orientation: 'portrait',
-      margin: '10mm'
-    }
-  });
   
   const defaultValues = useMemo(() => ({
     date,
@@ -114,28 +225,24 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     }
   }, [onSave, date]);
   
-  const handleEmailClick = useCallback(() => {
+  const handleEmailClick = useCallback(async () => {
     setIsPdfDialogOpen(true);
     setIsGeneratingPdf(true);
     
-    setTimeout(() => {
-      if (pdfRef.current) {
-        toPDF(pdfRef.current)
-          .then((dataUrl) => {
-            setPdfUrl(dataUrl);
-            setIsGeneratingPdf(false);
-          })
-          .catch((error) => {
-            console.error("Error generating PDF:", error);
-            setIsGeneratingPdf(false);
-            toast.error("Could not generate PDF");
-          });
-      } else {
-        setIsGeneratingPdf(false);
-        toast.error("Could not generate PDF");
-      }
-    }, 500);
-  }, [toPDF]);
+    try {
+      // Generate PDF using @react-pdf/renderer
+      const formData = form.getValues();
+      const pdfDoc = <PDFDocument data={formData} />;
+      const blob = await pdf(pdfDoc).toBlob();
+      const dataUrl = URL.createObjectURL(blob);
+      setPdfUrl(dataUrl);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Could not generate PDF");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, [form]);
   
   const handleSendEmail = useCallback(() => {
     if (pdfUrl) {
