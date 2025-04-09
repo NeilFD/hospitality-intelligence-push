@@ -4,6 +4,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2, BarChart2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/date-utils';
+import { Badge } from '@/components/ui/badge';
+
 interface BudgetItem {
   id?: string;
   category: string;
@@ -18,6 +20,7 @@ interface BudgetItem {
   isOperatingProfit?: boolean;
   isGrossProfit?: boolean;
 }
+
 interface PLReportTableProps {
   isLoading: boolean;
   processedBudgetData: BudgetItem[];
@@ -25,6 +28,7 @@ interface PLReportTableProps {
   currentYear: number;
   onOpenTracker: () => void;
 }
+
 export function PLReportTable({
   isLoading,
   processedBudgetData,
@@ -87,11 +91,8 @@ export function PLReportTable({
     }
     fontClass = item.isHighlighted || isTurnover || isGrossProfit || isCostOfSales ? 'font-bold' : '';
 
-    // Simplify percentage calculation
     let percentageDisplay = '';
-    let actualPercentageDisplay = '';
     
-    // Percentage for gross profit items
     if (isGrossProfit) {
       if (item.name.toLowerCase().includes('food')) {
         const foodRevenueItem = displayData.find(i => i.name.toLowerCase().includes('food sales') || i.name.toLowerCase().includes('food revenue'));
@@ -111,7 +112,6 @@ export function PLReportTable({
       }
     }
     
-    // Wages percentage of turnover
     if (isWages) {
       const turnoverItem = displayData.find(i => i.name.toLowerCase() === 'turnover' || i.name.toLowerCase() === 'total revenue');
       if (turnoverItem && turnoverItem.actual_amount) {
@@ -119,7 +119,6 @@ export function PLReportTable({
       }
     }
     
-    // Fallback to budget percentage if no specific calculation
     if (!percentageDisplay && item.budget_percentage !== undefined) {
       percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
     }
@@ -136,6 +135,7 @@ export function PLReportTable({
         </TableCell>
         <TableCell className={`text-right ${fontClass} flex items-center justify-end gap-2`}>
           <span>{formatCurrency(actualAmount)}</span>
+          {percentageDisplay && <Badge variant="outline" className="text-xs">{percentageDisplay}</Badge>}
         </TableCell>
         <TableCell className={`text-right ${fontClass} ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''}`}>
           {formatCurrency(variance)}
@@ -191,7 +191,7 @@ export function PLReportTable({
                     <TableCell className="text-right">
                       {totalGrossProfitItem.budget_percentage !== undefined ? `${(totalGrossProfitItem.budget_percentage * 100).toFixed(2)}%` : ''}
                     </TableCell>
-                    <TableCell className={`text-right font-bold flex items-center justify-end gap-2`}>
+                    <TableCell className="text-right font-bold flex items-center justify-end gap-2">
                       <span>{formatCurrency(totalGrossProfitItem.actual_amount || 0)}</span>
                       {turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0 && (
                         <span className="text-xs bg-gray-200/80 px-1.5 py-0.5 rounded text-gray-100">
