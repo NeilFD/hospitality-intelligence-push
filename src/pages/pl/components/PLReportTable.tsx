@@ -20,6 +20,39 @@ export function PLReportTable({
   currentYear,
   onOpenTracker,
 }: PLReportTableProps) {
+  const getDaysInMonth = () => {
+    const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
+    return date.getDate();
+  };
+  
+  const getCurrentDay = () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    if (yesterday.getFullYear() === currentYear && yesterday.getMonth() === getMonthNumber(currentMonthName) - 1) {
+      return yesterday.getDate();
+    }
+    
+    const daysInMonth = getDaysInMonth();
+    return Math.min(yesterday.getDate(), daysInMonth);
+  };
+  
+  const getMonthNumber = (monthName: string) => {
+    const months = ["January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"];
+    return months.indexOf(monthName) + 1;
+  };
+  
+  const daysInMonth = getDaysInMonth();
+  const currentDay = getCurrentDay();
+  
+  const calculateForecast = (actualAmount: number) => {
+    if (currentDay <= 0) return actualAmount;
+    const dailyAverage = actualAmount / currentDay;
+    return dailyAverage * daysInMonth;
+  };
+
   const getFontClass = (name: string) => {
     const lowercaseName = name.toLowerCase();
     if (
@@ -177,6 +210,8 @@ export function PLReportTable({
       const fontClass = getFontClass(item.name);
       const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
       
+      const forecastAmount = calculateForecast(item.actual_amount || 0);
+      
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 
         item.name.toLowerCase() === "total revenue" ||
@@ -214,11 +249,11 @@ export function PLReportTable({
             {percentageDisplay ? percentageDisplay : ""}
           </TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
-            {formatCurrency(item.forecast_amount || item.budget_amount)}
+            {formatCurrency(forecastAmount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(
-              (item.forecast_amount || item.budget_amount) - item.actual_amount
+              forecastAmount - (item.budget_amount || 0)
             )}
           </TableCell>
         </TableRow>
