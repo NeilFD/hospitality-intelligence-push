@@ -19,7 +19,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        typewriter: ['"Scripter Serif"', '"Special Elite"', 'monospace'],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', "Segoe UI", 'Roboto', "Helvetica Neue", 'Arial', "Noto Sans", 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',
