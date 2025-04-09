@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Share2 } from 'lucide-react';
+import { SendHorizonal, Sparkles, User, Share2, Bot as BotIcon } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { useWagesStore } from '@/components/wages/WagesStore';
@@ -678,31 +679,38 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   };
 
   return (
-    <div className={`flex flex-col rounded-xl overflow-hidden shadow-inner ${className}`}>
-      <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-tavern-blue to-tavern-blue-dark">
-        <Bot className="text-white" />
-        <h3 className="font-semibold text-white">Cleo - Performance Assistant</h3>
+    <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
+      <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
+        <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm animate-float">
+          <Sparkles className="text-white h-5 w-5" />
+        </div>
+        <h3 className="font-semibold text-white text-lg">Cleo - Performance Assistant</h3>
       </div>
       
-      <ScrollArea ref={scrollAreaRef} className="flex-1 h-64 p-4 overflow-y-auto bg-white/80 backdrop-blur-sm">
-        <div className="space-y-4">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 h-64 p-4 overflow-y-auto chat-container">
+        <div className="space-y-5">
           {messages.map((message, index) => (
             <div 
               key={index} 
-              className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'} animate-scale-in`}
+              style={{animationDelay: `${index * 0.05}s`}}
             >
-              {!message.isUser && <Bot className="h-6 w-6 mt-1 text-tavern-blue flex-shrink-0" />}
+              {!message.isUser && 
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pastel-blue to-pastel-purple flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
+                  <BotIcon className="h-4 w-4 text-white" />
+                </div>
+              }
               
-              <div className="relative">
+              <div className="relative max-w-[80%]">
                 <div 
-                  className={`rounded-lg p-3 max-w-[80%] shadow-sm ${
+                  className={`rounded-2xl p-4 shadow-glass ${
                     message.isUser 
-                      ? 'bg-gradient-to-r from-tavern-blue to-tavern-blue-dark text-white' 
-                      : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100 text-tavern-blue-dark'
+                      ? 'message-bubble-user rounded-tr-sm' 
+                      : 'message-bubble-ai rounded-tl-sm'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                  <p className="text-xs mt-1 opacity-70">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.text}</p>
+                  <p className="text-xs mt-2 opacity-70 font-medium">
                     {message.timestamp instanceof Date 
                       ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                       : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -713,16 +721,16 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
                   <div className="absolute -top-2 -right-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-white shadow-sm hover:bg-gray-100">
-                          <Share2 className="h-3 w-3" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full glass-button">
+                          <Share2 className="h-3.5 w-3.5 text-tavern-blue" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="frost-panel">
                         <DropdownMenuLabel>Share via</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => shareViaWhatsApp(message.text)}>
+                        <DropdownMenuItem onClick={() => shareViaWhatsApp(message.text)} className="hover:bg-pastel-blue/30">
                           WhatsApp
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => shareViaEmail(message.text)}>
+                        <DropdownMenuItem onClick={() => shareViaEmail(message.text)} className="hover:bg-pastel-blue/30">
                           Email
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -731,39 +739,43 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
                 )}
               </div>
               
-              {message.isUser && <User className="h-6 w-6 mt-1 text-tavern-blue flex-shrink-0" />}
+              {message.isUser && 
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-tavern-blue-light to-tavern-blue flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+              }
             </div>
           ))}
           
           {isLoading && (
-            <div className="flex justify-start gap-2">
-              <Bot className="h-6 w-6 mt-1 text-tavern-blue flex-shrink-0" />
-              <div className="bg-gray-50 rounded-lg p-3 shadow-sm border border-gray-100">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-tavern-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                  <span className="w-2 h-2 bg-tavern-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                  <span className="w-2 h-2 bg-tavern-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                </div>
+            <div className="flex justify-start gap-2 animate-pulse">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pastel-blue to-pastel-purple flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
+                <BotIcon className="h-4 w-4 text-white" />
+              </div>
+              <div className="frost-panel rounded-2xl rounded-tl-sm p-4 flex gap-2 min-w-[100px]">
+                <span className="w-2 h-2 bg-pastel-purple rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                <span className="w-2 h-2 bg-pastel-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                <span className="w-2 h-2 bg-pastel-purple rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
               </div>
             </div>
           )}
         </div>
       </ScrollArea>
       
-      <form onSubmit={handleSubmit} className="p-4 border-t border-gray-100 bg-white flex gap-2">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-white/20 frost-panel flex gap-2 backdrop-blur-md">
         <Input
           placeholder="Ask about your business performance..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading}
-          className="flex-1 bg-gray-50 border-gray-200 focus:border-tavern-blue focus:ring-tavern-blue"
+          className="flex-1 glass-input text-tavern-blue shadow-inner focus:shadow-none"
         />
         <Button 
           type="submit" 
           disabled={isLoading || !input.trim()} 
-          className="bg-tavern-blue hover:bg-tavern-blue-dark shadow-sm"
+          className="send-button shadow-glass text-white"
         >
-          <Send className="h-5 w-5" />
+          <SendHorizonal className="h-5 w-5" />
         </Button>
       </form>
     </div>

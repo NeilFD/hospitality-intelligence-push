@@ -33,7 +33,7 @@
     --input: 214 32% 91%;
     --ring: 222 84% 5%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
   }
 
   .dark {
@@ -83,7 +83,28 @@
 }
 
 .glass-morphism {
-  @apply backdrop-blur-md bg-white/20 border border-white/30 shadow-sm;
+  @apply backdrop-blur-md bg-white/30 border border-white/40 shadow-glass;
+}
+
+.neo-glass {
+  @apply backdrop-blur-lg bg-gradient-to-br from-white/40 to-white/10 border border-white/30 shadow-glass;
+}
+
+.frost-panel {
+  @apply backdrop-blur-md bg-white/60 shadow-glass-card border border-white/50;
+}
+
+.glass-card {
+  @apply backdrop-blur-sm bg-white/80 shadow-glass-card border border-white/50 hover:shadow-glass-hover transition-all duration-300;
+}
+
+.glass-input {
+  @apply backdrop-blur-sm bg-white/70 border border-white/50 focus:border-white/70 focus:ring-1 focus:ring-white/70 transition-all;
+}
+
+.glass-button {
+  @apply backdrop-blur-md bg-gradient-to-r from-white/30 to-white/20 border border-white/30 
+         hover:from-white/40 hover:to-white/30 hover:shadow-glass-hover transition-all duration-300;
 }
 
 .table-cell {
@@ -95,25 +116,59 @@
 }
 
 .table-header {
-  @apply bg-[#48495E]/80 backdrop-blur-sm text-white font-semibold p-2 text-center rounded-t-md;
+  @apply bg-gradient-to-r from-[#48495E]/80 to-[#48495E]/70 backdrop-blur-sm text-white font-semibold p-2 text-center rounded-t-md;
 }
 
 .table-header-day {
-  @apply bg-tavern-blue-light/50 backdrop-blur-sm text-[#48495E] font-semibold p-2 text-center;
+  @apply bg-tavern-blue-light/30 backdrop-blur-sm text-[#48495E] font-semibold p-2 text-center;
 }
 
 .table-row-totals {
-  @apply bg-tavern-blue-light/20 backdrop-blur-sm font-medium;
+  @apply bg-tavern-blue-light/10 backdrop-blur-sm font-medium;
 }
 
 .status-good {
-  @apply bg-tavern-green/10 backdrop-blur-sm text-[#48495E] font-semibold border border-tavern-green/30;
+  @apply bg-pastel-green backdrop-blur-sm text-[#48495E] font-semibold border border-tavern-green/30;
 }
 
 .status-warning {
-  @apply bg-tavern-amber/10 backdrop-blur-sm text-[#48495E] font-semibold border border-tavern-amber/30;
+  @apply bg-pastel-yellow backdrop-blur-sm text-[#48495E] font-semibold border border-tavern-amber/30;
 }
 
 .status-bad {
-  @apply bg-tavern-blue-light/10 backdrop-blur-sm text-[#48495E] font-semibold border border-tavern-blue/30;
+  @apply bg-pastel-blue backdrop-blur-sm text-[#48495E] font-semibold border border-tavern-blue/30;
+}
+
+.animated-gradient {
+  background: linear-gradient(-45deg, #E5DEFF, #D3E4FD, #FFDEE2, #FDE1D3);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.message-bubble-user {
+  @apply bg-gradient-to-r from-pastel-purple to-pastel-blue text-tavern-blue-dark;
+}
+
+.message-bubble-ai {
+  @apply bg-gradient-to-r from-pastel-green/70 to-pastel-blue/70 border border-white/50;
+}
+
+.chat-container {
+  @apply bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-lg;
+}
+
+.send-button {
+  @apply bg-gradient-to-r from-pastel-purple to-pastel-blue hover:opacity-90;
 }

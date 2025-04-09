@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -78,6 +79,16 @@ export default {
           amber: '#F7B731',
           red: '#EB5757',
           gray: '#F5F7FA'
+        },
+        pastel: {
+          blue: '#D3E4FD',
+          purple: '#E5DEFF',
+          pink: '#FFDEE2',
+          green: '#F2FCE2',
+          yellow: '#FEF7CD',
+          orange: '#FEC6A1',
+          peach: '#FDE1D3',
+          gray: '#F1F0FB'
         }
       },
       borderRadius: {
@@ -107,15 +118,38 @@ export default {
         shimmer: {
           '0%, 100%': { transform: 'translateX(-100%)' },
           '50%': { transform: 'translateX(100%)' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
+        },
+        'scale-in': {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' }
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-5px)' }
+        },
+        'glow': {
+          '0%, 100%': { boxShadow: '0 0 5px 2px rgba(165, 192, 226, 0.2)' },
+          '50%': { boxShadow: '0 0 20px 2px rgba(165, 192, 226, 0.4)' }
         }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        shimmer: 'shimmer 2s infinite linear'
+        shimmer: 'shimmer 2s infinite linear',
+        'fade-in': 'fade-in 0.5s ease-out',
+        'scale-in': 'scale-in 0.3s ease-out',
+        'float': 'float 3s ease-in-out infinite',
+        'glow': 'glow 3s ease-in-out infinite'
       },
       boxShadow: {
         'subtle': '0 2px 15px -3px rgba(0, 0, 0, 0.07)',
+        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+        'glass-hover': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+        'glass-card': '0 4px 16px 0 rgba(31, 38, 135, 0.1)'
       }
     }
   },
