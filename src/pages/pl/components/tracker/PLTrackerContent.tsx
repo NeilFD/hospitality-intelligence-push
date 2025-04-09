@@ -8,6 +8,7 @@ import { DailyInputDrawer } from './DailyInputDrawer';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { formatCurrency } from '@/lib/date-utils';
 import { TrackerSummaryRows } from './TrackerSummaryRows';
+import { getActualAmount } from './TrackerCalculations';
 
 interface PLTrackerContentProps {
   isLoading: boolean;
@@ -107,8 +108,10 @@ export function PLTrackerContent({
             <TableBody>
               {filteredBudgetData.map((item, index) => {
                 const itemIndex = trackedBudgetData.findIndex(i => i.id === item.id);
-                const actualAmount = getActualAmount(item);
                 const proRatedBudget = calculateProRatedBudget(item);
+                const actualAmount = item.tracking_type === 'Pro-Rated' 
+                  ? proRatedBudget 
+                  : getActualAmount(item);
                 const variance = actualAmount - proRatedBudget;
                 
                 if (item.isHeader) {
