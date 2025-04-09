@@ -104,7 +104,7 @@ const WeeklyInput = () => {
 
   return <div className="p-4 md:p-8">
       <Card className="border shadow-md">
-        <CardHeader className="bg-gray-50 border-b pb-4">
+        <CardHeader className="bg-gray-50 border-b pb-4 -mt-8">
           <CardTitle className="text-2xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
