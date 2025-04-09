@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -684,7 +683,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm animate-float">
           <Sparkles className="text-white h-5 w-5" />
         </div>
-        <h3 className="font-semibold text-white text-lg">Cleo - Performance Assistant</h3>
+        <h3 className="font-semibold text-tavern-blue-dark text-lg">Cleo - Performance Assistant</h3>
       </div>
       
       <ScrollArea ref={scrollAreaRef} className="flex-1 h-64 p-4 overflow-y-auto chat-container">
