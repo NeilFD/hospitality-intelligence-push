@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -16,12 +17,15 @@ const WeeklyInput = () => {
     month: string;
     week: string;
   }>();
+  
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [activeDay, setActiveDay] = useState<string>('');
+  
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
+  
   const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
   const currentWeek = useMemo(() => weekDates[weekNumber - 1] || {
     startDate: '',

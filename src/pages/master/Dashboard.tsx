@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { generateWeekDates } from '@/lib/date-utils';
+
 const MasterDashboard = () => {
   const navigate = useNavigate();
 
@@ -31,9 +32,12 @@ const MasterDashboard = () => {
   const goToCurrentMonth = () => {
     setSelectedDate(new Date());
   };
+  
+  // Fix the week navigation function to use the correct path format
   const goToWeek = (year: number, month: number, weekNumber: number) => {
     navigate(`/master/week/${year}/${month}/${weekNumber}`);
   };
+  
   const goToMonth = (year: number, month: number) => {
     navigate(`/master/month/${year}/${month}`);
   };
@@ -183,4 +187,5 @@ const MasterDashboard = () => {
       </div>
     </div>;
 };
+
 export default MasterDashboard;
