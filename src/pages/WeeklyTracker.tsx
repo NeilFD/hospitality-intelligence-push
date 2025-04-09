@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, Trash2 } from 'lucide-react';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { 
   Table, TableHeader, TableBody, TableHead, 
@@ -108,7 +107,7 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
   };
   
   const calculateCost = (day: TrackerData) => {
-    return calculateNetPurchases(day) + day.staffFoodAllowance;
+    return calculateNetPurchases(day) - day.staffFoodAllowance;
   };
   
   const calculateGrossProfit = (day: TrackerData) => {
@@ -179,6 +178,15 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
       return {
         ...day,
         creditNotes: [...day.creditNotes, 0]
+      };
+    }));
+  };
+
+  const handleDeleteCreditNote = (index: number) => {
+    setTrackerData(prev => prev.map(day => {
+      return {
+        ...day,
+        creditNotes: day.creditNotes.filter((_, i) => i !== index)
       };
     }));
   };
@@ -342,16 +350,26 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                   <TableRow key={`credit-note-${index}`} className="text-red-600">
                     <TableCell className="font-medium flex items-center justify-between">
                       Credit note {index + 1}
-                      {index === 0 && (
+                      <div className="flex space-x-1">
+                        {index === 0 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleAddCreditNote}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Plus size={14} />
+                          </Button>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={handleAddCreditNote}
-                          className="h-6 w-6 p-0"
+                          onClick={() => handleDeleteCreditNote(index)}
+                          className="h-6 w-6 p-0 border-red-300 hover:bg-red-50 hover:text-red-600"
                         >
-                          <Plus size={14} />
+                          <Trash2 size={14} />
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                     {trackerData.map(day => (
                       <TableCell key={`credit-${day.id}-${index}`} className="p-0">
