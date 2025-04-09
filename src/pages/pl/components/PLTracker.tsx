@@ -95,10 +95,9 @@ export function PLTracker({
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
             getActualAmount={(item) => {
-              // For pro-rated items, use the daysInMonth and dayOfMonth from the current state
+              // Always calculate pro-rated items based on the current day of month
               if (item.tracking_type === 'Pro-Rated') {
-                const actual = (item.budget_amount / daysInMonth) * dayOfMonth;
-                return actual;
+                return (item.budget_amount / daysInMonth) * dayOfMonth;
               }
               return getActualAmount(item);
             }}
@@ -120,4 +119,3 @@ export function PLTracker({
     </Card>
   );
 }
-

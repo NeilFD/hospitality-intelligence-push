@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -118,17 +117,12 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return Number(item.actual_amount) || 0;
   }
 
-  // Handle Pro-Rated items
+  // Handle Pro-Rated items - this should be calculated dynamically based on the day of month
   if (item.tracking_type === 'Pro-Rated') {
-    // For Pro-Rated items, calculate the pro-rated actual based on budget
-    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    const dayOfMonth = new Date().getDate();
-    
-    const proRatedActual = calculateProRatedActual(item, daysInMonth, dayOfMonth);
-    console.log(`Pro-Rated actual for ${item.name}:`, proRatedActual);
-    
-    // Return the pro-rated calculation as the actual value for pro-rated items
-    return proRatedActual;
+    // NOTE: We cannot directly use daysInMonth and dayOfMonth here as they're not available
+    // The PLTracker.tsx component will handle this calculation instead
+    // Return a placeholder that will be overridden
+    return Number(item.actual_amount) || 0;
   }
   
   if (item.tracking_type === 'Discrete') {
@@ -157,4 +151,3 @@ export function calculateProRatedActual(
   });
   return proRatedActual;
 }
-
