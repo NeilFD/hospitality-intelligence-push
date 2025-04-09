@@ -113,7 +113,7 @@ export function PLTrackerContent({
                 
                 if (item.isHeader) {
                   return (
-                    <TableRow key={item.id} className="bg-gray-50 border-t border-gray-200">
+                    <TableRow key={item.id || index} className="bg-gray-50 border-t border-gray-200">
                       <TableCell colSpan={7} className="py-2 font-bold text-slate-800">
                         {item.name}
                       </TableCell>
@@ -121,9 +121,10 @@ export function PLTrackerContent({
                   );
                 } else {
                   const readOnlyActual = isReadOnlyActual(item);
+                  const isProRated = item.tracking_type === 'Pro-Rated';
                   
                   return (
-                    <TableRow key={item.id} className="border-t border-gray-100">
+                    <TableRow key={item.id || index} className="border-t border-gray-100">
                       <TableCell className="text-left text-slate-800">{item.name}</TableCell>
                       <TableCell className="text-right">{formatCurrency(item.budget_amount)}</TableCell>
                       <TableCell className="text-right">
@@ -132,6 +133,8 @@ export function PLTrackerContent({
                       <TableCell className="text-right">{formatCurrency(proRatedBudget)}</TableCell>
                       <TableCell className="text-right">
                         {readOnlyActual ? (
+                          <div className="text-right">{formatCurrency(actualAmount)}</div>
+                        ) : isProRated ? (
                           <div className="text-right">{formatCurrency(actualAmount)}</div>
                         ) : (
                           <div className="flex items-center justify-end gap-2">

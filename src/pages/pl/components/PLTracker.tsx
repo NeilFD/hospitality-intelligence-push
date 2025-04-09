@@ -8,6 +8,7 @@ import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
 import { PLTrackerSettings } from './PLTrackerSettings';
+import { calculateProRatedBudget } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -126,21 +127,27 @@ export function PLTracker({
       return item.actual_amount || 0;
     }
     
-    // For other items, use manual entry or tracking type logic
+    // For other items, use either manual entry, daily values sum, or pro-rated budget based on tracking type
     if (item.manually_entered_actual !== undefined) {
       return item.manually_entered_actual;
     }
     
-    if (item.tracking_type === 'Pro-Rated') {
-      return calculateProRatedBudget(item);
+    // For discrete tracking type, use the sum of daily values if available, otherwise return 0
+    if (item.tracking_type === 'Discrete') {
+      // If daily values exist, calculate the sum
+      if (item.daily_values && item.daily_values.length > 0) {
+        return item.daily_values.reduce((sum, day) => sum + (day.value || 0), 0);
+      }
+      return 0; // No daily values for a Discrete item means 0
     }
     
+    // For Pro-Rated tracking type, calculate the pro-rated budget value
+    if (item.tracking_type === 'Pro-Rated') {
+      return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
+    }
+    
+    // Fallback to actual_amount if it exists, otherwise 0
     return item.actual_amount || 0;
-  };
-  
-  const calculateProRatedBudget = (item: PLTrackerBudgetItem) => {
-    const budgetPerDay = item.budget_amount / daysInMonth;
-    return budgetPerDay * dayOfMonth;
   };
   
   const handleOpenSettings = () => {
@@ -188,7 +195,7 @@ export function PLTracker({
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
             getActualAmount={getActualAmount}
-            calculateProRatedBudget={calculateProRatedBudget}
+            calculateProRatedBudget={(item) => calculateProRatedBudget(item, daysInMonth, dayOfMonth)}
             currentMonthName={currentMonthName}
             currentYear={currentYear}
           />

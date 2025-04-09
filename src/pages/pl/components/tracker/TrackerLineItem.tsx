@@ -6,7 +6,6 @@ import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { DailyInputDrawer } from './DailyInputDrawer';
 import { CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { fetchDailyValues } from '@/services/budget-service';
 
 interface TrackerLineItemProps {
   item: PLTrackerBudgetItem;
@@ -70,7 +69,7 @@ export function TrackerLineItem({
                  item.name.toLowerCase() === 'salaries';
   
   // Determine if item should have read-only actual values
-  const isReadOnlyActual = isRevenue || isCOS || isWages || isGrossProfit;
+  const isReadOnlyActual = isRevenue || isCOS || isWages || isGrossProfit || item.tracking_type === 'Pro-Rated';
   
   let rowClassName = '';
   let fontClass = '';
