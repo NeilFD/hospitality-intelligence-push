@@ -254,8 +254,16 @@ export type Database = {
           beverage_revenue: number | null
           created_at: string
           date: string
+          day_foh_manager: string | null
+          day_foh_team: string | null
+          day_kitchen_manager: string | null
+          day_kitchen_team: string | null
           day_of_week: string
           dinner_covers: number | null
+          evening_foh_manager: string | null
+          evening_foh_team: string | null
+          evening_kitchen_manager: string | null
+          evening_kitchen_team: string | null
           food_revenue: number | null
           id: string
           local_events: string | null
@@ -277,8 +285,16 @@ export type Database = {
           beverage_revenue?: number | null
           created_at?: string
           date: string
+          day_foh_manager?: string | null
+          day_foh_team?: string | null
+          day_kitchen_manager?: string | null
+          day_kitchen_team?: string | null
           day_of_week: string
           dinner_covers?: number | null
+          evening_foh_manager?: string | null
+          evening_foh_team?: string | null
+          evening_kitchen_manager?: string | null
+          evening_kitchen_team?: string | null
           food_revenue?: number | null
           id?: string
           local_events?: string | null
@@ -300,8 +316,16 @@ export type Database = {
           beverage_revenue?: number | null
           created_at?: string
           date?: string
+          day_foh_manager?: string | null
+          day_foh_team?: string | null
+          day_kitchen_manager?: string | null
+          day_kitchen_team?: string | null
           day_of_week?: string
           dinner_covers?: number | null
+          evening_foh_manager?: string | null
+          evening_foh_team?: string | null
+          evening_kitchen_manager?: string | null
+          evening_kitchen_team?: string | null
           food_revenue?: number | null
           id?: string
           local_events?: string | null

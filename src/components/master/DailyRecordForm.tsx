@@ -39,6 +39,15 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     windSpeed: initialData.windSpeed || 0,
     localEvents: initialData.localEvents || '',
     operationsNotes: initialData.operationsNotes || '',
+    // New team fields
+    dayFohTeam: initialData.dayFohTeam || '',
+    dayFohManager: initialData.dayFohManager || '',
+    dayKitchenTeam: initialData.dayKitchenTeam || '',
+    dayKitchenManager: initialData.dayKitchenManager || '',
+    eveningFohTeam: initialData.eveningFohTeam || '',
+    eveningFohManager: initialData.eveningFohManager || '',
+    eveningKitchenTeam: initialData.eveningKitchenTeam || '',
+    eveningKitchenManager: initialData.eveningKitchenManager || '',
   }), [date, dayOfWeek, initialData]);
 
   const form = useForm<Partial<MasterDailyRecord>>({
@@ -196,6 +205,172 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
               <div>
                 <span className="text-xs font-medium block text-gray-600">Average Spend/Cover (£)</span>
                 <span className="text-base font-semibold">{averageCoverSpend.toFixed(2)}</span>
+              </div>
+            </div>
+            
+            {/* Team on duty section */}
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold mb-3">Team on Duty</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
+                {/* Day FOH */}
+                <div className="border rounded-md p-3">
+                  <h4 className="text-xs font-medium text-gray-600 mb-2">Day FOH</h4>
+                  <div className="space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="dayFohManager"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Manager</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Manager name"
+                              className="h-8 text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="dayFohTeam"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Team members</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Team members and their roles"
+                              className="min-h-[60px] text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                
+                {/* Day Kitchen */}
+                <div className="border rounded-md p-3">
+                  <h4 className="text-xs font-medium text-gray-600 mb-2">Day Kitchen</h4>
+                  <div className="space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="dayKitchenManager"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Manager</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Manager name"
+                              className="h-8 text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="dayKitchenTeam"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Team members</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Team members and their roles"
+                              className="min-h-[60px] text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                
+                {/* Evening FOH */}
+                <div className="border rounded-md p-3">
+                  <h4 className="text-xs font-medium text-gray-600 mb-2">Evening FOH</h4>
+                  <div className="space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="eveningFohManager"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Manager</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Manager name"
+                              className="h-8 text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="eveningFohTeam"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Team members</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Team members and their roles"
+                              className="min-h-[60px] text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                
+                {/* Evening Kitchen */}
+                <div className="border rounded-md p-3">
+                  <h4 className="text-xs font-medium text-gray-600 mb-2">Evening Kitchen</h4>
+                  <div className="space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="eveningKitchenManager"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Manager</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Manager name"
+                              className="h-8 text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="eveningKitchenTeam"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Team members</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Team members and their roles"
+                              className="min-h-[60px] text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import { generateWeekDates } from '@/lib/date-utils';
@@ -191,6 +192,16 @@ export const upsertMasterDailyRecord = async (
     precipitation: record.precipitation,
     wind_speed: record.windSpeed,
     
+    // Add the new team fields
+    day_foh_team: record.dayFohTeam,
+    day_foh_manager: record.dayFohManager,
+    day_kitchen_team: record.dayKitchenTeam,
+    day_kitchen_manager: record.dayKitchenManager,
+    evening_foh_team: record.eveningFohTeam,
+    evening_foh_manager: record.eveningFohManager,
+    evening_kitchen_team: record.eveningKitchenTeam,
+    evening_kitchen_manager: record.eveningKitchenManager,
+    
     local_events: record.localEvents,
     operations_notes: record.operationsNotes
   };
@@ -232,6 +243,16 @@ const mapDbRecordToMasterDailyRecord = (data: any): MasterDailyRecord => {
     temperature: data.temperature,
     precipitation: data.precipitation,
     windSpeed: data.wind_speed,
+    
+    // Map the new team fields
+    dayFohTeam: data.day_foh_team,
+    dayFohManager: data.day_foh_manager,
+    dayKitchenTeam: data.day_kitchen_team,
+    dayKitchenManager: data.day_kitchen_manager,
+    eveningFohTeam: data.evening_foh_team,
+    eveningFohManager: data.evening_foh_manager,
+    eveningKitchenTeam: data.evening_kitchen_team,
+    eveningKitchenManager: data.evening_kitchen_manager,
     
     localEvents: data.local_events,
     operationsNotes: data.operations_notes

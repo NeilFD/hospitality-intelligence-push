@@ -1,4 +1,5 @@
 
+
 export interface WeatherData {
   description: string;
   temperature: number;
@@ -31,6 +32,16 @@ export interface MasterDailyRecord {
   precipitation?: number;
   windSpeed?: number;
   
+  // Team on duty
+  dayFohTeam?: string;
+  dayFohManager?: string;
+  dayKitchenTeam?: string;
+  dayKitchenManager?: string;
+  eveningFohTeam?: string;
+  eveningFohManager?: string;
+  eveningKitchenTeam?: string;
+  eveningKitchenManager?: string;
+  
   // Contextual information
   localEvents?: string;
   operationsNotes?: string;
@@ -48,3 +59,4 @@ export interface MasterMonthlyRecord {
   month: number;
   weeks: MasterWeeklyRecord[];
 }
+
