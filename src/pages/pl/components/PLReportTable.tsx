@@ -1,4 +1,3 @@
-
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -78,34 +77,28 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
-  // Find indices we need
-  let grossProfitIndex = -1;
-  let wagesIndex = -1;
-  
-  // Identify the positions of Gross Profit and Wages rows
-  processedBudgetData.forEach((item, index) => {
-    if (item.name && item.name.toLowerCase().includes("gross profit")) {
-      grossProfitIndex = index;
-    }
-    if (
-      item.name && 
-      (item.name.toLowerCase().includes("wages") || 
-       item.name.toLowerCase().includes("salaries"))
-    ) {
-      if (wagesIndex === -1) wagesIndex = index;
-    }
-  });
-  
-  // Filter out the unwanted Total row
-  const filteredBudgetData = processedBudgetData.filter((item, index) => {
-    // Check if this is a Total row between Gross Profit and Wages
-    if ((item.name === "Total" || item.name === "TOTAL") && 
-        index > grossProfitIndex && 
-        index < wagesIndex) {
-      return false;
-    }
-    return true;
-  });
+  // Specifically remove the Total row that comes after Gross Profit/(Loss) and before Wages
+  const filteredBudgetData = React.useMemo(() => {
+    // First find the index of the Gross Profit/(Loss) row
+    const grossProfitIndex = processedBudgetData.findIndex(
+      item => item.name === "Gross Profit/(Loss)" || item.name === "Gross Profit"
+    );
+    
+    // Find the index of the Wages and Salaries row
+    const wagesIndex = processedBudgetData.findIndex(
+      item => item.name === "Wages and Salaries" || item.name === "Wages" || item.name === "Salaries"
+    );
+    
+    // Return filtered data without the specific Total row
+    return processedBudgetData.filter((item, index) => {
+      // Check if this is the Total row we want to remove
+      if (item.name === "Total" && index > grossProfitIndex && index < wagesIndex) {
+        console.log("Removing Total row at index:", index);
+        return false;
+      }
+      return true;
+    });
+  }, [processedBudgetData]);
 
   const renderTableContent = () => {
     return filteredBudgetData.map((item, index) => {
