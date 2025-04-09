@@ -77,27 +77,41 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
-  // Specifically remove the Total row that comes after Gross Profit/(Loss) and before Wages
+  // Remove the Total row that appears after Gross Profit and before Wages
+  // Using direct array manipulation for more reliability
   const filteredBudgetData = React.useMemo(() => {
-    // First find the index of the Gross Profit/(Loss) row
-    const grossProfitIndex = processedBudgetData.findIndex(
-      item => item.name === "Gross Profit/(Loss)" || item.name === "Gross Profit"
+    // First make sure we have data to process
+    if (!processedBudgetData || processedBudgetData.length === 0) {
+      return [];
+    }
+
+    // Copy the original array to avoid modifying the source data
+    let result = [...processedBudgetData];
+    
+    // Find the Gross Profit row
+    const grossProfitIndex = result.findIndex(
+      item => item.name?.toLowerCase().includes("gross profit")
     );
     
-    // Find the index of the Wages and Salaries row
-    const wagesIndex = processedBudgetData.findIndex(
-      item => item.name === "Wages and Salaries" || item.name === "Wages" || item.name === "Salaries"
-    );
+    // If we can't find Gross Profit, return the original data
+    if (grossProfitIndex === -1) {
+      return result;
+    }
     
-    // Return filtered data without the specific Total row
-    return processedBudgetData.filter((item, index) => {
-      // Check if this is the Total row we want to remove
-      if (item.name === "Total" && index > grossProfitIndex && index < wagesIndex) {
-        console.log("Removing Total row at index:", index);
-        return false;
-      }
-      return true;
-    });
+    // Look at the next row and check if it's a Total row
+    const nextIndex = grossProfitIndex + 1;
+    if (
+      nextIndex < result.length && 
+      result[nextIndex] && 
+      result[nextIndex].name && 
+      result[nextIndex].name.toLowerCase() === "total"
+    ) {
+      // Remove this Total row
+      console.log("Found and removing Total row at index:", nextIndex);
+      result.splice(nextIndex, 1);
+    }
+    
+    return result;
   }, [processedBudgetData]);
 
   const renderTableContent = () => {
