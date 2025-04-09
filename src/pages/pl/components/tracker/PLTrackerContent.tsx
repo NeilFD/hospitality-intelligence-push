@@ -7,6 +7,7 @@ import { Calendar } from 'lucide-react';
 import { DailyInputDrawer } from './DailyInputDrawer';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { formatCurrency } from '@/lib/date-utils';
+import { TrackerSummaryRows } from './TrackerSummaryRows';
 
 interface PLTrackerContentProps {
   isLoading: boolean;
@@ -56,11 +57,27 @@ export function PLTrackerContent({
     }
   };
   
-  // Helper function to check if an item is a revenue item
+  // Helper function to check if an item is a revenue or COS item
   const isRevenueItem = (item: PLTrackerBudgetItem) => {
     return item.name.toLowerCase().includes('revenue') ||
            item.name.toLowerCase().includes('sales') ||
            item.name.toLowerCase() === 'turnover';
+  };
+
+  const isCOSItem = (item: PLTrackerBudgetItem) => {
+    return item.name.toLowerCase().includes('cost of sales') ||
+           item.name.toLowerCase().includes('cos');
+  };
+
+  const isWagesItem = (item: PLTrackerBudgetItem) => {
+    return item.name.toLowerCase().includes('wages and salaries') ||
+           item.name.toLowerCase() === 'wages' ||
+           item.name.toLowerCase() === 'salaries';
+  };
+
+  // Determine if an item should have read-only actual values
+  const isReadOnlyActual = (item: PLTrackerBudgetItem) => {
+    return isRevenueItem(item) || isCOSItem(item) || isWagesItem(item);
   };
 
   return (
@@ -103,7 +120,7 @@ export function PLTrackerContent({
                     </TableRow>
                   );
                 } else {
-                  const isRevenue = isRevenueItem(item);
+                  const readOnlyActual = isReadOnlyActual(item);
                   
                   return (
                     <TableRow key={item.id} className="border-t border-gray-100">
@@ -114,7 +131,7 @@ export function PLTrackerContent({
                       </TableCell>
                       <TableCell className="text-right">{formatCurrency(proRatedBudget)}</TableCell>
                       <TableCell className="text-right">
-                        {isRevenue ? (
+                        {readOnlyActual ? (
                           <div className="text-right">{formatCurrency(actualAmount)}</div>
                         ) : (
                           <div className="flex items-center justify-end gap-2">
@@ -155,6 +172,16 @@ export function PLTrackerContent({
                   );
                 }
               })}
+              
+              <TrackerSummaryRows
+                trackedBudgetData={trackedBudgetData}
+                dayOfMonth={dayOfMonth}
+                daysInMonth={daysInMonth}
+                getActualAmount={getActualAmount}
+                calculateProRatedBudget={calculateProRatedBudget}
+                updateForecastAmount={updateForecastAmount}
+              />
+              
             </TableBody>
           </Table>
         )}

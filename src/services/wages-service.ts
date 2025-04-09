@@ -73,6 +73,35 @@ export const fetchWagesByDay = async (year: number, month: number, day: number):
   };
 };
 
+export const fetchTotalWagesForMonth = async (year: number, month: number): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('wages')
+      .select('foh_wages, kitchen_wages')
+      .eq('year', year)
+      .eq('month', month);
+    
+    if (error) {
+      console.error('Error fetching wages for month:', error);
+      return 0;
+    }
+    
+    if (!data || data.length === 0) {
+      return 0;
+    }
+    
+    // Sum up both FOH and Kitchen wages
+    const totalWages = data.reduce((sum, item) => {
+      return sum + Number(item.foh_wages || 0) + Number(item.kitchen_wages || 0);
+    }, 0);
+    
+    return totalWages;
+  } catch (err) {
+    console.error('Unexpected error calculating total wages:', err);
+    return 0;
+  }
+};
+
 export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
   const user = await getCurrentUser();
   

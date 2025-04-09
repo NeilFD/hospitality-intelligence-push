@@ -61,6 +61,16 @@ export function TrackerLineItem({
   const isRevenue = item.name.toLowerCase().includes('revenue') || 
                    item.name.toLowerCase().includes('sales') ||
                    isTurnover;
+                   
+  const isCOS = item.name.toLowerCase().includes('cost of sales') || 
+               item.name.toLowerCase().includes('cos');
+               
+  const isWages = item.name.toLowerCase().includes('wages and salaries') ||
+                 item.name.toLowerCase() === 'wages' ||
+                 item.name.toLowerCase() === 'salaries';
+  
+  // Determine if item should have read-only actual values
+  const isReadOnlyActual = isRevenue || isCOS || isWages;
   
   let rowClassName = '';
   let fontClass = '';
@@ -113,7 +123,7 @@ export function TrackerLineItem({
       </TableCell>
       <TableCell className={`text-right ${fontClass}`}>
         <div className="flex items-center justify-end gap-2 pointer-events-auto">
-          {!isRevenue && (
+          {!isReadOnlyActual ? (
             <Button 
               variant="outline"
               size="icon"
@@ -123,7 +133,7 @@ export function TrackerLineItem({
             >
               <CalendarDays className="h-5 w-5" />
             </Button>
-          )}
+          ) : null}
           <span className="text-right">
             {formatCurrency(actualAmount)}
           </span>

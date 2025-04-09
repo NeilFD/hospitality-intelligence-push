@@ -10,6 +10,8 @@ import { useBudgetData } from './hooks/useBudgetData';
 import { PLTracker } from './components/PLTracker';
 import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyRevenueData } from '@/services/master-record-service';
+import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
+import { fetchTotalWagesForMonth } from '@/services/wages-service';
 
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
@@ -37,14 +39,31 @@ export default function PLDashboard() {
     queryFn: () => fetchMonthlyRevenueData(currentYear, currentMonth)
   });
 
+  // Fetch Food and Beverage COS data
+  const { data: foodCOSData, isLoading: isFoodCOSLoading } = useQuery({
+    queryKey: ['food-cos-data', currentYear, currentMonth],
+    queryFn: () => fetchFoodCOSForMonth(currentYear, currentMonth)
+  });
+
+  const { data: beverageCOSData, isLoading: isBeverageCOSLoading } = useQuery({
+    queryKey: ['beverage-cos-data', currentYear, currentMonth],
+    queryFn: () => fetchBeverageCOSForMonth(currentYear, currentMonth)
+  });
+
+  // Fetch Wages data
+  const { data: wagesData, isLoading: isWagesLoading } = useQuery({
+    queryKey: ['wages-data', currentYear, currentMonth],
+    queryFn: () => fetchTotalWagesForMonth(currentYear, currentMonth)
+  });
+
   const {
     isLoading: isBudgetDataLoading,
     processedBudgetData
   } = useBudgetData(currentYear, currentMonth);
   
-  const isLoading = isBudgetDataLoading || isMasterDataLoading;
+  const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
   
-  // Update the processedBudgetData with master record revenue data
+  // Update the processedBudgetData with master record revenue data, COS, and wages data
   const updatedBudgetData = processedBudgetData.map(item => {
     if (masterRevenueData && !isLoading) {
       // Update food revenue item
@@ -65,6 +84,41 @@ export default function PLDashboard() {
       if (item.name.toLowerCase().includes('turnover') || 
           item.name.toLowerCase().includes('total revenue')) {
         return { ...item, actual_amount: masterRevenueData.totalRevenue };
+      }
+
+      // Update food COS
+      if (item.name.toLowerCase().includes('food cost of sales') || 
+          item.name.toLowerCase().includes('food cos') ||
+          (item.name.toLowerCase().includes('food') && 
+           item.category.toLowerCase().includes('cost of sales'))) {
+        return { ...item, actual_amount: foodCOSData || 0 };
+      }
+      
+      // Update beverage COS
+      if (item.name.toLowerCase().includes('beverage cost of sales') || 
+          item.name.toLowerCase().includes('beverage cos') ||
+          item.name.toLowerCase().includes('drinks cost of sales') ||
+          item.name.toLowerCase().includes('drinks cos') ||
+          ((item.name.toLowerCase().includes('beverage') || 
+            item.name.toLowerCase().includes('drink')) && 
+           item.category.toLowerCase().includes('cost of sales'))) {
+        return { ...item, actual_amount: beverageCOSData || 0 };
+      }
+      
+      // Update total COS
+      if ((item.name.toLowerCase() === 'cost of sales' || 
+          item.name.toLowerCase() === 'cos') && 
+          !item.name.toLowerCase().includes('food') &&
+          !item.name.toLowerCase().includes('beverage') &&
+          !item.name.toLowerCase().includes('drink')) {
+        return { ...item, actual_amount: (foodCOSData || 0) + (beverageCOSData || 0) };
+      }
+
+      // Update wages
+      if (item.name.toLowerCase().includes('wages and salaries') || 
+          item.name.toLowerCase() === 'wages' ||
+          item.name.toLowerCase() === 'salaries') {
+        return { ...item, actual_amount: wagesData || 0 };
       }
     }
     return item;

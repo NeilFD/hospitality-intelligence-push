@@ -28,7 +28,7 @@ export function PLTracker({
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
   // Convert ProcessedBudgetItem to PLTrackerBudgetItem to ensure tracking_type is defined
-  // The processedBudgetData now already includes the actual revenue values from the master records
+  // The processedBudgetData now already includes the actual revenue, COS and wages values
   const processedDataWithTrackingType = processedBudgetData.map(item => ({
     ...item,
     tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined
@@ -51,7 +51,7 @@ export function PLTracker({
   );
   
   const getActualAmount = (item: PLTrackerBudgetItem) => {
-    // First priority: Check if it's a special revenue item that should get data from master records
+    // First priority: Check if it's a revenue or COS or wages item that should get data from other trackers
     if (item.name.toLowerCase().includes('food revenue') || 
         item.name.toLowerCase().includes('food sales')) {
       // Use the actual amount from master records for food revenue
@@ -69,6 +69,39 @@ export function PLTracker({
     if (item.name.toLowerCase() === 'turnover' || 
         item.name.toLowerCase().includes('total revenue')) {
       // Use the actual amount from master records for total revenue
+      return item.actual_amount || 0;
+    }
+    
+    // For food and beverage COS
+    if (item.name.toLowerCase().includes('food cost of sales') ||
+        item.name.toLowerCase().includes('food cos') ||
+        (item.name.toLowerCase().includes('food') && 
+         item.category.toLowerCase().includes('cost of sales'))) {
+      return item.actual_amount || 0;
+    }
+    
+    if (item.name.toLowerCase().includes('beverage cost of sales') ||
+        item.name.toLowerCase().includes('beverage cos') ||
+        item.name.toLowerCase().includes('drinks cost of sales') ||
+        item.name.toLowerCase().includes('drinks cos') ||
+        ((item.name.toLowerCase().includes('beverage') || 
+          item.name.toLowerCase().includes('drink')) &&
+         item.category.toLowerCase().includes('cost of sales'))) {
+      return item.actual_amount || 0;
+    }
+    
+    if ((item.name.toLowerCase() === 'cost of sales' || 
+         item.name.toLowerCase() === 'cos') && 
+        !item.name.toLowerCase().includes('food') &&
+        !item.name.toLowerCase().includes('beverage') &&
+        !item.name.toLowerCase().includes('drink')) {
+      return item.actual_amount || 0;
+    }
+    
+    // For wages
+    if (item.name.toLowerCase().includes('wages and salaries') ||
+        item.name.toLowerCase() === 'wages' ||
+        item.name.toLowerCase() === 'salaries') {
       return item.actual_amount || 0;
     }
     
