@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -87,39 +86,45 @@ export function PLReportTable({
       fontClass = 'font-semibold';
     }
     fontClass = item.isHighlighted || isTurnover || isGrossProfit || isCostOfSales ? 'font-bold' : '';
-    const rowKey = typeof i === 'number' ? i : `${i}-${item.name.replace(/\s+/g, '-').toLowerCase()}`;
 
-    // Calculate percentage for gross profit items
+    // Simplify percentage calculation
     let percentageDisplay = '';
-    if (isGrossProfit && item.name.toLowerCase().includes('food') && foodRevenueItem && foodRevenueItem.actual_amount) {
-      const foodRevenue = foodRevenueItem.actual_amount;
-      const percentage = foodRevenue > 0 ? (actualAmount / foodRevenue * 100).toFixed(2) : "0.00";
-      percentageDisplay = `${percentage}%`;
-    } else if (isGrossProfit && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) && beverageRevenueItem && beverageRevenueItem.actual_amount) {
-      const beverageRevenue = beverageRevenueItem.actual_amount;
-      const percentage = beverageRevenue > 0 ? (actualAmount / beverageRevenue * 100).toFixed(2) : "0.00";
-      percentageDisplay = `${percentage}%`;
-    } else if (item.budget_percentage !== undefined) {
+    let actualPercentageDisplay = '';
+    
+    // Percentage for gross profit items
+    if (isGrossProfit) {
+      if (item.name.toLowerCase().includes('food')) {
+        const foodRevenueItem = displayData.find(i => i.name.toLowerCase().includes('food sales') || i.name.toLowerCase().includes('food revenue'));
+        if (foodRevenueItem && foodRevenueItem.actual_amount) {
+          percentageDisplay = ((actualAmount / foodRevenueItem.actual_amount) * 100).toFixed(2) + '%';
+        }
+      } else if (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) {
+        const beverageRevenueItem = displayData.find(i => 
+          i.name.toLowerCase().includes('beverage sales') || 
+          i.name.toLowerCase().includes('beverage revenue') || 
+          i.name.toLowerCase().includes('drink sales') ||
+          i.name.toLowerCase().includes('drinks revenue')
+        );
+        if (beverageRevenueItem && beverageRevenueItem.actual_amount) {
+          percentageDisplay = ((actualAmount / beverageRevenueItem.actual_amount) * 100).toFixed(2) + '%';
+        }
+      }
+    }
+    
+    // Wages percentage of turnover
+    if (isWages) {
+      const turnoverItem = displayData.find(i => i.name.toLowerCase() === 'turnover' || i.name.toLowerCase() === 'total revenue');
+      if (turnoverItem && turnoverItem.actual_amount) {
+        percentageDisplay = ((actualAmount / turnoverItem.actual_amount) * 100).toFixed(2) + '%';
+      }
+    }
+    
+    // Fallback to budget percentage if no specific calculation
+    if (!percentageDisplay && item.budget_percentage !== undefined) {
       percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
     }
-    
-    // Calculate wages as percentage of turnover
-    let actualPercentageDisplay = '';
-    if (isWages && turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0) {
-      const wagesPercentage = (actualAmount / turnoverItem.actual_amount * 100).toFixed(2);
-      actualPercentageDisplay = `${wagesPercentage}%`;
-    } else if (isGrossProfit && totalGrossProfitItem && turnoverItem && turnoverItem.actual_amount && turnoverItem.actual_amount > 0) {
-      const gpPercentage = (actualAmount / turnoverItem.actual_amount * 100).toFixed(2);
-      actualPercentageDisplay = `${gpPercentage}%`;
-    } else if (isGrossProfit && item.name.toLowerCase().includes('food') && foodRevenueItem && foodRevenueItem.actual_amount && foodRevenueItem.actual_amount > 0) {
-      const foodGPPercentage = (actualAmount / foodRevenueItem.actual_amount * 100).toFixed(2);
-      actualPercentageDisplay = `${foodGPPercentage}%`;
-    } else if (isGrossProfit && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) && beverageRevenueItem && beverageRevenueItem.actual_amount && beverageRevenueItem.actual_amount > 0) {
-      const beverageGPPercentage = (actualAmount / beverageRevenueItem.actual_amount * 100).toFixed(2);
-      actualPercentageDisplay = `${beverageGPPercentage}%`;
-    }
-    
-    return <TableRow key={rowKey} className={rowClassName}>
+
+    return <TableRow key={typeof i === 'number' ? i : `${i}-${item.name.replace(/\s+/g, '-').toLowerCase()}`} className={rowClassName}>
         <TableCell className={fontClass}>
           {item.name}
         </TableCell>
@@ -131,17 +136,13 @@ export function PLReportTable({
         </TableCell>
         <TableCell className={`text-right ${fontClass} flex items-center justify-end gap-2`}>
           <span>{formatCurrency(actualAmount)}</span>
-          {actualPercentageDisplay && (
-            <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">
-              {actualPercentageDisplay}
-            </span>
-          )}
         </TableCell>
         <TableCell className={`text-right ${fontClass} ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''}`}>
           {formatCurrency(variance)}
         </TableCell>
       </TableRow>;
   };
+
   return <Card className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
         <CardTitle>P&L Flash Report - {currentMonthName} {currentYear}</CardTitle>
