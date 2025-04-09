@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -7,7 +8,7 @@ import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
 import { PLTrackerSettings } from './PLTrackerSettings';
-import { calculateProRatedBudget, getActualAmount, calculateProRatedActual } from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -58,21 +59,6 @@ export function PLTracker({
     setShowSettings(false);
   };
 
-  // Calculate actual amounts for all items with proper pro-rating 
-  const calculateActualAmount = (item: PLTrackerBudgetItem): number => {
-    console.log(`PLTracker calculating actual for ${item.name}:`, {
-      tracking_type: item.tracking_type
-    });
-    
-    // For pro-rated items, explicitly calculate based on current day
-    if (item.tracking_type === 'Pro-Rated') {
-      return calculateProRatedActual(item, daysInMonth, dayOfMonth);
-    }
-    
-    // For all other items, use getActualAmount function
-    return getActualAmount(item);
-  };
-
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       {showSettings ? (
@@ -108,7 +94,7 @@ export function PLTracker({
             updateManualActualAmount={updateManualActualAmount}
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
-            getActualAmount={calculateActualAmount}
+            getActualAmount={getActualAmount}
             calculateProRatedBudget={(item) => calculateProRatedBudget(item, daysInMonth, dayOfMonth)}
             currentMonthName={currentMonthName}
             currentYear={currentYear}

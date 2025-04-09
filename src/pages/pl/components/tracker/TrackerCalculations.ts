@@ -102,6 +102,15 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     budget_amount: item.budget_amount
   });
   
+  // Handle Pro-Rated items first - this is the fix to show pro-rated actuals
+  if (item.tracking_type === 'Pro-Rated') {
+    // For Pro-Rated items, we want to show a pro-rated amount regardless
+    // This effectively duplicates the pro-rated budget calculation
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    const dayOfMonth = new Date().getDate();
+    return (item.budget_amount / daysInMonth) * dayOfMonth;
+  }
+  
   // Check if item is a summary or special item with preloaded actual_amount
   if (item.name.toLowerCase().includes('turnover') || 
       item.name.toLowerCase().includes('revenue') ||
@@ -127,7 +136,6 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return Number(item.manually_entered_actual) || Number(item.actual_amount) || 0;
   }
   
-  // Pro-rated items should use pro-rated actual calculation
   return Number(item.actual_amount) || 0;
 }
 
