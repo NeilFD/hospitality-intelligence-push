@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -104,68 +103,40 @@ const WeeklyInput = () => {
 
   return <div className="p-4 md:p-8">
       <Card className="border shadow-md">
-        <CardHeader className="bg-gray-50 border-b pb-4 -mt-8">
+        <CardHeader className="bg-gray-50 border-b pb-4">
           <CardTitle className="text-2xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        
+        <div className="pt-4 pb-2 px-4 bg-white border-b">
           <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
-            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50 py-3 -mt-16 mb-6">
-              {records.map(day => <TabsTrigger key={day.date} value={day.date} className={`
-                    relative 
-                    group 
-                    data-[state=active]:text-tavern-green 
-                    transition-colors 
-                    duration-200 
-                    hover:bg-gray-100
-                    flex 
-                    flex-col 
-                    items-center 
-                    justify-center
-                    py-2
-                    -mb-1
-                  `}>
-                  <div className="text-center relative z-10 w-full">
-                    <div className="font-medium text-xs opacity-70 group-data-[state=active]:opacity-100 mb-1">
-                      {format(new Date(day.date), 'EEE')}
-                    </div>
-                    <div className="text-xl font-semibold relative inline-block">
-                      <span className={`
-                        px-3
-                        py-1
-                        rounded-md 
-                        inline-block
-                        min-w-[48px]
-                        text-center
-                        bg-gray-100
-                        group-data-[state=active]:bg-tavern-green/10
-                        group-data-[state=active]:text-tavern-green
-                      `}>
-                        {format(new Date(day.date), 'd')}
-                      </span>
-                      <span className="
-                          absolute 
-                          bottom-0 
-                          left-1/2 
-                          transform 
-                          -translate-x-1/2 
-                          w-8 
-                          h-1 
-                          bg-tavern-green 
-                          opacity-0 
-                          group-data-[state=active]:opacity-100 
-                          transition-opacity 
-                          duration-200
-                        " />
-                    </div>
-                  </div>
-                </TabsTrigger>)}
+            <TabsList className="grid grid-cols-7 rounded-md bg-gray-50 p-1">
+              {records.map(day => (
+                <TabsTrigger 
+                  key={day.date} 
+                  value={day.date} 
+                  className="flex flex-col items-center justify-center py-2 gap-1 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                >
+                  <span className="text-xs opacity-70">{format(new Date(day.date), 'EEE')}</span>
+                  <span className="text-lg font-semibold">{format(new Date(day.date), 'd')}</span>
+                </TabsTrigger>
+              ))}
             </TabsList>
             
-            {records.map(day => <TabsContent key={day.date} value={day.date} className="p-4 bg-gray-100">
-                <DailyRecordForm key={day.date} date={day.date} dayOfWeek={day.dayOfWeek} initialData={day} onSave={handleSaveDailyRecord} />
-              </TabsContent>)}
+            <div className="mt-4">
+              {records.map(day => (
+                <TabsContent key={day.date} value={day.date} className="p-1 bg-gray-100 rounded-md">
+                  <DailyRecordForm 
+                    key={day.date} 
+                    date={day.date} 
+                    dayOfWeek={day.dayOfWeek} 
+                    initialData={day} 
+                    onSave={handleSaveDailyRecord} 
+                  />
+                </TabsContent>
+              ))}
+            </div>
           </Tabs>
-        </CardContent>
+        </div>
       </Card>
     </div>;
 };
