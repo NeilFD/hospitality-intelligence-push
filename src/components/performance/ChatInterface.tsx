@@ -87,6 +87,11 @@ const ensureDate = (dateInput: any): Date => {
 const extractAIResponse = (response: any): string => {
   console.log('Raw webhook response:', response);
   
+  // Check if response is an array with a single object containing a 'response' key
+  if (Array.isArray(response) && response.length > 0 && response[0].response) {
+    return response[0].response.trim();
+  }
+  
   let responseText = "";
   
   if (response?.data?.json?.body) {
