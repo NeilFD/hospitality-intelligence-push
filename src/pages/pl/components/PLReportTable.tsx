@@ -90,12 +90,10 @@ export function PLReportTable({
             {formatCurrency(item.budget_amount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
-            <div className="flex items-center justify-end whitespace-nowrap">
-              <span>{formatCurrency(item.actual_amount)}</span>
-              {percentageDisplay && (
-                <span className="text-gray-500 ml-1 mr-2">({percentageDisplay})</span>
-              )}
-            </div>
+            {formatCurrency(item.actual_amount)}
+          </TableCell>
+          <TableCell className={`text-right ${fontClass}`}>
+            {percentageDisplay ? percentageDisplay : ""}
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
             {formatCurrency(item.forecast_amount || item.budget_amount)}
@@ -128,6 +126,7 @@ export function PLReportTable({
               <TableHead className="w-[240px]">Item</TableHead>
               <TableHead className="text-right">Budget</TableHead>
               <TableHead className="text-right">Actual MTD</TableHead>
+              <TableHead className="text-right">%</TableHead>
               <TableHead className="text-right">Forecast</TableHead>
               <TableHead className="text-right">Variance</TableHead>
             </TableRow>
@@ -146,6 +145,9 @@ export function PLReportTable({
                     </TableCell>
                     <TableCell className="text-right">
                       <Skeleton className="h-4 w-[80px] ml-auto" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-4 w-[40px] ml-auto" />
                     </TableCell>
                     <TableCell className="text-right">
                       <Skeleton className="h-4 w-[80px] ml-auto" />
