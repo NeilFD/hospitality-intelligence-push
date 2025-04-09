@@ -45,6 +45,23 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
     defaultValues
   });
 
+  // Calculate derived values
+  const totalRevenue = useMemo(() => {
+    const foodRev = form.watch('foodRevenue') || 0;
+    const bevRev = form.watch('beverageRevenue') || 0;
+    return foodRev + bevRev;
+  }, [form.watch('foodRevenue'), form.watch('beverageRevenue')]);
+
+  const totalCovers = useMemo(() => {
+    const lunch = form.watch('lunchCovers') || 0;
+    const dinner = form.watch('dinnerCovers') || 0;
+    return lunch + dinner;
+  }, [form.watch('lunchCovers'), form.watch('dinnerCovers')]);
+
+  const averageCoverSpend = useMemo(() => {
+    return totalCovers > 0 ? totalRevenue / totalCovers : 0;
+  }, [totalRevenue, totalCovers]);
+
   const handleWeatherFetched = useCallback((weatherData: {
     description: string;
     temperature: number;
@@ -164,6 +181,22 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Display calculated values */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded-md">
+              <div>
+                <span className="text-xs font-medium block text-gray-600">Total Revenue (£)</span>
+                <span className="text-base font-semibold">{totalRevenue.toFixed(2)}</span>
+              </div>
+              <div>
+                <span className="text-xs font-medium block text-gray-600">Total Covers</span>
+                <span className="text-base font-semibold">{totalCovers}</span>
+              </div>
+              <div>
+                <span className="text-xs font-medium block text-gray-600">Average Spend/Cover (£)</span>
+                <span className="text-base font-semibold">{averageCoverSpend.toFixed(2)}</span>
+              </div>
             </div>
             
             <WeatherFetcher 
