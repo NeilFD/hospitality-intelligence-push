@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +18,7 @@ const WeeklyInput = () => {
     week: string;
   }>();
   
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [activeDay, setActiveDay] = useState<string>('');
@@ -35,6 +36,8 @@ const WeeklyInput = () => {
   const loadRecords = useCallback(async () => {
     setLoading(true);
     try {
+      console.log(`Loading master records for: Year=${year}, Month=${month}, Week=${weekNumber}`);
+      
       const fetchedRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
       if (weekNumber <= weekDates.length) {
         const {
@@ -105,7 +108,8 @@ const WeeklyInput = () => {
       </div>;
   }
 
-  return <div className="p-2 md:p-4">
+  return (
+    <div className="p-2 md:p-4">
       <Card className="border shadow-sm">
         <CardHeader className="bg-gray-50 border-b py-2 px-4">
           <CardTitle className="text-lg md:text-xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
@@ -164,7 +168,8 @@ const WeeklyInput = () => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
 
 export default WeeklyInput;

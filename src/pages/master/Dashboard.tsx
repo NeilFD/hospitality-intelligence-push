@@ -33,7 +33,7 @@ const MasterDashboard = () => {
     setSelectedDate(new Date());
   };
   
-  // Fix the week navigation function to use the correct path format
+  // Navigate to week page
   const goToWeek = (year: number, month: number, weekNumber: number) => {
     navigate(`/master/week/${year}/${month}/${weekNumber}`);
   };
@@ -49,6 +49,7 @@ const MasterDashboard = () => {
 
   // Check if current date is in the displayed month
   const isCurrentMonth = new Date().getMonth() === selectedDate.getMonth() && new Date().getFullYear() === selectedDate.getFullYear();
+  
   return <div className="p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
@@ -151,6 +152,7 @@ const MasterDashboard = () => {
       })}
       </div>
       
+      {/* Monthly summaries section */}
       <div className="mt-8 mb-2 flex justify-between items-center">
         <h2 className="text-xl font-semibold text-slate-900">Monthly Summaries</h2>
         <div className="flex space-x-2">
