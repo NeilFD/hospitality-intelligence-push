@@ -103,7 +103,7 @@ const MasterDashboard = () => {
         </CardContent>
       </Card>
 
-      <h2 className="text-xl font-semibold mb-4">Weeks in {format(selectedDate, 'MMMM yyyy')}</h2>
+      <h2 className="text-xl font-semibold mb-4 text-slate-900">Weeks in {format(selectedDate, 'MMMM yyyy')}</h2>
       
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {weeks.map((week, index) => {
