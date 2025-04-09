@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -157,9 +158,13 @@ export function PLReportTable({
         ? "font-bold" 
         : "";
       
+      const boldTitleClass = (shouldHighlight && item.name.toLowerCase().includes("cost of sales")) 
+        ? "font-bold" 
+        : "";
+      
       return (
         <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
-          <TableCell className={`${fontClass}`}>{item.name}</TableCell>
+          <TableCell className={`${fontClass} ${boldTitleClass}`}>{item.name}</TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(item.budget_amount)}
           </TableCell>
