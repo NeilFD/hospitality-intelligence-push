@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
@@ -19,6 +19,7 @@ import WagesDashboard from '@/pages/wages/WagesDashboard';
 import NotFound from '@/pages/NotFound';
 import Index from '@/pages/Index';
 import RequireAuth from '@/components/auth/RequireAuth';
+import { ensureMasterModuleExists } from '@/lib/store';
 
 // Food pages
 import FoodDashboard from '@/pages/food/Dashboard';
@@ -45,6 +46,10 @@ import MasterWeeklyInput from '@/pages/master/WeeklyInput';
 // Import React Query dependencies
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+// Create a client
+const queryClient = new QueryClient();
+
+// Router configuration with explicit paths
 const router = createBrowserRouter([
   {
     path: "/",
@@ -106,7 +111,7 @@ const router = createBrowserRouter([
         path: "/pl/dashboard",
         element: <PLDashboard />
       },
-      // Master Records module routes
+      // Master Records module routes (Daily Info)
       {
         path: "/master/dashboard",
         element: <MasterDashboard />
@@ -153,10 +158,13 @@ const router = createBrowserRouter([
   },
 ]);
 
-// Create a client
-const queryClient = new QueryClient();
-
 function App() {
+  // Ensure the master module exists in the store
+  useEffect(() => {
+    ensureMasterModuleExists();
+    console.log("App initialized - ensured master module exists");
+  }, []);
+
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>

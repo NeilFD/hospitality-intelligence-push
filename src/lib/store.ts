@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -23,14 +24,14 @@ const initialSuppliers: Supplier[] = [
   { id: '5', name: 'Local Farm Co-op' },
 ];
 
-// Default modules
+// Default modules - ensure master module is always included
 const defaultModules: Module[] = [
-  { id: '1', type: 'pl', name: 'P&L Tracker', enabled: true, displayOrder: 1 },
-  { id: '2', type: 'wages', name: 'Wages Tracker', enabled: true, displayOrder: 2 },
-  { id: '3', type: 'food', name: 'Food Tracker', enabled: true, displayOrder: 3 },
-  { id: '4', type: 'beverage', name: 'Beverage Tracker', enabled: true, displayOrder: 4 },
-  { id: '5', type: 'performance', name: 'Performance and Analysis', enabled: true, displayOrder: 5 },
-  { id: '6', type: 'master', name: 'Master Records', enabled: true, displayOrder: 0 }
+  { id: 'master', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 0 },
+  { id: 'pl', type: 'pl', name: 'P&L Tracker', enabled: true, displayOrder: 1 },
+  { id: 'wages', type: 'wages', name: 'Wages Tracker', enabled: true, displayOrder: 2 },
+  { id: 'food', type: 'food', name: 'Food Tracker', enabled: true, displayOrder: 3 },
+  { id: 'beverage', type: 'beverage', name: 'Beverage Tracker', enabled: true, displayOrder: 4 },
+  { id: 'performance', type: 'performance', name: 'Performance and Analysis', enabled: true, displayOrder: 5 }
 ];
 
 // Create initial month record with empty weeks
@@ -64,11 +65,37 @@ const createInitialState = (): AppState => {
   };
 };
 
+// Initialize store with persistence
 export const useStore = create<AppState>()(
   persist(
     () => createInitialState(),
     {
       name: 'tavern-kitchen-ledger',
+      onRehydrateStorage: () => (state) => {
+        // Ensure all required modules exist on rehydration
+        if (state) {
+          const moduleTypes: ModuleType[] = ['master', 'pl', 'wages', 'food', 'beverage', 'performance'];
+          
+          // Check if any required modules are missing and add them
+          const updatedModules = [...state.modules];
+          let hasChanges = false;
+          
+          moduleTypes.forEach((moduleType) => {
+            if (!updatedModules.some(m => m.type === moduleType)) {
+              const missingModule = defaultModules.find(m => m.type === moduleType);
+              if (missingModule) {
+                updatedModules.push(missingModule);
+                hasChanges = true;
+              }
+            }
+          });
+          
+          if (hasChanges) {
+            state.modules = updatedModules;
+          }
+        }
+        console.log("Store rehydrated with modules:", state?.modules);
+      }
     }
   )
 );
@@ -124,3 +151,22 @@ export const useWeekRecord = (year: number, month: number, weekNumber: number) =
     return monthRecord.weeks.find(w => w.weekNumber === weekNumber) || null;
   });
 };
+
+// Add a utility function to ensure the master module is present
+export const ensureMasterModuleExists = () => {
+  useStore.setState(state => {
+    // Check if master module exists
+    if (!state.modules.some(m => m.type === 'master')) {
+      // Add the master module if it doesn't exist
+      return {
+        ...state,
+        modules: [
+          { id: 'master', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 0 },
+          ...state.modules
+        ]
+      };
+    }
+    return state;
+  });
+};
+

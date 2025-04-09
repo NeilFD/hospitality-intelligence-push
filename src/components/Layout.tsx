@@ -13,9 +13,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ModuleType } from "@/types/kitchen-ledger";
 import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
+
 interface LayoutProps {
   children: ReactNode;
 }
+
 const Layout = ({
   children
 }: LayoutProps) => {
@@ -36,23 +38,33 @@ const Layout = ({
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
+  
+  useEffect(() => {
+    console.log("Available modules:", modules);
+    console.log("Current module:", currentModule);
+  }, [modules, currentModule]);
+  
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
+  
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
+  
   const handleLogout = async () => {
     await logout();
     toast.success('You have been logged out');
     navigate('/login');
   };
+  
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
+  
   const getModuleIcon = (type: ModuleType) => {
     switch (type) {
       case 'food':
@@ -65,10 +77,13 @@ const Layout = ({
         return <Clock className="mr-2 h-4 w-4" />;
       case 'performance':
         return <BarChart className="mr-2 h-4 w-4" />;
+      case 'master':
+        return <Calendar className="mr-2 h-4 w-4" />;
       default:
         return <ChartBar className="mr-2 h-4 w-4" />;
     }
   };
+  
   const getModuleNavItems = useMemo(() => {
     switch (currentModule) {
       case 'food':
@@ -109,80 +124,261 @@ const Layout = ({
           path: "/performance/dashboard",
           icon: <Home className="mr-2 h-4 w-4" />
         }];
+      case 'master':
+        return [{
+          name: "Daily Info Dashboard",
+          path: "/master/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }];
       default:
         return [];
     }
   }, [currentModule, currentYear, currentMonth]);
+  
   const moduleNavItems = useMemo(() => {
-    return sortedModules.map(module => ({
+    const modulesList = [...sortedModules];
+    
+    if (!modulesList.some(mod => mod.type === 'master')) {
+      modulesList.push({
+        id: 'master-module',
+        type: 'master',
+        name: 'Daily Info',
+        enabled: true,
+        displayOrder: 0
+      });
+    }
+    
+    return modulesList.map(module => ({
       name: module.type === 'master' ? 'Daily Info' : module.name,
       path: `/${module.type}/dashboard`,
       icon: getModuleIcon(module.type),
       type: module.type
     }));
   }, [sortedModules]);
+  
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
+    console.log(`Setting current module to: ${moduleType}`);
   };
+  
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   if (isAuthPage) {
     return <>{children}</>;
   }
-  const Sidebar = <div className="h-full flex flex-col bg-[#48495E]">
+  
+  const Sidebar = (
+    <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="md" className="mb-3" />
-        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Pub Tracker</p>}
+        <p className="text-tavern-blue-light text-sm mt-1">Pub Tracker</p>
       </div>
       <Separator className="bg-tavern-blue-light/20" />
       
       <div className="p-2 my-2">
-        <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
-              Modules
-            </p>}
+        <div className="px-3 py-1 mb-2">
+          <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+            Modules
+          </p>
         </div>
         
-        <nav className="space-y-1">
-          {moduleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? "bg-white text-[#48495E] font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined} onClick={() => handleModuleSelect(item.type as ModuleType)}>
-              <div className={sidebarCollapsed ? "mx-auto" : ""}>
-                {item.icon}
-              </div>
-              {!sidebarCollapsed && <span>{item.name}</span>}
-            </Link>)}
-        </nav>
+        <ModuleNavigation />
       </div>
       
       <Separator className="bg-tavern-blue-light/20" />
       
       <div className="flex-1 p-2">
-        <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
-              {sortedModules.find(m => m.type === currentModule)?.name || 'Navigation'}
-            </p>}
+        <div className="px-3 py-1 mb-2">
+          <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+            Navigation
+          </p>
         </div>
         
-        <nav className="space-y-1">
-          {getModuleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? "bg-tavern-blue-dark text-white font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined}>
-              <div className={sidebarCollapsed ? "mx-auto" : ""}>
-                {item.icon}
-              </div>
-              {!sidebarCollapsed && <span>{item.name}</span>}
-            </Link>)}
-        </nav>
+        <ModuleSubNavigation />
       </div>
       
       <div className="p-4">
-        {!sidebarCollapsed && <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>}
+        <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>
       </div>
-    </div>;
-  const ProfileAvatar = () => <div className="flex flex-col items-center">
-      <Avatar className="h-9 w-9 bg-tavern-blue text-white">
-        {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
-      </Avatar>
-      {profile && <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
-          {profile.first_name || 'User'}
-        </span>}
-    </div>;
+    </div>
+  );
+
+  const ProfileAvatar = () => {
+    const { profile } = useAuthStore();
+    
+    const getUserInitials = () => {
+      if (!profile) return '?';
+      const firstName = profile.first_name || '';
+      const lastName = profile.last_name || '';
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    };
+    
+    return (
+      <div className="flex flex-col items-center">
+        <Avatar className="h-9 w-9 bg-tavern-blue text-white">
+          {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
+        </Avatar>
+        {profile && <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
+            {profile.first_name || 'User'}
+          </span>}
+      </div>
+    );
+  };
+
+  const ModuleNavigation = () => {
+    const location = useLocation();
+    const modules = useModules();
+    const currentModule = useCurrentModule();
+    const setCurrentModule = useSetCurrentModule();
+    const isSidebarCollapsed = false;
+    
+    const sortedModules = useMemo(() => {
+      const modulesList = [...modules];
+      
+      if (!modulesList.some(mod => mod.type === 'master')) {
+        modulesList.push({
+          id: 'master-module',
+          type: 'master',
+          name: 'Daily Info',
+          enabled: true,
+          displayOrder: 0
+        });
+      }
+      
+      return modulesList.sort((a, b) => a.displayOrder - b.displayOrder);
+    }, [modules]);
+    
+    const getModuleIcon = (type: ModuleType) => {
+      switch (type) {
+        case 'food':
+          return <Sandwich className="mr-2 h-4 w-4" />;
+        case 'beverage':
+          return <Wine className="mr-2 h-4 w-4" />;
+        case 'pl':
+          return <span className="mr-2 h-4 w-4 text-lg font-bold">£</span>;
+        case 'wages':
+          return <Clock className="mr-2 h-4 w-4" />;
+        case 'performance':
+          return <BarChart className="mr-2 h-4 w-4" />;
+        case 'master':
+          return <Calendar className="mr-2 h-4 w-4" />;
+        default:
+          return <ChartBar className="mr-2 h-4 w-4" />;
+      }
+    };
+    
+    const handleModuleSelect = (moduleType: ModuleType) => {
+      setCurrentModule(moduleType);
+      console.log(`Setting current module to: ${moduleType}`);
+    };
+    
+    return (
+      <nav className="space-y-1">
+        {sortedModules.map(item => (
+          <Link 
+            key={item.type} 
+            to={`/${item.type}/dashboard`} 
+            className={cn(
+              "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+              currentModule === item.type 
+                ? "bg-white text-[#48495E] font-medium" 
+                : "text-white hover:bg-white/10"
+            )}
+            title={isSidebarCollapsed ? (item.type === 'master' ? 'Daily Info' : item.name) : undefined}
+            onClick={() => handleModuleSelect(item.type)}
+          >
+            <div className={isSidebarCollapsed ? "mx-auto" : ""}>
+              {getModuleIcon(item.type)}
+            </div>
+            {!isSidebarCollapsed && <span>{item.type === 'master' ? 'Daily Info' : item.name}</span>}
+          </Link>
+        ))}
+      </nav>
+    );
+  };
+
+  const ModuleSubNavigation = () => {
+    const location = useLocation();
+    const currentModule = useCurrentModule();
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    const isSidebarCollapsed = false;
+    
+    const getModuleNavItems = useMemo(() => {
+      switch (currentModule) {
+        case 'food':
+        case 'beverage':
+          const prefix = currentModule === 'food' ? 'Food' : 'Beverage';
+          return [{
+            name: `${prefix} Dashboard`,
+            path: `/${currentModule}/dashboard`,
+            icon: <Home className="mr-2 h-4 w-4" />
+          }, {
+            name: `${prefix} Input Settings`,
+            path: `/${currentModule}/input-settings`,
+            icon: <Settings className="mr-2 h-4 w-4" />
+          }, {
+            name: `${prefix} Month Summary`,
+            path: `/${currentModule}/month/${currentYear}/${currentMonth}`,
+            icon: <Calendar className="mr-2 h-4 w-4" />
+          }, {
+            name: `${prefix} Annual Summary`,
+            path: `/${currentModule}/annual-summary`,
+            icon: <ChartBar className="mr-2 h-4 w-4" />
+          }];
+        case 'pl':
+          return [{
+            name: "P&L Dashboard",
+            path: "/pl/dashboard",
+            icon: <Home className="mr-2 h-4 w-4" />
+          }];
+        case 'wages':
+          return [{
+            name: "Wages Dashboard",
+            path: "/wages/dashboard",
+            icon: <Home className="mr-2 h-4 w-4" />
+          }];
+        case 'performance':
+          return [{
+            name: "Performance Dashboard",
+            path: "/performance/dashboard",
+            icon: <Home className="mr-2 h-4 w-4" />
+          }];
+        case 'master':
+          return [{
+            name: "Daily Info Dashboard",
+            path: "/master/dashboard",
+            icon: <Home className="mr-2 h-4 w-4" />
+          }];
+        default:
+          return [];
+      }
+    }, [currentModule, currentYear, currentMonth]);
+    
+    return (
+      <nav className="space-y-1">
+        {getModuleNavItems.map(item => (
+          <Link 
+            key={item.path} 
+            to={item.path} 
+            className={cn(
+              "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+              location.pathname === item.path 
+                ? "bg-tavern-blue-dark text-white font-medium" 
+                : "text-white hover:bg-white/10"
+            )}
+            title={isSidebarCollapsed ? item.name : undefined}
+          >
+            <div className={isSidebarCollapsed ? "mx-auto" : ""}>
+              {item.icon}
+            </div>
+            {!isSidebarCollapsed && <span>{item.name}</span>}
+          </Link>
+        ))}
+      </nav>
+    );
+  };
+
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -279,4 +475,5 @@ const Layout = ({
         </>}
     </div>;
 };
+
 export default Layout;
