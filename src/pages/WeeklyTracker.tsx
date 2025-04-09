@@ -4,8 +4,11 @@ import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus, Save, Trash2 } from 'lucide-react';
 import { ModuleType } from '@/types/kitchen-ledger';
-import { fetchTrackerDataByWeek, fetchSuppliers, fetchTrackerPurchases, fetchTrackerCreditNotes } from '@/services/kitchen-service';
+import { fetchTrackerDataByWeek, fetchSuppliers, fetchTrackerPurchases, fetchTrackerCreditNotes, upsertTrackerData, upsertTrackerPurchase, upsertTrackerCreditNote } from '@/services/kitchen-service';
 import { toast } from 'sonner';
 
 interface TrackerData {
@@ -31,6 +34,7 @@ interface WeeklyTrackerProps {
 const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerProps) => {
   const params = useParams<{ year: string; month: string; week: string }>();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [trackerData, setTrackerData] = useState<TrackerData[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   
@@ -120,6 +124,123 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
     return (calculateGrossProfit(day) / day.revenue) * 100;
   };
 
+  // Handle input changes
+  const handleRevenueChange = (dayId: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setTrackerData(prev => prev.map(day => 
+      day.id === dayId ? { ...day, revenue: numValue } : day
+    ));
+  };
+
+  const handlePurchaseChange = (dayId: string, supplierId: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setTrackerData(prev => prev.map(day => {
+      if (day.id === dayId) {
+        return {
+          ...day,
+          purchases: {
+            ...day.purchases,
+            [supplierId]: numValue
+          }
+        };
+      }
+      return day;
+    }));
+  };
+
+  const handleCreditNoteChange = (dayId: string, index: number, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setTrackerData(prev => prev.map(day => {
+      if (day.id === dayId) {
+        const updatedCreditNotes = [...day.creditNotes];
+        updatedCreditNotes[index] = numValue;
+        return {
+          ...day,
+          creditNotes: updatedCreditNotes
+        };
+      }
+      return day;
+    }));
+  };
+
+  const handleStaffFoodChange = (dayId: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setTrackerData(prev => prev.map(day => 
+      day.id === dayId ? { ...day, staffFoodAllowance: numValue } : day
+    ));
+  };
+
+  const handleAddCreditNote = (dayId: string) => {
+    setTrackerData(prev => prev.map(day => {
+      if (day.id === dayId) {
+        return {
+          ...day,
+          creditNotes: [...day.creditNotes, 0]
+        };
+      }
+      return day;
+    }));
+  };
+
+  const handleRemoveCreditNote = (dayId: string, index: number) => {
+    setTrackerData(prev => prev.map(day => {
+      if (day.id === dayId) {
+        const updatedCreditNotes = [...day.creditNotes];
+        updatedCreditNotes.splice(index, 1);
+        return {
+          ...day,
+          creditNotes: updatedCreditNotes
+        };
+      }
+      return day;
+    }));
+  };
+
+  const saveTrackerData = async () => {
+    setSaving(true);
+    try {
+      for (const day of trackerData) {
+        // Update tracker data
+        await upsertTrackerData({
+          id: day.id,
+          year,
+          month,
+          week_number: weekNumber,
+          date: day.date,
+          day_of_week: day.dayOfWeek,
+          module_type: moduleType,
+          revenue: day.revenue,
+          staff_food_allowance: day.staffFoodAllowance
+        });
+        
+        // Update purchases
+        for (const [supplierId, amount] of Object.entries(day.purchases)) {
+          await upsertTrackerPurchase({
+            tracker_data_id: day.id,
+            supplier_id: supplierId,
+            amount
+          });
+        }
+        
+        // Update credit notes
+        for (let i = 0; i < day.creditNotes.length; i++) {
+          await upsertTrackerCreditNote({
+            tracker_data_id: day.id,
+            credit_index: i,
+            amount: day.creditNotes[i]
+          });
+        }
+      }
+      
+      toast.success(`${modulePrefix} tracker data saved successfully`);
+    } catch (error) {
+      console.error(`Error saving ${moduleType} tracker data:`, error);
+      toast.error(`Failed to save ${moduleType} tracker data`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -132,8 +253,16 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
   return (
     <div className="p-4 md:p-8">
       <Card className="border shadow-sm">
-        <CardHeader className="bg-gray-50 border-b pb-4">
+        <CardHeader className="bg-gray-50 border-b pb-4 flex flex-row items-center justify-between">
           <CardTitle className="text-xl">{modulePrefix} Weekly Tracker - Week {weekNumber}, {month}/{year}</CardTitle>
+          <Button 
+            onClick={saveTrackerData} 
+            disabled={saving}
+            className="flex items-center gap-2"
+          >
+            <Save size={16} />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </CardHeader>
         <CardContent className="p-6">
           {trackerData.length > 0 ? (
@@ -149,55 +278,88 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                     </CardHeader>
                     <CardContent className="py-3 px-4">
                       <div className="space-y-3">
-                        <div className="flex justify-between font-medium">
+                        <div className="flex justify-between font-medium items-center">
                           <span className="text-sm">Revenue:</span>
-                          <span>£{day.revenue.toFixed(2)}</span>
+                          <Input 
+                            type="number" 
+                            value={day.revenue} 
+                            onChange={(e) => handleRevenueChange(day.id, e.target.value)} 
+                            className="max-w-[120px] h-8 text-right"
+                          />
                         </div>
                         
                         {/* Purchases by supplier */}
-                        {Object.keys(day.purchases).length > 0 && (
-                          <div className="space-y-1">
-                            <h4 className="text-xs font-medium text-gray-500">Purchases:</h4>
-                            {Object.entries(day.purchases).map(([supplierId, amount]) => {
-                              const supplier = suppliers.find(s => s.id === supplierId);
-                              return (
-                                <div key={supplierId} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{supplier?.name || 'Unknown'}:</span>
-                                  <span>£{amount.toFixed(2)}</span>
-                                </div>
-                              );
-                            })}
-                            <div className="flex justify-between text-sm font-medium pt-1 border-t border-gray-100">
-                              <span>Total Purchases:</span>
-                              <span>£{calculateTotalPurchases(day).toFixed(2)}</span>
+                        <div className="space-y-1">
+                          <h4 className="text-xs font-medium text-gray-500">Purchases:</h4>
+                          {suppliers.map(supplier => (
+                            <div key={supplier.id} className="flex justify-between text-sm items-center">
+                              <span className="text-gray-600">{supplier.name}:</span>
+                              <Input 
+                                type="number" 
+                                value={day.purchases[supplier.id] || 0}
+                                onChange={(e) => handlePurchaseChange(day.id, supplier.id, e.target.value)} 
+                                className="max-w-[120px] h-8 text-right"
+                              />
                             </div>
+                          ))}
+                          <div className="flex justify-between text-sm font-medium pt-1 border-t border-gray-100">
+                            <span>Total Purchases:</span>
+                            <span>£{calculateTotalPurchases(day).toFixed(2)}</span>
                           </div>
-                        )}
+                        </div>
                         
                         {/* Credit Notes */}
-                        {day.creditNotes.length > 0 && (
-                          <div className="space-y-1">
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center">
                             <h4 className="text-xs font-medium text-gray-500">Credit Notes:</h4>
-                            {day.creditNotes.map((amount, index) => (
-                              <div key={index} className="flex justify-between text-sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-6 w-6 p-0" 
+                              onClick={() => handleAddCreditNote(day.id)}
+                            >
+                              <Plus size={14} />
+                            </Button>
+                          </div>
+                          {day.creditNotes.map((amount, index) => (
+                            <div key={index} className="flex justify-between text-sm items-center">
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-600" 
+                                  onClick={() => handleRemoveCreditNote(day.id, index)}
+                                >
+                                  <Trash2 size={14} />
+                                </Button>
                                 <span className="text-gray-600">Credit Note {index + 1}:</span>
-                                <span>£{amount.toFixed(2)}</span>
                               </div>
-                            ))}
+                              <Input 
+                                type="number" 
+                                value={amount}
+                                onChange={(e) => handleCreditNoteChange(day.id, index, e.target.value)} 
+                                className="max-w-[120px] h-8 text-right"
+                              />
+                            </div>
+                          ))}
+                          {day.creditNotes.length > 0 && (
                             <div className="flex justify-between text-sm font-medium pt-1 border-t border-gray-100">
                               <span>Total Credits:</span>
                               <span>£{calculateTotalCreditNotes(day).toFixed(2)}</span>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                         
                         {/* Staff Food Allowance */}
-                        {day.staffFoodAllowance > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Staff Food:</span>
-                            <span>£{day.staffFoodAllowance.toFixed(2)}</span>
-                          </div>
-                        )}
+                        <div className="flex justify-between text-sm items-center">
+                          <span className="text-gray-600">Staff Food:</span>
+                          <Input 
+                            type="number" 
+                            value={day.staffFoodAllowance}
+                            onChange={(e) => handleStaffFoodChange(day.id, e.target.value)} 
+                            className="max-w-[120px] h-8 text-right"
+                          />
+                        </div>
                         
                         {/* Net Cost */}
                         <div className="flex justify-between text-sm font-medium border-t border-gray-200 pt-2">
