@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { History, AlertTriangle, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
