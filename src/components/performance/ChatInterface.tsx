@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,16 +91,26 @@ const extractAIResponse = (response: any): string => {
   if (Array.isArray(response) && response.length > 0 && response[0].response) {
     let responseText = response[0].response.trim();
     
+    // Clean up the response text
     responseText = responseText
-      .replace(/\n{2,}/g, '\n')
-      .replace(/^\s+|\s+$/g, '')
-      .replace(/\n\s+/g, '\n')
-      .replace(/\\n/g, '\n')
-      .replace(/\\[\[\]\(\)]/g, '')
-      .replace(/\\\[|\\\]/g, '')
-      .replace(/\\text\{([^}]+)\}/g, '$1')
-      .replace(/\\approx/g, '≈')
-      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');
+      .replace(/\n{2,}/g, '\n\n')   // Replace multiple newlines with double newlines
+      .replace(/^\s+|\s+$/g, '')    // Trim leading/trailing whitespace
+      .replace(/\n\s+/g, '\n')      // Remove space at start of lines
+      .replace(/\\n/g, '\n')        // Replace literal \n with actual newlines
+      .replace(/\\[\[\]\(\)]/g, '') // Remove escaped brackets
+      .replace(/\\\[|\\\]/g, '')    // Remove escaped brackets another way
+      .replace(/\\text\{([^}]+)\}/g, '$1') // Replace \text{content} with content
+      .replace(/\\approx/g, '≈')    // Replace \approx with ≈
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2'); // Replace fractions
+      
+    // Format numbered lists - ensure each number starts on a new line
+    responseText = responseText.replace(/(\d+\.\s*[^\n]+)/g, '\n$1\n');
+    
+    // Format paragraphs better
+    responseText = responseText
+      .replace(/([.!?])\s+(?=[A-Z])/g, '$1\n\n') // Add paragraph breaks at sentences ending with capital letter starts
+      .replace(/\n{3,}/g, '\n\n')   // Normalize multiple newlines to just double newlines
+      .trim();                       // Final trim
     
     return responseText;
   }
@@ -136,18 +147,30 @@ const extractAIResponse = (response: any): string => {
     responseText = JSON.stringify(jsonObj, null, 2);
     return responseText;
   } catch (e) {
+    // For non-JSON responses, format text for better readability
     let formattedText = responseText
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/\.\s+/g, '.\n\n')
-      .replace(/([.!?])\s*(?=[A-Z])/g, '$1\n\n')
-      .replace(/([.!?])\n{3,}/g, '$1\n\n')
+      .replace(/\n{3,}/g, '\n\n')           // Normalize multiple newlines
+      .replace(/\.\s+/g, '.\n\n')           // Add paragraph breaks after periods
+      .replace(/([.!?])\s*(?=[A-Z])/g, '$1\n\n') // Add paragraph breaks at sentences ending with capital letter starts
+      .replace(/([.!?])\n{3,}/g, '$1\n\n')  // Normalize multiple newlines after punctuation
       .trim();
       
+    // Format numbered lists - ensure each number starts on a new line
+    formattedText = formattedText.replace(/(\d+\.\s*[^\n]+)/g, '\n$1\n');
+    
+    // Clean up the formatting
     formattedText = formattedText
-      .replace(/\s+([,.!?:;])/g, '$1')
-      .replace(/,{2,}/g, ',')
-      .replace(/\.{2,}/g, '...')
-      .replace(/\s{2,}/g, ' ');
+      .replace(/\s+([,.!?:;])/g, '$1')      // No spaces before punctuation
+      .replace(/,{2,}/g, ',')               // Remove multiple commas
+      .replace(/\.{2,}/g, '...')            // Convert multiple periods to ellipsis
+      .replace(/\s{2,}/g, ' ')              // Normalize multiple spaces
+      .replace(/\n{3,}/g, '\n\n')           // Final normalization of multiple newlines
+      .replace(/\\[\[\]\(\)]/g, '')         // Remove escaped brackets
+      .replace(/\\\[|\\\]/g, '')            // Remove escaped brackets another way
+      .replace(/\\text\{([^}]+)\}/g, '$1')  // Replace \text{content} with content
+      .replace(/\\approx/g, '≈')            // Replace \approx with ≈
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2') // Replace fractions
+      .trim();
       
     return formattedText;
   }
