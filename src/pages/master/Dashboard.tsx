@@ -148,7 +148,7 @@ const MasterDashboard = () => {
       </div>
       
       <div className="mt-8 mb-2 flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Monthly Summaries</h2>
+        <h2 className="text-xl font-semibold text-slate-900">Monthly Summaries</h2>
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="h-8 w-8 p-0">
             <ChevronLeft className="h-4 w-4" />
