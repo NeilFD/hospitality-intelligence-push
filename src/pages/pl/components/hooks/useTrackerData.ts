@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { useToast } from '@/hooks/use-toast';
@@ -52,8 +53,16 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
               // Calculate the total value from daily values
               const totalValue = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
               
-              // Update actual_amount for Discrete tracking items
-              if (trackingType === 'Discrete') {
+              // For non-special items, update the actual amount
+              if (!item.name.toLowerCase().includes('revenue') &&
+                  !item.name.toLowerCase().includes('turnover') &&
+                  !item.name.toLowerCase().includes('cost of sales') &&
+                  !item.name.toLowerCase().includes('cos') &&
+                  !item.name.toLowerCase().includes('gross profit') &&
+                  !item.name.toLowerCase().includes('operating profit') &&
+                  !item.name.toLowerCase().includes('wages') &&
+                  !item.name.toLowerCase().includes('salary') &&
+                  trackingType === 'Discrete') {
                 actualAmount = totalValue;
               }
             }
@@ -102,7 +111,8 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       const updated = [...prev];
       updated[index] = {
         ...updated[index],
-        manually_entered_actual: numValue
+        manually_entered_actual: numValue,
+        actual_amount: numValue // Also update actual_amount for discrete items
       };
       return updated;
     });
@@ -124,8 +134,11 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       // Calculate total from daily values
       const total = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
       
-      // Store total as actual amount if this is a revenue or expense item
-      if (!updated[index].isHeader && !updated[index].isGrossProfit && !updated[index].isOperatingProfit) {
+      // Update actual_amount for discrete items
+      if (updated[index].tracking_type === 'Discrete' &&
+          !updated[index].isHeader &&
+          !updated[index].isGrossProfit &&
+          !updated[index].isOperatingProfit) {
         updated[index].actual_amount = total;
       }
       

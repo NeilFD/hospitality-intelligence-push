@@ -8,7 +8,7 @@ import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
 import { PLTrackerSettings } from './PLTrackerSettings';
-import { calculateProRatedBudget, getActualAmount as getBaseActualAmount } from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -49,55 +49,6 @@ export function PLTracker({
   const filteredBudgetData = trackedBudgetData.filter(item => 
     !(item.isHeader && item.budget_amount === 0)
   );
-  
-  const getActualAmount = (item: PLTrackerBudgetItem) => {
-    // First check if it's a Pro-Rated item, if so return the pro-rated budget value
-    if (item.tracking_type === 'Pro-Rated') {
-      return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
-    }
-    
-    // For revenue, COS, and other special items, check if preloaded actual_amount exists
-    if (item.name.toLowerCase().includes('food revenue') || 
-        item.name.toLowerCase().includes('food sales') ||
-        item.name.toLowerCase().includes('beverage revenue') || 
-        item.name.toLowerCase().includes('beverage sales') || 
-        item.name.toLowerCase().includes('drink sales') ||
-        item.name.toLowerCase().includes('drinks revenue') ||
-        item.name.toLowerCase() === 'turnover' || 
-        item.name.toLowerCase().includes('total revenue') ||
-        item.name.toLowerCase().includes('food cost of sales') ||
-        item.name.toLowerCase().includes('food cos') ||
-        item.name.toLowerCase().includes('beverage cost of sales') ||
-        item.name.toLowerCase().includes('beverage cos') ||
-        item.name.toLowerCase().includes('drinks cost of sales') ||
-        item.name.toLowerCase().includes('drinks cos') ||
-        item.name.toLowerCase().includes('food gross profit') ||
-        item.name.toLowerCase().includes('beverage gross profit') || 
-        item.name.toLowerCase().includes('drinks gross profit') ||
-        item.name.toLowerCase() === 'gross profit' || 
-        item.name.toLowerCase() === 'gross profit/(loss)' ||
-        item.name.toLowerCase().includes('wages and salaries') ||
-        item.name.toLowerCase() === 'wages' ||
-        item.name.toLowerCase() === 'salaries') {
-      return item.actual_amount || 0;
-    }
-    
-    // For Discrete items, use either manual entry or daily values
-    if (item.tracking_type === 'Discrete') {
-      if (item.manually_entered_actual !== undefined) {
-        return item.manually_entered_actual;
-      }
-      
-      if (item.daily_values && item.daily_values.length > 0) {
-        return item.daily_values.reduce((sum, day) => sum + (day.value || 0), 0);
-      }
-      
-      return 0; // No values found
-    }
-    
-    // Default fallback
-    return item.actual_amount || 0;
-  };
   
   const handleOpenSettings = () => {
     setShowSettings(true);
@@ -143,7 +94,7 @@ export function PLTracker({
             updateManualActualAmount={updateManualActualAmount}
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
-            getActualAmount={getActualAmount}
+            getActualAmount={item => getActualAmount(item)}
             calculateProRatedBudget={(item) => calculateProRatedBudget(item, daysInMonth, dayOfMonth)}
             currentMonthName={currentMonthName}
             currentYear={currentYear}

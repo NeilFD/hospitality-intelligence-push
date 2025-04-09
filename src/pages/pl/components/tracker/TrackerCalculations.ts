@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -89,13 +90,33 @@ export function calculateSummaryProRatedBudget(
 }
 
 export function getActualAmount(item: PLTrackerBudgetItem): number {
+  // Check if item is a summary or special item with preloaded actual_amount
+  if (item.name.toLowerCase().includes('turnover') || 
+      item.name.toLowerCase().includes('revenue') ||
+      item.name.toLowerCase().includes('sales') ||
+      item.name.toLowerCase().includes('cost of sales') ||
+      item.name.toLowerCase().includes('cos') ||
+      item.name.toLowerCase() === 'gross profit' ||
+      item.name.toLowerCase() === 'gross profit/(loss)' ||
+      item.name.toLowerCase() === 'operating profit' ||
+      item.name.toLowerCase().includes('wages') ||
+      item.name.toLowerCase().includes('salary') ||
+      item.isGrossProfit ||
+      item.isOperatingProfit) {
+    return Number(item.actual_amount) || 0;
+  }
+  
+  if (item.tracking_type === 'Pro-Rated') {
+    return Number(item.actual_amount) || 0;
+  }
+
   if (item.tracking_type === 'Discrete') {
     if (item.daily_values && item.daily_values.length > 0) {
-      return item.daily_values.reduce((sum, day) => sum + (day.value || 0), 0);
+      return item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
     }
-    return item.manually_entered_actual || 0;
-  } else {
-    // For Pro-Rated items, the actual amount is calculated elsewhere
-    return item.actual_amount || 0;
+    return Number(item.manually_entered_actual) || Number(item.actual_amount) || 0;
   }
+  
+  // Fallback to actual_amount or 0
+  return Number(item.actual_amount) || 0;
 }

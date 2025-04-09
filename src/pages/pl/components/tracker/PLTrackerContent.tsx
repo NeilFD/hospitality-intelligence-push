@@ -75,9 +75,14 @@ export function PLTrackerContent({
            item.name.toLowerCase() === 'salaries';
   };
 
+  const isGrossProfitItem = (item: PLTrackerBudgetItem) => {
+    return item.name.toLowerCase().includes('gross profit');
+  };
+
   // Determine if an item should have read-only actual values
   const isReadOnlyActual = (item: PLTrackerBudgetItem) => {
-    return isRevenueItem(item) || isCOSItem(item) || isWagesItem(item) || item.tracking_type === 'Pro-Rated';
+    return isRevenueItem(item) || isCOSItem(item) || isWagesItem(item) || 
+           isGrossProfitItem(item) || item.tracking_type === 'Pro-Rated';
   };
 
   return (
