@@ -28,6 +28,7 @@ export function PLTracker({
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
   // Convert ProcessedBudgetItem to PLTrackerBudgetItem to ensure tracking_type is defined
+  // The processedBudgetData now already includes the actual revenue values from the master records
   const processedDataWithTrackingType = processedBudgetData.map(item => ({
     ...item,
     tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined

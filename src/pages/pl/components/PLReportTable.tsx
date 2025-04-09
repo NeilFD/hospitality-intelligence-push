@@ -4,8 +4,6 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2, BarChart2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/date-utils';
-import { fetchDailyValues } from '@/services/budget-service';
-import { useQuery } from '@tanstack/react-query';
 
 interface BudgetItem {
   id?: string;
@@ -39,44 +37,7 @@ export function PLReportTable({
 }: PLReportTableProps) {
   console.log("All budget data:", processedBudgetData.map(item => item.name));
 
-  const currentMonth = new Date(`${currentMonthName} 1, ${currentYear}`).getMonth() + 1;
-
-  const { data: budgetItemsWithActuals } = useQuery({
-    queryKey: ['budget-daily-values', currentMonth, currentYear],
-    queryFn: async () => {
-      const itemsWithIds = processedBudgetData.filter(item => item.id);
-      
-      const updatedItems = [...processedBudgetData];
-      
-      await Promise.all(itemsWithIds.map(async (item, index) => {
-        if (item.id) {
-          try {
-            const dailyValues = await fetchDailyValues(item.id, currentMonth, currentYear);
-            
-            if (dailyValues && dailyValues.length > 0) {
-              const totalActual = dailyValues.reduce((sum, day) => 
-                sum + (day.value || 0), 0);
-              
-              const itemIndex = updatedItems.findIndex(i => i.id === item.id);
-              if (itemIndex >= 0) {
-                updatedItems[itemIndex] = {
-                  ...updatedItems[itemIndex],
-                  actual_amount: totalActual
-                };
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching daily values for ${item.name}:`, error);
-          }
-        }
-      }));
-      
-      return updatedItems;
-    },
-    enabled: !isLoading && processedBudgetData.some(item => item.id != null)
-  });
-
-  const displayData = budgetItemsWithActuals || processedBudgetData;
+  const displayData = processedBudgetData;
   
   const foodGpItems = displayData.filter(item => 
     item.name.toLowerCase().includes('food') && 

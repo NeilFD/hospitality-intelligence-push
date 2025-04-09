@@ -97,6 +97,27 @@ export const fetchMasterRecordsByMonth = async (
   }));
 };
 
+// New function to fetch total monthly revenue data from master records
+export const fetchMonthlyRevenueData = async (
+  year: number,
+  month: number
+): Promise<{ foodRevenue: number; beverageRevenue: number; totalRevenue: number }> => {
+  const { data, error } = await supabase
+    .from('master_daily_records')
+    .select('food_revenue, beverage_revenue, total_revenue')
+    .eq('year', year)
+    .eq('month', month);
+  
+  if (error) throw error;
+  
+  // Calculate the totals
+  const foodRevenue = data.reduce((sum, record) => sum + (record.food_revenue || 0), 0);
+  const beverageRevenue = data.reduce((sum, record) => sum + (record.beverage_revenue || 0), 0);
+  const totalRevenue = data.reduce((sum, record) => sum + (record.total_revenue || 0), 0);
+  
+  return { foodRevenue, beverageRevenue, totalRevenue };
+};
+
 // Fetch master daily records for a month
 export const fetchMasterMonthlyRecords = async (
   year: number,
