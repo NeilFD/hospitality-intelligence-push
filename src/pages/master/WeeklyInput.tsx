@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -122,7 +123,19 @@ const WeeklyInput = () => {
                       rounded-none 
                       text-gray-700
                       data-[state=active]:text-tavern-blue-dark
-                      hover:bg-gray-100"
+                      hover:bg-gray-100
+                      relative
+                      after:absolute
+                      after:bottom-0
+                      after:left-1/2
+                      after:-translate-x-1/2
+                      after:w-4/5
+                      after:h-0.5
+                      after:bg-[#78E08F]
+                      after:scale-x-0
+                      after:transition-transform
+                      after:duration-300
+                      data-[state=active]:after:scale-x-100"
                   >
                     <span className="text-xs opacity-80">{format(new Date(day.date), 'EEE')}</span>
                     <span className="text-base font-semibold">{format(new Date(day.date), 'd')}</span>
