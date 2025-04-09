@@ -109,7 +109,7 @@ const WeeklyInput = () => {
         </CardHeader>
         <CardContent className="p-0">
           <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
-            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50 py-2 -mt-5">
+            <TabsList className="grid grid-cols-7 rounded-none border-b bg-gray-50 py-2 -mt-2 mb-4">
               {records.map(day => <TabsTrigger key={day.date} value={day.date} className={`
                     relative 
                     group 
@@ -121,8 +121,8 @@ const WeeklyInput = () => {
                     flex-col 
                     items-center 
                     justify-center
-                    py-4
-                    -mb-2
+                    py-2
+                    -mb-1
                   `}>
                   <div className="text-center relative z-10 w-full">
                     <div className="font-medium text-xs opacity-70 group-data-[state=active]:opacity-100 mb-1">
@@ -131,7 +131,7 @@ const WeeklyInput = () => {
                     <div className="text-xl font-semibold relative inline-block">
                       <span className={`
                         px-3
-                        py-2
+                        py-1
                         rounded-md 
                         inline-block
                         min-w-[48px]
