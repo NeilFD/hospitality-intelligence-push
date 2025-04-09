@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -88,13 +87,14 @@ export default function LoginForm() {
         <motion.div 
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
-          className="pt-2"
+          className="pt-2 relative overflow-hidden group"
         >
           <Button 
             type="submit" 
-            className="w-full bg-gradient-to-r from-tavern-green/90 to-tavern-blue-light/90 text-white hover:from-tavern-green hover:to-tavern-blue-light hover:shadow-lg transition-all duration-300"
+            className="w-full bg-gradient-to-r from-tavern-green/90 to-tavern-blue-light/90 text-white hover:from-tavern-green hover:to-tavern-blue-light hover:shadow-lg transition-all duration-300 relative overflow-hidden"
             disabled={isLoading}
           >
+            <span className="absolute inset-x-0 top-0 h-0.5 bg-white/30 animate-shimmer" />
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
         </motion.div>
