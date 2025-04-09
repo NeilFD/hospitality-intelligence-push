@@ -78,8 +78,19 @@ export function PLReportTable({
     return formatPercentage(percentage / 100);
   };
 
+  // Filter out the 'Total' row between Gross Profit and Wages and Salaries
+  const filteredBudgetData = processedBudgetData.filter(item => {
+    // Check if the item is the Total row we want to filter out
+    // It typically appears between Gross Profit and Wages
+    const lowercaseName = item.name.toLowerCase();
+    return lowercaseName !== 'total' || 
+           (lowercaseName === 'total' && 
+            item.category && 
+            !item.category.toLowerCase().includes('expense'));
+  });
+
   const renderTableContent = () => {
-    return processedBudgetData.map((item, index) => {
+    return filteredBudgetData.map((item, index) => {
       const fontClass = getFontClass(item.name);
       const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
       
