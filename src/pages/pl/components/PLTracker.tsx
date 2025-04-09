@@ -95,9 +95,16 @@ export function PLTracker({
             updateForecastAmount={updateForecastAmount}
             updateDailyValues={updateDailyValues}
             getActualAmount={(item) => {
-              // Always calculate pro-rated items based on the current day of month
+              // Explicitly calculate pro-rated items based on the current day of month
               if (item.tracking_type === 'Pro-Rated') {
-                return (item.budget_amount / daysInMonth) * dayOfMonth;
+                const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
+                console.log(`Pro-rated actual for ${item.name}:`, { 
+                  budget: item.budget_amount, 
+                  daysInMonth, 
+                  dayOfMonth, 
+                  result: proRatedActual 
+                });
+                return proRatedActual;
               }
               return getActualAmount(item);
             }}
