@@ -95,10 +95,12 @@ const WeeklyInput = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-8">
+    return (
+      <div className="p-8">
         <Skeleton className="h-12 w-3/4 mb-4" />
         <Skeleton className="h-64 w-full" />
-      </div>;
+      </div>
+    );
   }
 
   return (
@@ -108,13 +110,13 @@ const WeeklyInput = () => {
           <CardTitle className="text-2xl">Master Input - Week {weekNumber}, {month}/{year}</CardTitle>
         </CardHeader>
         
-        <div className="space-y-4 p-4">
+        <div className="p-4">
           <Tabs 
             value={activeDay} 
             onValueChange={setActiveDay} 
-            className="w-full space-y-4"
+            className="w-full"
           >
-            <TabsList className="grid grid-cols-7 gap-2 bg-gray-100 p-2 rounded-md">
+            <TabsList className="grid grid-cols-7 gap-2 mb-4 bg-gray-100 p-2 rounded-md">
               {records.map(day => (
                 <TabsTrigger 
                   key={day.date} 
@@ -135,7 +137,7 @@ const WeeklyInput = () => {
               <TabsContent 
                 key={day.date} 
                 value={day.date} 
-                className="mt-4 p-2 bg-gray-50 rounded-md"
+                className="mt-0 p-0"
               >
                 <DailyRecordForm 
                   key={day.date} 
