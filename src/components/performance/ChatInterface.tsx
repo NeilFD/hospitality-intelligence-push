@@ -84,36 +84,56 @@ const ensureDate = (dateInput: any): Date => {
   }
 };
 
-// Simply pass through the complete response without filtering
 const extractAIResponse = (response: any): string => {
   console.log('Raw webhook response:', response);
   
-  // If we have response.data.json.body (from the screenshot), return that content
+  let responseText = "";
+  
   if (response?.data?.json?.body) {
-    return JSON.stringify(response.data.json.body);
+    responseText = typeof response.data.json.body === 'string' 
+      ? response.data.json.body
+      : JSON.stringify(response.data.json.body);
+  }
+  else if (response?.rawResponse) {
+    responseText = response.rawResponse;
+  }
+  else if (response?.data?.output) {
+    responseText = response.data.output;
+  }
+  else if (Array.isArray(response?.data) && response.data.length > 0) {
+    responseText = typeof response.data[0] === 'string' 
+      ? response.data[0]
+      : JSON.stringify(response.data[0]);
+  }
+  else if (response) {
+    responseText = typeof response === 'string' 
+      ? response 
+      : JSON.stringify(response);
+  }
+  else {
+    return "No response data received from webhook.";
   }
   
-  // For raw response text
-  if (response?.rawResponse) {
-    return response.rawResponse;
+  try {
+    const jsonObj = JSON.parse(responseText);
+    responseText = JSON.stringify(jsonObj, null, 2);
+    return responseText;
+  } catch (e) {
+    let formattedText = responseText
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\.\s+/g, '.\n\n')
+      .replace(/([.!?])\s*(?=[A-Z])/g, '$1\n\n')
+      .replace(/([.!?])\n{3,}/g, '$1\n\n')
+      .trim();
+      
+    formattedText = formattedText
+      .replace(/\s+([,.!?:;])/g, '$1')
+      .replace(/,{2,}/g, ',')
+      .replace(/\.{2,}/g, '...')
+      .replace(/\s{2,}/g, ' ');
+      
+    return formattedText;
   }
-  
-  // If there's a direct output field
-  if (response?.data?.output) {
-    return response.data.output;
-  }
-  
-  // If there's array data
-  if (Array.isArray(response?.data) && response.data.length > 0) {
-    return JSON.stringify(response.data[0]);
-  }
-  
-  // Return the entire response stringified as fallback
-  if (response) {
-    return JSON.stringify(response);
-  }
-  
-  return "No response data received from webhook.";
 };
 
 export default function ChatInterface({ className }: ChatInterfaceProps) {
@@ -428,7 +448,6 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     
     const deepCopyFoodData = annualRecord ? JSON.parse(JSON.stringify(annualRecord)) : null;
     
-    // Update food data with tracker data if available
     if (foodTrackerData && foodTrackerData.length > 0 && deepCopyFoodData && deepCopyFoodData.months) {
       console.log("Updating deepCopyFoodData with tracker data");
       
