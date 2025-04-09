@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -202,12 +201,12 @@ export function PLReportTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="w-[240px]">Item</TableHead>
-              <TableHead className="text-right">Budget</TableHead>
-              <TableHead className="text-right">Actual MTD</TableHead>
-              <TableHead className="text-right">%</TableHead>
-              <TableHead className="text-right">Forecast</TableHead>
-              <TableHead className="text-right">Variance</TableHead>
+              <TableHead className="w-[240px] font-bold">Item</TableHead>
+              <TableHead className="text-right font-bold">Budget</TableHead>
+              <TableHead className="text-right font-bold">Actual MTD</TableHead>
+              <TableHead className="text-right font-bold">%</TableHead>
+              <TableHead className="text-right font-bold">Forecast</TableHead>
+              <TableHead className="text-right font-bold">Variance</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
