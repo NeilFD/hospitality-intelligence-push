@@ -473,3 +473,71 @@ export const upsertTrackerCreditNote = async (creditNote: Omit<DbTrackerCreditNo
     return data;
   }
 };
+
+// New function to get summarized data for a tracker by month
+export const getTrackerSummaryByMonth = async (
+  year: number,
+  month: number,
+  moduleType: 'food' | 'beverage'
+): Promise<{
+  revenue: number;
+  cost: number;
+  gpPercentage: number;
+}> => {
+  try {
+    // Fetch tracker data for the month
+    const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
+    
+    let totalRevenue = 0;
+    let totalCost = 0;
+    
+    // Process each day in the tracker
+    const dayPromises = trackerData.map(async (day) => {
+      // Add revenue
+      const dayRevenue = Number(day.revenue) || 0;
+      
+      // Fetch purchases for this day
+      const purchases = await fetchTrackerPurchases(day.id);
+      const creditNotes = await fetchTrackerCreditNotes(day.id);
+      
+      const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+      const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+      const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
+      
+      const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+      
+      return {
+        revenue: dayRevenue,
+        cost: dayCost
+      };
+    });
+    
+    // Process all days
+    const daysData = await Promise.all(dayPromises);
+    
+    // Calculate totals
+    daysData.forEach(day => {
+      totalRevenue += day.revenue;
+      totalCost += day.cost;
+    });
+    
+    // Calculate GP percentage
+    let gpPercentage = 0;
+    if (totalRevenue > 0) {
+      gpPercentage = (totalRevenue - totalCost) / totalRevenue;
+    }
+    
+    return {
+      revenue: totalRevenue,
+      cost: totalCost,
+      gpPercentage
+    };
+  } catch (error) {
+    console.error(`Error fetching ${moduleType} tracker summary:`, error);
+    return {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
+    };
+  }
+};
