@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
@@ -33,7 +34,7 @@ const MasterDashboard = () => {
     setSelectedDate(new Date());
   };
   
-  // Navigate to week page
+  // Navigate to week page - Ensure this matches the route in App.tsx exactly
   const goToWeek = (year: number, month: number, weekNumber: number) => {
     navigate(`/master/week/${year}/${month}/${weekNumber}`);
   };
