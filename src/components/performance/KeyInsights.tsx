@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
-import { formatCurrency, formatPercentage, calculateGP } from '@/lib/date-utils';
+import { formatCurrency, formatPercentage } from '@/lib/date-utils';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { TrendingUp, TrendingDown, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
 
 export default function KeyInsights() {
-  const { annualRecord, currentYear, currentMonth } = useStore();
+  const { currentYear, currentMonth } = useStore();
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [gpData, setGpData] = useState<any[]>([]);
   const [foodGP, setFoodGP] = useState(0);
@@ -68,8 +68,8 @@ export default function KeyInsights() {
   useEffect(() => {
     setIsLoading(isFoodLoading || isBevLoading);
     
-    const calculateInsights = () => {
-      console.log("Calculating insights with data:", { 
+    const processTrackerData = () => {
+      console.log("Processing tracker data:", { 
         foodTrackerData, 
         bevTrackerData, 
         prevFoodData, 
@@ -77,265 +77,402 @@ export default function KeyInsights() {
       });
       
       // Current month calculations
-      let foodRev = 0;
-      let foodCost = 0;
-      let bevRev = 0;
-      let bevCost = 0;
+      let currentFoodRev = 0;
+      let currentFoodCost = 0;
+      let currentBevRev = 0;
+      let currentBevCost = 0;
       
-      // Process current month's food data
+      // Process food tracker data
       if (foodTrackerData && foodTrackerData.length > 0) {
-        foodTrackerData.forEach(day => {
-          const dayRevenue = Number(day.revenue) || 0;
-          foodRev += dayRevenue;
-          
-          // Calculate costs
-          let dayCosts = 0;
-          if (day.purchases) {
-            Object.values(day.purchases).forEach(amount => {
-              dayCosts += Number(amount) || 0;
-            });
-          }
-          
-          let creditTotal = 0;
-          if (day.creditNotes && Array.isArray(day.creditNotes)) {
-            day.creditNotes.forEach(credit => {
-              creditTotal += Number(credit) || 0;
-            });
-          }
-          
-          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
-          foodCost += dayCosts - creditTotal + staffFoodAllowance;
-        });
-      }
-      
-      // Process current month's beverage data
-      if (bevTrackerData && bevTrackerData.length > 0) {
-        bevTrackerData.forEach(day => {
-          const dayRevenue = Number(day.revenue) || 0;
-          bevRev += dayRevenue;
-          
-          // Calculate costs
-          let dayCosts = 0;
-          if (day.purchases) {
-            Object.values(day.purchases).forEach(amount => {
-              dayCosts += Number(amount) || 0;
-            });
-          }
-          
-          let creditTotal = 0;
-          if (day.creditNotes && Array.isArray(day.creditNotes)) {
-            day.creditNotes.forEach(credit => {
-              creditTotal += Number(credit) || 0;
-            });
-          }
-          
-          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
-          bevCost += dayCosts - creditTotal + staffFoodAllowance;
-        });
-      }
-      
-      // Previous month calculations
-      let prevFoodRev = 0;
-      let prevFoodCost = 0;
-      let prevBevRev = 0;
-      let prevBevCost = 0;
-      
-      // Process previous month's food data
-      if (prevFoodData && prevFoodData.length > 0) {
-        prevFoodData.forEach(day => {
-          const dayRevenue = Number(day.revenue) || 0;
-          prevFoodRev += dayRevenue;
-          
-          // Calculate costs
-          let dayCosts = 0;
-          if (day.purchases) {
-            Object.values(day.purchases).forEach(amount => {
-              dayCosts += Number(amount) || 0;
-            });
-          }
-          
-          let creditTotal = 0;
-          if (day.creditNotes && Array.isArray(day.creditNotes)) {
-            day.creditNotes.forEach(credit => {
-              creditTotal += Number(credit) || 0;
-            });
-          }
-          
-          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
-          prevFoodCost += dayCosts - creditTotal + staffFoodAllowance;
-        });
-      }
-      
-      // Process previous month's beverage data
-      if (prevBevData && prevBevData.length > 0) {
-        prevBevData.forEach(day => {
-          const dayRevenue = Number(day.revenue) || 0;
-          prevBevRev += dayRevenue;
-          
-          // Calculate costs
-          let dayCosts = 0;
-          if (day.purchases) {
-            Object.values(day.purchases).forEach(amount => {
-              dayCosts += Number(amount) || 0;
-            });
-          }
-          
-          let creditTotal = 0;
-          if (day.creditNotes && Array.isArray(day.creditNotes)) {
-            day.creditNotes.forEach(credit => {
-              creditTotal += Number(credit) || 0;
-            });
-          }
-          
-          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
-          prevBevCost += dayCosts - creditTotal + staffFoodAllowance;
-        });
-      }
-      
-      // Calculate gross profits correctly
-      const currentFoodGP = foodRev > 0 ? (foodRev - foodCost) / foodRev : 0;
-      const currentBevGP = bevRev > 0 ? (bevRev - bevCost) / bevRev : 0;
-      const combinedCurrentGP = (foodRev + bevRev) > 0 ? 
-        ((foodRev + bevRev) - (foodCost + bevCost)) / (foodRev + bevRev) : 0;
+        console.log("Processing food tracker data");
         
-      const prevCombinedGP = (prevFoodRev + prevBevRev) > 0 ? 
-        ((prevFoodRev + prevBevRev) - (prevFoodCost + prevBevCost)) / (prevFoodRev + prevBevRev) : 0;
+        // Process each day's data
+        const foodDataPromises = foodTrackerData.map(async (day) => {
+          const revenue = Number(day.revenue) || 0;
+          currentFoodRev += revenue;
+          
+          // Fetch purchases for this day
+          const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+            headers: {
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+              'Content-Type': 'application/json'
+            },
+          });
+          
+          // Fetch credit notes for this day
+          const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+            headers: {
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+              'Content-Type': 'application/json'
+            },
+          });
+          
+          const purchases = await purchasesResponse.json();
+          const creditNotes = await creditNotesResponse.json();
+          
+          const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+          const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
+          
+          const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+          currentFoodCost += dayCost;
+          
+          console.log(`Food day ${day.date}: Revenue = ${revenue}, Cost = ${dayCost}`);
+          
+          return {
+            date: day.date,
+            revenue: revenue,
+            cost: dayCost,
+            week: Math.ceil(new Date(day.date).getDate() / 7)
+          };
+        });
+        
+        // Process all days
+        Promise.all(foodDataPromises).then(() => {
+          console.log(`Food totals: Revenue = ${currentFoodRev}, Cost = ${currentFoodCost}`);
+          let foodGPValue = 0;
+          
+          if (currentFoodRev > 0) {
+            foodGPValue = (currentFoodRev - currentFoodCost) / currentFoodRev;
+          }
+          
+          // Update state
+          setFoodRevenue(currentFoodRev);
+          setFoodCosts(currentFoodCost);
+          setFoodGP(foodGPValue);
+          
+          processWeeklyData();
+        });
+      }
       
-      console.log("GP Calculations:", {
-        foodRevenue: foodRev,
-        foodCosts: foodCost,
-        foodGP: currentFoodGP,
-        beverageRevenue: bevRev,
-        beverageCosts: bevCost, 
-        beverageGP: currentBevGP,
-        combinedGP: combinedCurrentGP
-      });
+      // Process beverage tracker data
+      if (bevTrackerData && bevTrackerData.length > 0) {
+        console.log("Processing beverage tracker data");
+        
+        // Process each day's data
+        const bevDataPromises = bevTrackerData.map(async (day) => {
+          const revenue = Number(day.revenue) || 0;
+          currentBevRev += revenue;
+          
+          // Fetch purchases for this day
+          const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+            headers: {
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+              'Content-Type': 'application/json'
+            },
+          });
+          
+          // Fetch credit notes for this day
+          const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+            headers: {
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+              'Content-Type': 'application/json'
+            },
+          });
+          
+          const purchases = await purchasesResponse.json();
+          const creditNotes = await creditNotesResponse.json();
+          
+          const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+          const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
+          
+          const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+          currentBevCost += dayCost;
+          
+          console.log(`Beverage day ${day.date}: Revenue = ${revenue}, Cost = ${dayCost}`);
+          
+          return {
+            date: day.date,
+            revenue: revenue,
+            cost: dayCost,
+            week: Math.ceil(new Date(day.date).getDate() / 7)
+          };
+        });
+        
+        // Process all days
+        Promise.all(bevDataPromises).then(() => {
+          console.log(`Beverage totals: Revenue = ${currentBevRev}, Cost = ${currentBevCost}`);
+          let bevGPValue = 0;
+          
+          if (currentBevRev > 0) {
+            bevGPValue = (currentBevRev - currentBevCost) / currentBevRev;
+          }
+          
+          // Update state
+          setBeverageRevenue(currentBevRev);
+          setBeverageCosts(currentBevCost);
+          setBeverageGP(bevGPValue);
+          
+          // Calculate combined values
+          const totalRev = currentFoodRev + currentBevRev;
+          const totalCost = currentFoodCost + currentBevCost;
+          let combinedGPValue = 0;
+          
+          if (totalRev > 0) {
+            combinedGPValue = (totalRev - totalCost) / totalRev;
+          }
+          
+          setTotalRevenue(totalRev);
+          setTotalCosts(totalCost);
+          setCombinedGP(combinedGPValue);
+          
+          processWeeklyData();
+        });
+      }
       
-      // Set state values
-      setFoodGP(currentFoodGP);
-      setBeverageGP(currentBevGP);
-      setCombinedGP(combinedCurrentGP);
-      setPreviousMonthGP(prevCombinedGP);
-      
-      setFoodRevenue(foodRev);
-      setFoodCosts(foodCost);
-      setBeverageRevenue(bevRev);
-      setBeverageCosts(bevCost);
-      setTotalRevenue(foodRev + bevRev);
-      setTotalCosts(foodCost + bevCost);
-      
-      // Weekly data processing
-      processWeeklyData();
+      // Process previous month's data
+      if (prevFoodData && prevBevData) {
+        console.log("Processing previous month data");
+        let prevFoodRev = 0;
+        let prevFoodCost = 0;
+        let prevBevRev = 0;
+        let prevBevCost = 0;
+        
+        const processPrevFoodData = async () => {
+          for (const day of prevFoodData) {
+            prevFoodRev += Number(day.revenue) || 0;
+            
+            // Fetch purchases for this day
+            const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+                'Content-Type': 'application/json'
+              },
+            });
+            
+            const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+                'Content-Type': 'application/json'
+              },
+            });
+            
+            const purchases = await purchasesResponse.json();
+            const creditNotes = await creditNotesResponse.json();
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
+            
+            prevFoodCost += purchasesTotal - creditNotesTotal + staffFoodAllowance;
+          }
+        };
+        
+        const processPrevBevData = async () => {
+          for (const day of prevBevData) {
+            prevBevRev += Number(day.revenue) || 0;
+            
+            // Fetch purchases for this day
+            const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+                'Content-Type': 'application/json'
+              },
+            });
+            
+            const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+                'Content-Type': 'application/json'
+              },
+            });
+            
+            const purchases = await purchasesResponse.json();
+            const creditNotes = await creditNotesResponse.json();
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
+            
+            prevBevCost += purchasesTotal - creditNotesTotal + staffFoodAllowance;
+          }
+        };
+        
+        Promise.all([processPrevFoodData(), processPrevBevData()]).then(() => {
+          // Calculate previous month's combined GP
+          const prevTotalRev = prevFoodRev + prevBevRev;
+          const prevTotalCost = prevFoodCost + prevBevCost;
+          let prevCombinedGP = 0;
+          
+          if (prevTotalRev > 0) {
+            prevCombinedGP = (prevTotalRev - prevTotalCost) / prevTotalRev;
+          }
+          
+          setPreviousMonthGP(prevCombinedGP);
+        });
+      }
     };
     
     const processWeeklyData = () => {
-      // Create map for weekly data
-      const weekMap: Record<string, { 
-        revenue: number, 
-        foodCost: number, 
-        bevCost: number, 
-        foodRevenue: number, 
-        bevRevenue: number 
-      }> = {};
-      
-      // Process food data by week
-      if (foodTrackerData) {
-        foodTrackerData.forEach(day => {
-          if (!day.date) return;
+      // Use Promise.all to process food and beverage weekly data simultaneously
+      Promise.all([processWeeklyFoodData(), processWeeklyBeverageData()])
+        .then(([foodWeekData, bevWeekData]) => {
+          // Combine food and beverage data by week
+          const combinedWeekData = combineWeeklyData(foodWeekData, bevWeekData);
           
-          // Extract week number
-          const date = new Date(day.date);
-          const weekOfMonth = Math.ceil(date.getDate() / 7);
-          const weekKey = `Week ${weekOfMonth}`;
+          console.log("Weekly data processed:", { 
+            foodWeekData, 
+            bevWeekData,
+            combinedWeekData
+          });
           
-          if (!weekMap[weekKey]) {
-            weekMap[weekKey] = { revenue: 0, foodCost: 0, bevCost: 0, foodRevenue: 0, bevRevenue: 0 };
-          }
-          
-          const dayRevenue = Number(day.revenue) || 0;
-          weekMap[weekKey].revenue += dayRevenue;
-          weekMap[weekKey].foodRevenue += dayRevenue;
-          
-          // Calculate costs
-          let dayCosts = 0;
-          if (day.purchases) {
-            Object.values(day.purchases).forEach(amount => {
-              dayCosts += Number(amount) || 0;
-            });
-          }
-          
-          let creditTotal = 0;
-          if (day.creditNotes && Array.isArray(day.creditNotes)) {
-            day.creditNotes.forEach(credit => {
-              creditTotal += Number(credit) || 0;
-            });
-          }
-          
-          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
-          weekMap[weekKey].foodCost += dayCosts - creditTotal + staffFoodAllowance;
+          setRevenueData(combinedWeekData.revenueData);
+          setGpData(combinedWeekData.gpData);
         });
+    };
+    
+    const processWeeklyFoodData = async () => {
+      if (!foodTrackerData || foodTrackerData.length === 0) {
+        return { weekMap: {} };
       }
       
-      // Process beverage data by week
-      if (bevTrackerData) {
-        bevTrackerData.forEach(day => {
-          if (!day.date) return;
-          
-          // Extract week number
-          const date = new Date(day.date);
-          const weekOfMonth = Math.ceil(date.getDate() / 7);
-          const weekKey = `Week ${weekOfMonth}`;
-          
-          if (!weekMap[weekKey]) {
-            weekMap[weekKey] = { revenue: 0, foodCost: 0, bevCost: 0, foodRevenue: 0, bevRevenue: 0 };
-          }
-          
-          const dayRevenue = Number(day.revenue) || 0;
-          weekMap[weekKey].revenue += dayRevenue;
-          weekMap[weekKey].bevRevenue += dayRevenue;
-          
-          // Calculate costs
-          let dayCosts = 0;
-          if (day.purchases) {
-            Object.values(day.purchases).forEach(amount => {
-              dayCosts += Number(amount) || 0;
-            });
-          }
-          
-          let creditTotal = 0;
-          if (day.creditNotes && Array.isArray(day.creditNotes)) {
-            day.creditNotes.forEach(credit => {
-              creditTotal += Number(credit) || 0;
-            });
-          }
-          
-          const staffFoodAllowance = Number(day.staffFoodAllowance) || 0;
-          weekMap[weekKey].bevCost += dayCosts - creditTotal + staffFoodAllowance;
+      const weekMap = {};
+      
+      // Process each day in the food tracker
+      for (const day of foodTrackerData) {
+        if (!day.date) continue;
+        
+        // Determine the week
+        const date = new Date(day.date);
+        const weekOfMonth = Math.ceil(date.getDate() / 7);
+        const weekKey = `Week ${weekOfMonth}`;
+        
+        if (!weekMap[weekKey]) {
+          weekMap[weekKey] = { 
+            foodRevenue: 0, 
+            foodCost: 0
+          };
+        }
+        
+        const dayRevenue = Number(day.revenue) || 0;
+        weekMap[weekKey].foodRevenue += dayRevenue;
+        
+        // Fetch purchases and credit notes for this day
+        const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+            'Content-Type': 'application/json'
+          },
         });
+        
+        const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+            'Content-Type': 'application/json'
+          },
+        });
+        
+        const purchases = await purchasesResponse.json();
+        const creditNotes = await creditNotesResponse.json();
+        
+        const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+        const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
+        
+        weekMap[weekKey].foodCost += purchasesTotal - creditNotesTotal + staffFoodAllowance;
       }
+      
+      return { weekMap };
+    };
+    
+    const processWeeklyBeverageData = async () => {
+      if (!bevTrackerData || bevTrackerData.length === 0) {
+        return { weekMap: {} };
+      }
+      
+      const weekMap = {};
+      
+      // Process each day in the beverage tracker
+      for (const day of bevTrackerData) {
+        if (!day.date) continue;
+        
+        // Determine the week
+        const date = new Date(day.date);
+        const weekOfMonth = Math.ceil(date.getDate() / 7);
+        const weekKey = `Week ${weekOfMonth}`;
+        
+        if (!weekMap[weekKey]) {
+          weekMap[weekKey] = { 
+            bevRevenue: 0, 
+            bevCost: 0
+          };
+        }
+        
+        const dayRevenue = Number(day.revenue) || 0;
+        weekMap[weekKey].bevRevenue += dayRevenue;
+        
+        // Fetch purchases and credit notes for this day
+        const purchasesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_purchases?tracker_data_id=eq.${day.id}`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+            'Content-Type': 'application/json'
+          },
+        });
+        
+        const creditNotesResponse = await fetch(`https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/tracker_credit_notes?tracker_data_id=eq.${day.id}`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+            'Content-Type': 'application/json'
+          },
+        });
+        
+        const purchases = await purchasesResponse.json();
+        const creditNotes = await creditNotesResponse.json();
+        
+        const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+        const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
+        
+        weekMap[weekKey].bevCost += purchasesTotal - creditNotesTotal + staffFoodAllowance;
+      }
+      
+      return { weekMap };
+    };
+    
+    const combineWeeklyData = (foodData, bevData) => {
+      // Combine food and beverage week maps
+      const allWeekKeys = new Set([
+        ...Object.keys(foodData.weekMap), 
+        ...Object.keys(bevData.weekMap)
+      ]);
+      
+      const combinedWeekMap = {};
+      
+      // Initialize combined data structure
+      allWeekKeys.forEach(weekKey => {
+        combinedWeekMap[weekKey] = {
+          foodRevenue: (foodData.weekMap[weekKey]?.foodRevenue || 0),
+          foodCost: (foodData.weekMap[weekKey]?.foodCost || 0),
+          bevRevenue: (bevData.weekMap[weekKey]?.bevRevenue || 0),
+          bevCost: (bevData.weekMap[weekKey]?.bevCost || 0)
+        };
+      });
       
       // Sort by week number
-      const sortedWeeks = Object.entries(weekMap)
+      const sortedWeeks = Object.entries(combinedWeekMap)
         .sort((a, b) => {
           const aNum = parseInt(a[0].replace('Week ', ''));
           const bNum = parseInt(b[0].replace('Week ', ''));
           return aNum - bNum;
         });
-      
+        
       // Convert to arrays for charts
-      const weeklyRevenue = sortedWeeks.map(([week, data]) => ({
+      const revenueData = sortedWeeks.map(([week, data]) => ({
         week,
-        revenue: data.revenue,
         foodRevenue: data.foodRevenue,
-        bevRevenue: data.bevRevenue
+        bevRevenue: data.bevRevenue,
+        revenue: data.foodRevenue + data.bevRevenue
       }));
       
-      const weeklyGP = sortedWeeks.map(([week, data]) => {
+      const gpData = sortedWeeks.map(([week, data]) => {
         // Calculate GP percentages correctly
         const foodGP = data.foodRevenue > 0 ? 
           ((data.foodRevenue - data.foodCost) / data.foodRevenue) * 100 : 0;
+          
         const bevGP = data.bevRevenue > 0 ? 
           ((data.bevRevenue - data.bevCost) / data.bevRevenue) * 100 : 0;
+          
         const combinedGP = (data.foodRevenue + data.bevRevenue) > 0 ? 
           (((data.foodRevenue + data.bevRevenue) - (data.foodCost + data.bevCost)) / 
           (data.foodRevenue + data.bevRevenue)) * 100 : 0;
@@ -348,13 +485,17 @@ export default function KeyInsights() {
         };
       });
       
-      console.log("Weekly data processed:", { weeklyRevenue, weeklyGP });
-      
-      setRevenueData(weeklyRevenue);
-      setGpData(weeklyGP);
+      return {
+        revenueData,
+        gpData
+      };
     };
     
-    calculateInsights();
+    // Start the data processing
+    if (!isLoading) {
+      processTrackerData();
+    }
+    
   }, [foodTrackerData, bevTrackerData, prevFoodData, prevBevData, isFoodLoading, isBevLoading]);
   
   // Calculate GP trend
@@ -565,3 +706,4 @@ export default function KeyInsights() {
     </div>
   );
 }
+
