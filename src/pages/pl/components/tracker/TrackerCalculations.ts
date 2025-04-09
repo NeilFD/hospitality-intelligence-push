@@ -123,7 +123,12 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     // For Pro-Rated items, calculate the pro-rated actual based on budget
     const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
     const dayOfMonth = new Date().getDate();
-    return calculateProRatedActual(item, daysInMonth, dayOfMonth);
+    
+    const proRatedActual = calculateProRatedActual(item, daysInMonth, dayOfMonth);
+    console.log(`Pro-Rated actual for ${item.name}:`, proRatedActual);
+    
+    // We return the pro-rated value directly, not checking for actual_amount which would be 0
+    return proRatedActual;
   }
   
   if (item.tracking_type === 'Discrete') {

@@ -8,6 +8,7 @@ import { DailyInputDrawer } from './DailyInputDrawer';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { formatCurrency } from '@/lib/date-utils';
 import { TrackerSummaryRows } from './TrackerSummaryRows';
+import { TrackerLineItem } from './TrackerLineItem';
 
 interface PLTrackerContentProps {
   isLoading: boolean;
@@ -112,59 +113,21 @@ export function PLTrackerContent({
                 const actualAmount = getActualAmount(item);
                 const variance = actualAmount - proRatedBudget;
                 
-                if (item.isHeader) {
-                  return (
-                    <TableRow key={item.id || index} className="bg-gray-50 border-t border-gray-200">
-                      <TableCell colSpan={7} className="py-2 font-bold text-slate-800">
-                        {item.name}
-                      </TableCell>
-                    </TableRow>
-                  );
-                } else {
-                  return (
-                    <TableRow key={item.id || index} className="border-t border-gray-100">
-                      <TableCell className="text-left text-slate-800">{item.name}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.budget_amount)}</TableCell>
-                      <TableCell className="text-right">
-                        {item.budget_percentage !== undefined ? `${(item.budget_percentage * 100).toFixed(2)}%` : ''}
-                      </TableCell>
-                      <TableCell className="text-right">{formatCurrency(proRatedBudget)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {item.tracking_type === 'Discrete' && 
-                           !isRevenueItem(item) && 
-                           !isCOSItem(item) && 
-                           !isWagesItem(item) && 
-                           !isGrossProfitItem(item) ? (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => handleOpenDailyInput(itemIndex)}
-                              title="Open Daily Input"
-                              className="h-8 w-8"
-                            >
-                              <Calendar className="h-4 w-4 text-purple-600" />
-                            </Button>
-                          ) : null}
-                          <span>{formatCurrency(actualAmount)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Input 
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
-                          onChange={(e) => updateForecastAmount(itemIndex, e.target.value)}
-                          className="w-24 ml-auto text-right"
-                        />
-                      </TableCell>
-                      <TableCell className={`text-right ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''}`}>
-                        {formatCurrency(variance)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                }
+                return (
+                  <TrackerLineItem
+                    key={item.id || index}
+                    item={item}
+                    index={itemIndex}
+                    proRatedBudget={proRatedBudget}
+                    actualAmount={actualAmount}
+                    variance={variance}
+                    updateManualActualAmount={updateManualActualAmount}
+                    updateForecastAmount={updateForecastAmount}
+                    updateDailyValues={updateDailyValues}
+                    currentMonthName={currentMonthName}
+                    currentYear={currentYear}
+                  />
+                );
               })}
               
               <TrackerSummaryRows
