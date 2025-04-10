@@ -28,6 +28,15 @@ import {
   fetchDailyRecords
 } from '@/services/kitchen-service';
 
+interface ExtendedDailyRecord {
+  date: string; // YYYY-MM-DD
+  dayOfWeek: string;
+  revenue?: number;
+  purchases?: Record<string, number>; // supplierId -> amount
+  creditNotes?: number[];
+  staffFoodAllowance?: number;
+}
+
 interface BevStore {
   getState: () => {
     annualRecord: {
@@ -35,10 +44,7 @@ interface BevStore {
         year: number;
         month: number;
         weeks: Array<{
-          days: Array<{
-            revenue?: number;
-            purchases?: Record<string, number>;
-          }>;
+          days: Array<ExtendedDailyRecord>;
         }>;
       }>;
     };
@@ -414,12 +420,15 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
                     monthData.revenue += Number(day.revenue);
                   }
                   
-                  if (day.purchases) {
-                    const dayPurchases = Object.values(day.purchases).reduce(
-                      (sum, amount) => sum + Number(amount), 0
-                    );
-                    monthData.cost += dayPurchases;
-                  }
+                  const dayPurchases = day.purchases ? 
+                    Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                  
+                  const creditNotes = day.creditNotes ? 
+                    day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
+                  
+                  const staffFoodAmount = day.staffFoodAllowance || 0;
+                  
+                  monthData.cost += dayPurchases - creditNotes + staffFoodAmount;
                 });
               }
             });
