@@ -6,9 +6,14 @@ const MONZO_USER_ID = Deno.env.get("MONZO_USER_ID");
 const MONZO_ACCESS_TOKEN = Deno.env.get("MONZO_ACCESS_TOKEN");
 const MONZO_API_BASE = "https://api.monzo.com";
 
+console.log("Monzo Edge Function initialized");
+
 serve(async (req) => {
+  console.log("Received request to Monzo edge function:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling CORS preflight request");
     return new Response("ok", { headers: corsHeaders });
   }
   
@@ -16,7 +21,9 @@ serve(async (req) => {
     let params;
     try {
       params = await req.json();
+      console.log("Request params:", JSON.stringify(params));
     } catch (e) {
+      console.error("Error parsing JSON body:", e);
       return new Response(
         JSON.stringify({ error: "Invalid JSON body" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -26,6 +33,7 @@ serve(async (req) => {
     const endpoint = params.endpoint;
     
     if (!endpoint) {
+      console.error("No API endpoint specified");
       return new Response(
         JSON.stringify({ error: "No API endpoint specified" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -33,6 +41,7 @@ serve(async (req) => {
     }
     
     if (!MONZO_ACCESS_TOKEN) {
+      console.error("Monzo access token not configured");
       return new Response(
         JSON.stringify({ error: "Monzo access token not configured" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -82,6 +91,7 @@ serve(async (req) => {
         apiUrl = `${MONZO_API_BASE}/transactions/${transactionId}?expand[]=merchant`;
         break;
       default:
+        console.error("Unknown endpoint:", endpoint);
         return new Response(
           JSON.stringify({ error: "Unknown endpoint" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -100,6 +110,7 @@ serve(async (req) => {
     });
     
     const data = await response.json();
+    console.log(`Monzo API response status: ${response.status}`);
     
     // Pass through the response status
     return new Response(
