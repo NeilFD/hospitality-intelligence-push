@@ -31,6 +31,7 @@ export interface TeamMessage {
   read_by: string[];
   room_id: string;
   reactions?: MessageReaction[];
+  deleted?: boolean;
 }
 
 export interface TeamPoll {
@@ -75,7 +76,6 @@ export interface ChatRoom {
   is_announcement_only: boolean;
 }
 
-// Get all team members (profiles)
 export const getTeamMembers = async (): Promise<UserProfile[]> => {
   const { data, error } = await supabase
     .from('profiles')
@@ -89,7 +89,6 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
   return data || [];
 };
 
-// Notes functions
 export const getNotes = async (): Promise<TeamNote[]> => {
   try {
     const { data, error } = await supabase
@@ -152,7 +151,6 @@ export const deleteNote = async (id: string): Promise<void> => {
   }
 };
 
-// Messages functions
 export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
   try {
     const { data, error } = await supabase
@@ -190,6 +188,18 @@ export const createMessage = async (
   return data;
 };
 
+export const deleteMessage = async (messageId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('team_messages')
+    .update({ deleted: true })
+    .eq('id', messageId);
+    
+  if (error) {
+    console.error('Error deleting message:', error);
+    throw error;
+  }
+};
+
 export const markMessageAsRead = async (messageId: string, userId: string): Promise<void> => {
   const { data: message, error: fetchError } = await supabase
     .from('team_messages')
@@ -223,7 +233,6 @@ export const addMessageReaction = async (
   emoji: string,
   userId: string
 ): Promise<TeamMessage> => {
-  // Fetch the current message
   const { data: message, error: fetchError } = await supabase
     .from('team_messages')
     .select('*')
@@ -235,42 +244,34 @@ export const addMessageReaction = async (
     throw fetchError;
   }
   
-  // Initialize or get current reactions
   const reactions = message.reactions || [];
   
-  // Check if this emoji reaction already exists
   const existingReactionIndex = reactions.findIndex(
     (reaction: MessageReaction) => reaction.emoji === emoji
   );
   
   if (existingReactionIndex !== -1) {
-    // Check if user already reacted with this emoji
     const userIds = reactions[existingReactionIndex].user_ids || [];
     const userReactionIndex = userIds.indexOf(userId);
     
     if (userReactionIndex !== -1) {
-      // Remove user's reaction if already exists (toggle behavior)
       userIds.splice(userReactionIndex, 1);
       
-      // If no users left reacting with this emoji, remove the reaction entirely
       if (userIds.length === 0) {
         reactions.splice(existingReactionIndex, 1);
       } else {
         reactions[existingReactionIndex].user_ids = userIds;
       }
     } else {
-      // Add user's reaction
       reactions[existingReactionIndex].user_ids.push(userId);
     }
   } else {
-    // Add new reaction type with this user
     reactions.push({
       emoji,
       user_ids: [userId]
     });
   }
   
-  // Update the message with new reactions
   const { data: updatedMessage, error: updateError } = await supabase
     .from('team_messages')
     .update({ reactions })
@@ -286,7 +287,6 @@ export const addMessageReaction = async (
   return updatedMessage;
 };
 
-// Poll functions
 export const getPolls = async (): Promise<TeamPoll[]> => {
   try {
     const { data: polls, error } = await supabase
@@ -299,7 +299,6 @@ export const getPolls = async (): Promise<TeamPoll[]> => {
       throw error;
     }
     
-    // Fetch options for each poll
     const pollsWithOptions = await Promise.all(
       polls.map(async (poll) => {
         const { data: options, error: optionsError } = await supabase
@@ -313,7 +312,6 @@ export const getPolls = async (): Promise<TeamPoll[]> => {
           return { ...poll, options: [] };
         }
         
-        // Get votes for each option
         const { data: votes, error: votesError } = await supabase
           .from('team_poll_votes')
           .select('*')
@@ -324,13 +322,11 @@ export const getPolls = async (): Promise<TeamPoll[]> => {
           return { ...poll, options, votes: [] };
         }
         
-        // For each option, get the users who voted for it
         const optionsWithVotes = await Promise.all(
           options.map(async (option) => {
             const optionVotes = votes.filter(vote => vote.option_id === option.id);
             const vote_count = optionVotes.length;
             
-            // Get user profiles for voters
             const userIds = optionVotes.map(vote => vote.user_id);
             let voters: UserProfile[] = [];
             
@@ -374,7 +370,6 @@ export const createPoll = async (
   poll: Pick<TeamPoll, 'question' | 'author_id' | 'multiple_choice' | 'color'>,
   options: Pick<TeamPollOption, 'option_text' | 'option_type' | 'attachment_url' | 'option_order'>[]
 ): Promise<TeamPoll> => {
-  // First, create the poll
   const { data: createdPoll, error: pollError } = await supabase
     .from('team_polls')
     .insert(poll)
@@ -386,7 +381,6 @@ export const createPoll = async (
     throw pollError;
   }
   
-  // Then create options for the poll
   const pollOptions = options.map(option => ({
     ...option,
     poll_id: createdPoll.id
@@ -409,7 +403,6 @@ export const createPoll = async (
 };
 
 export const votePoll = async (vote: Omit<TeamPollVote, 'id' | 'created_at' | 'updated_at'>): Promise<TeamPollVote> => {
-  // Check if this is a single-choice poll and the user already voted
   const { data: poll, error: pollError } = await supabase
     .from('team_polls')
     .select('multiple_choice')
@@ -422,7 +415,6 @@ export const votePoll = async (vote: Omit<TeamPollVote, 'id' | 'created_at' | 'u
   }
   
   if (!poll.multiple_choice) {
-    // For single choice polls, we need to remove any previous votes by this user
     const { error: deleteError } = await supabase
       .from('team_poll_votes')
       .delete()
@@ -434,7 +426,6 @@ export const votePoll = async (vote: Omit<TeamPollVote, 'id' | 'created_at' | 'u
       throw deleteError;
     }
   } else {
-    // For multiple choice, check if this exact vote already exists
     const { data: existingVote, error: checkError } = await supabase
       .from('team_poll_votes')
       .select('*')
@@ -448,7 +439,6 @@ export const votePoll = async (vote: Omit<TeamPollVote, 'id' | 'created_at' | 'u
     }
     
     if (existingVote && existingVote.length > 0) {
-      // Vote already exists, remove it (toggle behavior)
       const { error: deleteError } = await supabase
         .from('team_poll_votes')
         .delete()
@@ -463,7 +453,6 @@ export const votePoll = async (vote: Omit<TeamPollVote, 'id' | 'created_at' | 'u
     }
   }
   
-  // Insert the new vote
   const { data: createdVote, error: voteError } = await supabase
     .from('team_poll_votes')
     .insert(vote)
@@ -506,7 +495,6 @@ export const updatePollStatus = async (id: string, active: boolean): Promise<Tea
   return data;
 };
 
-// File upload helper
 export const uploadTeamFile = async (file: File, folder: 'notes' | 'messages' | 'polls'): Promise<string> => {
   try {
     const fileExt = file.name.split('.').pop();
@@ -533,7 +521,6 @@ export const uploadTeamFile = async (file: File, folder: 'notes' | 'messages' | 
   }
 };
 
-// Get all available chat rooms
 export const getChatRooms = async (): Promise<ChatRoom[]> => {
   const { data, error } = await supabase
     .from('team_chat_rooms')

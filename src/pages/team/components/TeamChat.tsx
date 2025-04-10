@@ -1,17 +1,17 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Send, Image, Mic, Smile, Paperclip, AtSign, Heart, ThumbsUp, Laugh, Angry, Frown, PartyPopper, ThumbsDown, Bookmark } from 'lucide-react';
-import { TeamMessage, getMessages, createMessage, markMessageAsRead, uploadTeamFile, getTeamMembers, getChatRooms, addMessageReaction, MessageReaction } from '@/services/team-service';
+import { Send, Image, Mic, Smile, Paperclip, AtSign, Heart, ThumbsUp, Laugh, Angry, Frown, PartyPopper, ThumbsDown, Bookmark, MoreVertical, Trash2 } from 'lucide-react';
+import { TeamMessage, getMessages, createMessage, markMessageAsRead, uploadTeamFile, getTeamMembers, getChatRooms, addMessageReaction, MessageReaction, deleteMessage } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserProfile } from '@/types/supabase-types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -20,6 +20,7 @@ interface MessageProps {
   isOwnMessage: boolean;
   author: UserProfile | undefined;
   onAddReaction: (messageId: string, emoji: string) => void;
+  onDeleteMessage: (messageId: string) => void;
   teamMembers: UserProfile[];
   currentUserId: string;
 }
@@ -52,6 +53,7 @@ const Message: React.FC<MessageProps> = ({
   isOwnMessage, 
   author, 
   onAddReaction,
+  onDeleteMessage,
   teamMembers,
   currentUserId
 }) => {
@@ -140,7 +142,7 @@ const Message: React.FC<MessageProps> = ({
             <div>
               {message.content && <p className="mb-2 whitespace-pre-wrap">{message.content}</p>}
               <audio controls className="w-full">
-                <source src={message.attachment_url} type="audio/mpeg" />
+                <source src={message.attachment_url} type="audio/webm" />
                 Your browser does not support the audio element.
               </audio>
             </div>
@@ -229,6 +231,29 @@ const Message: React.FC<MessageProps> = ({
               </div>
             </PopoverContent>
           </Popover>
+
+          {isOwnMessage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute top-1 right-1 h-6 w-6 rounded-full hover:bg-blue-600 opacity-70 hover:opacity-100 p-0"
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem 
+                  className="text-red-600 focus:text-red-600 cursor-pointer flex items-center gap-2"
+                  onClick={() => onDeleteMessage(message.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {message.reactions && message.reactions.length > 0 && (
@@ -286,20 +311,17 @@ const TeamChat: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   
-  // Get available chat rooms
   const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
     queryKey: ['chatRooms'],
     queryFn: getChatRooms
   });
   
-  // Select first room by default if none selected
   useEffect(() => {
     if (!selectedRoomId && rooms.length > 0) {
       setSelectedRoomId(rooms[0].id);
     }
   }, [rooms, selectedRoomId]);
   
-  // Get messages for selected room
   const { 
     data: messages = [], 
     isLoading: isLoadingMessages,
@@ -310,13 +332,11 @@ const TeamChat: React.FC = () => {
     enabled: !!selectedRoomId
   });
   
-  // Get team members for message authors and reactions
   const { data: teamMembers = [] } = useQuery({
     queryKey: ['teamMembers'],
     queryFn: getTeamMembers
   });
   
-  // Create message mutation
   const createMessageMutation = useMutation({
     mutationFn: createMessage,
     onSuccess: () => {
@@ -324,7 +344,6 @@ const TeamChat: React.FC = () => {
     }
   });
   
-  // Add reaction mutation
   const addReactionMutation = useMutation({
     mutationFn: ({ messageId, emoji, userId }: { messageId: string, emoji: string, userId: string }) => 
       addMessageReaction(messageId, emoji, userId),
@@ -333,19 +352,28 @@ const TeamChat: React.FC = () => {
     }
   });
   
-  // Scroll to bottom of messages
+  const deleteMessageMutation = useMutation({
+    mutationFn: (messageId: string) => deleteMessage(messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamMessages', selectedRoomId] });
+      toast.success("Message deleted");
+    },
+    onError: (error) => {
+      console.error("Error deleting message:", error);
+      toast.error("Failed to delete message");
+    }
+  });
+  
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
   
-  // Find message authors
   const findMessageAuthor = (authorId: string) => {
     return teamMembers.find(member => member.id === authorId);
   };
   
-  // Handle message submission
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user || !selectedRoomId) return;
     
@@ -380,13 +408,17 @@ const TeamChat: React.FC = () => {
     });
   };
   
+  const handleDeleteMessage = (messageId: string) => {
+    if (!user) return;
+    
+    deleteMessageMutation.mutate(messageId);
+  };
+  
   const handleRoomSelect = (roomId: string) => {
     setSelectedRoomId(roomId);
   };
   
-  // Handle image upload
   const handleImageUpload = () => {
-    // Create a hidden file input and trigger it
     if (!fileInputRef.current) {
       const input = document.createElement('input');
       input.type = 'file';
@@ -401,10 +433,8 @@ const TeamChat: React.FC = () => {
             setIsSubmitting(true);
             toast.loading('Uploading image...');
             
-            // Upload the file to storage
             const attachmentUrl = await uploadTeamFile(file, 'messages');
             
-            // Create a message with the image URL
             await createMessageMutation.mutateAsync({
               content: messageText,
               author_id: user.id,
@@ -433,16 +463,13 @@ const TeamChat: React.FC = () => {
     }
   };
   
-  // Handle voice recording
   const handleVoiceRecording = async () => {
     if (isRecording) {
-      // Stop recording
       if (voiceRecorderRef.current) {
         voiceRecorderRef.current.stop();
       }
     } else {
       try {
-        // Start recording
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const recorder = new MediaRecorder(stream);
         const chunks: Blob[] = [];
@@ -457,7 +484,6 @@ const TeamChat: React.FC = () => {
         recorder.onstop = async () => {
           setIsRecording(false);
           
-          // Convert chunks to audio file
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
           const audioFile = new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' });
           
@@ -466,10 +492,8 @@ const TeamChat: React.FC = () => {
               setIsSubmitting(true);
               toast.loading('Uploading voice message...');
               
-              // Upload the audio file
               const attachmentUrl = await uploadTeamFile(audioFile, 'messages');
               
-              // Create a message with the audio URL
               await createMessageMutation.mutateAsync({
                 content: messageText,
                 author_id: user.id,
@@ -491,7 +515,6 @@ const TeamChat: React.FC = () => {
             }
           }
           
-          // Stop all tracks
           stream.getTracks().forEach(track => track.stop());
         };
         
@@ -506,9 +529,7 @@ const TeamChat: React.FC = () => {
     }
   };
   
-  // Handle file upload
   const handleFileUpload = () => {
-    // Create a hidden file input and trigger it
     const input = document.createElement('input');
     input.type = 'file';
     input.style.display = 'none';
@@ -521,10 +542,8 @@ const TeamChat: React.FC = () => {
           setIsSubmitting(true);
           toast.loading('Uploading file...');
           
-          // Upload the file to storage
           const attachmentUrl = await uploadTeamFile(file, 'messages');
           
-          // Create a message with the file URL
           await createMessageMutation.mutateAsync({
             content: messageText || `File: ${file.name}`,
             author_id: user.id,
@@ -550,7 +569,6 @@ const TeamChat: React.FC = () => {
     document.body.removeChild(input);
   };
   
-  // Handle member mention
   const handleMemberMention = () => {
     const availableMembers = teamMembers.map(member => 
       `@${member.first_name} ${member.last_name}`
@@ -559,7 +577,7 @@ const TeamChat: React.FC = () => {
     toast.info(`Available members to mention: ${availableMembers}`);
     setMessageText(prev => prev + '@');
   };
-  
+
   return (
     <div className="flex h-[calc(100vh-120px)]">
       <ChatRoomSidebar 
@@ -589,17 +607,20 @@ const TeamChat: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {messages.map((message) => (
-                    <Message
-                      key={message.id}
-                      message={message}
-                      isOwnMessage={message.author_id === user?.id}
-                      author={findMessageAuthor(message.author_id)}
-                      onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)}
-                      teamMembers={teamMembers}
-                      currentUserId={user?.id || ''}
-                    />
-                  ))}
+                  {messages
+                    .filter(message => !message.deleted)
+                    .map((message) => (
+                      <Message
+                        key={message.id}
+                        message={message}
+                        isOwnMessage={message.author_id === user?.id}
+                        author={findMessageAuthor(message.author_id)}
+                        onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)}
+                        onDeleteMessage={handleDeleteMessage}
+                        teamMembers={teamMembers}
+                        currentUserId={user?.id || ''}
+                      />
+                    ))}
                   <div ref={messagesEndRef} />
                 </>
               )}
@@ -676,7 +697,6 @@ const TeamChat: React.FC = () => {
         </Card>
       </div>
       
-      {/* Hidden file input for image uploads */}
       <input 
         type="file"
         ref={fileInputRef}
@@ -689,10 +709,8 @@ const TeamChat: React.FC = () => {
               setIsSubmitting(true);
               toast.loading('Uploading image...');
               
-              // Upload the file to storage
               const attachmentUrl = await uploadTeamFile(file, 'messages');
               
-              // Create a message with the image URL
               await createMessageMutation.mutateAsync({
                 content: messageText,
                 author_id: user.id,
@@ -719,4 +737,3 @@ const TeamChat: React.FC = () => {
 };
 
 export default TeamChat;
-
