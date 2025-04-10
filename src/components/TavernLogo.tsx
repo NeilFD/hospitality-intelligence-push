@@ -9,7 +9,7 @@ interface TavernLogoProps {
 
 export const TavernLogo: React.FC<TavernLogoProps> = ({
   className,
-  size = 'md'
+  size = 'lg' // Changed default size from 'md' to 'lg'
 }) => {
   const sizeClasses = {
     sm: 'h-8 w-8',
@@ -27,3 +27,4 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
       </div>
     </div>;
 };
+
