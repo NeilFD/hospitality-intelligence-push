@@ -79,7 +79,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch master daily records as the single source of truth
         const { data: masterRecords, error: masterError } = await supabase
           .from('master_daily_records')
           .select('*')
@@ -94,16 +93,13 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         
         console.log(`Found ${masterRecords.length} master records for ${currentYear}-${currentMonth}`);
         
-        // Fetch tracker data for cost calculation
         const trackerData = await fetchTrackerDataByMonth(currentYear, currentMonth, moduleType);
         
-        // Map tracker data by date for easy lookup
         const trackerByDate: Record<string, any> = {};
         for (const tracker of trackerData) {
           trackerByDate[tracker.date] = tracker;
         }
         
-        // Initialize weekly summaries
         const weekMap: Record<number, WeekSummary> = {};
         for (let i = 1; i <= 5; i++) {
           weekMap[i] = {
@@ -114,19 +110,15 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           };
         }
         
-        // Process each day from master records
         for (const record of masterRecords) {
           const weekNumber = record.week_number;
           
-          // Select correct revenue field based on module type
           const dayRevenue = moduleType === 'food' ? 
             Number(record.food_revenue) || 0 : 
             Number(record.beverage_revenue) || 0;
             
-          // Add to weekly total
           weekMap[weekNumber].revenue += dayRevenue;
           
-          // Process costs from tracker data if available
           const trackerRecord = trackerByDate[record.date];
           if (trackerRecord) {
             const purchases = await fetchTrackerPurchases(trackerRecord.id);
@@ -143,11 +135,9 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           }
         }
         
-        // Calculate GP for each week and totals
         let monthTotalRevenue = 0;
         let monthTotalCosts = 0;
         
-        // Convert the map to an array and calculate GP
         const weeklyDataArray: WeekSummary[] = Object.values(weekMap).map(week => {
           monthTotalRevenue += week.revenue;
           monthTotalCosts += week.costs;
@@ -158,14 +148,12 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           };
         });
         
-        // Sort by week number
         weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
         
         console.log('Weekly breakdown:', weeklyDataArray.map(w => 
           `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}`
         ));
         
-        // Update state with calculated data
         setWeeklyData(weeklyDataArray);
         setTotalRevenue(monthTotalRevenue);
         setTotalCosts(monthTotalCosts);
@@ -179,68 +167,58 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           variant: "destructive",
         });
         
-        // Fallback to local data if API fails
+        const calculateFromLocalStore = () => {
+          const weekMap: Record<number, WeekSummary> = {};
+          for (let i = 1; i <= 5; i++) {
+            weekMap[i] = {
+              weekNumber: i,
+              revenue: 0,
+              costs: 0,
+              gp: 0
+            };
+          }
+          
+          monthRecord.weeks.forEach(week => {
+            const weekNumber = week.weekNumber;
+            let weekRevenue = 0;
+            let weekCosts = 0;
+            
+            week.days.forEach(day => {
+              weekRevenue += day.revenue;
+              
+              const dayCosts = Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
+              const creditNotes = day.creditNotes.reduce((sum, credit) => sum + credit, 0);
+              weekCosts += dayCosts - creditNotes + day.staffFoodAllowance;
+            });
+            
+            weekMap[weekNumber] = {
+              weekNumber,
+              revenue: weekRevenue,
+              costs: weekCosts,
+              gp: calculateGP(weekRevenue, weekCosts)
+            };
+          });
+          
+          const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
+          
+          let localTotalRevenue = 0;
+          let localTotalCosts = 0;
+          
+          localWeeklyData.forEach(week => {
+            localTotalRevenue += week.revenue;
+            localTotalCosts += week.costs;
+          });
+          
+          setWeeklyData(localWeeklyData);
+          setTotalRevenue(localTotalRevenue);
+          setTotalCosts(localTotalCosts);
+          setGpPercentage(calculateGP(localTotalRevenue, localTotalCosts));
+        };
+        
         calculateFromLocalStore();
       }
     };
     
-    const calculateFromLocalStore = () => {
-      // Initialize week summaries with zeros
-      const weekMap: Record<number, WeekSummary> = {};
-      for (let i = 1; i <= 5; i++) {
-        weekMap[i] = {
-          weekNumber: i,
-          revenue: 0,
-          costs: 0,
-          gp: 0
-        };
-      }
-      
-      // Process each week from the month record
-      monthRecord.weeks.forEach(week => {
-        const weekNumber = week.weekNumber;
-        let weekRevenue = 0;
-        let weekCosts = 0;
-        
-        // Sum up all days' revenue and costs in this week
-        week.days.forEach(day => {
-          // Add revenue for this day
-          weekRevenue += day.revenue;
-          
-          // Calculate costs for this day
-          const dayCosts = Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
-          const creditNotes = day.creditNotes.reduce((sum, credit) => sum + credit, 0);
-          weekCosts += dayCosts - creditNotes + day.staffFoodAllowance;
-        });
-        
-        // Update the week summary
-        weekMap[weekNumber] = {
-          weekNumber,
-          revenue: weekRevenue,
-          costs: weekCosts,
-          gp: calculateGP(weekRevenue, weekCosts)
-        };
-      });
-      
-      // Convert the map to an array and sort by week number
-      const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
-      
-      // Calculate month totals
-      let localTotalRevenue = 0;
-      let localTotalCosts = 0;
-      
-      localWeeklyData.forEach(week => {
-        localTotalRevenue += week.revenue;
-        localTotalCosts += week.costs;
-      });
-      
-      // Update state
-      setWeeklyData(localWeeklyData);
-      setTotalRevenue(localTotalRevenue);
-      setTotalCosts(localTotalCosts);
-      setGpPercentage(calculateGP(localTotalRevenue, localTotalCosts));
-    };
-
     fetchData();
   }, [currentYear, currentMonth, toast, moduleType]);
   
@@ -278,6 +256,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           label="Month-to-Date GP %" 
           value={formatPercentage(gpPercentage)} 
           status={gpStatus} 
+          gpMode={true} 
         />
         <StatusBox 
           label="GP Target" 
@@ -288,6 +267,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           label="Variance" 
           value={`${gpDifference >= 0 ? '+' : ''}${formatPercentage(gpDifference)}`} 
           status={gpStatus} 
+          gpMode={true} 
         />
       </div>
 
@@ -306,6 +286,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           label={spendDifference >= 0 ? "Underspending by" : "Overspending by"} 
           value={formatCurrency(Math.abs(spendDifference))} 
           status={spendStatus} 
+          gpMode={true} 
         />
       </div>
 
@@ -335,9 +316,9 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
                       <td className="table-cell">{formatCurrency(week.revenue)}</td>
                       <td className="table-cell">{formatCurrency(week.costs)}</td>
                       <td className={`table-cell ${
-                        week.gp >= monthRecord.gpTarget ? 'text-tavern-green' : 
-                        week.gp >= monthRecord.gpTarget - 0.03 ? 'text-tavern-amber' : 
-                        'text-tavern-red'
+                        week.gp >= monthRecord.gpTarget ? 'text-green-600' : 
+                        week.gp >= monthRecord.gpTarget - 0.03 ? 'text-amber-600' : 
+                        'text-red-600'
                       }`}>
                         {formatPercentage(week.gp)}
                       </td>
@@ -359,7 +340,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
                     <td className={`table-header ${
                       gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light/50' : 
                       gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber/50' : 
-                      'bg-tavern-blue-light/50 text-tavern-blue-dark'
+                      'bg-tavern-red/50'
                     } backdrop-blur-sm`}>
                       {formatPercentage(gpPercentage)}
                     </td>
