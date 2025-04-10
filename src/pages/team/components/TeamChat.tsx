@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,7 +73,7 @@ const Message: React.FC<MessageProps> = ({
         </div>
       )}
       
-      <div className="flex flex-col">
+      <div className="flex flex-col relative">
         <div className={`${messageBubbleClass} shadow-sm hover:shadow-md transition-shadow duration-200`}>
           {!isOwnMessage && author && (
             <p className="font-semibold text-xs mb-1">
@@ -138,6 +137,32 @@ const Message: React.FC<MessageProps> = ({
           <div className="text-xs mt-1 opacity-70">
             {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
+
+          {/* Emoji reaction button - Now positioned on corner of message bubble */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-white shadow-sm hover:bg-gray-50 opacity-70 hover:opacity-100"
+              >
+                <Smile className="h-3.5 w-3.5 text-gray-500" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2 flex space-x-2">
+              {emojis.map((item, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => onAddReaction(message.id, item.emoji)}
+                >
+                  {item.icon}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Emoji reactions display */}
@@ -166,34 +191,6 @@ const Message: React.FC<MessageProps> = ({
             ))}
           </div>
         )}
-      </div>
-
-      {/* Emoji reaction button - Now always visible */}
-      <div className="flex relative ml-1">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-6 w-6 rounded-full bg-gray-100 hover:bg-gray-200"
-            >
-              <Smile className="h-3 w-3" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-2 flex space-x-2">
-            {emojis.map((item, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onAddReaction(message.id, item.emoji)}
-              >
-                {item.icon}
-              </Button>
-            ))}
-          </PopoverContent>
-        </Popover>
       </div>
       
       {isOwnMessage && (
