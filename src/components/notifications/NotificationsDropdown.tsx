@@ -7,7 +7,7 @@ import { TeamMessage } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Bell } from 'lucide-react';
+import { Bell, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -158,6 +158,41 @@ const NotificationsDropdown = () => {
     navigate(`/team/chat?room=${message.room_id}`);
   };
   
+  // Clear all notifications (mark all as read)
+  const handleClearAllNotifications = async () => {
+    if (!user || notifications.length === 0) return;
+    
+    // Get all unread notifications
+    const unreadNotifications = notifications.filter(
+      msg => !msg.read_by.includes(user.id)
+    );
+    
+    if (unreadNotifications.length === 0) return;
+    
+    // Mark all as read in database
+    for (const notification of unreadNotifications) {
+      const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+      await supabase
+        .from('team_messages')
+        .update({ read_by: [...currentReadBy, user.id] })
+        .eq('id', notification.id);
+    }
+    
+    // Update local state
+    setNotifications(prev => 
+      prev.map(n => ({
+        ...n,
+        read_by: n.read_by.includes(user.id) ? n.read_by : [...n.read_by, user.id]
+      }))
+    );
+    
+    // No more unread messages
+    setHasUnread(false);
+    
+    // Refresh the data
+    queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
+  };
+  
   const getAuthorName = (authorId: string) => {
     const author = profiles.find(p => p.id === authorId);
     if (author) {
@@ -195,8 +230,19 @@ const NotificationsDropdown = () => {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-2 border-b">
+        <div className="flex justify-between items-center p-2 border-b">
           <h4 className="text-sm font-medium">Notifications</h4>
+          {notifications && notifications.length > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 p-0 flex items-center gap-1 hover:bg-red-50" 
+              onClick={handleClearAllNotifications}
+            >
+              <Trash2 className="h-4 w-4 text-gray-500" />
+              <span className="text-xs text-gray-500">Clear All</span>
+            </Button>
+          )}
         </div>
         <ScrollArea className="h-[300px]">
           {notifications && notifications.length > 0 ? (
