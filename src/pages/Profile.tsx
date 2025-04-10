@@ -13,12 +13,13 @@ import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 
 type Role = 'Owner' | 'Manager' | 'Team Member';
+type AuthServiceRole = 'Owner' | 'Head Chef' | 'Staff';
 
 interface ProfileData {
   id: string;
   first_name: string;
   last_name: string;
-  role: Role;
+  role: Role | AuthServiceRole;
   avatar_url: string;
 }
 
@@ -33,15 +34,37 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewedProfile, setViewedProfile] = useState<ProfileData | null>(null);
 
+  // Convert new role format to auth service format
+  const convertRoleToAuthServiceRole = (newRole: Role): AuthServiceRole => {
+    switch (newRole) {
+      case 'Owner': return 'Owner';
+      case 'Manager': return 'Head Chef';
+      case 'Team Member': return 'Staff';
+      default: return 'Staff';
+    }
+  };
+
+  // Convert auth service role format to new role format
+  const convertAuthServiceRoleToRole = (authRole: AuthServiceRole | string | null): Role => {
+    if (authRole === 'Owner') return 'Owner';
+    if (authRole === 'Head Chef' || authRole === 'Manager') return 'Manager';
+    return 'Team Member';
+  };
+
   const handleUpdateProfile = async () => {
     try {
       setIsLoading(true);
+      
+      // Convert the role to the format expected by the auth service
+      const authServiceRole = convertRoleToAuthServiceRole(role);
+      
       await updateProfile({
         firstName,
         lastName,
-        role,
+        role: authServiceRole,
         avatarUrl
       });
+      
       toast.success("Profile updated successfully.");
       setIsEditing(false);
     } catch (error: any) {
@@ -86,18 +109,9 @@ export default function Profile() {
           setFirstName(data.first_name || '');
           setLastName(data.last_name || '');
           
-          // Convert any old role values to new ones
-          let updatedRole: 'Owner' | 'Manager' | 'Team Member' = 'Team Member';
-          if (data.role === 'Owner') {
-            updatedRole = 'Owner';
-          } else if (data.role === 'Manager' || data.role === 'Head Chef') {
-            updatedRole = 'Manager';
-          } else {
-            updatedRole = 'Team Member';
-          }
-          setRole(updatedRole);
+          // Convert database role to new role format
+          setRole(convertAuthServiceRoleToRole(data.role));
           setAvatarUrl(data.avatar_url);
-          
         }
       } catch (error) {
         toast.error("Error fetching profile: " + (error as Error).message);
@@ -114,18 +128,9 @@ export default function Profile() {
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
         
-        // Convert any old role values to new ones
-        let updatedRole: 'Owner' | 'Manager' | 'Team Member' = 'Team Member';
-        if (profile.role === 'Owner') {
-          updatedRole = 'Owner';
-        } else if (profile.role === 'Manager' || profile.role === 'Head Chef') {
-          updatedRole = 'Manager';
-        } else {
-          updatedRole = 'Team Member';
-        }
-        setRole(updatedRole);
+        // Convert database role to new role format
+        setRole(convertAuthServiceRoleToRole(profile.role));
         setAvatarUrl(profile.avatar_url);
-        
       }
     }
   }, [userId, user, profile]);

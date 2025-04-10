@@ -14,7 +14,7 @@ interface AuthState {
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
-  updateProfile: (updates: { first_name?: string; last_name?: string; role?: 'Owner' | 'Head Chef' | 'Staff'; avatar_url?: string }) => Promise<void>;
+  updateProfile: (updates: { firstName?: string; lastName?: string; role?: 'Owner' | 'Head Chef' | 'Staff'; avatarUrl?: string }) => Promise<void>;
   clearError: () => void;
 }
 
@@ -135,9 +135,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       
+      const updateData = {
+        first_name: updates.firstName,
+        last_name: updates.lastName,
+        role: updates.role,
+        avatar_url: updates.avatarUrl
+      };
+      
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(updateData)
         .eq('id', user.id);
       
       if (error) throw error;
