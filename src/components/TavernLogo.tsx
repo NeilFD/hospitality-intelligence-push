@@ -9,16 +9,16 @@ interface TavernLogoProps {
 
 export const TavernLogo: React.FC<TavernLogoProps> = ({
   className,
-  size = 'lg' // Changed default size from 'md' to 'lg'
+  size = 'lg'
 }) => {
   const sizeClasses = {
     sm: 'h-8 w-8',
     md: 'h-12 w-12',
-    lg: 'h-20 w-20',
+    lg: 'h-24 w-24', // Increased from h-20 w-20 to match the main window logo
     xl: 'h-24 w-24',
     '2xl': 'h-40 w-40',
     '3xl': 'h-64 w-64',
-    '4xl': 'h-96 w-96' // Added even larger size for flexibility
+    '4xl': 'h-96 w-96'
   };
 
   return <div className={cn('flex items-center justify-center', className)}>
@@ -27,4 +27,3 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
       </div>
     </div>;
 };
-
