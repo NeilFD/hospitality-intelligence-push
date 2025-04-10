@@ -209,9 +209,18 @@ export default function FoodBeverageAnalysis() {
   }, [dailyData]);
   
   const chartConfig = {
-    food: { label: 'Food', color: '#10b981', theme: { light: '#10b981', dark: '#047857' } },
-    beverage: { label: 'Beverage', color: '#6366f1', theme: { light: '#6366f1', dark: '#4338ca' } },
-    combined: { label: 'Combined', color: '#f59e0b', theme: { light: '#f59e0b', dark: '#d97706' } }
+    food: { 
+      label: 'Food', 
+      theme: { light: '#10b981', dark: '#047857' }
+    },
+    beverage: { 
+      label: 'Beverage', 
+      theme: { light: '#6366f1', dark: '#4338ca' }
+    },
+    combined: { 
+      label: 'Combined', 
+      theme: { light: '#f59e0b', dark: '#d97706' }
+    }
   };
   
   // Calculate trends and insights
@@ -411,7 +420,12 @@ export default function FoodBeverageAnalysis() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={dailyData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="date" tickFormatter={(date) => new Date(date).getDate()} />
+                        <XAxis dataKey="date" tickFormatter={(date) => {
+                          if (typeof date === 'string') {
+                            return new Date(date).getDate();
+                          }
+                          return date;
+                        }} />
                         <YAxis tickFormatter={(value) => `£${value}`} />
                         <Tooltip 
                           content={({ active, payload }) => {
@@ -510,7 +524,12 @@ export default function FoodBeverageAnalysis() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={dailyData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="date" tickFormatter={(date) => new Date(date).getDate()} />
+                        <XAxis dataKey="date" tickFormatter={(date) => {
+                          if (typeof date === 'string') {
+                            return new Date(date).getDate();
+                          }
+                          return date;
+                        }} />
                         <YAxis tickFormatter={(value) => `£${value}`} />
                         <Tooltip 
                           content={({ active, payload }) => {
@@ -609,7 +628,12 @@ export default function FoodBeverageAnalysis() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={dailyData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="date" tickFormatter={(date) => new Date(date).getDate()} />
+                        <XAxis dataKey="date" tickFormatter={(date) => {
+                          if (typeof date === 'string') {
+                            return new Date(date).getDate();
+                          }
+                          return date;
+                        }} />
                         <YAxis tickFormatter={(value) => `£${value}`} />
                         <Tooltip 
                           content={({ active, payload }) => {
@@ -660,7 +684,7 @@ export default function FoodBeverageAnalysis() {
                             <Cell fill="#10b981" />
                             <Cell fill="#6366f1" />
                           </Pie>
-                          <Tooltip formatter={(value) => formatCurrency(value)} />
+                          <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                         </PieChart>
                       </ResponsiveContainer>
                     </ChartContainer>
@@ -678,7 +702,7 @@ export default function FoodBeverageAnalysis() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} />
                           <XAxis dataKey="dayOfWeek" />
                           <YAxis tickFormatter={(value) => `£${value}`} />
-                          <Tooltip formatter={(value) => formatCurrency(value)} />
+                          <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                           <Line type="monotone" dataKey="totalRevenue" stroke="#f59e0b" name="Total" />
                           <Line type="monotone" dataKey="foodRevenue" stroke="#10b981" name="Food" />
                           <Line type="monotone" dataKey="bevRevenue" stroke="#6366f1" name="Beverage" />

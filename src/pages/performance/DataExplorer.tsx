@@ -35,7 +35,7 @@ export default function DataExplorer() {
   const [customQuery, setCustomQuery] = useState('');
   const [queryResults, setQueryResults] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
-  const [chartConfig, setChartConfig] = useState({});
+  const [chartConfig, setChartConfig] = useState<Record<string, any>>({});
   
   const years = Array.from({ length: 3 }, (_, i) => currentYear - 1 + i);
   
@@ -96,27 +96,22 @@ export default function DataExplorer() {
     const config = {
       food: { 
         label: 'Food', 
-        color: '#10b981',
         theme: { light: '#10b981', dark: '#047857' }
       },
       beverage: { 
         label: 'Beverage', 
-        color: '#6366f1',
         theme: { light: '#6366f1', dark: '#4338ca' }
       },
       total: { 
         label: 'Total', 
-        color: '#f59e0b',
         theme: { light: '#f59e0b', dark: '#d97706' }
       },
       covers: { 
         label: 'Covers', 
-        color: '#ec4899',
         theme: { light: '#ec4899', dark: '#be185d' }
       },
       wages: { 
         label: 'Wages', 
-        color: '#8b5cf6',
         theme: { light: '#8b5cf6', dark: '#6d28d9' }
       }
     };
@@ -147,7 +142,7 @@ export default function DataExplorer() {
     
     // Aggregate data based on selected aggregation
     if (aggregation === 'monthly') {
-      const monthlyData = Array(12).fill().map((_, i) => {
+      const monthlyData = Array(12).fill(0).map((_, i) => {
         const month = i + 1;
         const monthData = combinedData.filter(d => new Date(d.date).getMonth() + 1 === month);
         
@@ -225,7 +220,7 @@ export default function DataExplorer() {
       return dayOfWeekData;
     } else {
       // Daily data, but sort by date
-      return combinedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      return combinedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }
   }, [masterRecords, wagesData, selectedYear, aggregation]);
   
@@ -276,10 +271,10 @@ export default function DataExplorer() {
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
-                  <Cell fill={chartConfig.food.color} />
-                  <Cell fill={chartConfig.beverage.color} />
+                  <Cell fill={chartConfig.food?.theme?.light || "#10b981"} />
+                  <Cell fill={chartConfig.beverage?.theme?.light || "#6366f1"} />
                 </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -300,10 +295,10 @@ export default function DataExplorer() {
                   }} 
                 />
                 <YAxis tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
-                <Bar dataKey="foodRevenue" stackId="revenue" name="Food" fill={chartConfig.food.color} />
-                <Bar dataKey="beverageRevenue" stackId="revenue" name="Beverage" fill={chartConfig.beverage.color} />
+                <Bar dataKey="foodRevenue" stackId="revenue" name="Food" fill={chartConfig.food?.theme?.light || "#10b981"} />
+                <Bar dataKey="beverageRevenue" stackId="revenue" name="Beverage" fill={chartConfig.beverage?.theme?.light || "#6366f1"} />
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -324,11 +319,11 @@ export default function DataExplorer() {
                   }} 
                 />
                 <YAxis tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
-                <Line type="monotone" dataKey="foodRevenue" name="Food" stroke={chartConfig.food.color} />
-                <Line type="monotone" dataKey="beverageRevenue" name="Beverage" stroke={chartConfig.beverage.color} />
-                <Line type="monotone" dataKey="totalRevenue" name="Total" stroke={chartConfig.total.color} />
+                <Line type="monotone" dataKey="foodRevenue" name="Food" stroke={chartConfig.food?.theme?.light || "#10b981"} />
+                <Line type="monotone" dataKey="beverageRevenue" name="Beverage" stroke={chartConfig.beverage?.theme?.light || "#6366f1"} />
+                <Line type="monotone" dataKey="totalRevenue" name="Total" stroke={chartConfig.total?.theme?.light || "#f59e0b"} />
               </LineChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -351,8 +346,8 @@ export default function DataExplorer() {
                   name="Beverage Revenue" 
                   tickFormatter={(value) => `£${value}`}
                 />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Scatter name="Revenues" data={processedData} fill={chartConfig.total.color} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Scatter name="Revenues" data={processedData} fill={chartConfig.total?.theme?.light || "#f59e0b"} />
               </ScatterChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -382,7 +377,7 @@ export default function DataExplorer() {
                   <Cell fill="#f59e0b" />
                   <Cell fill="#6366f1" />
                 </Pie>
-                <Tooltip formatter={(value) => value} />
+                <Tooltip formatter={(value) => Number(value)} />
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -429,7 +424,7 @@ export default function DataExplorer() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="totalCovers" name="Total Covers" stroke={chartConfig.covers.color} />
+                <Line type="monotone" dataKey="totalCovers" name="Total Covers" stroke={chartConfig.covers?.theme?.light || "#ec4899"} />
               </LineChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -443,10 +438,10 @@ export default function DataExplorer() {
                 <XAxis type="number" dataKey="totalCovers" name="Total Covers" />
                 <YAxis type="number" dataKey="totalRevenue" name="Revenue" tickFormatter={(value) => `£${value}`} />
                 <Tooltip formatter={(value, name) => {
-                  if (name === 'Revenue') return formatCurrency(value);
+                  if (name === 'Revenue') return formatCurrency(Number(value));
                   return value;
                 }} />
-                <Scatter name="Covers vs Revenue" data={processedData} fill={chartConfig.covers.color} />
+                <Scatter name="Covers vs Revenue" data={processedData} fill={chartConfig.covers?.theme?.light || "#ec4899"} />
               </ScatterChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -476,7 +471,7 @@ export default function DataExplorer() {
                   <Cell fill="#10b981" />
                   <Cell fill="#8b5cf6" />
                 </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -497,7 +492,7 @@ export default function DataExplorer() {
                   }} 
                 />
                 <YAxis tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
                 <Bar dataKey="fohWages" stackId="wages" name="FOH" fill="#10b981" />
                 <Bar dataKey="kitchenWages" stackId="wages" name="Kitchen" fill="#8b5cf6" />
@@ -521,10 +516,10 @@ export default function DataExplorer() {
                   }} 
                 />
                 <YAxis tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
-                <Line type="monotone" dataKey="totalWages" name="Total Wages" stroke={chartConfig.wages.color} />
-                <Line type="monotone" dataKey="totalRevenue" name="Revenue" stroke={chartConfig.total.color} />
+                <Line type="monotone" dataKey="totalWages" name="Total Wages" stroke={chartConfig.wages?.theme?.light || "#8b5cf6"} />
+                <Line type="monotone" dataKey="totalRevenue" name="Revenue" stroke={chartConfig.total?.theme?.light || "#f59e0b"} />
               </LineChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -537,8 +532,8 @@ export default function DataExplorer() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" dataKey="totalRevenue" name="Revenue" tickFormatter={(value) => `£${value}`} />
                 <YAxis type="number" dataKey="totalWages" name="Wages" tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Scatter name="Revenue vs Wages" data={processedData} fill={chartConfig.wages.color} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Scatter name="Revenue vs Wages" data={processedData} fill={chartConfig.wages?.theme?.light || "#8b5cf6"} />
               </ScatterChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -561,7 +556,7 @@ export default function DataExplorer() {
                   }} 
                 />
                 <YAxis tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Bar dataKey="averageSpend" name="Average Spend" fill="#ec4899" />
               </BarChart>
             </ResponsiveContainer>
@@ -583,7 +578,7 @@ export default function DataExplorer() {
                   }} 
                 />
                 <YAxis tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Line type="monotone" dataKey="averageSpend" name="Average Spend" stroke="#ec4899" />
               </LineChart>
             </ResponsiveContainer>
@@ -598,7 +593,7 @@ export default function DataExplorer() {
                 <XAxis type="number" dataKey="totalCovers" name="Covers" />
                 <YAxis type="number" dataKey="averageSpend" name="Average Spend" tickFormatter={(value) => `£${value}`} />
                 <Tooltip formatter={(value, name) => {
-                  if (name === 'Average Spend') return formatCurrency(value);
+                  if (name === 'Average Spend') return formatCurrency(Number(value));
                   return value;
                 }} />
                 <Scatter name="Covers vs Average Spend" data={processedData} fill="#ec4899" />
@@ -623,7 +618,7 @@ export default function DataExplorer() {
                   }} 
                 />
                 <YAxis tickFormatter={(value) => `£${value}`} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Bar dataKey="averageSpend" name="Average Spend" fill="#ec4899" />
               </BarChart>
             </ResponsiveContainer>
@@ -631,6 +626,13 @@ export default function DataExplorer() {
         );
       }
     }
+    
+    // Default chart if nothing matches
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <p className="text-muted-foreground">No visualization available for this data type and chart combination</p>
+      </div>
+    );
   };
   
   // Handle custom query from user
@@ -776,7 +778,7 @@ export default function DataExplorer() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
-                      {Object.keys(queryResults[0]).map((key) => (
+                      {Object.keys(queryResults[0] || {}).map((key) => (
                         <th key={key} className="p-2 text-left text-sm font-medium text-gray-600">
                           {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
                         </th>
@@ -790,11 +792,11 @@ export default function DataExplorer() {
                           <td key={key} className="p-2 border-t border-slate-200">
                             {typeof value === 'number' 
                               ? (key.includes('percentage') 
-                                ? `${value.toFixed(2)}%` 
+                                ? `${Number(value).toFixed(2)}%` 
                                 : key.includes('revenue') || key.includes('wages') 
-                                  ? formatCurrency(value)
+                                  ? formatCurrency(Number(value))
                                   : value)
-                              : value}
+                              : value as React.ReactNode}
                           </td>
                         ))}
                       </tr>
