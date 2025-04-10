@@ -513,21 +513,17 @@ const TeamChat: React.FC = () => {
               </div>
               
               <div className="flex flex-wrap gap-1 mt-2">
-                <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 px-2" title="Add image" onClick={handleImageUpload}>
-                  <Image className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Image</span>
+                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
+                  <Image className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="sm" className={`text-gray-500 hover:text-gray-700 px-2 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
-                  <Mic className={`h-4 w-4 mr-1 ${isRecording ? 'text-red-500' : ''}`} />
-                  <span className="text-xs">{isRecording ? 'Stop' : 'Voice'}</span>
+                <Button variant="ghost" size="icon" className={`text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
+                  <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 px-2" title="Attach file" onClick={handleFileUpload}>
-                  <Paperclip className="h-4 w-4 mr-1" />
-                  <span className="text-xs">File</span>
+                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
+                  <Paperclip className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 px-2" title="Mention" onClick={handleMemberMention}>
-                  <AtSign className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Mention</span>
+                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700" title="Mention" onClick={handleMemberMention}>
+                  <AtSign className="h-5 w-5" />
                 </Button>
               </div>
             </div>
