@@ -39,7 +39,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
   return (
     <div className={cn(
       "transition-all duration-300 bg-pastel-blue h-full border-r border-white/20 flex-shrink-0 relative",
-      isMobile && minimized ? "w-12" : (isMobile ? "w-32" : "w-64")
+      isMobile && minimized ? "w-12" : (isMobile ? "w-52" : "w-64")
     )}>
       <div className="flex items-center justify-between border-b border-white/30 p-2 bg-tavern-blue/10">
         {!isMobile || !minimized ? (
@@ -64,7 +64,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         )}
       </div>
       
-      <ScrollArea className="h-[calc(100vh-120px)]">
+      <ScrollArea className="h-[calc(100vh-180px)]">
         <div className="p-1">
           {rooms.map((room) => (
             <Button
@@ -76,7 +76,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                   ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90" 
                   : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
                 isMobile && minimized ? "p-2" : "",
-                isMobile ? "h-10" : ""
+                isMobile ? "h-12" : ""
               )}
               onClick={() => onRoomSelect(room.id)}
               title={room.name}
@@ -102,14 +102,14 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Mobile expand/collapse tab for better visibility */}
+      {/* Mobile expand/collapse tab with improved visibility */}
       {isMobile && minimized && (
         <div 
-          className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-tavern-blue/90 text-white rounded-r-md p-1 cursor-pointer shadow-md"
+          className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-[#7E69AB] text-white rounded-r-md p-1 shadow-lg cursor-pointer"
           onClick={toggleMinimize}
           aria-label="Expand sidebar"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-5 w-5" />
         </div>
       )}
     </div>
