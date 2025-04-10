@@ -15,7 +15,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-
 interface MessageProps {
   message: TeamMessage;
   isOwnMessage: boolean;
@@ -25,7 +24,6 @@ interface MessageProps {
   teamMembers: UserProfile[];
   currentUserId: string;
 }
-
 const EMOJI_CATEGORIES = [{
   name: "Smileys",
   emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "☺️", "😚", "😙", "🥲", "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "😮‍💨", "🤥", "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😵", "😵‍💫", "🤯", "🤠", "🥳", "🥸", "😎", "🤓", "🧐"]
@@ -42,28 +40,22 @@ const EMOJI_CATEGORIES = [{
   name: "Activities",
   emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
-
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
   if (!content.includes('@')) return content;
-  
   const userMap = new Map();
   teamMembers.forEach(member => {
     const fullName = `${member.first_name} ${member.last_name}`.trim();
     userMap.set(member.id, fullName);
   });
-  
   const parts = content.split('@');
   const result: React.ReactNode[] = [parts[0]];
-  
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i];
-    
     if (part.startsWith('all ') || part.startsWith('all\n')) {
       result.push(<span key={`mention-all-${i}`} className="bg-blue-100 text-blue-800 rounded px-1">@all</span>);
       result.push(part.substring(3));
       continue;
     }
-    
     let found = false;
     for (const [userId, name] of userMap.entries()) {
       if (part.startsWith(`${userId} `) || part.startsWith(`${userId}\n`)) {
@@ -73,34 +65,24 @@ const highlightMentions = (content: string, teamMembers: UserProfile[]): React.R
         break;
       }
     }
-    
     if (!found) {
       result.push('@' + part);
     }
   }
-  
   return result;
 };
-
 const getUserNames = (userIds: string[]): string => {
   if (!userIds || userIds.length === 0) return "No users";
-  
   return userIds.join(", ");
 };
-
 const getUserNamesList = (userIds: string[], teamMembers: UserProfile[]): string => {
   if (!userIds || userIds.length === 0) return "No users";
-  
-  const names = userIds
-    .map(id => {
-      const member = teamMembers.find(member => member.id === id);
-      return member ? `${member.first_name} ${member.last_name}`.trim() : "Unknown user";
-    })
-    .filter(name => name !== "Unknown user");
-  
+  const names = userIds.map(id => {
+    const member = teamMembers.find(member => member.id === id);
+    return member ? `${member.first_name} ${member.last_name}`.trim() : "Unknown user";
+  }).filter(name => name !== "Unknown user");
   return names.length > 0 ? names.join(", ") : "Unknown users";
 };
-
 const Message: React.FC<MessageProps> = ({
   message,
   isOwnMessage,
@@ -111,10 +93,7 @@ const Message: React.FC<MessageProps> = ({
   currentUserId
 }) => {
   const messageContainerClass = isOwnMessage ? "flex justify-end mb-4" : "flex justify-start mb-4";
-  const messageBubbleClass = isOwnMessage 
-    ? "bg-[#7E69AB] text-white rounded-tl-lg rounded-tr-lg rounded-bl-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left" 
-    : "bg-gray-200 text-gray-800 rounded-tl-lg rounded-tr-lg rounded-br-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left";
-  
+  const messageBubbleClass = isOwnMessage ? "bg-[#7E69AB] text-white rounded-tl-lg rounded-tr-lg rounded-bl-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left" : "bg-gray-200 text-gray-800 rounded-tl-lg rounded-tr-lg rounded-br-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left";
   const getInitials = () => {
     if (!author) return '?';
     return `${(author.first_name?.[0] || '').toUpperCase()}${(author.last_name?.[0] || '').toUpperCase()}`;
@@ -145,7 +124,6 @@ const Message: React.FC<MessageProps> = ({
     icon: <Bookmark className="h-4 w-4" />,
     emoji: "🔖"
   }];
-  
   return <div className={messageContainerClass}>
       {!isOwnMessage && <div className="flex-shrink-0 mr-2">
           <Avatar className="h-8 w-8">
@@ -266,7 +244,6 @@ const Message: React.FC<MessageProps> = ({
         </div>}
     </div>;
 };
-
 const TeamChat: React.FC = () => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -285,7 +262,6 @@ const TeamChat: React.FC = () => {
   const [showMentionSelector, setShowMentionSelector] = useState(false);
   const [mentionStart, setMentionStart] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const {
     data: rooms = [],
     isLoading: isLoadingRooms
@@ -313,7 +289,6 @@ const TeamChat: React.FC = () => {
     queryKey: ['teamMembers'],
     queryFn: getTeamMembers
   });
-
   const createMessageMutation = useMutation({
     mutationFn: createMessage,
     onSuccess: () => {
@@ -361,15 +336,12 @@ const TeamChat: React.FC = () => {
   const findMessageAuthor = (authorId: string) => {
     return teamMembers.find(member => member.id === authorId);
   };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setMessageText(value);
-    
     const lastAtSymbol = value.lastIndexOf('@');
     if (lastAtSymbol >= 0) {
       const afterAt = value.substring(lastAtSymbol + 1);
-      
       if (lastAtSymbol === value.length - 1 || /^\s*$/.test(afterAt) || /^[a-zA-Z0-9\s]*$/.test(afterAt)) {
         setMentionStart(lastAtSymbol);
         setMentionQuery(afterAt.trim().toLowerCase());
@@ -377,48 +349,39 @@ const TeamChat: React.FC = () => {
         return;
       }
     }
-    
     setShowMentionSelector(false);
   };
-
   const insertMention = (userId: string, displayName: string) => {
     if (textareaRef.current) {
       const before = messageText.substring(0, mentionStart);
       const after = messageText.substring(mentionStart + mentionQuery.length + 1);
-      
       const newText = `${before}@${userId} ${after}`;
       setMessageText(newText);
       textareaRef.current.focus();
       setShowMentionSelector(false);
     }
   };
-
   const insertAllMention = () => {
     if (textareaRef.current) {
       const before = messageText.substring(0, mentionStart);
       const after = messageText.substring(mentionStart + mentionQuery.length + 1);
-      
       const newText = `${before}@all ${after}`;
       setMessageText(newText);
       textareaRef.current.focus();
       setShowMentionSelector(false);
     }
   };
-
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user || !selectedRoomId) return;
     try {
       setIsSubmitting(true);
-      
       const mentionedUserIds: string[] = [];
       const mentionAll = messageText.includes('@all');
-      
       teamMembers.forEach(member => {
         if (messageText.includes(`@${member.id}`)) {
           mentionedUserIds.push(member.id);
         }
       });
-      
       if (mentionAll) {
         teamMembers.forEach(member => {
           if (!mentionedUserIds.includes(member.id)) {
@@ -426,7 +389,6 @@ const TeamChat: React.FC = () => {
           }
         });
       }
-      
       await createMessageMutation.mutateAsync({
         content: messageText,
         author_id: user.id,
@@ -444,7 +406,6 @@ const TeamChat: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
   const handleAddReaction = (messageId: string, emoji: string) => {
     if (!user) return;
     addReactionMutation.mutate({
@@ -453,16 +414,13 @@ const TeamChat: React.FC = () => {
       userId: user.id
     });
   };
-
   const handleDeleteMessage = (messageId: string) => {
     if (!user) return;
     deleteMessageMutation.mutate(messageId);
   };
-
   const handleRoomSelect = (roomId: string) => {
     setSelectedRoomId(roomId);
   };
-
   const handleImageUpload = () => {
     if (!fileInputRef.current) {
       const input = document.createElement('input');
@@ -503,7 +461,6 @@ const TeamChat: React.FC = () => {
       fileInputRef.current.click();
     }
   };
-
   const handleVoiceRecording = async () => {
     if (isRecording) {
       if (voiceRecorderRef.current) {
@@ -566,7 +523,6 @@ const TeamChat: React.FC = () => {
       }
     }
   };
-
   const handleFileUpload = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -602,71 +558,42 @@ const TeamChat: React.FC = () => {
     input.click();
     document.body.removeChild(input);
   };
-
   const renderMentionSelector = () => {
     if (!showMentionSelector) return null;
-    
     const safeTeamMembers = Array.isArray(teamMembers) ? teamMembers : [];
-    
-    const filteredMembers = safeTeamMembers
-      .filter(member => {
-        if (!member || typeof member !== 'object') return false;
-        const firstName = member.first_name || '';
-        const lastName = member.last_name || '';
-        const fullName = `${firstName} ${lastName}`.toLowerCase().trim();
-        return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
-      });
-    
-    return (
-      <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
+    const filteredMembers = safeTeamMembers.filter(member => {
+      if (!member || typeof member !== 'object') return false;
+      const firstName = member.first_name || '';
+      const lastName = member.last_name || '';
+      const fullName = `${firstName} ${lastName}`.toLowerCase().trim();
+      return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
+    });
+    return <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
         <Command className="rounded-lg border shadow-md">
-          <CommandInput 
-            placeholder="Search people..." 
-            value={mentionQuery} 
-            onValueChange={setMentionQuery} 
-          />
+          <CommandInput placeholder="Search people..." value={mentionQuery} onValueChange={setMentionQuery} />
           <CommandList>
             <CommandEmpty>No users found</CommandEmpty>
             <CommandGroup>
-              <CommandItem 
-                key="mention-all"
-                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-                onSelect={insertAllMention}
-              >
+              <CommandItem key="mention-all" className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" onSelect={insertAllMention}>
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
                   <AtSign className="w-4 h-4" />
                 </div>
                 <span className="font-medium">everyone</span>
               </CommandItem>
               
-              {filteredMembers.map(member => (
-                <CommandItem 
-                  key={member.id} 
-                  className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-                  onSelect={() => insertMention(
-                    member.id,
-                    `${member.first_name || ''} ${member.last_name || ''}`
-                  )}
-                >
+              {filteredMembers.map(member => <CommandItem key={member.id} onSelect={() => insertMention(member.id, `${member.first_name || ''} ${member.last_name || ''}`)} className="flex items-center gap-2 p-2 cursor-pointer bg-violet-300">
                   <Avatar className="h-8 w-8">
-                    {member.avatar_url ? (
-                      <AvatarImage src={member.avatar_url} alt={member.first_name || 'User'} />
-                    ) : (
-                      <AvatarFallback>
-                        {(member.first_name?.[0] || '')}{(member.last_name?.[0] || '')}
-                      </AvatarFallback>
-                    )}
+                    {member.avatar_url ? <AvatarImage src={member.avatar_url} alt={member.first_name || 'User'} /> : <AvatarFallback>
+                        {member.first_name?.[0] || ''}{member.last_name?.[0] || ''}
+                      </AvatarFallback>}
                   </Avatar>
                   <span>{member.first_name || ''} {member.last_name || ''}</span>
-                </CommandItem>
-              ))}
+                </CommandItem>)}
             </CommandGroup>
           </CommandList>
         </Command>
-      </div>
-    );
+      </div>;
   };
-
   return <div className="flex h-[calc(100vh-120px)]">
       <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
       
@@ -694,22 +621,15 @@ const TeamChat: React.FC = () => {
               {renderMentionSelector()}
               
               <div className="flex items-end gap-2">
-                <Textarea 
-                  placeholder="Type a message... Use @ to mention users or @all for everyone" 
-                  value={messageText} 
-                  onChange={handleInputChange}
-                  ref={textareaRef} 
-                  className="min-h-[60px] max-h-[120px] resize-none" 
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    } else if (e.key === 'Escape' && showMentionSelector) {
-                      e.preventDefault();
-                      setShowMentionSelector(false);
-                    }
-                  }} 
-                />
+                <Textarea placeholder="Type a message... Use @ to mention users or @all for everyone" value={messageText} onChange={handleInputChange} ref={textareaRef} className="min-h-[60px] max-h-[120px] resize-none" onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                } else if (e.key === 'Escape' && showMentionSelector) {
+                  e.preventDefault();
+                  setShowMentionSelector(false);
+                }
+              }} />
                 <Button onClick={handleSendMessage} disabled={isSubmitting || !messageText.trim()} size="icon" className="h-10 w-10 rounded-full">
                   <Send className="h-5 w-5" />
                 </Button>
@@ -725,31 +645,25 @@ const TeamChat: React.FC = () => {
                 <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
                   <Paperclip className="h-5 w-5" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="flex-1 text-gray-500 hover:text-gray-700" 
-                  title="Mention" 
-                  onClick={() => {
+                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={() => {
+                if (textareaRef.current) {
+                  const cursorPosition = textareaRef.current.selectionStart;
+                  const textBefore = messageText.substring(0, cursorPosition);
+                  const textAfter = messageText.substring(cursorPosition);
+                  const newText = `${textBefore}@${textAfter}`;
+                  setMessageText(newText);
+                  setMentionStart(cursorPosition);
+                  setMentionQuery('');
+                  setShowMentionSelector(true);
+                  textareaRef.current.focus();
+                  setTimeout(() => {
                     if (textareaRef.current) {
-                      const cursorPosition = textareaRef.current.selectionStart;
-                      const textBefore = messageText.substring(0, cursorPosition);
-                      const textAfter = messageText.substring(cursorPosition);
-                      const newText = `${textBefore}@${textAfter}`;
-                      setMessageText(newText);
-                      setMentionStart(cursorPosition);
-                      setMentionQuery('');
-                      setShowMentionSelector(true);
-                      textareaRef.current.focus();
-                      setTimeout(() => {
-                        if (textareaRef.current) {
-                          textareaRef.current.selectionStart = cursorPosition + 1;
-                          textareaRef.current.selectionEnd = cursorPosition + 1;
-                        }
-                      }, 0);
+                      textareaRef.current.selectionStart = cursorPosition + 1;
+                      textareaRef.current.selectionEnd = cursorPosition + 1;
                     }
-                  }}
-                >
+                  }, 0);
+                }
+              }}>
                   <AtSign className="h-5 w-5" />
                 </Button>
               </div>
@@ -788,5 +702,4 @@ const TeamChat: React.FC = () => {
     }} />
     </div>;
 };
-
 export default TeamChat;
