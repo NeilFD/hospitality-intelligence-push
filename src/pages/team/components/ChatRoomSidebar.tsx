@@ -39,12 +39,12 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
   return (
     <div className={cn(
       "transition-all duration-300 bg-pastel-blue h-full border-r border-white/20 flex-shrink-0 relative",
-      isMobile && minimized ? "w-12" : (isMobile ? "w-52" : "w-64")
+      isMobile && minimized ? "w-12" : (isMobile ? "w-64" : "w-64")
     )}>
-      <div className="flex items-center justify-between border-b border-white/30 p-2 bg-tavern-blue/10 sticky top-0 z-10">
+      <div className="flex items-center justify-between border-b border-white/30 p-3 bg-tavern-blue/10 sticky top-0 z-10">
         {!isMobile || !minimized ? (
           <h2 className="text-lg font-semibold text-tavern-blue-dark truncate pl-1">
-            {isMobile ? "Rooms" : "Chat Rooms"}
+            {isMobile ? "Chat Rooms" : "Chat Rooms"}
           </h2>
         ) : null}
         
@@ -64,38 +64,38 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         )}
       </div>
       
-      <ScrollArea className="h-[calc(100vh-200px)]">
-        <div className="p-1 pt-2">
+      <ScrollArea className="h-[calc(100vh-180px)]">
+        <div className="p-2 pt-3">
           {rooms.map((room) => (
             <Button
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-2 font-medium",
+                "w-full justify-start mb-3 font-medium",
                 selectedRoomId === room.id 
                   ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90" 
                   : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
                 isMobile && minimized ? "p-2" : "",
-                isMobile ? "h-12" : ""
+                isMobile ? "h-14" : "h-12"
               )}
               onClick={() => onRoomSelect(room.id)}
               title={room.name}
             >
               {room.is_announcement_only ? (
                 <AlertCircle className={cn(
-                  "h-4 w-4", 
+                  "h-5 w-5", 
                   selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark",
                   minimized ? "mx-auto" : "mr-2"
                 )} />
               ) : (
                 <Hash className={cn(
-                  "h-4 w-4",
+                  "h-5 w-5",
                   selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark", 
                   minimized ? "mx-auto" : "mr-2"
                 )} />
               )}
               {(!isMobile || !minimized) && (
-                <span className="truncate">{room.name}</span>
+                <span className="truncate text-base">{room.name}</span>
               )}
             </Button>
           ))}

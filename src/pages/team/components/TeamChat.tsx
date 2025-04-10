@@ -271,15 +271,21 @@ const TeamChat: React.FC = () => {
   );
   
   return (
-    <div className="h-[calc(100vh-180px)] flex overflow-hidden w-full max-w-full">
+    <div className="h-full flex overflow-hidden w-full max-w-full">
       <ChatRoomSidebar 
         selectedRoomId={selectedRoomId} 
         onRoomSelect={setSelectedRoomId} 
       />
       <div className="flex-grow overflow-hidden w-full max-w-full">
         <Card className="flex-grow flex flex-col overflow-hidden rounded-xl shadow-lg border-none h-full">
-          <CardContent className="p-2 flex-grow flex flex-col overflow-hidden">
-            <div className="flex-grow overflow-y-auto p-2 overflow-x-hidden" style={{ scrollBehavior: 'smooth', maxHeight: 'calc(100vh - 280px)' }}>
+          <CardContent className="p-2 flex-grow flex flex-col overflow-hidden h-full">
+            <div 
+              className="flex-grow overflow-y-auto p-2 overflow-x-hidden" 
+              style={{ 
+                scrollBehavior: 'smooth', 
+                height: 'calc(100vh - 340px)' 
+              }}
+            >
               {isLoadingMessages ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
