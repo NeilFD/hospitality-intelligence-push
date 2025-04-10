@@ -2,6 +2,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RequireAuth from "./components/RequireAuth";
 import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
@@ -23,48 +24,53 @@ import Noticeboard from "./pages/team/Noticeboard";
 import Chat from "./pages/team/Chat";
 import Knowledge from "./pages/team/Knowledge";
 
+// Create a client
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          <Route path="/" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
-          
-          <Route path="/profile" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
-          <Route path="/profile/:userId" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
-          
-          {/* Food Routes */}
-          <Route path="/food/dashboard" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
-          <Route path="/food/input-settings" element={<RequireAuth><Layout><FoodInputSettings /></Layout></RequireAuth>} />
-          <Route path="/food/month/:year/:month" element={<RequireAuth><Layout><FoodMonthSummary /></Layout></RequireAuth>} />
-          <Route path="/food/annual-summary" element={<RequireAuth><Layout><FoodAnnualSummary /></Layout></RequireAuth>} />
-          
-          {/* Beverage Routes */}
-          <Route path="/beverage/dashboard" element={<RequireAuth><Layout><BeverageDashboard /></Layout></RequireAuth>} />
-          <Route path="/beverage/input-settings" element={<RequireAuth><Layout><BeverageInputSettings /></Layout></RequireAuth>} />
-          <Route path="/beverage/month/:year/:month" element={<RequireAuth><Layout><BeverageMonthSummary /></Layout></RequireAuth>} />
-          <Route path="/beverage/annual-summary" element={<RequireAuth><Layout><BeverageAnnualSummary /></Layout></RequireAuth>} />
-          
-          {/* P&L Routes */}
-          <Route path="/pl/dashboard" element={<RequireAuth><Layout><PLDashboard /></Layout></RequireAuth>} />
-          
-          {/* Wages Routes */}
-          <Route path="/wages/dashboard" element={<RequireAuth><Layout><WagesDashboard /></Layout></RequireAuth>} />
-          
-          {/* Performance Routes */}
-          <Route path="/performance/dashboard" element={<RequireAuth><Layout><PerformanceDashboard /></Layout></RequireAuth>} />
-          
-          {/* Team Routes */}
-          <Route path="/team/dashboard" element={<RequireAuth><Layout><TeamDashboard /></Layout></RequireAuth>} />
-          <Route path="/team/noticeboard" element={<RequireAuth><Layout><Noticeboard /></Layout></RequireAuth>} />
-          <Route path="/team/chat" element={<RequireAuth><Layout><Chat /></Layout></RequireAuth>} />
-          <Route path="/team/knowledge" element={<RequireAuth><Layout><Knowledge /></Layout></RequireAuth>} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            <Route path="/" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
+            
+            <Route path="/profile" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
+            <Route path="/profile/:userId" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
+            
+            {/* Food Routes */}
+            <Route path="/food/dashboard" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
+            <Route path="/food/input-settings" element={<RequireAuth><Layout><FoodInputSettings /></Layout></RequireAuth>} />
+            <Route path="/food/month/:year/:month" element={<RequireAuth><Layout><FoodMonthSummary /></Layout></RequireAuth>} />
+            <Route path="/food/annual-summary" element={<RequireAuth><Layout><FoodAnnualSummary /></Layout></RequireAuth>} />
+            
+            {/* Beverage Routes */}
+            <Route path="/beverage/dashboard" element={<RequireAuth><Layout><BeverageDashboard /></Layout></RequireAuth>} />
+            <Route path="/beverage/input-settings" element={<RequireAuth><Layout><BeverageInputSettings /></Layout></RequireAuth>} />
+            <Route path="/beverage/month/:year/:month" element={<RequireAuth><Layout><BeverageMonthSummary /></Layout></RequireAuth>} />
+            <Route path="/beverage/annual-summary" element={<RequireAuth><Layout><BeverageAnnualSummary /></Layout></RequireAuth>} />
+            
+            {/* P&L Routes */}
+            <Route path="/pl/dashboard" element={<RequireAuth><Layout><PLDashboard /></Layout></RequireAuth>} />
+            
+            {/* Wages Routes */}
+            <Route path="/wages/dashboard" element={<RequireAuth><Layout><WagesDashboard /></Layout></RequireAuth>} />
+            
+            {/* Performance Routes */}
+            <Route path="/performance/dashboard" element={<RequireAuth><Layout><PerformanceDashboard /></Layout></RequireAuth>} />
+            
+            {/* Team Routes */}
+            <Route path="/team/dashboard" element={<RequireAuth><Layout><TeamDashboard /></Layout></RequireAuth>} />
+            <Route path="/team/noticeboard" element={<RequireAuth><Layout><Noticeboard /></Layout></RequireAuth>} />
+            <Route path="/team/chat" element={<RequireAuth><Layout><Chat /></Layout></RequireAuth>} />
+            <Route path="/team/knowledge" element={<RequireAuth><Layout><Knowledge /></Layout></RequireAuth>} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
