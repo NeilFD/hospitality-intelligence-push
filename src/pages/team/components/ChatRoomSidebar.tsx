@@ -71,31 +71,31 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-3 font-medium text-left px-4 py-3", // Increased padding with px-4 and py-3
+                "w-full justify-start mb-2 font-medium text-left px-3 py-2", // Reduced padding and margin
                 selectedRoomId === room.id 
                   ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
                   : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
                 isMobile && minimized ? "p-2" : "",
-                isMobile ? "h-14" : "h-12"
+                isMobile ? "h-12" : "h-10" // Slightly reduced height
               )}
               onClick={() => onRoomSelect(room.id)}
               title={room.name}
             >
               {room.is_announcement_only ? (
                 <AlertCircle className={cn(
-                  "h-5 w-5 mr-2", 
+                  "h-4 w-4 mr-2", 
                   selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark",
                   minimized ? "mx-auto" : ""
                 )} />
               ) : (
                 <Hash className={cn(
-                  "h-5 w-5 mr-2",
+                  "h-4 w-4 mr-2",
                   selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark", 
                   minimized ? "mx-auto" : ""
                 )} />
               )}
               {(!isMobile || !minimized) && (
-                <span className="truncate text-base">{room.name}</span>
+                <span className="truncate text-sm">{room.name}</span>
               )}
             </Button>
           ))}
