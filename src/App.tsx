@@ -34,6 +34,7 @@ function App() {
           <Route path="/" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
           
           <Route path="/profile" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
+          <Route path="/profile/:userId" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
           
           {/* Food Routes */}
           <Route path="/food/dashboard" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
