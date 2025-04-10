@@ -20,7 +20,6 @@ import BeverageMonthSummary from "@/pages/beverage/MonthSummary";
 import BeverageAnnualSummary from "@/pages/beverage/AnnualSummary";
 import BeverageWeeklyTracker from "@/pages/beverage/WeeklyTracker";
 import PLDashboard from "@/pages/pl/Dashboard";
-import PLBank from "@/pages/pl/Bank";
 import WagesDashboard from "@/pages/wages/WagesDashboard";
 import PerformanceDashboard from "@/pages/performance/Dashboard";
 import WageOptimization from "@/pages/performance/WageOptimization";
@@ -68,7 +67,6 @@ function App() {
             
             {/* P&L Routes */}
             <Route path="/pl/dashboard" element={<RequireAuth><Layout><PLDashboard /></Layout></RequireAuth>} />
-            <Route path="/pl/bank" element={<BankPageAuth><Layout><PLBank /></Layout></BankPageAuth>} />
             
             {/* Wages Routes */}
             <Route path="/wages/dashboard" element={<RequireAuth><Layout><WagesDashboard /></Layout></RequireAuth>} />
