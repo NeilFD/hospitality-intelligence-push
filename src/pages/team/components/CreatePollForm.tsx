@@ -117,13 +117,13 @@ const CreatePollForm: React.FC<CreatePollFormProps> = ({ onClose }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="question">Poll Question</Label>
+        <Label htmlFor="question" className="mb-2 block">Poll Question</Label>
         <Textarea 
           id="question" 
           placeholder="What's your question?" 
           value={question} 
           onChange={(e) => setQuestion(e.target.value)}
-          className="min-h-[60px]"
+          className="min-h-[60px] border-[1px] border-gray-300 focus:ring-2 focus:ring-tavern-blue-light focus:border-transparent rounded-md px-3 py-2 text-base"
         />
       </div>
 
