@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -21,7 +20,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       try {
         const wagesData = await getMonthlyWages(year, month);
         
-        // Fetch master records to get revenue data
         const masterRecords = await fetchMasterRecordsByMonth(year, month);
         const masterRecordsByDate: Record<string, { foodRevenue: number; beverageRevenue: number }> = {};
         
@@ -32,7 +30,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
           };
         });
         
-        // Update wages data with master record revenue
         const updatedWagesData = wagesData.map(day => {
           const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.day.toString().padStart(2, '0')}`;
           const masterRecord = masterRecordsByDate[dateStr];
@@ -61,7 +58,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   }, [year, month, getMonthlyWages]);
   
   const handleInputChange = async (day: number, field: string, value: string) => {
-    // Only allow changes to wages fields, not revenue fields
     if (field === 'foodRevenue' || field === 'bevRevenue') {
       toast.info('Revenue data can only be changed in the Master Input module');
       return;
@@ -69,10 +65,8 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     
     const numValue = parseFloat(value) || 0;
     
-    // Convert the day to proper day of week
     const dateObj = new Date(year, month - 1, day);
     const dayOfWeek = dateObj.getDay();
-    // Convert JS day (0=Sunday, 1=Monday) to our format (0=Monday, 6=Sunday)
     const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     
     const currentDay = monthlyData.find(d => d.day === day) || {
@@ -153,47 +147,50 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[120px]">Day & Date</TableHead>
-                <TableHead>FOH Wages</TableHead>
-                <TableHead>Kitchen Wages</TableHead>
-                <TableHead>Total Wages</TableHead>
-                <TableHead className="flex items-center gap-1">
-                  Food Revenue
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-500" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Revenue data is synchronized from Master Input records</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <TableHead className="text-right">FOH Wages</TableHead>
+                <TableHead className="text-right">Kitchen Wages</TableHead>
+                <TableHead className="text-right">Total Wages</TableHead>
+                <TableHead className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    Food Revenue
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-gray-500" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Revenue data is synchronized from Master Input records</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </TableHead>
-                <TableHead className="flex items-center gap-1">
-                  Bev Revenue
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-gray-500" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Revenue data is synchronized from Master Input records</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <TableHead className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    Bev Revenue
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-gray-500" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Revenue data is synchronized from Master Input records</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </TableHead>
-                <TableHead>Total Revenue</TableHead>
-                <TableHead>FOH %</TableHead>
-                <TableHead>Kitchen %</TableHead>
-                <TableHead>Total %</TableHead>
+                <TableHead className="text-right">Total Revenue</TableHead>
+                <TableHead className="text-right">FOH %</TableHead>
+                <TableHead className="text-right">Kitchen %</TableHead>
+                <TableHead className="text-right">Total %</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {monthlyData.map((day) => {
-                // Get day name and format it correctly (Monday first) using UTC
                 const dateObj = new Date(Date.UTC(year, month - 1, day.day));
-                const jsDay = dateObj.getDay(); // 0=Sunday, 1=Monday, etc.
-                const adjustedDayIndex = jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Monday, ..., 6=Sunday
+                const jsDay = dateObj.getDay();
+                const adjustedDayIndex = jsDay === 0 ? 6 : jsDay - 1;
                 const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
                 const dayName = dayNames[adjustedDayIndex];
                 const shortDayName = dayName.substring(0, 3);
@@ -215,49 +212,49 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                     <TableCell className="font-medium">
                       {shortDayName}, {day.day}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right p-1">
                       <Input
                         type="number"
                         value={day.fohWages || ''}
                         onChange={(e) => handleInputChange(day.day, 'fohWages', e.target.value)}
-                        className="w-24"
+                        className="w-24 ml-auto"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right p-1">
                       <Input
                         type="number"
                         value={day.kitchenWages || ''}
                         onChange={(e) => handleInputChange(day.day, 'kitchenWages', e.target.value)}
-                        className="w-24"
+                        className="w-24 ml-auto"
                       />
                     </TableCell>
-                    <TableCell>{formatCurrency(totalDailyWages)}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">{formatCurrency(totalDailyWages)}</TableCell>
+                    <TableCell className="text-right p-1">
                       <Input
                         type="number"
                         value={day.foodRevenue || ''}
                         onChange={(e) => handleInputChange(day.day, 'foodRevenue', e.target.value)}
-                        className="w-24 bg-gray-50"
+                        className="w-24 ml-auto bg-gray-50"
                         readOnly
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right p-1">
                       <Input
                         type="number"
                         value={day.bevRevenue || ''}
                         onChange={(e) => handleInputChange(day.day, 'bevRevenue', e.target.value)}
-                        className="w-24 bg-gray-50"
+                        className="w-24 ml-auto bg-gray-50"
                         readOnly
                       />
                     </TableCell>
-                    <TableCell>{formatCurrency(totalDailyRevenue)}</TableCell>
-                    <TableCell className={fohPercent > 20 ? 'text-red-500' : 'text-green-500'}>
+                    <TableCell className="text-right">{formatCurrency(totalDailyRevenue)}</TableCell>
+                    <TableCell className={`text-right ${fohPercent > 20 ? 'text-red-500' : 'text-green-500'}`}>
                       {fohPercent.toFixed(1)}%
                     </TableCell>
-                    <TableCell className={kitchenPercent > 20 ? 'text-red-500' : 'text-green-500'}>
+                    <TableCell className={`text-right ${kitchenPercent > 20 ? 'text-red-500' : 'text-green-500'}`}>
                       {kitchenPercent.toFixed(1)}%
                     </TableCell>
-                    <TableCell className={totalPercent > 35 ? 'text-red-500' : 'text-green-500'}>
+                    <TableCell className={`text-right ${totalPercent > 35 ? 'text-red-500' : 'text-green-500'}`}>
                       {totalPercent.toFixed(1)}%
                     </TableCell>
                   </TableRow>
@@ -267,19 +264,19 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             <TableFooter>
               <TableRow className="font-medium">
                 <TableCell>MONTHLY TOTAL</TableCell>
-                <TableCell>{formatCurrency(totals.fohWages)}</TableCell>
-                <TableCell>{formatCurrency(totals.kitchenWages)}</TableCell>
-                <TableCell>{formatCurrency(totals.totalWages)}</TableCell>
-                <TableCell>{formatCurrency(totals.foodRevenue)}</TableCell>
-                <TableCell>{formatCurrency(totals.bevRevenue)}</TableCell>
-                <TableCell>{formatCurrency(totals.totalRevenue)}</TableCell>
-                <TableCell className={fohPercentage > 20 ? 'text-red-500' : 'text-green-500'}>
+                <TableCell className="text-right">{formatCurrency(totals.fohWages)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(totals.kitchenWages)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(totals.totalWages)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(totals.foodRevenue)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(totals.bevRevenue)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(totals.totalRevenue)}</TableCell>
+                <TableCell className={`text-right ${fohPercentage > 20 ? 'text-red-500' : 'text-green-500'}`}>
                   {fohPercentage.toFixed(1)}%
                 </TableCell>
-                <TableCell className={kitchenPercentage > 20 ? 'text-red-500' : 'text-green-500'}>
+                <TableCell className={`text-right ${kitchenPercentage > 20 ? 'text-red-500' : 'text-green-500'}`}>
                   {kitchenPercentage.toFixed(1)}%
                 </TableCell>
-                <TableCell className={totalPercentage > 35 ? 'text-red-500' : 'text-green-500'}>
+                <TableCell className={`text-right ${totalPercentage > 35 ? 'text-red-500' : 'text-green-500'}`}>
                   {totalPercentage.toFixed(1)}%
                 </TableCell>
               </TableRow>
