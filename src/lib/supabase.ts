@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import { UserProfile } from '@/types/supabase-types';

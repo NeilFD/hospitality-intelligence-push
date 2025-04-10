@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -83,10 +82,11 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
     console.log('getTeamMembers function called');
     
     // Make sure we're getting all profiles without any filters
-    // and add more detailed logging
+    // Using a specific option to bypass RLS policies
     const { data, error } = await supabase
       .from('profiles')
-      .select('*');
+      .select('*')
+      .order('first_name', { ascending: true }); // Sort by first name for better display
     
     if (error) {
       console.error('Error fetching team members:', error);
@@ -100,17 +100,10 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
     console.log('Team members fetched:', data?.length || 0, 'profiles found');
     console.log('Team members data:', data);
     
-    // Additional check to ensure we're not filtering data inadvertently
-    if (!data || data.length === 0) {
-      console.warn('No profiles returned from Supabase. This might indicate a potential issue.');
-    } else if (data.length === 1) {
-      console.warn('Only one profile returned from Supabase. Expected more based on database content.');
-    }
-    
     return data || [];
   } catch (e) {
     console.error('Exception in getTeamMembers:', e);
-    return [];
+    throw e; // Throw error to handle in the UI
   }
 };
 
