@@ -5,21 +5,26 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { PlusCircle, Pin, Trash2, Image, Mic, Smile, Tag } from 'lucide-react';
-import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile } from '@/services/team-service';
+import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile, getTeamMembers } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 interface StickyNoteProps {
   note: TeamNote;
   onUpdate: (id: string, updates: Partial<TeamNote>) => void;
   onDelete: (id: string) => void;
+  authorName?: string;
 }
+
 const NOTE_COLORS = ['bg-yellow-100 hover:bg-yellow-200', 'bg-pink-100 hover:bg-pink-200', 'bg-blue-100 hover:bg-blue-200', 'bg-green-100 hover:bg-green-200', 'bg-purple-100 hover:bg-purple-200', 'bg-orange-100 hover:bg-orange-200'];
+
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
   onUpdate,
-  onDelete
+  onDelete,
+  authorName
 }) => {
   return <div className={`${note.color || NOTE_COLORS[0]} rounded-lg p-4 shadow-md transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
       <div className="flex justify-between items-start mb-2">
@@ -52,11 +57,13 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>}
       </div>
       
-      <div className="mt-2 text-xs text-gray-500 flex items-center space-x-1">
+      <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
         <span>{new Date(note.created_at).toLocaleDateString()}</span>
+        {authorName && <span className="italic">- {authorName}</span>}
       </div>
     </div>;
 };
+
 const CreateNoteForm: React.FC<{
   onClose: () => void;
 }> = ({
@@ -168,9 +175,11 @@ const CreateNoteForm: React.FC<{
       </div>
     </form>;
 };
+
 const TeamNoticeboard: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const queryClient = useQueryClient();
+  
   const {
     data: notes = [],
     isLoading
@@ -178,6 +187,18 @@ const TeamNoticeboard: React.FC = () => {
     queryKey: ['teamNotes'],
     queryFn: getNotes
   });
+  
+  const {
+    data: teamMembers = []
+  } = useQuery({
+    queryKey: ['teamMembers'],
+    queryFn: getTeamMembers
+  });
+  
+  const userNameMap = Object.fromEntries(
+    teamMembers.map(member => [member.id, member.first_name])
+  );
+  
   const updateNoteMutation = useMutation({
     mutationFn: ({
       id,
@@ -196,6 +217,7 @@ const TeamNoticeboard: React.FC = () => {
       toast.error(`Failed to update note: ${error.message}`);
     }
   });
+  
   const deleteNoteMutation = useMutation({
     mutationFn: (id: string) => deleteNote(id),
     onSuccess: () => {
@@ -208,24 +230,26 @@ const TeamNoticeboard: React.FC = () => {
       toast.error(`Failed to delete note: ${error.message}`);
     }
   });
+  
   const handleUpdate = (id: string, updates: Partial<TeamNote>) => {
     updateNoteMutation.mutate({
       id,
       updates
     });
   };
+  
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this note?')) {
       deleteNoteMutation.mutate(id);
     }
   };
 
-  // Sort notes: pinned first, then by creation date
   const sortedNotes = [...(notes || [])].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
+  
   return <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -256,9 +280,18 @@ const TeamNoticeboard: React.FC = () => {
                 New Note
               </Button>
             </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {sortedNotes.map(note => <StickyNote key={note.id} note={note} onUpdate={handleUpdate} onDelete={handleDelete} />)}
+              {sortedNotes.map(note => (
+                <StickyNote 
+                  key={note.id} 
+                  note={note} 
+                  onUpdate={handleUpdate} 
+                  onDelete={handleDelete}
+                  authorName={userNameMap[note.author_id]} 
+                />
+              ))}
             </div>}
         </>}
     </div>;
 };
+
 export default TeamNoticeboard;
