@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,13 +17,11 @@ const NotificationsDropdown = () => {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   
-  // Get messages where current user is mentioned
   const { data: mentionedMessages, refetch: refetchMentions } = useQuery({
     queryKey: ['mentionedMessages', user?.id],
     queryFn: async () => {
       if (!user) return [];
       
-      // This query gets mentions where the current user is mentioned
       const { data, error } = await supabase
         .from('team_messages')
         .select('*')
@@ -43,7 +40,6 @@ const NotificationsDropdown = () => {
     enabled: !!user,
   });
   
-  // Get user profiles for message authors
   const { data: profiles = [] } = useQuery({
     queryKey: ['teamMembers'],
     queryFn: async () => {
@@ -60,7 +56,6 @@ const NotificationsDropdown = () => {
     },
   });
   
-  // Listen for new mentions via Supabase realtime
   useEffect(() => {
     if (!user) return;
     
@@ -76,7 +71,6 @@ const NotificationsDropdown = () => {
         },
         (payload) => {
           if (payload.new && (payload.new as any).author_id !== user.id) {
-            // Force refetch when a new mention arrives
             refetchMentions();
           }
         }
@@ -90,7 +84,6 @@ const NotificationsDropdown = () => {
           filter: `mentioned_users=cs.{${user.id}}`
         },
         () => {
-          // Refresh messages when read status is updated
           refetchMentions();
         }
       )
@@ -101,16 +94,13 @@ const NotificationsDropdown = () => {
     };
   }, [user, refetchMentions]);
   
-  // Process notifications and correctly check unread status
   useEffect(() => {
     if (mentionedMessages && user) {
-      // Make sure each message has a valid read_by array
       const processedMessages = mentionedMessages.map(msg => ({
         ...msg,
         read_by: Array.isArray(msg.read_by) ? msg.read_by : []
       }));
       
-      // Check if any messages are unread (not in read_by array)
       const anyUnread = processedMessages.some(msg => !msg.read_by.includes(user.id));
       
       setNotifications(processedMessages);
@@ -118,27 +108,21 @@ const NotificationsDropdown = () => {
     }
   }, [mentionedMessages, user]);
   
-  // Mark notification as read and navigate
   const handleNotificationClick = async (message: TeamMessage) => {
     if (!user) return;
     
-    // Normalize read_by to always be an array
     const currentReadBy = Array.isArray(message.read_by) ? message.read_by : [];
     
-    // Only update if user hasn't read it yet
     if (!currentReadBy.includes(user.id)) {
       const updatedReadBy = [...currentReadBy, user.id];
       
-      // Update in Supabase
       await supabase
         .from('team_messages')
         .update({ read_by: updatedReadBy })
         .eq('id', message.id);
         
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
       
-      // Update local state for immediate UI feedback
       setNotifications(prev => 
         prev.map(n => 
           n.id === message.id 
@@ -147,29 +131,24 @@ const NotificationsDropdown = () => {
         )
       );
       
-      // Re-check if there are any remaining unread messages
       const stillHasUnread = notifications.some(
         n => n.id !== message.id && !n.read_by.includes(user.id)
       );
       setHasUnread(stillHasUnread);
     }
     
-    // Navigate to chat with the specific room_id
     navigate(`/team/chat?room=${message.room_id}`);
   };
   
-  // Clear all notifications (mark all as read)
   const handleClearAllNotifications = async () => {
     if (!user || notifications.length === 0) return;
     
-    // Get all unread notifications
     const unreadNotifications = notifications.filter(
       msg => !msg.read_by.includes(user.id)
     );
     
     if (unreadNotifications.length === 0) return;
     
-    // Mark all as read in database
     for (const notification of unreadNotifications) {
       const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
       await supabase
@@ -178,7 +157,6 @@ const NotificationsDropdown = () => {
         .eq('id', notification.id);
     }
     
-    // Update local state
     setNotifications(prev => 
       prev.map(n => ({
         ...n,
@@ -186,10 +164,8 @@ const NotificationsDropdown = () => {
       }))
     );
     
-    // No more unread messages
     setHasUnread(false);
     
-    // Refresh the data
     queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
   };
   
@@ -214,7 +190,6 @@ const NotificationsDropdown = () => {
     return author?.avatar_url || '';
   };
   
-  // Format content to limit length
   const formatContent = (content: string) => {
     return content.length > 50 ? content.substring(0, 50) + '...' : content;
   };
@@ -248,7 +223,6 @@ const NotificationsDropdown = () => {
           {notifications && notifications.length > 0 ? (
             <div className="py-1">
               {notifications.map((notification) => {
-                // Ensure read_by is an array and check if the current user has read it
                 const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
                 const isUnread = !readBy.includes(user?.id || '');
                 
@@ -256,9 +230,10 @@ const NotificationsDropdown = () => {
                   <Button
                     key={notification.id}
                     variant="ghost"
-                    className={`w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 ${
-                      isUnread ? 'bg-blue-50' : ''
-                    }`}
+                    className={`
+                      w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 
+                      ${isUnread ? 'bg-blue-50' : ''}
+                    `}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     <Avatar className="h-8 w-8 flex-shrink-0">
@@ -273,14 +248,14 @@ const NotificationsDropdown = () => {
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <div className="flex flex-col items-start text-left">
-                      <p className="text-xs font-medium">
+                    <div className="flex flex-col items-start text-left w-full overflow-hidden">
+                      <p className="text-xs font-medium truncate w-full">
                         {getAuthorName(notification.author_id)}
                         <span className="font-normal ml-2 text-gray-500">
                           mentioned you
                         </span>
                       </p>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <p className="text-xs text-gray-600 mt-1 truncate w-full">
                         {formatContent(notification.content)}
                       </p>
                       <span className="text-xs text-gray-400 mt-1">
