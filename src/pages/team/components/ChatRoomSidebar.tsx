@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getChatRooms, ChatRoom } from '@/services/team-service';
+import { getChatRooms } from '@/services/team-service';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Hash, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -43,7 +43,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
     )}>
       <div className="flex items-center justify-between border-b border-white/30 p-3 bg-tavern-blue/10 sticky top-0 z-10">
         {!isMobile || !minimized ? (
-          <h2 className="text-lg font-semibold text-tavern-blue-dark truncate pl-1">
+          <h2 className="text-lg font-semibold text-tavern-blue-dark pl-1">
             {isMobile ? "Chat Rooms" : "Chat Rooms"}
           </h2>
         ) : null}
@@ -71,7 +71,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-3 font-medium",
+                "w-full justify-start mb-3 font-medium text-left", // Added text-left for left alignment
                 selectedRoomId === room.id 
                   ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90" 
                   : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
@@ -83,15 +83,15 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
             >
               {room.is_announcement_only ? (
                 <AlertCircle className={cn(
-                  "h-5 w-5", 
+                  "h-5 w-5 mr-2", 
                   selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark",
-                  minimized ? "mx-auto" : "mr-2"
+                  minimized ? "mx-auto" : ""
                 )} />
               ) : (
                 <Hash className={cn(
-                  "h-5 w-5",
+                  "h-5 w-5 mr-2",
                   selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark", 
-                  minimized ? "mx-auto" : "mr-2"
+                  minimized ? "mx-auto" : ""
                 )} />
               )}
               {(!isMobile || !minimized) && (
