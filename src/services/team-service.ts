@@ -208,6 +208,18 @@ export const createNoteReply = async (
   return data;
 };
 
+export const deleteNoteReply = async (replyId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('team_note_replies')
+    .delete()
+    .eq('id', replyId);
+    
+  if (error) {
+    console.error('Error deleting note reply:', error);
+    throw error;
+  }
+};
+
 export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
   try {
     const { data, error } = await supabase

@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { PlusCircle, Pin, Trash2, Image, Mic, Smile, BarChart2, MessageSquare } from 'lucide-react';
-import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile, getTeamMembers, getPolls, createNoteReply, getNoteReplies } from '@/services/team-service';
+import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile, getTeamMembers, getPolls, createNoteReply, getNoteReplies, deleteNoteReply } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -65,6 +66,19 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }
   });
   
+  const deleteReplyMutation = useMutation({
+    mutationFn: async (replyId: string) => {
+      return await deleteNoteReply(replyId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['noteReplies', note.id] });
+      toast.success('Reply deleted');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete reply: ${error.message}`);
+    }
+  });
+  
   const handleAddReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyContent.trim()) {
@@ -72,6 +86,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       return;
     }
     replyMutation.mutate(replyContent);
+  };
+  
+  const handleDeleteReply = (replyId: string) => {
+    deleteReplyMutation.mutate(replyId);
   };
   
   const glassStyle = "bg-opacity-60 backdrop-filter backdrop-blur-sm shadow-lg border border-opacity-30";
@@ -141,7 +159,19 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               <ScrollArea className="max-h-32">
                 {replies.map(reply => (
                   <div key={reply.id} className="bg-white/40 rounded p-2 mb-2 text-sm">
-                    <p className="text-gray-800 text-xs">{reply.content}</p>
+                    <div className="flex justify-between items-start">
+                      <p className="text-gray-800 text-xs">{reply.content}</p>
+                      {user && user.id === reply.author_id && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-red-500"
+                          onClick={() => handleDeleteReply(reply.id)}
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      )}
+                    </div>
                     <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500">
                       <span>{userNameMap[reply.author_id] || 'Unknown'}</span>
                       <span>{new Date(reply.created_at).toLocaleString()}</span>
