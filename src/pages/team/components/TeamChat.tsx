@@ -61,7 +61,7 @@ const Message: React.FC<MessageProps> = ({
     return teamMembers.find(member => member.id === userId);
   };
 
-  // Use author_id instead of user_id since that's what TeamMessage interface uses
+  // Use author_id from TeamMessage interface
   const messageAuthor = author || getAuthorProfile(message.author_id);
 
   return (
