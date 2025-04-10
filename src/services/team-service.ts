@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -15,6 +14,11 @@ export interface TeamNote {
   mentioned_users?: string[];
 }
 
+export interface MessageReaction {
+  emoji: string;
+  user_ids: string[];
+}
+
 export interface TeamMessage {
   id: string;
   content: string;
@@ -26,6 +30,7 @@ export interface TeamMessage {
   mentioned_users?: string[];
   read_by: string[];
   room_id: string;
+  reactions?: MessageReaction[];
 }
 
 export interface TeamPoll {
@@ -211,6 +216,74 @@ export const markMessageAsRead = async (messageId: string, userId: string): Prom
       throw updateError;
     }
   }
+};
+
+export const addMessageReaction = async (
+  messageId: string,
+  emoji: string,
+  userId: string
+): Promise<TeamMessage> => {
+  // Fetch the current message
+  const { data: message, error: fetchError } = await supabase
+    .from('team_messages')
+    .select('*')
+    .eq('id', messageId)
+    .single();
+    
+  if (fetchError) {
+    console.error('Error fetching message:', fetchError);
+    throw fetchError;
+  }
+  
+  // Initialize or get current reactions
+  const reactions = message.reactions || [];
+  
+  // Check if this emoji reaction already exists
+  const existingReactionIndex = reactions.findIndex(
+    (reaction: MessageReaction) => reaction.emoji === emoji
+  );
+  
+  if (existingReactionIndex !== -1) {
+    // Check if user already reacted with this emoji
+    const userIds = reactions[existingReactionIndex].user_ids || [];
+    const userReactionIndex = userIds.indexOf(userId);
+    
+    if (userReactionIndex !== -1) {
+      // Remove user's reaction if already exists (toggle behavior)
+      userIds.splice(userReactionIndex, 1);
+      
+      // If no users left reacting with this emoji, remove the reaction entirely
+      if (userIds.length === 0) {
+        reactions.splice(existingReactionIndex, 1);
+      } else {
+        reactions[existingReactionIndex].user_ids = userIds;
+      }
+    } else {
+      // Add user's reaction
+      reactions[existingReactionIndex].user_ids.push(userId);
+    }
+  } else {
+    // Add new reaction type with this user
+    reactions.push({
+      emoji,
+      user_ids: [userId]
+    });
+  }
+  
+  // Update the message with new reactions
+  const { data: updatedMessage, error: updateError } = await supabase
+    .from('team_messages')
+    .update({ reactions })
+    .eq('id', messageId)
+    .select()
+    .single();
+    
+  if (updateError) {
+    console.error('Error updating message reactions:', updateError);
+    throw updateError;
+  }
+  
+  return updatedMessage;
 };
 
 // Poll functions
