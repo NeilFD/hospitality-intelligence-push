@@ -81,6 +81,19 @@ const NotificationsDropdown = () => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'team_messages',
+          filter: `mentioned_users=cs.{${user.id}}`
+        },
+        () => {
+          // Refresh messages when read status is updated
+          refetchMentions();
+        }
+      )
       .subscribe();
     
     return () => {
@@ -88,7 +101,7 @@ const NotificationsDropdown = () => {
     };
   }, [user, refetchMentions]);
   
-  // Process notifications
+  // Process notifications and correctly check unread status
   useEffect(() => {
     if (mentionedMessages && user) {
       // Make sure each message has a valid read_by array
@@ -147,9 +160,10 @@ const NotificationsDropdown = () => {
         );
         
         // Re-check if there are any remaining unread messages
-        setHasUnread(notifications.some(
+        const stillHasUnread = notifications.some(
           n => n.id !== message.id && !n.read_by.includes(user.id)
-        ));
+        );
+        setHasUnread(stillHasUnread);
       }
     }
     

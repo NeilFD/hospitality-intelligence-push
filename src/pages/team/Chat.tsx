@@ -41,7 +41,16 @@ const Chat: React.FC = () => {
                 action: {
                   label: 'View',
                   onClick: () => {
-                    window.location.href = `/team/chat?room=${message.room_id}`;
+                    // Mark as read when clicking on the notification toast
+                    supabase
+                      .from('team_messages')
+                      .update({ 
+                        read_by: [...message.read_by, user.id] 
+                      })
+                      .eq('id', message.id)
+                      .then(() => {
+                        window.location.href = `/team/chat?room=${message.room_id}`;
+                      });
                   }
                 }
               });
