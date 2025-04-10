@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { PlusCircle, Pin, Trash2, Image, Mic, Smile, Tag } from 'lucide-react';
+import { PlusCircle, Pin, Trash2, Image, Mic, Smile } from 'lucide-react';
 import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile, getTeamMembers } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -33,8 +31,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   onDelete,
   authorName
 }) => {
+  const glassStyle = "bg-opacity-60 backdrop-filter backdrop-blur-sm shadow-lg border border-opacity-30";
+  
   return (
-    <div className={`${note.color || NOTE_COLORS[0]} rounded-lg p-4 shadow-md transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
+    <div className={`${note.color || NOTE_COLORS[0]} ${glassStyle} rounded-lg p-4 transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
       <div className="flex justify-between items-start mb-2">
         <Button variant="ghost" size="icon" className={`h-6 w-6 ${note.pinned ? 'text-amber-600' : 'text-gray-400'}`} onClick={() => onUpdate(note.id, {
           pinned: !note.pinned

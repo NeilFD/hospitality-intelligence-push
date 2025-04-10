@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Send, Image, Mic, Smile, Paperclip, AtSign } from 'lucide-react';
@@ -163,7 +161,13 @@ const TeamChat: React.FC = () => {
     mutationFn: async (messageData: Omit<TeamMessage, 'id' | 'created_at' | 'updated_at'>) => {
       let attachmentUrl = '';
       if (file && messageType !== 'text') {
-        attachmentUrl = await uploadTeamFile(file, 'messages');
+        try {
+          attachmentUrl = await uploadTeamFile(file, 'messages');
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          toast.error('Failed to upload file. Please try again.');
+          throw error;
+        }
       }
       
       return await createMessage({
