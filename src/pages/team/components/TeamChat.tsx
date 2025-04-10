@@ -1,4 +1,7 @@
 
+import React from 'react';
+import { UserProfile } from '@/types/supabase-types';
+
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
   if (!content.includes('@')) return content;
   
@@ -42,3 +45,19 @@ const highlightMentions = (content: string, teamMembers: UserProfile[]): React.R
   
   return result;
 };
+
+interface TeamChatProps {
+  initialRoomId: string | null;
+}
+
+const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId }) => {
+  // We'll add the necessary implementation here based on how it's being used
+  return (
+    <div>
+      {/* Implementation would go here */}
+      Team Chat Component (Room ID: {initialRoomId || 'none'})
+    </div>
+  );
+};
+
+export default TeamChat;

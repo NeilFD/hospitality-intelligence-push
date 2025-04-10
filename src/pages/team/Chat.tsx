@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
