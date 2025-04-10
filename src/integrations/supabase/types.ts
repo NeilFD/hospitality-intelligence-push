@@ -527,6 +527,81 @@ export type Database = {
         }
         Relationships: []
       }
+      team_messages: {
+        Row: {
+          attachment_url: string | null
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          mentioned_users: string[] | null
+          read_by: string[] | null
+          type: Database["public"]["Enums"]["message_type"]
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          mentioned_users?: string[] | null
+          read_by?: string[] | null
+          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          mentioned_users?: string[] | null
+          read_by?: string[] | null
+          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_notes: {
+        Row: {
+          attachment_url: string | null
+          author_id: string
+          color: string | null
+          content: string
+          created_at: string
+          id: string
+          mentioned_users: string[] | null
+          pinned: boolean
+          type: Database["public"]["Enums"]["message_type"]
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          author_id: string
+          color?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          mentioned_users?: string[] | null
+          pinned?: boolean
+          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          author_id?: string
+          color?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          mentioned_users?: string[] | null
+          pinned?: boolean
+          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tracker_credit_notes: {
         Row: {
           amount: number
@@ -890,6 +965,7 @@ export type Database = {
       }
     }
     Enums: {
+      message_type: "text" | "image" | "voice" | "gif" | "file"
       module_type: "food" | "beverage" | "pl" | "wages" | "performance"
       user_role: "Owner" | "Head Chef" | "Staff"
     }
@@ -1007,6 +1083,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      message_type: ["text", "image", "voice", "gif", "file"],
       module_type: ["food", "beverage", "pl", "wages", "performance"],
       user_role: ["Owner", "Head Chef", "Staff"],
     },
