@@ -151,17 +151,17 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               </ScrollArea>
             )}
             
-            <form onSubmit={handleAddReply} className="mt-2">
+            <form onSubmit={handleAddReply} className="mt-2 space-y-2">
               <Textarea 
                 placeholder="Add a reply..." 
                 value={replyContent} 
                 onChange={(e) => setReplyContent(e.target.value)}
-                className="min-h-[40px] text-xs resize-none"
+                className="min-h-[40px] text-xs resize-none text-gray-900"
               />
               <Button 
                 type="submit" 
                 size="sm" 
-                className="mt-1 w-full text-xs"
+                className="w-full text-xs"
                 disabled={replyMutation.isPending}
               >
                 {replyMutation.isPending ? 'Adding...' : 'Add Reply'}
