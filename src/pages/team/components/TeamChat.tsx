@@ -14,7 +14,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 interface MessageProps {
   message: TeamMessage;
@@ -619,47 +619,49 @@ const TeamChat: React.FC = () => {
     
     return (
       <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
-        <Command className="rounded-lg border shadow-md" shouldFilter={false}>
+        <Command className="rounded-lg border shadow-md">
           <CommandInput 
             placeholder="Search people..." 
             value={mentionQuery} 
             onValueChange={setMentionQuery} 
           />
-          <CommandEmpty>No users found</CommandEmpty>
-          <CommandGroup>
-            <CommandItem 
-              key="mention-all"
-              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-              onSelect={insertAllMention}
-            >
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
-                <AtSign className="w-4 h-4" />
-              </div>
-              <span className="font-medium">everyone</span>
-            </CommandItem>
-            
-            {filteredMembers.map(member => (
+          <CommandList>
+            <CommandEmpty>No users found</CommandEmpty>
+            <CommandGroup>
               <CommandItem 
-                key={member.id} 
+                key="mention-all"
                 className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-                onSelect={() => insertMention(
-                  member.id,
-                  `${member.first_name || ''} ${member.last_name || ''}`
-                )}
+                onSelect={insertAllMention}
               >
-                <Avatar className="h-8 w-8">
-                  {member.avatar_url ? (
-                    <AvatarImage src={member.avatar_url} alt={member.first_name || 'User'} />
-                  ) : (
-                    <AvatarFallback>
-                      {(member.first_name?.[0] || '')}{(member.last_name?.[0] || '')}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <span>{member.first_name || ''} {member.last_name || ''}</span>
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+                  <AtSign className="w-4 h-4" />
+                </div>
+                <span className="font-medium">everyone</span>
               </CommandItem>
-            ))}
-          </CommandGroup>
+              
+              {filteredMembers.map(member => (
+                <CommandItem 
+                  key={member.id} 
+                  className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
+                  onSelect={() => insertMention(
+                    member.id,
+                    `${member.first_name || ''} ${member.last_name || ''}`
+                  )}
+                >
+                  <Avatar className="h-8 w-8">
+                    {member.avatar_url ? (
+                      <AvatarImage src={member.avatar_url} alt={member.first_name || 'User'} />
+                    ) : (
+                      <AvatarFallback>
+                        {(member.first_name?.[0] || '')}{(member.last_name?.[0] || '')}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span>{member.first_name || ''} {member.last_name || ''}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </div>
     );
