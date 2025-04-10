@@ -1,17 +1,20 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle } from 'lucide-react';
+import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTeamMembers } from '@/services/team-service';
 import { UserProfile } from '@/types/supabase-types';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>('all');
 
   useEffect(() => {
     const fetchTeamMembers = async () => {
@@ -38,6 +41,11 @@ const TeamDashboard: React.FC = () => {
     fetchTeamMembers();
   }, []);
 
+  // Filter members based on selected role
+  const filteredMembers = roleFilter === 'all' 
+    ? teamMembers 
+    : teamMembers.filter(member => member.role === roleFilter);
+
   return <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
         <h1 className="text-3xl font-bold mb-2 text-slate-900 flex items-center gap-2">
@@ -49,10 +57,27 @@ const TeamDashboard: React.FC = () => {
       </div>
       
       <div className="mb-8 bg-white rounded-lg border border-gray-100 shadow p-4">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Users className="h-5 w-5 text-indigo-600" />
-          Team Members
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5 text-indigo-600" />
+            Team Members
+          </h2>
+          
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="Owner">Owner</SelectItem>
+                <SelectItem value="Head Chef">Head Chef</SelectItem>
+                <SelectItem value="Staff">Staff</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         
         <div className="flex flex-wrap gap-4 items-center">
           {isLoading ? (
@@ -64,10 +89,10 @@ const TeamDashboard: React.FC = () => {
               <AlertCircle className="h-5 w-5 mr-2" />
               {error}
             </div>
-          ) : teamMembers.length === 0 ? (
+          ) : filteredMembers.length === 0 ? (
             <p className="text-gray-500 italic">No team members found</p>
           ) : (
-            teamMembers.map((member) => (
+            filteredMembers.map((member) => (
               <Link 
                 key={member.id} 
                 to={`/profile/${member.id}`}

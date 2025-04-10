@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -86,7 +87,7 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .order('first_name', { ascending: true }); // Sort by first name for better display
+      .order('created_at', { ascending: false }); // Sort by creation date, newest first
     
     if (error) {
       console.error('Error fetching team members:', error);
