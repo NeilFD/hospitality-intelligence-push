@@ -65,18 +65,18 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
       </div>
       
       <ScrollArea className="h-[calc(100vh-180px)]">
-        <div className="p-2 pt-3">
+        <div className="p-2 pt-4">  {/* Changed pt-3 to pt-4 to add a bit more space */}
           {rooms.map((room) => (
             <Button
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-2 font-medium text-left px-3 py-2", // Reduced padding and margin
+                "w-full justify-start mb-2.5 font-medium text-left px-3 py-2", // Slightly increased mb from mb-2
                 selectedRoomId === room.id 
                   ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
                   : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
                 isMobile && minimized ? "p-2" : "",
-                isMobile ? "h-12" : "h-10" // Slightly reduced height
+                isMobile ? "h-12" : "h-10"
               )}
               onClick={() => onRoomSelect(room.id)}
               title={room.name}
