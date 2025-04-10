@@ -545,9 +545,9 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                   </TableCell>
                 </TableRow>
 
-                {/* Daily total food cost */}
+                {/* Daily total beverage cost */}
                 <TableRow className="bg-gray-200 font-medium">
-                  <TableCell>Daily Total Food Cost</TableCell>
+                  <TableCell>Daily Total {moduleType === 'beverage' ? 'Beverage' : 'Food'} Cost</TableCell>
                   {trackerData.map(day => (
                     <TableCell key={`cost-${day.id}`} className="text-right">
                       £{calculateCost(day).toFixed(2)}
