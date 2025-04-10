@@ -91,25 +91,23 @@ const NotificationsDropdown = () => {
   // Process notifications
   useEffect(() => {
     if (mentionedMessages && user) {
-      // Debug: Log messages to see their read_by arrays
-      console.log('Mentioned messages:', mentionedMessages);
-      
-      // Force cast read_by to array if it's null
-      const messagesWithReadBy = mentionedMessages.map(msg => ({
+      // Make sure each message has a valid read_by array
+      const processedMessages = mentionedMessages.map(msg => ({
         ...msg,
         read_by: Array.isArray(msg.read_by) ? msg.read_by : []
       }));
       
-      // Filter messages that haven't been read by the current user
-      const unreadMessages = messagesWithReadBy.filter(
-        msg => !msg.read_by.includes(user.id)
-      );
+      // Check if any messages are unread (not in read_by array)
+      const anyUnread = processedMessages.some(msg => {
+        const isUnread = !msg.read_by.includes(user.id);
+        console.log(`Message ${msg.id} unread status:`, isUnread, 'read_by:', msg.read_by);
+        return isUnread;
+      });
       
-      console.log('Unread count:', unreadMessages.length);
+      console.log('Has any unread messages:', anyUnread);
       
-      setNotifications(messagesWithReadBy);
-      // Set hasUnread based on whether there are any unread messages
-      setHasUnread(unreadMessages.length > 0);
+      setNotifications(processedMessages);
+      setHasUnread(anyUnread);
     }
   }, [mentionedMessages, user]);
   
@@ -148,10 +146,9 @@ const NotificationsDropdown = () => {
           )
         );
         
-        // Re-evaluate if there are any remaining unread messages
+        // Re-check if there are any remaining unread messages
         setHasUnread(notifications.some(
-          n => n.id !== message.id && 
-              (!Array.isArray(n.read_by) || !n.read_by.includes(user.id))
+          n => n.id !== message.id && !n.read_by.includes(user.id)
         ));
       }
     }
@@ -204,7 +201,7 @@ const NotificationsDropdown = () => {
           {notifications && notifications.length > 0 ? (
             <div className="py-1">
               {notifications.map((notification) => {
-                // Force cast read_by to array if it's null
+                // Ensure read_by is an array and check if the current user has read it
                 const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
                 const isUnread = !readBy.includes(user?.id || '');
                 
@@ -261,6 +258,32 @@ const NotificationsDropdown = () => {
       </PopoverContent>
     </Popover>
   );
+  
+  // Helper functions
+  function getAuthorName(authorId: string) {
+    const author = profiles.find(p => p.id === authorId);
+    if (author) {
+      return `${author.first_name} ${author.last_name}`.trim();
+    }
+    return 'Unknown User';
+  }
+  
+  function getInitials(authorId: string) {
+    const author = profiles.find(p => p.id === authorId);
+    if (author) {
+      return `${(author.first_name?.[0] || '').toUpperCase()}${(author.last_name?.[0] || '').toUpperCase()}`;
+    }
+    return '?';
+  }
+  
+  function getAuthorAvatar(authorId: string) {
+    const author = profiles.find(p => p.id === authorId);
+    return author?.avatar_url || '';
+  }
+  
+  function formatContent(content: string) {
+    return content.length > 50 ? content.substring(0, 50) + '...' : content;
+  }
 };
 
 export default NotificationsDropdown;
