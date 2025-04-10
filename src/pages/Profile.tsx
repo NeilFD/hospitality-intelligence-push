@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { format, parse } from 'date-fns';
@@ -56,7 +55,6 @@ export default function Profile() {
   const [viewedProfile, setViewedProfile] = useState<ProfileData | null>(null);
   const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
 
-  // Convert new role format to auth service format
   const convertRoleToAuthServiceRole = (newRole: Role): AuthServiceRole => {
     switch (newRole) {
       case 'Owner': return 'Owner';
@@ -66,18 +64,16 @@ export default function Profile() {
     }
   };
 
-  // Convert auth service role format to new role format
   const convertAuthServiceRoleToRole = (authRole: AuthServiceRole | string | null): Role => {
     if (authRole === 'Owner') return 'Owner';
     if (authRole === 'Head Chef' || authRole === 'Manager') return 'Manager';
     return 'Team Member';
   };
 
-  // Convert stored birthday to Date
   useEffect(() => {
     if (profile?.birth_date) {
       try {
-        const parsedDate = parse(profile.birth_date, 'yyyy-MM-dd', new Date());
+        const parsedDate = parse(profile.birth_date, 'MM-dd', new Date());
         if (!isNaN(parsedDate.getTime())) {
           setBirthDate(parsedDate);
         }
@@ -91,11 +87,9 @@ export default function Profile() {
     try {
       setIsLoading(true);
       
-      // Convert the role to the format expected by the auth service
       const authServiceRole = convertRoleToAuthServiceRole(role);
       
-      // Convert the birth date to string in 'YYYY-MM-DD' format
-      const formattedBirthDate = birthDate ? format(birthDate, 'yyyy-MM-dd') : null;
+      const formattedBirthDate = birthDate ? format(birthDate, 'MM-dd') : null;
       
       await updateProfile({
         firstName,
@@ -154,7 +148,6 @@ export default function Profile() {
           setFirstName(data.first_name || '');
           setLastName(data.last_name || '');
           
-          // Convert database role to new role format
           setRole(convertAuthServiceRoleToRole(data.role));
           setAvatarUrl(data.avatar_url);
           setJobTitle(data.job_title || '');
@@ -193,7 +186,6 @@ export default function Profile() {
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
         
-        // Convert database role to new role format
         setRole(convertAuthServiceRoleToRole(profile.role));
         setAvatarUrl(profile.avatar_url);
         setJobTitle(profile.job_title || '');
@@ -298,23 +290,32 @@ export default function Profile() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {birthDate ? format(birthDate, "PPP") : <span>Pick a date</span>}
+                    {birthDate ? format(birthDate, "MMMM dd") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={birthDate}
-                    onSelect={setBirthDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        const currentYear = new Date().getFullYear();
+                        date.setFullYear(currentYear);
+                        setBirthDate(date);
+                      }
+                    }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
+                    captionLayout="buttons"
+                    fromYear={new Date().getFullYear()}
+                    toYear={new Date().getFullYear()}
                   />
                 </PopoverContent>
               </Popover>
             ) : (
               <Input 
                 type="text" 
-                value={birthDate ? format(birthDate, "PP") : ''} 
+                value={birthDate ? format(birthDate, "MMMM dd") : ''} 
                 disabled 
               />
             )}
