@@ -512,7 +512,7 @@ const TeamChat: React.FC = () => {
                 </Button>
               </div>
               
-              <div className="flex gap-1 mt-2">
+              <div className="flex flex-wrap gap-1 mt-2">
                 <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 px-2" title="Add image" onClick={handleImageUpload}>
                   <Image className="h-4 w-4 mr-1" />
                   <span className="text-xs">Image</span>
