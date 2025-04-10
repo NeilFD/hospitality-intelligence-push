@@ -41,8 +41,12 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
   return data || [];
 };
 
-// Notes functions
-export const getNotes = async (): Promise<TeamNote[]> => {
+// Store the mock notes in memory when we don't have a database table
+const mockNotes: TeamNote[] = [];
+const mockMessages: TeamMessage[] = [];
+
+// Notes functions - Internal implementation
+const fetchNotesFromSupabase = async (): Promise<TeamNote[]> => {
   try {
     const { data, error } = await supabase
       .from('team_notes')
@@ -56,13 +60,32 @@ export const getNotes = async (): Promise<TeamNote[]> => {
     
     return data || [];
   } catch (e) {
-    console.error('Exception in getNotes:', e);
+    console.error('Exception in fetchNotesFromSupabase:', e);
     return [];
   }
 };
 
-// Store the mock notes in memory when we don't have a database table
-const mockNotes: TeamNote[] = [];
+// Public function that decides between mock and real data
+export const getNotes = async (): Promise<TeamNote[]> => {
+  try {
+    const { error } = await supabase
+      .from('team_notes')
+      .select('id')
+      .limit(1);
+      
+    if (error && error.code === '42P01') {
+      // Table doesn't exist, use mock data
+      console.warn('The team_notes table does not exist yet. Returning mock notes.');
+      return [...mockNotes];
+    }
+    
+    // Table exists, use the database function
+    return await fetchNotesFromSupabase();
+  } catch (e) {
+    console.error('Exception in getNotes:', e);
+    return [...mockNotes];
+  }
+};
 
 export const createNote = async (note: Omit<TeamNote, 'id' | 'created_at' | 'updated_at'>): Promise<TeamNote> => {
   try {
@@ -131,29 +154,6 @@ export const createNote = async (note: Omit<TeamNote, 'id' | 'created_at' | 'upd
   }
 };
 
-// Override getNotes to use mock data when the table doesn't exist
-const originalGetNotes = getNotes;
-export const getNotes = async (): Promise<TeamNote[]> => {
-  try {
-    const { error } = await supabase
-      .from('team_notes')
-      .select('id')
-      .limit(1);
-      
-    if (error && error.code === '42P01') {
-      // Table doesn't exist, use mock data
-      console.warn('The team_notes table does not exist yet. Returning mock notes.');
-      return [...mockNotes];
-    }
-    
-    // Table exists, use the original function
-    return await originalGetNotes();
-  } catch (e) {
-    console.error('Exception in getNotes:', e);
-    return [...mockNotes];
-  }
-};
-
 export const updateNote = async (id: string, updates: Partial<TeamNote>): Promise<TeamNote> => {
   // Check if we're using mock data
   if (id.startsWith('mock-')) {
@@ -205,9 +205,6 @@ export const deleteNote = async (id: string): Promise<void> => {
     throw error;
   }
 };
-
-// Store mock messages in memory
-const mockMessages: TeamMessage[] = [];
 
 // Messages functions
 export const getMessages = async (): Promise<TeamMessage[]> => {
