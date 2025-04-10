@@ -155,7 +155,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
               <Textarea 
                 placeholder="Add a reply..." 
                 value={replyContent} 
-                onChange={e => setReplyContent(e.target.value)}
+                onChange={(e) => setReplyContent(e.target.value)}
                 className="min-h-[40px] text-xs resize-none"
               />
               <Button 
