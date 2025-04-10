@@ -12,10 +12,12 @@ import FoodDashboard from "@/pages/food/Dashboard";
 import FoodInputSettings from "@/pages/food/InputSettings";
 import FoodMonthSummary from "@/pages/food/MonthSummary";
 import FoodAnnualSummary from "@/pages/food/AnnualSummary";
+import FoodWeeklyTracker from "@/pages/food/WeeklyTracker";
 import BeverageDashboard from "@/pages/beverage/Dashboard";
 import BeverageInputSettings from "@/pages/beverage/InputSettings";
 import BeverageMonthSummary from "@/pages/beverage/MonthSummary";
 import BeverageAnnualSummary from "@/pages/beverage/AnnualSummary";
+import BeverageWeeklyTracker from "@/pages/beverage/WeeklyTracker";
 import PLDashboard from "@/pages/pl/Dashboard";
 import WagesDashboard from "@/pages/wages/Dashboard";
 import PerformanceDashboard from "@/pages/performance/Dashboard";
@@ -49,12 +51,14 @@ function App() {
             <Route path="/food/input-settings" element={<RequireAuth><Layout><FoodInputSettings /></Layout></RequireAuth>} />
             <Route path="/food/month/:year/:month" element={<RequireAuth><Layout><FoodMonthSummary /></Layout></RequireAuth>} />
             <Route path="/food/annual-summary" element={<RequireAuth><Layout><FoodAnnualSummary /></Layout></RequireAuth>} />
+            <Route path="/food/week/:year/:month/:week" element={<RequireAuth><Layout><FoodWeeklyTracker /></Layout></RequireAuth>} />
             
             {/* Beverage Routes */}
             <Route path="/beverage/dashboard" element={<RequireAuth><Layout><BeverageDashboard /></Layout></RequireAuth>} />
             <Route path="/beverage/input-settings" element={<RequireAuth><Layout><BeverageInputSettings /></Layout></RequireAuth>} />
             <Route path="/beverage/month/:year/:month" element={<RequireAuth><Layout><BeverageMonthSummary /></Layout></RequireAuth>} />
             <Route path="/beverage/annual-summary" element={<RequireAuth><Layout><BeverageAnnualSummary /></Layout></RequireAuth>} />
+            <Route path="/beverage/week/:year/:month/:week" element={<RequireAuth><Layout><BeverageWeeklyTracker /></Layout></RequireAuth>} />
             
             {/* P&L Routes */}
             <Route path="/pl/dashboard" element={<RequireAuth><Layout><PLDashboard /></Layout></RequireAuth>} />
