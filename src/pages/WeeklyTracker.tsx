@@ -527,9 +527,11 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
                   </TableRow>
                 ))}
 
-                {/* Staff food allowance */}
+                {/* Staff Food Allowance */}
                 <TableRow className="bg-blue-50">
-                  <TableCell className="font-medium">Staff Food Allowance</TableCell>
+                  <TableCell className="font-medium">
+                    Staff {moduleType === 'beverage' ? 'Beverage' : 'Food'} Allowance
+                  </TableCell>
                   {trackerData.map(day => (
                     <TableCell key={`staff-food-${day.id}`} className="p-0">
                       <Input
