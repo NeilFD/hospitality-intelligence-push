@@ -32,6 +32,7 @@ const NotificationsDropdown = () => {
         .select('*')
         .contains('mentioned_users', [user.id])
         .eq('deleted', false)
+        .not('read_by', 'cs', `{${user.id}}`) // Exclude messages where user.id is in read_by
         .order('created_at', { ascending: false })
         .limit(10);
         
