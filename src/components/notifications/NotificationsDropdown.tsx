@@ -166,7 +166,7 @@ const NotificationsDropdown = () => {
     
     setHasUnread(false);
     
-    queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
+    queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
   };
   
   const getAuthorName = (authorId: string) => {
