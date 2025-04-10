@@ -21,7 +21,8 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   fetchTrackerDataByMonth, 
   syncTrackerPurchasesToPurchases, 
-  syncTrackerCreditNotesToCreditNotes 
+  syncTrackerCreditNotesToCreditNotes,
+  fetchTrackerPurchases
 } from '@/services/kitchen-service';
 
 interface BevStore {
