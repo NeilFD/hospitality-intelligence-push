@@ -406,6 +406,11 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   email?: string;
+  job_title: string | null;
+  birth_date_month: string | null;
+  favourite_dish: string | null;
+  favourite_drink: string | null;
+  about_me: string | null;
 }
 
 export interface DBSupplier {
