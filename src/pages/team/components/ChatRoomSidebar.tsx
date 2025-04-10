@@ -104,7 +104,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                 key={room.id}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start mb-3 font-medium text-left px-3 py-2 hover:bg-pastel-green hover:text-[#48495E]", // Added mint color hover state
+                  "w-full justify-start mb-3 font-medium text-left px-3 py-2 hover:bg-pastel-green hover:text-[#48495E]", // Mint color hover state
                   selectedRoomId === room.id 
                     ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
                     : "bg-white/20 text-tavern-blue-dark hover:bg-pastel-green hover:text-[#48495E]", // Consistent hover state
