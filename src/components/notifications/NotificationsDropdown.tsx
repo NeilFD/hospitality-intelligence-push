@@ -169,7 +169,7 @@ const NotificationsDropdown = () => {
       }
       
       let successCount = 0;
-      let updatedNotifications = [...notifications]; // Create a copy of notifications for updates
+      let updatedNotifications = [...notifications];
       
       for (const notification of unreadNotifications) {
         try {
@@ -191,7 +191,6 @@ const NotificationsDropdown = () => {
               console.log(`Successfully marked notification ${notification.id} as read`);
               successCount++;
               
-              // Update the notification in our copy
               updatedNotifications = updatedNotifications.map(n => 
                 n.id === notification.id 
                   ? { ...n, read_by: updatedReadBy } 
@@ -204,7 +203,6 @@ const NotificationsDropdown = () => {
         }
       }
       
-      // Update the state with all changes at once
       setNotifications(updatedNotifications);
       setHasUnread(false);
       
@@ -215,10 +213,7 @@ const NotificationsDropdown = () => {
         console.log(`Successfully cleared ${successCount} notifications`);
         toast.success('All notifications cleared');
         
-        // Update the cache data directly
         queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
-        
-        // Also refetch to ensure everything is in sync with the database
         await refetchMentions();
       }
     } catch (error) {
