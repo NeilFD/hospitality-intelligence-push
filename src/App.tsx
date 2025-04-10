@@ -22,6 +22,8 @@ import PLDashboard from "@/pages/pl/Dashboard";
 import WagesDashboard from "@/pages/wages/WagesDashboard";
 import PerformanceDashboard from "@/pages/performance/Dashboard";
 import WageOptimization from "@/pages/performance/WageOptimization";
+import FoodBeverageAnalysis from "@/pages/performance/FoodBeverageAnalysis";
+import DataExplorer from "@/pages/performance/DataExplorer";
 import TeamDashboard from "./pages/team/Dashboard";
 import Noticeboard from "./pages/team/Noticeboard";
 import Chat from "./pages/team/Chat";
@@ -70,6 +72,8 @@ function App() {
             {/* Performance Routes */}
             <Route path="/performance/dashboard" element={<RequireAuth><Layout><PerformanceDashboard /></Layout></RequireAuth>} />
             <Route path="/performance/wage-optimization" element={<RequireAuth><Layout><WageOptimization /></Layout></RequireAuth>} />
+            <Route path="/performance/fb-analysis" element={<RequireAuth><Layout><FoodBeverageAnalysis /></Layout></RequireAuth>} />
+            <Route path="/performance/data-explorer" element={<RequireAuth><Layout><DataExplorer /></Layout></RequireAuth>} />
             
             {/* Master Routes */}
             <Route path="/master/dashboard" element={<RequireAuth><Layout><MasterDashboard /></Layout></RequireAuth>} />
