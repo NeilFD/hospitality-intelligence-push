@@ -24,6 +24,8 @@ const NotificationsDropdown = () => {
     queryFn: async () => {
       if (!user) return [];
       
+      console.log('Fetching mentioned messages for user:', user.id);
+      
       const { data, error } = await supabase
         .from('team_messages')
         .select('*')
@@ -37,9 +39,11 @@ const NotificationsDropdown = () => {
         return [];
       }
       
+      console.log('Fetched mentioned messages:', data);
       return data as TeamMessage[];
     },
     enabled: !!user,
+    staleTime: 1000 * 30, // Consider data fresh for 30 seconds
   });
   
   const { data: profiles = [] } = useQuery({
@@ -104,6 +108,9 @@ const NotificationsDropdown = () => {
       }));
       
       const anyUnread = processedMessages.some(msg => !msg.read_by.includes(user.id));
+      
+      console.log('Processed messages:', processedMessages);
+      console.log('Any unread:', anyUnread);
       
       setNotifications(processedMessages);
       setHasUnread(anyUnread);
@@ -228,8 +235,10 @@ const NotificationsDropdown = () => {
     }
     
     try {
+      // Optimistic UI update
       setNotifications(prev => prev.filter(n => n.id !== message.id));
       
+      // Update unread status after removing the message
       const remainingUnread = notifications
         .filter(n => n.id !== message.id)
         .some(n => {
@@ -239,6 +248,9 @@ const NotificationsDropdown = () => {
       
       setHasUnread(remainingUnread);
       
+      console.log('Deleting message with ID:', message.id);
+      
+      // Ensure the deleted flag is set to true in Supabase
       const { error } = await supabase
         .from('team_messages')
         .update({ deleted: true })
@@ -247,17 +259,22 @@ const NotificationsDropdown = () => {
       if (error) {
         console.error('Error deleting notification:', error);
         toast.error('Failed to delete notification');
-        await refetchMentions();
+        await refetchMentions(); // Revert UI by refetching
         return;
       }
       
-      queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+      // Force refetch to ensure our local state matches the database
+      queryClient.invalidateQueries({ 
+        queryKey: ['mentionedMessages', user.id],
+        exact: true
+      });
+      
       toast.success('Notification deleted');
       
     } catch (error) {
       console.error('Error deleting notification:', error);
       toast.error('Failed to delete notification');
-      await refetchMentions();
+      await refetchMentions(); // Revert UI by refetching
     }
   };
   
