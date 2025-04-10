@@ -1,12 +1,15 @@
 
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface StatusBoxProps {
   label: string;
   value: string;
   status: 'good' | 'warning' | 'bad' | 'neutral';
   className?: string;
-  gpMode?: boolean; // New prop to handle GP% specific coloring
+  gpMode?: boolean;
+  icon?: React.ReactNode;
+  loading?: boolean;
 }
 
 export default function StatusBox({ 
@@ -14,7 +17,9 @@ export default function StatusBox({
   value, 
   status, 
   className, 
-  gpMode = false 
+  gpMode = false,
+  icon,
+  loading = false
 }: StatusBoxProps) {
   const statusClasses = {
     good: 'bg-tavern-green/10 backdrop-blur-sm text-[#48495E] border-tavern-green/30',
@@ -63,6 +68,19 @@ export default function StatusBox({
     }
   };
 
+  if (loading) {
+    return (
+      <div className={cn(
+        'rounded-xl p-4 flex flex-col items-center justify-center border shadow-sm glass-morphism h-28 min-w-[150px] animate-pulse',
+        'bg-gray-100',
+        className
+      )}>
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+        <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
       'rounded-xl p-4 flex flex-col items-center justify-center border shadow-sm glass-morphism h-28 min-w-[150px]',
@@ -77,6 +95,7 @@ export default function StatusBox({
       )}>
         {value}
       </p>
+      {icon && <div className="mt-1 text-gray-400">{icon}</div>}
     </div>
   );
 }

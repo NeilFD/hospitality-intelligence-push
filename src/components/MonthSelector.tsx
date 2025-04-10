@@ -12,18 +12,27 @@ import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getMonthName } from '@/lib/date-utils';
 
 interface MonthSelectorProps {
-  initialYear: number;
-  initialMonth: number;
-  onChange: (month: number, year: number) => void;
+  initialYear?: number;
+  initialMonth?: number;
+  currentYear?: number;
+  currentMonth?: number;
+  onChange?: (month: number, year: number) => void;
+  onChangeMonth?: (year: number, month: number) => void;
 }
 
 export default function MonthSelector({ 
   initialYear, 
   initialMonth, 
-  onChange 
+  currentYear: propCurrentYear, 
+  currentMonth: propCurrentMonth,
+  onChange,
+  onChangeMonth
 }: MonthSelectorProps) {
-  const [localYear, setLocalYear] = useState<number>(initialYear);
-  const [localMonth, setLocalMonth] = useState<number>(initialMonth);
+  const startYear = initialYear || propCurrentYear || new Date().getFullYear();
+  const startMonth = initialMonth || propCurrentMonth || new Date().getMonth() + 1;
+  
+  const [localYear, setLocalYear] = useState<number>(startYear);
+  const [localMonth, setLocalMonth] = useState<number>(startMonth);
   
   const handlePreviousMonth = () => {
     let newMonth = localMonth - 1;
@@ -36,7 +45,9 @@ export default function MonthSelector({
     
     setLocalMonth(newMonth);
     setLocalYear(newYear);
-    onChange(newMonth, newYear);
+    
+    if (onChange) onChange(newMonth, newYear);
+    if (onChangeMonth) onChangeMonth(newYear, newMonth);
   };
   
   const handleNextMonth = () => {
@@ -50,19 +61,25 @@ export default function MonthSelector({
     
     setLocalMonth(newMonth);
     setLocalYear(newYear);
-    onChange(newMonth, newYear);
+    
+    if (onChange) onChange(newMonth, newYear);
+    if (onChangeMonth) onChangeMonth(newYear, newMonth);
   };
   
   const handleYearChange = (value: string) => {
     const year = parseInt(value);
     setLocalYear(year);
-    onChange(localMonth, year);
+    
+    if (onChange) onChange(localMonth, year);
+    if (onChangeMonth) onChangeMonth(year, localMonth);
   };
   
   const handleMonthChange = (value: string) => {
     const month = parseInt(value);
     setLocalMonth(month);
-    onChange(month, localYear);
+    
+    if (onChange) onChange(month, localYear);
+    if (onChangeMonth) onChangeMonth(localYear, month);
   };
   
   return (
