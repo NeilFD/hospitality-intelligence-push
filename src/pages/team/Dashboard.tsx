@@ -41,7 +41,7 @@ const Dashboard: React.FC = () => {
             
             <TabsContent value="noticeboard">
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
-                <h1 className="text-3xl font-bold mb-2">Team Noticeboard</h1>
+                <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Noticeboard</h1>
                 <p className="text-gray-600">
                   Pin important notes, share updates, and stay connected with the team.
                 </p>
