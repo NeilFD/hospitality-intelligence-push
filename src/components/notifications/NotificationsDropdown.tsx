@@ -157,16 +157,20 @@ const NotificationsDropdown = () => {
         .eq('id', notification.id);
     }
     
-    setNotifications(prev => 
-      prev.map(n => ({
-        ...n,
-        read_by: n.read_by.includes(user.id) ? n.read_by : [...n.read_by, user.id]
-      }))
-    );
+    // Update local state to reflect that all notifications are now read
+    const updatedNotifications = notifications.map(n => ({
+      ...n,
+      read_by: n.read_by.includes(user.id) ? n.read_by : [...n.read_by, user.id]
+    }));
     
+    setNotifications(updatedNotifications);
     setHasUnread(false);
     
+    // Invalidate the query to refresh the data
     queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+    
+    // Force a refetch to ensure UI is updated
+    refetchMentions();
   };
   
   const getAuthorName = (authorId: string) => {
