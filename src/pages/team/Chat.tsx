@@ -33,9 +33,8 @@ const Chat: React.FC = () => {
           if (payload.new) {
             const message = payload.new as any;
             if (message.author_id !== user.id) {  // Don't notify for own messages
-              // Ensure the message is properly marked as unread for the current user
-              // This is critical for the notification badge to work correctly
-              message.read_by = Array.isArray(message.read_by) ? message.read_by : [];
+              // Ensure the read_by array is properly initialized
+              const readBy = Array.isArray(message.read_by) ? message.read_by : [];
               
               toast.info('You have been mentioned in a message', {
                 action: {
@@ -45,7 +44,7 @@ const Chat: React.FC = () => {
                     supabase
                       .from('team_messages')
                       .update({ 
-                        read_by: [...message.read_by, user.id] 
+                        read_by: [...readBy, user.id] 
                       })
                       .eq('id', message.id)
                       .then(() => {

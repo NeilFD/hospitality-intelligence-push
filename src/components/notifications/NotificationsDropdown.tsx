@@ -24,6 +24,7 @@ const NotificationsDropdown = () => {
     queryFn: async () => {
       if (!user) return [];
       
+      // This query gets mentions where the current user is mentioned
       const { data, error } = await supabase
         .from('team_messages')
         .select('*')
@@ -75,9 +76,8 @@ const NotificationsDropdown = () => {
         },
         (payload) => {
           if (payload.new && (payload.new as any).author_id !== user.id) {
+            // Force refetch when a new mention arrives
             refetchMentions();
-            // Force set hasUnread to true when a new mention is received
-            setHasUnread(true);
           }
         }
       )
@@ -111,13 +111,7 @@ const NotificationsDropdown = () => {
       }));
       
       // Check if any messages are unread (not in read_by array)
-      const anyUnread = processedMessages.some(msg => {
-        const isUnread = !msg.read_by.includes(user.id);
-        console.log(`Message ${msg.id} unread status:`, isUnread, 'read_by:', msg.read_by);
-        return isUnread;
-      });
-      
-      console.log('Has any unread messages:', anyUnread);
+      const anyUnread = processedMessages.some(msg => !msg.read_by.includes(user.id));
       
       setNotifications(processedMessages);
       setHasUnread(anyUnread);
@@ -135,36 +129,29 @@ const NotificationsDropdown = () => {
     if (!currentReadBy.includes(user.id)) {
       const updatedReadBy = [...currentReadBy, user.id];
       
-      console.log('Marking as read:', message.id, 'Updated read_by:', updatedReadBy);
-      
       // Update in Supabase
-      const { error } = await supabase
+      await supabase
         .from('team_messages')
         .update({ read_by: updatedReadBy })
         .eq('id', message.id);
         
-      if (error) {
-        console.error('Error marking message as read:', error);
-      } else {
-        // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
-        queryClient.invalidateQueries({ queryKey: ['teamMessages'] });
-        
-        // Update local state for immediate UI feedback
-        setNotifications(prev => 
-          prev.map(n => 
-            n.id === message.id 
-              ? { ...n, read_by: updatedReadBy } 
-              : n
-          )
-        );
-        
-        // Re-check if there are any remaining unread messages
-        const stillHasUnread = notifications.some(
-          n => n.id !== message.id && !n.read_by.includes(user.id)
-        );
-        setHasUnread(stillHasUnread);
-      }
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
+      
+      // Update local state for immediate UI feedback
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === message.id 
+            ? { ...n, read_by: updatedReadBy } 
+            : n
+        )
+      );
+      
+      // Re-check if there are any remaining unread messages
+      const stillHasUnread = notifications.some(
+        n => n.id !== message.id && !n.read_by.includes(user.id)
+      );
+      setHasUnread(stillHasUnread);
     }
     
     // Navigate to chat with the specific room_id
