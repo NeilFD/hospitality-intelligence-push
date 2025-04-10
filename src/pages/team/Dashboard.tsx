@@ -44,7 +44,7 @@ const TeamDashboard: React.FC = () => {
                 <div className="bg-blue-100 rounded-full p-1">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <span>Pin information visible to keep it visible</span>
+                <span>Pin info to keep it visible</span>
               </li>
             </ul>
           </CardContent>
