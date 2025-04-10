@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Hash, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Hash, AlertCircle, ChevronRight, ChevronLeft, MessageSquare, Utensils, Wine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -34,6 +34,28 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
 
   const toggleMinimize = () => {
     setMinimized(!minimized);
+  };
+
+  // Function to get the appropriate icon for each room
+  const getRoomIcon = (roomName: string, isSelected: boolean) => {
+    const lowerName = roomName.toLowerCase();
+    const className = cn(
+      "h-4 w-4 mr-2", 
+      isSelected ? "text-white" : "text-tavern-blue-dark",
+      minimized ? "mx-auto" : ""
+    );
+    
+    if (lowerName.includes('food')) {
+      return <Utensils className={className} />;
+    } else if (lowerName.includes('beverage') || lowerName.includes('drink')) {
+      return <Wine className={className} />;
+    } else if (lowerName.includes('important') || lowerName.includes('announcement')) {
+      return <AlertCircle className={className} />;
+    } else if (lowerName.includes('general')) {
+      return <MessageSquare className={className} />;
+    } else {
+      return <Hash className={className} />;
+    }
   };
 
   return (
@@ -81,19 +103,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
               onClick={() => onRoomSelect(room.id)}
               title={room.name}
             >
-              {room.is_announcement_only ? (
-                <AlertCircle className={cn(
-                  "h-4 w-4 mr-2", 
-                  selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark",
-                  minimized ? "mx-auto" : ""
-                )} />
-              ) : (
-                <Hash className={cn(
-                  "h-4 w-4 mr-2",
-                  selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark", 
-                  minimized ? "mx-auto" : ""
-                )} />
-              )}
+              {getRoomIcon(room.name, selectedRoomId === room.id)}
               {(!isMobile || !minimized) && (
                 <span className="truncate text-sm">{room.name}</span>
               )}
