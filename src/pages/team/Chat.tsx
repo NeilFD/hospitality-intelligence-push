@@ -14,7 +14,7 @@ const Chat: React.FC = () => {
       isMobile ? "p-0 max-w-full" : "p-4"
     )}>
       <div className={cn(
-        "bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg", 
+        "bg-pastel-blue/50 rounded-lg", 
         isMobile ? "p-3 mb-2" : "p-6 mb-6"
       )}>
         <h1 className="text-3xl font-bold mb-2 text-slate-900 flex items-center gap-2">
