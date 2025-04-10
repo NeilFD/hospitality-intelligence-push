@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
@@ -37,10 +38,10 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
 
   return (
     <div className={cn(
-      "transition-all duration-300 bg-pastel-blue h-full border-r border-white/20 flex-shrink-0 relative",
+      "transition-all duration-300 bg-transparent backdrop-blur-sm h-full border-r border-white/20 flex-shrink-0 relative",
       isMobile && minimized ? "w-12" : (isMobile ? "w-64" : "w-64")
     )}>
-      <div className="flex items-center justify-between border-b border-white/30 p-3 bg-tavern-blue/10 sticky top-0 z-10">
+      <div className="flex items-center justify-between border-b border-white/30 p-3 bg-white/10 backdrop-blur-sm sticky top-0 z-10">
         {!isMobile || !minimized ? (
           <h2 className="text-lg font-semibold text-tavern-blue-dark pl-1">
             {isMobile ? "Chat Rooms" : "Chat Rooms"}
