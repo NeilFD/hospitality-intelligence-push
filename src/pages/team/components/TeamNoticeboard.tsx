@@ -260,7 +260,7 @@ const TeamNoticeboard: React.FC = () => {
               <h2 className="text-2xl font-bold text-slate-800">Team Noticeboard</h2>
               <TabsList className="mt-2">
                 <TabsTrigger value="notes" className="text-slate-900">Notes</TabsTrigger>
-                <TabsTrigger value="polls">Polls</TabsTrigger>
+                <TabsTrigger value="polls" className="text-slate-900">Polls</TabsTrigger>
               </TabsList>
             </div>
             
