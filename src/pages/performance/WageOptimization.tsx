@@ -37,6 +37,38 @@ const COLORS = {
   ]
 };
 
+// Define chart configurations
+const CHART_CONFIG = {
+  fohWages: { 
+    label: 'FOH Wages', 
+    color: COLORS.fohWages 
+  },
+  kitchenWages: { 
+    label: 'Kitchen Wages', 
+    color: COLORS.kitchenWages 
+  },
+  totalWages: { 
+    label: 'Total Wages', 
+    color: COLORS.totalWages 
+  },
+  totalRevenue: { 
+    label: 'Total Revenue', 
+    color: COLORS.revenue 
+  },
+  wagePercentage: { 
+    label: 'Wage %', 
+    color: COLORS.totalWages 
+  },
+  averageWagePerDay: { 
+    label: 'Avg Wage/Day', 
+    color: COLORS.fohWages 
+  },
+  wagePerCover: { 
+    label: 'Wage per Cover', 
+    color: COLORS.totalWages 
+  }
+};
+
 export default function WageOptimization() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -635,7 +667,7 @@ export default function WageOptimization() {
                     <CardTitle>Wage to Cover Ratio By Day</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                    <ChartContainer>
+                    <ChartContainer config={CHART_CONFIG}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={wagePerCoverData}>
                           <CartesianGrid strokeDasharray="3 3" />
@@ -660,7 +692,7 @@ export default function WageOptimization() {
                     <CardTitle>Wage to Revenue Ratio By Day</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                    <ChartContainer>
+                    <ChartContainer config={CHART_CONFIG}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={wagesData.map(day => ({
                           date: day.day,
@@ -710,7 +742,7 @@ export default function WageOptimization() {
                     <CardTitle>Weekly Performance Trends</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                    <ChartContainer>
+                    <ChartContainer config={CHART_CONFIG}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={trends}>
                           <CartesianGrid strokeDasharray="3 3" />
@@ -743,7 +775,7 @@ export default function WageOptimization() {
                     <CardTitle>Performance by Day of Week</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                    <ChartContainer>
+                    <ChartContainer config={CHART_CONFIG}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={dayTypeAnalysis}>
                           <CartesianGrid strokeDasharray="3 3" />
@@ -813,7 +845,7 @@ export default function WageOptimization() {
                     <CardTitle>FOH vs Kitchen Wage Split</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                    <ChartContainer>
+                    <ChartContainer config={CHART_CONFIG}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -854,7 +886,7 @@ export default function WageOptimization() {
                     <CardTitle>Staff Costs by Day of Week</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                    <ChartContainer>
+                    <ChartContainer config={CHART_CONFIG}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={dayTypeAnalysis}>
                           <CartesianGrid strokeDasharray="3 3" />
@@ -875,7 +907,7 @@ export default function WageOptimization() {
                     <CardTitle>Weekly Labor Cost Analysis</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
-                    <ChartContainer>
+                    <ChartContainer config={CHART_CONFIG}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={trends}>
                           <CartesianGrid strokeDasharray="3 3" />
