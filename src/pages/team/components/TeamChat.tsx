@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ const highlightMentions = (content: string, teamMembers: UserProfile[]): React.R
   return result;
 };
 
-const getUserNames = (userIds: string[]) => {
+const getUserNames = (userIds: string[]): string => {
   if (!userIds || userIds.length === 0) return "No users";
   
   return userIds.join(", ");
@@ -621,7 +622,7 @@ const TeamChat: React.FC = () => {
                 </div> : messages.length === 0 ? <div className="flex justify-center items-center h-full">
                   <p className="text-gray-500">No messages yet. Start the conversation!</p>
                 </div> : <>
-                  {messages.filter(message => !message.deleted).map(message => <Message key={message.id} message={message} isOwnMessage={message.author_id === user?.id} author={findMessageAuthor(message.author_id)} onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)} onDeleteMessage={handleDeleteMessage} teamMembers={teamMembers} currentUserId={user?.id || ''} />)}
+                  {messages.filter(message => !message.deleted).map(message => <Message key={message.id} message={message} isOwnMessage={message.author_id === user?.id} author={findMessageAuthor(message.author_id)} onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)} onDeleteMessage={handleDeleteMessage} teamMembers={teamMembers || []} currentUserId={user?.id || ''} />)}
                   <div ref={messagesEndRef} />
                 </>}
             </div>
@@ -629,50 +630,59 @@ const TeamChat: React.FC = () => {
             <div className="p-3 border-t relative">
               {showMentionSelector && (
                 <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
-                  <Command>
-                    <CommandInput placeholder="Search people..." value={mentionQuery} onValueChange={setMentionQuery} />
-                    <CommandEmpty>No users found</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem 
-                        key="mention-all"
-                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-                        onSelect={() => insertAllMention()}
-                      >
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
-                          <AtSign className="w-4 h-4" />
-                        </div>
-                        <span className="font-medium">everyone</span>
-                      </CommandItem>
-                      
-                      {teamMembers && teamMembers.length > 0 ? 
-                        teamMembers
-                          .filter(member => {
-                            if (!member || !member.first_name) return false;
-                            const fullName = `${member.first_name} ${member.last_name || ''}`.toLowerCase().trim();
-                            return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
-                          })
-                          .map(member => (
-                            <CommandItem 
-                              key={member.id} 
-                              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-                              onSelect={() => insertMention(member.id, `${member.first_name} ${member.last_name || ''}`)}
-                            >
-                              <Avatar className="h-8 w-8">
-                                {member.avatar_url ? (
-                                  <AvatarImage src={member.avatar_url} />
-                                ) : (
-                                  <AvatarFallback>
-                                    {member.first_name?.[0]}{member.last_name?.[0]}
-                                  </AvatarFallback>
-                                )}
-                              </Avatar>
-                              <span>{member.first_name} {member.last_name}</span>
-                            </CommandItem>
-                          ))
-                        : <CommandItem disabled>Loading users...</CommandItem>
-                      }
-                    </CommandGroup>
-                  </Command>
+                  {/* Wrap Command in error boundary */}
+                  <div className="command-wrapper">
+                    <Command shouldFilter={false}>
+                      <CommandInput 
+                        placeholder="Search people..." 
+                        value={mentionQuery} 
+                        onValueChange={setMentionQuery} 
+                      />
+                      <CommandEmpty>No users found</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem 
+                          key="mention-all"
+                          className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
+                          onSelect={() => insertAllMention()}
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+                            <AtSign className="w-4 h-4" />
+                          </div>
+                          <span className="font-medium">everyone</span>
+                        </CommandItem>
+                        
+                        {/* Only render team members section if we have data */}
+                        {Array.isArray(teamMembers) && teamMembers.length > 0 ? (
+                          teamMembers
+                            .filter(member => {
+                              if (!member || !member.first_name) return false;
+                              const fullName = `${member.first_name || ''} ${member.last_name || ''}`.toLowerCase().trim();
+                              return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
+                            })
+                            .map(member => (
+                              <CommandItem 
+                                key={member.id} 
+                                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
+                                onSelect={() => insertMention(member.id, `${member.first_name || ''} ${member.last_name || ''}`)}
+                              >
+                                <Avatar className="h-8 w-8">
+                                  {member.avatar_url ? (
+                                    <AvatarImage src={member.avatar_url} alt={member.first_name} />
+                                  ) : (
+                                    <AvatarFallback>
+                                      {(member.first_name?.[0] || '')}{(member.last_name?.[0] || '')}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                                <span>{member.first_name || ''} {member.last_name || ''}</span>
+                              </CommandItem>
+                            ))
+                        ) : (
+                          <CommandItem disabled>Loading users...</CommandItem>
+                        )}
+                      </CommandGroup>
+                    </Command>
+                  </div>
                 </div>
               )}
               
