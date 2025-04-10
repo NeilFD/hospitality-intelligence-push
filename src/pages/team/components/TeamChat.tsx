@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -167,16 +168,16 @@ const Message: React.FC<MessageProps> = ({
         )}
       </div>
 
-      {/* Emoji reaction button */}
-      <div className="flex relative group">
+      {/* Emoji reaction button - Now always visible */}
+      <div className="flex relative ml-1">
         <Popover>
           <PopoverTrigger asChild>
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="icon" 
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100 absolute -ml-10"
+              className="h-6 w-6 rounded-full bg-gray-100 hover:bg-gray-200"
             >
-              <Smile className="h-4 w-4" />
+              <Smile className="h-3 w-3" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2 flex space-x-2">
