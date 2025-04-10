@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle, Info } from 'lucide-react';
+import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTeamMembers } from '@/services/team-service';
-import { checkProfilesCount } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 import { toast } from 'sonner';
 
@@ -13,12 +12,6 @@ const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string>('');
-  const [profileStats, setProfileStats] = useState<{
-    countQuery?: number;
-    fetchedCount?: number;
-    isAuthenticated?: boolean;
-  }>({});
 
   useEffect(() => {
     const fetchTeamMembers = async () => {
@@ -26,38 +19,16 @@ const TeamDashboard: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        // First, check profile count directly from database
-        const profileCheck = await checkProfilesCount();
-        setProfileStats(profileCheck);
-        
-        console.log('Profile check results:', profileCheck);
-        
-        // Then fetch team members as usual
-        console.log('About to fetch team members');
         const members = await getTeamMembers();
         
-        console.log('Team members in component:', members.length);
-        console.log('Raw members data:', JSON.stringify(members));
-        
-        // Check if response is valid
         if (members && Array.isArray(members)) {
           setTeamMembers(members);
-          setDebugInfo(`Found ${members.length} team members. IDs: ${members.map(m => m.id.substring(0, 6) + '...').join(', ')}`);
-          
-          if (members.length === 0) {
-            console.warn('No team members returned from service');
-          } else if (members.length < profileCheck.countQuery) {
-            console.warn(`Only ${members.length} team members returned, expected ${profileCheck.countQuery} based on database content`);
-          }
         } else {
           setError('Invalid data format received');
-          setDebugInfo('Received invalid data format');
-          console.error('Invalid data format:', members);
         }
       } catch (error) {
         console.error("Error fetching team members:", error);
         setError("Failed to fetch team members");
-        setDebugInfo(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         toast.error("Failed to load team members");
       } finally {
         setIsLoading(false);
@@ -82,27 +53,6 @@ const TeamDashboard: React.FC = () => {
           <Users className="h-5 w-5 text-indigo-600" />
           Team Members
         </h2>
-        
-        {/* Enhanced debug info section */}
-        <div className="mb-4 p-3 bg-blue-50 rounded-md">
-          <div className="flex items-center mb-2">
-            <Info className="h-4 w-4 text-blue-500 mr-2" />
-            <span className="text-sm font-medium text-blue-700">
-              Database Profile Stats
-            </span>
-          </div>
-          <p className="text-sm text-blue-600 pl-6">
-            Database profile count: <strong>{profileStats.countQuery || '?'}</strong>, 
-            Profiles fetched from DB: <strong>{profileStats.fetchedCount || '?'}</strong>, 
-            User authenticated: <strong>{profileStats.isAuthenticated ? 'Yes' : 'No'}</strong>
-          </p>
-          <p className="text-sm text-blue-600 pl-6">
-            Team members loaded in component: <strong>{teamMembers.length}</strong>, 
-            Loading: <strong>{isLoading ? 'Yes' : 'No'}</strong>, 
-            Error: <strong>{error || 'None'}</strong>
-          </p>
-          <p className="text-sm text-blue-600 pl-6">{debugInfo || 'No additional debug info available'}</p>
-        </div>
         
         <div className="flex flex-wrap gap-4 items-center">
           {isLoading ? (
