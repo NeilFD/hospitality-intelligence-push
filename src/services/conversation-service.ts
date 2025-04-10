@@ -275,7 +275,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       };
     }
     
-    // Return more raw response data to make troubleshooting easier
+    // Return the parsed response data directly, preserving the original format
     return {
       success: statusCode >= 200 && statusCode < 300,
       data: responseData,

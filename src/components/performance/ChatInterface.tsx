@@ -87,7 +87,11 @@ const ensureDate = (dateInput: any): Date => {
 const extractAIResponse = (response: any): string => {
   console.log('Raw webhook response:', response);
   
-  if (Array.isArray(response) && response.length > 0 && response[0].response) {
+  if (Array.isArray(response?.data) && response.data.length > 0 && response.data[0]?.response) {
+    return response.data[0].response;
+  }
+  
+  if (Array.isArray(response) && response.length > 0 && response[0]?.response) {
     return response[0].response;
   }
   
@@ -99,7 +103,15 @@ const extractAIResponse = (response: any): string => {
       : JSON.stringify(response.data.json.body);
   }
   else if (response?.rawResponse) {
-    responseText = response.rawResponse;
+    try {
+      const parsedResponse = JSON.parse(response.rawResponse);
+      if (Array.isArray(parsedResponse) && parsedResponse.length > 0 && parsedResponse[0]?.response) {
+        return parsedResponse[0].response;
+      }
+      responseText = response.rawResponse;
+    } catch (e) {
+      responseText = response.rawResponse;
+    }
   }
   else if (response?.data?.output) {
     responseText = response.data.output;
