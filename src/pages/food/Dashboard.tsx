@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,30 +50,34 @@ const FoodDashboard = () => {
     <div className="p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <h1 className="text-2xl font-bold mb-4 sm:mb-0">Food Controller Dashboard</h1>
-        <MonthSelector onChange={handleMonthChange} initialYear={year} initialMonth={month} />
+        <MonthSelector 
+          initialYear={year} 
+          initialMonth={month} 
+          onChange={handleMonthChange} 
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <StatusBox 
-          title="Food Revenue" 
+          label="Food Revenue" 
           value={`£${summary.revenue.toLocaleString()}`} 
-          color="blue" 
-          loading={loading}
+          status="neutral" 
           icon={<BarChart3 />}
+          loading={loading}
         />
         <StatusBox 
-          title="Food Cost" 
+          label="Food Cost" 
           value={`£${summary.cost.toLocaleString()}`} 
-          color="yellow" 
-          loading={loading}
+          status="neutral" 
           icon={<BarChart3 />}
+          loading={loading}
         />
         <StatusBox 
-          title="Food GP %" 
+          label="Food GP %" 
           value={`${formattedGP}%`} 
-          color={statusColor} 
-          loading={loading}
+          status={statusColor === 'green' ? 'good' : 'bad'} 
           icon={<BarChart3 />}
+          loading={loading}
         />
       </div>
 

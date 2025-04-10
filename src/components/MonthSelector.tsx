@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Select,
@@ -11,55 +10,59 @@ import {
 } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getMonthName } from '@/lib/date-utils';
-import { useStore } from '@/lib/store';
 
 interface MonthSelectorProps {
-  currentYear: number;
-  currentMonth: number;
-  onChangeMonth: (year: number, month: number) => void;
+  initialYear: number;
+  initialMonth: number;
+  onChange: (month: number, year: number) => void;
 }
 
 export default function MonthSelector({ 
-  currentYear, 
-  currentMonth, 
-  onChangeMonth 
+  initialYear, 
+  initialMonth, 
+  onChange 
 }: MonthSelectorProps) {
-  const navigate = useNavigate();
-  const [localYear, setLocalYear] = useState<number>(currentYear);
+  const [localYear, setLocalYear] = useState<number>(initialYear);
+  const [localMonth, setLocalMonth] = useState<number>(initialMonth);
   
   const handlePreviousMonth = () => {
-    let newMonth = currentMonth - 1;
-    let newYear = currentYear;
+    let newMonth = localMonth - 1;
+    let newYear = localYear;
     
     if (newMonth < 1) {
       newMonth = 12;
-      newYear = currentYear - 1;
+      newYear = localYear - 1;
     }
     
-    onChangeMonth(newYear, newMonth);
+    setLocalMonth(newMonth);
+    setLocalYear(newYear);
+    onChange(newMonth, newYear);
   };
   
   const handleNextMonth = () => {
-    let newMonth = currentMonth + 1;
-    let newYear = currentYear;
+    let newMonth = localMonth + 1;
+    let newYear = localYear;
     
     if (newMonth > 12) {
       newMonth = 1;
-      newYear = currentYear + 1;
+      newYear = localYear + 1;
     }
     
-    onChangeMonth(newYear, newMonth);
+    setLocalMonth(newMonth);
+    setLocalYear(newYear);
+    onChange(newMonth, newYear);
   };
   
   const handleYearChange = (value: string) => {
     const year = parseInt(value);
     setLocalYear(year);
-    onChangeMonth(year, currentMonth);
+    onChange(localMonth, year);
   };
   
   const handleMonthChange = (value: string) => {
     const month = parseInt(value);
-    onChangeMonth(localYear, month);
+    setLocalMonth(month);
+    onChange(month, localYear);
   };
   
   return (
@@ -76,7 +79,7 @@ export default function MonthSelector({
       <div className="flex items-center space-x-2">
         <div className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-gray-500" />
-          <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
+          <Select value={localMonth.toString()} onValueChange={handleMonthChange}>
             <SelectTrigger className="w-[120px] bg-white border-gray-300">
               <SelectValue placeholder="Month" />
             </SelectTrigger>
@@ -90,12 +93,12 @@ export default function MonthSelector({
           </Select>
         </div>
         
-        <Select value={currentYear.toString()} onValueChange={handleYearChange}>
+        <Select value={localYear.toString()} onValueChange={handleYearChange}>
           <SelectTrigger className="w-[90px] bg-white border-gray-300">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
-            {Array.from({ length: 10 }, (_, i) => currentYear - 2 + i).map((year) => (
+            {Array.from({ length: 10 }, (_, i) => localYear - 2 + i).map((year) => (
               <SelectItem key={year} value={year.toString()}>
                 {year}
               </SelectItem>
