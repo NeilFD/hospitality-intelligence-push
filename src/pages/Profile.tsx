@@ -54,7 +54,16 @@ const Profile = () => {
             setViewedProfile(data);
             setFirstName(data.first_name || '');
             setLastName(data.last_name || '');
-            setRole((data.role as 'Owner' | 'Head Chef' | 'Staff') || 'Staff');
+            // Convert any old role values to new ones
+            let updatedRole: 'Owner' | 'Manager' | 'Team Member' = 'Team Member';
+            if (data.role === 'Owner') {
+              updatedRole = 'Owner';
+            } else if (data.role === 'Head Chef') {
+              updatedRole = 'Manager';
+            } else if (data.role === 'Staff') {
+              updatedRole = 'Team Member';
+            }
+            setRole(updatedRole);
             setAvatarUrl(data.avatar_url);
             
             // Set new fields
@@ -75,7 +84,16 @@ const Profile = () => {
         if (profile) {
           setFirstName(profile.first_name || '');
           setLastName(profile.last_name || '');
-          setRole((profile.role as 'Owner' | 'Head Chef' | 'Staff') || 'Staff');
+          // Convert any old role values to new ones
+          let updatedRole: 'Owner' | 'Manager' | 'Team Member' = 'Team Member';
+          if (profile.role === 'Owner') {
+            updatedRole = 'Owner';
+          } else if (profile.role === 'Head Chef') {
+            updatedRole = 'Manager';
+          } else if (profile.role === 'Staff') {
+            updatedRole = 'Team Member';
+          }
+          setRole(updatedRole);
           setAvatarUrl(profile.avatar_url);
           
           // Set new fields
