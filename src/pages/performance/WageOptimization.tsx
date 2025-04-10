@@ -791,7 +791,7 @@ export default function WageOptimization() {
             
             <TabsContent value="optimization" className="space-y-6">
               {optimizationSuggestions.length > 0 && <Alert>
-                  <AlertCircle className="h-4 w-4" />
+                  <AlertCircle className="h-4 w-4 bg-slate-400" />
                   <AlertTitle className="text-slate-900">Optimization Opportunities</AlertTitle>
                   <AlertDescription className="bg-gray-400">
                     Based on your data, we've identified opportunities to optimize your wage costs.
