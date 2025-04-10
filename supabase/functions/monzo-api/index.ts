@@ -114,10 +114,32 @@ serve(async (req) => {
     
     if (!response.ok) {
       console.error(`Monzo API error (${response.status}):`, data);
-      return new Response(
-        JSON.stringify({ error: "Monzo API error", details: data }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: response.status }
-      );
+      
+      // Provide more helpful error messages for common errors
+      if (response.status === 401) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Monzo API authentication failed", 
+            message: "Your Monzo access token may be invalid or expired",
+            details: data 
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      } else if (response.status === 403) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Monzo API permission denied", 
+            message: "Your Monzo access token doesn't have permission for this operation",
+            details: data 
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({ error: "Monzo API error", details: data }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: response.status }
+        );
+      }
     }
     
     // Return successful response
