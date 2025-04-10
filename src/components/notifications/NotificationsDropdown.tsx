@@ -150,6 +150,8 @@ const NotificationsDropdown = () => {
     if (unreadNotifications.length === 0) return;
     
     try {
+      console.log("Clearing notifications:", unreadNotifications.length);
+      
       const updatePromises = unreadNotifications.map(notification => {
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         
@@ -161,17 +163,25 @@ const NotificationsDropdown = () => {
       
       await Promise.all(updatePromises);
       
-      const updatedNotifications = notifications.map(n => ({
-        ...n,
-        read_by: n.read_by.includes(user.id) ? n.read_by : [...n.read_by, user.id]
-      }));
+      const updatedNotifications = notifications.map(notification => {
+        if (!notification.read_by.includes(user.id)) {
+          return {
+            ...notification,
+            read_by: [...notification.read_by, user.id]
+          };
+        }
+        return notification;
+      });
       
       setNotifications(updatedNotifications);
       setHasUnread(false);
       
-      queryClient.setQueryData(['mentionedMessages', user?.id], updatedNotifications);
+      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
       
+      await queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
       await refetchMentions();
+      
+      console.log("All notifications cleared successfully");
     } catch (error) {
       console.error('Error clearing notifications:', error);
     }
