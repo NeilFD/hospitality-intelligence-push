@@ -90,9 +90,8 @@ const extractAIResponse = (response: any): string => {
   if (Array.isArray(response) && response.length > 0 && response[0].response) {
     let responseText = response[0].response.trim();
     
-    // Remove emoji and any special characters
+    // Clean up formatting while preserving emojis
     responseText = responseText
-      .replace(/🌟|🎉/g, '')  // Remove specific emojis
       .replace(/\s*-\s*/g, '\n')  // Convert hyphen lists to new lines
       .replace(/:\s*/, '\n')  // Move colons to new lines
       .replace(/£/g, '')  // Remove pound sign
