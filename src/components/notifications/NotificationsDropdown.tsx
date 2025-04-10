@@ -149,35 +149,32 @@ const NotificationsDropdown = () => {
     
     if (unreadNotifications.length === 0) return;
     
-    console.log('Clearing all notifications:', unreadNotifications.length);
-    
-    for (const notification of unreadNotifications) {
-      const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-      
-      await supabase
-        .from('team_messages')
-        .update({ read_by: [...currentReadBy, user.id] })
-        .eq('id', notification.id);
+    try {
+      for (const notification of unreadNotifications) {
+        const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         
-      console.log(`Updated notification ${notification.id} in database`);
+        await supabase
+          .from('team_messages')
+          .update({ read_by: [...currentReadBy, user.id] })
+          .eq('id', notification.id);
+      }
+      
+      const updatedNotifications = notifications.map(n => ({
+        ...n,
+        read_by: Array.isArray(n.read_by) && n.read_by.includes(user.id) 
+          ? n.read_by 
+          : [...(Array.isArray(n.read_by) ? n.read_by : []), user.id]
+      }));
+      
+      setNotifications(updatedNotifications);
+      setHasUnread(false);
+      
+      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+      queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+      await refetchMentions();
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
     }
-    
-    const updatedNotifications = notifications.map(n => ({
-      ...n,
-      read_by: n.read_by.includes(user.id) ? n.read_by : [...n.read_by, user.id]
-    }));
-    
-    console.log('Setting notifications to:', updatedNotifications);
-    setNotifications(updatedNotifications);
-    setHasUnread(false);
-    
-    console.log('Invalidating query mentionedMessages');
-    queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
-    
-    console.log('Refetching mentions');
-    await refetchMentions();
-    
-    console.log('Clear all operation complete');
   };
   
   const getAuthorName = (authorId: string) => {
