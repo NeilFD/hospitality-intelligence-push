@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getChatRooms } from '@/services/team-service';
+import { getChatRooms, ChatRoom } from '@/services/team-service';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Hash } from 'lucide-react';
+import { Hash, AlertCircle } from 'lucide-react';
 
 interface ChatRoomSidebarProps {
   selectedRoomId: string;
@@ -40,7 +40,11 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
               className="w-full justify-start mb-2"
               onClick={() => onRoomSelect(room.id)}
             >
-              <Hash className="mr-2 h-4 w-4" />
+              {room.is_announcement_only ? (
+                <AlertCircle className="mr-2 h-4 w-4 text-red-500" />
+              ) : (
+                <Hash className="mr-2 h-4 w-4" />
+              )}
               {room.name}
             </Button>
           ))}

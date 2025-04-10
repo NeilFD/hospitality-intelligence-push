@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -24,6 +25,7 @@ export interface TeamMessage {
   attachment_url?: string;
   mentioned_users?: string[];
   read_by: string[];
+  room_id: string;
 }
 
 export interface TeamPoll {
@@ -58,6 +60,14 @@ export interface TeamPollVote {
   user_id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ChatRoom {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  is_announcement_only: boolean;
 }
 
 // Get all team members (profiles)
@@ -451,13 +461,7 @@ export const uploadTeamFile = async (file: File, folder: 'notes' | 'messages' | 
 };
 
 // Get all available chat rooms
-export const getChatRooms = async (): Promise<{
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  is_announcement_only: boolean;
-}[]> => {
+export const getChatRooms = async (): Promise<ChatRoom[]> => {
   const { data, error } = await supabase
     .from('team_chat_rooms')
     .select('*');

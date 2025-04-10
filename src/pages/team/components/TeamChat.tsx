@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Send, Image, Mic, Smile, Paperclip, AtSign } from 'lucide-react';
-import { TeamMessage, getMessages, createMessage, markMessageAsRead, uploadTeamFile, getTeamMembers } from '@/services/team-service';
+import { TeamMessage, getMessages, createMessage, markMessageAsRead, uploadTeamFile, getTeamMembers, getChatRooms } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -142,13 +142,14 @@ const TeamChat: React.FC = () => {
 
   const { data: rooms = [] } = useQuery({
     queryKey: ['chatRooms'],
-    queryFn: () => getChatRooms(),
-    onSuccess: (fetchedRooms) => {
-      if (fetchedRooms.length > 0 && !selectedRoomId) {
-        setSelectedRoomId(fetchedRooms[0].id);
-      }
-    }
+    queryFn: getChatRooms
   });
+  
+  useEffect(() => {
+    if (rooms.length > 0 && !selectedRoomId) {
+      setSelectedRoomId(rooms[0].id);
+    }
+  }, [rooms, selectedRoomId]);
   
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: ['teamMessages', selectedRoomId],
@@ -171,7 +172,7 @@ const TeamChat: React.FC = () => {
   }, [messages]);
   
   const messageMutation = useMutation({
-    mutationFn: async (messageData: Omit<TeamMessage, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (messageData: Omit<TeamMessage, 'id' | 'created_at' | 'updated_at'> & { room_id: string }) => {
       let attachmentUrl = '';
       if (file && messageType !== 'text') {
         try {
