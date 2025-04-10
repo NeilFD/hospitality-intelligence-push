@@ -24,6 +24,7 @@ import { fetchMasterDailyRecordsForWeek } from '@/services/master-record-service
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { generateWeekDates } from '@/lib/date-utils';
+import { supabase } from '@/lib/supabase';
 
 interface TrackerData {
   id: string;
