@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,6 @@ import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
-// Define the missing MessageProps interface
 interface MessageProps {
   message: TeamMessage;
   isOwnMessage: boolean;
@@ -26,6 +24,10 @@ interface MessageProps {
   onDeleteMessage: (messageId: string) => void;
   teamMembers: UserProfile[];
   currentUserId: string;
+}
+
+interface TeamChatProps {
+  initialRoomId?: string | null;
 }
 
 const EMOJI_CATEGORIES = [{
@@ -265,7 +267,7 @@ const Message: React.FC<MessageProps> = ({
     </div>;
 };
 
-const TeamChat: React.FC = () => {
+const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId }) => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('');
@@ -283,6 +285,7 @@ const TeamChat: React.FC = () => {
   const [showMentionSelector, setShowMentionSelector] = useState(false);
   const [mentionStart, setMentionStart] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
   const {
     data: rooms = [],
     isLoading: isLoadingRooms
@@ -290,11 +293,15 @@ const TeamChat: React.FC = () => {
     queryKey: ['chatRooms'],
     queryFn: getChatRooms
   });
+  
   useEffect(() => {
-    if (!selectedRoomId && rooms.length > 0) {
+    if (initialRoomId) {
+      setSelectedRoomId(initialRoomId);
+    } else if (!selectedRoomId && rooms.length > 0) {
       setSelectedRoomId(rooms[0].id);
     }
-  }, [rooms, selectedRoomId]);
+  }, [rooms, selectedRoomId, initialRoomId]);
+  
   const {
     data: messages = [],
     isLoading: isLoadingMessages,
@@ -304,12 +311,14 @@ const TeamChat: React.FC = () => {
     queryFn: () => selectedRoomId ? getMessages(selectedRoomId) : Promise.resolve([]),
     enabled: !!selectedRoomId
   });
+  
   const {
     data: teamMembers = []
   } = useQuery({
     queryKey: ['teamMembers'],
     queryFn: getTeamMembers
   });
+  
   const createMessageMutation = useMutation({
     mutationFn: createMessage,
     onSuccess: () => {
@@ -318,6 +327,7 @@ const TeamChat: React.FC = () => {
       });
     }
   });
+  
   const addReactionMutation = useMutation({
     mutationFn: ({
       messageId,
@@ -334,6 +344,7 @@ const TeamChat: React.FC = () => {
       });
     }
   });
+  
   const deleteMessageMutation = useMutation({
     mutationFn: (messageId: string) => deleteMessage(messageId),
     onSuccess: () => {
@@ -347,6 +358,7 @@ const TeamChat: React.FC = () => {
       toast.error("Failed to delete message");
     }
   });
+  
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({
@@ -354,9 +366,11 @@ const TeamChat: React.FC = () => {
       });
     }
   }, [messages]);
+  
   const findMessageAuthor = (authorId: string) => {
     return teamMembers.find(member => member.id === authorId);
   };
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setMessageText(value);
@@ -372,6 +386,7 @@ const TeamChat: React.FC = () => {
     }
     setShowMentionSelector(false);
   };
+  
   const insertMention = (userId: string, displayName: string) => {
     if (textareaRef.current) {
       const before = messageText.substring(0, mentionStart);
@@ -388,6 +403,7 @@ const TeamChat: React.FC = () => {
       textareaRef.current.dataset.mentions = JSON.stringify(Object.fromEntries(mentionsMap));
     }
   };
+  
   const insertAllMention = () => {
     if (textareaRef.current) {
       const before = messageText.substring(0, mentionStart);
@@ -398,6 +414,7 @@ const TeamChat: React.FC = () => {
       setShowMentionSelector(false);
     }
   };
+  
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user || !selectedRoomId) return;
     
@@ -460,6 +477,7 @@ const TeamChat: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+  
   const handleAddReaction = (messageId: string, emoji: string) => {
     if (!user) return;
     addReactionMutation.mutate({
@@ -468,13 +486,16 @@ const TeamChat: React.FC = () => {
       userId: user.id
     });
   };
+  
   const handleDeleteMessage = (messageId: string) => {
     if (!user) return;
     deleteMessageMutation.mutate(messageId);
   };
+  
   const handleRoomSelect = (roomId: string) => {
     setSelectedRoomId(roomId);
   };
+  
   const handleImageUpload = () => {
     if (!fileInputRef.current) {
       const input = document.createElement('input');
@@ -515,6 +536,7 @@ const TeamChat: React.FC = () => {
       fileInputRef.current.click();
     }
   };
+  
   const handleVoiceRecording = async () => {
     if (isRecording) {
       if (voiceRecorderRef.current) {
@@ -577,6 +599,7 @@ const TeamChat: React.FC = () => {
       }
     }
   };
+  
   const handleFileUpload = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -612,6 +635,7 @@ const TeamChat: React.FC = () => {
     input.click();
     document.body.removeChild(input);
   };
+  
   const renderMentionSelector = () => {
     if (!showMentionSelector) return null;
     

@@ -1,0 +1,199 @@
+
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { TeamMessage } from '@/services/team-service';
+import { useAuthStore } from '@/services/auth-service';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Bell } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const NotificationsDropdown = () => {
+  const [hasUnread, setHasUnread] = useState(false);
+  const [notifications, setNotifications] = useState<TeamMessage[]>([]);
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  
+  // Get messages where current user is mentioned
+  const { data: mentionedMessages } = useQuery({
+    queryKey: ['mentionedMessages', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('team_messages')
+        .select('*')
+        .contains('mentioned_users', [user.id])
+        .eq('deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(10);
+        
+      if (error) {
+        console.error('Error fetching mentioned messages:', error);
+        return [];
+      }
+      
+      return data as TeamMessage[];
+    },
+    enabled: !!user,
+  });
+  
+  // Get user profiles for message authors
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['teamMembers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        return [];
+      }
+      
+      return data;
+    },
+  });
+  
+  // Process notifications
+  useEffect(() => {
+    if (mentionedMessages && user) {
+      // Filter messages that haven't been read by the current user
+      const unreadMessages = mentionedMessages.filter(
+        msg => !msg.read_by.includes(user.id)
+      );
+      
+      setNotifications(mentionedMessages);
+      setHasUnread(unreadMessages.length > 0);
+    }
+  }, [mentionedMessages, user]);
+  
+  // Mark notification as read and navigate
+  const handleNotificationClick = async (message: TeamMessage) => {
+    if (user && !message.read_by.includes(user.id)) {
+      // Update read_by array
+      const updatedReadBy = [...message.read_by, user.id];
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('team_messages')
+        .update({ read_by: updatedReadBy })
+        .eq('id', message.id);
+        
+      if (error) {
+        console.error('Error marking message as read:', error);
+      } else {
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
+        queryClient.invalidateQueries({ queryKey: ['teamMessages'] });
+      }
+    }
+    
+    // Navigate to chat with the specific room_id
+    navigate(`/team/chat?room=${message.room_id}`);
+  };
+  
+  const getAuthorName = (authorId: string) => {
+    const author = profiles.find(p => p.id === authorId);
+    if (author) {
+      return `${author.first_name} ${author.last_name}`.trim();
+    }
+    return 'Unknown User';
+  };
+  
+  const getInitials = (authorId: string) => {
+    const author = profiles.find(p => p.id === authorId);
+    if (author) {
+      return `${(author.first_name?.[0] || '').toUpperCase()}${(author.last_name?.[0] || '').toUpperCase()}`;
+    }
+    return '?';
+  };
+  
+  const getAuthorAvatar = (authorId: string) => {
+    const author = profiles.find(p => p.id === authorId);
+    return author?.avatar_url || '';
+  };
+  
+  // Format content to limit length
+  const formatContent = (content: string) => {
+    return content.length > 50 ? content.substring(0, 50) + '...' : content;
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative p-0 h-auto bg-transparent hover:bg-transparent">
+          <Bell className="h-5 w-5 text-tavern-blue" />
+          {hasUnread && (
+            <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500" />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="p-2 border-b">
+          <h4 className="text-sm font-medium">Notifications</h4>
+        </div>
+        <ScrollArea className="h-[300px]">
+          {notifications && notifications.length > 0 ? (
+            <div className="py-1">
+              {notifications.map((notification) => (
+                <Button
+                  key={notification.id}
+                  variant="ghost"
+                  className={`w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 ${
+                    user && !notification.read_by.includes(user.id) 
+                      ? 'bg-blue-50' 
+                      : ''
+                  }`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    {getAuthorAvatar(notification.author_id) ? (
+                      <AvatarImage 
+                        src={getAuthorAvatar(notification.author_id)} 
+                        alt={getAuthorName(notification.author_id)} 
+                      />
+                    ) : (
+                      <AvatarFallback>
+                        {getInitials(notification.author_id)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="flex flex-col items-start text-left">
+                    <p className="text-xs font-medium">
+                      {getAuthorName(notification.author_id)}
+                      <span className="font-normal ml-2 text-gray-500">
+                        mentioned you
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {formatContent(notification.content)}
+                    </p>
+                    <span className="text-xs text-gray-400 mt-1">
+                      {new Date(notification.created_at).toLocaleString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-gray-500">
+              <p>No new notifications</p>
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export default NotificationsDropdown;
