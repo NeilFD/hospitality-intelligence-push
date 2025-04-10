@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ModuleType } from "@/types/kitchen-ledger";
 import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
-import { ModuleIcon } from "./ModuleIcons";
 
 interface LayoutProps {
   children: ReactNode;
@@ -213,7 +212,7 @@ const Layout = ({
             </SheetContent>
           </Sheet>
           <div className="flex-1 overflow-auto pt-16">
-            <div className="absolute top-4 left-0 right-0 flex justify-between px-4">
+            <div className="absolute top-2 left-0 right-0 flex justify-between px-4">
               <div className="w-8"></div>
               <TavernLogo size="md" />
               {isAuthenticated && <DropdownMenu>
@@ -254,7 +253,7 @@ const Layout = ({
             {Sidebar}
           </div>
           <div className="flex-1 overflow-auto relative">
-            <div className="flex items-center justify-between px-8 py-4">
+            <div className="flex items-center justify-between px-8 py-2">
               <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-gray-800">
                 {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
