@@ -142,13 +142,18 @@ const NotificationsDropdown = () => {
   };
   
   const handleClearAllNotifications = async () => {
-    if (!user || !notifications.length) {
+    if (!user) {
+      console.log("No user logged in");
+      return;
+    }
+    
+    if (!notifications || notifications.length === 0) {
       console.log("No notifications to clear");
       return;
     }
     
     const unreadNotifications = notifications.filter(
-      msg => !msg.read_by.includes(user.id)
+      msg => Array.isArray(msg.read_by) && !msg.read_by.includes(user.id)
     );
     
     if (unreadNotifications.length === 0) {
@@ -159,7 +164,7 @@ const NotificationsDropdown = () => {
     try {
       console.log("Clearing notifications:", unreadNotifications.length);
       
-      const updatedNotificationsArray = [];
+      let successCount = 0;
       
       for (const notification of unreadNotifications) {
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
@@ -167,45 +172,43 @@ const NotificationsDropdown = () => {
         if (!currentReadBy.includes(user.id)) {
           const updatedReadBy = [...currentReadBy, user.id];
           
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from('team_messages')
             .update({ read_by: updatedReadBy })
-            .eq('id', notification.id)
-            .select();
+            .eq('id', notification.id);
           
           if (error) {
             console.error(`Error updating notification ${notification.id}:`, error);
-            toast.error('Failed to clear a notification');
-            continue;
-          }
-          
-          if (data && data[0]) {
-            updatedNotificationsArray.push(data[0]);
+          } else {
+            successCount++;
           }
         }
       }
       
-      if (updatedNotificationsArray.length === 0) {
-        console.log("No notifications were updated");
+      if (successCount === 0) {
+        console.log("Failed to clear any notifications");
+        toast.error('Failed to clear notifications');
         return;
       }
       
-      const freshNotifications = notifications.map(notification => {
-        const updatedNotification = updatedNotificationsArray.find(n => n.id === notification.id);
-        if (updatedNotification) {
-          return updatedNotification;
+      await refetchMentions();
+      
+      const updatedNotifications = notifications.map(notification => {
+        if (!notification.read_by.includes(user.id)) {
+          return {
+            ...notification,
+            read_by: [...notification.read_by, user.id]
+          };
         }
         return notification;
       });
       
-      setNotifications(freshNotifications);
+      setNotifications(updatedNotifications);
       setHasUnread(false);
       
-      await refetchMentions();
+      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
       
-      queryClient.setQueryData(['mentionedMessages', user.id], freshNotifications);
-      
-      console.log("All notifications cleared successfully");
+      console.log(`Successfully cleared ${successCount} notifications`);
       toast.success('All notifications cleared');
     } catch (error) {
       console.error('Error clearing notifications:', error);
