@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users } from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -117,6 +118,11 @@ const Layout = ({
             name: "Team Chat",
             path: "/team/chat",
             icon: <MessageSquare className="mr-2 h-4 w-4" />
+          },
+          {
+            name: "Knowledge Base",
+            path: "/team/knowledge",
+            icon: <Book className="mr-2 h-4 w-4" />
           }
         ];
       default:
