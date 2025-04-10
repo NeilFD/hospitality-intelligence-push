@@ -16,6 +16,7 @@ const TeamDashboard: React.FC = () => {
     const fetchTeamMembers = async () => {
       try {
         const members = await getTeamMembers();
+        console.log('Team members in component:', members.length);
         setTeamMembers(members);
       } catch (error) {
         console.error("Error fetching team members:", error);
