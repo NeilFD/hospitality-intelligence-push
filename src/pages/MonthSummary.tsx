@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,7 +46,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
   const [totalCosts, setTotalCosts] = useState(0);
   const [gpPercentage, setGpPercentage] = useState(0);
   
-  // Fetch tracker data from Supabase
   const { data: trackerData, isLoading: isLoadingTracker } = useQuery({
     queryKey: ['tracker-data', currentYear, currentMonth, moduleType],
     queryFn: async () => {
@@ -69,10 +67,8 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     navigate(`/${moduleType}/month/${year}/${month}`);
   };
   
-  // Function to generate all weeks for the current month
   const generateAllWeeksForMonth = (): WeekSummary[] => {
-    // Get the number of weeks in the month
-    const totalWeeks = 5; // Most months have 4-5 weeks
+    const totalWeeks = 5;
     const allWeeks: WeekSummary[] = [];
     
     for (let i = 1; i <= totalWeeks; i++) {
@@ -87,11 +83,9 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     return allWeeks;
   };
   
-  // Calculate summary data from tracker data or fall back to local store
   useEffect(() => {
     const calculateFromTrackerData = async () => {
       if (!trackerData || trackerData.length === 0) {
-        // Fall back to local store if no tracker data
         calculateFromLocalStore();
         return;
       }
@@ -101,53 +95,42 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         let monthCost = 0;
         const weekSummaries: Record<number, WeekSummary> = {};
         
-        // Initialize week summaries for all weeks of the month
         const allWeeks = generateAllWeeksForMonth();
         allWeeks.forEach(week => {
           weekSummaries[week.weekNumber] = week;
         });
         
-        // Process each tracker day
         for (const day of trackerData) {
-          // Add revenue to week and month totals
           const revenue = Number(day.revenue) || 0;
           weekSummaries[day.week_number].revenue += revenue;
           monthRev += revenue;
           
-          // Fetch purchases for this tracker day
           const purchases = await fetchTrackerPurchases(day.id);
           const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
           
-          // Fetch credit notes for this tracker day
           const creditNotes = await fetchTrackerCreditNotes(day.id);
           const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount), 0);
           
-          // Staff food allowance
           const staffFood = Number(day.staff_food_allowance) || 0;
           
-          // Calculate net costs (purchases - credit notes + staff food)
           const netDayCosts = dayCosts - dayCreditNotes + staffFood;
           weekSummaries[day.week_number].costs += netDayCosts;
           monthCost += netDayCosts;
         }
         
-        // Calculate GP for each week and create week array
         const weeklyDataArray = Object.values(weekSummaries).map(week => {
           week.gp = calculateGP(week.revenue, week.costs);
           return week;
         });
         
-        // Sort by week number
         weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
         
         setWeeklyData(weeklyDataArray);
         setTotalRevenue(monthRev);
         setTotalCosts(monthCost);
         setGpPercentage(calculateGP(monthRev, monthCost));
-        
       } catch (error) {
         console.error("Error calculating from tracker data:", error);
-        // Fall back to local store on error
         calculateFromLocalStore();
         toast({
           title: "Error loading tracker data",
@@ -157,18 +140,14 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
       }
     };
     
-    // Fallback to local store data if needed
     const calculateFromLocalStore = () => {
-      // Create a mapping of week numbers to week data objects for proper processing
       const weekMap: Record<number, WeekSummary> = {};
       
-      // Initialize all weeks in the month
       const allWeeks = generateAllWeeksForMonth();
       allWeeks.forEach(week => {
         weekMap[week.weekNumber] = week;
       });
       
-      // Process each week in the month record
       monthRecord.weeks.forEach(week => {
         const weekRevenue = week.days.reduce((sum, day) => sum + day.revenue, 0);
         
@@ -180,7 +159,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         
         const weekGp = calculateGP(weekRevenue, weekCosts);
         
-        // Store week data in the map using the week number as key
         weekMap[week.weekNumber] = {
           weekNumber: week.weekNumber,
           revenue: weekRevenue,
@@ -189,7 +167,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         };
       });
       
-      // Convert the map to an array and sort by week number
       const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
       
       const localTotalRevenue = monthRecord.weeks.reduce((sum, week) => {
@@ -212,9 +189,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
       setGpPercentage(calculateGP(localTotalRevenue, localTotalCosts));
     };
 
-    // Execute the calculations
     calculateFromTrackerData();
-    
   }, [trackerData, monthRecord, currentYear, currentMonth, toast]);
   
   const gpDifference = gpPercentage - monthRecord.gpTarget;
