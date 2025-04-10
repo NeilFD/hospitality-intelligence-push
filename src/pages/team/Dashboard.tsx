@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, ArrowRight } from 'lucide-react';
+import { Users, MessageSquare, ArrowRight, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const TeamDashboard: React.FC = () => {
