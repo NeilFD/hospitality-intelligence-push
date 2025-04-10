@@ -258,32 +258,6 @@ const NotificationsDropdown = () => {
       </PopoverContent>
     </Popover>
   );
-  
-  // Helper functions
-  function getAuthorName(authorId: string) {
-    const author = profiles.find(p => p.id === authorId);
-    if (author) {
-      return `${author.first_name} ${author.last_name}`.trim();
-    }
-    return 'Unknown User';
-  }
-  
-  function getInitials(authorId: string) {
-    const author = profiles.find(p => p.id === authorId);
-    if (author) {
-      return `${(author.first_name?.[0] || '').toUpperCase()}${(author.last_name?.[0] || '').toUpperCase()}`;
-    }
-    return '?';
-  }
-  
-  function getAuthorAvatar(authorId: string) {
-    const author = profiles.find(p => p.id === authorId);
-    return author?.avatar_url || '';
-  }
-  
-  function formatContent(content: string) {
-    return content.length > 50 ? content.substring(0, 50) + '...' : content;
-  }
 };
 
 export default NotificationsDropdown;
