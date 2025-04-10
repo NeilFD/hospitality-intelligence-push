@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -222,10 +223,11 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     fetchData();
   }, [currentYear, currentMonth, toast, moduleType]);
   
+  // Fix the GP status calculation to properly determine good/warning/bad status
   const gpDifference = gpPercentage - monthRecord.gpTarget;
   const gpStatus = 
-    gpDifference >= 0.02 ? 'good' : 
-    gpDifference >= -0.02 ? 'warning' : 
+    gpPercentage >= monthRecord.gpTarget ? 'good' : 
+    gpPercentage >= monthRecord.gpTarget - 0.02 ? 'warning' : 
     'bad';
 
   const targetSpend = totalRevenue * monthRecord.costTarget;

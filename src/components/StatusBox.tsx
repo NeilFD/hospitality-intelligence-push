@@ -19,7 +19,7 @@ export default function StatusBox({
   const statusClasses = {
     good: 'bg-tavern-green/10 backdrop-blur-sm text-[#48495E] border-tavern-green/30',
     warning: 'bg-tavern-amber/10 backdrop-blur-sm text-[#48495E] border-tavern-amber/30',
-    bad: 'bg-tavern-blue-light/10 backdrop-blur-sm text-[#48495E] border-tavern-blue/30',
+    bad: 'bg-tavern-red/10 backdrop-blur-sm text-[#48495E] border-tavern-red/30',
     neutral: 'bg-tavern-blue-light/5 backdrop-blur-sm text-[#48495E] border-tavern-blue-light/20'
   };
   
@@ -52,11 +52,12 @@ export default function StatusBox({
     return status;
   };
 
-  // New method to get text color based on status
+  // Updated method to get text color based on status
   const getTextColor = () => {
     const calculatedStatus = gpMode ? getGPStatus() : status;
     switch (calculatedStatus) {
       case 'good': return 'text-green-600';
+      case 'warning': return 'text-amber-600'; 
       case 'bad': return 'text-red-600';
       default: return 'text-[#48495E]';
     }
@@ -79,4 +80,3 @@ export default function StatusBox({
     </div>
   );
 }
-
