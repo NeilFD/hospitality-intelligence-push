@@ -79,7 +79,7 @@ export interface ChatRoom {
 
 export const getTeamMembers = async (): Promise<UserProfile[]> => {
   try {
-    // Explicitly query all profiles with no filters
+    // Make sure we're getting all profiles without any filters
     const { data, error } = await supabase
       .from('profiles')
       .select('*');
