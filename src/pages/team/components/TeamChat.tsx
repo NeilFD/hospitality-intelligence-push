@@ -40,7 +40,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -80,6 +80,25 @@ const highlightMentions = (content: string, teamMembers: UserProfile[]): React.R
   }
   
   return result;
+};
+
+const getUserNames = (userIds: string[]) => {
+  if (!userIds || userIds.length === 0) return "No users";
+  
+  return userIds.join(", ");
+};
+
+const getUserNamesList = (userIds: string[], teamMembers: UserProfile[]): string => {
+  if (!userIds || userIds.length === 0) return "No users";
+  
+  const names = userIds
+    .map(id => {
+      const member = teamMembers.find(member => member.id === id);
+      return member ? `${member.first_name} ${member.last_name}`.trim() : "Unknown user";
+    })
+    .filter(name => name !== "Unknown user");
+  
+  return names.length > 0 ? names.join(", ") : "Unknown users";
 };
 
 const Message: React.FC<MessageProps> = ({
@@ -232,7 +251,9 @@ const Message: React.FC<MessageProps> = ({
                 </HoverCardTrigger>
                 <HoverCardContent className="p-2 w-48">
                   <p className="text-xs font-medium">Reacted with {reaction.emoji}:</p>
-                  <p className="text-xs mt-1">{getUserNames(reaction.user_ids)}</p>
+                  <p className="text-xs mt-1">
+                    {getUserNamesList(reaction.user_ids, teamMembers)}
+                  </p>
                 </HoverCardContent>
               </HoverCard>)}
           </div>}
