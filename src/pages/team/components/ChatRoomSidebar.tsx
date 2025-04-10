@@ -71,9 +71,9 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-3 font-medium text-left px-3", // Added px-3 to ensure consistent padding
+                "w-full justify-start mb-3 font-medium text-left px-4 py-3", // Increased padding with px-4 and py-3
                 selectedRoomId === room.id 
-                  ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" // Added rounded-md to prevent overflow
+                  ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
                   : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
                 isMobile && minimized ? "p-2" : "",
                 isMobile ? "h-14" : "h-12"
