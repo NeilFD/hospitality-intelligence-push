@@ -1,142 +1,279 @@
 
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, FileText, Calendar, Settings, BarChart3 } from 'lucide-react';
-import MonthSelector from '@/components/MonthSelector';
+import { useStore } from '@/lib/store';
 import StatusBox from '@/components/StatusBox';
-import { getTrackerSummaryByMonth } from '@/services/kitchen-service';
-import { checkProfilesCount } from '@/lib/supabase';
-import SyncTrackerDataButton from '@/components/SyncTrackerDataButton';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { formatCurrency, formatPercentage, calculateGP } from '@/lib/date-utils';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTrackerDataByMonth, fetchTrackerPurchases, fetchTrackerCreditNotes } from '@/services/kitchen-service';
+import { supabase } from '@/lib/supabase';
 
-const FoodDashboard = () => {
-  const navigate = useNavigate();
-  const currentDate = new Date();
-  const [year, setYear] = useState(currentDate.getFullYear());
-  const [month, setMonth] = useState(currentDate.getMonth() + 1);
-  const [summary, setSummary] = useState({ revenue: 0, cost: 0, gpPercentage: 0 });
-  const [loading, setLoading] = useState(true);
-
+export default function FoodDashboard() {
+  const {
+    currentYear,
+    currentMonth
+  } = useStore();
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalCost, setTotalCost] = useState(0);
+  const [gpPercentage, setGpPercentage] = useState(0);
+  const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
+  const [currentMonthCost, setCurrentMonthCost] = useState(0);
+  const [currentMonthGP, setCurrentMonthGP] = useState(0);
+  
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        // This is for debugging profile issues mentioned in other issues
-        const profilesData = await checkProfilesCount();
-        console.log('Profiles check result:', profilesData);
+        // Fetch master records for the current month as the single source of truth
+        const { data: masterRecords, error: masterError } = await supabase
+          .from('master_daily_records')
+          .select('*')
+          .eq('year', currentYear)
+          .eq('month', currentMonth)
+          .order('date');
+          
+        if (masterError) {
+          console.error('Error fetching master records:', masterError);
+          throw masterError;
+        }
         
-        const data = await getTrackerSummaryByMonth(year, month, 'food');
-        setSummary(data);
+        console.log(`Dashboard: Found ${masterRecords.length} master records for ${currentYear}-${currentMonth}`);
+        
+        // Fetch tracker data for costs
+        const trackerData = await fetchTrackerDataByMonth(currentYear, currentMonth, 'food');
+        
+        const trackerByDate: Record<string, any> = {};
+        for (const tracker of trackerData) {
+          trackerByDate[tracker.date] = tracker;
+        }
+        
+        let monthTotalRevenue = 0;
+        let monthTotalCosts = 0;
+        
+        // Calculate revenue from master records and costs from tracker data
+        for (const record of masterRecords) {
+          const foodRevenue = Number(record.food_revenue) || 0;
+          monthTotalRevenue += foodRevenue;
+          
+          const trackerRecord = trackerByDate[record.date];
+          if (trackerRecord) {
+            const purchases = await fetchTrackerPurchases(trackerRecord.id);
+            const creditNotes = await fetchTrackerCreditNotes(trackerRecord.id);
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFoodAllowance = Number(trackerRecord.staff_food_allowance) || 0;
+            
+            const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+            monthTotalCosts += dayCost;
+          }
+        }
+        
+        const monthGP = calculateGP(monthTotalRevenue, monthTotalCosts);
+        
+        console.log(`Dashboard: Food - Month Revenue: ${monthTotalRevenue}, Costs: ${monthTotalCosts}, GP: ${monthGP}`);
+        
+        // Now fetch annual data
+        const { data: annualMasterRecords, error: annualError } = await supabase
+          .from('master_daily_records')
+          .select('*')
+          .eq('year', currentYear)
+          .order('date');
+          
+        if (annualError) {
+          console.error('Error fetching annual master records:', annualError);
+          throw annualError;
+        }
+        
+        let annualRevenue = 0;
+        let annualCosts = 0;
+        
+        // Get all tracker data for the year
+        const annualTrackerData = await Promise.all(
+          Array.from({ length: 12 }, (_, i) => i + 1).map(month => 
+            fetchTrackerDataByMonth(currentYear, month, 'food')
+          )
+        );
+        
+        // Flatten the array of arrays
+        const allTrackerData = annualTrackerData.flat();
+        
+        // Create a map of tracker data by date
+        const allTrackerByDate: Record<string, any> = {};
+        for (const tracker of allTrackerData) {
+          allTrackerByDate[tracker.date] = tracker;
+        }
+        
+        // Calculate annual totals
+        for (const record of annualMasterRecords) {
+          const foodRevenue = Number(record.food_revenue) || 0;
+          annualRevenue += foodRevenue;
+          
+          const trackerRecord = allTrackerByDate[record.date];
+          if (trackerRecord) {
+            const purchases = await fetchTrackerPurchases(trackerRecord.id);
+            const creditNotes = await fetchTrackerCreditNotes(trackerRecord.id);
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFoodAllowance = Number(trackerRecord.staff_food_allowance) || 0;
+            
+            const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+            annualCosts += dayCost;
+          }
+        }
+        
+        const annualGP = calculateGP(annualRevenue, annualCosts);
+        
+        console.log(`Dashboard: Food - Annual Revenue: ${annualRevenue}, Costs: ${annualCosts}, GP: ${annualGP}`);
+        
+        // Update state
+        setCurrentMonthRevenue(monthTotalRevenue);
+        setCurrentMonthCost(monthTotalCosts);
+        setCurrentMonthGP(monthGP);
+        setTotalRevenue(annualRevenue);
+        setTotalCost(annualCosts);
+        setGpPercentage(annualGP);
+        
       } catch (error) {
-        console.error('Error fetching food tracker summary:', error);
-      } finally {
-        setLoading(false);
+        console.error("Error calculating from master records:", error);
+        // Fall back to local store data if there was an error
+        fallbackToLocalStore();
       }
     };
+    
+    const fallbackToLocalStore = () => {
+      console.log("Falling back to local store for food dashboard");
+      const { annualRecord } = useStore.getState();
+      
+      let revenue = 0;
+      let cost = 0;
+      let monthRevenue = 0;
+      let monthCost = 0;
+      
+      if (annualRecord && annualRecord.months) {
+        annualRecord.months.forEach(month => {
+          if (month.weeks) {
+            month.weeks.forEach(week => {
+              if (week.days) {
+                week.days.forEach(day => {
+                  if (day.revenue) {
+                    revenue += day.revenue;
+                  }
 
+                  const dayPurchases = day.purchases ? 
+                    Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                  cost += dayPurchases;
+
+                  if (month.year === currentYear && month.month === currentMonth) {
+                    if (day.revenue) {
+                      monthRevenue += day.revenue;
+                    }
+                    monthCost += dayPurchases;
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+      
+      setTotalRevenue(revenue);
+      setTotalCost(cost);
+      setGpPercentage(calculateGP(revenue, cost));
+      setCurrentMonthRevenue(monthRevenue);
+      setCurrentMonthCost(monthCost);
+      setCurrentMonthGP(calculateGP(monthRevenue, monthCost));
+    };
+    
     fetchData();
-  }, [year, month]);
+  }, [currentYear, currentMonth]);
 
-  const handleMonthChange = (newMonth: number, newYear: number) => {
-    setMonth(newMonth);
-    setYear(newYear);
+  const getGpStatus = (gp: number, target: number) => {
+    if (gp >= target) return 'good';
+    if (gp >= target - 0.05) return 'warning';
+    return 'bad';
   };
 
-  const statusColor = summary.gpPercentage >= 0.68 ? 'green' : 'red';
-  const formattedGP = (summary.gpPercentage * 100).toFixed(1);
-
   return (
-    <div className="p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h1 className="text-2xl font-bold mb-4 sm:mb-0">Food Controller Dashboard</h1>
-        <MonthSelector 
-          initialYear={year} 
-          initialMonth={month} 
-          onChange={handleMonthChange} 
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <StatusBox 
-          label="Food Revenue" 
-          value={`£${summary.revenue.toLocaleString()}`} 
-          status="neutral" 
-          icon={<BarChart3 />}
-          loading={loading}
-        />
-        <StatusBox 
-          label="Food Cost" 
-          value={`£${summary.cost.toLocaleString()}`} 
-          status="neutral" 
-          icon={<BarChart3 />}
-          loading={loading}
-        />
-        <StatusBox 
-          label="Food GP %" 
-          value={`${formattedGP}%`} 
-          status={statusColor === 'green' ? 'good' : 'bad'} 
-          icon={<BarChart3 />}
-          loading={loading}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Card className="shadow-sm hover:shadow transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Weekly Food Tracker</CardTitle>
+    <div className="container py-4 space-y-4">
+      <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center">Food Tracker Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
+            <CardTitle className="text-tavern-blue-dark text-xl">
+              Current Month
+            </CardTitle>
           </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-gray-600 mb-4">Track your food purchases, revenue, and keep an eye on your GP %.</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={() => navigate('/food/weekly-tracker')} className="w-full sm:w-auto">
-                <FileText className="mr-2 h-5 w-5" /> Open Weekly Tracker
-              </Button>
-              <SyncTrackerDataButton moduleType="food" year={year} month={month} className="w-full sm:w-auto" />
+          <CardContent className="space-y-6 pt-6">
+            <div className="grid grid-cols-2 gap-4">
+              <StatusBox 
+                label="Revenue" 
+                value={formatCurrency(currentMonthRevenue)} 
+                status="neutral" 
+                className="h-28" 
+              />
+              <StatusBox 
+                label="Food Cost" 
+                value={formatCurrency(currentMonthCost)} 
+                status="neutral" 
+                className="h-28" 
+              />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm hover:shadow transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Monthly Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-gray-600 mb-4">View your monthly food control summary and analytics.</p>
-            <Button onClick={() => navigate('/food/month-summary')} className="w-full sm:w-auto">
-              <Calendar className="mr-2 h-5 w-5" /> View Monthly Summary
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="shadow-sm hover:shadow transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Annual Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-gray-600 mb-4">View annual food control trends and yearly performance.</p>
-            <Button onClick={() => navigate('/food/annual-summary')} className="w-full sm:w-auto">
-              <BarChart3 className="mr-2 h-5 w-5" /> View Annual Summary
+            <StatusBox 
+              label="GP Percentage" 
+              value={formatPercentage(currentMonthGP)} 
+              status={getGpStatus(currentMonthGP, 0.68)} 
+              className="w-full h-24" 
+              gpMode={true}
+            />
+            <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark rounded-lg shadow-sm transition-all duration-300">
+              <Link to={`/food/month/${currentYear}/${currentMonth}`}>
+                View Month Details <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Food Control Settings</CardTitle>
+        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
+          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
+            <CardTitle className="text-tavern-blue-dark text-xl">
+              Annual Performance
+            </CardTitle>
           </CardHeader>
-          <CardContent className="pt-2">
-            <p className="text-gray-600 mb-4">Manage your food suppliers, GP targets and other settings.</p>
-            <Button onClick={() => navigate('/food/settings')} className="w-full sm:w-auto">
-              <Settings className="mr-2 h-5 w-5" /> Manage Settings
+          <CardContent className="space-y-6 pt-6">
+            <div className="grid grid-cols-2 gap-4">
+              <StatusBox 
+                label="Total Revenue" 
+                value={formatCurrency(totalRevenue)} 
+                status="neutral" 
+                className="h-28" 
+              />
+              <StatusBox 
+                label="Total Food Cost" 
+                value={formatCurrency(totalCost)} 
+                status="neutral" 
+                className="h-28" 
+              />
+            </div>
+            <StatusBox 
+              label="GP Percentage" 
+              value={formatPercentage(gpPercentage)} 
+              status={getGpStatus(gpPercentage, 0.68)} 
+              className="w-full h-24" 
+              gpMode={true}
+            />
+            <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white rounded-lg shadow-sm transition-all duration-300">
+              <Link to="/food/annual-summary">
+                View Annual Summary <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </CardContent>
         </Card>
       </div>
     </div>
   );
-};
-
-export default FoodDashboard;
+}

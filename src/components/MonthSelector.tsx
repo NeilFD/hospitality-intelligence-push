@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Select,
@@ -10,76 +11,55 @@ import {
 } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getMonthName } from '@/lib/date-utils';
+import { useStore } from '@/lib/store';
 
 interface MonthSelectorProps {
-  initialYear?: number;
-  initialMonth?: number;
-  currentYear?: number;
-  currentMonth?: number;
-  onChange?: (month: number, year: number) => void;
-  onChangeMonth?: (year: number, month: number) => void;
+  currentYear: number;
+  currentMonth: number;
+  onChangeMonth: (year: number, month: number) => void;
 }
 
 export default function MonthSelector({ 
-  initialYear, 
-  initialMonth, 
-  currentYear: propCurrentYear, 
-  currentMonth: propCurrentMonth,
-  onChange,
-  onChangeMonth
+  currentYear, 
+  currentMonth, 
+  onChangeMonth 
 }: MonthSelectorProps) {
-  const startYear = initialYear || propCurrentYear || new Date().getFullYear();
-  const startMonth = initialMonth || propCurrentMonth || new Date().getMonth() + 1;
-  
-  const [localYear, setLocalYear] = useState<number>(startYear);
-  const [localMonth, setLocalMonth] = useState<number>(startMonth);
+  const navigate = useNavigate();
+  const [localYear, setLocalYear] = useState<number>(currentYear);
   
   const handlePreviousMonth = () => {
-    let newMonth = localMonth - 1;
-    let newYear = localYear;
+    let newMonth = currentMonth - 1;
+    let newYear = currentYear;
     
     if (newMonth < 1) {
       newMonth = 12;
-      newYear = localYear - 1;
+      newYear = currentYear - 1;
     }
     
-    setLocalMonth(newMonth);
-    setLocalYear(newYear);
-    
-    if (onChange) onChange(newMonth, newYear);
-    if (onChangeMonth) onChangeMonth(newYear, newMonth);
+    onChangeMonth(newYear, newMonth);
   };
   
   const handleNextMonth = () => {
-    let newMonth = localMonth + 1;
-    let newYear = localYear;
+    let newMonth = currentMonth + 1;
+    let newYear = currentYear;
     
     if (newMonth > 12) {
       newMonth = 1;
-      newYear = localYear + 1;
+      newYear = currentYear + 1;
     }
     
-    setLocalMonth(newMonth);
-    setLocalYear(newYear);
-    
-    if (onChange) onChange(newMonth, newYear);
-    if (onChangeMonth) onChangeMonth(newYear, newMonth);
+    onChangeMonth(newYear, newMonth);
   };
   
   const handleYearChange = (value: string) => {
     const year = parseInt(value);
     setLocalYear(year);
-    
-    if (onChange) onChange(localMonth, year);
-    if (onChangeMonth) onChangeMonth(year, localMonth);
+    onChangeMonth(year, currentMonth);
   };
   
   const handleMonthChange = (value: string) => {
     const month = parseInt(value);
-    setLocalMonth(month);
-    
-    if (onChange) onChange(month, localYear);
-    if (onChangeMonth) onChangeMonth(localYear, month);
+    onChangeMonth(localYear, month);
   };
   
   return (
@@ -96,7 +76,7 @@ export default function MonthSelector({
       <div className="flex items-center space-x-2">
         <div className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-gray-500" />
-          <Select value={localMonth.toString()} onValueChange={handleMonthChange}>
+          <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
             <SelectTrigger className="w-[120px] bg-white border-gray-300">
               <SelectValue placeholder="Month" />
             </SelectTrigger>
@@ -110,12 +90,12 @@ export default function MonthSelector({
           </Select>
         </div>
         
-        <Select value={localYear.toString()} onValueChange={handleYearChange}>
+        <Select value={currentYear.toString()} onValueChange={handleYearChange}>
           <SelectTrigger className="w-[90px] bg-white border-gray-300">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
-            {Array.from({ length: 10 }, (_, i) => localYear - 2 + i).map((year) => (
+            {Array.from({ length: 10 }, (_, i) => currentYear - 2 + i).map((year) => (
               <SelectItem key={year} value={year.toString()}>
                 {year}
               </SelectItem>
