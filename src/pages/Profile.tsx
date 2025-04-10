@@ -10,8 +10,9 @@ import { useAuthStore } from '@/services/auth-service';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Loader2, Camera, UserIcon } from 'lucide-react';
+import { Loader2, Camera, UserIcon, BriefcaseIcon, CakeIcon, UtensilsIcon, GlassWater, ScrollTextIcon } from 'lucide-react';
 import { UserProfile } from '@/types/supabase-types';
+import { Textarea } from '@/components/ui/textarea';
 
 const Profile = () => {
   const { user, profile, loadUser } = useAuthStore();
@@ -26,6 +27,13 @@ const Profile = () => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'Owner' | 'Head Chef' | 'Staff'>('Staff');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  
+  // New state variables for additional fields
+  const [jobTitle, setJobTitle] = useState('');
+  const [birthDateMonth, setBirthDateMonth] = useState('');
+  const [favouriteDish, setFavouriteDish] = useState('');
+  const [favouriteDrink, setFavouriteDrink] = useState('');
+  const [aboutMe, setAboutMe] = useState('');
   
   useEffect(() => {
     const loadProfileData = async () => {
@@ -48,6 +56,13 @@ const Profile = () => {
             setLastName(data.last_name || '');
             setRole((data.role as 'Owner' | 'Head Chef' | 'Staff') || 'Staff');
             setAvatarUrl(data.avatar_url);
+            
+            // Set new fields
+            setJobTitle(data.job_title || '');
+            setBirthDateMonth(data.birth_date_month || '');
+            setFavouriteDish(data.favourite_dish || '');
+            setFavouriteDrink(data.favourite_drink || '');
+            setAboutMe(data.about_me || '');
           }
         } catch (error: any) {
           toast.error(`Error loading profile: ${error.message}`);
@@ -62,6 +77,13 @@ const Profile = () => {
           setLastName(profile.last_name || '');
           setRole((profile.role as 'Owner' | 'Head Chef' | 'Staff') || 'Staff');
           setAvatarUrl(profile.avatar_url);
+          
+          // Set new fields
+          setJobTitle(profile.job_title || '');
+          setBirthDateMonth(profile.birth_date_month || '');
+          setFavouriteDish(profile.favourite_dish || '');
+          setFavouriteDrink(profile.favourite_drink || '');
+          setAboutMe(profile.about_me || '');
         }
         
         if (user) {
@@ -84,7 +106,13 @@ const Profile = () => {
         .update({
           first_name: firstName,
           last_name: lastName,
-          role: role
+          role: role,
+          // Add new fields
+          job_title: jobTitle,
+          birth_date_month: birthDateMonth,
+          favourite_dish: favouriteDish,
+          favourite_drink: favouriteDrink,
+          about_me: aboutMe
         })
         .eq('id', user.id);
       
@@ -220,6 +248,11 @@ const Profile = () => {
                 <p className="mt-1 inline-block bg-tavern-blue text-white text-xs px-2 py-1 rounded-full">
                   {role}
                 </p>
+                {jobTitle && (
+                  <p className="text-sm text-gray-600 mt-1 flex items-center justify-center gap-1">
+                    <BriefcaseIcon className="h-3 w-3" /> {jobTitle}
+                  </p>
+                )}
               </div>
             </div>
             
@@ -274,9 +307,64 @@ const Profile = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* New fields for editable profile */}
+                  <div className="space-y-2">
+                    <Label htmlFor="job-title">Job Title</Label>
+                    <Input
+                      id="job-title"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                      placeholder="Job Title"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="birth-date">Birth Month & Day</Label>
+                    <Input
+                      id="birth-date"
+                      value={birthDateMonth}
+                      onChange={(e) => setBirthDateMonth(e.target.value)}
+                      placeholder="e.g., January 15"
+                    />
+                    <p className="text-xs text-muted-foreground">Only month and day, not year</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="favourite-dish">Favourite Tavern Dish</Label>
+                      <Input
+                        id="favourite-dish"
+                        value={favouriteDish}
+                        onChange={(e) => setFavouriteDish(e.target.value)}
+                        placeholder="Your favourite dish"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="favourite-drink">Favourite Tavern Drink</Label>
+                      <Input
+                        id="favourite-drink"
+                        value={favouriteDrink}
+                        onChange={(e) => setFavouriteDrink(e.target.value)}
+                        placeholder="Your favourite drink"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="about-me">About Me</Label>
+                    <Textarea
+                      id="about-me"
+                      value={aboutMe}
+                      onChange={(e) => setAboutMe(e.target.value)}
+                      placeholder="Tell us about yourself"
+                      className="min-h-[100px]"
+                    />
+                  </div>
                 </>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-center gap-2">
                     <UserIcon className="h-5 w-5 text-tavern-blue" />
                     <span className="font-medium">Team Member Information</span>
@@ -313,6 +401,61 @@ const Profile = () => {
                       disabled
                     />
                   </div>
+                  
+                  {/* New read-only fields for viewed profiles */}
+                  {jobTitle && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1">
+                        <BriefcaseIcon className="h-4 w-4 text-tavern-blue" />
+                        <Label>Job Title</Label>
+                      </div>
+                      <p className="pl-5 text-gray-700">{jobTitle}</p>
+                    </div>
+                  )}
+                  
+                  {birthDateMonth && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1">
+                        <CakeIcon className="h-4 w-4 text-tavern-blue" />
+                        <Label>Birthday</Label>
+                      </div>
+                      <p className="pl-5 text-gray-700">{birthDateMonth}</p>
+                    </div>
+                  )}
+                  
+                  {(favouriteDish || favouriteDrink) && (
+                    <div className="space-y-4">
+                      {favouriteDish && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1">
+                            <UtensilsIcon className="h-4 w-4 text-tavern-blue" />
+                            <Label>Favourite Tavern Dish</Label>
+                          </div>
+                          <p className="pl-5 text-gray-700">{favouriteDish}</p>
+                        </div>
+                      )}
+                      
+                      {favouriteDrink && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1">
+                            <GlassWater className="h-4 w-4 text-tavern-blue" />
+                            <Label>Favourite Tavern Drink</Label>
+                          </div>
+                          <p className="pl-5 text-gray-700">{favouriteDrink}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {aboutMe && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1">
+                        <ScrollTextIcon className="h-4 w-4 text-tavern-blue" />
+                        <Label>About</Label>
+                      </div>
+                      <p className="pl-5 text-gray-700 whitespace-pre-line">{aboutMe}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
