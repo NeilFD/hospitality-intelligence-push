@@ -1,4 +1,3 @@
-
 import { supabase, signIn, signUp, signOut, getCurrentUser, getProfile } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 import { create } from 'zustand';
@@ -20,7 +19,7 @@ interface AuthState {
     role?: 'Owner' | 'Head Chef' | 'Staff'; 
     avatarUrl?: string;
     jobTitle?: string;
-    birthDateMonth?: string;
+    birthDate?: string;
     favouriteDish?: string;
     favouriteDrink?: string;
     aboutMe?: string;
@@ -31,7 +30,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
-  isLoading: true, // Start with loading true so we can check for existing session
+  isLoading: true,
   error: null,
   isAuthenticated: false,
   
@@ -72,7 +71,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       set({ 
         isLoading: false,
-        // Note: User may need to verify email before being authenticated
         isAuthenticated: data.user !== null && !data.user.email_confirmed_at
       });
     } catch (error: any) {
@@ -151,7 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         role: updates.role,
         avatar_url: updates.avatarUrl,
         job_title: updates.jobTitle,
-        birth_date_month: updates.birthDateMonth,
+        birth_date: updates.birthDate,
         favourite_dish: updates.favouriteDish,
         favourite_drink: updates.favouriteDrink,
         about_me: updates.aboutMe
@@ -164,7 +162,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (error) throw error;
       
-      // Reload user data to get the updated profile
       await get().loadUser();
       
       set({ isLoading: false });
@@ -179,11 +176,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearError: () => set({ error: null })
 }));
 
-// Initialize auth state on store creation
-// This will check for existing session on app load
 useAuthStore.getState().loadUser();
 
-// Setup auth state change listener
 supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
     useAuthStore.getState().loadUser();

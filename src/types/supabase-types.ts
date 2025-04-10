@@ -1,4 +1,3 @@
-
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -408,7 +407,7 @@ export interface UserProfile {
   updated_at: string;
   email?: string;
   job_title: string | null;
-  birth_date_month: string | null;
+  birth_date: string | null;
   favourite_dish: string | null;
   favourite_drink: string | null;
   about_me: string | null;

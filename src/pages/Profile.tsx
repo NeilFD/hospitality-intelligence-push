@@ -1,6 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { format, parse } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -12,6 +14,14 @@ import { toast } from "sonner";
 import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import { cn } from "@/lib/utils"
 
 type Role = 'Owner' | 'Manager' | 'Team Member';
 type AuthServiceRole = 'Owner' | 'Head Chef' | 'Staff';
@@ -23,7 +33,7 @@ interface ProfileData {
   role: Role | AuthServiceRole;
   avatar_url: string;
   job_title?: string;
-  birth_date_month?: string;
+  birth_date: string | null;
   favourite_dish?: string;
   favourite_drink?: string;
   about_me?: string;
@@ -38,12 +48,12 @@ export default function Profile() {
   const [role, setRole] = useState<Role>('Team Member');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [jobTitle, setJobTitle] = useState('');
-  const [birthDateMonth, setBirthDateMonth] = useState('');
   const [favouriteDish, setFavouriteDish] = useState('');
   const [favouriteDrink, setFavouriteDrink] = useState('');
   const [aboutMe, setAboutMe] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [viewedProfile, setViewedProfile] = useState<ProfileData | null>(null);
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
 
   // Convert new role format to auth service format
   const convertRoleToAuthServiceRole = (newRole: Role): AuthServiceRole => {
@@ -62,6 +72,14 @@ export default function Profile() {
     return 'Team Member';
   };
 
+  // Convert stored birthday to Date
+  useEffect(() => {
+    if (profile?.birth_date) {
+      const parsedDate = parse(profile.birth_date, 'yyyy-MM-dd', new Date());
+      setBirthDate(parsedDate);
+    }
+  }, [profile]);
+
   const handleUpdateProfile = async () => {
     try {
       setIsLoading(true);
@@ -69,13 +87,16 @@ export default function Profile() {
       // Convert the role to the format expected by the auth service
       const authServiceRole = convertRoleToAuthServiceRole(role);
       
+      // Convert the birth date to string in 'YYYY-MM-DD' format
+      const formattedBirthDate = birthDate ? format(birthDate, 'yyyy-MM-dd') : null;
+      
       await updateProfile({
         firstName,
         lastName,
         role: authServiceRole,
         avatarUrl,
         jobTitle,
-        birthDateMonth,
+        birthDate: formattedBirthDate,
         favouriteDish,
         favouriteDrink,
         aboutMe
@@ -129,10 +150,13 @@ export default function Profile() {
           setRole(convertAuthServiceRoleToRole(data.role));
           setAvatarUrl(data.avatar_url);
           setJobTitle(data.job_title || '');
-          setBirthDateMonth(data.birth_date_month || '');
           setFavouriteDish(data.favourite_dish || '');
           setFavouriteDrink(data.favourite_drink || '');
           setAboutMe(data.about_me || '');
+          if (data.birth_date) {
+            const parsedDate = parse(data.birth_date, 'yyyy-MM-dd', new Date());
+            setBirthDate(parsedDate);
+          }
         }
       } catch (error) {
         toast.error("Error fetching profile: " + (error as Error).message);
@@ -153,10 +177,13 @@ export default function Profile() {
         setRole(convertAuthServiceRoleToRole(profile.role));
         setAvatarUrl(profile.avatar_url);
         setJobTitle(profile.job_title || '');
-        setBirthDateMonth(profile.birth_date_month || '');
         setFavouriteDish(profile.favourite_dish || '');
         setFavouriteDrink(profile.favourite_drink || '');
         setAboutMe(profile.about_me || '');
+        if (profile.birth_date) {
+          const parsedDate = parse(profile.birth_date, 'yyyy-MM-dd', new Date());
+          setBirthDate(parsedDate);
+        }
       }
     }
   }, [userId, user, profile]);
@@ -241,32 +268,42 @@ export default function Profile() {
               placeholder="e.g. Chef de Partie, Server, etc."
             />
           </div>
+          
           <div className="grid gap-2">
-            <Label htmlFor="birthDateMonth">Birthday (Month Only)</Label>
-            <Select 
-              value={birthDateMonth} 
-              onValueChange={setBirthDateMonth} 
-              disabled={!isEditing && !userId}
-            >
-              <SelectTrigger id="birthDateMonth">
-                <SelectValue placeholder="Select month" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="January">January</SelectItem>
-                <SelectItem value="February">February</SelectItem>
-                <SelectItem value="March">March</SelectItem>
-                <SelectItem value="April">April</SelectItem>
-                <SelectItem value="May">May</SelectItem>
-                <SelectItem value="June">June</SelectItem>
-                <SelectItem value="July">July</SelectItem>
-                <SelectItem value="August">August</SelectItem>
-                <SelectItem value="September">September</SelectItem>
-                <SelectItem value="October">October</SelectItem>
-                <SelectItem value="November">November</SelectItem>
-                <SelectItem value="December">December</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Birthday</Label>
+            {isEditing && !userId ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !birthDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {birthDate ? format(birthDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={birthDate}
+                    onSelect={setBirthDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Input 
+                type="text" 
+                value={birthDate ? format(birthDate, "PP") : ''} 
+                disabled 
+              />
+            )}
           </div>
+
           <div className="grid gap-2">
             <Label htmlFor="favouriteDish">Favourite Tavern Dish</Label>
             <Input
