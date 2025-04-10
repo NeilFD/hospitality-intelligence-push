@@ -23,6 +23,7 @@ import {
 import { fetchMasterDailyRecordsForWeek } from '@/services/master-record-service';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { generateWeekDates } from '@/lib/date-utils';
 
 interface TrackerData {
   id: string;
@@ -88,14 +89,24 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
       const suppliersData = await fetchSuppliers(moduleType);
       setSuppliers(suppliersData.map(s => ({ id: s.id, name: s.name })));
       
-      const data = await fetchTrackerDataByWeek(year, month, weekNumber, moduleType);
-      console.info(`Processing ${moduleType} tracker data: ${data.length} records`);
+      const weekDates = generateWeekDates(year, month);
+      const currentWeekDates = weekNumber <= weekDates.length ? weekDates[weekNumber - 1] : null;
       
+      if (!currentWeekDates) {
+        console.error('Invalid week number:', weekNumber);
+        setLoading(false);
+        return;
+      }
+      
+      const existingData = await fetchTrackerDataByWeek(year, month, weekNumber, moduleType);
+      console.info(`Processing ${moduleType} tracker data: ${existingData.length} records`);
+      
+      const existingDataMap: Record<string, any> = {};
       const purchasesByTrackerId: Record<string, Record<string, number>> = {};
       const creditNotesByTrackerId: Record<string, number[]> = {};
       
-      for (const item of data) {
-        console.info(`Day ${item.date}: Revenue = ${item.revenue}`);
+      for (const item of existingData) {
+        existingDataMap[item.date] = item;
         
         const purchases = await fetchTrackerPurchases(item.id);
         purchasesByTrackerId[item.id] = {};
@@ -108,8 +119,14 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
         creditNotesByTrackerId[item.id] = creditNotes.map(cn => cn.amount);
       }
       
-      const formattedData = data.map(item => {
-        const masterRecord = masterRecords[item.date] || { foodRevenue: 0, beverageRevenue: 0 };
+      const start = new Date(currentWeekDates.startDate);
+      const end = new Date(currentWeekDates.endDate);
+      const daysInWeek: TrackerData[] = [];
+      
+      for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        const dayOfWeek = format(day, 'EEEE');
+        const masterRecord = masterRecords[dateStr] || { foodRevenue: 0, beverageRevenue: 0 };
         let revenue = 0;
         
         if (moduleType === 'food') {
@@ -118,18 +135,47 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
           revenue = masterRecord.beverageRevenue;
         }
         
-        return {
-          id: item.id,
-          date: item.date,
-          dayOfWeek: item.day_of_week,
-          revenue: revenue,
-          purchases: purchasesByTrackerId[item.id] || {},
-          creditNotes: creditNotesByTrackerId[item.id] || [],
-          staffFoodAllowance: item.staff_food_allowance || 0
-        };
-      });
+        if (existingDataMap[dateStr]) {
+          const item = existingDataMap[dateStr];
+          daysInWeek.push({
+            id: item.id,
+            date: dateStr,
+            dayOfWeek: dayOfWeek,
+            revenue: revenue || 0,
+            purchases: purchasesByTrackerId[item.id] || {},
+            creditNotes: creditNotesByTrackerId[item.id] || [],
+            staffFoodAllowance: item.staff_food_allowance || 0
+          });
+        } else {
+          const emptyPurchases: Record<string, number> = {};
+          suppliersData.forEach(supplier => {
+            emptyPurchases[supplier.id] = 0;
+          });
+          
+          const newTrackerData = await upsertTrackerData({
+            year,
+            month,
+            week_number: weekNumber,
+            date: dateStr,
+            day_of_week: dayOfWeek,
+            module_type: moduleType,
+            revenue: revenue || 0,
+            staff_food_allowance: 0
+          });
+          
+          daysInWeek.push({
+            id: newTrackerData.id,
+            date: dateStr,
+            dayOfWeek: dayOfWeek,
+            revenue: revenue || 0,
+            purchases: emptyPurchases,
+            creditNotes: [],
+            staffFoodAllowance: 0
+          });
+        }
+      }
       
-      setTrackerData(formattedData);
+      setTrackerData(daysInWeek);
     } catch (error) {
       console.error(`Error loading ${moduleType} tracker data:`, error);
       toast.error(`Failed to load ${moduleType} tracker data`);
