@@ -30,8 +30,8 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-tavern-blue h-full border-r border-white/10">
-      <h2 className="text-lg font-semibold p-4 border-b border-white/10 text-white">Chat Rooms</h2>
+    <div className="w-64 bg-tavern-blue-light/90 h-full border-r border-white/10">
+      <h2 className="text-lg font-semibold p-4 border-b border-white/10 text-tavern-blue-dark">Chat Rooms</h2>
       <ScrollArea className="h-[calc(100vh-120px)]">
         <div className="p-2">
           {rooms.map((room) => (
@@ -39,15 +39,17 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-2 text-white/70 hover:bg-white/10 transition-colors duration-200",
-                selectedRoomId === room.id ? "bg-tavern-blue-dark text-white hover:bg-tavern-blue-dark/90" : "hover:text-white"
+                "w-full justify-start mb-2 text-tavern-blue-dark hover:bg-white/10 transition-colors duration-200",
+                selectedRoomId === room.id 
+                  ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90" 
+                  : "hover:text-tavern-blue"
               )}
               onClick={() => onRoomSelect(room.id)}
             >
               {room.is_announcement_only ? (
                 <AlertCircle className="mr-2 h-4 w-4 text-white" />
               ) : (
-                <Hash className="mr-2 h-4 w-4 opacity-60" />
+                <Hash className="mr-2 h-4 w-4 opacity-60 text-tavern-blue-dark" />
               )}
               {room.name}
             </Button>
