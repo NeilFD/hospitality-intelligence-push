@@ -103,7 +103,12 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         
         console.log(`Processing tracker data for ${moduleType}:`, trackerData);
         
-        // Group tracker data by week number
+        // Direct logging of all days to verify the source data
+        trackerData.forEach(day => {
+          console.log(`Raw tracker data - Day ${day.date}, Week ${day.week_number}, Revenue: ${day.revenue}`);
+        });
+        
+        // Group tracker data by week number first
         const dataByWeek: Record<number, any[]> = {};
         trackerData.forEach(day => {
           const weekNum = day.week_number || 1;
@@ -113,21 +118,29 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           dataByWeek[weekNum].push(day);
         });
         
-        // Process all days by week
-        for (const [weekNum, weekDays] of Object.entries(dataByWeek)) {
-          const weekNumber = parseInt(weekNum);
+        // Log the contents of each week's data
+        Object.entries(dataByWeek).forEach(([weekNum, days]) => {
+          console.log(`Week ${weekNum} contains ${days.length} days of data`);
+          days.forEach(day => {
+            console.log(`  - Day ${day.date}: Revenue = ${day.revenue}`);
+          });
+        });
+        
+        // Process data week by week in a single loop
+        for (const [weekNumStr, weekDays] of Object.entries(dataByWeek)) {
+          const weekNumber = parseInt(weekNumStr);
           let weekRevenue = 0;
           let weekCosts = 0;
           
-          // First pass to calculate revenue
-          for (const day of weekDays) {
-            const revenue = Number(day.revenue) || 0;
-            weekRevenue += revenue;
-            console.log(`Week ${weekNumber}, Day ${day.date}: Revenue = ${revenue}`);
-          }
+          console.log(`Processing Week ${weekNumber} with ${weekDays.length} days`);
           
-          // Second pass to calculate costs
+          // Process each day in this week
           for (const day of weekDays) {
+            // Add revenue
+            const dayRevenue = Number(day.revenue) || 0;
+            weekRevenue += dayRevenue;
+            
+            // Calculate costs for this day
             try {
               const purchases = await fetchTrackerPurchases(day.id);
               const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -140,12 +153,13 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
               const netDayCosts = dayCosts - dayCreditNotes + staffFood;
               weekCosts += netDayCosts;
               
-              console.log(`Week ${weekNumber}, Day ${day.date}: Costs = ${netDayCosts}`);
+              console.log(`Week ${weekNumber}, Day ${day.date}: Revenue = ${dayRevenue}, Costs = ${netDayCosts}`);
             } catch (error) {
               console.error(`Error fetching purchase data for day ${day.date}:`, error);
             }
           }
           
+          // Update the week summary
           weekSummaries[weekNumber] = {
             weekNumber,
             revenue: weekRevenue,
@@ -159,15 +173,12 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           monthCost += weekCosts;
         }
         
-        const weeklyDataArray = Object.values(weekSummaries).map(week => {
-          week.gp = calculateGP(week.revenue, week.costs);
-          return week;
-        });
-        
-        weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
+        // Convert week summaries to array and sort by week number
+        const weeklyDataArray = Object.values(weekSummaries).sort((a, b) => a.weekNumber - b.weekNumber);
         
         console.log(`Total ${moduleType} revenue from tracker:`, monthRev);
         console.log(`Total ${moduleType} cost from tracker:`, monthCost);
+        console.log('Weekly breakdown:', weeklyDataArray);
         
         setWeeklyData(weeklyDataArray);
         setTotalRevenue(monthRev);
