@@ -14,6 +14,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 
 interface MessageProps {
   message: TeamMessage;
@@ -41,6 +42,45 @@ const EMOJI_CATEGORIES = [{
   name: "Activities",
   emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
+
+const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
+  if (!content.includes('@')) return content;
+  
+  const userMap = new Map();
+  teamMembers.forEach(member => {
+    const fullName = `${member.first_name} ${member.last_name}`.trim();
+    userMap.set(member.id, fullName);
+  });
+  
+  const parts = content.split('@');
+  const result: React.ReactNode[] = [parts[0]];
+  
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i];
+    
+    if (part.startsWith('all ') || part.startsWith('all\n')) {
+      result.push(<span key={`mention-all-${i}`} className="bg-blue-100 text-blue-800 rounded px-1">@all</span>);
+      result.push(part.substring(3));
+      continue;
+    }
+    
+    let found = false;
+    for (const [userId, name] of userMap.entries()) {
+      if (part.startsWith(`${userId} `) || part.startsWith(`${userId}\n`)) {
+        result.push(<span key={`mention-${userId}-${i}`} className="bg-blue-100 text-blue-800 rounded px-1">@{name}</span>);
+        result.push(part.substring(userId.length));
+        found = true;
+        break;
+      }
+    }
+    
+    if (!found) {
+      result.push('@' + part);
+    }
+  }
+  
+  return result;
+};
 
 const Message: React.FC<MessageProps> = ({
   message,
@@ -86,12 +126,7 @@ const Message: React.FC<MessageProps> = ({
     icon: <Bookmark className="h-4 w-4" />,
     emoji: "🔖"
   }];
-  const getUserNames = (userIds: string[]) => {
-    return userIds.map(userId => {
-      const user = teamMembers.find(member => member.id === userId);
-      return user ? `${user.first_name} ${user.last_name}` : 'Unknown user';
-    }).join(', ');
-  };
+  
   return <div className={messageContainerClass}>
       {!isOwnMessage && <div className="flex-shrink-0 mr-2">
           <Avatar className="h-8 w-8">
@@ -105,20 +140,20 @@ const Message: React.FC<MessageProps> = ({
               {author.first_name} {author.last_name}
             </p>}
           
-          {message.type === 'text' && <p className="whitespace-pre-wrap">{message.content}</p>}
+          {message.type === 'text' && <p className="whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
           
           {message.type === 'image' && <div>
-              {message.content && <p className="mb-2 whitespace-pre-wrap">{message.content}</p>}
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
               <img src={message.attachment_url} alt="Image" className="rounded-md max-h-60 w-auto" loading="lazy" />
             </div>}
           
           {message.type === 'gif' && <div>
-              {message.content && <p className="mb-2 whitespace-pre-wrap">{message.content}</p>}
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
               <img src={message.attachment_url} alt="GIF" className="rounded-md max-h-60 w-auto" loading="lazy" />
             </div>}
           
           {message.type === 'voice' && <div>
-              {message.content && <p className="mb-2 whitespace-pre-wrap">{message.content}</p>}
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
               <audio controls className="w-full">
                 <source src={message.attachment_url} type="audio/webm" />
                 Your browser does not support the audio element.
@@ -126,7 +161,7 @@ const Message: React.FC<MessageProps> = ({
             </div>}
           
           {message.type === 'file' && <div>
-              {message.content && <p className="mb-2 whitespace-pre-wrap">{message.content}</p>}
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
               <div className="flex items-center space-x-2">
                 <Paperclip className="h-4 w-4" />
                 <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
@@ -225,6 +260,11 @@ const TeamChat: React.FC = () => {
   const voiceRecorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [showMentionSelector, setShowMentionSelector] = useState(false);
+  const [mentionStart, setMentionStart] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const {
     data: rooms = [],
     isLoading: isLoadingRooms
@@ -252,6 +292,7 @@ const TeamChat: React.FC = () => {
     queryKey: ['teamMembers'],
     queryFn: getTeamMembers
   });
+
   const createMessageMutation = useMutation({
     mutationFn: createMessage,
     onSuccess: () => {
@@ -299,16 +340,79 @@ const TeamChat: React.FC = () => {
   const findMessageAuthor = (authorId: string) => {
     return teamMembers.find(member => member.id === authorId);
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setMessageText(value);
+    
+    const lastAtSymbol = value.lastIndexOf('@');
+    if (lastAtSymbol >= 0) {
+      const afterAt = value.substring(lastAtSymbol + 1);
+      
+      if (lastAtSymbol === value.length - 1 || /^\s*$/.test(afterAt) || /^[a-zA-Z0-9\s]*$/.test(afterAt)) {
+        setMentionStart(lastAtSymbol);
+        setMentionQuery(afterAt.trim().toLowerCase());
+        setShowMentionSelector(true);
+        return;
+      }
+    }
+    
+    setShowMentionSelector(false);
+  };
+
+  const insertMention = (userId: string, displayName: string) => {
+    if (textareaRef.current) {
+      const before = messageText.substring(0, mentionStart);
+      const after = messageText.substring(mentionStart + mentionQuery.length + 1);
+      
+      const newText = `${before}@${userId} ${after}`;
+      setMessageText(newText);
+      textareaRef.current.focus();
+      setShowMentionSelector(false);
+    }
+  };
+
+  const insertAllMention = () => {
+    if (textareaRef.current) {
+      const before = messageText.substring(0, mentionStart);
+      const after = messageText.substring(mentionStart + mentionQuery.length + 1);
+      
+      const newText = `${before}@all ${after}`;
+      setMessageText(newText);
+      textareaRef.current.focus();
+      setShowMentionSelector(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user || !selectedRoomId) return;
     try {
       setIsSubmitting(true);
+      
+      const mentionedUserIds: string[] = [];
+      const mentionAll = messageText.includes('@all');
+      
+      teamMembers.forEach(member => {
+        if (messageText.includes(`@${member.id}`)) {
+          mentionedUserIds.push(member.id);
+        }
+      });
+      
+      if (mentionAll) {
+        teamMembers.forEach(member => {
+          if (!mentionedUserIds.includes(member.id)) {
+            mentionedUserIds.push(member.id);
+          }
+        });
+      }
+      
       await createMessageMutation.mutateAsync({
         content: messageText,
         author_id: user.id,
         type: 'text',
         room_id: selectedRoomId,
-        read_by: [user.id]
+        read_by: [user.id],
+        mentioned_users: mentionedUserIds.length > 0 ? mentionedUserIds : undefined
       });
       setMessageText('');
       toast.success('Message sent');
@@ -319,6 +423,7 @@ const TeamChat: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
   const handleAddReaction = (messageId: string, emoji: string) => {
     if (!user) return;
     addReactionMutation.mutate({
@@ -327,13 +432,16 @@ const TeamChat: React.FC = () => {
       userId: user.id
     });
   };
+
   const handleDeleteMessage = (messageId: string) => {
     if (!user) return;
     deleteMessageMutation.mutate(messageId);
   };
+
   const handleRoomSelect = (roomId: string) => {
     setSelectedRoomId(roomId);
   };
+
   const handleImageUpload = () => {
     if (!fileInputRef.current) {
       const input = document.createElement('input');
@@ -374,6 +482,7 @@ const TeamChat: React.FC = () => {
       fileInputRef.current.click();
     }
   };
+
   const handleVoiceRecording = async () => {
     if (isRecording) {
       if (voiceRecorderRef.current) {
@@ -436,6 +545,7 @@ const TeamChat: React.FC = () => {
       }
     }
   };
+
   const handleFileUpload = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -471,11 +581,7 @@ const TeamChat: React.FC = () => {
     input.click();
     document.body.removeChild(input);
   };
-  const handleMemberMention = () => {
-    const availableMembers = teamMembers.map(member => `@${member.first_name} ${member.last_name}`).join(', ');
-    toast.info(`Available members to mention: ${availableMembers}`);
-    setMessageText(prev => prev + '@');
-  };
+
   return <div className="flex h-[calc(100vh-120px)]">
       <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
       
@@ -499,14 +605,68 @@ const TeamChat: React.FC = () => {
                 </>}
             </div>
             
-            <div className="p-3 border-t">
+            <div className="p-3 border-t relative">
+              {showMentionSelector && (
+                <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
+                  <Command>
+                    <CommandInput placeholder="Search people..." value={mentionQuery} onValueChange={setMentionQuery} />
+                    <CommandEmpty>No users found</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem 
+                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
+                        onSelect={() => insertAllMention()}
+                      >
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+                          <AtSign className="w-4 h-4" />
+                        </div>
+                        <span className="font-medium">everyone</span>
+                      </CommandItem>
+                      
+                      {teamMembers
+                        .filter(member => {
+                          const fullName = `${member.first_name} ${member.last_name}`.toLowerCase();
+                          return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
+                        })
+                        .map(member => (
+                          <CommandItem 
+                            key={member.id} 
+                            className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
+                            onSelect={() => insertMention(member.id, `${member.first_name} ${member.last_name}`)}
+                          >
+                            <Avatar className="h-8 w-8">
+                              {member.avatar_url ? (
+                                <AvatarImage src={member.avatar_url} />
+                              ) : (
+                                <AvatarFallback>
+                                  {member.first_name?.[0]}{member.last_name?.[0]}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <span>{member.first_name} {member.last_name}</span>
+                          </CommandItem>
+                        ))}
+                    </CommandGroup>
+                  </Command>
+                </div>
+              )}
+              
               <div className="flex items-end gap-2">
-                <Textarea placeholder="Type a message..." value={messageText} onChange={e => setMessageText(e.target.value)} className="min-h-[60px] max-h-[120px] resize-none" onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }} />
+                <Textarea 
+                  placeholder="Type a message... Use @ to mention users or @all for everyone" 
+                  value={messageText} 
+                  onChange={handleInputChange}
+                  ref={textareaRef} 
+                  className="min-h-[60px] max-h-[120px] resize-none" 
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    } else if (e.key === 'Escape' && showMentionSelector) {
+                      e.preventDefault();
+                      setShowMentionSelector(false);
+                    }
+                  }} 
+                />
                 <Button onClick={handleSendMessage} disabled={isSubmitting || !messageText.trim()} size="icon" className="h-10 w-10 rounded-full">
                   <Send className="h-5 w-5" />
                 </Button>
@@ -522,7 +682,31 @@ const TeamChat: React.FC = () => {
                 <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
                   <Paperclip className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={handleMemberMention}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="flex-1 text-gray-500 hover:text-gray-700" 
+                  title="Mention" 
+                  onClick={() => {
+                    if (textareaRef.current) {
+                      const cursorPosition = textareaRef.current.selectionStart;
+                      const textBefore = messageText.substring(0, cursorPosition);
+                      const textAfter = messageText.substring(cursorPosition);
+                      const newText = `${textBefore}@${textAfter}`;
+                      setMessageText(newText);
+                      setMentionStart(cursorPosition);
+                      setMentionQuery('');
+                      setShowMentionSelector(true);
+                      textareaRef.current.focus();
+                      setTimeout(() => {
+                        if (textareaRef.current) {
+                          textareaRef.current.selectionStart = cursorPosition + 1;
+                          textareaRef.current.selectionEnd = cursorPosition + 1;
+                        }
+                      }, 0);
+                    }
+                  }}
+                >
                   <AtSign className="h-5 w-5" />
                 </Button>
               </div>
