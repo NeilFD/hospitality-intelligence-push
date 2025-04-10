@@ -150,27 +150,33 @@ const NotificationsDropdown = () => {
     if (unreadNotifications.length === 0) return;
     
     try {
-      for (const notification of unreadNotifications) {
+      const updatePromises = unreadNotifications.map(notification => {
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         
-        await supabase
+        return supabase
           .from('team_messages')
           .update({ read_by: [...currentReadBy, user.id] })
           .eq('id', notification.id);
-      }
+      });
       
-      const updatedNotifications = notifications.map(n => ({
-        ...n,
-        read_by: Array.isArray(n.read_by) && n.read_by.includes(user.id) 
-          ? n.read_by 
-          : [...(Array.isArray(n.read_by) ? n.read_by : []), user.id]
-      }));
+      await Promise.all(updatePromises);
+      
+      const updatedNotifications = notifications.map(n => {
+        if (!n.read_by.includes(user.id)) {
+          return {
+            ...n,
+            read_by: [...n.read_by, user.id]
+          };
+        }
+        return n;
+      });
       
       setNotifications(updatedNotifications);
       setHasUnread(false);
       
       queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
       queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+      
       await refetchMentions();
     } catch (error) {
       console.error('Error clearing notifications:', error);
