@@ -191,7 +191,7 @@ const NotificationsDropdown = () => {
   };
   
   const formatContent = (content: string) => {
-    return content.length > 50 ? content.substring(0, 50) + '...' : content;
+    return content;
   };
 
   return (
@@ -248,14 +248,14 @@ const NotificationsDropdown = () => {
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <div className="flex flex-col items-start text-left w-full overflow-hidden">
-                      <p className="text-xs font-medium truncate w-full">
+                    <div className="flex flex-col items-start text-left w-full">
+                      <p className="text-xs font-medium w-full break-words">
                         {getAuthorName(notification.author_id)}
                         <span className="font-normal ml-2 text-gray-500">
                           mentioned you
                         </span>
                       </p>
-                      <p className="text-xs text-gray-600 mt-1 truncate w-full">
+                      <p className="text-xs text-gray-600 mt-1 w-full break-words whitespace-normal">
                         {formatContent(notification.content)}
                       </p>
                       <span className="text-xs text-gray-400 mt-1">
