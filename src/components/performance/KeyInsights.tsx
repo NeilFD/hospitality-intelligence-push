@@ -94,50 +94,84 @@ export default function KeyInsights() {
       const bevWeekMap: Record<string, { revenue: number, cost: number }> = {};
       
       if (foodTrackerData && foodTrackerData.length > 0) {
+        console.log("Processing food tracker data by week:", foodTrackerData);
+        
         for (const day of foodTrackerData) {
           if (!day.date) continue;
           
-          const date = new Date(day.date);
-          const weekOfMonth = Math.ceil(date.getDate() / 7);
-          const weekKey = `Week ${weekOfMonth}`;
+          const weekNum = day.week_number || Math.ceil(new Date(day.date).getDate() / 7);
+          const weekKey = `Week ${weekNum}`;
           
           if (!foodWeekMap[weekKey]) {
             foodWeekMap[weekKey] = { revenue: 0, cost: 0 };
           }
           
-          foodWeekMap[weekKey].revenue += Number(day.revenue) || 0;
+          const revenue = Number(day.revenue) || 0;
+          foodWeekMap[weekKey].revenue += revenue;
+          console.log(`Added food revenue for ${day.date} (${weekKey}): ${revenue}`);
+        }
+        
+        for (const day of foodTrackerData) {
+          if (!day.date) continue;
           
-          const purchases = await fetchTrackerPurchases(day.id);
-          const creditNotes = await fetchTrackerCreditNotes(day.id);
+          const weekNum = day.week_number || Math.ceil(new Date(day.date).getDate() / 7);
+          const weekKey = `Week ${weekNum}`;
           
-          const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-          const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
-          
-          foodWeekMap[weekKey].cost += purchasesTotal - creditNotesTotal + (Number(day.staff_food_allowance) || 0);
+          try {
+            const purchases = await fetchTrackerPurchases(day.id);
+            const creditNotes = await fetchTrackerCreditNotes(day.id);
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFood = Number(day.staff_food_allowance) || 0;
+            
+            const dayCost = purchasesTotal - creditNotesTotal + staffFood;
+            foodWeekMap[weekKey].cost += dayCost;
+            console.log(`Added food cost for ${day.date} (${weekKey}): ${dayCost}`);
+          } catch (error) {
+            console.error(`Error processing food costs for day ${day.date}:`, error);
+          }
         }
       }
       
       if (bevTrackerData && bevTrackerData.length > 0) {
+        console.log("Processing beverage tracker data by week:", bevTrackerData);
+        
         for (const day of bevTrackerData) {
           if (!day.date) continue;
           
-          const date = new Date(day.date);
-          const weekOfMonth = Math.ceil(date.getDate() / 7);
-          const weekKey = `Week ${weekOfMonth}`;
+          const weekNum = day.week_number || Math.ceil(new Date(day.date).getDate() / 7);
+          const weekKey = `Week ${weekNum}`;
           
           if (!bevWeekMap[weekKey]) {
             bevWeekMap[weekKey] = { revenue: 0, cost: 0 };
           }
           
-          bevWeekMap[weekKey].revenue += Number(day.revenue) || 0;
+          const revenue = Number(day.revenue) || 0;
+          bevWeekMap[weekKey].revenue += revenue;
+          console.log(`Added beverage revenue for ${day.date} (${weekKey}): ${revenue}`);
+        }
+        
+        for (const day of bevTrackerData) {
+          if (!day.date) continue;
           
-          const purchases = await fetchTrackerPurchases(day.id);
-          const creditNotes = await fetchTrackerCreditNotes(day.id);
+          const weekNum = day.week_number || Math.ceil(new Date(day.date).getDate() / 7);
+          const weekKey = `Week ${weekNum}`;
           
-          const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-          const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
-          
-          bevWeekMap[weekKey].cost += purchasesTotal - creditNotesTotal + (Number(day.staff_food_allowance) || 0);
+          try {
+            const purchases = await fetchTrackerPurchases(day.id);
+            const creditNotes = await fetchTrackerCreditNotes(day.id);
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFood = Number(day.staff_food_allowance) || 0;
+            
+            const dayCost = purchasesTotal - creditNotesTotal + staffFood;
+            bevWeekMap[weekKey].cost += dayCost;
+            console.log(`Added beverage cost for ${day.date} (${weekKey}): ${dayCost}`);
+          } catch (error) {
+            console.error(`Error processing beverage costs for day ${day.date}:`, error);
+          }
         }
       }
       
@@ -152,6 +186,9 @@ export default function KeyInsights() {
         return aNum - bNum;
       });
       
+      console.log("Food weekly data summary:", foodWeekMap);
+      console.log("Beverage weekly data summary:", bevWeekMap);
+      
       sortedWeeks.forEach(week => {
         const foodRevenue = foodWeekMap[week]?.revenue || 0;
         const foodCost = foodWeekMap[week]?.cost || 0;
@@ -164,6 +201,8 @@ export default function KeyInsights() {
         const combinedGP = combinedRevenue > 0 
           ? ((combinedRevenue - (foodCost + bevCost)) / combinedRevenue) * 100 
           : 0;
+        
+        console.log(`${week} summary - Food: £${foodRevenue} (${foodGP.toFixed(1)}%), Bev: £${bevRevenue} (${bevGP.toFixed(1)}%), Combined: £${combinedRevenue} (${combinedGP.toFixed(1)}%)`);
         
         weeklyRevenueData.push({
           week,

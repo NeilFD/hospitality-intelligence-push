@@ -100,22 +100,49 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           weekSummaries[week.weekNumber] = week;
         });
         
+        console.log(`Processing tracker data for ${moduleType}:`, trackerData);
+        
+        // First pass to properly group data by week
         for (const day of trackerData) {
+          const weekNum = day.week_number || 1;
           const revenue = Number(day.revenue) || 0;
-          weekSummaries[day.week_number].revenue += revenue;
+          
+          console.log(`Day ${day.date}: Revenue = ${revenue}`);
+          
+          if (!weekSummaries[weekNum]) {
+            weekSummaries[weekNum] = {
+              weekNumber: weekNum,
+              revenue: 0,
+              costs: 0,
+              gp: 0
+            };
+          }
+          
+          weekSummaries[weekNum].revenue += revenue;
           monthRev += revenue;
+        }
+        
+        // Second pass to calculate costs
+        for (const day of trackerData) {
+          const weekNum = day.week_number || 1;
           
-          const purchases = await fetchTrackerPurchases(day.id);
-          const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
-          
-          const creditNotes = await fetchTrackerCreditNotes(day.id);
-          const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount), 0);
-          
-          const staffFood = Number(day.staff_food_allowance) || 0;
-          
-          const netDayCosts = dayCosts - dayCreditNotes + staffFood;
-          weekSummaries[day.week_number].costs += netDayCosts;
-          monthCost += netDayCosts;
+          try {
+            const purchases = await fetchTrackerPurchases(day.id);
+            const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            
+            const creditNotes = await fetchTrackerCreditNotes(day.id);
+            const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            
+            const staffFood = Number(day.staff_food_allowance) || 0;
+            
+            const netDayCosts = dayCosts - dayCreditNotes + staffFood;
+            weekSummaries[weekNum].costs += netDayCosts;
+            monthCost += netDayCosts;
+            
+            console.log(`Day ${day.date}: Costs = ${netDayCosts}`);
+          } catch (error) {
+            console.error(`Error fetching purchase data for day ${day.date}:`, error);
+          }
         }
         
         const weeklyDataArray = Object.values(weekSummaries).map(week => {
@@ -124,6 +151,9 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         });
         
         weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
+        
+        console.log(`Total ${moduleType} revenue from tracker:`, monthRev);
+        console.log(`Total ${moduleType} cost from tracker:`, monthCost);
         
         setWeeklyData(weeklyDataArray);
         setTotalRevenue(monthRev);
