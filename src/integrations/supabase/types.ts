@@ -563,6 +563,7 @@ export type Database = {
           author_id: string
           content: string
           created_at: string
+          deleted: boolean
           id: string
           mentioned_users: string[] | null
           read_by: string[] | null
@@ -575,6 +576,7 @@ export type Database = {
           author_id: string
           content: string
           created_at?: string
+          deleted?: boolean
           id?: string
           mentioned_users?: string[] | null
           read_by?: string[] | null
@@ -587,6 +589,7 @@ export type Database = {
           author_id?: string
           content?: string
           created_at?: string
+          deleted?: boolean
           id?: string
           mentioned_users?: string[] | null
           read_by?: string[] | null
