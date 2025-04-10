@@ -279,7 +279,7 @@ const TeamChat: React.FC = () => {
       <div className="flex-grow overflow-hidden w-full max-w-full">
         <Card className="flex-grow flex flex-col overflow-hidden rounded-xl shadow-lg border-none h-full">
           <CardContent className="p-2 flex-grow flex flex-col overflow-hidden">
-            <div className="flex-grow overflow-y-auto p-2 overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
+            <div className="flex-grow overflow-y-auto p-2 overflow-x-hidden" style={{ scrollBehavior: 'smooth', maxHeight: 'calc(100vh - 280px)' }}>
               {isLoadingMessages ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -316,7 +316,7 @@ const TeamChat: React.FC = () => {
               )}
             </div>
             
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t mt-auto">
               <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
                 <div className="flex space-x-1 mb-1 overflow-x-auto pb-1 scrollbar-hide">
                   <Button 

@@ -41,7 +41,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
       "transition-all duration-300 bg-pastel-blue h-full border-r border-white/20 flex-shrink-0 relative",
       isMobile && minimized ? "w-12" : (isMobile ? "w-52" : "w-64")
     )}>
-      <div className="flex items-center justify-between border-b border-white/30 p-2 bg-tavern-blue/10">
+      <div className="flex items-center justify-between border-b border-white/30 p-2 bg-tavern-blue/10 sticky top-0 z-10">
         {!isMobile || !minimized ? (
           <h2 className="text-lg font-semibold text-tavern-blue-dark truncate pl-1">
             {isMobile ? "Rooms" : "Chat Rooms"}
@@ -64,14 +64,14 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         )}
       </div>
       
-      <ScrollArea className="h-[calc(100vh-180px)]">
-        <div className="p-1">
+      <ScrollArea className="h-[calc(100vh-200px)]">
+        <div className="p-1 pt-2">
           {rooms.map((room) => (
             <Button
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-1 font-medium",
+                "w-full justify-start mb-2 font-medium",
                 selectedRoomId === room.id 
                   ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90" 
                   : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",

@@ -26,7 +26,7 @@ const Chat: React.FC = () => {
           </p>
         )}
       </div>
-      <div className="overflow-hidden">
+      <div className="overflow-hidden h-[calc(100vh-130px)]">
         <TeamChat />
       </div>
     </div>
