@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface Conversation {
@@ -236,8 +237,8 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       let responseForStorage = "";
       
       // Try to get the most appropriate response content for storage
-      if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].output) {
-        responseForStorage = responseData[0].output;
+      if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].response) {
+        responseForStorage = responseData[0].response;
       } else if (responseData?.output) {
         responseForStorage = responseData.output;
       } else if (responseData?.response) {
