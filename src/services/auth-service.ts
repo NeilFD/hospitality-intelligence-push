@@ -14,7 +14,17 @@ interface AuthState {
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
-  updateProfile: (updates: { firstName?: string; lastName?: string; role?: 'Owner' | 'Head Chef' | 'Staff'; avatarUrl?: string }) => Promise<void>;
+  updateProfile: (updates: { 
+    firstName?: string; 
+    lastName?: string; 
+    role?: 'Owner' | 'Head Chef' | 'Staff'; 
+    avatarUrl?: string;
+    jobTitle?: string;
+    birthDateMonth?: string;
+    favouriteDish?: string;
+    favouriteDrink?: string;
+    aboutMe?: string;
+  }) => Promise<void>;
   clearError: () => void;
 }
 
@@ -139,7 +149,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         first_name: updates.firstName,
         last_name: updates.lastName,
         role: updates.role,
-        avatar_url: updates.avatarUrl
+        avatar_url: updates.avatarUrl,
+        job_title: updates.jobTitle,
+        birth_date_month: updates.birthDateMonth,
+        favourite_dish: updates.favouriteDish,
+        favourite_drink: updates.favouriteDrink,
+        about_me: updates.aboutMe
       };
       
       const { error } = await supabase

@@ -11,6 +11,7 @@ import { Edit, Check, User } from 'lucide-react';
 import { toast } from "sonner";
 import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
+import { Textarea } from "@/components/ui/textarea";
 
 type Role = 'Owner' | 'Manager' | 'Team Member';
 type AuthServiceRole = 'Owner' | 'Head Chef' | 'Staff';
@@ -21,6 +22,11 @@ interface ProfileData {
   last_name: string;
   role: Role | AuthServiceRole;
   avatar_url: string;
+  job_title?: string;
+  birth_date_month?: string;
+  favourite_dish?: string;
+  favourite_drink?: string;
+  about_me?: string;
 }
 
 export default function Profile() {
@@ -31,6 +37,11 @@ export default function Profile() {
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<Role>('Team Member');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [jobTitle, setJobTitle] = useState('');
+  const [birthDateMonth, setBirthDateMonth] = useState('');
+  const [favouriteDish, setFavouriteDish] = useState('');
+  const [favouriteDrink, setFavouriteDrink] = useState('');
+  const [aboutMe, setAboutMe] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [viewedProfile, setViewedProfile] = useState<ProfileData | null>(null);
 
@@ -62,7 +73,12 @@ export default function Profile() {
         firstName,
         lastName,
         role: authServiceRole,
-        avatarUrl
+        avatarUrl,
+        jobTitle,
+        birthDateMonth,
+        favouriteDish,
+        favouriteDrink,
+        aboutMe
       });
       
       toast.success("Profile updated successfully.");
@@ -112,6 +128,11 @@ export default function Profile() {
           // Convert database role to new role format
           setRole(convertAuthServiceRoleToRole(data.role));
           setAvatarUrl(data.avatar_url);
+          setJobTitle(data.job_title || '');
+          setBirthDateMonth(data.birth_date_month || '');
+          setFavouriteDish(data.favourite_dish || '');
+          setFavouriteDrink(data.favourite_drink || '');
+          setAboutMe(data.about_me || '');
         }
       } catch (error) {
         toast.error("Error fetching profile: " + (error as Error).message);
@@ -131,6 +152,11 @@ export default function Profile() {
         // Convert database role to new role format
         setRole(convertAuthServiceRoleToRole(profile.role));
         setAvatarUrl(profile.avatar_url);
+        setJobTitle(profile.job_title || '');
+        setBirthDateMonth(profile.birth_date_month || '');
+        setFavouriteDish(profile.favourite_dish || '');
+        setFavouriteDrink(profile.favourite_drink || '');
+        setAboutMe(profile.about_me || '');
       }
     }
   }, [userId, user, profile]);
@@ -203,6 +229,76 @@ export default function Profile() {
             ) : (
               <Input type="text" value={role} disabled />
             )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="jobTitle">Job Title</Label>
+            <Input
+              type="text"
+              id="jobTitle"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              disabled={!isEditing && !userId}
+              placeholder="e.g. Chef de Partie, Server, etc."
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="birthDateMonth">Birthday (Month Only)</Label>
+            <Select 
+              value={birthDateMonth} 
+              onValueChange={setBirthDateMonth} 
+              disabled={!isEditing && !userId}
+            >
+              <SelectTrigger id="birthDateMonth">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="January">January</SelectItem>
+                <SelectItem value="February">February</SelectItem>
+                <SelectItem value="March">March</SelectItem>
+                <SelectItem value="April">April</SelectItem>
+                <SelectItem value="May">May</SelectItem>
+                <SelectItem value="June">June</SelectItem>
+                <SelectItem value="July">July</SelectItem>
+                <SelectItem value="August">August</SelectItem>
+                <SelectItem value="September">September</SelectItem>
+                <SelectItem value="October">October</SelectItem>
+                <SelectItem value="November">November</SelectItem>
+                <SelectItem value="December">December</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="favouriteDish">Favourite Tavern Dish</Label>
+            <Input
+              type="text"
+              id="favouriteDish"
+              value={favouriteDish}
+              onChange={(e) => setFavouriteDish(e.target.value)}
+              disabled={!isEditing && !userId}
+              placeholder="What's your favourite dish from the menu?"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="favouriteDrink">Favourite Tavern Drink</Label>
+            <Input
+              type="text"
+              id="favouriteDrink"
+              value={favouriteDrink}
+              onChange={(e) => setFavouriteDrink(e.target.value)}
+              disabled={!isEditing && !userId}
+              placeholder="What's your favourite drink from the bar?"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="aboutMe">About Me</Label>
+            <Textarea
+              id="aboutMe"
+              value={aboutMe}
+              onChange={(e) => setAboutMe(e.target.value)}
+              disabled={!isEditing && !userId}
+              placeholder="Tell us a bit about yourself..."
+              className="min-h-[100px]"
+            />
           </div>
           <div className="flex justify-end">
             {userId ? (
