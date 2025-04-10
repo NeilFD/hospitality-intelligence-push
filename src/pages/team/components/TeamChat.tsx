@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+
+// Define the missing MessageProps interface
+interface MessageProps {
+  message: TeamMessage;
+  isOwnMessage: boolean;
+  author: UserProfile | undefined;
+  onAddReaction: (messageId: string, emoji: string) => void;
+  onDeleteMessage: (messageId: string) => void;
+  teamMembers: UserProfile[];
+  currentUserId: string;
+}
 
 const EMOJI_CATEGORIES = [{
   name: "Smileys",
