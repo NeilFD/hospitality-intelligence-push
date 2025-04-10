@@ -581,6 +581,7 @@ export type Database = {
           deleted: boolean
           id: string
           mentioned_users: string[] | null
+          notification_state: string | null
           read_by: string[] | null
           room_id: string
           type: Database["public"]["Enums"]["message_type"]
@@ -594,6 +595,7 @@ export type Database = {
           deleted?: boolean
           id?: string
           mentioned_users?: string[] | null
+          notification_state?: string | null
           read_by?: string[] | null
           room_id: string
           type?: Database["public"]["Enums"]["message_type"]
@@ -607,6 +609,7 @@ export type Database = {
           deleted?: boolean
           id?: string
           mentioned_users?: string[] | null
+          notification_state?: string | null
           read_by?: string[] | null
           room_id?: string
           type?: Database["public"]["Enums"]["message_type"]

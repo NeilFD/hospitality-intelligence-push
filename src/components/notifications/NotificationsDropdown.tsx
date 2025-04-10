@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,7 +31,7 @@ const NotificationsDropdown = () => {
         .select('*')
         .contains('mentioned_users', [user.id])
         .eq('deleted', false)
-        .not('read_by', 'cs', `{${user.id}}`) // Exclude messages where user.id is in read_by
+        .eq('notification_state', 'live')
         .order('created_at', { ascending: false })
         .limit(10);
         
@@ -45,7 +44,7 @@ const NotificationsDropdown = () => {
       return data as TeamMessage[];
     },
     enabled: !!user,
-    staleTime: 1000 * 30, // Consider data fresh for 30 seconds
+    staleTime: 1000 * 30,
   });
   
   const { data: profiles = [] } = useQuery({
@@ -104,33 +103,25 @@ const NotificationsDropdown = () => {
   
   useEffect(() => {
     if (mentionedMessages && user) {
-      const processedMessages = mentionedMessages.map(msg => ({
-        ...msg,
-        read_by: Array.isArray(msg.read_by) ? msg.read_by : []
-      }));
-      
-      const anyUnread = processedMessages.some(msg => !msg.read_by.includes(user.id));
-      
-      console.log('Processed messages:', processedMessages);
-      console.log('Any unread:', anyUnread);
-      
-      setNotifications(processedMessages);
-      setHasUnread(anyUnread);
+      setNotifications(mentionedMessages);
+      setHasUnread(mentionedMessages.length > 0);
     }
   }, [mentionedMessages, user]);
   
   const handleNotificationClick = async (message: TeamMessage) => {
     if (!user) return;
     
-    const currentReadBy = Array.isArray(message.read_by) ? message.read_by : [];
-    
-    if (!currentReadBy.includes(user.id)) {
-      const updatedReadBy = [...currentReadBy, user.id];
-      
-      try {
+    try {
+      const currentReadBy = Array.isArray(message.read_by) ? message.read_by : [];
+      if (!currentReadBy.includes(user.id)) {
+        const updatedReadBy = [...currentReadBy, user.id];
+        
         const { error } = await supabase
           .from('team_messages')
-          .update({ read_by: updatedReadBy })
+          .update({ 
+            read_by: updatedReadBy,
+            notification_state: 'dismissed'
+          })
           .eq('id', message.id);
           
         if (error) {
@@ -139,28 +130,11 @@ const NotificationsDropdown = () => {
           return;
         }
         
-        setNotifications(prev => 
-          prev.map(n => 
-            n.id === message.id 
-              ? { ...n, read_by: updatedReadBy } 
-              : n
-          )
-        );
-        
-        const stillHasUnread = notifications
-          .filter(n => n.id !== message.id)
-          .some(n => {
-            const nReadBy = Array.isArray(n.read_by) ? n.read_by : [];
-            return !nReadBy.includes(user.id);
-          });
-          
-        setHasUnread(stillHasUnread);
-        
         queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
-      } catch (error) {
-        console.error('Error in handleNotificationClick:', error);
-        toast.error('Failed to process notification');
       }
+    } catch (error) {
+      console.error('Error in handleNotificationClick:', error);
+      toast.error('Failed to process notification');
     }
     
     setIsOpen(false);
@@ -178,49 +152,37 @@ const NotificationsDropdown = () => {
     }
     
     try {
-      const unreadNotifications = notifications.filter(notification => {
-        const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-        return !readBy.includes(user.id);
-      });
+      setHasUnread(false);
       
-      if (unreadNotifications.length === 0) {
+      const { error } = await supabase
+        .from('team_messages')
+        .update({ notification_state: 'dismissed' })
+        .in('id', notifications.map(n => n.id));
+      
+      if (error) {
+        console.error('Error clearing notifications:', error);
+        toast.error('Failed to clear notifications');
+        await refetchMentions();
         return;
       }
       
-      setHasUnread(false);
+      toast.success('All notifications cleared');
       
-      const updatePromises = unreadNotifications.map(async (notification) => {
+      const updatePromises = notifications.map(async (notification) => {
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-        const updatedReadBy = [...currentReadBy, user.id];
-        
-        const { error } = await supabase
-          .from('team_messages')
-          .update({ read_by: updatedReadBy })
-          .eq('id', notification.id);
+        if (!currentReadBy.includes(user.id)) {
+          const updatedReadBy = [...currentReadBy, user.id];
           
-        return { id: notification.id, success: !error, error };
+          return await supabase
+            .from('team_messages')
+            .update({ read_by: updatedReadBy })
+            .eq('id', notification.id);
+        }
+        return { error: null };
       });
       
-      const results = await Promise.all(updatePromises);
-      const failedUpdates = results.filter(result => !result.success);
-      
-      if (failedUpdates.length > 0) {
-        console.error('Failed to update some notifications:', failedUpdates);
-        toast.error(`${failedUpdates.length} notifications couldn't be cleared`);
-        await refetchMentions();
-      } else {
-        toast.success('All notifications cleared');
-        
-        setNotifications(prev => prev.map(notification => {
-          const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-          if (!readBy.includes(user.id)) {
-            return { ...notification, read_by: [...readBy, user.id] };
-          }
-          return notification;
-        }));
-        
-        queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
-      }
+      await Promise.all(updatePromises);
+      queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
     } catch (error) {
       console.error('Error clearing notifications:', error);
       toast.error('Failed to clear notifications');
@@ -237,41 +199,38 @@ const NotificationsDropdown = () => {
     }
     
     try {
-      // Optimistic UI update
       setNotifications(prev => prev.filter(n => n.id !== message.id));
       
-      // Update unread status after removing the message
       const remainingUnread = notifications
         .filter(n => n.id !== message.id)
-        .some(n => {
-          const readBy = Array.isArray(n.read_by) ? n.read_by : [];
-          return !readBy.includes(user.id);
-        });
+        .length > 0;
       
       setHasUnread(remainingUnread);
       
       console.log('Dismissing notification with ID:', message.id);
       
-      // Instead of marking as deleted, add user to read_by to hide from notifications
-      // This preserves the message in the chat but removes it from notifications
+      const { error } = await supabase
+        .from('team_messages')
+        .update({ notification_state: 'dismissed' })
+        .eq('id', message.id);
+          
+      if (error) {
+        console.error('Error dismissing notification:', error);
+        toast.error('Failed to dismiss notification');
+        await refetchMentions();
+        return;
+      }
+      
       const currentReadBy = Array.isArray(message.read_by) ? message.read_by : [];
       if (!currentReadBy.includes(user.id)) {
         const updatedReadBy = [...currentReadBy, user.id];
         
-        const { error } = await supabase
+        await supabase
           .from('team_messages')
           .update({ read_by: updatedReadBy })
           .eq('id', message.id);
-          
-        if (error) {
-          console.error('Error dismissing notification:', error);
-          toast.error('Failed to dismiss notification');
-          await refetchMentions(); // Revert UI by refetching
-          return;
-        }
       }
       
-      // Force refetch to ensure our local state matches the database
       queryClient.invalidateQueries({ 
         queryKey: ['mentionedMessages', user.id],
         exact: true
@@ -282,7 +241,7 @@ const NotificationsDropdown = () => {
     } catch (error) {
       console.error('Error dismissing notification:', error);
       toast.error('Failed to dismiss notification');
-      await refetchMentions(); // Revert UI by refetching
+      await refetchMentions();
     }
   };
   
@@ -340,16 +299,13 @@ const NotificationsDropdown = () => {
           {notifications && notifications.length > 0 ? (
             <div className="py-1">
               {notifications.map((notification) => {
-                const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-                const isUnread = !readBy.includes(user?.id || '');
-                
                 return (
                   <div key={notification.id} className="relative group">
                     <Button
                       variant="ghost"
                       className={`
                         w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 
-                        ${isUnread ? 'bg-blue-50' : ''}
+                        bg-blue-50
                       `}
                       onClick={() => handleNotificationClick(notification)}
                     >
