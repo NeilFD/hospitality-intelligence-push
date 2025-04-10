@@ -19,8 +19,9 @@ import BeverageMonthSummary from "@/pages/beverage/MonthSummary";
 import BeverageAnnualSummary from "@/pages/beverage/AnnualSummary";
 import BeverageWeeklyTracker from "@/pages/beverage/WeeklyTracker";
 import PLDashboard from "@/pages/pl/Dashboard";
-import WagesDashboard from "@/pages/wages/Dashboard";
+import WagesDashboard from "@/pages/wages/WagesDashboard";
 import PerformanceDashboard from "@/pages/performance/Dashboard";
+import WageOptimization from "@/pages/performance/WageOptimization";
 import TeamDashboard from "./pages/team/Dashboard";
 import Noticeboard from "./pages/team/Noticeboard";
 import Chat from "./pages/team/Chat";
@@ -68,6 +69,7 @@ function App() {
             
             {/* Performance Routes */}
             <Route path="/performance/dashboard" element={<RequireAuth><Layout><PerformanceDashboard /></Layout></RequireAuth>} />
+            <Route path="/performance/wage-optimization" element={<RequireAuth><Layout><WageOptimization /></Layout></RequireAuth>} />
             
             {/* Master Routes */}
             <Route path="/master/dashboard" element={<RequireAuth><Layout><MasterDashboard /></Layout></RequireAuth>} />
