@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RequireAuth from "./components/RequireAuth";
+import BankPageAuth from "./components/auth/BankPageAuth";
 import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -67,7 +68,7 @@ function App() {
             
             {/* P&L Routes */}
             <Route path="/pl/dashboard" element={<RequireAuth><Layout><PLDashboard /></Layout></RequireAuth>} />
-            <Route path="/pl/bank" element={<RequireAuth><Layout><PLBank /></Layout></RequireAuth>} />
+            <Route path="/pl/bank" element={<BankPageAuth><Layout><PLBank /></Layout></BankPageAuth>} />
             
             {/* Wages Routes */}
             <Route path="/wages/dashboard" element={<RequireAuth><Layout><WagesDashboard /></Layout></RequireAuth>} />
@@ -79,7 +80,7 @@ function App() {
             <Route path="/performance/data-explorer" element={<RequireAuth><Layout><DataExplorer /></Layout></RequireAuth>} />
             
             {/* Monzo API Routes */}
-            <Route path="/monzo" element={<RequireAuth><Layout><MonzoApi /></Layout></RequireAuth>} />
+            <Route path="/monzo" element={<BankPageAuth><Layout><MonzoApi /></Layout></BankPageAuth>} />
             
             {/* Master Routes */}
             <Route path="/master/dashboard" element={<RequireAuth><Layout><MasterDashboard /></Layout></RequireAuth>} />
