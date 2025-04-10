@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -167,7 +168,7 @@ const Message: React.FC<MessageProps> = ({
             {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
 
-          {/* Emoji reaction button - Now positioned on corner of message bubble */}
+          {/* Emoji reaction button - positioned on corner of message bubble */}
           <Popover>
             <PopoverTrigger asChild>
               <Button 
@@ -178,7 +179,13 @@ const Message: React.FC<MessageProps> = ({
                 <Smile className="h-3.5 w-3.5 text-gray-500" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-72 p-3">
+            <PopoverContent 
+              className="w-72 p-3"
+              align={isOwnMessage ? "end" : "start"}
+              side="top"
+              sideOffset={5}
+              alignOffset={isOwnMessage ? -40 : 40}
+            >
               {/* Tab buttons for emoji categories */}
               <div className="flex mb-2 gap-1 justify-between border-b pb-2">
                 {EMOJI_CATEGORIES.map((category, index) => (
