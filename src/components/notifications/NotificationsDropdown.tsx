@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -168,39 +169,55 @@ const NotificationsDropdown = () => {
         return;
       }
       
+      // Create a copy of notifications that we'll update as we go
+      let updatedNotifications = [...notifications];
+      let allUpdatesSuccessful = true;
+      
+      // Process notifications one by one
       for (const notification of unreadNotifications) {
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-        if (!currentReadBy.includes(user.id)) {
-          const updatedReadBy = [...currentReadBy, user.id];
-          
-          const { error } = await supabase
-            .from('team_messages')
-            .update({ read_by: updatedReadBy })
-            .eq('id', notification.id);
-          
-          if (error) {
-            console.error(`Error updating notification ${notification.id}:`, error);
-          } else {
-            console.info(`Successfully marked notification ${notification.id} as read`);
-          }
+        const updatedReadBy = [...currentReadBy, user.id];
+        
+        const { error } = await supabase
+          .from('team_messages')
+          .update({ read_by: updatedReadBy })
+          .eq('id', notification.id);
+        
+        if (error) {
+          console.error(`Error updating notification ${notification.id}:`, error);
+          allUpdatesSuccessful = false;
+        } else {
+          // Update our local copy with the new read_by array
+          updatedNotifications = updatedNotifications.map(n => 
+            n.id === notification.id 
+              ? { ...n, read_by: updatedReadBy } 
+              : n
+          );
         }
       }
       
-      const updatedNotifications = notifications.map(notification => {
-        const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-        if (!readBy.includes(user.id)) {
-          return { ...notification, read_by: [...readBy, user.id] };
-        }
-        return notification;
-      });
+      // Only update the state after all database operations are complete
+      if (allUpdatesSuccessful) {
+        setNotifications(updatedNotifications);
+        setHasUnread(false);
+        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+        toast.success('All notifications cleared');
+      } else {
+        // Even if some failed, update with what succeeded
+        setNotifications(updatedNotifications);
+        
+        // Recheck if we still have unread notifications
+        const stillHasUnread = updatedNotifications.some(notification => {
+          const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+          return !readBy.includes(user.id);
+        });
+        
+        setHasUnread(stillHasUnread);
+        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+        toast.error('Some notifications could not be cleared');
+      }
       
-      setNotifications(updatedNotifications);
-      setHasUnread(false);
-      
-      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
-      
-      toast.success('All notifications cleared');
-      
+      // Refresh data from server to ensure consistency
       await refetchMentions();
     } catch (error) {
       console.error('Error clearing notifications:', error);
