@@ -13,8 +13,17 @@ serve(async (req) => {
   }
   
   try {
-    const url = new URL(req.url);
-    const endpoint = url.searchParams.get("endpoint");
+    let params;
+    try {
+      params = await req.json();
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    
+    const endpoint = params.endpoint;
     
     if (!endpoint) {
       return new Response(
@@ -31,8 +40,8 @@ serve(async (req) => {
     }
     
     // Parse request parameters
-    const accountId = url.searchParams.get("account_id") || "";
-    const transactionId = url.searchParams.get("transaction_id") || "";
+    const accountId = params.account_id || "";
+    const transactionId = params.transaction_id || "";
     
     // Map endpoint parameter to actual API endpoints
     let apiUrl = "";

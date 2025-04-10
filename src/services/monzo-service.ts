@@ -31,7 +31,7 @@ export interface MonzoTransaction {
 export const monzoApi = {
   async whoAmI(): Promise<{ user_id: string; authenticated: boolean }> {
     const { data, error } = await supabase.functions.invoke('monzo-api', {
-      query: { endpoint: 'whoami' },
+      body: { endpoint: 'whoami' },
     });
     
     if (error) throw new Error(error.message);
@@ -40,7 +40,7 @@ export const monzoApi = {
   
   async getAccounts(): Promise<{ accounts: MonzoAccount[] }> {
     const { data, error } = await supabase.functions.invoke('monzo-api', {
-      query: { endpoint: 'accounts' },
+      body: { endpoint: 'accounts' },
     });
     
     if (error) throw new Error(error.message);
@@ -49,7 +49,7 @@ export const monzoApi = {
   
   async getBalance(accountId: string): Promise<MonzoBalance> {
     const { data, error } = await supabase.functions.invoke('monzo-api', {
-      query: { 
+      body: { 
         endpoint: 'balance',
         account_id: accountId
       },
@@ -61,7 +61,7 @@ export const monzoApi = {
   
   async getTransactions(accountId: string): Promise<{ transactions: MonzoTransaction[] }> {
     const { data, error } = await supabase.functions.invoke('monzo-api', {
-      query: { 
+      body: { 
         endpoint: 'transactions',
         account_id: accountId
       },
@@ -73,7 +73,7 @@ export const monzoApi = {
   
   async getTransactionDetail(transactionId: string): Promise<{ transaction: MonzoTransaction }> {
     const { data, error } = await supabase.functions.invoke('monzo-api', {
-      query: { 
+      body: { 
         endpoint: 'transaction_detail',
         transaction_id: transactionId
       },
