@@ -79,7 +79,11 @@ export interface ChatRoom {
 
 export const getTeamMembers = async (): Promise<UserProfile[]> => {
   try {
+    // Log the start of the function call for debugging
+    console.log('getTeamMembers function called');
+    
     // Make sure we're getting all profiles without any filters
+    // and add more detailed logging
     const { data, error } = await supabase
       .from('profiles')
       .select('*');
@@ -89,9 +93,19 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
       throw error;
     }
     
+    // Log the full response for debugging
+    console.log('Supabase response:', { data, error });
+    
     // Log the number of profiles found for debugging
     console.log('Team members fetched:', data?.length || 0, 'profiles found');
     console.log('Team members data:', data);
+    
+    // Additional check to ensure we're not filtering data inadvertently
+    if (!data || data.length === 0) {
+      console.warn('No profiles returned from Supabase. This might indicate a potential issue.');
+    } else if (data.length === 1) {
+      console.warn('Only one profile returned from Supabase. Expected more based on database content.');
+    }
     
     return data || [];
   } catch (e) {

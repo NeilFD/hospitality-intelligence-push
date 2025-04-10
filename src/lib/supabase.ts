@@ -16,6 +16,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Add extra logging to troubleshoot connection issues
+console.log('Supabase client initialized with URL:', supabaseUrl);
+
 // Authentication helpers
 export const signUp = async (email: string, password: string, metadata?: { first_name?: string; last_name?: string }) => {
   return await supabase.auth.signUp({

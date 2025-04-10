@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTeamMembers } from '@/services/team-service';
 import { UserProfile } from '@/types/supabase-types';
+import { toast } from 'sonner';
 
 const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
@@ -19,15 +20,34 @@ const TeamDashboard: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
+        
+        // Fetch team members with extra logging
+        console.log('About to fetch team members');
         const members = await getTeamMembers();
+        
         console.log('Team members in component:', members.length);
-        console.log('Team members details:', members);
-        setTeamMembers(members);
-        setDebugInfo(`Found ${members.length} team members`);
+        console.log('Raw members data:', JSON.stringify(members));
+        
+        // Check if response is valid
+        if (members && Array.isArray(members)) {
+          setTeamMembers(members);
+          setDebugInfo(`Found ${members.length} team members. IDs: ${members.map(m => m.id.substring(0, 6) + '...').join(', ')}`);
+          
+          if (members.length === 0) {
+            console.warn('No team members returned from service');
+          } else if (members.length < 5) {
+            console.warn(`Only ${members.length} team members returned, expected 5 based on database content`);
+          }
+        } else {
+          setError('Invalid data format received');
+          setDebugInfo('Received invalid data format');
+          console.error('Invalid data format:', members);
+        }
       } catch (error) {
         console.error("Error fetching team members:", error);
         setError("Failed to fetch team members");
         setDebugInfo(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast.error("Failed to load team members");
       } finally {
         setIsLoading(false);
       }
@@ -52,12 +72,18 @@ const TeamDashboard: React.FC = () => {
           Team Members
         </h2>
         
-        {/* Debug info section */}
-        <div className="mb-4 p-2 bg-blue-50 rounded-md flex items-center">
-          <Info className="h-4 w-4 text-blue-500 mr-2" />
-          <span className="text-sm text-blue-700">
-            Debug: {debugInfo || 'No debug info available'}
-          </span>
+        {/* Enhanced debug info section */}
+        <div className="mb-4 p-3 bg-blue-50 rounded-md">
+          <div className="flex items-center mb-2">
+            <Info className="h-4 w-4 text-blue-500 mr-2" />
+            <span className="text-sm font-medium text-blue-700">
+              Debug Information
+            </span>
+          </div>
+          <p className="text-sm text-blue-600 pl-6">{debugInfo || 'No debug info available'}</p>
+          <p className="text-sm text-blue-600 pl-6">
+            Team members count: {teamMembers.length}, Loading: {isLoading ? 'Yes' : 'No'}, Error: {error || 'None'}
+          </p>
         </div>
         
         <div className="flex flex-wrap gap-4 items-center">
@@ -230,4 +256,5 @@ const TeamDashboard: React.FC = () => {
       </div>
     </div>;
 };
+
 export default TeamDashboard;
