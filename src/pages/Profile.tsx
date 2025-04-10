@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { format, parse } from 'date-fns';
@@ -42,7 +43,7 @@ interface ProfileData {
 export default function Profile() {
   const { userId } = useParams<{ userId?: string }>();
   const { user, profile, updateProfile } = useAuthStore();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!userId); // Auto-edit mode for own profile
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<Role>('Team Member');
@@ -75,8 +76,14 @@ export default function Profile() {
   // Convert stored birthday to Date
   useEffect(() => {
     if (profile?.birth_date) {
-      const parsedDate = parse(profile.birth_date, 'yyyy-MM-dd', new Date());
-      setBirthDate(parsedDate);
+      try {
+        const parsedDate = parse(profile.birth_date, 'yyyy-MM-dd', new Date());
+        if (!isNaN(parsedDate.getTime())) {
+          setBirthDate(parsedDate);
+        }
+      } catch (error) {
+        console.error('Error parsing birth date:', error);
+      }
     }
   }, [profile]);
 
@@ -142,6 +149,7 @@ export default function Profile() {
         }
 
         if (data) {
+          console.log('Fetched profile data:', data);
           setViewedProfile(data);
           setFirstName(data.first_name || '');
           setLastName(data.last_name || '');
@@ -153,12 +161,23 @@ export default function Profile() {
           setFavouriteDish(data.favourite_dish || '');
           setFavouriteDrink(data.favourite_drink || '');
           setAboutMe(data.about_me || '');
+          
           if (data.birth_date) {
-            const parsedDate = parse(data.birth_date, 'yyyy-MM-dd', new Date());
-            setBirthDate(parsedDate);
+            try {
+              const parsedDate = parse(data.birth_date, 'yyyy-MM-dd', new Date());
+              if (!isNaN(parsedDate.getTime())) {
+                setBirthDate(parsedDate);
+                console.log('Birth date parsed successfully:', parsedDate);
+              } else {
+                console.error('Invalid birth date format:', data.birth_date);
+              }
+            } catch (error) {
+              console.error('Error parsing birth date:', error, data.birth_date);
+            }
           }
         }
       } catch (error) {
+        console.error('Error fetching profile:', error);
         toast.error("Error fetching profile: " + (error as Error).message);
       } finally {
         setIsLoading(false);
@@ -170,6 +189,7 @@ export default function Profile() {
     } else {
       setIsLoading(false);
       if (profile) {
+        console.log('Setting current user profile:', profile);
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
         
@@ -180,10 +200,6 @@ export default function Profile() {
         setFavouriteDish(profile.favourite_dish || '');
         setFavouriteDrink(profile.favourite_drink || '');
         setAboutMe(profile.about_me || '');
-        if (profile.birth_date) {
-          const parsedDate = parse(profile.birth_date, 'yyyy-MM-dd', new Date());
-          setBirthDate(parsedDate);
-        }
       }
     }
   }, [userId, user, profile]);
@@ -202,7 +218,7 @@ export default function Profile() {
     <div className="container py-6 max-w-[1400px] mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>{userId ? 'View Profile' : 'Edit Profile'}</CardTitle>
+          <CardTitle>{userId && userId !== user?.id ? 'View Profile' : 'Edit Profile'}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex items-center space-x-4">
@@ -213,7 +229,7 @@ export default function Profile() {
                 <AvatarFallback>{getUserInitials()}</AvatarFallback>
               )}
             </Avatar>
-            {isEditing && !userId && (
+            {isEditing && (
               <div className="flex flex-col">
                 <Label htmlFor="avatar">Change Avatar</Label>
                 <Input type="file" id="avatar" accept="image/*" onChange={handleAvatarChange} />
@@ -227,7 +243,7 @@ export default function Profile() {
               id="firstName"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              disabled={!isEditing && !userId}
+              disabled={!isEditing}
             />
           </div>
           <div className="grid gap-2">
@@ -237,12 +253,12 @@ export default function Profile() {
               id="lastName"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              disabled={!isEditing && !userId}
+              disabled={!isEditing}
             />
           </div>
           <div className="grid gap-2">
             <Label>Role</Label>
-            {isEditing && !userId ? (
+            {isEditing ? (
               <Select value={role} onValueChange={(value) => setRole(value as Role)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a role" />
@@ -264,14 +280,14 @@ export default function Profile() {
               id="jobTitle"
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
-              disabled={!isEditing && !userId}
+              disabled={!isEditing}
               placeholder="e.g. Chef de Partie, Server, etc."
             />
           </div>
           
           <div className="grid gap-2">
             <Label>Birthday</Label>
-            {isEditing && !userId ? (
+            {isEditing ? (
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -311,7 +327,7 @@ export default function Profile() {
               id="favouriteDish"
               value={favouriteDish}
               onChange={(e) => setFavouriteDish(e.target.value)}
-              disabled={!isEditing && !userId}
+              disabled={!isEditing}
               placeholder="What's your favourite dish from the menu?"
             />
           </div>
@@ -322,7 +338,7 @@ export default function Profile() {
               id="favouriteDrink"
               value={favouriteDrink}
               onChange={(e) => setFavouriteDrink(e.target.value)}
-              disabled={!isEditing && !userId}
+              disabled={!isEditing}
               placeholder="What's your favourite drink from the bar?"
             />
           </div>
@@ -332,13 +348,13 @@ export default function Profile() {
               id="aboutMe"
               value={aboutMe}
               onChange={(e) => setAboutMe(e.target.value)}
-              disabled={!isEditing && !userId}
+              disabled={!isEditing}
               placeholder="Tell us a bit about yourself..."
               className="min-h-[100px]"
             />
           </div>
-          <div className="flex justify-end">
-            {userId ? (
+          <div className="flex justify-end mt-4">
+            {userId && userId !== user?.id ? (
               <Button variant="outline" onClick={() => window.history.back()}>
                 Back
               </Button>
@@ -354,7 +370,7 @@ export default function Profile() {
                     </>
                   ) : (
                     <>
-                      Update <Check className="ml-2 h-4 w-4" />
+                      Save Profile <Check className="ml-2 h-4 w-4" />
                     </>
                   )}
                 </Button>

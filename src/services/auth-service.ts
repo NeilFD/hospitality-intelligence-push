@@ -1,3 +1,4 @@
+
 import { supabase, signIn, signUp, signOut, getCurrentUser, getProfile } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 import { create } from 'zustand';
@@ -155,6 +156,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         about_me: updates.aboutMe
       };
       
+      console.log('Updating profile with data:', updateData);
+      
       const { error } = await supabase
         .from('profiles')
         .update(updateData)
@@ -162,10 +165,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (error) throw error;
       
+      // Reload the user profile after update
       await get().loadUser();
       
       set({ isLoading: false });
     } catch (error: any) {
+      console.error('Error updating profile:', error);
       set({
         error: error.message || 'Failed to update profile',
         isLoading: false
