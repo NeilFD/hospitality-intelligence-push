@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -161,59 +162,69 @@ const NotificationsDropdown = () => {
         return !readBy.includes(user.id);
       });
       
-      console.log(`Found ${unreadNotifications.length} unread notifications to clear`);
+      console.info(`Found ${unreadNotifications.length} unread notifications to clear`);
       
       if (unreadNotifications.length === 0) {
         console.log("No unread notifications to clear");
         return;
       }
       
+      // Process notifications one by one to avoid race conditions
       let successCount = 0;
-      let updatedNotifications = [...notifications];
+      let newNotifications = [...notifications];
       
       for (const notification of unreadNotifications) {
         try {
           const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+          const updatedReadBy = [...currentReadBy, user.id];
           
-          if (!currentReadBy.includes(user.id)) {
-            const updatedReadBy = [...currentReadBy, user.id];
+          console.info(`Updating notification ${notification.id}, adding user ${user.id} to read_by`);
+          
+          const { error } = await supabase
+            .from('team_messages')
+            .update({ read_by: updatedReadBy })
+            .eq('id', notification.id);
             
-            console.log(`Updating notification ${notification.id}, adding user ${user.id} to read_by`);
+          if (error) {
+            console.error(`Error updating notification ${notification.id}:`, error);
+          } else {
+            console.info(`Successfully marked notification ${notification.id} as read`);
+            successCount++;
             
-            const { error } = await supabase
-              .from('team_messages')
-              .update({ read_by: updatedReadBy })
-              .eq('id', notification.id);
-              
-            if (error) {
-              console.error(`Error updating notification ${notification.id}:`, error);
-            } else {
-              console.log(`Successfully marked notification ${notification.id} as read`);
-              successCount++;
-              
-              updatedNotifications = updatedNotifications.map(n => 
-                n.id === notification.id 
-                  ? { ...n, read_by: updatedReadBy } 
-                  : n
-              );
-            }
+            // Update our local state with the new read_by array
+            newNotifications = newNotifications.map(n => 
+              n.id === notification.id 
+                ? { ...n, read_by: updatedReadBy } 
+                : n
+            );
           }
         } catch (notificationError) {
           console.error(`Error processing notification ${notification.id}:`, notificationError);
         }
       }
       
-      setNotifications(updatedNotifications);
-      setHasUnread(false);
+      // Update the UI with the new read statuses
+      setNotifications(newNotifications);
+      
+      // Check if we still have any unread notifications
+      const stillHasUnread = newNotifications.some(notification => {
+        const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+        return !readBy.includes(user.id);
+      });
+      
+      setHasUnread(stillHasUnread);
+      
+      // Update the cache with our new state
+      queryClient.setQueryData(['mentionedMessages', user.id], newNotifications);
       
       if (successCount === 0) {
         console.log("Failed to clear any notifications");
         toast.error('Failed to clear notifications');
       } else {
-        console.log(`Successfully cleared ${successCount} notifications`);
+        console.info(`Successfully cleared ${successCount} notifications`);
         toast.success('All notifications cleared');
         
-        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+        // Refresh data from server to ensure everything is in sync
         await refetchMentions();
       }
     } catch (error) {
