@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -144,6 +145,7 @@ const NotificationsDropdown = () => {
   const handleClearAllNotifications = async () => {
     if (!user) {
       console.log("No user logged in");
+      toast.error('User not logged in');
       return;
     }
     
@@ -152,8 +154,14 @@ const NotificationsDropdown = () => {
       return;
     }
     
-    const unreadNotifications = notifications.filter(
-      msg => Array.isArray(msg.read_by) && !msg.read_by.includes(user.id)
+    // Ensure we're working with properly structured data
+    const normalizedNotifications = notifications.map(notification => ({
+      ...notification,
+      read_by: Array.isArray(notification.read_by) ? notification.read_by : []
+    }));
+    
+    const unreadNotifications = normalizedNotifications.filter(
+      msg => !msg.read_by.includes(user.id)
     );
     
     if (unreadNotifications.length === 0) {
@@ -165,23 +173,31 @@ const NotificationsDropdown = () => {
       console.log("Clearing notifications:", unreadNotifications.length);
       
       let successCount = 0;
+      let updatedMessages = [...normalizedNotifications];
       
       for (const notification of unreadNotifications) {
-        const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+        // Skip if notification is already marked as read
+        if (notification.read_by.includes(user.id)) continue;
         
-        if (!currentReadBy.includes(user.id)) {
-          const updatedReadBy = [...currentReadBy, user.id];
+        // Create updated read_by array with user.id added
+        const updatedReadBy = [...notification.read_by, user.id];
+        
+        // Update in Supabase
+        const { error } = await supabase
+          .from('team_messages')
+          .update({ read_by: updatedReadBy })
+          .eq('id', notification.id);
+        
+        if (error) {
+          console.error(`Error updating notification ${notification.id}:`, error);
+        } else {
+          console.log(`Successfully updated notification ${notification.id}`);
+          successCount++;
           
-          const { error } = await supabase
-            .from('team_messages')
-            .update({ read_by: updatedReadBy })
-            .eq('id', notification.id);
-          
-          if (error) {
-            console.error(`Error updating notification ${notification.id}:`, error);
-          } else {
-            successCount++;
-          }
+          // Update the message in our local array
+          updatedMessages = updatedMessages.map(msg => 
+            msg.id === notification.id ? { ...msg, read_by: updatedReadBy } : msg
+          );
         }
       }
       
@@ -191,22 +207,15 @@ const NotificationsDropdown = () => {
         return;
       }
       
-      await refetchMentions();
-      
-      const updatedNotifications = notifications.map(notification => {
-        if (!notification.read_by.includes(user.id)) {
-          return {
-            ...notification,
-            read_by: [...notification.read_by, user.id]
-          };
-        }
-        return notification;
-      });
-      
-      setNotifications(updatedNotifications);
+      // Update local state with the updated messages
+      setNotifications(updatedMessages);
       setHasUnread(false);
       
-      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+      // Update the query cache
+      queryClient.setQueryData(['mentionedMessages', user.id], updatedMessages);
+      
+      // Force a refetch to ensure our data is in sync with the server
+      await queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
       
       console.log(`Successfully cleared ${successCount} notifications`);
       toast.success('All notifications cleared');
