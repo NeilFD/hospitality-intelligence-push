@@ -76,7 +76,7 @@ const TeamDashboard: React.FC = () => {
                 <div className="bg-indigo-100 rounded-full p-1">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <span>Share quick updates</span>
+                <span>Chat with the team</span>
               </li>
               <li className="flex items-center gap-2">
                 <div className="bg-indigo-100 rounded-full p-1">
