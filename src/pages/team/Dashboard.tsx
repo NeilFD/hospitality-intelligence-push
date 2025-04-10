@@ -51,7 +51,7 @@ const Dashboard: React.FC = () => {
             
             <TabsContent value="chat">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
-                <h1 className="text-3xl font-bold mb-2">Team Chat</h1>
+                <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Chat</h1>
                 <p className="text-gray-600">
                   Real-time messaging with your team members.
                 </p>
