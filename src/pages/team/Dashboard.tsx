@@ -34,7 +34,7 @@ const Dashboard: React.FC = () => {
               <TabsTrigger value="noticeboard" className="text-base font-medium text-slate-900">
                 <Clipboard className="w-4 h-4 mr-2" /> Noticeboard
               </TabsTrigger>
-              <TabsTrigger value="chat" className="text-base font-medium">
+              <TabsTrigger value="chat" className="text-base font-medium text-slate-900">
                 <MessageSquare className="w-4 h-4 mr-2" /> Team Chat
               </TabsTrigger>
             </TabsList>
