@@ -6,8 +6,13 @@ import { motion } from 'framer-motion';
 
 export default function Login() {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#48495E] via-[#38394E] to-[#2C2D3E] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div 
+      className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" 
+      style={{ 
+        backgroundImage: `url('/lovable-uploads/c33b3b89-d14c-4429-ba4f-a3282b9afe1b.png')` 
+      }}
+    >
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-xl">
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
