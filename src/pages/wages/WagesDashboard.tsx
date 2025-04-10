@@ -5,6 +5,9 @@ import { WagesMonthlyTable } from '@/components/wages/WagesMonthlyTable';
 import { WagesAnalytics } from '@/components/wages/WagesAnalytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MonthYearSelector } from '@/components/wages/MonthYearSelector';
+import { Button } from '@/components/ui/button';
+import { TrendingUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function WagesDashboard() {
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
@@ -12,7 +15,18 @@ export default function WagesDashboard() {
 
   return (
     <div className="container py-6 max-w-[1400px] mx-auto">
-      <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center">Wages Tracker Dashboard</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+        <h1 className="text-3xl font-bold text-tavern-blue mb-4 md:mb-0">Wages Tracker Dashboard</h1>
+        
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" className="flex items-center gap-2" asChild>
+            <Link to="/performance/wage-optimization">
+              <TrendingUp className="h-4 w-4 text-tavern-blue" />
+              <span>Advanced Wage Optimization</span>
+            </Link>
+          </Button>
+        </div>
+      </div>
       
       <div className="mb-6">
         <MonthYearSelector 
