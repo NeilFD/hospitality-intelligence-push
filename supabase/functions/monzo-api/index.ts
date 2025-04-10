@@ -43,7 +43,7 @@ serve(async (req) => {
     if (!MONZO_ACCESS_TOKEN) {
       console.error("Monzo access token not configured");
       return new Response(
-        JSON.stringify({ error: "Monzo access token not configured" }),
+        JSON.stringify({ error: "Monzo access token not configured", message: "Please add MONZO_ACCESS_TOKEN to your Supabase secrets" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
@@ -112,10 +112,18 @@ serve(async (req) => {
     const data = await response.json();
     console.log(`Monzo API response status: ${response.status}`);
     
-    // Pass through the response status
+    if (!response.ok) {
+      console.error(`Monzo API error (${response.status}):`, data);
+      return new Response(
+        JSON.stringify({ error: "Monzo API error", details: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: response.status }
+      );
+    }
+    
+    // Return successful response
     return new Response(
       JSON.stringify(data),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: response.status }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
     
   } catch (error) {
