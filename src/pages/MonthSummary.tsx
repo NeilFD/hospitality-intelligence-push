@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,73 +91,70 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
       }
 
       try {
-        let monthRev = 0;
-        let monthCost = 0;
+        // Initialize weekly totals
+        const weekTotals: Record<number, { revenue: number, costs: number }> = {};
         
-        // Initialize the week summaries with zeros for all 5 weeks
-        const allWeeks = generateAllWeeksForMonth();
-        const weekSummaries: Record<number, WeekSummary> = {};
-        allWeeks.forEach(week => {
-          weekSummaries[week.weekNumber] = week;
-        });
-        
-        console.log(`Processing tracker data for ${moduleType}:`, trackerData);
-        
-        // IMPORTANT: Use direct approach to ensure correct week revenues and costs
         for (const day of trackerData) {
           const weekNumber = day.week_number || 1;
+          
+          // Initialize this week if needed
+          if (!weekTotals[weekNumber]) {
+            weekTotals[weekNumber] = { revenue: 0, costs: 0 };
+          }
+          
+          // Add revenue
           const dayRevenue = Number(day.revenue) || 0;
+          weekTotals[weekNumber].revenue += dayRevenue;
           
-          // Add revenue to the appropriate week
-          if (!weekSummaries[weekNumber]) {
-            weekSummaries[weekNumber] = {
-              weekNumber,
-              revenue: 0,
-              costs: 0,
-              gp: 0
-            };
-          }
+          // Get costs for this day
+          const purchases = await fetchTrackerPurchases(day.id);
+          const purchasesAmount = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
           
-          weekSummaries[weekNumber].revenue += dayRevenue;
-          monthRev += dayRevenue;
+          const creditNotes = await fetchTrackerCreditNotes(day.id);
+          const creditNotesAmount = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
           
-          // Calculate costs for this day
-          try {
-            const purchases = await fetchTrackerPurchases(day.id);
-            const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-            
-            const creditNotes = await fetchTrackerCreditNotes(day.id);
-            const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
-            
-            const staffFood = Number(day.staff_food_allowance) || 0;
-            
-            const netDayCosts = dayCosts - dayCreditNotes + staffFood;
-            weekSummaries[weekNumber].costs += netDayCosts;
-            monthCost += netDayCosts;
-            
-            console.log(`Week ${weekNumber}, Day ${day.date}: Revenue = ${dayRevenue}, Costs = ${netDayCosts}`);
-          } catch (error) {
-            console.error(`Error fetching purchase data for day ${day.date}:`, error);
-          }
+          const staffFood = Number(day.staff_food_allowance) || 0;
+          const dayCosts = purchasesAmount - creditNotesAmount + staffFood;
+          
+          weekTotals[weekNumber].costs += dayCosts;
+          
+          console.log(`Week ${weekNumber}, Day ${day.date}: Revenue = ${dayRevenue}, Costs = ${dayCosts}`);
         }
         
-        // Calculate GP for each week
-        for (const weekNum in weekSummaries) {
-          const week = weekSummaries[weekNum];
-          week.gp = calculateGP(week.revenue, week.costs);
+        // Calculate GP and build weekly data array
+        let monthRevenue = 0;
+        let monthCosts = 0;
+        const weeklyDataArray: WeekSummary[] = [];
+        
+        // Make sure we have all 5 weeks in the month
+        const allWeeks = generateAllWeeksForMonth();
+        
+        // Fill in the data we have
+        for (let i = 1; i <= 5; i++) {
+          const weekData = weekTotals[i] || { revenue: 0, costs: 0 };
+          const weekRevenue = weekData.revenue;
+          const weekCosts = weekData.costs;
+          
+          monthRevenue += weekRevenue;
+          monthCosts += weekCosts;
+          
+          weeklyDataArray.push({
+            weekNumber: i,
+            revenue: weekRevenue,
+            costs: weekCosts,
+            gp: calculateGP(weekRevenue, weekCosts)
+          });
+          
+          console.log(`Week ${i} Summary - Revenue: ${weekRevenue}, Costs: ${weekCosts}`);
         }
         
-        // Convert week summaries to array and sort by week number
-        const weeklyDataArray = Object.values(weekSummaries).sort((a, b) => a.weekNumber - b.weekNumber);
-        
-        console.log(`Total ${moduleType} revenue from tracker:`, monthRev);
-        console.log(`Total ${moduleType} cost from tracker:`, monthCost);
-        console.log('Weekly breakdown:', weeklyDataArray);
+        console.log(`Total monthly revenue from tracker: ${monthRevenue}`);
+        console.log(`Total monthly costs from tracker: ${monthCosts}`);
         
         setWeeklyData(weeklyDataArray);
-        setTotalRevenue(monthRev);
-        setTotalCosts(monthCost);
-        setGpPercentage(calculateGP(monthRev, monthCost));
+        setTotalRevenue(monthRevenue);
+        setTotalCosts(monthCosts);
+        setGpPercentage(calculateGP(monthRevenue, monthCosts));
       } catch (error) {
         console.error("Error calculating from tracker data:", error);
         calculateFromLocalStore();
