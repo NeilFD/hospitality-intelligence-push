@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 const NotificationsDropdown = () => {
   const [hasUnread, setHasUnread] = useState(false);
   const [notifications, setNotifications] = useState<TeamMessage[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -138,6 +139,7 @@ const NotificationsDropdown = () => {
       setHasUnread(stillHasUnread);
     }
     
+    setIsOpen(false);
     navigate(`/team/chat?room=${message.room_id}`);
   };
   
@@ -159,7 +161,7 @@ const NotificationsDropdown = () => {
         return !readBy.includes(user.id);
       });
       
-      console.log(`Found ${unreadNotifications.length} unread notifications`);
+      console.log(`Found ${unreadNotifications.length} unread notifications to clear`);
       
       if (unreadNotifications.length === 0) {
         console.log("No unread notifications to clear");
@@ -167,6 +169,7 @@ const NotificationsDropdown = () => {
       }
       
       let successCount = 0;
+      let updatedNotifications = [...notifications]; // Create a copy of notifications for updates
       
       for (const notification of unreadNotifications) {
         try {
@@ -188,12 +191,11 @@ const NotificationsDropdown = () => {
               console.log(`Successfully marked notification ${notification.id} as read`);
               successCount++;
               
-              setNotifications(prev => 
-                prev.map(msg => 
-                  msg.id === notification.id 
-                    ? { ...msg, read_by: updatedReadBy } 
-                    : msg
-                )
+              // Update the notification in our copy
+              updatedNotifications = updatedNotifications.map(n => 
+                n.id === notification.id 
+                  ? { ...n, read_by: updatedReadBy } 
+                  : n
               );
             }
           }
@@ -202,6 +204,10 @@ const NotificationsDropdown = () => {
         }
       }
       
+      // Update the state with all changes at once
+      setNotifications(updatedNotifications);
+      setHasUnread(false);
+      
       if (successCount === 0) {
         console.log("Failed to clear any notifications");
         toast.error('Failed to clear notifications');
@@ -209,11 +215,11 @@ const NotificationsDropdown = () => {
         console.log(`Successfully cleared ${successCount} notifications`);
         toast.success('All notifications cleared');
         
-        setHasUnread(false);
+        // Update the cache data directly
+        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
         
-        queryClient.setQueryData(['mentionedMessages', user.id], notifications);
-        
-        await queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+        // Also refetch to ensure everything is in sync with the database
+        await refetchMentions();
       }
     } catch (error) {
       console.error('Error clearing notifications:', error);
@@ -247,7 +253,7 @@ const NotificationsDropdown = () => {
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative p-0 h-auto bg-transparent hover:bg-transparent">
           <Bell className="h-5 w-5 text-tavern-blue" />
