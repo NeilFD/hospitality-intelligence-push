@@ -176,7 +176,9 @@ const NotificationsDropdown = () => {
       setNotifications(updatedNotifications);
       setHasUnread(false);
       
-      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+      if (user.id) {
+        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+      }
       
       await queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
       await refetchMentions();
