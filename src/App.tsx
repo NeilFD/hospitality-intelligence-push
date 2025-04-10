@@ -23,6 +23,9 @@ import TeamDashboard from "./pages/team/Dashboard";
 import Noticeboard from "./pages/team/Noticeboard";
 import Chat from "./pages/team/Chat";
 import Knowledge from "./pages/team/Knowledge";
+import MasterDashboard from "./pages/master/Dashboard";
+import WeeklyInput from "./pages/master/WeeklyInput";
+import MonthSummary from "./pages/master/MonthSummary";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -61,6 +64,11 @@ function App() {
             
             {/* Performance Routes */}
             <Route path="/performance/dashboard" element={<RequireAuth><Layout><PerformanceDashboard /></Layout></RequireAuth>} />
+            
+            {/* Master Routes */}
+            <Route path="/master/dashboard" element={<RequireAuth><Layout><MasterDashboard /></Layout></RequireAuth>} />
+            <Route path="/master/week/:year/:month/:week" element={<RequireAuth><Layout><WeeklyInput /></Layout></RequireAuth>} />
+            <Route path="/master/month/:year/:month" element={<RequireAuth><Layout><MonthSummary /></Layout></RequireAuth>} />
             
             {/* Team Routes */}
             <Route path="/team/dashboard" element={<RequireAuth><Layout><TeamDashboard /></Layout></RequireAuth>} />
