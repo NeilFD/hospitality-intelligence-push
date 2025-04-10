@@ -602,6 +602,119 @@ export type Database = {
         }
         Relationships: []
       }
+      team_poll_options: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          id: string
+          option_order: number
+          option_text: string
+          option_type: Database["public"]["Enums"]["poll_option_type"]
+          poll_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          option_order?: number
+          option_text: string
+          option_type?: Database["public"]["Enums"]["poll_option_type"]
+          poll_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          option_order?: number
+          option_text?: string
+          option_type?: Database["public"]["Enums"]["poll_option_type"]
+          poll_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_poll_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "team_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_id: string
+          poll_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_id: string
+          poll_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_id?: string
+          poll_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_poll_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "team_poll_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "team_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_polls: {
+        Row: {
+          active: boolean
+          author_id: string
+          color: string | null
+          created_at: string
+          id: string
+          multiple_choice: boolean
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          author_id: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          multiple_choice?: boolean
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          author_id?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          multiple_choice?: boolean
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tracker_credit_notes: {
         Row: {
           amount: number
@@ -967,6 +1080,7 @@ export type Database = {
     Enums: {
       message_type: "text" | "image" | "voice" | "gif" | "file"
       module_type: "food" | "beverage" | "pl" | "wages" | "performance"
+      poll_option_type: "text" | "image"
       user_role: "Owner" | "Head Chef" | "Staff"
     }
     CompositeTypes: {
@@ -1085,6 +1199,7 @@ export const Constants = {
     Enums: {
       message_type: ["text", "image", "voice", "gif", "file"],
       module_type: ["food", "beverage", "pl", "wages", "performance"],
+      poll_option_type: ["text", "image"],
       user_role: ["Owner", "Head Chef", "Staff"],
     },
   },
