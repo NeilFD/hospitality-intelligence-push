@@ -154,12 +154,13 @@ const NotificationsDropdown = () => {
       return;
     }
     
-    // Ensure we're working with properly structured data
+    // Make a defensive copy of notifications to avoid mutation issues
     const normalizedNotifications = notifications.map(notification => ({
       ...notification,
       read_by: Array.isArray(notification.read_by) ? notification.read_by : []
     }));
     
+    // Only process notifications that are actually unread
     const unreadNotifications = normalizedNotifications.filter(
       msg => !msg.read_by.includes(user.id)
     );
@@ -172,15 +173,19 @@ const NotificationsDropdown = () => {
     try {
       console.log("Clearing notifications:", unreadNotifications.length);
       
+      // Track successful updates and modified notifications
       let successCount = 0;
-      let updatedMessages = [...normalizedNotifications];
+      let updatedMessages = [...normalizedNotifications]; // Start with all messages
       
+      // Process each unread notification
       for (const notification of unreadNotifications) {
-        // Skip if notification is already marked as read
-        if (notification.read_by.includes(user.id)) continue;
-        
         // Create updated read_by array with user.id added
         const updatedReadBy = [...notification.read_by, user.id];
+        
+        console.log(`Updating notification ${notification.id} read_by:`, {
+          before: notification.read_by,
+          after: updatedReadBy
+        });
         
         // Update in Supabase
         const { error } = await supabase
@@ -201,6 +206,7 @@ const NotificationsDropdown = () => {
         }
       }
       
+      // If we didn't successfully update any notifications, show an error
       if (successCount === 0) {
         console.log("Failed to clear any notifications");
         toast.error('Failed to clear notifications');
@@ -208,13 +214,16 @@ const NotificationsDropdown = () => {
       }
       
       // Update local state with the updated messages
+      console.log("Updating local notification state:", updatedMessages);
       setNotifications(updatedMessages);
       setHasUnread(false);
       
       // Update the query cache
+      console.log("Updating query cache");
       queryClient.setQueryData(['mentionedMessages', user.id], updatedMessages);
       
       // Force a refetch to ensure our data is in sync with the server
+      console.log("Invalidating queries to refresh data");
       await queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
       
       console.log(`Successfully cleared ${successCount} notifications`);

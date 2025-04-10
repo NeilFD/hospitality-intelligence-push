@@ -1,5 +1,5 @@
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 
 const NotificationsToaster = () => {
   return <Toaster position="top-right" closeButton />;
