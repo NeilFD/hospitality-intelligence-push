@@ -281,6 +281,10 @@ const TeamChat: React.FC = () => {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const voiceRecorderRef = useRef<MediaRecorder | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   
   // Get available chat rooms
   const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
@@ -380,6 +384,182 @@ const TeamChat: React.FC = () => {
     setSelectedRoomId(roomId);
   };
   
+  // Handle image upload
+  const handleImageUpload = () => {
+    // Create a hidden file input and trigger it
+    if (!fileInputRef.current) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.display = 'none';
+      input.onchange = async (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        
+        if (file && user && selectedRoomId) {
+          try {
+            setIsSubmitting(true);
+            toast.loading('Uploading image...');
+            
+            // Upload the file to storage
+            const attachmentUrl = await uploadTeamFile(file, 'messages');
+            
+            // Create a message with the image URL
+            await createMessageMutation.mutateAsync({
+              content: messageText,
+              author_id: user.id,
+              type: 'image',
+              attachment_url: attachmentUrl,
+              room_id: selectedRoomId,
+              read_by: [user.id]
+            });
+            
+            setMessageText('');
+            toast.dismiss();
+            toast.success('Image sent');
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Failed to upload image');
+          } finally {
+            setIsSubmitting(false);
+          }
+        }
+      };
+      document.body.appendChild(input);
+      input.click();
+      document.body.removeChild(input);
+    } else {
+      fileInputRef.current.click();
+    }
+  };
+  
+  // Handle voice recording
+  const handleVoiceRecording = async () => {
+    if (isRecording) {
+      // Stop recording
+      if (voiceRecorderRef.current) {
+        voiceRecorderRef.current.stop();
+      }
+    } else {
+      try {
+        // Start recording
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+        
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+            setAudioChunks([...chunks]);
+          }
+        };
+        
+        recorder.onstop = async () => {
+          setIsRecording(false);
+          
+          // Convert chunks to audio file
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioFile = new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' });
+          
+          if (user && selectedRoomId) {
+            try {
+              setIsSubmitting(true);
+              toast.loading('Uploading voice message...');
+              
+              // Upload the audio file
+              const attachmentUrl = await uploadTeamFile(audioFile, 'messages');
+              
+              // Create a message with the audio URL
+              await createMessageMutation.mutateAsync({
+                content: messageText,
+                author_id: user.id,
+                type: 'voice',
+                attachment_url: attachmentUrl,
+                room_id: selectedRoomId,
+                read_by: [user.id]
+              });
+              
+              setMessageText('');
+              setAudioChunks([]);
+              toast.dismiss();
+              toast.success('Voice message sent');
+            } catch (error) {
+              console.error('Error uploading voice message:', error);
+              toast.error('Failed to upload voice message');
+            } finally {
+              setIsSubmitting(false);
+            }
+          }
+          
+          // Stop all tracks
+          stream.getTracks().forEach(track => track.stop());
+        };
+        
+        voiceRecorderRef.current = recorder;
+        recorder.start();
+        setIsRecording(true);
+        toast.info('Recording voice message... Click again to stop.');
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        toast.error('Could not access microphone');
+      }
+    }
+  };
+  
+  // Handle file upload
+  const handleFileUpload = () => {
+    // Create a hidden file input and trigger it
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.style.display = 'none';
+    input.onchange = async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      
+      if (file && user && selectedRoomId) {
+        try {
+          setIsSubmitting(true);
+          toast.loading('Uploading file...');
+          
+          // Upload the file to storage
+          const attachmentUrl = await uploadTeamFile(file, 'messages');
+          
+          // Create a message with the file URL
+          await createMessageMutation.mutateAsync({
+            content: messageText || `File: ${file.name}`,
+            author_id: user.id,
+            type: 'file',
+            attachment_url: attachmentUrl,
+            room_id: selectedRoomId,
+            read_by: [user.id]
+          });
+          
+          setMessageText('');
+          toast.dismiss();
+          toast.success('File sent');
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          toast.error('Failed to upload file');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    };
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+  };
+  
+  // Handle member mention
+  const handleMemberMention = () => {
+    const availableMembers = teamMembers.map(member => 
+      `@${member.first_name} ${member.last_name}`
+    ).join(', ');
+    
+    toast.info(`Available members to mention: ${availableMembers}`);
+    setMessageText(prev => prev + '@');
+  };
+  
   return (
     <div className="flex h-[calc(100vh-120px)]">
       <ChatRoomSidebar 
@@ -455,6 +635,7 @@ const TeamChat: React.FC = () => {
                   size="sm" 
                   className="text-gray-500 hover:text-gray-700 px-2" 
                   title="Add image"
+                  onClick={handleImageUpload}
                 >
                   <Image className="h-4 w-4 mr-1" />
                   <span className="text-xs">Image</span>
@@ -462,17 +643,19 @@ const TeamChat: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-500 hover:text-gray-700 px-2" 
-                  title="Record voice"
+                  className={`text-gray-500 hover:text-gray-700 px-2 ${isRecording ? 'bg-red-100' : ''}`}
+                  title={isRecording ? "Stop recording" : "Record voice"}
+                  onClick={handleVoiceRecording}
                 >
-                  <Mic className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Voice</span>
+                  <Mic className={`h-4 w-4 mr-1 ${isRecording ? 'text-red-500' : ''}`} />
+                  <span className="text-xs">{isRecording ? 'Stop' : 'Voice'}</span>
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   className="text-gray-500 hover:text-gray-700 px-2" 
                   title="Attach file"
+                  onClick={handleFileUpload}
                 >
                   <Paperclip className="h-4 w-4 mr-1" />
                   <span className="text-xs">File</span>
@@ -482,6 +665,7 @@ const TeamChat: React.FC = () => {
                   size="sm" 
                   className="text-gray-500 hover:text-gray-700 px-2" 
                   title="Mention"
+                  onClick={handleMemberMention}
                 >
                   <AtSign className="h-4 w-4 mr-1" />
                   <span className="text-xs">Mention</span>
@@ -491,8 +675,48 @@ const TeamChat: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Hidden file input for image uploads */}
+      <input 
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept="image/*"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file && user && selectedRoomId) {
+            try {
+              setIsSubmitting(true);
+              toast.loading('Uploading image...');
+              
+              // Upload the file to storage
+              const attachmentUrl = await uploadTeamFile(file, 'messages');
+              
+              // Create a message with the image URL
+              await createMessageMutation.mutateAsync({
+                content: messageText,
+                author_id: user.id,
+                type: 'image',
+                attachment_url: attachmentUrl,
+                room_id: selectedRoomId,
+                read_by: [user.id]
+              });
+              
+              setMessageText('');
+              toast.dismiss();
+              toast.success('Image sent');
+            } catch (error) {
+              console.error('Error uploading image:', error);
+              toast.error('Failed to upload image');
+            } finally {
+              setIsSubmitting(false);
+            }
+          }
+        }}
+      />
     </div>
   );
 };
 
 export default TeamChat;
+
