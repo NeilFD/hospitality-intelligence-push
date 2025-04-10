@@ -10,6 +10,7 @@ import { useAuthStore } from '@/services/auth-service';
 import { formatCurrency, calculateGP } from '@/lib/date-utils';
 import { sendWebhookRequest } from '@/services/conversation-service';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -344,12 +345,13 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
               bevMonth.weeks.forEach(week => {
                 if (week.days) {
                   week.days.forEach(day => {
-                    if (day.purchases) {
-                      const dayPurchases = Object.values(day.purchases).reduce(
-                        (sum, amount) => sum + Number(amount), 0
-                      );
-                      totalCost += dayPurchases;
-                    }
+                    const dayPurchases = day.purchases ? 
+                      Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                    
+                    const creditNotes = day.creditNotes ? 
+                      day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
+                    
+                    totalCost += dayPurchases - creditNotes + (day.staffFoodAllowance || 0);
                   });
                 }
               });
