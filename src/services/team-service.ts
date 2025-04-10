@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -77,17 +78,26 @@ export interface ChatRoom {
 }
 
 export const getTeamMembers = async (): Promise<UserProfile[]> => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*');
+  try {
+    // Explicitly query all profiles with no filters
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*');
     
-  if (error) {
-    console.error('Error fetching team members:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching team members:', error);
+      throw error;
+    }
+    
+    // Log the number of profiles found for debugging
+    console.log('Team members fetched:', data?.length || 0, 'profiles found');
+    console.log('Team members data:', data);
+    
+    return data || [];
+  } catch (e) {
+    console.error('Exception in getTeamMembers:', e);
+    return [];
   }
-  
-  console.log('Team members fetched:', data?.length || 0, 'profiles found');
-  return data || [];
 };
 
 export const getNotes = async (): Promise<TeamNote[]> => {

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,8 +14,10 @@ const TeamDashboard: React.FC = () => {
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
+        setIsLoading(true);
         const members = await getTeamMembers();
         console.log('Team members in component:', members.length);
+        console.log('Team members details:', members);
         setTeamMembers(members);
       } catch (error) {
         console.error("Error fetching team members:", error);
@@ -38,7 +39,6 @@ const TeamDashboard: React.FC = () => {
         </p>
       </div>
       
-      {/* Team Members Section */}
       <div className="mb-8 bg-white rounded-lg border border-gray-100 shadow p-4">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <Users className="h-5 w-5 text-indigo-600" />
@@ -79,7 +79,6 @@ const TeamDashboard: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Noticeboard Card */}
         <Card className="border border-blue-100 shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg border-b border-blue-100">
             <div className="flex items-center gap-3">
@@ -123,7 +122,6 @@ const TeamDashboard: React.FC = () => {
           </CardFooter>
         </Card>
         
-        {/* Team Chat Card */}
         <Card className="border border-indigo-100 shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-lg border-b border-indigo-100">
             <div className="flex items-center gap-3">
@@ -167,7 +165,6 @@ const TeamDashboard: React.FC = () => {
           </CardFooter>
         </Card>
         
-        {/* Team Knowledge Card - NEW */}
         <Card className="border border-amber-100 shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-lg border-b border-amber-100">
             <div className="flex items-center gap-3">
