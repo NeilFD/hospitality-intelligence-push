@@ -4,16 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { PlusCircle, Pin, Trash2, Image, Mic, Smile, BarChart2 } from 'lucide-react';
-import { 
-  TeamNote, 
-  getNotes, 
-  createNote, 
-  updateNote, 
-  deleteNote, 
-  uploadTeamFile, 
-  getTeamMembers,
-  getPolls 
-} from '@/services/team-service';
+import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile, getTeamMembers, getPolls } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,23 +12,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamPollCard from './TeamPoll';
 import CreatePollForm from './CreatePollForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
 interface StickyNoteProps {
   note: TeamNote;
   onUpdate: (id: string, updates: Partial<TeamNote>) => void;
   onDelete: (id: string) => void;
   authorName?: string;
 }
-
-const NOTE_COLORS = [
-  'bg-yellow-100/70 hover:bg-yellow-200/80 backdrop-blur-sm border border-yellow-200/50', 
-  'bg-pink-100/70 hover:bg-pink-200/80 backdrop-blur-sm border border-pink-200/50', 
-  'bg-blue-100/70 hover:bg-blue-200/80 backdrop-blur-sm border border-blue-200/50', 
-  'bg-green-100/70 hover:bg-green-200/80 backdrop-blur-sm border border-green-200/50', 
-  'bg-purple-100/70 hover:bg-purple-200/80 backdrop-blur-sm border border-purple-200/50', 
-  'bg-orange-100/70 hover:bg-orange-200/80 backdrop-blur-sm border border-orange-200/50'
-];
-
+const NOTE_COLORS = ['bg-yellow-100/70 hover:bg-yellow-200/80 backdrop-blur-sm border border-yellow-200/50', 'bg-pink-100/70 hover:bg-pink-200/80 backdrop-blur-sm border border-pink-200/50', 'bg-blue-100/70 hover:bg-blue-200/80 backdrop-blur-sm border border-blue-200/50', 'bg-green-100/70 hover:bg-green-200/80 backdrop-blur-sm border border-green-200/50', 'bg-purple-100/70 hover:bg-purple-200/80 backdrop-blur-sm border border-purple-200/50', 'bg-orange-100/70 hover:bg-orange-200/80 backdrop-blur-sm border border-orange-200/50'];
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
   onUpdate,
@@ -45,13 +26,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   authorName
 }) => {
   const glassStyle = "bg-opacity-60 backdrop-filter backdrop-blur-sm shadow-lg border border-opacity-30";
-  
-  return (
-    <div className={`${note.color || NOTE_COLORS[0]} ${glassStyle} rounded-lg p-4 transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
+  return <div className={`${note.color || NOTE_COLORS[0]} ${glassStyle} rounded-lg p-4 transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
       <div className="flex justify-between items-start mb-2">
         <Button variant="ghost" size="icon" className={`h-6 w-6 ${note.pinned ? 'text-amber-600' : 'text-gray-400'}`} onClick={() => onUpdate(note.id, {
-          pinned: !note.pinned
-        })}>
+        pinned: !note.pinned
+      })}>
           <Pin size={16} />
         </Button>
         <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-red-500" onClick={() => onDelete(note.id)}>
@@ -61,59 +40,35 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       
       <div className="flex-grow">
         {note.type === 'text' && <p className="font-['Special_Elite'] text-gray-800 whitespace-pre-wrap">{note.content}</p>}
-        {note.type === 'image' && (
-          <div className="flex flex-col space-y-2">
+        {note.type === 'image' && <div className="flex flex-col space-y-2">
             <p className="font-['Special_Elite'] text-gray-800 mb-2">{note.content}</p>
-            {note.attachment_url && (
-              <img 
-                src={note.attachment_url} 
-                alt="Note attachment" 
-                className="rounded-md w-full h-auto object-cover" 
-                onError={(e) => {
-                  console.error("Image failed to load:", note.attachment_url);
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-            )}
-          </div>
-        )}
-        {note.type === 'gif' && (
-          <div className="flex flex-col space-y-2">
+            {note.attachment_url && <img src={note.attachment_url} alt="Note attachment" className="rounded-md w-full h-auto object-cover" onError={e => {
+          console.error("Image failed to load:", note.attachment_url);
+          (e.target as HTMLImageElement).src = '/placeholder.svg';
+        }} />}
+          </div>}
+        {note.type === 'gif' && <div className="flex flex-col space-y-2">
             <p className="font-['Special_Elite'] text-gray-800 mb-2">{note.content}</p>
-            {note.attachment_url && (
-              <img 
-                src={note.attachment_url} 
-                alt="GIF" 
-                className="rounded-md w-full h-auto" 
-                onError={(e) => {
-                  console.error("GIF failed to load:", note.attachment_url);
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-            )}
-          </div>
-        )}
-        {note.type === 'voice' && (
-          <div className="flex flex-col space-y-2">
+            {note.attachment_url && <img src={note.attachment_url} alt="GIF" className="rounded-md w-full h-auto" onError={e => {
+          console.error("GIF failed to load:", note.attachment_url);
+          (e.target as HTMLImageElement).src = '/placeholder.svg';
+        }} />}
+          </div>}
+        {note.type === 'voice' && <div className="flex flex-col space-y-2">
             <p className="font-['Special_Elite'] text-gray-800 mb-2">{note.content}</p>
-            {note.attachment_url && (
-              <audio controls className="w-full mt-2">
+            {note.attachment_url && <audio controls className="w-full mt-2">
                 <source src={note.attachment_url} type="audio/mpeg" />
                 Your browser does not support the audio element.
-              </audio>
-            )}
-          </div>
-        )}
+              </audio>}
+          </div>}
       </div>
       
       <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
         <span>{new Date(note.created_at).toLocaleDateString()}</span>
         {authorName && <span className="italic">- {authorName}</span>}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 const CreateNoteForm: React.FC<{
   onClose: () => void;
 }> = ({
@@ -225,13 +180,11 @@ const CreateNoteForm: React.FC<{
       </div>
     </form>;
 };
-
 const TeamNoticeboard: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
   const [activeTab, setActiveTab] = useState('notes');
   const queryClient = useQueryClient();
-  
   const {
     data: notes = [],
     isLoading: notesLoading
@@ -239,7 +192,6 @@ const TeamNoticeboard: React.FC = () => {
     queryKey: ['teamNotes'],
     queryFn: getNotes
   });
-  
   const {
     data: polls = [],
     isLoading: pollsLoading
@@ -247,18 +199,13 @@ const TeamNoticeboard: React.FC = () => {
     queryKey: ['teamPolls'],
     queryFn: getPolls
   });
-  
   const {
     data: teamMembers = []
   } = useQuery({
     queryKey: ['teamMembers'],
     queryFn: getTeamMembers
   });
-  
-  const userNameMap = Object.fromEntries(
-    teamMembers.map(member => [member.id, member.first_name])
-  );
-  
+  const userNameMap = Object.fromEntries(teamMembers.map(member => [member.id, member.first_name]));
   const updateNoteMutation = useMutation({
     mutationFn: ({
       id,
@@ -277,7 +224,6 @@ const TeamNoticeboard: React.FC = () => {
       toast.error(`Failed to update note: ${error.message}`);
     }
   });
-  
   const deleteNoteMutation = useMutation({
     mutationFn: (id: string) => deleteNote(id),
     onSuccess: () => {
@@ -290,50 +236,45 @@ const TeamNoticeboard: React.FC = () => {
       toast.error(`Failed to delete note: ${error.message}`);
     }
   });
-  
   const handleUpdate = (id: string, updates: Partial<TeamNote>) => {
     updateNoteMutation.mutate({
       id,
       updates
     });
   };
-  
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this note?')) {
       deleteNoteMutation.mutate(id);
     }
   };
-
   const sortedNotes = [...(notes || [])].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
-  
-  return (
-    <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
+  return <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
       <div className="container mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-slate-800">Team Noticeboard</h2>
               <TabsList className="mt-2">
-                <TabsTrigger value="notes">Notes</TabsTrigger>
+                <TabsTrigger value="notes" className="text-slate-900">Notes</TabsTrigger>
                 <TabsTrigger value="polls">Polls</TabsTrigger>
               </TabsList>
             </div>
             
             <div className="flex space-x-2">
-              <Popover open={showCreatePoll && activeTab === 'polls'} onOpenChange={(open) => setShowCreatePoll(open)}>
+              <Popover open={showCreatePoll && activeTab === 'polls'} onOpenChange={open => setShowCreatePoll(open)}>
                 <PopoverTrigger asChild>
                   <Button variant={activeTab === 'polls' ? 'default' : 'outline'} onClick={() => {
-                    if (activeTab !== 'polls') {
-                      setActiveTab('polls');
-                      setTimeout(() => setShowCreatePoll(true), 100);
-                    } else {
-                      setShowCreatePoll(true);
-                    }
-                  }}>
+                  if (activeTab !== 'polls') {
+                    setActiveTab('polls');
+                    setTimeout(() => setShowCreatePoll(true), 100);
+                  } else {
+                    setShowCreatePoll(true);
+                  }
+                }}>
                     <BarChart2 className="mr-2 h-4 w-4" />
                     New Poll
                   </Button>
@@ -343,16 +284,16 @@ const TeamNoticeboard: React.FC = () => {
                 </PopoverContent>
               </Popover>
               
-              <Popover open={showCreateForm && activeTab === 'notes'} onOpenChange={(open) => setShowCreateForm(open)}>
+              <Popover open={showCreateForm && activeTab === 'notes'} onOpenChange={open => setShowCreateForm(open)}>
                 <PopoverTrigger asChild>
                   <Button variant={activeTab === 'notes' ? 'default' : 'outline'} onClick={() => {
-                    if (activeTab !== 'notes') {
-                      setActiveTab('notes');
-                      setTimeout(() => setShowCreateForm(true), 100);
-                    } else {
-                      setShowCreateForm(true);
-                    }
-                  }}>
+                  if (activeTab !== 'notes') {
+                    setActiveTab('notes');
+                    setTimeout(() => setShowCreateForm(true), 100);
+                  } else {
+                    setShowCreateForm(true);
+                  }
+                }}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     New Note
                   </Button>
@@ -375,15 +316,7 @@ const TeamNoticeboard: React.FC = () => {
                       New Note
                     </Button>
                   </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {sortedNotes.map(note => (
-                      <StickyNote 
-                        key={note.id} 
-                        note={note} 
-                        onUpdate={handleUpdate} 
-                        onDelete={handleDelete}
-                        authorName={userNameMap[note.author_id]} 
-                      />
-                    ))}
+                    {sortedNotes.map(note => <StickyNote key={note.id} note={note} onUpdate={handleUpdate} onDelete={handleDelete} authorName={userNameMap[note.author_id]} />)}
                   </div>}
               </>}
           </TabsContent>
@@ -399,20 +332,12 @@ const TeamNoticeboard: React.FC = () => {
                       New Poll
                     </Button>
                   </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {polls.map(poll => (
-                      <TeamPollCard 
-                        key={poll.id} 
-                        poll={poll} 
-                        authorName={userNameMap[poll.author_id]} 
-                      />
-                    ))}
+                    {polls.map(poll => <TeamPollCard key={poll.id} poll={poll} authorName={userNameMap[poll.author_id]} />)}
                   </div>}
               </>}
           </TabsContent>
         </Tabs>
       </div>
-    </ScrollArea>
-  );
+    </ScrollArea>;
 };
-
 export default TeamNoticeboard;
