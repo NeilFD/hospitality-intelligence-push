@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -154,80 +153,68 @@ const NotificationsDropdown = () => {
       return;
     }
     
-    // Make a defensive copy of notifications to avoid mutation issues
-    const normalizedNotifications = notifications.map(notification => ({
-      ...notification,
-      read_by: Array.isArray(notification.read_by) ? notification.read_by : []
-    }));
-    
-    // Only process notifications that are actually unread
-    const unreadNotifications = normalizedNotifications.filter(
-      msg => !msg.read_by.includes(user.id)
-    );
-    
-    if (unreadNotifications.length === 0) {
-      console.log("No unread notifications to clear");
-      return;
-    }
-    
     try {
-      console.log("Clearing notifications:", unreadNotifications.length);
+      const unreadNotifications = notifications.filter(notification => {
+        const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+        return !readBy.includes(user.id);
+      });
       
-      // Track successful updates and modified notifications
-      let successCount = 0;
-      let updatedMessages = [...normalizedNotifications]; // Start with all messages
+      console.log(`Found ${unreadNotifications.length} unread notifications`);
       
-      // Process each unread notification
-      for (const notification of unreadNotifications) {
-        // Create updated read_by array with user.id added
-        const updatedReadBy = [...notification.read_by, user.id];
-        
-        console.log(`Updating notification ${notification.id} read_by:`, {
-          before: notification.read_by,
-          after: updatedReadBy
-        });
-        
-        // Update in Supabase
-        const { error } = await supabase
-          .from('team_messages')
-          .update({ read_by: updatedReadBy })
-          .eq('id', notification.id);
-        
-        if (error) {
-          console.error(`Error updating notification ${notification.id}:`, error);
-        } else {
-          console.log(`Successfully updated notification ${notification.id}`);
-          successCount++;
-          
-          // Update the message in our local array
-          updatedMessages = updatedMessages.map(msg => 
-            msg.id === notification.id ? { ...msg, read_by: updatedReadBy } : msg
-          );
-        }
-      }
-      
-      // If we didn't successfully update any notifications, show an error
-      if (successCount === 0) {
-        console.log("Failed to clear any notifications");
-        toast.error('Failed to clear notifications');
+      if (unreadNotifications.length === 0) {
+        console.log("No unread notifications to clear");
         return;
       }
       
-      // Update local state with the updated messages
-      console.log("Updating local notification state:", updatedMessages);
-      setNotifications(updatedMessages);
-      setHasUnread(false);
+      let successCount = 0;
       
-      // Update the query cache
-      console.log("Updating query cache");
-      queryClient.setQueryData(['mentionedMessages', user.id], updatedMessages);
+      for (const notification of unreadNotifications) {
+        try {
+          const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+          
+          if (!currentReadBy.includes(user.id)) {
+            const updatedReadBy = [...currentReadBy, user.id];
+            
+            console.log(`Updating notification ${notification.id}, adding user ${user.id} to read_by`);
+            
+            const { error } = await supabase
+              .from('team_messages')
+              .update({ read_by: updatedReadBy })
+              .eq('id', notification.id);
+              
+            if (error) {
+              console.error(`Error updating notification ${notification.id}:`, error);
+            } else {
+              console.log(`Successfully marked notification ${notification.id} as read`);
+              successCount++;
+              
+              setNotifications(prev => 
+                prev.map(msg => 
+                  msg.id === notification.id 
+                    ? { ...msg, read_by: updatedReadBy } 
+                    : msg
+                )
+              );
+            }
+          }
+        } catch (notificationError) {
+          console.error(`Error processing notification ${notification.id}:`, notificationError);
+        }
+      }
       
-      // Force a refetch to ensure our data is in sync with the server
-      console.log("Invalidating queries to refresh data");
-      await queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
-      
-      console.log(`Successfully cleared ${successCount} notifications`);
-      toast.success('All notifications cleared');
+      if (successCount === 0) {
+        console.log("Failed to clear any notifications");
+        toast.error('Failed to clear notifications');
+      } else {
+        console.log(`Successfully cleared ${successCount} notifications`);
+        toast.success('All notifications cleared');
+        
+        setHasUnread(false);
+        
+        queryClient.setQueryData(['mentionedMessages', user.id], notifications);
+        
+        await queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+      }
     } catch (error) {
       console.error('Error clearing notifications:', error);
       toast.error('Failed to clear notifications');
