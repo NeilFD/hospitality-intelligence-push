@@ -23,14 +23,14 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-4 text-center text-white/50">
+      <div className="p-4 text-center text-tavern-blue-light/50">
         Loading rooms...
       </div>
     );
   }
 
   return (
-    <div className="w-64 bg-[#283244] h-full border-r border-white/10">
+    <div className="w-64 bg-tavern-blue h-full border-r border-white/10">
       <h2 className="text-lg font-semibold p-4 border-b border-white/10 text-white">Chat Rooms</h2>
       <ScrollArea className="h-[calc(100vh-120px)]">
         <div className="p-2">
@@ -40,7 +40,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
               variant="ghost"
               className={cn(
                 "w-full justify-start mb-2 text-white/70 hover:bg-white/10 transition-colors duration-200",
-                selectedRoomId === room.id ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90" : "hover:text-white"
+                selectedRoomId === room.id ? "bg-tavern-blue-dark text-white hover:bg-tavern-blue-dark/90" : "hover:text-white"
               )}
               onClick={() => onRoomSelect(room.id)}
             >
