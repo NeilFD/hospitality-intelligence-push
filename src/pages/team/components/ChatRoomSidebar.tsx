@@ -4,14 +4,45 @@ import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Hash, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
+import { 
+  Hash, 
+  AlertCircle, 
+  ChevronRight, 
+  ChevronLeft, 
+  MessageSquare, 
+  Bell, 
+  Users, 
+  Coffee, 
+  Beer, 
+  Utensils 
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ChatRoom } from '@/services/team-service';
 
 interface ChatRoomSidebarProps {
   selectedRoomId: string;
   onRoomSelect: (roomId: string) => void;
 }
+
+const getRoomIcon = (room: ChatRoom) => {
+  if (room.is_announcement_only) return Bell;
+  
+  switch (room.slug.toLowerCase()) {
+    case 'general':
+      return MessageSquare;
+    case 'food':
+      return Utensils;
+    case 'beverage':
+      return Beer;
+    case 'team':
+      return Users;
+    case 'coffee':
+      return Coffee;
+    default:
+      return Hash;
+  }
+};
 
 const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({ 
   selectedRoomId, 
@@ -66,39 +97,42 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
       
       <ScrollArea className="h-[calc(100vh-180px)]">
         <div className="p-2 pt-5">
-          {rooms.map((room) => (
-            <Button
-              key={room.id}
-              variant="ghost"
-              className={cn(
-                "w-full justify-start mb-3 font-medium text-left px-3 py-2",
-                selectedRoomId === room.id 
-                  ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
-                  : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
-                isMobile && minimized ? "p-2" : "",
-                isMobile ? "h-12" : "h-10"
-              )}
-              onClick={() => onRoomSelect(room.id)}
-              title={room.name}
-            >
-              {room.is_announcement_only ? (
-                <AlertCircle className={cn(
-                  "h-4 w-4 mr-2", 
-                  selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark",
-                  minimized ? "mx-auto" : ""
-                )} />
-              ) : (
-                <Hash className={cn(
-                  "h-4 w-4 mr-2",
-                  selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark", 
-                  minimized ? "mx-auto" : ""
-                )} />
-              )}
-              {(!isMobile || !minimized) && (
-                <span className="truncate text-sm">{room.name}</span>
-              )}
-            </Button>
-          ))}
+          {rooms.map((room) => {
+            const RoomIcon = getRoomIcon(room);
+            return (
+              <Button
+                key={room.id}
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start mb-3 font-medium text-left px-3 py-2",
+                  selectedRoomId === room.id 
+                    ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
+                    : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
+                  isMobile && minimized ? "p-2" : "",
+                  isMobile ? "h-12" : "h-10"
+                )}
+                onClick={() => onRoomSelect(room.id)}
+                title={room.name}
+              >
+                {room.is_announcement_only ? (
+                  <AlertCircle className={cn(
+                    "h-4 w-4 mr-2", 
+                    selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark",
+                    minimized ? "mx-auto" : ""
+                  )} />
+                ) : (
+                  <RoomIcon className={cn(
+                    "h-4 w-4 mr-2",
+                    selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark", 
+                    minimized ? "mx-auto" : ""
+                  )} />
+                )}
+                {(!isMobile || !minimized) && (
+                  <span className="truncate text-sm">{room.name}</span>
+                )}
+              </Button>
+            );
+          })}
         </div>
       </ScrollArea>
 
