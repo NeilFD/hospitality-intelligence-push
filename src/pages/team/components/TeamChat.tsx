@@ -512,17 +512,17 @@ const TeamChat: React.FC = () => {
                 </Button>
               </div>
               
-              <div className="flex flex-wrap gap-1 mt-2">
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
+              <div className="flex justify-between w-full gap-1 mt-2">
+                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
                   <Image className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className={`text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
+                <Button variant="ghost" size="icon" className={`flex-1 text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
                   <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
                 </Button>
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
+                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
                   <Paperclip className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700" title="Mention" onClick={handleMemberMention}>
+                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={handleMemberMention}>
                   <AtSign className="h-5 w-5" />
                 </Button>
               </div>
