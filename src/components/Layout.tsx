@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useMemo, ReactNode } from "react";
+import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -90,10 +89,6 @@ const Layout = ({
           name: "P&L Dashboard",
           path: "/pl/dashboard",
           icon: <Home className="mr-2 h-4 w-4" />
-        }, {
-          name: "Bank",
-          path: "/pl/bank",
-          icon: <Wallet className="mr-2 h-4 w-4" />
         }];
       case 'wages':
         return [{
