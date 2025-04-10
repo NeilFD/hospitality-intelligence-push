@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -75,7 +76,7 @@ const NotificationsDropdown = () => {
         (payload) => {
           if (payload.new && (payload.new as any).author_id !== user.id) {
             refetchMentions();
-            // Always set hasUnread to true when a new mention is received
+            // Force set hasUnread to true when a new mention is received
             setHasUnread(true);
           }
         }
@@ -93,14 +94,20 @@ const NotificationsDropdown = () => {
       // Debug: Log messages to see their read_by arrays
       console.log('Mentioned messages:', mentionedMessages);
       
+      // Force cast read_by to array if it's null
+      const messagesWithReadBy = mentionedMessages.map(msg => ({
+        ...msg,
+        read_by: Array.isArray(msg.read_by) ? msg.read_by : []
+      }));
+      
       // Filter messages that haven't been read by the current user
-      const unreadMessages = mentionedMessages.filter(
-        msg => !msg.read_by || !Array.isArray(msg.read_by) || !msg.read_by.includes(user.id)
+      const unreadMessages = messagesWithReadBy.filter(
+        msg => !msg.read_by.includes(user.id)
       );
       
       console.log('Unread count:', unreadMessages.length);
       
-      setNotifications(mentionedMessages);
+      setNotifications(messagesWithReadBy);
       // Set hasUnread based on whether there are any unread messages
       setHasUnread(unreadMessages.length > 0);
     }
@@ -108,9 +115,14 @@ const NotificationsDropdown = () => {
   
   // Mark notification as read and navigate
   const handleNotificationClick = async (message: TeamMessage) => {
-    if (user && (!message.read_by || !message.read_by.includes(user.id))) {
-      // Update read_by array - ensure it's an array first
-      const updatedReadBy = Array.isArray(message.read_by) ? [...message.read_by, user.id] : [user.id];
+    if (!user) return;
+    
+    // Normalize read_by to always be an array
+    const currentReadBy = Array.isArray(message.read_by) ? message.read_by : [];
+    
+    // Only update if user hasn't read it yet
+    if (!currentReadBy.includes(user.id)) {
+      const updatedReadBy = [...currentReadBy, user.id];
       
       console.log('Marking as read:', message.id, 'Updated read_by:', updatedReadBy);
       
@@ -127,12 +139,20 @@ const NotificationsDropdown = () => {
         queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
         queryClient.invalidateQueries({ queryKey: ['teamMessages'] });
         
-        // Check if all messages are now read and update the unread indicator
-        const remainingUnread = notifications.filter(
-          msg => msg.id !== message.id && (!msg.read_by || !msg.read_by.includes(user.id))
+        // Update local state for immediate UI feedback
+        setNotifications(prev => 
+          prev.map(n => 
+            n.id === message.id 
+              ? { ...n, read_by: updatedReadBy } 
+              : n
+          )
         );
         
-        setHasUnread(remainingUnread.length > 0);
+        // Re-evaluate if there are any remaining unread messages
+        setHasUnread(notifications.some(
+          n => n.id !== message.id && 
+              (!Array.isArray(n.read_by) || !n.read_by.includes(user.id))
+        ));
       }
     }
     
@@ -183,50 +203,54 @@ const NotificationsDropdown = () => {
         <ScrollArea className="h-[300px]">
           {notifications && notifications.length > 0 ? (
             <div className="py-1">
-              {notifications.map((notification) => (
-                <Button
-                  key={notification.id}
-                  variant="ghost"
-                  className={`w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 ${
-                    user && (!notification.read_by || !notification.read_by.includes(user.id))
-                      ? 'bg-blue-50' 
-                      : ''
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    {getAuthorAvatar(notification.author_id) ? (
-                      <AvatarImage 
-                        src={getAuthorAvatar(notification.author_id)} 
-                        alt={getAuthorName(notification.author_id)} 
-                      />
-                    ) : (
-                      <AvatarFallback>
-                        {getInitials(notification.author_id)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex flex-col items-start text-left">
-                    <p className="text-xs font-medium">
-                      {getAuthorName(notification.author_id)}
-                      <span className="font-normal ml-2 text-gray-500">
-                        mentioned you
+              {notifications.map((notification) => {
+                // Force cast read_by to array if it's null
+                const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+                const isUnread = !readBy.includes(user?.id || '');
+                
+                return (
+                  <Button
+                    key={notification.id}
+                    variant="ghost"
+                    className={`w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 ${
+                      isUnread ? 'bg-blue-50' : ''
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      {getAuthorAvatar(notification.author_id) ? (
+                        <AvatarImage 
+                          src={getAuthorAvatar(notification.author_id)} 
+                          alt={getAuthorName(notification.author_id)} 
+                        />
+                      ) : (
+                        <AvatarFallback>
+                          {getInitials(notification.author_id)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="flex flex-col items-start text-left">
+                      <p className="text-xs font-medium">
+                        {getAuthorName(notification.author_id)}
+                        <span className="font-normal ml-2 text-gray-500">
+                          mentioned you
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {formatContent(notification.content)}
+                      </p>
+                      <span className="text-xs text-gray-400 mt-1">
+                        {new Date(notification.created_at).toLocaleString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </span>
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {formatContent(notification.content)}
-                    </p>
-                    <span className="text-xs text-gray-400 mt-1">
-                      {new Date(notification.created_at).toLocaleString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-                </Button>
-              ))}
+                    </div>
+                  </Button>
+                );
+              })}
             </div>
           ) : (
             <div className="py-8 text-center text-gray-500">
