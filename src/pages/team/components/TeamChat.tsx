@@ -271,15 +271,15 @@ const TeamChat: React.FC = () => {
   );
   
   return (
-    <div className="h-[calc(100vh-180px)] flex overflow-hidden w-full">
+    <div className="h-[calc(100vh-180px)] flex overflow-hidden w-full max-w-full">
       <ChatRoomSidebar 
         selectedRoomId={selectedRoomId} 
         onRoomSelect={setSelectedRoomId} 
       />
-      <div className="flex-grow overflow-hidden">
+      <div className="flex-grow overflow-hidden w-full max-w-full">
         <Card className="flex-grow flex flex-col overflow-hidden rounded-xl shadow-lg border-none h-full">
-          <CardContent className="p-4 flex-grow flex flex-col overflow-hidden">
-            <div className="flex-grow overflow-y-auto p-4 overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
+          <CardContent className="p-2 flex-grow flex flex-col overflow-hidden">
+            <div className="flex-grow overflow-y-auto p-2 overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
               {isLoadingMessages ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -316,9 +316,9 @@ const TeamChat: React.FC = () => {
               )}
             </div>
             
-            <div className="pt-4 border-t">
+            <div className="pt-2 border-t">
               <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-                <div className="flex space-x-2 mb-2 overflow-x-auto pb-1 scrollbar-hide">
+                <div className="flex space-x-1 mb-1 overflow-x-auto pb-1 scrollbar-hide">
                   <Button 
                     type="button" 
                     variant="ghost" 
@@ -344,7 +344,7 @@ const TeamChat: React.FC = () => {
                       triggerFileInput();
                     }}
                   >
-                    <Image className="h-4 w-4 mr-1" />
+                    <Image className="h-4 w-4" />
                   </Button>
                   <Button 
                     type="button" 
@@ -359,7 +359,7 @@ const TeamChat: React.FC = () => {
                       triggerFileInput();
                     }}
                   >
-                    <Mic className="h-4 w-4 mr-1" />
+                    <Mic className="h-4 w-4" />
                   </Button>
                   <Button 
                     type="button" 
@@ -374,7 +374,7 @@ const TeamChat: React.FC = () => {
                       triggerFileInput();
                     }}
                   >
-                    <Smile className="h-4 w-4 mr-1" />
+                    <Smile className="h-4 w-4" />
                   </Button>
                   <Button 
                     type="button" 
@@ -389,7 +389,7 @@ const TeamChat: React.FC = () => {
                       triggerFileInput();
                     }}
                   >
-                    <Paperclip className="h-4 w-4 mr-1" />
+                    <Paperclip className="h-4 w-4" />
                   </Button>
                   <input 
                     type="file" 
