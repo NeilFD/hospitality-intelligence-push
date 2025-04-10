@@ -527,6 +527,36 @@ export type Database = {
         }
         Relationships: []
       }
+      team_chat_rooms: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_announcement_only: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_announcement_only?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_announcement_only?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_messages: {
         Row: {
           attachment_url: string | null
@@ -536,6 +566,7 @@ export type Database = {
           id: string
           mentioned_users: string[] | null
           read_by: string[] | null
+          room_id: string
           type: Database["public"]["Enums"]["message_type"]
           updated_at: string
         }
@@ -547,6 +578,7 @@ export type Database = {
           id?: string
           mentioned_users?: string[] | null
           read_by?: string[] | null
+          room_id: string
           type?: Database["public"]["Enums"]["message_type"]
           updated_at?: string
         }
@@ -558,10 +590,19 @@ export type Database = {
           id?: string
           mentioned_users?: string[] | null
           read_by?: string[] | null
+          room_id?: string
           type?: Database["public"]["Enums"]["message_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "team_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "team_chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_notes: {
         Row: {

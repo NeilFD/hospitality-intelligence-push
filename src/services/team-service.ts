@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -139,11 +138,12 @@ export const deleteNote = async (id: string): Promise<void> => {
 };
 
 // Messages functions
-export const getMessages = async (): Promise<TeamMessage[]> => {
+export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
   try {
     const { data, error } = await supabase
       .from('team_messages')
       .select('*')
+      .eq('room_id', roomId)
       .order('created_at', { ascending: true });
       
     if (error) {
@@ -158,10 +158,12 @@ export const getMessages = async (): Promise<TeamMessage[]> => {
   }
 };
 
-export const createMessage = async (message: Omit<TeamMessage, 'id' | 'created_at' | 'updated_at'>): Promise<TeamMessage> => {
+export const createMessage = async (
+  messageData: Omit<TeamMessage, 'id' | 'created_at' | 'updated_at'> & { room_id: string }
+): Promise<TeamMessage> => {
   const { data, error } = await supabase
     .from('team_messages')
-    .insert(message)
+    .insert(messageData)
     .select()
     .single();
     
@@ -446,4 +448,24 @@ export const uploadTeamFile = async (file: File, folder: 'notes' | 'messages' | 
     console.error('Exception in uploadTeamFile:', e);
     throw e;
   }
+};
+
+// Get all available chat rooms
+export const getChatRooms = async (): Promise<{
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  is_announcement_only: boolean;
+}[]> => {
+  const { data, error } = await supabase
+    .from('team_chat_rooms')
+    .select('*');
+    
+  if (error) {
+    console.error('Error fetching chat rooms:', error);
+    throw error;
+  }
+  
+  return data || [];
 };

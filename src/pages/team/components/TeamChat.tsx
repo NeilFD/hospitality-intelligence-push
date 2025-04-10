@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserProfile } from '@/types/supabase-types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import ChatRoomSidebar from './ChatRoomSidebar';
 
 interface MessageProps {
   message: TeamMessage;
@@ -129,6 +130,7 @@ const TeamChat: React.FC = () => {
   const [content, setContent] = useState('');
   const [messageType, setMessageType] = useState<'text' | 'image' | 'voice' | 'gif' | 'file'>('text');
   const [file, setFile] = useState<File | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const { user } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,10 +139,21 @@ const TeamChat: React.FC = () => {
   const [showMentions, setShowMentions] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { data: rooms = [] } = useQuery({
+    queryKey: ['chatRooms'],
+    queryFn: () => getChatRooms(),
+    onSuccess: (fetchedRooms) => {
+      if (fetchedRooms.length > 0 && !selectedRoomId) {
+        setSelectedRoomId(fetchedRooms[0].id);
+      }
+    }
+  });
   
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
-    queryKey: ['teamMessages'],
-    queryFn: getMessages,
+    queryKey: ['teamMessages', selectedRoomId],
+    queryFn: () => getMessages(selectedRoomId),
+    enabled: !!selectedRoomId,
     refetchInterval: 5000 // Poll every 5 seconds
   });
   
@@ -148,7 +161,7 @@ const TeamChat: React.FC = () => {
     queryKey: ['teamMembers'],
     queryFn: getTeamMembers
   });
-  
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -198,12 +211,13 @@ const TeamChat: React.FC = () => {
       return;
     }
     
-    if (user) {
+    if (user && selectedRoomId) {
       messageMutation.mutate({
         content,
         author_id: user.id,
         type: messageType,
-        read_by: [user.id]
+        read_by: [user.id],
+        room_id: selectedRoomId
       });
     }
   };
@@ -240,7 +254,6 @@ const TeamChat: React.FC = () => {
     setContent(`${beforeMention}${mentionText}${afterMention}`);
     setShowMentions(false);
     
-    // Focus back on textarea
     setTimeout(() => {
       if (textareaRef.current) {
         const newCursorPos = cursorPosition + mentionText.length - 1;
@@ -255,205 +268,209 @@ const TeamChat: React.FC = () => {
   );
   
   return (
-    <div className="h-[calc(100vh-180px)] flex flex-col">
-      <Card className="flex-grow flex flex-col overflow-hidden rounded-xl shadow-lg border-none">
-        <CardContent className="p-4 flex-grow flex flex-col overflow-hidden">
-          <div className="flex-grow overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
-            {isLoadingMessages ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-start">
-                    <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse mr-2"></div>
-                    <div className="flex-1">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-1/4"></div>
-                      <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+    <div className="h-[calc(100vh-180px)] flex">
+      <ChatRoomSidebar 
+        selectedRoomId={selectedRoomId} 
+        onRoomSelect={setSelectedRoomId} 
+      />
+      <div className="flex-grow">
+        <Card className="flex-grow flex flex-col overflow-hidden rounded-xl shadow-lg border-none h-full">
+          <CardContent className="p-4 flex-grow flex flex-col overflow-hidden">
+            <div className="flex-grow overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
+              {isLoadingMessages ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-start">
+                      <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse mr-2"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-1/4"></div>
+                        <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <p>No messages yet. Start the conversation!</p>
-              </div>
-            ) : (
-              <>
-                {messages.map((message) => {
-                  const isOwnMessage = message.author_id === user?.id;
-                  const author = teamMembers.find(m => m.id === message.author_id);
-                  
-                  return (
-                    <Message
-                      key={message.id}
-                      message={message}
-                      isOwnMessage={isOwnMessage}
-                      author={author}
-                    />
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
-          
-          <div className="pt-4 border-t">
-            <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-              <div className="flex space-x-2 mb-2">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  className={messageType === 'text' ? 'bg-blue-100' : ''}
-                  onClick={() => {
-                    setMessageType('text');
-                    setFile(null);
-                  }}
-                >
-                  Text
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  className={messageType === 'image' ? 'bg-blue-100' : ''}
-                  onClick={() => {
-                    setMessageType('image');
-                    if (fileInputRef.current) {
-                      fileInputRef.current.accept = 'image/*';
-                    }
-                    triggerFileInput();
-                  }}
-                >
-                  <Image className="h-4 w-4 mr-1" />
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  className={messageType === 'voice' ? 'bg-blue-100' : ''}
-                  onClick={() => {
-                    setMessageType('voice');
-                    if (fileInputRef.current) {
-                      fileInputRef.current.accept = 'audio/*';
-                    }
-                    triggerFileInput();
-                  }}
-                >
-                  <Mic className="h-4 w-4 mr-1" />
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  className={messageType === 'gif' ? 'bg-blue-100' : ''}
-                  onClick={() => {
-                    setMessageType('gif');
-                    if (fileInputRef.current) {
-                      fileInputRef.current.accept = 'image/gif';
-                    }
-                    triggerFileInput();
-                  }}
-                >
-                  <Smile className="h-4 w-4 mr-1" />
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  className={messageType === 'file' ? 'bg-blue-100' : ''}
-                  onClick={() => {
-                    setMessageType('file');
-                    if (fileInputRef.current) {
-                      fileInputRef.current.accept = '*/*';
-                    }
-                    triggerFileInput();
-                  }}
-                >
-                  <Paperclip className="h-4 w-4 mr-1" />
-                </Button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </div>
-              
-              <div className="relative">
-                <Textarea
-                  ref={textareaRef}
-                  placeholder={messageType === 'text' ? "Type your message..." : `Add a caption to your ${messageType}...`}
-                  className="min-h-[80px] pr-12"
-                  value={content}
-                  onChange={(e) => {
-                    setContent(e.target.value);
-                    setCursorPosition(e.target.selectionStart);
+                  ))}
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p>No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                <>
+                  {messages.map((message) => {
+                    const isOwnMessage = message.author_id === user?.id;
+                    const author = teamMembers.find(m => m.id === message.author_id);
                     
-                    // Handle @ mentions
-                    if (showMentions) {
-                      // Extract what's being typed after @
-                      const lastAtPos = e.target.value.lastIndexOf('@', cursorPosition - 1);
-                      if (lastAtPos !== -1) {
-                        const searchText = e.target.value.slice(lastAtPos + 1, cursorPosition);
-                        setMentionSearch(searchText.trim());
-                      }
-                    }
-                  }}
-                  onKeyDown={handleKeyDown}
-                  onClick={() => setShowMentions(false)}
-                />
-                
-                <Button 
-                  type="submit" 
-                  size="icon"
-                  className="absolute bottom-2 right-2"
-                  disabled={messageMutation.isPending || (messageType === 'text' && !content.trim()) || (messageType !== 'text' && !file)}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              {file && messageType !== 'text' && (
-                <div className="flex items-center space-x-2 bg-blue-100 p-2 rounded">
-                  <span className="text-sm truncate flex-1">{file.name}</span>
+                    return (
+                      <Message
+                        key={message.id}
+                        message={message}
+                        isOwnMessage={isOwnMessage}
+                        author={author}
+                      />
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+            
+            <div className="pt-4 border-t">
+              <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
+                <div className="flex space-x-2 mb-2">
                   <Button 
                     type="button" 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => setFile(null)}
+                    className={messageType === 'text' ? 'bg-blue-100' : ''}
+                    onClick={() => {
+                      setMessageType('text');
+                      setFile(null);
+                    }}
                   >
-                    ✕
+                    Text
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    className={messageType === 'image' ? 'bg-blue-100' : ''}
+                    onClick={() => {
+                      setMessageType('image');
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = 'image/*';
+                      }
+                      triggerFileInput();
+                    }}
+                  >
+                    <Image className="h-4 w-4 mr-1" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    className={messageType === 'voice' ? 'bg-blue-100' : ''}
+                    onClick={() => {
+                      setMessageType('voice');
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = 'audio/*';
+                      }
+                      triggerFileInput();
+                    }}
+                  >
+                    <Mic className="h-4 w-4 mr-1" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    className={messageType === 'gif' ? 'bg-blue-100' : ''}
+                    onClick={() => {
+                      setMessageType('gif');
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = 'image/gif';
+                      }
+                      triggerFileInput();
+                    }}
+                  >
+                    <Smile className="h-4 w-4 mr-1" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    className={messageType === 'file' ? 'bg-blue-100' : ''}
+                    onClick={() => {
+                      setMessageType('file');
+                      if (fileInputRef.current) {
+                        fileInputRef.current.accept = '*/*';
+                      }
+                      triggerFileInput();
+                    }}
+                  >
+                    <Paperclip className="h-4 w-4 mr-1" />
+                  </Button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+                
+                <div className="relative">
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder={messageType === 'text' ? "Type your message..." : `Add a caption to your ${messageType}...`}
+                    className="min-h-[80px] pr-12"
+                    value={content}
+                    onChange={(e) => {
+                      setContent(e.target.value);
+                      setCursorPosition(e.target.selectionStart);
+                      
+                      if (showMentions) {
+                        const lastAtPos = e.target.value.lastIndexOf('@', cursorPosition - 1);
+                        if (lastAtPos !== -1) {
+                          const searchText = e.target.value.slice(lastAtPos + 1, cursorPosition);
+                          setMentionSearch(searchText.trim());
+                        }
+                      }
+                    }}
+                    onKeyDown={handleKeyDown}
+                    onClick={() => setShowMentions(false)}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    size="icon"
+                    className="absolute bottom-2 right-2"
+                    disabled={messageMutation.isPending || (messageType === 'text' && !content.trim()) || (messageType !== 'text' && !file)}
+                  >
+                    <Send className="h-4 w-4" />
                   </Button>
                 </div>
-              )}
-              
-              {showMentions && (
-                <div className="absolute bottom-[100px] left-0 bg-white rounded-md shadow-lg border p-2 max-h-40 overflow-y-auto w-64">
-                  {filteredMembers.length === 0 ? (
-                    <div className="p-2 text-gray-500">No matching team members</div>
-                  ) : (
-                    filteredMembers.map(member => (
-                      <div
-                        key={member.id}
-                        className="p-2 hover:bg-gray-100 cursor-pointer flex items-center"
-                        onClick={() => handleMentionSelect(member)}
-                      >
-                        <Avatar className="h-6 w-6 mr-2">
-                          {member.avatar_url ? (
-                            <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} />
-                          ) : (
-                            <AvatarFallback>{`${(member.first_name?.[0] || '').toUpperCase()}${(member.last_name?.[0] || '').toUpperCase()}`}</AvatarFallback>
-                          )}
-                        </Avatar>
-                        <span>{member.first_name} {member.last_name}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </form>
-          </div>
-        </CardContent>
-      </Card>
+                
+                {file && messageType !== 'text' && (
+                  <div className="flex items-center space-x-2 bg-blue-100 p-2 rounded">
+                    <span className="text-sm truncate flex-1">{file.name}</span>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setFile(null)}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                )}
+                
+                {showMentions && (
+                  <div className="absolute bottom-[100px] left-0 bg-white rounded-md shadow-lg border p-2 max-h-40 overflow-y-auto w-64">
+                    {filteredMembers.length === 0 ? (
+                      <div className="p-2 text-gray-500">No matching team members</div>
+                    ) : (
+                      filteredMembers.map(member => (
+                        <div
+                          key={member.id}
+                          className="p-2 hover:bg-gray-100 cursor-pointer flex items-center"
+                          onClick={() => handleMentionSelect(member)}
+                        >
+                          <Avatar className="h-6 w-6 mr-2">
+                            {member.avatar_url ? (
+                              <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} />
+                            ) : (
+                              <AvatarFallback>{`${(member.first_name?.[0] || '').toUpperCase()}${(member.last_name?.[0] || '').toUpperCase()}`}</AvatarFallback>
+                            )}
+                          </Avatar>
+                          <span>{member.first_name} {member.last_name}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
