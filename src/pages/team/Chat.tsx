@@ -15,11 +15,11 @@ const Chat: React.FC = () => {
     )}>
       <div className={cn(
         "bg-[#E5DEFF] rounded-lg", 
-        isMobile ? "p-3 mb-2" : "p-6 mb-6"
+        isMobile ? "p-3 mb-4" : "p-6 mb-6"  // Increased bottom margin
       )}>
         <h1 className={cn(
           "font-bold text-slate-900 flex items-center gap-2",
-          isMobile ? "text-xl mb-0 py-2" : "text-3xl mb-2"
+          isMobile ? "text-xl mb-2 py-2" : "text-3xl mb-4"  // Increased bottom margin
         )}>
           <MessageSquare className={cn(
             isMobile ? "h-5 w-5" : "h-6 w-6"
@@ -27,7 +27,7 @@ const Chat: React.FC = () => {
           Team Chat
         </h1>
         {!isMobile && (
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-2">  {/* Added bottom margin */}
             Real-time messaging with your team members.
           </p>
         )}
