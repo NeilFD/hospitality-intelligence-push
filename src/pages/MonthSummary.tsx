@@ -91,18 +91,19 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
       }
 
       try {
-        // Initialize weekly totals
+        // Initialize weekly totals with all weeks
         const weekTotals: Record<number, { revenue: number, costs: number }> = {};
         
+        // Pre-initialize all weeks with zero values
+        for (let i = 1; i <= 5; i++) {
+          weekTotals[i] = { revenue: 0, costs: 0 };
+        }
+        
+        // Process each day's data
         for (const day of trackerData) {
           const weekNumber = day.week_number || 1;
           
-          // Initialize this week if needed
-          if (!weekTotals[weekNumber]) {
-            weekTotals[weekNumber] = { revenue: 0, costs: 0 };
-          }
-          
-          // Add revenue
+          // Add revenue - ensure we're working with numbers
           const dayRevenue = Number(day.revenue) || 0;
           weekTotals[weekNumber].revenue += dayRevenue;
           
@@ -126,12 +127,9 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         let monthCosts = 0;
         const weeklyDataArray: WeekSummary[] = [];
         
-        // Make sure we have all 5 weeks in the month
-        const allWeeks = generateAllWeeksForMonth();
-        
-        // Fill in the data we have
+        // Process each week
         for (let i = 1; i <= 5; i++) {
-          const weekData = weekTotals[i] || { revenue: 0, costs: 0 };
+          const weekData = weekTotals[i];
           const weekRevenue = weekData.revenue;
           const weekCosts = weekData.costs;
           
@@ -167,48 +165,56 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     };
     
     const calculateFromLocalStore = () => {
+      // Initialize week summaries with zeros
       const weekMap: Record<number, WeekSummary> = {};
+      for (let i = 1; i <= 5; i++) {
+        weekMap[i] = {
+          weekNumber: i,
+          revenue: 0,
+          costs: 0,
+          gp: 0
+        };
+      }
       
-      const allWeeks = generateAllWeeksForMonth();
-      allWeeks.forEach(week => {
-        weekMap[week.weekNumber] = week;
-      });
-      
+      // Process each week from the month record
       monthRecord.weeks.forEach(week => {
-        const weekRevenue = week.days.reduce((sum, day) => sum + day.revenue, 0);
+        const weekNumber = week.weekNumber;
+        let weekRevenue = 0;
+        let weekCosts = 0;
         
-        const weekCosts = week.days.reduce((sum, day) => {
-          const dayCosts = Object.values(day.purchases).reduce((purchaseSum, amount) => purchaseSum + amount, 0);
-          const creditNotes = day.creditNotes.reduce((creditSum, credit) => creditSum + credit, 0);
-          return sum + dayCosts - creditNotes + day.staffFoodAllowance;
-        }, 0);
+        // Sum up all days' revenue and costs in this week
+        week.days.forEach(day => {
+          // Add revenue for this day
+          weekRevenue += day.revenue;
+          
+          // Calculate costs for this day
+          const dayCosts = Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
+          const creditNotes = day.creditNotes.reduce((sum, credit) => sum + credit, 0);
+          weekCosts += dayCosts - creditNotes + day.staffFoodAllowance;
+        });
         
-        const weekGp = calculateGP(weekRevenue, weekCosts);
-        
-        weekMap[week.weekNumber] = {
-          weekNumber: week.weekNumber,
+        // Update the week summary
+        weekMap[weekNumber] = {
+          weekNumber,
           revenue: weekRevenue,
           costs: weekCosts,
-          gp: weekGp
+          gp: calculateGP(weekRevenue, weekCosts)
         };
       });
       
+      // Convert the map to an array and sort by week number
       const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
       
-      const localTotalRevenue = monthRecord.weeks.reduce((sum, week) => {
-        const weekRevenue = week.days.reduce((daySum, day) => daySum + day.revenue, 0);
-        return sum + weekRevenue;
-      }, 0);
+      // Calculate month totals
+      let localTotalRevenue = 0;
+      let localTotalCosts = 0;
       
-      const localTotalCosts = monthRecord.weeks.reduce((sum, week) => {
-        const weekCosts = week.days.reduce((daySum, day) => {
-          const dayCosts = Object.values(day.purchases).reduce((purchaseSum, amount) => purchaseSum + amount, 0);
-          const creditNotes = day.creditNotes.reduce((creditSum, credit) => creditSum + credit, 0);
-          return daySum + dayCosts - creditNotes + day.staffFoodAllowance;
-        }, 0);
-        return sum + weekCosts;
-      }, 0);
+      localWeeklyData.forEach(week => {
+        localTotalRevenue += week.revenue;
+        localTotalCosts += week.costs;
+      });
       
+      // Update state
       setWeeklyData(localWeeklyData);
       setTotalRevenue(localTotalRevenue);
       setTotalCosts(localTotalCosts);
