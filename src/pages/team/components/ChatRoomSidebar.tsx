@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
@@ -104,7 +103,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                 key={room.id}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start mb-3 font-medium text-left px-3 py-2", // Explicitly added text-left
+                  "w-full justify-start mb-3 font-medium text-left px-3 py-2",
                   selectedRoomId === room.id 
                     ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
                     : "bg-white/20 text-tavern-blue-dark hover:bg-white/40",
@@ -135,16 +134,6 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
           })}
         </div>
       </ScrollArea>
-
-      {isMobile && minimized && (
-        <div 
-          className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-[#7E69AB] text-white rounded-r-md p-1 shadow-lg cursor-pointer"
-          onClick={toggleMinimize}
-          aria-label="Expand sidebar"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </div>
-      )}
     </div>
   );
 };
