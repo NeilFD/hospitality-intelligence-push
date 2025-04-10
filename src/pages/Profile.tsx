@@ -25,7 +25,7 @@ const Profile = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'Owner' | 'Head Chef' | 'Staff'>('Staff');
+  const [role, setRole] = useState<'Owner' | 'Manager' | 'Team Member'>('Team Member');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
   // New state variables for additional fields
@@ -296,14 +296,14 @@ const Profile = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Select value={role} onValueChange={(value: 'Owner' | 'Head Chef' | 'Staff') => setRole(value)}>
+                    <Select value={role} onValueChange={(value: 'Owner' | 'Manager' | 'Team Member') => setRole(value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Owner">Owner</SelectItem>
-                        <SelectItem value="Head Chef">Head Chef</SelectItem>
-                        <SelectItem value="Staff">Staff</SelectItem>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                        <SelectItem value="Team Member">Team Member</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

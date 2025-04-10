@@ -1140,7 +1140,7 @@ export type Database = {
       message_type: "text" | "image" | "voice" | "gif" | "file"
       module_type: "food" | "beverage" | "pl" | "wages" | "performance"
       poll_option_type: "text" | "image"
-      user_role: "Owner" | "Head Chef" | "Staff"
+      user_role: "Owner" | "Manager" | "Team Member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1259,7 +1259,7 @@ export const Constants = {
       message_type: ["text", "image", "voice", "gif", "file"],
       module_type: ["food", "beverage", "pl", "wages", "performance"],
       poll_option_type: ["text", "image"],
-      user_role: ["Owner", "Head Chef", "Staff"],
+      user_role: ["Owner", "Manager", "Team Member"],
     },
   },
 } as const

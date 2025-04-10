@@ -1,3 +1,4 @@
+
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -10,7 +11,7 @@ export interface Database {
           id: string;
           first_name?: string | null;
           last_name?: string | null;
-          role?: 'Owner' | 'Head Chef' | 'Staff' | null;
+          role?: 'Owner' | 'Manager' | 'Team Member' | null;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -19,7 +20,7 @@ export interface Database {
           id?: string;
           first_name?: string | null;
           last_name?: string | null;
-          role?: 'Owner' | 'Head Chef' | 'Staff' | null;
+          role?: 'Owner' | 'Manager' | 'Team Member' | null;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -401,7 +402,7 @@ export interface UserProfile {
   id: string;
   first_name: string | null;
   last_name: string | null;
-  role: 'Owner' | 'Head Chef' | 'Staff' | null;
+  role: 'Owner' | 'Manager' | 'Team Member' | null;
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
