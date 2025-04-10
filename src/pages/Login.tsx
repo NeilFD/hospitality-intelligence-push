@@ -7,9 +7,14 @@ import { motion } from 'framer-motion';
 export default function Login() {
   return (
     <div 
-      className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" 
+      className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
       style={{ 
-        backgroundImage: `url('/lovable-uploads/c33b3b89-d14c-4429-ba4f-a3282b9afe1b.png')` 
+        backgroundImage: `url('/lovable-uploads/fe70fc7b-7a93-47f5-9ad8-20b71e341ce1.png')`,
+        height: '100vh',
+        width: '100vw',
+        position: 'fixed',
+        top: 0,
+        left: 0
       }}
     >
       <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-xl">
