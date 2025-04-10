@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,7 +6,7 @@ import { TeamMessage } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Bell, Trash2 } from 'lucide-react';
+import { Bell, Trash2, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
@@ -155,7 +154,6 @@ const NotificationsDropdown = () => {
     }
     
     try {
-      // First filter unread notifications
       const unreadNotifications = notifications.filter(notification => {
         const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         return !readBy.includes(user.id);
@@ -165,14 +163,10 @@ const NotificationsDropdown = () => {
         return;
       }
       
-      // Immediately mark everything as read in UI
       setHasUnread(false);
       
-      // Create one single query that will mark all unread notifications as read
-      // Using the "in" filter for better performance
       const notificationIds = unreadNotifications.map(n => n.id);
       
-      // For each notification, update its read_by array
       const updates = await Promise.all(
         unreadNotifications.map(async (notification) => {
           const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
@@ -187,7 +181,6 @@ const NotificationsDropdown = () => {
         })
       );
       
-      // Check results
       const failedUpdates = updates.filter(update => !update.success);
       
       if (failedUpdates.length > 0) {
@@ -197,8 +190,6 @@ const NotificationsDropdown = () => {
         toast.success('All notifications cleared');
       }
       
-      // Update local state regardless of database success
-      // This ensures UI stays in sync with what the user expects
       const updatedNotifications = notifications.map(notification => {
         const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         if (!readBy.includes(user.id)) {
@@ -209,14 +200,54 @@ const NotificationsDropdown = () => {
       
       setNotifications(updatedNotifications);
       
-      // Update the query cache to stay consistent
       queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
       
-      // Always refetch to ensure database and local state are in sync
       await refetchMentions();
     } catch (error) {
       console.error('Error clearing notifications:', error);
       toast.error('Failed to clear notifications');
+      await refetchMentions();
+    }
+  };
+  
+  const handleDeleteNotification = async (event: React.MouseEvent, message: TeamMessage) => {
+    event.stopPropagation();
+    
+    if (!user) {
+      toast.error('User not logged in');
+      return;
+    }
+    
+    try {
+      setNotifications(prev => prev.filter(n => n.id !== message.id));
+      
+      const remainingUnread = notifications
+        .filter(n => n.id !== message.id)
+        .some(n => {
+          const readBy = Array.isArray(n.read_by) ? n.read_by : [];
+          return !readBy.includes(user.id);
+        });
+      
+      setHasUnread(remainingUnread);
+      
+      const { error } = await supabase
+        .from('team_messages')
+        .update({ deleted: true })
+        .eq('id', message.id);
+      
+      if (error) {
+        console.error('Error deleting notification:', error);
+        toast.error('Failed to delete notification');
+        await refetchMentions();
+        return;
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
+      toast.success('Notification deleted');
+      
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast.error('Failed to delete notification');
       await refetchMentions();
     }
   };
@@ -279,47 +310,56 @@ const NotificationsDropdown = () => {
                 const isUnread = !readBy.includes(user?.id || '');
                 
                 return (
-                  <Button
-                    key={notification.id}
-                    variant="ghost"
-                    className={`
-                      w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 
-                      ${isUnread ? 'bg-blue-50' : ''}
-                    `}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      {getAuthorAvatar(notification.author_id) ? (
-                        <AvatarImage 
-                          src={getAuthorAvatar(notification.author_id)} 
-                          alt={getAuthorName(notification.author_id)} 
-                        />
-                      ) : (
-                        <AvatarFallback>
-                          {getInitials(notification.author_id)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div className="flex flex-col items-start text-left w-full">
-                      <p className="text-xs font-medium w-full break-words">
-                        {getAuthorName(notification.author_id)}
-                        <span className="font-normal ml-2 text-gray-500">
-                          mentioned you
+                  <div key={notification.id} className="relative group">
+                    <Button
+                      variant="ghost"
+                      className={`
+                        w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 
+                        ${isUnread ? 'bg-blue-50' : ''}
+                      `}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        {getAuthorAvatar(notification.author_id) ? (
+                          <AvatarImage 
+                            src={getAuthorAvatar(notification.author_id)} 
+                            alt={getAuthorName(notification.author_id)} 
+                          />
+                        ) : (
+                          <AvatarFallback>
+                            {getInitials(notification.author_id)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex flex-col items-start text-left w-full">
+                        <p className="text-xs font-medium w-full break-words">
+                          {getAuthorName(notification.author_id)}
+                          <span className="font-normal ml-2 text-gray-500">
+                            mentioned you
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1 w-full break-words whitespace-normal">
+                          {formatContent(notification.content)}
+                        </p>
+                        <span className="text-xs text-gray-400 mt-1">
+                          {new Date(notification.created_at).toLocaleString([], {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </span>
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1 w-full break-words whitespace-normal">
-                        {formatContent(notification.content)}
-                      </p>
-                      <span className="text-xs text-gray-400 mt-1">
-                        {new Date(notification.created_at).toLocaleString([], {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                  </Button>
+                      </div>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 h-6 w-6 p-1 transition-opacity"
+                      onClick={(e) => handleDeleteNotification(e, notification)}
+                    >
+                      <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </Button>
+                  </div>
                 );
               })}
             </div>
