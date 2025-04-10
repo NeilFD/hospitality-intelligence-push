@@ -22,7 +22,9 @@ import {
   fetchTrackerDataByMonth, 
   syncTrackerPurchasesToPurchases, 
   syncTrackerCreditNotesToCreditNotes,
-  fetchTrackerPurchases
+  fetchTrackerPurchases,
+  fetchPurchases,
+  fetchDailyRecords
 } from '@/services/kitchen-service';
 
 interface BevStore {
@@ -561,18 +563,102 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           }
         }
       }
+      
+      if (foodPurchases.length === 0 && foodTrackerData && foodTrackerData.length > 0) {
+        console.log("No purchases found through tracker, trying direct purchase table query...");
+        
+        const { data: foodDailyRecords } = await supabase
+          .from('daily_records')
+          .select('id, date')
+          .eq('module_type', 'food')
+          .gte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+          .lte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-31`);
+        
+        if (foodDailyRecords && foodDailyRecords.length > 0) {
+          console.log(`Found ${foodDailyRecords.length} daily records for food`);
+          
+          for (const dailyRecord of foodDailyRecords) {
+            try {
+              const dailyPurchases = await fetchPurchases(dailyRecord.id);
+              if (dailyPurchases && dailyPurchases.length > 0) {
+                console.log(`Found ${dailyPurchases.length} purchases for ${dailyRecord.date}`);
+                const purchasesWithDate = dailyPurchases.map(p => ({
+                  ...p, 
+                  date: dailyRecord.date
+                }));
+                foodPurchases = [...foodPurchases, ...purchasesWithDate];
+              }
+            } catch (e) {
+              console.error(`Error fetching purchases for daily record ${dailyRecord.id}:`, e);
+            }
+          }
+        }
+      }
+      
+      if (bevPurchases.length === 0 && bevTrackerData && bevTrackerData.length > 0) {
+        console.log("No purchases found through tracker for beverage, trying direct purchase table query...");
+        
+        const { data: bevDailyRecords } = await supabase
+          .from('daily_records')
+          .select('id, date')
+          .eq('module_type', 'beverage')
+          .gte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+          .lte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-31`);
+        
+        if (bevDailyRecords && bevDailyRecords.length > 0) {
+          console.log(`Found ${bevDailyRecords.length} daily records for beverage`);
+          
+          for (const dailyRecord of bevDailyRecords) {
+            try {
+              const dailyPurchases = await fetchPurchases(dailyRecord.id);
+              if (dailyPurchases && dailyPurchases.length > 0) {
+                console.log(`Found ${dailyPurchases.length} purchases for ${dailyRecord.date}`);
+                const purchasesWithDate = dailyPurchases.map(p => ({
+                  ...p, 
+                  date: dailyRecord.date
+                }));
+                bevPurchases = [...bevPurchases, ...purchasesWithDate];
+              }
+            } catch (e) {
+              console.error(`Error fetching purchases for daily record ${dailyRecord.id}:`, e);
+            }
+          }
+        }
+      }
+      
+      console.log(`Final count - Food purchases: ${foodPurchases.length}, Bev purchases: ${bevPurchases.length}`);
     } catch (error) {
       console.error("Error fetching detailed purchase data:", error);
     }
     
+    const foodDailyPurchases = {};
+    foodPurchases.forEach(purchase => {
+      const date = purchase.date || "unknown";
+      if (!foodDailyPurchases[date]) {
+        foodDailyPurchases[date] = [];
+      }
+      foodDailyPurchases[date].push(purchase);
+    });
+    
+    const bevDailyPurchases = {};
+    bevPurchases.forEach(purchase => {
+      const date = purchase.date || "unknown";
+      if (!bevDailyPurchases[date]) {
+        bevDailyPurchases[date] = [];
+      }
+      bevDailyPurchases[date].push(purchase);
+    });
+    
     const trackerDataSummary = {
       food: {
         records: foodTrackerData || [],
-        purchases: foodPurchases
+        purchases: foodPurchases,
+        dailyPurchases: foodDailyPurchases
       },
       beverage: {
         records: bevTrackerData || [],
-        purchases: bevPurchases
+        purchases: bevPurchases,
+        dailyPurchases: bevDailyPurchases
       }
     };
     
@@ -585,7 +671,9 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     console.log("Raw Beverage Data:", deepCopyBevData); 
     console.log("Wages Data:", { monthlyWages, weekdayTotals });
     console.log("Food Purchases:", foodPurchases);
+    console.log("Food Daily Purchases:", foodDailyPurchases);
     console.log("Beverage Purchases:", bevPurchases);
+    console.log("Beverage Daily Purchases:", bevDailyPurchases);
     console.log("*** END WEBHOOK PAYLOAD DEBUG ***");
     
     return {
@@ -613,7 +701,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           },
           rawData: deepCopyFoodData,
           trackerRecords: foodTrackerData || [],
-          purchaseDetails: foodPurchases
+          purchaseDetails: foodPurchases,
+          dailyPurchases: foodDailyPurchases
         },
         beverage: {
           year: currentYear,
@@ -632,7 +721,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           },
           rawData: deepCopyBevData,
           trackerRecords: bevTrackerData || [],
-          purchaseDetails: bevPurchases
+          purchaseDetails: bevPurchases,
+          dailyPurchases: bevDailyPurchases
         },
         wages: {
           year: currentYear,

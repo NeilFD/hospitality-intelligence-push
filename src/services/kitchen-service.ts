@@ -573,3 +573,20 @@ export const getTrackerSummaryByMonth = async (
     };
   }
 };
+
+// Added direct query to fetch all daily records for a month
+export const fetchMonthlyDailyRecords = async (year: number, month: number, moduleType: ModuleType = 'food') => {
+  const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+  const endDate = `${year}-${month.toString().padStart(2, '0')}-31`;
+  
+  const { data, error } = await supabase
+    .from('daily_records')
+    .select('*')
+    .eq('module_type', moduleType)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date');
+  
+  if (error) throw error;
+  return data;
+};
