@@ -533,9 +533,46 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       deepCopyBevData = { error: "Failed to copy beverage data" };
     }
     
+    let foodPurchases = [];
+    let bevPurchases = [];
+    
+    try {
+      const foodTrackerIds = foodTrackerData?.map(day => day.id) || [];
+      if (foodTrackerIds.length > 0) {
+        for (const id of foodTrackerIds) {
+          try {
+            const purchases = await fetchTrackerPurchases(id);
+            foodPurchases = [...foodPurchases, ...purchases];
+          } catch (e) {
+            console.error(`Error fetching purchases for tracker ${id}:`, e);
+          }
+        }
+      }
+      
+      const bevTrackerIds = bevTrackerData?.map(day => day.id) || [];
+      if (bevTrackerIds.length > 0) {
+        for (const id of bevTrackerIds) {
+          try {
+            const purchases = await fetchTrackerPurchases(id);
+            bevPurchases = [...bevPurchases, ...purchases];
+          } catch (e) {
+            console.error(`Error fetching purchases for bev tracker ${id}:`, e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching detailed purchase data:", error);
+    }
+    
     const trackerDataSummary = {
-      food: foodTrackerData || [],
-      beverage: bevTrackerData || []
+      food: {
+        records: foodTrackerData || [],
+        purchases: foodPurchases
+      },
+      beverage: {
+        records: bevTrackerData || [],
+        purchases: bevPurchases
+      }
     };
     
     console.log("*** WEBHOOK PAYLOAD DEBUG ***");
@@ -546,6 +583,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     console.log("Raw Food Data:", deepCopyFoodData);
     console.log("Raw Beverage Data:", deepCopyBevData); 
     console.log("Wages Data:", { monthlyWages, weekdayTotals });
+    console.log("Food Purchases:", foodPurchases);
+    console.log("Beverage Purchases:", bevPurchases);
     console.log("*** END WEBHOOK PAYLOAD DEBUG ***");
     
     return {
@@ -572,7 +611,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
             costPercentage: 100 - foodAnnualData.gpPercentage
           },
           rawData: deepCopyFoodData,
-          trackerRecords: foodTrackerData || []
+          trackerRecords: foodTrackerData || [],
+          purchaseDetails: foodPurchases
         },
         beverage: {
           year: currentYear,
@@ -590,7 +630,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
             costPercentage: 100 - bevData.annual.gpPercentage
           },
           rawData: deepCopyBevData,
-          trackerRecords: bevTrackerData || []
+          trackerRecords: bevTrackerData || [],
+          purchaseDetails: bevPurchases
         },
         wages: {
           year: currentYear,
