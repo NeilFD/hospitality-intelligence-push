@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clipboard, MessageSquare, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const TeamDashboard: React.FC = () => {
-  return (
-    <div className="container mx-auto p-4">
+  return <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-8">
         <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Hub</h1>
         <p className="text-gray-600">
@@ -35,7 +32,7 @@ const TeamDashboard: React.FC = () => {
                 <div className="bg-blue-100 rounded-full p-1">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <span>Pin important announcements</span>
+                <span>Post important announcements</span>
               </li>
               <li className="flex items-center gap-2">
                 <div className="bg-blue-100 rounded-full p-1">
@@ -47,7 +44,7 @@ const TeamDashboard: React.FC = () => {
                 <div className="bg-blue-100 rounded-full p-1">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <span>Keep persistent information visible</span>
+                <span>Pin information visible to keep it visible</span>
               </li>
             </ul>
           </CardContent>
@@ -104,8 +101,6 @@ const TeamDashboard: React.FC = () => {
           </CardFooter>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default TeamDashboard;
