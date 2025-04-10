@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Send, Image, Mic, Smile, Paperclip, AtSign, Heart, ThumbsUp, Laugh, Angry } from 'lucide-react';
+import { Send, Image, Mic, Smile, Paperclip, AtSign, Heart, ThumbsUp, Laugh, Angry, Frown, PartyPopper, ThumbsDown, Bookmark } from 'lucide-react';
 import { TeamMessage, getMessages, createMessage, markMessageAsRead, uploadTeamFile, getTeamMembers, getChatRooms, addMessageReaction, MessageReaction } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +22,29 @@ interface MessageProps {
   teamMembers: UserProfile[];
   currentUserId: string;
 }
+
+const EMOJI_CATEGORIES = [
+  {
+    name: "Smileys",
+    emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "☺️", "😚", "😙", "🥲", "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "😮‍💨", "🤥", "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😵", "😵‍💫", "🤯", "🤠", "🥳", "🥸", "😎", "🤓", "🧐"]
+  },
+  {
+    name: "Gestures",
+    emojis: ["👍", "👎", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👋", "🤚", "🖐️", "✋", "🖖", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪", "🦾", "🦿", "🦵", "🦶", "👂", "🦻", "👃", "🧠", "🫀", "🫁", "🦷", "🦴"]
+  },
+  {
+    name: "Love",
+    emojis: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❤️‍🔥", "❤️‍🩹", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "♥️", "💌", "💋", "👨‍❤️‍💋‍👨", "👩‍❤️‍💋‍👩", "👨‍❤️‍👨", "👩‍❤️‍👩"]
+  },
+  {
+    name: "Celebration",
+    emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
+  },
+  {
+    name: "Activities",
+    emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂"]
+  }
+];
 
 const Message: React.FC<MessageProps> = ({ 
   message, 
@@ -44,11 +67,17 @@ const Message: React.FC<MessageProps> = ({
     return `${(author.first_name?.[0] || '').toUpperCase()}${(author.last_name?.[0] || '').toUpperCase()}`;
   };
 
-  const emojis = [
+  const [selectedCategory, setSelectedCategory] = useState(0);
+
+  const commonEmojis = [
     { icon: <Heart className="h-4 w-4" />, emoji: "❤️" },
     { icon: <ThumbsUp className="h-4 w-4" />, emoji: "👍" },
     { icon: <Laugh className="h-4 w-4" />, emoji: "😂" },
-    { icon: <Angry className="h-4 w-4" />, emoji: "😡" }
+    { icon: <PartyPopper className="h-4 w-4" />, emoji: "🎉" },
+    { icon: <ThumbsDown className="h-4 w-4" />, emoji: "👎" },
+    { icon: <Frown className="h-4 w-4" />, emoji: "😢" },
+    { icon: <Angry className="h-4 w-4" />, emoji: "😡" },
+    { icon: <Bookmark className="h-4 w-4" />, emoji: "🔖" }
   ];
 
   // Get user names for reactions
@@ -149,18 +178,53 @@ const Message: React.FC<MessageProps> = ({
                 <Smile className="h-3.5 w-3.5 text-gray-500" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 flex space-x-2">
-              {emojis.map((item, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => onAddReaction(message.id, item.emoji)}
-                >
-                  {item.icon}
-                </Button>
-              ))}
+            <PopoverContent className="w-72 p-3">
+              {/* Tab buttons for emoji categories */}
+              <div className="flex mb-2 gap-1 justify-between border-b pb-2">
+                {EMOJI_CATEGORIES.map((category, index) => (
+                  <Button
+                    key={index}
+                    variant={selectedCategory === index ? "secondary" : "ghost"}
+                    className="h-8 px-2 text-xs"
+                    onClick={() => setSelectedCategory(index)}
+                  >
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
+              
+              {/* Emoji grid */}
+              <div className="grid grid-cols-8 gap-1.5 max-h-[150px] overflow-y-auto py-1">
+                {EMOJI_CATEGORIES[selectedCategory].emojis.map((emoji, index) => (
+                  <Button
+                    key={index}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-lg"
+                    onClick={() => onAddReaction(message.id, emoji)}
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+              
+              {/* Frequently used emojis */}
+              <div className="mt-2 pt-2 border-t">
+                <p className="text-xs text-muted-foreground mb-1.5">Frequently Used</p>
+                <div className="flex gap-1 flex-wrap">
+                  {commonEmojis.map((item, index) => (
+                    <Button
+                      key={index}
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => onAddReaction(message.id, item.emoji)}
+                    >
+                      {item.emoji}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
         </div>
