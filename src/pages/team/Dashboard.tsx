@@ -31,17 +31,17 @@ const Dashboard: React.FC = () => {
         <div className="md:w-2/3">
           <Tabs defaultValue="noticeboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="noticeboard" className="text-base font-medium">
+              <TabsTrigger value="noticeboard" className="text-base font-medium text-slate-900">
                 <Clipboard className="w-4 h-4 mr-2" /> Noticeboard
               </TabsTrigger>
-              <TabsTrigger value="chat" className="text-base font-medium text-slate-900">
+              <TabsTrigger value="chat" className="text-base font-medium">
                 <MessageSquare className="w-4 h-4 mr-2" /> Team Chat
               </TabsTrigger>
             </TabsList>
             
             <TabsContent value="noticeboard">
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
-                <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Noticeboard</h1>
+                <h1 className="text-3xl font-bold mb-2">Team Noticeboard</h1>
                 <p className="text-gray-600">
                   Pin important notes, share updates, and stay connected with the team.
                 </p>
