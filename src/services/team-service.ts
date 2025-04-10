@@ -87,7 +87,7 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .order('created_at', { ascending: false }); // Sort by creation date, newest first
+      .order('created_at', { ascending: true }); // Sort by creation date, oldest first
     
     if (error) {
       console.error('Error fetching team members:', error);
