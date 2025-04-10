@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2 } from 'lucide-react';
+import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTeamMembers } from '@/services/team-service';
@@ -11,17 +11,23 @@ import { UserProfile } from '@/types/supabase-types';
 const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const members = await getTeamMembers();
         console.log('Team members in component:', members.length);
         console.log('Team members details:', members);
         setTeamMembers(members);
+        setDebugInfo(`Found ${members.length} team members`);
       } catch (error) {
         console.error("Error fetching team members:", error);
+        setError("Failed to fetch team members");
+        setDebugInfo(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setIsLoading(false);
       }
@@ -46,10 +52,23 @@ const TeamDashboard: React.FC = () => {
           Team Members
         </h2>
         
+        {/* Debug info section */}
+        <div className="mb-4 p-2 bg-blue-50 rounded-md flex items-center">
+          <Info className="h-4 w-4 text-blue-500 mr-2" />
+          <span className="text-sm text-blue-700">
+            Debug: {debugInfo || 'No debug info available'}
+          </span>
+        </div>
+        
         <div className="flex flex-wrap gap-4 items-center">
           {isLoading ? (
             <div className="w-full flex justify-center py-4">
               <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="w-full flex items-center justify-center py-4 text-red-500">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              {error}
             </div>
           ) : teamMembers.length === 0 ? (
             <p className="text-gray-500 italic">No team members found</p>
