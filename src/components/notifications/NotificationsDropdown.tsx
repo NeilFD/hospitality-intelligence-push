@@ -150,16 +150,14 @@ const NotificationsDropdown = () => {
     if (unreadNotifications.length === 0) return;
     
     try {
-      const updatePromises = unreadNotifications.map(notification => {
+      for (const notification of unreadNotifications) {
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         
-        return supabase
+        await supabase
           .from('team_messages')
           .update({ read_by: [...currentReadBy, user.id] })
           .eq('id', notification.id);
-      });
-      
-      await Promise.all(updatePromises);
+      }
       
       const updatedNotifications = notifications.map(n => {
         if (!n.read_by.includes(user.id)) {
@@ -174,8 +172,7 @@ const NotificationsDropdown = () => {
       setNotifications(updatedNotifications);
       setHasUnread(false);
       
-      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
-      queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+      queryClient.setQueryData(['mentionedMessages', user?.id], updatedNotifications);
       
       await refetchMentions();
     } catch (error) {
