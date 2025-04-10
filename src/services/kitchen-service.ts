@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { 
   DbSupplier, 
@@ -378,10 +379,6 @@ export const fetchTrackerDataByMonth = async (year: number, month: number, modul
   }
   
   console.log(`Found ${data.length} records for ${year}-${month}`);
-  data.forEach(record => {
-    console.log(`Date: ${record.date}, Week: ${record.week_number}, Revenue: ${record.revenue}`);
-  });
-  
   return data;
 };
 
@@ -496,32 +493,60 @@ export const getTrackerSummaryByMonth = async (
   gpPercentage: number;
 }> => {
   try {
-    // Fetch tracker data for the month
+    // Get master records as the source of truth for revenue
+    const { data: masterRecords, error: masterError } = await supabase
+      .from('master_daily_records')
+      .select('date, week_number, food_revenue, beverage_revenue')
+      .eq('year', year)
+      .eq('month', month)
+      .order('date');
+    
+    if (masterError) {
+      console.error('Error fetching master records:', masterError);
+      throw masterError;
+    }
+    
+    console.log(`Found ${masterRecords.length} master daily records for ${year}-${month}`);
+    
+    // Get tracker data for cost calculation
     const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
     
-    console.log(`Processing ${trackerData.length} tracker records for summary calculation`);
+    // Map tracker data by date for easy lookup
+    const trackerByDate: Record<string, DbTrackerData> = {};
+    trackerData.forEach(record => {
+      trackerByDate[record.date] = record;
+    });
     
     let totalRevenue = 0;
     let totalCost = 0;
     
-    // Process each day in the tracker
-    for (const day of trackerData) {
-      // Add revenue - ensure we're using the correct numeric value
-      const dayRevenue = Number(day.revenue) || 0;
+    // Process each day using master records for revenue and tracker data for costs
+    for (const masterRecord of masterRecords) {
+      // Get revenue from master record based on module type
+      const dayRevenue = moduleType === 'food' 
+        ? Number(masterRecord.food_revenue) || 0 
+        : Number(masterRecord.beverage_revenue) || 0;
+      
       totalRevenue += dayRevenue;
       
-      // Fetch purchases for this day
-      const purchases = await fetchTrackerPurchases(day.id);
-      const creditNotes = await fetchTrackerCreditNotes(day.id);
+      console.log(`Master record ${masterRecord.date} (Week ${masterRecord.week_number}): ${moduleType} Revenue = ${dayRevenue}`);
       
-      const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-      const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
-      const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
-      
-      const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
-      totalCost += dayCost;
-      
-      console.log(`Day ${day.date}: Revenue=${dayRevenue}, Purchases=${purchasesTotal}, Credits=${creditNotesTotal}, Cost=${dayCost}`);
+      // Get cost from tracker data if available
+      const trackerRecord = trackerByDate[masterRecord.date];
+      if (trackerRecord) {
+        // Calculate costs from tracker data
+        const purchases = await fetchTrackerPurchases(trackerRecord.id);
+        const creditNotes = await fetchTrackerCreditNotes(trackerRecord.id);
+        
+        const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+        const staffFoodAllowance = Number(trackerRecord.staff_food_allowance) || 0;
+        
+        const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+        totalCost += dayCost;
+        
+        console.log(`Tracker costs for ${masterRecord.date}: Purchases=${purchasesTotal}, Credits=${creditNotesTotal}, Cost=${dayCost}`);
+      }
     }
     
     // Calculate GP percentage
@@ -530,7 +555,7 @@ export const getTrackerSummaryByMonth = async (
       gpPercentage = (totalRevenue - totalCost) / totalRevenue;
     }
     
-    console.log(`Month summary for ${moduleType}: Revenue=${totalRevenue}, Cost=${totalCost}, GP%=${gpPercentage}`);
+    console.log(`Month summary for ${moduleType} using master records: Revenue=${totalRevenue}, Cost=${totalCost}, GP%=${gpPercentage}`);
     
     return {
       revenue: totalRevenue,

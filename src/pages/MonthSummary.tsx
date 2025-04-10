@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth, fetchTrackerPurchases, fetchTrackerCreditNotes, getTrackerSummaryByMonth } from '@/services/kitchen-service';
+import { supabase } from '@/lib/supabase';
 
 interface MonthSummaryProps {
   modulePrefix?: string;
@@ -46,14 +47,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
   const [totalCosts, setTotalCosts] = useState(0);
   const [gpPercentage, setGpPercentage] = useState(0);
   
-  const { data: trackerData, isLoading: isLoadingTracker } = useQuery({
-    queryKey: ['tracker-data', currentYear, currentMonth, moduleType],
-    queryFn: async () => {
-      return await fetchTrackerDataByMonth(currentYear, currentMonth, moduleType);
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-  
   useEffect(() => {
     if (yearParam && monthParam) {
       setCurrentYear(parseInt(yearParam));
@@ -84,83 +77,110 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
   };
   
   useEffect(() => {
-    const calculateFromTrackerData = async () => {
-      if (!trackerData || trackerData.length === 0) {
-        calculateFromLocalStore();
-        return;
-      }
-
+    const fetchData = async () => {
       try {
-        // Initialize weekly totals with all weeks
-        const weekTotals: Record<number, { revenue: number, costs: number }> = {};
-        
-        // Pre-initialize all weeks with zero values
-        for (let i = 1; i <= 5; i++) {
-          weekTotals[i] = { revenue: 0, costs: 0 };
+        // Fetch master daily records as the single source of truth
+        const { data: masterRecords, error: masterError } = await supabase
+          .from('master_daily_records')
+          .select('*')
+          .eq('year', currentYear)
+          .eq('month', currentMonth)
+          .order('date');
+          
+        if (masterError) {
+          console.error('Error fetching master records:', masterError);
+          throw masterError;
         }
         
-        // Process each day's data
-        for (const day of trackerData) {
-          const weekNumber = day.week_number || 1;
-          
-          // Add revenue - ensure we're working with numbers
-          const dayRevenue = Number(day.revenue) || 0;
-          weekTotals[weekNumber].revenue += dayRevenue;
-          
-          // Get costs for this day
-          const purchases = await fetchTrackerPurchases(day.id);
-          const purchasesAmount = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-          
-          const creditNotes = await fetchTrackerCreditNotes(day.id);
-          const creditNotesAmount = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
-          
-          const staffFood = Number(day.staff_food_allowance) || 0;
-          const dayCosts = purchasesAmount - creditNotesAmount + staffFood;
-          
-          weekTotals[weekNumber].costs += dayCosts;
-          
-          console.log(`Week ${weekNumber}, Day ${day.date}: Revenue = ${dayRevenue}, Costs = ${dayCosts}`);
+        console.log(`Found ${masterRecords.length} master records for ${currentYear}-${currentMonth}`);
+        
+        // Fetch tracker data for cost calculation
+        const trackerData = await fetchTrackerDataByMonth(currentYear, currentMonth, moduleType);
+        
+        // Map tracker data by date for easy lookup
+        const trackerByDate: Record<string, any> = {};
+        for (const tracker of trackerData) {
+          trackerByDate[tracker.date] = tracker;
         }
         
-        // Calculate GP and build weekly data array
-        let monthRevenue = 0;
-        let monthCosts = 0;
-        const weeklyDataArray: WeekSummary[] = [];
-        
-        // Process each week
+        // Initialize weekly summaries
+        const weekMap: Record<number, WeekSummary> = {};
         for (let i = 1; i <= 5; i++) {
-          const weekData = weekTotals[i];
-          const weekRevenue = weekData.revenue;
-          const weekCosts = weekData.costs;
-          
-          monthRevenue += weekRevenue;
-          monthCosts += weekCosts;
-          
-          weeklyDataArray.push({
+          weekMap[i] = {
             weekNumber: i,
-            revenue: weekRevenue,
-            costs: weekCosts,
-            gp: calculateGP(weekRevenue, weekCosts)
-          });
-          
-          console.log(`Week ${i} Summary - Revenue: ${weekRevenue}, Costs: ${weekCosts}`);
+            revenue: 0,
+            costs: 0,
+            gp: 0
+          };
         }
         
-        console.log(`Total monthly revenue from tracker: ${monthRevenue}`);
-        console.log(`Total monthly costs from tracker: ${monthCosts}`);
+        // Process each day from master records
+        for (const record of masterRecords) {
+          const weekNumber = record.week_number;
+          
+          // Select correct revenue field based on module type
+          const dayRevenue = moduleType === 'food' ? 
+            Number(record.food_revenue) || 0 : 
+            Number(record.beverage_revenue) || 0;
+            
+          // Add to weekly total
+          weekMap[weekNumber].revenue += dayRevenue;
+          
+          // Process costs from tracker data if available
+          const trackerRecord = trackerByDate[record.date];
+          if (trackerRecord) {
+            const purchases = await fetchTrackerPurchases(trackerRecord.id);
+            const creditNotes = await fetchTrackerCreditNotes(trackerRecord.id);
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFoodAllowance = Number(trackerRecord.staff_food_allowance) || 0;
+            
+            const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+            weekMap[weekNumber].costs += dayCost;
+            
+            console.log(`${record.date} (Week ${weekNumber}): Revenue=${dayRevenue}, Cost=${dayCost}`);
+          }
+        }
         
+        // Calculate GP for each week and totals
+        let monthTotalRevenue = 0;
+        let monthTotalCosts = 0;
+        
+        // Convert the map to an array and calculate GP
+        const weeklyDataArray: WeekSummary[] = Object.values(weekMap).map(week => {
+          monthTotalRevenue += week.revenue;
+          monthTotalCosts += week.costs;
+          
+          return {
+            ...week,
+            gp: calculateGP(week.revenue, week.costs)
+          };
+        });
+        
+        // Sort by week number
+        weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
+        
+        console.log('Weekly breakdown:', weeklyDataArray.map(w => 
+          `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}`
+        ));
+        
+        // Update state with calculated data
         setWeeklyData(weeklyDataArray);
-        setTotalRevenue(monthRevenue);
-        setTotalCosts(monthCosts);
-        setGpPercentage(calculateGP(monthRevenue, monthCosts));
+        setTotalRevenue(monthTotalRevenue);
+        setTotalCosts(monthTotalCosts);
+        setGpPercentage(calculateGP(monthTotalRevenue, monthTotalCosts));
+        
       } catch (error) {
-        console.error("Error calculating from tracker data:", error);
-        calculateFromLocalStore();
+        console.error("Error calculating from master records:", error);
         toast({
-          title: "Error loading tracker data",
-          description: "Falling back to local data",
+          title: "Error loading data",
+          description: "There was a problem loading the month summary",
           variant: "destructive",
         });
+        
+        // Fallback to local data if API fails
+        calculateFromLocalStore();
       }
     };
     
@@ -221,8 +241,8 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
       setGpPercentage(calculateGP(localTotalRevenue, localTotalCosts));
     };
 
-    calculateFromTrackerData();
-  }, [trackerData, monthRecord, currentYear, currentMonth, toast, moduleType]);
+    fetchData();
+  }, [currentYear, currentMonth, toast, moduleType]);
   
   const gpDifference = gpPercentage - monthRecord.gpTarget;
   const gpStatus = 
@@ -239,7 +259,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
 
   const pageTitle = modulePrefix ? `${modulePrefix} Monthly Summary` : "Monthly Summary";
   const costLabel = moduleType === 'food' ? 'Food Costs' : moduleType === 'beverage' ? 'Beverage Costs' : 'Costs';
-
+  
   return (
     <div className="container py-8 space-y-6">
       <div className="flex justify-between items-center">
@@ -294,9 +314,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           <CardTitle>Weekly Breakdown</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          {isLoadingTracker ? (
-            <div className="py-10 text-center text-muted-foreground">Loading tracker data...</div>
-          ) : weeklyData.length === 0 ? (
+          {weeklyData.length === 0 ? (
             <div className="py-10 text-center text-muted-foreground">No weekly data available</div>
           ) : (
             <div className="overflow-x-auto rounded-lg">
