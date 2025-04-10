@@ -19,7 +19,7 @@ const NotificationsDropdown = () => {
   const queryClient = useQueryClient();
   
   // Get messages where current user is mentioned
-  const { data: mentionedMessages } = useQuery({
+  const { data: mentionedMessages, refetch: refetchMentions } = useQuery({
     queryKey: ['mentionedMessages', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -58,6 +58,33 @@ const NotificationsDropdown = () => {
       return data;
     },
   });
+  
+  // Listen for new mentions via Supabase realtime
+  useEffect(() => {
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('public:team_messages:mentions')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'team_messages',
+          filter: `mentioned_users=cs.{${user.id}}`
+        },
+        (payload) => {
+          if (payload.new && (payload.new as any).author_id !== user.id) {
+            refetchMentions();
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, refetchMentions]);
   
   // Process notifications
   useEffect(() => {
