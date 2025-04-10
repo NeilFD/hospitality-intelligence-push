@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { 
   DbSupplier, 
@@ -481,6 +480,9 @@ export const upsertTrackerCreditNote = async (creditNote: Omit<DbTrackerCreditNo
     return data;
   }
 };
+
+// Export the synchronization functions from lib/supabase.ts
+export { syncTrackerPurchasesToPurchases, syncTrackerCreditNotesToCreditNotes } from '@/lib/supabase';
 
 // New function to get summarized data for a tracker by month
 export const getTrackerSummaryByMonth = async (

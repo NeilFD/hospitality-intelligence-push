@@ -18,7 +18,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
-import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
+import { 
+  fetchTrackerDataByMonth, 
+  syncTrackerPurchasesToPurchases, 
+  syncTrackerCreditNotesToCreditNotes 
+} from '@/services/kitchen-service';
 
 interface BevStore {
   getState: () => {
@@ -143,6 +147,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { annualRecord, currentYear, currentMonth } = useStore();
   const { getMonthlyWages, getWeekdayTotals } = useWagesStore();
   const { user } = useAuthStore();
@@ -438,6 +443,21 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       console.error("Error fetching wages data:", error);
     }
     
+    setIsSyncing(true);
+    try {
+      await syncTrackerPurchasesToPurchases(currentYear, currentMonth, 'food');
+      await syncTrackerCreditNotesToCreditNotes(currentYear, currentMonth, 'food');
+      
+      await syncTrackerPurchasesToPurchases(currentYear, currentMonth, 'beverage');
+      await syncTrackerCreditNotesToCreditNotes(currentYear, currentMonth, 'beverage');
+      
+      console.log("Successfully synchronized tracker data to purchases and credit notes tables.");
+    } catch (error) {
+      console.error("Error syncing tracker data:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+    
     const foodAnnualData = getCompleteAnnualData();
     const foodMonthData = getCompleteMonthData(currentYear, currentMonth);
     
@@ -662,6 +682,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           <Sparkles className="text-tavern-blue-dark h-5 w-5" />
         </div>
         <h3 className="font-semibold text-tavern-blue-dark text-lg">Cleo - Performance Assistant</h3>
+        {isSyncing && <span className="text-xs text-tavern-blue-dark ml-auto animate-pulse">Syncing data...</span>}
       </div>
       
       <ScrollArea ref={scrollAreaRef} className="flex-1 h-64 p-4 overflow-y-auto chat-container">
@@ -744,12 +765,12 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           placeholder="Ask about your business performance..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={isLoading}
+          disabled={isLoading || isSyncing}
           className="flex-1 glass-input text-tavern-blue-dark shadow-inner focus:shadow-none"
         />
         <Button 
           type="submit" 
-          disabled={isLoading || !input.trim()} 
+          disabled={isLoading || isSyncing || !input.trim()} 
           className="send-button shadow-glass bg-gradient-to-r from-tavern-blue-light/80 to-tavern-blue/90 text-white"
         >
           <SendHorizonal className="h-5 w-5 text-tavern-blue-dark" />
