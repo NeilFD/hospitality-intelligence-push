@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare } from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -126,7 +126,8 @@ const Layout = ({
   
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
-      name: module.type === 'master' ? 'Daily Info' : module.name,
+      name: module.type === 'master' ? 'Daily Info' : 
+             module.type === 'team' ? 'Team' : module.name,
       path: `/${module.type}/dashboard`,
       icon: <ModuleIcon type={module.type} className="mr-2 h-4 w-4" />,
       type: module.type

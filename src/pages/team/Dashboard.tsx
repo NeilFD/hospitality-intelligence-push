@@ -1,12 +1,16 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clipboard, MessageSquare, ArrowRight } from 'lucide-react';
+import { Users, MessageSquare, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 const TeamDashboard: React.FC = () => {
   return <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Hub</h1>
+        <h1 className="text-3xl font-bold mb-2 text-slate-900 flex items-center gap-2">
+          <Users className="h-8 w-8 text-indigo-600" /> Team
+        </h1>
         <p className="text-gray-600">
           Connect with your team, share updates, and stay informed.
         </p>
