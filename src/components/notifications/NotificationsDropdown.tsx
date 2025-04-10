@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -219,6 +220,7 @@ const NotificationsDropdown = () => {
     }
     
     try {
+      // Optimistically update UI first
       setNotifications(prev => prev.filter(n => n.id !== message.id));
       
       const remainingUnread = notifications
@@ -230,6 +232,7 @@ const NotificationsDropdown = () => {
       
       setHasUnread(remainingUnread);
       
+      // Fixed: Actually update the deleted field in Supabase
       const { error } = await supabase
         .from('team_messages')
         .update({ deleted: true })
@@ -242,6 +245,7 @@ const NotificationsDropdown = () => {
         return;
       }
       
+      // Invalidate the query cache to ensure latest data is fetched on next query
       queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
       toast.success('Notification deleted');
       
