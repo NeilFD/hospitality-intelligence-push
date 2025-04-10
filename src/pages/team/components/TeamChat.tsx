@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,7 +44,7 @@ const EMOJI_CATEGORIES = [
   },
   {
     name: "Activities",
-    emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂"]
+    emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
   }
 ];
 
@@ -588,9 +588,9 @@ const TeamChat: React.FC = () => {
       <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm overflow-hidden">
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
           <CardContent className="p-0 flex flex-col h-full">
-            <div className="bg-purple-50 p-3 border-b">
+            <div className="bg-pastel-blue p-3 border-b flex items-center justify-between border-white/30">
               {selectedRoomId && rooms.length > 0 && (
-                <h2 className="text-lg font-semibold text-purple-900">
+                <h2 className="text-lg font-semibold text-tavern-blue-dark">
                   {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
                 </h2>
               )}
