@@ -588,9 +588,9 @@ const TeamChat: React.FC = () => {
       <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm overflow-hidden">
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
           <CardContent className="p-0 flex flex-col h-full">
-            <div className="bg-tavern-blue/10 p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
+            <div className="bg-pastel-blue p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
               {selectedRoomId && rooms.length > 0 && (
-                <h2 className="text-lg font-semibold text-tavern-blue-dark pl-1">
+                <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2">
                   {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
                 </h2>
               )}
