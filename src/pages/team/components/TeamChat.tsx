@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -273,7 +274,225 @@ const Message: React.FC<MessageProps> = ({
 };
 
 const TeamChat: React.FC = () => {
-  // ... keep existing code
+  const [messageText, setMessageText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  
+  // Get available chat rooms
+  const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
+    queryKey: ['chatRooms'],
+    queryFn: getChatRooms
+  });
+  
+  // Select first room by default if none selected
+  useEffect(() => {
+    if (!selectedRoomId && rooms.length > 0) {
+      setSelectedRoomId(rooms[0].id);
+    }
+  }, [rooms, selectedRoomId]);
+  
+  // Get messages for selected room
+  const { 
+    data: messages = [], 
+    isLoading: isLoadingMessages,
+    refetch: refetchMessages
+  } = useQuery({
+    queryKey: ['teamMessages', selectedRoomId],
+    queryFn: () => selectedRoomId ? getMessages(selectedRoomId) : Promise.resolve([]),
+    enabled: !!selectedRoomId
+  });
+  
+  // Get team members for message authors and reactions
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['teamMembers'],
+    queryFn: getTeamMembers
+  });
+  
+  // Create message mutation
+  const createMessageMutation = useMutation({
+    mutationFn: createMessage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamMessages', selectedRoomId] });
+    }
+  });
+  
+  // Add reaction mutation
+  const addReactionMutation = useMutation({
+    mutationFn: ({ messageId, emoji, userId }: { messageId: string, emoji: string, userId: string }) => 
+      addMessageReaction(messageId, emoji, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamMessages', selectedRoomId] });
+    }
+  });
+  
+  // Scroll to bottom of messages
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+  
+  // Find message authors
+  const findMessageAuthor = (authorId: string) => {
+    return teamMembers.find(member => member.id === authorId);
+  };
+  
+  // Handle message submission
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !user || !selectedRoomId) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      await createMessageMutation.mutateAsync({
+        content: messageText,
+        author_id: user.id,
+        type: 'text',
+        room_id: selectedRoomId,
+        read_by: [user.id]
+      });
+      
+      setMessageText('');
+      toast.success('Message sent');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleAddReaction = (messageId: string, emoji: string) => {
+    if (!user) return;
+    
+    addReactionMutation.mutate({
+      messageId,
+      emoji,
+      userId: user.id
+    });
+  };
+  
+  const handleRoomSelect = (roomId: string) => {
+    setSelectedRoomId(roomId);
+  };
+  
+  return (
+    <div className="flex h-[calc(100vh-120px)]">
+      <ChatRoomSidebar 
+        selectedRoomId={selectedRoomId}
+        onRoomSelect={handleRoomSelect}
+      />
+      
+      <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm overflow-hidden">
+        <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
+          <CardContent className="p-0 flex flex-col h-full">
+            <div className="bg-purple-50 p-3 border-b">
+              {selectedRoomId && rooms.length > 0 && (
+                <h2 className="text-lg font-semibold text-purple-900">
+                  {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
+                </h2>
+              )}
+            </div>
+            
+            <div className="flex-1 p-4 overflow-y-auto">
+              {isLoadingMessages ? (
+                <div className="flex justify-center items-center h-full">
+                  <p className="text-gray-500">Loading messages...</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex justify-center items-center h-full">
+                  <p className="text-gray-500">No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                <>
+                  {messages.map((message) => (
+                    <Message
+                      key={message.id}
+                      message={message}
+                      isOwnMessage={message.author_id === user?.id}
+                      author={findMessageAuthor(message.author_id)}
+                      onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)}
+                      teamMembers={teamMembers}
+                      currentUserId={user?.id || ''}
+                    />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+            
+            <div className="p-3 border-t">
+              <div className="flex items-end gap-2">
+                <Textarea
+                  placeholder="Type a message..."
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  className="min-h-[60px] max-h-[120px] resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <Button 
+                  onClick={handleSendMessage} 
+                  disabled={isSubmitting || !messageText.trim()} 
+                  size="icon" 
+                  className="h-10 w-10 rounded-full"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              <div className="flex gap-1 mt-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-gray-700 px-2" 
+                  title="Add image"
+                >
+                  <Image className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Image</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-gray-700 px-2" 
+                  title="Record voice"
+                >
+                  <Mic className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Voice</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-gray-700 px-2" 
+                  title="Attach file"
+                >
+                  <Paperclip className="h-4 w-4 mr-1" />
+                  <span className="text-xs">File</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-gray-700 px-2" 
+                  title="Mention"
+                >
+                  <AtSign className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Mention</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 };
 
 export default TeamChat;
