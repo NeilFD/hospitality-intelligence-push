@@ -76,6 +76,8 @@ const NotificationsDropdown = () => {
         (payload) => {
           if (payload.new && (payload.new as any).author_id !== user.id) {
             refetchMentions();
+            // Set hasUnread to true when a new mention is received
+            setHasUnread(true);
           }
         }
       )
@@ -95,6 +97,7 @@ const NotificationsDropdown = () => {
       );
       
       setNotifications(mentionedMessages);
+      // Set hasUnread based on whether there are any unread messages
       setHasUnread(unreadMessages.length > 0);
     }
   }, [mentionedMessages, user]);
