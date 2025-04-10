@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -40,10 +39,6 @@ const Layout = ({
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
-  
-  const sortedModules = useMemo(() => {
-    return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
-  }, [modules]);
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
