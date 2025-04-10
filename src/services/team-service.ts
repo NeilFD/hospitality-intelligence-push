@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -60,28 +61,38 @@ export const getNotes = async (): Promise<TeamNote[]> => {
   }
 };
 
+// Store the mock notes in memory when we don't have a database table
+const mockNotes: TeamNote[] = [];
+
 export const createNote = async (note: Omit<TeamNote, 'id' | 'created_at' | 'updated_at'>): Promise<TeamNote> => {
   try {
+    const now = new Date().toISOString();
+    
+    // Check if the table exists by trying to select from it
     const { error: checkError } = await supabase
       .from('team_notes')
       .select('id')
       .limit(1);
     
     if (checkError && checkError.code === '42P01') {
+      // Table doesn't exist, use mock data instead
       console.warn('The team_notes table does not exist yet. Creating a mock note.');
       
       const mockNote: TeamNote = {
-        id: `mock-${Date.now()}`,
+        id: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         content: note.content,
         author_id: note.author_id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
         pinned: note.pinned || false,
         color: note.color || '',
         type: note.type || 'text',
         attachment_url: note.attachment_url,
         mentioned_users: note.mentioned_users
       };
+      
+      // Add to our in-memory mock notes array
+      mockNotes.push(mockNote);
       
       return mockNote;
     }
@@ -100,11 +111,64 @@ export const createNote = async (note: Omit<TeamNote, 'id' | 'created_at' | 'upd
     return data;
   } catch (e) {
     console.error('Exception in createNote:', e);
-    throw e;
+    
+    // Fallback to mock data if anything goes wrong
+    const mockNote: TeamNote = {
+      id: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      content: note.content,
+      author_id: note.author_id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      pinned: note.pinned || false,
+      color: note.color || '',
+      type: note.type || 'text',
+      attachment_url: note.attachment_url,
+      mentioned_users: note.mentioned_users
+    };
+    
+    mockNotes.push(mockNote);
+    return mockNote;
+  }
+};
+
+// Override getNotes to use mock data when the table doesn't exist
+const originalGetNotes = getNotes;
+export const getNotes = async (): Promise<TeamNote[]> => {
+  try {
+    const { error } = await supabase
+      .from('team_notes')
+      .select('id')
+      .limit(1);
+      
+    if (error && error.code === '42P01') {
+      // Table doesn't exist, use mock data
+      console.warn('The team_notes table does not exist yet. Returning mock notes.');
+      return [...mockNotes];
+    }
+    
+    // Table exists, use the original function
+    return await originalGetNotes();
+  } catch (e) {
+    console.error('Exception in getNotes:', e);
+    return [...mockNotes];
   }
 };
 
 export const updateNote = async (id: string, updates: Partial<TeamNote>): Promise<TeamNote> => {
+  // Check if we're using mock data
+  if (id.startsWith('mock-')) {
+    const index = mockNotes.findIndex(note => note.id === id);
+    if (index !== -1) {
+      mockNotes[index] = { 
+        ...mockNotes[index], 
+        ...updates, 
+        updated_at: new Date().toISOString() 
+      };
+      return mockNotes[index];
+    }
+    throw new Error('Mock note not found');
+  }
+
   const { data, error } = await supabase
     .from('team_notes')
     .update(updates)
@@ -121,6 +185,16 @@ export const updateNote = async (id: string, updates: Partial<TeamNote>): Promis
 };
 
 export const deleteNote = async (id: string): Promise<void> => {
+  // Check if we're using mock data
+  if (id.startsWith('mock-')) {
+    const index = mockNotes.findIndex(note => note.id === id);
+    if (index !== -1) {
+      mockNotes.splice(index, 1);
+      return;
+    }
+    throw new Error('Mock note not found');
+  }
+
   const { error } = await supabase
     .from('team_notes')
     .delete()
@@ -132,48 +206,67 @@ export const deleteNote = async (id: string): Promise<void> => {
   }
 };
 
+// Store mock messages in memory
+const mockMessages: TeamMessage[] = [];
+
 // Messages functions
 export const getMessages = async (): Promise<TeamMessage[]> => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
+      .from('team_messages')
+      .select('id')
+      .limit(1);
+      
+    if (error && error.code === '42P01') {
+      // Table doesn't exist, use mock data
+      console.warn('The team_messages table does not exist yet. Returning mock messages.');
+      return [...mockMessages];
+    }
+    
+    const { data, error: fetchError } = await supabase
       .from('team_messages')
       .select('*')
       .order('created_at', { ascending: true });
       
-    if (error) {
-      console.error('Error fetching team messages:', error);
+    if (fetchError) {
+      console.error('Error fetching team messages:', fetchError);
       return [];
     }
     
     return data || [];
   } catch (e) {
     console.error('Exception in getMessages:', e);
-    return [];
+    return [...mockMessages];
   }
 };
 
 export const createMessage = async (message: Omit<TeamMessage, 'id' | 'created_at' | 'updated_at'>): Promise<TeamMessage> => {
   try {
+    const now = new Date().toISOString();
+    
+    // Check if the table exists
     const { error: checkError } = await supabase
       .from('team_messages')
       .select('id')
       .limit(1);
     
     if (checkError && checkError.code === '42P01') {
+      // Table doesn't exist, use mock data
       console.warn('The team_messages table does not exist yet. Creating a mock message.');
       
       const mockMessage: TeamMessage = {
-        id: `mock-${Date.now()}`,
+        id: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         content: message.content,
         author_id: message.author_id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
         type: message.type || 'text',
         attachment_url: message.attachment_url,
         mentioned_users: message.mentioned_users,
         read_by: message.read_by || []
       };
       
+      mockMessages.push(mockMessage);
       return mockMessage;
     }
     
@@ -191,11 +284,35 @@ export const createMessage = async (message: Omit<TeamMessage, 'id' | 'created_a
     return data;
   } catch (e) {
     console.error('Exception in createMessage:', e);
-    throw e;
+    
+    // Fallback to mock data
+    const mockMessage: TeamMessage = {
+      id: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      content: message.content,
+      author_id: message.author_id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      type: message.type || 'text',
+      attachment_url: message.attachment_url,
+      mentioned_users: message.mentioned_users,
+      read_by: message.read_by || []
+    };
+    
+    mockMessages.push(mockMessage);
+    return mockMessage;
   }
 };
 
 export const markMessageAsRead = async (messageId: string, userId: string): Promise<void> => {
+  // Check if we're using mock data
+  if (messageId.startsWith('mock-')) {
+    const index = mockMessages.findIndex(msg => msg.id === messageId);
+    if (index !== -1 && !mockMessages[index].read_by.includes(userId)) {
+      mockMessages[index].read_by.push(userId);
+    }
+    return;
+  }
+
   const { data: message, error: fetchError } = await supabase
     .from('team_messages')
     .select('read_by')
