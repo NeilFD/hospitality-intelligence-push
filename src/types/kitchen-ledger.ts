@@ -45,7 +45,8 @@ export interface AnnualRecord {
   months: MonthlyRecord[];
 }
 
-export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master';
+// Update the ModuleType to include the new 'team' module
+export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master' | 'team';
 
 export interface Module {
   id: string;

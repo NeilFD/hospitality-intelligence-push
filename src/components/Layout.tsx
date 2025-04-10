@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Sandwich, Wine, BarChart, DollarSign, Clock } from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -13,9 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ModuleType } from "@/types/kitchen-ledger";
 import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
+import { ModuleIcon } from "./ModuleIcons";
+
 interface LayoutProps {
   children: ReactNode;
 }
+
 const Layout = ({
   children
 }: LayoutProps) => {
@@ -36,39 +40,28 @@ const Layout = ({
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
+  
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
+  
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
+  
   const handleLogout = async () => {
     await logout();
     toast.success('You have been logged out');
     navigate('/login');
   };
+  
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-  const getModuleIcon = (type: ModuleType) => {
-    switch (type) {
-      case 'food':
-        return <Sandwich className="mr-2 h-4 w-4" />;
-      case 'beverage':
-        return <Wine className="mr-2 h-4 w-4" />;
-      case 'pl':
-        return <span className="mr-2 h-4 w-4 text-lg font-bold">£</span>;
-      case 'wages':
-        return <Clock className="mr-2 h-4 w-4" />;
-      case 'performance':
-        return <BarChart className="mr-2 h-4 w-4" />;
-      default:
-        return <ChartBar className="mr-2 h-4 w-4" />;
-    }
-  };
+  
   const getModuleNavItems = useMemo(() => {
     switch (currentModule) {
       case 'food':
@@ -109,25 +102,35 @@ const Layout = ({
           path: "/performance/dashboard",
           icon: <Home className="mr-2 h-4 w-4" />
         }];
+      case 'team':
+        return [{
+          name: "Team Dashboard",
+          path: "/team/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }];
       default:
         return [];
     }
   }, [currentModule, currentYear, currentMonth]);
+  
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
       name: module.type === 'master' ? 'Daily Info' : module.name,
       path: `/${module.type}/dashboard`,
-      icon: getModuleIcon(module.type),
+      icon: <ModuleIcon type={module.type} className="mr-2 h-4 w-4" />,
       type: module.type
     }));
   }, [sortedModules]);
+  
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
+  
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   if (isAuthPage) {
     return <>{children}</>;
   }
+  
   const Sidebar = <div className="h-full flex flex-col bg-[#48495E]">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="md" className="mb-3" />
@@ -175,6 +178,7 @@ const Layout = ({
         {!sidebarCollapsed && <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>}
       </div>
     </div>;
+    
   const ProfileAvatar = () => <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-tavern-blue text-white">
         {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
@@ -183,6 +187,7 @@ const Layout = ({
           {profile.first_name || 'User'}
         </span>}
     </div>;
+    
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -279,4 +284,5 @@ const Layout = ({
         </>}
     </div>;
 };
+
 export default Layout;

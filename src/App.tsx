@@ -42,6 +42,9 @@ import MasterDashboard from '@/pages/master/Dashboard';
 import MasterMonthSummary from '@/pages/master/MonthSummary';
 import MasterWeeklyInput from '@/pages/master/WeeklyInput';
 
+// Team Communication pages
+import TeamDashboard from '@/pages/team/Dashboard';
+
 // Import React Query dependencies
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -136,6 +139,11 @@ const router = createBrowserRouter([
       {
         path: "/wages/dashboard",
         element: <WagesDashboard />
+      },
+      // Team module routes
+      {
+        path: "/team/dashboard",
+        element: <TeamDashboard />
       },
       {
         path: "*",

@@ -31,7 +31,8 @@ const defaultModules: Module[] = [
   { id: '3', type: 'food', name: 'Food Tracker', enabled: true, displayOrder: 3 },
   { id: '4', type: 'beverage', name: 'Beverage Tracker', enabled: true, displayOrder: 4 },
   { id: '5', type: 'performance', name: 'Performance and Analysis', enabled: true, displayOrder: 5 },
-  { id: '6', type: 'master', name: 'Master Records', enabled: true, displayOrder: 0 }
+  { id: '6', type: 'master', name: 'Master Records', enabled: true, displayOrder: 0 },
+  { id: '7', type: 'team', name: 'Team Communication', enabled: true, displayOrder: 6 }
 ];
 
 // Create initial month record with empty weeks
