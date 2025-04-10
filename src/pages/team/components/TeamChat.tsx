@@ -11,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from 'date-fns';
 import { MoreVertical, Send, Smile, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTeamMembers, getChatRooms, getMessages, createMessage as sendChatMessage, addMessageReaction as addReaction, deleteMessage } from '@/services/team-service';
+import { getTeamMembers, getChatRooms, getMessages, createMessage, addMessageReaction, deleteMessage } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { TeamMessage, MessageReaction } from "@/services/team-service"; // Import from team-service instead
+import { TeamMessage, MessageReaction } from "@/services/team-service";
 
 interface MessageProps {
   message: TeamMessage;
@@ -61,7 +61,8 @@ const Message: React.FC<MessageProps> = ({
     return teamMembers.find(member => member.id === userId);
   };
 
-  const messageAuthor = author || getAuthorProfile(message.user_id || message.author_id);
+  // Use author_id instead of user_id since that's what TeamMessage interface uses
+  const messageAuthor = author || getAuthorProfile(message.author_id);
 
   return (
     <div className={`mb-2 py-2 px-3 rounded-md hover:bg-gray-100 transition-colors duration-200 ${isOwnMessage ? 'bg-blue-50 text-right' : ''}`}>
@@ -135,9 +136,9 @@ const Message: React.FC<MessageProps> = ({
                 </Tabs>
               </PopoverContent>
             </Popover>
-            {message.reactions && Object.entries(message.reactions as Record<string, string[]>).map(([emoji, userIds]) => (
-              <Badge key={emoji} variant="secondary" className="ml-1">
-                {emoji} {userIds.length}
+            {message.reactions && Array.isArray(message.reactions) && message.reactions.map((reaction: MessageReaction) => (
+              <Badge key={reaction.emoji} variant="secondary" className="ml-1">
+                {reaction.emoji} {reaction.user_ids.length}
               </Badge>
             ))}
           </div>
@@ -190,7 +191,17 @@ const TeamChat: React.FC = () => {
   }, [messages]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: (data: { roomId: string; content: string }) => sendChatMessage(data),
+    mutationFn: (data: { roomId: string; content: string }) => {
+      if (!user?.id) throw new Error("User not authenticated");
+      // Properly format the data to match the expected parameter type
+      return createMessage({
+        room_id: data.roomId,
+        content: data.content,
+        author_id: user.id,
+        type: 'text',
+        read_by: [user.id],
+      });
+    },
     onSuccess: () => {
       setInput('');
       queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedRoomId] });
@@ -198,7 +209,7 @@ const TeamChat: React.FC = () => {
   });
 
   const addReactionMutation = useMutation({
-    mutationFn: (data: { messageId: string; emoji: string }) => addReaction(data.messageId, data.emoji, user?.id || ''),
+    mutationFn: (data: { messageId: string; emoji: string }) => addMessageReaction(data.messageId, data.emoji, user?.id || ''),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedRoomId] });
     }
@@ -216,7 +227,7 @@ const TeamChat: React.FC = () => {
   };
 
   const handleSend = () => {
-    if (input.trim() && selectedRoomId) {
+    if (input.trim() && selectedRoomId && user) {
       sendMessageMutation.mutate({
         roomId: selectedRoomId,
         content: input,
@@ -259,12 +270,12 @@ const TeamChat: React.FC = () => {
             
             <div className="flex-1 overflow-y-auto p-4">
               {messages.map(message => {
-                const author = teamMembers.find(member => member.id === (message.user_id || message.author_id));
+                const author = teamMembers.find(member => member.id === message.author_id);
                 return (
                   <Message
                     key={message.id}
                     message={message}
-                    isOwnMessage={(message.user_id || message.author_id) === user?.id}
+                    isOwnMessage={message.author_id === user?.id}
                     author={author}
                     onAddReaction={handleAddReaction}
                     onDeleteMessage={handleDeleteMessage}
