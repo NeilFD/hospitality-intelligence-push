@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
@@ -13,7 +12,6 @@ import { supabase } from '@/lib/supabase';
 
 export default function BeverageDashboard() {
   const {
-    annualRecord,
     currentYear,
     currentMonth
   } = useStore();
@@ -24,83 +22,131 @@ export default function BeverageDashboard() {
   const [currentMonthCost, setCurrentMonthCost] = useState(0);
   const [currentMonthGP, setCurrentMonthGP] = useState(0);
   
-  // Fetch tracker data for the current month
-  const { data: trackerData, isLoading: isLoadingTracker } = useQuery({
-    queryKey: ['tracker-data', currentYear, currentMonth, 'beverage'],
-    queryFn: async () => {
-      return await fetchTrackerDataByMonth(currentYear, currentMonth, 'beverage');
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-  // Calculate values based on tracker data from Supabase
   useEffect(() => {
-    const calculateFromTrackerData = async () => {
-      if (!trackerData || trackerData.length === 0) {
-        // Fall back to local store data if no tracker data
-        calculateFromLocalStore();
-        return;
-      }
-
+    const fetchData = async () => {
       try {
-        let monthRev = 0;
-        let monthCost = 0;
-        
-        // Process each tracker day
-        for (const day of trackerData) {
-          monthRev += Number(day.revenue) || 0;
+        // Fetch master records for the current month as the single source of truth
+        const { data: masterRecords, error: masterError } = await supabase
+          .from('master_daily_records')
+          .select('*')
+          .eq('year', currentYear)
+          .eq('month', currentMonth)
+          .order('date');
           
-          // Fetch purchases for this tracker day
-          const purchases = await fetchTrackerPurchases(day.id);
-          const dayPurchases = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
-          monthCost += dayPurchases;
-          
-          // Fetch credit notes for this tracker day
-          const creditNotes = await fetchTrackerCreditNotes(day.id);
-          const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount), 0);
-          monthCost -= dayCreditNotes; // Subtract credit notes from cost
+        if (masterError) {
+          console.error('Error fetching master records:', masterError);
+          throw masterError;
         }
         
-        setCurrentMonthRevenue(monthRev);
-        setCurrentMonthCost(monthCost);
-        setCurrentMonthGP(calculateGP(monthRev, monthCost));
+        console.log(`Dashboard: Found ${masterRecords.length} master records for ${currentYear}-${currentMonth}`);
         
-        // Calculate annual totals
-        let annualRevenue = 0;
-        let annualCost = 0;
+        // Fetch tracker data for costs
+        const trackerData = await fetchTrackerDataByMonth(currentYear, currentMonth, 'beverage');
         
-        // Fetch data for all months in the current year
-        for (let month = 1; month <= 12; month++) {
-          const monthData = await fetchTrackerDataByMonth(currentYear, month, 'beverage');
+        const trackerByDate: Record<string, any> = {};
+        for (const tracker of trackerData) {
+          trackerByDate[tracker.date] = tracker;
+        }
+        
+        let monthTotalRevenue = 0;
+        let monthTotalCosts = 0;
+        
+        // Calculate revenue from master records and costs from tracker data
+        for (const record of masterRecords) {
+          const bevRevenue = Number(record.beverage_revenue) || 0;
+          monthTotalRevenue += bevRevenue;
           
-          for (const day of monthData) {
-            annualRevenue += Number(day.revenue) || 0;
+          const trackerRecord = trackerByDate[record.date];
+          if (trackerRecord) {
+            const purchases = await fetchTrackerPurchases(trackerRecord.id);
+            const creditNotes = await fetchTrackerCreditNotes(trackerRecord.id);
             
-            // Fetch purchases for this tracker day
-            const purchases = await fetchTrackerPurchases(day.id);
-            const dayPurchases = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
-            annualCost += dayPurchases;
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFoodAllowance = Number(trackerRecord.staff_food_allowance) || 0;
             
-            // Fetch credit notes for this tracker day
-            const creditNotes = await fetchTrackerCreditNotes(day.id);
-            const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount), 0);
-            annualCost -= dayCreditNotes; // Subtract credit notes from cost
+            const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+            monthTotalCosts += dayCost;
           }
         }
         
+        const monthGP = calculateGP(monthTotalRevenue, monthTotalCosts);
+        
+        console.log(`Dashboard: Beverage - Month Revenue: ${monthTotalRevenue}, Costs: ${monthTotalCosts}, GP: ${monthGP}`);
+        
+        // Now fetch annual data
+        const { data: annualMasterRecords, error: annualError } = await supabase
+          .from('master_daily_records')
+          .select('*')
+          .eq('year', currentYear)
+          .order('date');
+          
+        if (annualError) {
+          console.error('Error fetching annual master records:', annualError);
+          throw annualError;
+        }
+        
+        let annualRevenue = 0;
+        let annualCosts = 0;
+        
+        // Get all tracker data for the year
+        const annualTrackerData = await Promise.all(
+          Array.from({ length: 12 }, (_, i) => i + 1).map(month => 
+            fetchTrackerDataByMonth(currentYear, month, 'beverage')
+          )
+        );
+        
+        // Flatten the array of arrays
+        const allTrackerData = annualTrackerData.flat();
+        
+        // Create a map of tracker data by date
+        const allTrackerByDate: Record<string, any> = {};
+        for (const tracker of allTrackerData) {
+          allTrackerByDate[tracker.date] = tracker;
+        }
+        
+        // Calculate annual totals
+        for (const record of annualMasterRecords) {
+          const bevRevenue = Number(record.beverage_revenue) || 0;
+          annualRevenue += bevRevenue;
+          
+          const trackerRecord = allTrackerByDate[record.date];
+          if (trackerRecord) {
+            const purchases = await fetchTrackerPurchases(trackerRecord.id);
+            const creditNotes = await fetchTrackerCreditNotes(trackerRecord.id);
+            
+            const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            const staffFoodAllowance = Number(trackerRecord.staff_food_allowance) || 0;
+            
+            const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+            annualCosts += dayCost;
+          }
+        }
+        
+        const annualGP = calculateGP(annualRevenue, annualCosts);
+        
+        console.log(`Dashboard: Beverage - Annual Revenue: ${annualRevenue}, Costs: ${annualCosts}, GP: ${annualGP}`);
+        
+        // Update state
+        setCurrentMonthRevenue(monthTotalRevenue);
+        setCurrentMonthCost(monthTotalCosts);
+        setCurrentMonthGP(monthGP);
         setTotalRevenue(annualRevenue);
-        setTotalCost(annualCost);
-        setGpPercentage(calculateGP(annualRevenue, annualCost));
+        setTotalCost(annualCosts);
+        setGpPercentage(annualGP);
         
       } catch (error) {
-        console.error("Error calculating from tracker data:", error);
+        console.error("Error calculating from beverage tracker data:", error);
         // Fall back to local store data if there was an error
-        calculateFromLocalStore();
+        fallbackToLocalStore();
       }
     };
     
-    // Fallback to local store data if needed
-    const calculateFromLocalStore = () => {
+    const fallbackToLocalStore = () => {
+      console.log("Falling back to local store for beverage dashboard");
+      const { annualRecord } = useStore.getState();
+      
       let revenue = 0;
       let cost = 0;
       let monthRevenue = 0;
@@ -131,9 +177,9 @@ export default function BeverageDashboard() {
     };
 
     // Execute the calculations
-    calculateFromTrackerData();
+    fetchData();
     
-  }, [trackerData, annualRecord, currentYear, currentMonth]);
+  }, [currentYear, currentMonth]);
 
   const getGpStatus = (gp: number, target: number) => {
     if (gp >= target) return 'good';
