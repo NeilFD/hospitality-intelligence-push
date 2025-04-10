@@ -91,12 +91,21 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
       setSuppliers(suppliersData.map(s => ({ id: s.id, name: s.name })));
       
       const weekDates = generateWeekDates(year, month);
-      const currentWeekDates = weekNumber <= weekDates.length ? weekDates[weekNumber - 1] : null;
       
-      if (!currentWeekDates) {
-        console.error('Invalid week number:', weekNumber);
-        setLoading(false);
-        return;
+      let currentWeekDates;
+      if (weekNumber <= weekDates.length) {
+        currentWeekDates = weekDates[weekNumber - 1];
+      } else {
+        const lastDayOfMonth = new Date(year, month, 0).getDate();
+        const startDay = Math.min((weekNumber - 1) * 7 + 1, lastDayOfMonth);
+        const endDay = Math.min(startDay + 6, lastDayOfMonth);
+        
+        currentWeekDates = {
+          startDate: `${year}-${month.toString().padStart(2, '0')}-${startDay.toString().padStart(2, '0')}`,
+          endDate: `${year}-${month.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}`
+        };
+        
+        console.log(`Created default week dates for week ${weekNumber}: ${currentWeekDates.startDate} to ${currentWeekDates.endDate}`);
       }
       
       const existingData = await fetchTrackerDataByWeek(year, month, weekNumber, moduleType);
@@ -123,6 +132,13 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
       const start = new Date(currentWeekDates.startDate);
       const end = new Date(currentWeekDates.endDate);
       const daysInWeek: TrackerData[] = [];
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        console.error('Invalid date range for week', weekNumber);
+        toast.error('Invalid date range for selected week');
+        setLoading(false);
+        return;
+      }
       
       for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
         const dateStr = format(day, 'yyyy-MM-dd');
@@ -187,6 +203,8 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
 
   useEffect(() => {
     if (Object.keys(masterRecords).length > 0) {
+      loadTrackerData();
+    } else {
       loadTrackerData();
     }
   }, [loadTrackerData, masterRecords]);
@@ -342,6 +360,27 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
       <div className="p-8">
         <Skeleton className="h-12 w-3/4 mb-4" />
         <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (trackerData.length === 0) {
+    return (
+      <div className="p-8">
+        <Card className="border shadow-sm">
+          <CardHeader className="bg-gray-50 border-b pb-4">
+            <CardTitle className="text-xl">{modulePrefix} Weekly Tracker - Week {weekNumber}, {month}/{year}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-600 mb-4">No data available for this week. Creating tracker data...</p>
+            <Button 
+              onClick={loadTrackerData} 
+              className="flex items-center gap-2"
+            >
+              Refresh
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
