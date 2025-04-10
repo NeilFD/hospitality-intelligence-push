@@ -149,28 +149,35 @@ const NotificationsDropdown = () => {
     
     if (unreadNotifications.length === 0) return;
     
+    console.log('Clearing all notifications:', unreadNotifications.length);
+    
     for (const notification of unreadNotifications) {
       const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+      
       await supabase
         .from('team_messages')
         .update({ read_by: [...currentReadBy, user.id] })
         .eq('id', notification.id);
+        
+      console.log(`Updated notification ${notification.id} in database`);
     }
     
-    // Update local state to reflect that all notifications are now read
     const updatedNotifications = notifications.map(n => ({
       ...n,
       read_by: n.read_by.includes(user.id) ? n.read_by : [...n.read_by, user.id]
     }));
     
+    console.log('Setting notifications to:', updatedNotifications);
     setNotifications(updatedNotifications);
     setHasUnread(false);
     
-    // Invalidate the query to refresh the data
+    console.log('Invalidating query mentionedMessages');
     queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
     
-    // Force a refetch to ensure UI is updated
-    refetchMentions();
+    console.log('Refetching mentions');
+    await refetchMentions();
+    
+    console.log('Clear all operation complete');
   };
   
   const getAuthorName = (authorId: string) => {
