@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -76,7 +75,7 @@ const NotificationsDropdown = () => {
         (payload) => {
           if (payload.new && (payload.new as any).author_id !== user.id) {
             refetchMentions();
-            // Set hasUnread to true when a new mention is received
+            // Always set hasUnread to true when a new mention is received
             setHasUnread(true);
           }
         }
@@ -91,10 +90,15 @@ const NotificationsDropdown = () => {
   // Process notifications
   useEffect(() => {
     if (mentionedMessages && user) {
+      // Debug: Log messages to see their read_by arrays
+      console.log('Mentioned messages:', mentionedMessages);
+      
       // Filter messages that haven't been read by the current user
       const unreadMessages = mentionedMessages.filter(
-        msg => !msg.read_by.includes(user.id)
+        msg => !msg.read_by || !Array.isArray(msg.read_by) || !msg.read_by.includes(user.id)
       );
+      
+      console.log('Unread count:', unreadMessages.length);
       
       setNotifications(mentionedMessages);
       // Set hasUnread based on whether there are any unread messages
@@ -104,9 +108,11 @@ const NotificationsDropdown = () => {
   
   // Mark notification as read and navigate
   const handleNotificationClick = async (message: TeamMessage) => {
-    if (user && !message.read_by.includes(user.id)) {
-      // Update read_by array
-      const updatedReadBy = [...message.read_by, user.id];
+    if (user && (!message.read_by || !message.read_by.includes(user.id))) {
+      // Update read_by array - ensure it's an array first
+      const updatedReadBy = Array.isArray(message.read_by) ? [...message.read_by, user.id] : [user.id];
+      
+      console.log('Marking as read:', message.id, 'Updated read_by:', updatedReadBy);
       
       // Update in Supabase
       const { error } = await supabase
@@ -120,6 +126,13 @@ const NotificationsDropdown = () => {
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
         queryClient.invalidateQueries({ queryKey: ['teamMessages'] });
+        
+        // Check if all messages are now read and update the unread indicator
+        const remainingUnread = notifications.filter(
+          msg => msg.id !== message.id && (!msg.read_by || !msg.read_by.includes(user.id))
+        );
+        
+        setHasUnread(remainingUnread.length > 0);
       }
     }
     
@@ -175,7 +188,7 @@ const NotificationsDropdown = () => {
                   key={notification.id}
                   variant="ghost"
                   className={`w-full justify-start rounded-none py-2 px-3 h-auto flex items-start gap-2 ${
-                    user && !notification.read_by.includes(user.id) 
+                    user && (!notification.read_by || !notification.read_by.includes(user.id))
                       ? 'bg-blue-50' 
                       : ''
                   }`}

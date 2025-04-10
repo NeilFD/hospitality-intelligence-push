@@ -33,6 +33,11 @@ const Chat: React.FC = () => {
           if (payload.new) {
             const message = payload.new as any;
             if (message.author_id !== user.id) {  // Don't notify for own messages
+              // Make sure we provide an empty read_by array if it's null
+              if (!message.read_by) {
+                message.read_by = [];
+              }
+              
               toast.info('You have been mentioned in a message', {
                 action: {
                   label: 'View',
