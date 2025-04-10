@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Edit, Check, User } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner";
 import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 
@@ -24,7 +25,6 @@ interface ProfileData {
 export default function Profile() {
   const { userId } = useParams<{ userId?: string }>();
   const { user, profile, updateProfile } = useAuthStore();
-  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -42,16 +42,10 @@ export default function Profile() {
         role,
         avatarUrl
       });
-      toast({
-        title: "Profile updated successfully.",
-      });
+      toast.success("Profile updated successfully.");
       setIsEditing(false);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error updating profile.",
-        description: error.message,
-      });
+      toast.error("Error updating profile: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -106,11 +100,7 @@ export default function Profile() {
           
         }
       } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Error fetching profile.",
-          description: (error as Error).message,
-        });
+        toast.error("Error fetching profile: " + (error as Error).message);
       } finally {
         setIsLoading(false);
       }
