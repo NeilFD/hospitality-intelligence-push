@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -59,7 +60,7 @@ function App() {
           <Route path="/team/dashboard" element={<RequireAuth><Layout><TeamDashboard /></Layout></RequireAuth>} />
           <Route path="/team/noticeboard" element={<RequireAuth><Layout><Noticeboard /></Layout></RequireAuth>} />
           <Route path="/team/chat" element={<RequireAuth><Layout><Chat /></Layout></RequireAuth>} />
-          <Route path="/team/knowledge" element={<RequireAuth><Knowledge /></Layout></RequireAuth>} />
+          <Route path="/team/knowledge" element={<RequireAuth><Layout><Knowledge /></Layout></RequireAuth>} />
         </Routes>
       </Router>
     </AuthProvider>
