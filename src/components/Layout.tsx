@@ -40,6 +40,10 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
+  const sortedModules = useMemo(() => {
+    return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
+  }, [modules]);
+  
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -209,7 +213,7 @@ const Layout = ({
             </SheetContent>
           </Sheet>
           <div className="flex-1 overflow-auto pt-16">
-            <div className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/60 shadow-sm border-b border-white/50 flex justify-between px-4 py-2">
+            <div className="absolute top-4 left-0 right-0 flex justify-between px-4">
               <div className="w-8"></div>
               <TavernLogo size="md" />
               {isAuthenticated && <DropdownMenu>
@@ -250,7 +254,7 @@ const Layout = ({
             {Sidebar}
           </div>
           <div className="flex-1 overflow-auto relative">
-            <div className="fixed top-0 right-0 left-0 z-50 backdrop-blur-md bg-white/60 shadow-sm border-b border-white/50 flex items-center justify-between px-8 py-2">
+            <div className="flex items-center justify-between px-8 py-4">
               <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-gray-800">
                 {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
@@ -287,9 +291,7 @@ const Layout = ({
                   </DropdownMenuContent>
                 </DropdownMenu>}
             </div>
-            <div className="pt-16">
-              {children}
-            </div>
+            {children}
           </div>
         </>}
     </div>;
