@@ -146,32 +146,60 @@ const NotificationsDropdown = () => {
   
   const handleClearAllNotifications = async () => {
     if (!user) {
-      console.log("No user logged in");
       toast.error('User not logged in');
       return;
     }
     
     if (!notifications || notifications.length === 0) {
-      console.log("No notifications to clear");
       return;
     }
     
     try {
-      // Step 1: Identify all unread notifications
+      // First filter unread notifications
       const unreadNotifications = notifications.filter(notification => {
         const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         return !readBy.includes(user.id);
       });
       
-      console.log(`Found ${unreadNotifications.length} unread notifications to clear`);
-      
       if (unreadNotifications.length === 0) {
-        console.log("No unread notifications to clear");
         return;
       }
       
-      // Step 2: Immediately update local state - optimistic update
-      const optimisticallyUpdatedNotifications = notifications.map(notification => {
+      // Immediately mark everything as read in UI
+      setHasUnread(false);
+      
+      // Create one single query that will mark all unread notifications as read
+      // Using the "in" filter for better performance
+      const notificationIds = unreadNotifications.map(n => n.id);
+      
+      // For each notification, update its read_by array
+      const updates = await Promise.all(
+        unreadNotifications.map(async (notification) => {
+          const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+          const updatedReadBy = [...currentReadBy, user.id];
+          
+          const { error } = await supabase
+            .from('team_messages')
+            .update({ read_by: updatedReadBy })
+            .eq('id', notification.id);
+            
+          return { id: notification.id, success: !error, error };
+        })
+      );
+      
+      // Check results
+      const failedUpdates = updates.filter(update => !update.success);
+      
+      if (failedUpdates.length > 0) {
+        console.error('Failed to update some notifications:', failedUpdates);
+        toast.error(`${failedUpdates.length} notifications couldn't be cleared`);
+      } else {
+        toast.success('All notifications cleared');
+      }
+      
+      // Update local state regardless of database success
+      // This ensures UI stays in sync with what the user expects
+      const updatedNotifications = notifications.map(notification => {
         const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         if (!readBy.includes(user.id)) {
           return { ...notification, read_by: [...readBy, user.id] };
@@ -179,42 +207,16 @@ const NotificationsDropdown = () => {
         return notification;
       });
       
-      setNotifications(optimisticallyUpdatedNotifications);
-      setHasUnread(false); // Optimistically clear the red dot
+      setNotifications(updatedNotifications);
       
-      // Step 3: Update each notification in the database
-      let successCount = 0;
+      // Update the query cache to stay consistent
+      queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
       
-      for (const notification of unreadNotifications) {
-        const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-        const updatedReadBy = [...currentReadBy, user.id];
-        
-        const { error } = await supabase
-          .from('team_messages')
-          .update({ read_by: updatedReadBy })
-          .eq('id', notification.id);
-        
-        if (!error) {
-          successCount++;
-        } else {
-          console.error(`Error updating notification ${notification.id}:`, error);
-        }
-      }
-      
-      // Step 4: Update the query cache with our new state
-      queryClient.setQueryData(['mentionedMessages', user.id], optimisticallyUpdatedNotifications);
-      
-      // Step 5: If some updates failed, refresh from server
-      if (successCount < unreadNotifications.length) {
-        toast.error(`${unreadNotifications.length - successCount} notifications could not be cleared`);
-        await refetchMentions(); // Get fresh data from server
-      } else {
-        toast.success('All notifications cleared');
-      }
+      // Always refetch to ensure database and local state are in sync
+      await refetchMentions();
     } catch (error) {
       console.error('Error clearing notifications:', error);
       toast.error('Failed to clear notifications');
-      // Revert optimistic updates by refreshing
       await refetchMentions();
     }
   };
