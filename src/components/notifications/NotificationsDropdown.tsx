@@ -157,23 +157,34 @@ const NotificationsDropdown = () => {
     }
     
     try {
+      // Step 1: Identify all unread notifications
       const unreadNotifications = notifications.filter(notification => {
         const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         return !readBy.includes(user.id);
       });
       
-      console.info(`Found ${unreadNotifications.length} unread notifications to clear`);
+      console.log(`Found ${unreadNotifications.length} unread notifications to clear`);
       
       if (unreadNotifications.length === 0) {
         console.log("No unread notifications to clear");
         return;
       }
       
-      // Create a copy of notifications that we'll update as we go
-      let updatedNotifications = [...notifications];
-      let allUpdatesSuccessful = true;
+      // Step 2: Immediately update local state - optimistic update
+      const optimisticallyUpdatedNotifications = notifications.map(notification => {
+        const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
+        if (!readBy.includes(user.id)) {
+          return { ...notification, read_by: [...readBy, user.id] };
+        }
+        return notification;
+      });
       
-      // Process notifications one by one
+      setNotifications(optimisticallyUpdatedNotifications);
+      setHasUnread(false); // Optimistically clear the red dot
+      
+      // Step 3: Update each notification in the database
+      let successCount = 0;
+      
       for (const notification of unreadNotifications) {
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         const updatedReadBy = [...currentReadBy, user.id];
@@ -183,45 +194,28 @@ const NotificationsDropdown = () => {
           .update({ read_by: updatedReadBy })
           .eq('id', notification.id);
         
-        if (error) {
-          console.error(`Error updating notification ${notification.id}:`, error);
-          allUpdatesSuccessful = false;
+        if (!error) {
+          successCount++;
         } else {
-          // Update our local copy with the new read_by array
-          updatedNotifications = updatedNotifications.map(n => 
-            n.id === notification.id 
-              ? { ...n, read_by: updatedReadBy } 
-              : n
-          );
+          console.error(`Error updating notification ${notification.id}:`, error);
         }
       }
       
-      // Only update the state after all database operations are complete
-      if (allUpdatesSuccessful) {
-        setNotifications(updatedNotifications);
-        setHasUnread(false);
-        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
-        toast.success('All notifications cleared');
-      } else {
-        // Even if some failed, update with what succeeded
-        setNotifications(updatedNotifications);
-        
-        // Recheck if we still have unread notifications
-        const stillHasUnread = updatedNotifications.some(notification => {
-          const readBy = Array.isArray(notification.read_by) ? notification.read_by : [];
-          return !readBy.includes(user.id);
-        });
-        
-        setHasUnread(stillHasUnread);
-        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
-        toast.error('Some notifications could not be cleared');
-      }
+      // Step 4: Update the query cache with our new state
+      queryClient.setQueryData(['mentionedMessages', user.id], optimisticallyUpdatedNotifications);
       
-      // Refresh data from server to ensure consistency
-      await refetchMentions();
+      // Step 5: If some updates failed, refresh from server
+      if (successCount < unreadNotifications.length) {
+        toast.error(`${unreadNotifications.length - successCount} notifications could not be cleared`);
+        await refetchMentions(); // Get fresh data from server
+      } else {
+        toast.success('All notifications cleared');
+      }
     } catch (error) {
       console.error('Error clearing notifications:', error);
       toast.error('Failed to clear notifications');
+      // Revert optimistic updates by refreshing
+      await refetchMentions();
     }
   };
   
