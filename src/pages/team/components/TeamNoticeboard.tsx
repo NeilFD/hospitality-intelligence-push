@@ -18,7 +18,14 @@ interface StickyNoteProps {
   authorName?: string;
 }
 
-const NOTE_COLORS = ['bg-yellow-100 hover:bg-yellow-200', 'bg-pink-100 hover:bg-pink-200', 'bg-blue-100 hover:bg-blue-200', 'bg-green-100 hover:bg-green-200', 'bg-purple-100 hover:bg-purple-200', 'bg-orange-100 hover:bg-orange-200'];
+const NOTE_COLORS = [
+  'bg-yellow-100/70 hover:bg-yellow-200/80 backdrop-blur-sm border border-yellow-200/50', 
+  'bg-pink-100/70 hover:bg-pink-200/80 backdrop-blur-sm border border-pink-200/50', 
+  'bg-blue-100/70 hover:bg-blue-200/80 backdrop-blur-sm border border-blue-200/50', 
+  'bg-green-100/70 hover:bg-green-200/80 backdrop-blur-sm border border-green-200/50', 
+  'bg-purple-100/70 hover:bg-purple-200/80 backdrop-blur-sm border border-purple-200/50', 
+  'bg-orange-100/70 hover:bg-orange-200/80 backdrop-blur-sm border border-orange-200/50'
+];
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
@@ -26,11 +33,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   onDelete,
   authorName
 }) => {
-  return <div className={`${note.color || NOTE_COLORS[0]} rounded-lg p-4 shadow-md transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
+  return (
+    <div className={`${note.color || NOTE_COLORS[0]} rounded-lg p-4 shadow-md transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
       <div className="flex justify-between items-start mb-2">
         <Button variant="ghost" size="icon" className={`h-6 w-6 ${note.pinned ? 'text-amber-600' : 'text-gray-400'}`} onClick={() => onUpdate(note.id, {
-        pinned: !note.pinned
-      })}>
+          pinned: !note.pinned
+        })}>
           <Pin size={16} />
         </Button>
         <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-red-500" onClick={() => onDelete(note.id)}>
@@ -40,28 +48,57 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       
       <div className="flex-grow">
         {note.type === 'text' && <p className="font-['Special_Elite'] text-gray-800 whitespace-pre-wrap">{note.content}</p>}
-        {note.type === 'image' && <div>
+        {note.type === 'image' && (
+          <div className="flex flex-col space-y-2">
             <p className="font-['Special_Elite'] text-gray-800 mb-2">{note.content}</p>
-            <img src={note.attachment_url} alt="Note attachment" className="rounded-md w-full h-auto" />
-          </div>}
-        {note.type === 'gif' && <div>
+            {note.attachment_url && (
+              <img 
+                src={note.attachment_url} 
+                alt="Note attachment" 
+                className="rounded-md w-full h-auto object-cover" 
+                onError={(e) => {
+                  console.error("Image failed to load:", note.attachment_url);
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
+              />
+            )}
+          </div>
+        )}
+        {note.type === 'gif' && (
+          <div className="flex flex-col space-y-2">
             <p className="font-['Special_Elite'] text-gray-800 mb-2">{note.content}</p>
-            <img src={note.attachment_url} alt="GIF" className="rounded-md w-full h-auto" />
-          </div>}
-        {note.type === 'voice' && <div>
+            {note.attachment_url && (
+              <img 
+                src={note.attachment_url} 
+                alt="GIF" 
+                className="rounded-md w-full h-auto" 
+                onError={(e) => {
+                  console.error("GIF failed to load:", note.attachment_url);
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
+              />
+            )}
+          </div>
+        )}
+        {note.type === 'voice' && (
+          <div className="flex flex-col space-y-2">
             <p className="font-['Special_Elite'] text-gray-800 mb-2">{note.content}</p>
-            <audio controls className="w-full mt-2">
-              <source src={note.attachment_url} type="audio/mpeg" />
-              Your browser does not support the audio element.
-            </audio>
-          </div>}
+            {note.attachment_url && (
+              <audio controls className="w-full mt-2">
+                <source src={note.attachment_url} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+            )}
+          </div>
+        )}
       </div>
       
       <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
         <span>{new Date(note.created_at).toLocaleDateString()}</span>
         {authorName && <span className="italic">- {authorName}</span>}
       </div>
-    </div>;
+    </div>
+  );
 };
 
 const CreateNoteForm: React.FC<{
@@ -271,7 +308,7 @@ const TeamNoticeboard: React.FC = () => {
       </div>
       
       {isLoading ? <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-100 animate-pulse rounded-lg h-[200px] w-full"></div>)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[200px] w-full border border-gray-200/50"></div>)}
         </div> : <>
           {sortedNotes.length === 0 ? <div className="text-center py-12">
               <p className="text-gray-500 mb-4">No notes yet. Create the first one!</p>
