@@ -14,15 +14,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-interface MessageProps {
-  message: TeamMessage;
-  isOwnMessage: boolean;
-  author: UserProfile | undefined;
-  onAddReaction: (messageId: string, emoji: string) => void;
-  onDeleteMessage: (messageId: string) => void;
-  teamMembers: UserProfile[];
-  currentUserId: string;
-}
+
 const EMOJI_CATEGORIES = [{
   name: "Smileys",
   emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "☺️", "😚", "😙", "🥲", "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "😮‍💨", "🤥", "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😵", "😵‍💫", "🤯", "🤠", "🥳", "🥸", "😎", "🤓", "🧐"]
@@ -39,6 +31,7 @@ const EMOJI_CATEGORIES = [{
   name: "Activities",
   emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
+
 const Message: React.FC<MessageProps> = ({
   message,
   isOwnMessage,
@@ -204,6 +197,7 @@ const Message: React.FC<MessageProps> = ({
         </div>}
     </div>;
 };
+
 const TeamChat: React.FC = () => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -472,10 +466,10 @@ const TeamChat: React.FC = () => {
   return <div className="flex h-[calc(100vh-120px)]">
       <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
       
-      <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden">
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
           <CardContent className="p-0 flex flex-col h-full">
-            <div className="bg-pastel-blue p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
+            <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
               {selectedRoomId && rooms.length > 0 && <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
                   {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
                 </h2>}
@@ -558,4 +552,5 @@ const TeamChat: React.FC = () => {
     }} />
     </div>;
 };
+
 export default TeamChat;
