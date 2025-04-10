@@ -2,18 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AtSign } from 'lucide-react';
+import { AtSign, Send } from 'lucide-react';
 import { getTeamMembers } from '@/services/team-service';
 import { UserProfile } from '@/types/supabase-types';
 
-export interface TeamChatProps {
-  // Add any props if needed
-}
-
-const TeamChat: React.FC<TeamChatProps> = () => {
+const TeamChat = () => {
   const [showMentionSelector, setShowMentionSelector] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
+  const [message, setMessage] = useState('');
+  
+  // Sample messages for demonstration
+  const [messages] = useState([
+    { id: 1, author: 'Neil Fincham-Dukes', content: 'Morning team! Hope everyone is well today.', timestamp: '09:15', avatar: 'https://kfiergoryrnjkewmeriy.supabase.co/storage/v1/object/public/avatars/4ca54c3c-78ad-4d74-9fd4-f1f487d365de/v364e0ltlk.JPG' },
+    { id: 2, author: 'Roman Ivanov', content: 'Hi Neil! All good here, preparing for the weekend rush.', timestamp: '09:17', avatar: null },
+    { id: 3, author: 'Shane Turner-Hill', content: 'Just a reminder that we need to check stock levels before the weekend.', timestamp: '09:20', avatar: null }
+  ]);
   
   useEffect(() => {
     const loadTeamMembers = async () => {
@@ -28,16 +32,37 @@ const TeamChat: React.FC<TeamChatProps> = () => {
     loadTeamMembers();
   }, []);
   
+  const handleSendMessage = () => {
+    if (message.trim()) {
+      // Here we would normally send the message to the server
+      console.log('Sending message:', message);
+      setMessage('');
+    }
+  };
+  
   const insertMention = (userId: string, displayName: string) => {
     console.log(`Inserting mention for ${displayName} (${userId})`);
-    // Implement mention insertion logic
+    setMessage(prev => `${prev}@${displayName} `);
     setShowMentionSelector(false);
   };
   
   const insertAllMention = () => {
     console.log('Inserting mention for everyone');
-    // Implement mention all logic
+    setMessage(prev => `${prev}@everyone `);
     setShowMentionSelector(false);
+  };
+  
+  const handleAtKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === '@') {
+      setShowMentionSelector(true);
+    }
+  };
+  
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
   
   const renderMentionSelector = () => {
@@ -107,21 +132,49 @@ const TeamChat: React.FC<TeamChatProps> = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 p-4 overflow-y-auto">
-        {/* Chat messages will go here */}
-        <p>Team chat content will appear here</p>
+      <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+        {/* Chat messages */}
+        {messages.map(msg => (
+          <div key={msg.id} className="mb-4 flex items-start">
+            <Avatar className="mr-2 h-8 w-8">
+              {msg.avatar ? (
+                <AvatarImage src={msg.avatar} alt={msg.author} />
+              ) : (
+                <AvatarFallback>
+                  {msg.author.split(' ').map(name => name[0]).join('')}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <span className="font-medium text-gray-800">{msg.author}</span>
+                <span className="ml-2 text-xs text-gray-500">{msg.timestamp}</span>
+              </div>
+              <div className="bg-white p-2 rounded-lg shadow-sm mt-1 text-gray-800">
+                {msg.content}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="border-t p-4 relative">
+      <div className="border-t p-4 relative bg-white">
         {renderMentionSelector()}
         <div className="flex">
           <input 
             type="text"
             className="flex-1 border rounded-md px-3 py-2"
             placeholder="Type your message..." 
-            onFocus={() => setShowMentionSelector(true)}
-            onClick={() => setShowMentionSelector(true)}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyUp={handleAtKey}
+            onKeyPress={handleKeyPress}
           />
-          <button className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md">Send</button>
+          <button 
+            className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md flex items-center"
+            onClick={handleSendMessage}
+          >
+            <Send className="h-4 w-4 mr-1" /> Send
+          </button>
         </div>
       </div>
     </div>
