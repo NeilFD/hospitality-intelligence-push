@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { useQuery } from '@tanstack/react-query';
-import { fetchTrackerDataByMonth, fetchTrackerPurchases, fetchTrackerCreditNotes } from '@/services/kitchen-service';
+import { fetchTrackerDataByMonth, fetchTrackerPurchases, fetchTrackerCreditNotes, getTrackerSummaryByMonth } from '@/services/kitchen-service';
 
 interface MonthSummaryProps {
   modulePrefix?: string;
@@ -94,83 +94,58 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
       try {
         let monthRev = 0;
         let monthCost = 0;
-        const weekSummaries: Record<number, WeekSummary> = {};
         
+        // Initialize the week summaries with zeros for all 5 weeks
         const allWeeks = generateAllWeeksForMonth();
+        const weekSummaries: Record<number, WeekSummary> = {};
         allWeeks.forEach(week => {
           weekSummaries[week.weekNumber] = week;
         });
         
         console.log(`Processing tracker data for ${moduleType}:`, trackerData);
         
-        // Direct logging of all days to verify the source data
-        trackerData.forEach(day => {
-          console.log(`Raw tracker data - Day ${day.date}, Week ${day.week_number}, Revenue: ${day.revenue}`);
-        });
-        
-        // Group tracker data by week number first
-        const dataByWeek: Record<number, any[]> = {};
-        trackerData.forEach(day => {
-          const weekNum = day.week_number || 1;
-          if (!dataByWeek[weekNum]) {
-            dataByWeek[weekNum] = [];
+        // IMPORTANT: Use direct approach to ensure correct week revenues and costs
+        for (const day of trackerData) {
+          const weekNumber = day.week_number || 1;
+          const dayRevenue = Number(day.revenue) || 0;
+          
+          // Add revenue to the appropriate week
+          if (!weekSummaries[weekNumber]) {
+            weekSummaries[weekNumber] = {
+              weekNumber,
+              revenue: 0,
+              costs: 0,
+              gp: 0
+            };
           }
-          dataByWeek[weekNum].push(day);
-        });
-        
-        // Log the contents of each week's data
-        Object.entries(dataByWeek).forEach(([weekNum, days]) => {
-          console.log(`Week ${weekNum} contains ${days.length} days of data`);
-          days.forEach(day => {
-            console.log(`  - Day ${day.date}: Revenue = ${day.revenue}`);
-          });
-        });
-        
-        // Process data week by week in a single loop
-        for (const [weekNumStr, weekDays] of Object.entries(dataByWeek)) {
-          const weekNumber = parseInt(weekNumStr);
-          let weekRevenue = 0;
-          let weekCosts = 0;
           
-          console.log(`Processing Week ${weekNumber} with ${weekDays.length} days`);
+          weekSummaries[weekNumber].revenue += dayRevenue;
+          monthRev += dayRevenue;
           
-          // Process each day in this week
-          for (const day of weekDays) {
-            // Add revenue
-            const dayRevenue = Number(day.revenue) || 0;
-            weekRevenue += dayRevenue;
+          // Calculate costs for this day
+          try {
+            const purchases = await fetchTrackerPurchases(day.id);
+            const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
             
-            // Calculate costs for this day
-            try {
-              const purchases = await fetchTrackerPurchases(day.id);
-              const dayCosts = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-              
-              const creditNotes = await fetchTrackerCreditNotes(day.id);
-              const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
-              
-              const staffFood = Number(day.staff_food_allowance) || 0;
-              
-              const netDayCosts = dayCosts - dayCreditNotes + staffFood;
-              weekCosts += netDayCosts;
-              
-              console.log(`Week ${weekNumber}, Day ${day.date}: Revenue = ${dayRevenue}, Costs = ${netDayCosts}`);
-            } catch (error) {
-              console.error(`Error fetching purchase data for day ${day.date}:`, error);
-            }
+            const creditNotes = await fetchTrackerCreditNotes(day.id);
+            const dayCreditNotes = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+            
+            const staffFood = Number(day.staff_food_allowance) || 0;
+            
+            const netDayCosts = dayCosts - dayCreditNotes + staffFood;
+            weekSummaries[weekNumber].costs += netDayCosts;
+            monthCost += netDayCosts;
+            
+            console.log(`Week ${weekNumber}, Day ${day.date}: Revenue = ${dayRevenue}, Costs = ${netDayCosts}`);
+          } catch (error) {
+            console.error(`Error fetching purchase data for day ${day.date}:`, error);
           }
-          
-          // Update the week summary
-          weekSummaries[weekNumber] = {
-            weekNumber,
-            revenue: weekRevenue,
-            costs: weekCosts,
-            gp: calculateGP(weekRevenue, weekCosts)
-          };
-          
-          console.log(`Week ${weekNumber} totals - Revenue: ${weekRevenue}, Costs: ${weekCosts}, GP: ${calculateGP(weekRevenue, weekCosts)}`);
-          
-          monthRev += weekRevenue;
-          monthCost += weekCosts;
+        }
+        
+        // Calculate GP for each week
+        for (const weekNum in weekSummaries) {
+          const week = weekSummaries[weekNum];
+          week.gp = calculateGP(week.revenue, week.costs);
         }
         
         // Convert week summaries to array and sort by week number
