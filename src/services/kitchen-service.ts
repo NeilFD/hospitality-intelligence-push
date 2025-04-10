@@ -362,6 +362,8 @@ export const fetchTrackerDataByWeek = async (year: number, month: number, weekNu
 };
 
 export const fetchTrackerDataByMonth = async (year: number, month: number, moduleType: ModuleType = 'food') => {
+  console.log(`Fetching tracker data for ${year}-${month} (${moduleType})`);
+  
   const { data, error } = await supabase
     .from('tracker_data')
     .select('*')
@@ -370,7 +372,16 @@ export const fetchTrackerDataByMonth = async (year: number, month: number, modul
     .eq('module_type', moduleType)
     .order('date');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching tracker data:', error);
+    throw error;
+  }
+  
+  console.log(`Found ${data.length} records for ${year}-${month}`);
+  data.forEach(record => {
+    console.log(`Date: ${record.date}, Week: ${record.week_number}, Revenue: ${record.revenue}`);
+  });
+  
   return data;
 };
 
