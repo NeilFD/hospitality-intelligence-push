@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -394,9 +393,19 @@ const TeamNoticeboard: React.FC = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-slate-800">Team Noticeboard</h2>
-              <TabsList className="mt-2">
-                <TabsTrigger value="notes" className="text-slate-900">Notes</TabsTrigger>
-                <TabsTrigger value="polls" className="text-slate-900">Polls</TabsTrigger>
+              <TabsList className="mt-2 bg-gray-100 p-1">
+                <TabsTrigger 
+                  value="notes" 
+                  className="text-gray-700 data-[state=active]:bg-tavern-blue data-[state=active]:text-white"
+                >
+                  Notes
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="polls" 
+                  className="text-gray-700 data-[state=active]:bg-tavern-blue data-[state=active]:text-white"
+                >
+                  Polls
+                </TabsTrigger>
               </TabsList>
             </div>
             
