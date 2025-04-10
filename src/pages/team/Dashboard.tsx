@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTeamMembers } from '@/services/team-service';
+import { checkProfilesCount } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 import { toast } from 'sonner';
 
@@ -14,6 +14,11 @@ const TeamDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
+  const [profileStats, setProfileStats] = useState<{
+    countQuery?: number;
+    fetchedCount?: number;
+    isAuthenticated?: boolean;
+  }>({});
 
   useEffect(() => {
     const fetchTeamMembers = async () => {
@@ -21,7 +26,13 @@ const TeamDashboard: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        // Fetch team members with extra logging
+        // First, check profile count directly from database
+        const profileCheck = await checkProfilesCount();
+        setProfileStats(profileCheck);
+        
+        console.log('Profile check results:', profileCheck);
+        
+        // Then fetch team members as usual
         console.log('About to fetch team members');
         const members = await getTeamMembers();
         
@@ -35,8 +46,8 @@ const TeamDashboard: React.FC = () => {
           
           if (members.length === 0) {
             console.warn('No team members returned from service');
-          } else if (members.length < 5) {
-            console.warn(`Only ${members.length} team members returned, expected 5 based on database content`);
+          } else if (members.length < profileCheck.countQuery) {
+            console.warn(`Only ${members.length} team members returned, expected ${profileCheck.countQuery} based on database content`);
           }
         } else {
           setError('Invalid data format received');
@@ -77,13 +88,20 @@ const TeamDashboard: React.FC = () => {
           <div className="flex items-center mb-2">
             <Info className="h-4 w-4 text-blue-500 mr-2" />
             <span className="text-sm font-medium text-blue-700">
-              Debug Information
+              Database Profile Stats
             </span>
           </div>
-          <p className="text-sm text-blue-600 pl-6">{debugInfo || 'No debug info available'}</p>
           <p className="text-sm text-blue-600 pl-6">
-            Team members count: {teamMembers.length}, Loading: {isLoading ? 'Yes' : 'No'}, Error: {error || 'None'}
+            Database profile count: <strong>{profileStats.countQuery || '?'}</strong>, 
+            Profiles fetched from DB: <strong>{profileStats.fetchedCount || '?'}</strong>, 
+            User authenticated: <strong>{profileStats.isAuthenticated ? 'Yes' : 'No'}</strong>
           </p>
+          <p className="text-sm text-blue-600 pl-6">
+            Team members loaded in component: <strong>{teamMembers.length}</strong>, 
+            Loading: <strong>{isLoading ? 'Yes' : 'No'}</strong>, 
+            Error: <strong>{error || 'None'}</strong>
+          </p>
+          <p className="text-sm text-blue-600 pl-6">{debugInfo || 'No additional debug info available'}</p>
         </div>
         
         <div className="flex flex-wrap gap-4 items-center">
