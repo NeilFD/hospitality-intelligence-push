@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -604,6 +603,68 @@ const TeamChat: React.FC = () => {
     document.body.removeChild(input);
   };
 
+  const renderMentionSelector = () => {
+    if (!showMentionSelector) return null;
+    
+    const safeTeamMembers = Array.isArray(teamMembers) ? teamMembers : [];
+    
+    const filteredMembers = safeTeamMembers
+      .filter(member => {
+        if (!member || typeof member !== 'object') return false;
+        const firstName = member.first_name || '';
+        const lastName = member.last_name || '';
+        const fullName = `${firstName} ${lastName}`.toLowerCase().trim();
+        return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
+      });
+    
+    return (
+      <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
+        <Command className="rounded-lg border shadow-md" shouldFilter={false}>
+          <CommandInput 
+            placeholder="Search people..." 
+            value={mentionQuery} 
+            onValueChange={setMentionQuery} 
+          />
+          <CommandEmpty>No users found</CommandEmpty>
+          <CommandGroup>
+            <CommandItem 
+              key="mention-all"
+              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
+              onSelect={insertAllMention}
+            >
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+                <AtSign className="w-4 h-4" />
+              </div>
+              <span className="font-medium">everyone</span>
+            </CommandItem>
+            
+            {filteredMembers.map(member => (
+              <CommandItem 
+                key={member.id} 
+                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
+                onSelect={() => insertMention(
+                  member.id,
+                  `${member.first_name || ''} ${member.last_name || ''}`
+                )}
+              >
+                <Avatar className="h-8 w-8">
+                  {member.avatar_url ? (
+                    <AvatarImage src={member.avatar_url} alt={member.first_name || 'User'} />
+                  ) : (
+                    <AvatarFallback>
+                      {(member.first_name?.[0] || '')}{(member.last_name?.[0] || '')}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <span>{member.first_name || ''} {member.last_name || ''}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </div>
+    );
+  };
+
   return <div className="flex h-[calc(100vh-120px)]">
       <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
       
@@ -628,63 +689,7 @@ const TeamChat: React.FC = () => {
             </div>
             
             <div className="p-3 border-t relative">
-              {showMentionSelector && (
-                <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
-                  {/* Wrap Command in error boundary */}
-                  <div className="command-wrapper">
-                    <Command shouldFilter={false}>
-                      <CommandInput 
-                        placeholder="Search people..." 
-                        value={mentionQuery} 
-                        onValueChange={setMentionQuery} 
-                      />
-                      <CommandEmpty>No users found</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem 
-                          key="mention-all"
-                          className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-                          onSelect={() => insertAllMention()}
-                        >
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
-                            <AtSign className="w-4 h-4" />
-                          </div>
-                          <span className="font-medium">everyone</span>
-                        </CommandItem>
-                        
-                        {/* Only render team members section if we have data */}
-                        {Array.isArray(teamMembers) && teamMembers.length > 0 ? (
-                          teamMembers
-                            .filter(member => {
-                              if (!member || !member.first_name) return false;
-                              const fullName = `${member.first_name || ''} ${member.last_name || ''}`.toLowerCase().trim();
-                              return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
-                            })
-                            .map(member => (
-                              <CommandItem 
-                                key={member.id} 
-                                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100" 
-                                onSelect={() => insertMention(member.id, `${member.first_name || ''} ${member.last_name || ''}`)}
-                              >
-                                <Avatar className="h-8 w-8">
-                                  {member.avatar_url ? (
-                                    <AvatarImage src={member.avatar_url} alt={member.first_name} />
-                                  ) : (
-                                    <AvatarFallback>
-                                      {(member.first_name?.[0] || '')}{(member.last_name?.[0] || '')}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
-                                <span>{member.first_name || ''} {member.last_name || ''}</span>
-                              </CommandItem>
-                            ))
-                        ) : (
-                          <CommandItem disabled>Loading users...</CommandItem>
-                        )}
-                      </CommandGroup>
-                    </Command>
-                  </div>
-                </div>
-              )}
+              {renderMentionSelector()}
               
               <div className="flex items-end gap-2">
                 <Textarea 
