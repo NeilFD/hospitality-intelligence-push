@@ -660,7 +660,11 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       bevDailyPurchases[date].push(purchase);
     });
     
-    const trackerDataSummary = {
+    console.log("*** WEBHOOK PAYLOAD DEBUG ***");
+    console.log("Food Annual Data:", foodAnnualData);
+    console.log("Food Month Data:", foodMonthData);
+    console.log("Beverage Data:", bevData);
+    console.log("Tracker Data Summary:", {
       food: {
         records: foodTrackerData || [],
         purchases: foodPurchases,
@@ -671,13 +675,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         purchases: bevPurchases,
         dailyPurchases: bevDailyPurchases
       }
-    };
-    
-    console.log("*** WEBHOOK PAYLOAD DEBUG ***");
-    console.log("Food Annual Data:", foodAnnualData);
-    console.log("Food Month Data:", foodMonthData);
-    console.log("Beverage Data:", bevData);
-    console.log("Tracker Data Summary:", trackerDataSummary);
+    });
     console.log("Raw Food Data:", deepCopyFoodData);
     console.log("Raw Beverage Data:", deepCopyBevData); 
     console.log("Wages Data:", { monthlyWages, weekdayTotals });
