@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Bell, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from 'sonner';
 
 const NotificationsDropdown = () => {
   const [hasUnread, setHasUnread] = useState(false);
@@ -141,28 +143,48 @@ const NotificationsDropdown = () => {
   };
   
   const handleClearAllNotifications = async () => {
-    if (!user || notifications.length === 0) return;
+    if (!user || !notifications.length) return;
     
+    // Find only the unread notifications
     const unreadNotifications = notifications.filter(
       msg => !msg.read_by.includes(user.id)
     );
     
-    if (unreadNotifications.length === 0) return;
+    if (unreadNotifications.length === 0) {
+      console.log("No unread notifications to clear");
+      return;
+    }
     
     try {
       console.log("Clearing notifications:", unreadNotifications.length);
       
       const updatePromises = unreadNotifications.map(notification => {
+        // Ensure read_by is always an array
         const currentReadBy = Array.isArray(notification.read_by) ? notification.read_by : [];
         
-        return supabase
-          .from('team_messages')
-          .update({ read_by: [...currentReadBy, user.id] })
-          .eq('id', notification.id);
+        // Only update if user is not already in read_by
+        if (!currentReadBy.includes(user.id)) {
+          const updatedReadBy = [...currentReadBy, user.id];
+          
+          return supabase
+            .from('team_messages')
+            .update({ read_by: updatedReadBy })
+            .eq('id', notification.id);
+        }
+        return Promise.resolve({ data: null, error: null });
       });
       
-      await Promise.all(updatePromises);
+      const results = await Promise.all(updatePromises);
       
+      // Check for errors
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        console.error('Errors clearing notifications:', errors);
+        toast.error('Failed to clear all notifications');
+        return;
+      }
+      
+      // Update local state
       const updatedNotifications = notifications.map(notification => {
         if (!notification.read_by.includes(user.id)) {
           return {
@@ -173,19 +195,26 @@ const NotificationsDropdown = () => {
         return notification;
       });
       
+      // Update UI state
       setNotifications(updatedNotifications);
       setHasUnread(false);
       
+      // Update cache directly with the new data
       if (user.id) {
-        queryClient.setQueryData(['mentionedMessages', user.id], updatedNotifications);
+        // Clone the notifications to avoid reference issues
+        const updatedCache = JSON.parse(JSON.stringify(updatedNotifications));
+        queryClient.setQueryData(['mentionedMessages', user.id], updatedCache);
       }
       
-      await queryClient.invalidateQueries({ queryKey: ['mentionedMessages'] });
+      // Force a refetch to ensure cache and server are in sync
+      await queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user?.id] });
       await refetchMentions();
       
       console.log("All notifications cleared successfully");
+      toast.success('All notifications cleared');
     } catch (error) {
       console.error('Error clearing notifications:', error);
+      toast.error('Failed to clear notifications');
     }
   };
   
