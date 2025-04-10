@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamPollCard from './TeamPoll';
 import CreatePollForm from './CreatePollForm';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface StickyNoteProps {
   note: TeamNote;
@@ -310,105 +310,109 @@ const TeamNoticeboard: React.FC = () => {
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
   
-  return <div className="container mx-auto p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Team Noticeboard</h2>
-            <TabsList className="mt-2">
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="polls">Polls</TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <div className="flex space-x-2">
-            <Popover open={showCreatePoll && activeTab === 'polls'} onOpenChange={(open) => setShowCreatePoll(open)}>
-              <PopoverTrigger asChild>
-                <Button variant={activeTab === 'polls' ? 'default' : 'outline'} onClick={() => {
-                  if (activeTab !== 'polls') {
-                    setActiveTab('polls');
-                    setTimeout(() => setShowCreatePoll(true), 100);
-                  } else {
-                    setShowCreatePoll(true);
-                  }
-                }}>
-                  <BarChart2 className="mr-2 h-4 w-4" />
-                  New Poll
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-96" align="end">
-                <CreatePollForm onClose={() => setShowCreatePoll(false)} />
-              </PopoverContent>
-            </Popover>
+  return (
+    <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
+      <div className="container mx-auto p-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800">Team Noticeboard</h2>
+              <TabsList className="mt-2">
+                <TabsTrigger value="notes">Notes</TabsTrigger>
+                <TabsTrigger value="polls">Polls</TabsTrigger>
+              </TabsList>
+            </div>
             
-            <Popover open={showCreateForm && activeTab === 'notes'} onOpenChange={(open) => setShowCreateForm(open)}>
-              <PopoverTrigger asChild>
-                <Button variant={activeTab === 'notes' ? 'default' : 'outline'} onClick={() => {
-                  if (activeTab !== 'notes') {
-                    setActiveTab('notes');
-                    setTimeout(() => setShowCreateForm(true), 100);
-                  } else {
-                    setShowCreateForm(true);
-                  }
-                }}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Note
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-96" align="end">
-                <CreateNoteForm onClose={() => setShowCreateForm(false)} />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-        
-        <TabsContent value="notes">
-          {notesLoading ? <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[200px] w-full border border-gray-200/50"></div>)}
-            </div> : <>
-              {sortedNotes.length === 0 ? <div className="text-center py-12">
-                  <p className="text-gray-500 mb-4">No notes yet. Create the first one!</p>
-                  <Button onClick={() => setShowCreateForm(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    New Note
-                  </Button>
-                </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {sortedNotes.map(note => (
-                    <StickyNote 
-                      key={note.id} 
-                      note={note} 
-                      onUpdate={handleUpdate} 
-                      onDelete={handleDelete}
-                      authorName={userNameMap[note.author_id]} 
-                    />
-                  ))}
-                </div>}
-            </>}
-        </TabsContent>
-        
-        <TabsContent value="polls">
-          {pollsLoading ? <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[1, 2].map(i => <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[250px] w-full border border-gray-200/50"></div>)}
-            </div> : <>
-              {polls.length === 0 ? <div className="text-center py-12">
-                  <p className="text-gray-500 mb-4">No polls yet. Create the first one!</p>
-                  <Button onClick={() => setShowCreatePoll(true)}>
+            <div className="flex space-x-2">
+              <Popover open={showCreatePoll && activeTab === 'polls'} onOpenChange={(open) => setShowCreatePoll(open)}>
+                <PopoverTrigger asChild>
+                  <Button variant={activeTab === 'polls' ? 'default' : 'outline'} onClick={() => {
+                    if (activeTab !== 'polls') {
+                      setActiveTab('polls');
+                      setTimeout(() => setShowCreatePoll(true), 100);
+                    } else {
+                      setShowCreatePoll(true);
+                    }
+                  }}>
                     <BarChart2 className="mr-2 h-4 w-4" />
                     New Poll
                   </Button>
-                </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {polls.map(poll => (
-                    <TeamPollCard 
-                      key={poll.id} 
-                      poll={poll} 
-                      authorName={userNameMap[poll.author_id]} 
-                    />
-                  ))}
-                </div>}
-            </>}
-        </TabsContent>
-      </Tabs>
-    </div>;
+                </PopoverTrigger>
+                <PopoverContent className="w-96" align="end">
+                  <CreatePollForm onClose={() => setShowCreatePoll(false)} />
+                </PopoverContent>
+              </Popover>
+              
+              <Popover open={showCreateForm && activeTab === 'notes'} onOpenChange={(open) => setShowCreateForm(open)}>
+                <PopoverTrigger asChild>
+                  <Button variant={activeTab === 'notes' ? 'default' : 'outline'} onClick={() => {
+                    if (activeTab !== 'notes') {
+                      setActiveTab('notes');
+                      setTimeout(() => setShowCreateForm(true), 100);
+                    } else {
+                      setShowCreateForm(true);
+                    }
+                  }}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New Note
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96" align="end">
+                  <CreateNoteForm onClose={() => setShowCreateForm(false)} />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
+          <TabsContent value="notes">
+            {notesLoading ? <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[200px] w-full border border-gray-200/50"></div>)}
+              </div> : <>
+                {sortedNotes.length === 0 ? <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">No notes yet. Create the first one!</p>
+                    <Button onClick={() => setShowCreateForm(true)}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      New Note
+                    </Button>
+                  </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {sortedNotes.map(note => (
+                      <StickyNote 
+                        key={note.id} 
+                        note={note} 
+                        onUpdate={handleUpdate} 
+                        onDelete={handleDelete}
+                        authorName={userNameMap[note.author_id]} 
+                      />
+                    ))}
+                  </div>}
+              </>}
+          </TabsContent>
+          
+          <TabsContent value="polls">
+            {pollsLoading ? <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2].map(i => <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[250px] w-full border border-gray-200/50"></div>)}
+              </div> : <>
+                {polls.length === 0 ? <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">No polls yet. Create the first one!</p>
+                    <Button onClick={() => setShowCreatePoll(true)}>
+                      <BarChart2 className="mr-2 h-4 w-4" />
+                      New Poll
+                    </Button>
+                  </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {polls.map(poll => (
+                      <TeamPollCard 
+                        key={poll.id} 
+                        poll={poll} 
+                        authorName={userNameMap[poll.author_id]} 
+                      />
+                    ))}
+                  </div>}
+              </>}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </ScrollArea>
+  );
 };
 
 export default TeamNoticeboard;
