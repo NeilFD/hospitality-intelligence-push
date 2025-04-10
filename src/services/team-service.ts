@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 
@@ -13,6 +12,14 @@ export interface TeamNote {
   type: 'text' | 'image' | 'voice' | 'gif';
   attachment_url?: string;
   mentioned_users?: string[];
+}
+
+export interface TeamNoteReply {
+  id: string;
+  content: string;
+  author_id: string;
+  note_id: string;
+  created_at: string;
 }
 
 export interface MessageReaction {
@@ -79,32 +86,26 @@ export interface ChatRoom {
 
 export const getTeamMembers = async (): Promise<UserProfile[]> => {
   try {
-    // Log the start of the function call for debugging
     console.log('getTeamMembers function called');
     
-    // Make sure we're getting all profiles without any filters
-    // Using a specific option to bypass RLS policies
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .order('created_at', { ascending: true }); // Sort by creation date, oldest first
-    
+      .order('created_at', { ascending: true });
+      
     if (error) {
       console.error('Error fetching team members:', error);
       throw error;
     }
     
-    // Log the full response for debugging
     console.log('Supabase response:', { data, error });
-    
-    // Log the number of profiles found for debugging
     console.log('Team members fetched:', data?.length || 0, 'profiles found');
     console.log('Team members data:', data);
     
     return data || [];
   } catch (e) {
     console.error('Exception in getTeamMembers:', e);
-    throw e; // Throw error to handle in the UI
+    throw e;
   }
 };
 
@@ -168,6 +169,43 @@ export const deleteNote = async (id: string): Promise<void> => {
     console.error('Error deleting note:', error);
     throw error;
   }
+};
+
+export const getNoteReplies = async (noteId: string): Promise<TeamNoteReply[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('team_note_replies')
+      .select('*')
+      .eq('note_id', noteId)
+      .order('created_at', { ascending: true });
+      
+    if (error) {
+      console.error('Error fetching note replies:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (e) {
+    console.error('Exception in getNoteReplies:', e);
+    return [];
+  }
+};
+
+export const createNoteReply = async (
+  reply: Omit<TeamNoteReply, 'id' | 'created_at'>
+): Promise<TeamNoteReply> => {
+  const { data, error } = await supabase
+    .from('team_note_replies')
+    .insert(reply)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Error creating note reply:', error);
+    throw error;
+  }
+  
+  return data;
 };
 
 export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
