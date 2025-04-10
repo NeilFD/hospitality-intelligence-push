@@ -86,6 +86,7 @@ export const getTeamMembers = async (): Promise<UserProfile[]> => {
     throw error;
   }
   
+  console.log('Team members fetched:', data?.length || 0, 'profiles found');
   return data || [];
 };
 
