@@ -42,8 +42,10 @@ import MasterDashboard from '@/pages/master/Dashboard';
 import MasterMonthSummary from '@/pages/master/MonthSummary';
 import MasterWeeklyInput from '@/pages/master/WeeklyInput';
 
-// Team Communication pages
+// Team pages
 import TeamDashboard from '@/pages/team/Dashboard';
+import TeamNoticeboard from '@/pages/team/Noticeboard';
+import TeamChat from '@/pages/team/Chat';
 
 // Import React Query dependencies
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -144,6 +146,14 @@ const router = createBrowserRouter([
       {
         path: "/team/dashboard",
         element: <TeamDashboard />
+      },
+      {
+        path: "/team/noticeboard",
+        element: <TeamNoticeboard />
+      },
+      {
+        path: "/team/chat",
+        element: <TeamChat />
       },
       {
         path: "*",

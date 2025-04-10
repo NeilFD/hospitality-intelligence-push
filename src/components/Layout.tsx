@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User } from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -103,11 +102,23 @@ const Layout = ({
           icon: <Home className="mr-2 h-4 w-4" />
         }];
       case 'team':
-        return [{
-          name: "Team Dashboard",
-          path: "/team/dashboard",
-          icon: <Home className="mr-2 h-4 w-4" />
-        }];
+        return [
+          {
+            name: "Team Dashboard",
+            path: "/team/dashboard",
+            icon: <Home className="mr-2 h-4 w-4" />
+          },
+          {
+            name: "Noticeboard",
+            path: "/team/noticeboard",
+            icon: <Clipboard className="mr-2 h-4 w-4" />
+          },
+          {
+            name: "Team Chat",
+            path: "/team/chat",
+            icon: <MessageSquare className="mr-2 h-4 w-4" />
+          }
+        ];
       default:
         return [];
     }

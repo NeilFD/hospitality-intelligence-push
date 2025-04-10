@@ -1,103 +1,111 @@
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import TeamNoticeboard from './components/TeamNoticeboard';
-import TeamChat from './components/TeamChat';
-import { useAuthStore } from '@/services/auth-service';
-import { useQuery } from '@tanstack/react-query';
-import { getTeamMembers } from '@/services/team-service';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clipboard, MessageSquare } from 'lucide-react';
-const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('noticeboard');
-  const {
-    user,
-    profile
-  } = useAuthStore();
-  const {
-    data: teamMembers = [],
-    isLoading
-  } = useQuery({
-    queryKey: ['teamMembers'],
-    queryFn: getTeamMembers
-  });
-  const sortedMembers = [...teamMembers].sort((a, b) => {
-    // Sort by online status first (future feature)
-    // Then by name
-    return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
-  });
-  return <div className="container mx-auto p-4">
-      <div className="flex flex-col md:flex-row md:space-x-6">
-        <div className="md:w-2/3">
-          <Tabs defaultValue="noticeboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="noticeboard" className="text-base font-medium text-slate-900">
-                <Clipboard className="w-4 h-4 mr-2" /> Noticeboard
-              </TabsTrigger>
-              <TabsTrigger value="chat" className="text-base font-medium text-slate-900">
-                <MessageSquare className="w-4 h-4 mr-2" /> Team Chat
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="noticeboard">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
-                <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Noticeboard</h1>
-                <p className="text-gray-600">
-                  Pin important notes, share updates, and stay connected with the team.
-                </p>
-              </div>
-              <TeamNoticeboard />
-            </TabsContent>
-            
-            <TabsContent value="chat">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
-                <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Chat</h1>
-                <p className="text-gray-600">
-                  Real-time messaging with your team members.
-                </p>
-              </div>
-              <TeamChat />
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div className="md:w-1/3 mt-6 md:mt-0">
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>
-                Currently {teamMembers.length} members
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? <div className="space-y-4">
-                  {[1, 2, 3].map(i => <div key={i} className="flex items-center">
-                      <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse mr-3"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3"></div>
-                      </div>
-                    </div>)}
-                </div> : <div className="space-y-4">
-                  {sortedMembers.map(member => <div key={member.id} className="flex items-center">
-                      <Avatar className="h-10 w-10 mr-3">
-                        {member.avatar_url ? <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} /> : <AvatarFallback>{`${(member.first_name?.[0] || '').toUpperCase()}${(member.last_name?.[0] || '').toUpperCase()}`}</AvatarFallback>}
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">
-                          {member.first_name} {member.last_name}
-                          {member.id === user?.id && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                              You
-                            </span>}
-                        </p>
-                        <p className="text-sm text-gray-500">{member.role}</p>
-                      </div>
-                    </div>)}
-                </div>}
-            </CardContent>
-          </Card>
-        </div>
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clipboard, MessageSquare, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+const TeamDashboard: React.FC = () => {
+  return (
+    <div className="container mx-auto p-4">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-8">
+        <h1 className="text-3xl font-bold mb-2 text-slate-900">Team Hub</h1>
+        <p className="text-gray-600">
+          Connect with your team, share updates, and stay informed.
+        </p>
       </div>
-    </div>;
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Noticeboard Card */}
+        <Card className="border border-blue-100 shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg border-b border-blue-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-full shadow-sm">
+                <Clipboard className="h-6 w-6 text-blue-500" />
+              </div>
+              <CardTitle className="text-xl">Team Noticeboard</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <CardDescription className="text-base mb-4">
+              Pin important announcements, share updates, and keep track of essential information for the team.
+            </CardDescription>
+            <ul className="space-y-2 mb-4">
+              <li className="flex items-center gap-2">
+                <div className="bg-blue-100 rounded-full p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span>Pin important announcements</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="bg-blue-100 rounded-full p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span>Share upcoming events</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="bg-blue-100 rounded-full p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span>Keep persistent information visible</span>
+              </li>
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Button asChild className="w-full justify-between bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
+              <Link to="/team/noticeboard">
+                Open Noticeboard <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        {/* Team Chat Card */}
+        <Card className="border border-indigo-100 shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-t-lg border-b border-indigo-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-full shadow-sm">
+                <MessageSquare className="h-6 w-6 text-indigo-500" />
+              </div>
+              <CardTitle className="text-xl">Team Chat</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <CardDescription className="text-base mb-4">
+              Real-time messaging with your team members for day-to-day communication and collaboration.
+            </CardDescription>
+            <ul className="space-y-2 mb-4">
+              <li className="flex items-center gap-2">
+                <div className="bg-indigo-100 rounded-full p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span>Share quick updates</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="bg-indigo-100 rounded-full p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span>Collaborate with team members</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="bg-indigo-100 rounded-full p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span>Send images, files, and more</span>
+              </li>
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Button asChild className="w-full justify-between bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700">
+              <Link to="/team/chat">
+                Open Chat <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
 };
-export default Dashboard;
+
+export default TeamDashboard;
