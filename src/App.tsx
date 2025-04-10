@@ -24,6 +24,7 @@ import PerformanceDashboard from "@/pages/performance/Dashboard";
 import WageOptimization from "@/pages/performance/WageOptimization";
 import FoodBeverageAnalysis from "@/pages/performance/FoodBeverageAnalysis";
 import DataExplorer from "@/pages/performance/DataExplorer";
+import MonzoApi from "@/pages/monzo/MonzoApi";
 import TeamDashboard from "./pages/team/Dashboard";
 import Noticeboard from "./pages/team/Noticeboard";
 import Chat from "./pages/team/Chat";
@@ -74,6 +75,9 @@ function App() {
             <Route path="/performance/wage-optimization" element={<RequireAuth><Layout><WageOptimization /></Layout></RequireAuth>} />
             <Route path="/performance/fb-analysis" element={<RequireAuth><Layout><FoodBeverageAnalysis /></Layout></RequireAuth>} />
             <Route path="/performance/data-explorer" element={<RequireAuth><Layout><DataExplorer /></Layout></RequireAuth>} />
+            
+            {/* Monzo API Routes */}
+            <Route path="/monzo" element={<RequireAuth><Layout><MonzoApi /></Layout></RequireAuth>} />
             
             {/* Master Routes */}
             <Route path="/master/dashboard" element={<RequireAuth><Layout><MasterDashboard /></Layout></RequireAuth>} />
