@@ -22,7 +22,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
     queryFn: getChatRooms
   });
   const isMobile = useIsMobile();
-  const [minimized, setMinimized] = React.useState(false);
+  const [minimized, setMinimized] = React.useState(isMobile ? true : false);
 
   if (isLoading) {
     return (
@@ -38,12 +38,14 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
 
   return (
     <div className={cn(
-      "transition-all duration-300 bg-pastel-blue h-full border-r border-white/10",
-      isMobile && minimized ? "w-14" : "w-64"
+      "transition-all duration-300 bg-pastel-blue h-full border-r border-white/10 flex-shrink-0",
+      isMobile && minimized ? "w-12" : (isMobile ? "w-16" : "w-64")
     )}>
-      <div className="flex items-center justify-between border-b border-white/10 p-4">
+      <div className="flex items-center justify-between border-b border-white/10 p-2">
         {!isMobile || !minimized ? (
-          <h2 className="text-lg font-semibold text-tavern-blue-dark">Chat Rooms</h2>
+          <h2 className="text-lg font-semibold text-tavern-blue-dark truncate">
+            {isMobile ? "Rooms" : "Chat Rooms"}
+          </h2>
         ) : null}
         
         {isMobile && (
@@ -52,6 +54,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
             size="sm" 
             onClick={toggleMinimize} 
             className={cn("ml-auto", minimized ? "mx-auto" : "")}
+            aria-label={minimized ? "Expand sidebar" : "Collapse sidebar"}
           >
             {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
           </Button>
@@ -59,26 +62,30 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
       </div>
       
       <ScrollArea className="h-[calc(100vh-120px)]">
-        <div className="p-2">
+        <div className="p-1">
           {rooms.map((room) => (
             <Button
               key={room.id}
               variant="ghost"
               className={cn(
-                "w-full justify-start mb-2 text-tavern-blue-dark hover:bg-white/10 transition-colors duration-200",
+                "w-full justify-start mb-1 text-tavern-blue-dark hover:bg-white/10 transition-colors duration-200",
                 selectedRoomId === room.id 
                   ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90" 
                   : "hover:text-tavern-blue",
-                isMobile && minimized ? "px-2" : ""
+                isMobile && minimized ? "p-2" : "",
+                isMobile ? "h-10" : ""
               )}
               onClick={() => onRoomSelect(room.id)}
+              title={room.name}
             >
               {room.is_announcement_only ? (
-                <AlertCircle className="mr-2 h-4 w-4 text-white" />
+                <AlertCircle className={cn("h-4 w-4 text-white", minimized ? "mx-auto" : "mr-2")} />
               ) : (
-                <Hash className="mr-2 h-4 w-4 opacity-60 text-tavern-blue-dark" />
+                <Hash className={cn("h-4 w-4 opacity-60 text-tavern-blue-dark", minimized ? "mx-auto" : "mr-2")} />
               )}
-              {(!isMobile || !minimized) && room.name}
+              {(!isMobile || !minimized) && (
+                <span className="truncate">{room.name}</span>
+              )}
             </Button>
           ))}
         </div>

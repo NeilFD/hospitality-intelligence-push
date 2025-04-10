@@ -9,7 +9,7 @@ const Chat: React.FC = () => {
   const isMobile = useIsMobile();
   
   return (
-    <div className={cn("container mx-auto", isMobile ? "p-2" : "p-4")}>
+    <div className={cn("container mx-auto", isMobile ? "p-2 max-w-full overflow-hidden" : "p-4")}>
       <div className={cn(
         "bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg", 
         isMobile ? "p-3 mb-3" : "p-6 mb-6"
