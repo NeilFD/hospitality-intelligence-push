@@ -499,13 +499,16 @@ export const getTrackerSummaryByMonth = async (
     // Fetch tracker data for the month
     const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
     
+    console.log(`Processing ${trackerData.length} tracker records for summary calculation`);
+    
     let totalRevenue = 0;
     let totalCost = 0;
     
     // Process each day in the tracker
-    const dayPromises = trackerData.map(async (day) => {
-      // Add revenue
+    for (const day of trackerData) {
+      // Add revenue - ensure we're using the correct numeric value
       const dayRevenue = Number(day.revenue) || 0;
+      totalRevenue += dayRevenue;
       
       // Fetch purchases for this day
       const purchases = await fetchTrackerPurchases(day.id);
@@ -516,27 +519,18 @@ export const getTrackerSummaryByMonth = async (
       const staffFoodAllowance = Number(day.staff_food_allowance) || 0;
       
       const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+      totalCost += dayCost;
       
-      return {
-        revenue: dayRevenue,
-        cost: dayCost
-      };
-    });
-    
-    // Process all days
-    const daysData = await Promise.all(dayPromises);
-    
-    // Calculate totals
-    daysData.forEach(day => {
-      totalRevenue += day.revenue;
-      totalCost += day.cost;
-    });
+      console.log(`Day ${day.date}: Revenue=${dayRevenue}, Purchases=${purchasesTotal}, Credits=${creditNotesTotal}, Cost=${dayCost}`);
+    }
     
     // Calculate GP percentage
     let gpPercentage = 0;
     if (totalRevenue > 0) {
       gpPercentage = (totalRevenue - totalCost) / totalRevenue;
     }
+    
+    console.log(`Month summary for ${moduleType}: Revenue=${totalRevenue}, Cost=${totalCost}, GP%=${gpPercentage}`);
     
     return {
       revenue: totalRevenue,
