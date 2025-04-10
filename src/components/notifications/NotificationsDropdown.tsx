@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -248,19 +249,25 @@ const NotificationsDropdown = () => {
       
       setHasUnread(remainingUnread);
       
-      console.log('Deleting message with ID:', message.id);
+      console.log('Dismissing notification with ID:', message.id);
       
-      // Ensure the deleted flag is set to true in Supabase
-      const { error } = await supabase
-        .from('team_messages')
-        .update({ deleted: true })
-        .eq('id', message.id);
-      
-      if (error) {
-        console.error('Error deleting notification:', error);
-        toast.error('Failed to delete notification');
-        await refetchMentions(); // Revert UI by refetching
-        return;
+      // Instead of marking as deleted, add user to read_by to hide from notifications
+      // This preserves the message in the chat but removes it from notifications
+      const currentReadBy = Array.isArray(message.read_by) ? message.read_by : [];
+      if (!currentReadBy.includes(user.id)) {
+        const updatedReadBy = [...currentReadBy, user.id];
+        
+        const { error } = await supabase
+          .from('team_messages')
+          .update({ read_by: updatedReadBy })
+          .eq('id', message.id);
+          
+        if (error) {
+          console.error('Error dismissing notification:', error);
+          toast.error('Failed to dismiss notification');
+          await refetchMentions(); // Revert UI by refetching
+          return;
+        }
       }
       
       // Force refetch to ensure our local state matches the database
@@ -269,11 +276,11 @@ const NotificationsDropdown = () => {
         exact: true
       });
       
-      toast.success('Notification deleted');
+      toast.success('Notification dismissed');
       
     } catch (error) {
-      console.error('Error deleting notification:', error);
-      toast.error('Failed to delete notification');
+      console.error('Error dismissing notification:', error);
+      toast.error('Failed to dismiss notification');
       await refetchMentions(); // Revert UI by refetching
     }
   };
