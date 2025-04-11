@@ -21,11 +21,28 @@ const WeeklyInput = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
-  const [activeDay, setActiveDay] = useState<string>('');
   
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
+  
+  // Create a storage key specific to this week/month/year
+  const selectedDateStorageKey = useMemo(() => 
+    `master-input-selected-date-${year}-${month}-${weekNumber}`, 
+  [year, month, weekNumber]);
+  
+  // Get active day from localStorage or use empty string as initial state
+  const [activeDay, setActiveDay] = useState<string>(() => {
+    const savedDate = localStorage.getItem(selectedDateStorageKey);
+    return savedDate || '';
+  });
+  
+  // Save the selected date to localStorage whenever it changes
+  useEffect(() => {
+    if (activeDay) {
+      localStorage.setItem(selectedDateStorageKey, activeDay);
+    }
+  }, [activeDay, selectedDateStorageKey]);
   
   const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
   const currentWeek = useMemo(() => weekDates[weekNumber - 1] || {
@@ -71,7 +88,14 @@ const WeeklyInput = () => {
         }
         setRecords(days);
         if (days.length > 0) {
-          if (!activeDay || !days.some(day => day.date === activeDay)) {
+          const savedDate = localStorage.getItem(selectedDateStorageKey);
+          // Check if saved date exists in the current week
+          const dateExists = savedDate && days.some(day => day.date === savedDate);
+          
+          if (dateExists) {
+            setActiveDay(savedDate);
+          } else if (!activeDay || !days.some(day => day.date === activeDay)) {
+            // If no valid saved date or current activeDay, default to first day
             setActiveDay(days[0].date);
           }
         }
@@ -82,7 +106,7 @@ const WeeklyInput = () => {
     } finally {
       setLoading(false);
     }
-  }, [year, month, weekNumber, weekDates, activeDay]);
+  }, [year, month, weekNumber, weekDates, activeDay, selectedDateStorageKey]);
 
   useEffect(() => {
     loadRecords();
