@@ -6,14 +6,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Format currency with £ symbol and no decimal places
+// Format currency with £ symbol and two decimal places
 export function formatCurrency(amount: number | undefined): string {
-  if (amount === undefined) return "£0";
+  if (amount === undefined) return "£0.00";
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 
