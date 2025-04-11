@@ -44,7 +44,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
           <div className="col-span-2 text-sm">Amount</div>
           <div className="col-span-2 text-sm">Unit</div>
           <div className="col-span-2 text-sm">£/unit</div>
-          <div className="col-span-1 text-sm text-right">Total</div>
+          <div className="col-span-1 text-sm text-right pr-4">Total</div>
           <div className="col-span-1"></div>
         </div>
         
@@ -55,7 +55,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="Name"
                 value={ingredient.name}
                 onChange={(e) => onIngredientChange(index, 'name', e.target.value)}
-                className="text-gray-900 bg-white border border-gray-300"
+                className="text-gray-900 bg-white border border-gray-300 h-10"
               />
             </div>
             <div className="col-span-2">
@@ -64,7 +64,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="Amount"
                 value={ingredient.amount || ''}
                 onChange={(e) => onIngredientChange(index, 'amount', e.target.value)}
-                className="text-gray-900 bg-white border border-gray-300"
+                className="text-gray-900 bg-white border border-gray-300 h-10"
               />
             </div>
             <div className="col-span-2">
@@ -72,7 +72,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 value={ingredient.unit}
                 onValueChange={(value) => onIngredientChange(index, 'unit', value)}
               >
-                <SelectTrigger className="w-full text-gray-900 bg-white">
+                <SelectTrigger className="w-full text-gray-900 bg-white h-10">
                   <SelectValue placeholder="Unit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -81,6 +81,9 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                   <SelectItem value="ml">ml</SelectItem>
                   <SelectItem value="l">L</SelectItem>
                   <SelectItem value="pcs">pcs</SelectItem>
+                  <SelectItem value="tbsp">tbsp</SelectItem>
+                  <SelectItem value="tsp">tsp</SelectItem>
+                  <SelectItem value="cup">cup</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -91,7 +94,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="£/unit"
                 value={ingredient.costPerUnit || ''}
                 onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value)}
-                className="text-gray-900 bg-white border border-gray-300"
+                className="text-gray-900 bg-white border border-gray-300 h-10"
               />
             </div>
             <div className="col-span-1 text-right pr-8 text-gray-900">
