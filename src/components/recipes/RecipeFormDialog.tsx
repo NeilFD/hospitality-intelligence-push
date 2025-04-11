@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -102,7 +101,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             [field]: value
           };
           
-          // Recalculate total cost if amount or costPerUnit changes
           if (field === 'amount' || field === 'costPerUnit') {
             updatedIngredient.totalCost = Number(updatedIngredient.amount) * Number(updatedIngredient.costPerUnit);
           }
@@ -154,18 +152,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   const calculateTotals = () => {
     const totalRecipeCost = formData.ingredients.reduce((sum, ingredient) => sum + ingredient.totalCost, 0);
     
-    // Calculate suggested selling price (70% GP including 20% VAT)
-    // Formula: Cost / (1 - GP) = Selling price excluding VAT
-    // Then: Selling price excluding VAT * 1.2 = Selling price including VAT
     const suggestedSellingPrice = (totalRecipeCost / (1 - 0.7)) * 1.2;
     
-    // If actual menu price is not set, use the suggested selling price
     const actualMenuPrice = formData.costing.actualMenuPrice || suggestedSellingPrice;
     
-    // Calculate GP% based on actual menu price
-    // First get price excluding VAT
-    const priceExVat = actualMenuPrice / 1.2;
-    // Then calculate GP%
     const grossProfitPercentage = (priceExVat - totalRecipeCost) / priceExVat;
     
     return {
@@ -185,7 +175,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
       updatedAt: new Date()
     };
     
-    // In a real app, we would upload the image and get a URL here
     if (imagePreview) {
       updatedRecipe.imageUrl = imagePreview;
     }
@@ -357,7 +346,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               </div>
               
               <div className="space-y-2">
-                {/* Table-like header for ingredients */}
                 <div className="grid grid-cols-12 gap-2 mb-1 px-2">
                   <div className="col-span-4 text-sm text-gray-500">Name</div>
                   <div className="col-span-2 text-sm text-gray-500">Amount</div>
@@ -389,7 +377,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         value={ingredient.unit}
                         onValueChange={(value) => handleIngredientChange(ingredient.id, 'unit', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="min-w-[80px]">
                           <SelectValue placeholder="Unit" />
                         </SelectTrigger>
                         <SelectContent>
