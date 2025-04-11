@@ -294,7 +294,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isVegetarian} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegetarian', checked === true)}
                   />
-                  <Label htmlFor="isVegetarian" className="text-dark-text-DEFAULT">Vegetarian</Label>
+                  <Label 
+                    htmlFor="isVegetarian" 
+                    className="text-dark-text-DEFAULT cursor-pointer"
+                  >
+                    Vegetarian
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -302,7 +307,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isVegan} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegan', checked === true)}
                   />
-                  <Label htmlFor="isVegan" className="text-dark-text-DEFAULT">Vegan</Label>
+                  <Label 
+                    htmlFor="isVegan" 
+                    className="text-dark-text-DEFAULT cursor-pointer"
+                  >
+                    Vegan
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -310,7 +320,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isGlutenFree} 
                     onCheckedChange={(checked) => handleCheckboxChange('isGlutenFree', checked === true)}
                   />
-                  <Label htmlFor="isGlutenFree" className="text-dark-text-DEFAULT">Gluten Free</Label>
+                  <Label 
+                    htmlFor="isGlutenFree" 
+                    className="text-dark-text-DEFAULT cursor-pointer"
+                  >
+                    Gluten Free
+                  </Label>
                 </div>
               </div>
             </div>
