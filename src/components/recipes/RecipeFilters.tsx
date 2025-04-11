@@ -92,7 +92,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-4 border-b">
+    <div className="space-y-4 pb-4 border-b w-full">
       <div className="space-y-4">
         <div className="bg-white p-3 rounded-lg shadow-sm">
           <form onSubmit={handleSearch} className="flex gap-2">
