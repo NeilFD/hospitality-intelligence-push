@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -209,17 +210,17 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category" className="text-gray-900">Category</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData({...formData, category: value})}
               >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select category" />
+                <SelectTrigger id="category" className="text-gray-900">
+                  <SelectValue placeholder="Select category" className="text-gray-900" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
-                    <SelectItem key={category.id} value={category.name}>
+                    <SelectItem key={category.id} value={category.name} className="text-gray-900">
                       {category.name}
                     </SelectItem>
                   ))}
@@ -321,7 +322,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="method">Method</Label>
+              <Label htmlFor="method" className="text-gray-900">Method</Label>
               <Textarea 
                 id="method"
                 name="method"
@@ -329,6 +330,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 onChange={handleInputChange}
                 placeholder="Enter cooking instructions"
                 rows={6}
+                className="text-gray-900"
               />
             </div>
           </div>
@@ -366,7 +368,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         placeholder="Name"
                         value={ingredient.name}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'name', e.target.value)}
-                        className="w-full"
+                        className="w-full text-gray-900"
                       />
                     </div>
                     <div className="col-span-2">
@@ -375,7 +377,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         placeholder="Amount"
                         value={ingredient.amount || ''}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'amount', parseFloat(e.target.value) || 0)}
-                        className="w-full"
+                        className="w-full text-gray-900"
                       />
                     </div>
                     <div className="col-span-2">
@@ -383,15 +385,15 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         value={ingredient.unit}
                         onValueChange={(value) => handleIngredientChange(ingredient.id, 'unit', value)}
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Unit" />
+                        <SelectTrigger className="w-full text-gray-900">
+                          <SelectValue placeholder="Unit" className="text-gray-900" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="g">g</SelectItem>
-                          <SelectItem value="kg">kg</SelectItem>
-                          <SelectItem value="ml">ml</SelectItem>
-                          <SelectItem value="l">L</SelectItem>
-                          <SelectItem value="pcs">pcs</SelectItem>
+                          <SelectItem value="g" className="text-gray-900">g</SelectItem>
+                          <SelectItem value="kg" className="text-gray-900">kg</SelectItem>
+                          <SelectItem value="ml" className="text-gray-900">ml</SelectItem>
+                          <SelectItem value="l" className="text-gray-900">L</SelectItem>
+                          <SelectItem value="pcs" className="text-gray-900">pcs</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -402,10 +404,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         placeholder="£/unit"
                         value={ingredient.costPerUnit || ''}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', parseFloat(e.target.value) || 0)}
-                        className="w-full"
+                        className="w-full text-gray-900"
                       />
                     </div>
-                    <div className="col-span-1 text-right py-2">
+                    <div className="col-span-1 text-right py-2 text-gray-900">
                       £{ingredient.totalCost.toFixed(2)}
                     </div>
                     <div className="col-span-1 flex justify-center">
@@ -422,14 +424,14 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                   </div>
                 ))}
                 
-                <div className="flex justify-end font-medium border-t border-gray-200 pt-2">
+                <div className="flex justify-end font-medium border-t border-gray-200 pt-2 text-gray-900">
                   Total: £{formData.ingredients.reduce((sum, ing) => sum + ing.totalCost, 0).toFixed(2)}
                 </div>
               </div>
             </div>
             
             <div>
-              <Label htmlFor="actualMenuPrice">Menu Price (£)</Label>
+              <Label htmlFor="actualMenuPrice" className="text-gray-900">Menu Price (£)</Label>
               <Input 
                 id="actualMenuPrice"
                 type="number"
@@ -443,6 +445,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                   }
                 })}
                 placeholder="Enter menu price"
+                className="text-gray-900"
               />
               <div className="text-sm text-gray-500 mt-1">
                 Suggested Price: £{calculateTotals().suggestedSellingPrice.toFixed(2)} (70% GP inc. VAT)
@@ -453,7 +456,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="timeToTableMinutes">Time to Table (mins)</Label>
+              <Label htmlFor="timeToTableMinutes" className="text-gray-900">Time to Table (mins)</Label>
               <Input 
                 id="timeToTableMinutes"
                 name="timeToTableMinutes"
@@ -468,22 +471,24 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                   }
                 })}
                 placeholder="Enter preparation time"
+                className="text-gray-900"
               />
             </div>
             
             <div>
-              <Label htmlFor="recommendedUpsell">Recommended Upsell</Label>
+              <Label htmlFor="recommendedUpsell" className="text-gray-900">Recommended Upsell</Label>
               <Input 
                 id="recommendedUpsell"
                 name="recommendedUpsell"
                 value={formData.recommendedUpsell}
                 onChange={handleInputChange}
                 placeholder="Enter recommended upsell"
+                className="text-gray-900"
               />
             </div>
             
             <div>
-              <Label htmlFor="miseEnPlace">Mise en Place</Label>
+              <Label htmlFor="miseEnPlace" className="text-gray-900">Mise en Place</Label>
               <Textarea 
                 id="miseEnPlace"
                 name="miseEnPlace"
@@ -491,6 +496,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 onChange={handleInputChange}
                 placeholder="Enter mise en place details"
                 rows={4}
+                className="text-gray-900"
               />
             </div>
           </div>
