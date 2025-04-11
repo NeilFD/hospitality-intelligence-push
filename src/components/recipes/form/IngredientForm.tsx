@@ -63,7 +63,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 type="number"
                 placeholder="Amount"
                 value={ingredient.amount || ''}
-                onChange={(e) => onIngredientChange(index, 'amount', e.target.value)}
+                onChange={(e) => onIngredientChange(index, 'amount', e.target.value === '' ? '' : Number(e.target.value))}
                 className="text-gray-900 bg-white border border-gray-300 rounded-none"
               />
             </div>
@@ -93,7 +93,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 step="0.01"
                 placeholder="£/unit"
                 value={ingredient.costPerUnit || ''}
-                onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value)}
+                onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value === '' ? '' : Number(e.target.value))}
                 className="text-gray-900 bg-white border border-gray-300 rounded-none"
               />
             </div>
