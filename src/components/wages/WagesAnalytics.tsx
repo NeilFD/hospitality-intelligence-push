@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/date-utils';
 import { ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from "sonner";
+import { fetchMasterMonthlyRecords } from '@/services/master-record-service';
 
 interface WagesAnalyticsProps {
   year: number;
@@ -40,6 +41,7 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [weekdayTotals, setWeekdayTotals] = useState<WeekdayTotals>({});
+  const [masterRecords, setMasterRecords] = useState<any[]>([]);
   
   const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
     fohWages: true,
@@ -52,10 +54,61 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const data = await getMonthlyWages(year, month);
-        setMonthlyData(data);
+        const wagesData = await getMonthlyWages(year, month);
+        
+        console.log(`Fetching master records for year=${year}, month=${month}`);
+        const masterData = await fetchMasterMonthlyRecords(year, month);
+        setMasterRecords(masterData);
+        
+        console.log('Master records fetched:', masterData.length);
+        
+        const masterRecordsMap: Record<number, any> = {};
+        masterData.forEach(record => {
+          const day = parseInt(record.date.split('-')[2]);
+          masterRecordsMap[day] = record;
+          console.log(`Master record for day ${day}: food=${record.foodRevenue}, bev=${record.beverageRevenue}`);
+        });
+        
+        const updatedData = wagesData.map(day => {
+          const masterRecord = masterRecordsMap[day.day];
+          if (masterRecord) {
+            return {
+              ...day,
+              foodRevenue: masterRecord.foodRevenue || 0,
+              bevRevenue: masterRecord.beverageRevenue || 0
+            };
+          }
+          return day;
+        });
+        
+        setMonthlyData(updatedData);
+        
         const totals = await getWeekdayTotals(year, month);
-        setWeekdayTotals(totals as WeekdayTotals);
+        
+        const updatedTotals: WeekdayTotals = { ...totals };
+        Object.keys(updatedTotals).forEach(day => {
+          updatedTotals[day].foodRevenue = 0;
+          updatedTotals[day].bevRevenue = 0;
+          updatedTotals[day].totalRevenue = 0;
+        });
+        
+        updatedData.forEach(day => {
+          const dayOfWeek = day.dayOfWeek;
+          if (updatedTotals[dayOfWeek]) {
+            updatedTotals[dayOfWeek].foodRevenue += day.foodRevenue || 0;
+            updatedTotals[dayOfWeek].bevRevenue += day.bevRevenue || 0;
+            updatedTotals[dayOfWeek].totalRevenue += (day.foodRevenue || 0) + (day.bevRevenue || 0);
+          }
+        });
+        
+        Object.keys(updatedTotals).forEach(day => {
+          const data = updatedTotals[day];
+          data.wagesPercentage = data.totalRevenue > 0 
+            ? (data.totalWages / data.totalRevenue) * 100
+            : 0;
+        });
+        
+        setWeekdayTotals(updatedTotals);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
         toast.error('Failed to load analytics data');
@@ -67,29 +120,34 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     fetchData();
   }, [year, month, getMonthlyWages, getWeekdayTotals]);
   
-  const totals = monthlyData.reduce((acc, day) => {
+  const masterTotals = masterRecords.reduce((acc, record) => {
+    acc.foodRevenue += record.foodRevenue || 0;
+    acc.bevRevenue += record.beverageRevenue || 0;
+    return acc;
+  }, { foodRevenue: 0, bevRevenue: 0 });
+  
+  const wagesTotals = monthlyData.reduce((acc, day) => {
     acc.fohWages += day.fohWages || 0;
     acc.kitchenWages += day.kitchenWages || 0;
-    acc.totalWages += (day.fohWages || 0) + (day.kitchenWages || 0);
-    acc.foodRevenue += day.foodRevenue || 0;
-    acc.bevRevenue += day.bevRevenue || 0;
-    acc.totalRevenue += (day.foodRevenue || 0) + (day.bevRevenue || 0);
     return acc;
-  }, { 
-    fohWages: 0, 
-    kitchenWages: 0, 
-    totalWages: 0,
-    foodRevenue: 0, 
-    bevRevenue: 0, 
-    totalRevenue: 0 
-  });
+  }, { fohWages: 0, kitchenWages: 0 });
+  
+  const totals = {
+    fohWages: wagesTotals.fohWages,
+    kitchenWages: wagesTotals.kitchenWages,
+    totalWages: wagesTotals.fohWages + wagesTotals.kitchenWages,
+    foodRevenue: masterTotals.foodRevenue,
+    bevRevenue: masterTotals.bevRevenue,
+    totalRevenue: masterTotals.foodRevenue + masterTotals.bevRevenue
+  };
   
   console.log('WagesAnalytics - Calculated totals:', {
     foodRevenue: totals.foodRevenue,
     bevRevenue: totals.bevRevenue,
     totalRevenue: totals.totalRevenue,
     totalWages: totals.totalWages,
-    days: monthlyData.length
+    days: monthlyData.length,
+    masterRecordsCount: masterRecords.length
   });
   
   const wagesChartData = [
@@ -106,16 +164,27 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     percentage: data.wagesPercentage
   }));
   
-  const dailyChartData = monthlyData.map(day => ({
-    name: `${day.day}`,
-    fohWages: day.fohWages || 0,
-    kitchenWages: day.kitchenWages || 0,
-    totalWages: (day.fohWages || 0) + (day.kitchenWages || 0),
-    totalRevenue: (day.foodRevenue || 0) + (day.bevRevenue || 0),
-    percentage: (day.foodRevenue || 0) + (day.bevRevenue || 0) > 0 
-      ? (((day.fohWages || 0) + (day.kitchenWages || 0)) / ((day.foodRevenue || 0) + (day.bevRevenue || 0))) * 100 
-      : 0
-  }));
+  const dailyChartData = monthlyData.map(day => {
+    const masterRecord = masterRecords.find(r => {
+      const recordDay = parseInt(r.date.split('-')[2]);
+      return recordDay === day.day;
+    });
+    
+    const foodRevenue = masterRecord ? (masterRecord.foodRevenue || 0) : (day.foodRevenue || 0);
+    const bevRevenue = masterRecord ? (masterRecord.beverageRevenue || 0) : (day.bevRevenue || 0);
+    const totalRevenue = foodRevenue + bevRevenue;
+    
+    return {
+      name: `${day.day}`,
+      fohWages: day.fohWages || 0,
+      kitchenWages: day.kitchenWages || 0,
+      totalWages: (day.fohWages || 0) + (day.kitchenWages || 0),
+      totalRevenue: totalRevenue,
+      percentage: totalRevenue > 0 
+        ? (((day.fohWages || 0) + (day.kitchenWages || 0)) / totalRevenue) * 100 
+        : 0
+    };
+  });
 
   const CustomLegend = () => {
     const allSeries = [
