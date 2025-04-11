@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -157,7 +156,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     
     const actualMenuPrice = formData.costing.actualMenuPrice || suggestedSellingPrice;
     
-    // Add the missing priceExVat variable
     const priceExVat = actualMenuPrice / 1.2;
     
     const grossProfitPercentage = (priceExVat - totalRecipeCost) / priceExVat;
@@ -353,7 +351,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 <div className="grid grid-cols-12 gap-2 mb-1 px-2">
                   <div className="col-span-4 text-sm text-gray-500">Name</div>
                   <div className="col-span-2 text-sm text-gray-500">Amount</div>
-                  <div className="col-span-1 text-sm text-gray-500">Unit</div>
+                  <div className="col-span-2 text-sm text-gray-500">Unit</div>
                   <div className="col-span-2 text-sm text-gray-500">£/unit</div>
                   <div className="col-span-2 text-sm text-gray-500 text-right">Total</div>
                   <div className="col-span-1"></div>
@@ -376,12 +374,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         onChange={(e) => handleIngredientChange(ingredient.id, 'amount', parseFloat(e.target.value) || 0)}
                       />
                     </div>
-                    <div className="col-span-1">
+                    <div className="col-span-2">
                       <Select
                         value={ingredient.unit}
                         onValueChange={(value) => handleIngredientChange(ingredient.id, 'unit', value)}
                       >
-                        <SelectTrigger className="min-w-[80px]">
+                        <SelectTrigger className="min-w-[100px]">
                           <SelectValue placeholder="Unit" />
                         </SelectTrigger>
                         <SelectContent>
@@ -402,7 +400,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', parseFloat(e.target.value) || 0)}
                       />
                     </div>
-                    <div className="col-span-2 text-right py-2">
+                    <div className="col-span-1 text-right py-2">
                       £{ingredient.totalCost.toFixed(2)}
                     </div>
                     <div className="col-span-1 flex justify-center">
