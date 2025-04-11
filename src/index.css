@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -78,7 +77,15 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium tracking-tight;
+    @apply font-medium tracking-tight text-tavern-blue;
+  }
+
+  .text-primary-content {
+    @apply text-tavern-blue;
+  }
+
+  .text-secondary-content {
+    @apply text-tavern-blue-light;
   }
 }
 
