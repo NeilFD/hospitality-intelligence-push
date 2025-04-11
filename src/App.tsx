@@ -33,6 +33,7 @@ import Knowledge from "./pages/team/Knowledge";
 import MasterDashboard from "./pages/master/Dashboard";
 import WeeklyInput from "./pages/master/WeeklyInput";
 import MonthSummary from "./pages/master/MonthSummary";
+import Index from "./pages/Index";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -46,7 +47,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
-            <Route path="/" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
+            <Route path="/" element={<RequireAuth><Layout><Index /></Layout></RequireAuth>} />
             
             <Route path="/profile" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
             <Route path="/profile/:userId" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />

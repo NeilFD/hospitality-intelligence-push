@@ -41,6 +41,11 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
+  useEffect(() => {
+    console.log('Modules in sidebar:', modules);
+    console.log('Current module:', currentModule);
+  }, [modules, currentModule]);
+  
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
