@@ -7,6 +7,9 @@ import { RecipeBasicInfo } from "./form/RecipeBasicInfo";
 import { RecipeAdditionalInfo } from "./form/RecipeAdditionalInfo";
 import { IngredientForm } from "./form/IngredientForm";
 import { createEmptyRecipe, emptyIngredient, calculateTotals } from "./form/RecipeFormUtils";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/lib/supabase";
 
 interface RecipeFormDialogProps {
   open: boolean;
@@ -30,6 +33,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   const [formData, setFormData] = useState<Recipe>(recipe || createEmptyRecipe(moduleType));
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | undefined>(recipe?.imageUrl);
+  const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
     if (recipe) {
@@ -130,20 +134,61 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   
   const computedCostingTotals = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
   
-  const handleSave = () => {
-    const costing = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
-    
-    const updatedRecipe: Recipe = {
-      ...formData,
-      costing,
-      updatedAt: new Date()
-    };
-    
-    if (imagePreview) {
-      updatedRecipe.imageUrl = imagePreview;
+  const validateForm = () => {
+    if (!formData.name) {
+      toast.error('Please enter a recipe name');
+      return false;
     }
+    if (!formData.category) {
+      toast.error('Please select a category');
+      return false;
+    }
+    if (formData.ingredients.some(i => !i.name)) {
+      toast.error('All ingredients must have a name');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) return;
     
-    onSave(updatedRecipe);
+    try {
+      setIsSaving(true);
+      
+      // Ensure all ingredients have IDs
+      const recipeToSave: Recipe = {
+        ...formData,
+        ingredients: formData.ingredients.map(ingredient => ({
+          ...ingredient,
+          id: ingredient.id || uuidv4()
+        })),
+        costing: computedCostingTotals,
+        updatedAt: new Date()
+      };
+      
+      // For new recipes, generate an ID
+      if (!recipeToSave.id) {
+        recipeToSave.id = uuidv4();
+        recipeToSave.createdAt = new Date();
+      }
+      
+      // If image was updated, use the new preview 
+      if (imagePreview) {
+        recipeToSave.imageUrl = imagePreview;
+      }
+      
+      // Save recipe
+      onSave(recipeToSave);
+      
+      // Close the dialog
+      onClose();
+    } catch (error) {
+      console.error('Error saving recipe:', error);
+      toast.error('Failed to save recipe');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -206,14 +251,16 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             variant="outline" 
             onClick={onClose}
             className="text-gray-900"
+            disabled={isSaving}
           >
             Cancel
           </Button>
           <Button 
             onClick={handleSave}
             className="text-white"
+            disabled={isSaving}
           >
-            Save Recipe
+            {isSaving ? 'Saving...' : 'Save Recipe'}
           </Button>
         </DialogFooter>
       </DialogContent>
