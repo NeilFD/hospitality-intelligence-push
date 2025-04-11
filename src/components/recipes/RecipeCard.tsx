@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Recipe } from "@/types/recipe-types";
@@ -20,6 +20,31 @@ interface RecipeCardProps {
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNoticeboard }) => {
+  // Add state to track the current posted status
+  const [isPinned, setIsPinned] = useState<boolean>(recipe.postedToNoticeboard || false);
+  
+  // Ensure we have the latest state from the database
+  useEffect(() => {
+    const fetchRecipeStatus = async () => {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('posted_to_noticeboard')
+        .eq('id', recipe.id)
+        .single();
+        
+      if (data && !error) {
+        setIsPinned(data.posted_to_noticeboard || false);
+      }
+    };
+    
+    fetchRecipeStatus();
+  }, [recipe.id]);
+
+  // Use the state variable instead of directly using recipe.postedToNoticeboard
+  useEffect(() => {
+    setIsPinned(recipe.postedToNoticeboard || false);
+  }, [recipe.postedToNoticeboard]);
+  
   const handleEmailShare = () => {
     const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
     const body = encodeURIComponent(
@@ -52,6 +77,10 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
 
   const handleToggleNoticeboard = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Update local state optimistically
+    setIsPinned(!isPinned);
+    
     if (onToggleNoticeboard) {
       onToggleNoticeboard();
     }
@@ -109,14 +138,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`text-gray-800 ${recipe.postedToNoticeboard ? 'text-green-600' : ''}`} 
+                  className={`text-gray-800 ${isPinned ? 'text-green-600' : ''}`} 
                   onClick={handleToggleNoticeboard}
                 >
-                  <Globe className={`h-4 w-4 ${recipe.postedToNoticeboard ? 'text-green-600 fill-green-100' : ''}`} />
+                  <Globe className={`h-4 w-4 ${isPinned ? 'text-green-600 fill-green-100' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {recipe.postedToNoticeboard ? 'Posted to Noticeboard' : 'Not Posted to Noticeboard'}
+                {isPinned ? 'Posted to Noticeboard' : 'Not Posted to Noticeboard'}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
