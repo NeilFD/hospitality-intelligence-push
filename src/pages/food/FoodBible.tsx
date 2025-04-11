@@ -361,7 +361,7 @@ const FoodBible: React.FC = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute left-0 top-6 z-10 h-8 w-8 rounded-r-md rounded-l-none border-l-0 p-0"
+            className="absolute left-0 top-4 z-10 h-8 w-8 rounded-r-md rounded-l-none border-l-0 p-0"
             onClick={toggleSidebar}
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
