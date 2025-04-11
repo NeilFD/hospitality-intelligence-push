@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -13,7 +12,7 @@ const FoodBible: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>(sampleFoodRecipes);
   const [filters, setFilters] = useState<RecipeFilterOptions>({
     searchTerm: "",
-    category: "",
+    category: "all_categories",
     allergens: [],
     isVegan: null,
     isVegetarian: null,
@@ -25,25 +24,20 @@ const FoodBible: React.FC = () => {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
   
-  // Filter recipes based on selected filters
   const filteredRecipes = useMemo(() => {
     return recipes.filter(recipe => {
-      // Filter by search term
       if (filters.searchTerm && !recipe.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
         return false;
       }
       
-      // Filter by category
       if (filters.category && filters.category !== "all_categories" && recipe.category !== filters.category) {
         return false;
       }
       
-      // Filter by starting letter
       if (selectedLetter && !recipe.name.toUpperCase().startsWith(selectedLetter)) {
         return false;
       }
       
-      // Filter by dietary requirements
       if (filters.isVegan !== null && recipe.isVegan !== filters.isVegan) {
         return false;
       }
@@ -56,7 +50,6 @@ const FoodBible: React.FC = () => {
         return false;
       }
       
-      // Filter by allergens (if selected, only show recipes WITHOUT those allergens)
       if (filters.allergens.length > 0) {
         for (const allergen of filters.allergens) {
           if (recipe.allergens.includes(allergen)) {
@@ -93,10 +86,8 @@ const FoodBible: React.FC = () => {
   
   const handleSaveRecipe = (recipe: Recipe) => {
     if (editingRecipe) {
-      // Update existing recipe
       setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
     } else {
-      // Add new recipe
       setRecipes([...recipes, recipe]);
     }
     setFormOpen(false);

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,7 +80,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   const clearFilters = () => {
     onFilterChange({
       searchTerm: "",
-      category: "",
+      category: "all_categories",
       allergens: [],
       isVegan: null,
       isVegetarian: null,
@@ -107,7 +106,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         <Button type="submit" size="sm">
           <Search className="h-4 w-4" />
         </Button>
-        {(filters.searchTerm || filters.category || filters.allergens.length > 0 || 
+        {(filters.searchTerm || filters.category !== "all_categories" || filters.allergens.length > 0 || 
            filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null) && (
           <Button type="button" variant="ghost" size="sm" onClick={clearFilters} title="Clear all filters">
             <X className="h-4 w-4" />
