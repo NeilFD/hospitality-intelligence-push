@@ -42,6 +42,7 @@ const FoodBible: React.FC = () => {
   const fetchRecipes = async () => {
     try {
       setLoading(true);
+      console.log("Fetching recipes from Supabase...");
       const {
         data: recipesData,
         error: recipesError
@@ -49,6 +50,9 @@ const FoodBible: React.FC = () => {
       if (recipesError) {
         throw recipesError;
       }
+      
+      console.log(`Fetched ${recipesData.length} recipes`);
+      
       const recipesWithIngredients = await Promise.all(recipesData.map(async recipe => {
         const {
           data: ingredientsData,
@@ -118,6 +122,12 @@ const FoodBible: React.FC = () => {
     try {
       console.log("Starting saveRecipeToSupabase with recipe:", recipe);
       
+      // Make sure recipe has an ID
+      if (!recipe.id) {
+        recipe.id = uuidv4();
+        console.log("Generated new recipe ID:", recipe.id);
+      }
+      
       const recipeData = {
         id: recipe.id,
         name: recipe.name || 'Unnamed Recipe',
@@ -141,18 +151,27 @@ const FoodBible: React.FC = () => {
       
       console.log("Recipe data formatted for Supabase:", recipeData);
       
+      // Try insert first, if it fails due to conflict then update
       const {
-        error: recipeError,
-      } = await supabase.from('recipes').upsert([recipeData]);
+        data: insertedRecipe,
+        error: insertError
+      } = await supabase.from('recipes').insert([recipeData]).select();
       
-      if (recipeError) {
-        console.error("Error inserting recipe:", recipeError);
-        throw recipeError;
+      if (insertError) {
+        console.log("Insert failed, trying upsert:", insertError);
+        // If insert fails (likely due to ID conflict), try upsert
+        const { error: upsertError } = await supabase.from('recipes').upsert([recipeData]);
+        
+        if (upsertError) {
+          console.error("Error upserting recipe:", upsertError);
+          throw upsertError;
+        }
+      } else {
+        console.log("Recipe inserted successfully:", insertedRecipe);
       }
       
-      console.log("Recipe saved successfully");
-      
       // Delete existing ingredients to avoid duplicates
+      console.log(`Deleting existing ingredients for recipe ${recipe.id}`);
       const { error: deleteError } = await supabase
         .from('recipe_ingredients')
         .delete()
@@ -160,10 +179,12 @@ const FoodBible: React.FC = () => {
       
       if (deleteError) {
         console.error('Error deleting existing ingredients:', deleteError);
-        throw deleteError;
+        // Continue with insert even if delete fails
+        console.log('Continuing with ingredient insert despite delete error');
       }
       
       // Insert all ingredients
+      console.log(`Inserting ${recipe.ingredients.length} ingredients`);
       for (const ingredient of recipe.ingredients) {
         if (!ingredient.name || ingredient.name.trim() === '') {
           console.log("Skipping ingredient with empty name");
@@ -180,13 +201,18 @@ const FoodBible: React.FC = () => {
           total_cost: ingredient.totalCost || 0
         };
         
+        console.log("Saving ingredient:", ingredientData);
+        
         const {
+          data: insertedIngredient,
           error: ingredientError
-        } = await supabase.from('recipe_ingredients').insert([ingredientData]);
+        } = await supabase.from('recipe_ingredients').insert([ingredientData]).select();
         
         if (ingredientError) {
           console.error('Error saving ingredient:', ingredientError);
           toast.error(`Error saving ingredient ${ingredient.name}`);
+        } else {
+          console.log("Ingredient inserted successfully:", insertedIngredient);
         }
       }
       
@@ -287,21 +313,25 @@ const FoodBible: React.FC = () => {
       // Ensure recipe has a valid ID
       if (!recipe.id) {
         recipe.id = uuidv4();
+        console.log("Generated new recipe ID in handleSaveRecipe:", recipe.id);
       }
       
-      const saveResult = await saveRecipeToSupabase(recipe);
-      console.log("Save result:", saveResult);
-
+      // Save recipe to Supabase
+      await saveRecipeToSupabase(recipe);
+      
+      // Update local state
       if (editingRecipe) {
         setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
       } else {
         setRecipes(prevRecipes => [...prevRecipes, recipe]);
       }
+      
       setFormOpen(false);
       setEditingRecipe(undefined);
       
       // Refresh recipes from database to ensure we have the latest data
-      fetchRecipes();
+      console.log("Refreshing recipes from database");
+      await fetchRecipes();
       
       console.log("Recipe form closed, state updated");
     } catch (error) {
