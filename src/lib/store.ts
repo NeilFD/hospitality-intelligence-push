@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -82,6 +83,12 @@ const handleRehydratedState = (state: AppState): AppState => {
       if (!moduleTypes.includes(defaultModule.type)) {
         console.log(`Adding missing module: ${defaultModule.name}`);
         newState.modules.push({ ...defaultModule });
+      } else {
+        // Update existing module names to match default module names
+        const existingModule = newState.modules.find(m => m.type === defaultModule.type);
+        if (existingModule) {
+          existingModule.name = defaultModule.name;
+        }
       }
     });
     

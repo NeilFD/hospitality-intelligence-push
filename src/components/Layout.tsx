@@ -44,7 +44,34 @@ const Layout = ({
   useEffect(() => {
     console.log('Modules in sidebar:', modules);
     console.log('Current module:', currentModule);
-  }, [modules, currentModule]);
+    
+    const clearLocalStorageCache = () => {
+      const storeData = localStorage.getItem('tavern-kitchen-ledger');
+      
+      if (storeData) {
+        try {
+          const parsedData = JSON.parse(storeData);
+          
+          if (parsedData.state && parsedData.state.modules) {
+            parsedData.state.modules.forEach((module: any) => {
+              if (module.type === 'food') {
+                module.name = 'Food Hub';
+              } else if (module.type === 'beverage') {
+                module.name = 'Beverage Hub';
+              }
+            });
+            
+            localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+            console.log('Updated modules in localStorage:', parsedData.state.modules);
+          }
+        } catch (error) {
+          console.error('Error updating localStorage:', error);
+        }
+      }
+    };
+    
+    clearLocalStorageCache();
+  }, []);
   
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
