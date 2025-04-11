@@ -225,7 +225,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="archived" 
-              className="flex items-center gap-1 text-sm bg-gray-600 text-white hover:bg-gray-700"
+              className="flex items-center gap-1 text-sm bg-gray-100 text-gray-800 data-[state=on]:bg-gray-600 data-[state=on]:text-white"
             >
               <Archive className="h-3 w-3 mr-1" />
               Archived
