@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -165,15 +164,19 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     try {
       setIsSaving(true);
       
-      // Ensure all ingredients have IDs
+      // Ensure all ingredients have IDs and valid data
       const recipeToSave: Recipe = {
         ...formData,
         ingredients: formData.ingredients.map(ingredient => ({
           ...ingredient,
-          id: ingredient.id || uuidv4()
+          id: ingredient.id || uuidv4(),
+          amount: Number(ingredient.amount) || 0,
+          costPerUnit: Number(ingredient.costPerUnit) || 0,
+          totalCost: Number(ingredient.totalCost) || 0
         })),
         costing: computedCostingTotals,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        archived: formData.archived || false
       };
       
       // For new recipes, generate an ID

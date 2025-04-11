@@ -116,6 +116,7 @@ const FoodBible: React.FC = () => {
     try {
       console.log("Saving recipe to Supabase:", recipe);
       
+      // Ensure recipe data is correctly formatted for storage
       const recipeData = {
         id: recipe.id,
         name: recipe.name,
@@ -139,6 +140,7 @@ const FoodBible: React.FC = () => {
       
       console.log("Recipe data to insert:", recipeData);
       
+      // Insert or update recipe in the recipes table
       const {
         error: recipeError,
         data: insertedRecipe
@@ -162,7 +164,7 @@ const FoodBible: React.FC = () => {
         throw deleteError;
       }
       
-      // Insert all ingredients
+      // Insert all ingredients with guaranteed unique IDs
       for (const ingredient of recipe.ingredients) {
         const ingredientData = {
           id: ingredient.id,
@@ -277,14 +279,18 @@ const FoodBible: React.FC = () => {
     try {
       console.log("handleSaveRecipe called with:", recipe);
       await saveRecipeToSupabase(recipe);
+
+      // Update UI with latest recipe data
       if (editingRecipe) {
         setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
       } else {
-        setRecipes([...recipes, recipe]);
+        setRecipes(prevRecipes => [...prevRecipes, recipe]);
       }
       setFormOpen(false);
+      setEditingRecipe(undefined);
     } catch (error) {
       console.error('Error in handleSaveRecipe:', error);
+      toast.error('Failed to save recipe. Please try again.');
     }
   };
 
