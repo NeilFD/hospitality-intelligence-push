@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -393,19 +394,24 @@ const TeamNoticeboard: React.FC = () => {
   } = useQuery({
     queryKey: ['noticeboard-recipes'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('*')
-        .eq('posted_to_noticeboard', true)
-        .eq('archived', false);
+      try {
+        const { data, error } = await supabase
+          .from('recipes')
+          .select('*')
+          .eq('posted_to_noticeboard', true)
+          .eq('archived', false);
+          
+        if (error) {
+          console.error('Error fetching recipes for noticeboard:', error);
+          throw error;
+        }
         
-      if (error) {
-        console.error('Error fetching recipes for noticeboard:', error);
-        throw error;
+        console.log('Fetched recipes for noticeboard:', data?.length || 0);
+        return data || [];
+      } catch (error) {
+        console.error('Exception in fetching recipes:', error);
+        return [];
       }
-      
-      console.log('Fetched recipes for noticeboard:', data?.length || 0);
-      return data || [];
     }
   });
   
@@ -509,7 +515,8 @@ const TeamNoticeboard: React.FC = () => {
   const unpinnedNotes = [...(notes || [])].filter(note => !note.pinned)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  const pinnedRecipes = recipes.filter((recipe: Recipe) => recipe.postedToNoticeboard);
+  console.log('Recipes data:', recipes);
+  console.log('Recipe count:', recipes?.length || 0);
 
   return (
     <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
@@ -585,7 +592,7 @@ const TeamNoticeboard: React.FC = () => {
             ) : (
               <>
                 {/* Pinned Section */}
-                {(pinnedNotes.length > 0 || pinnedRecipes.length > 0) && (
+                {(pinnedNotes.length > 0 || recipes.length > 0) && (
                   <div 
                     className="mb-8 p-4 bg-gray-50/70 rounded-lg border border-dashed border-amber-300/50 backdrop-blur-sm"
                     onDragOver={(e) => e.preventDefault()}
@@ -608,21 +615,21 @@ const TeamNoticeboard: React.FC = () => {
                         />
                       ))}
                       
-                      {pinnedRecipes.map((recipe: Recipe) => (
+                      {recipes.map((recipe: any) => (
                         <div 
                           key={recipe.id} 
                           className="bg-white/70 backdrop-blur-sm border border-emerald-100 rounded-lg p-4 hover:shadow-md transition-shadow"
                         >
                           <h4 className="font-semibold text-gray-900">{recipe.name}</h4>
                           <p className="text-sm text-gray-600">{recipe.category}</p>
-                          {recipe.imageUrl && (
+                          {recipe.image_url && (
                             <div className="mt-2 h-32 overflow-hidden rounded">
                               <img 
-                                src={recipe.imageUrl} 
+                                src={recipe.image_url} 
                                 alt={recipe.name} 
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                  console.error("Recipe image failed to load:", recipe.imageUrl);
+                                  console.error("Recipe image failed to load:", recipe.image_url);
                                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                                 }}
                               />
