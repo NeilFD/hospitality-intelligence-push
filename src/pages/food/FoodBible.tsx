@@ -282,14 +282,14 @@ const FoodBible: React.FC = () => {
       <Button 
         variant="outline" 
         size="icon" 
-        className="absolute left-4 top-4 z-40" 
+        className="fixed left-4 top-20 z-40 md:flex hidden" 
         onClick={() => {
           setSidebarOpen(true);
           setSidebarMaximized(false);
         }}
         title="Open sidebar"
       >
-        <Maximize2 className="h-4 w-4" />
+        <PanelLeft className="h-4 w-4" />
       </Button>
     )}
     
