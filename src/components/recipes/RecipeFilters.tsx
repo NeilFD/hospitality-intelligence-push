@@ -125,7 +125,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all_categories">All Categories</SelectItem>
             {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
               <SelectItem key={category.id} value={category.name}>
                 {category.name}

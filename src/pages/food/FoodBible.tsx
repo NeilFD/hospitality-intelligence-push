@@ -34,7 +34,7 @@ const FoodBible: React.FC = () => {
       }
       
       // Filter by category
-      if (filters.category && recipe.category !== filters.category) {
+      if (filters.category && filters.category !== "all_categories" && recipe.category !== filters.category) {
         return false;
       }
       
