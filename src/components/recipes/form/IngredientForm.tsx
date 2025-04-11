@@ -94,7 +94,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 className="text-gray-900 bg-white border border-gray-300"
               />
             </div>
-            <div className="col-span-1 text-right pr-2 text-gray-900">
+            <div className="col-span-1 text-right pr-4 text-gray-900">
               £{(ingredient.totalCost || 0).toFixed(2)}
             </div>
             <div className="col-span-1 flex justify-center">
