@@ -111,6 +111,18 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
           {recipe.isVegan && <Badge variant="outline" className="bg-green-100 text-green-950">Vegan</Badge>}
           {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-900">Gluten Free</Badge>}
         </div>
+        
+        {/* Add allergen information */}
+        {recipe.allergens && recipe.allergens.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {recipe.allergens.map((allergen, index) => (
+              <Badge key={index} variant="outline" className="bg-red-50 text-red-900">
+                {allergen}
+              </Badge>
+            ))}
+          </div>
+        )}
+        
         <div className="text-sm text-gray-800 mb-2">
           <p>Cost: {formatCurrency(recipe.costing.totalRecipeCost)}</p>
           <p>Menu Price: {formatCurrency(recipe.costing.actualMenuPrice)}</p>
