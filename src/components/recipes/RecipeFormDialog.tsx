@@ -200,24 +200,25 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto text-dark-text-DEFAULT">
         <DialogHeader>
-          <DialogTitle>{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-dark-text-DEFAULT">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
+          <DialogDescription className="text-dark-text-muted">
             Fill in the details for this {moduleType === 'food' ? 'dish' : 'beverage'} recipe.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-dark-text-DEFAULT">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Recipe Name</Label>
+              <Label htmlFor="name" className="text-dark-text-DEFAULT">Recipe Name</Label>
               <Input 
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Enter recipe name"
+                className="text-dark-text-DEFAULT"
               />
             </div>
             
@@ -241,7 +242,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label className="mb-2 block">Image</Label>
+              <Label className="mb-2 block text-dark-text-DEFAULT">Image</Label>
               <div className="flex items-center space-x-2">
                 <div className="w-full">
                   <Label 
@@ -285,15 +286,15 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label className="mb-2 block">Dietary Options</Label>
-              <div className="flex space-x-4 mt-2">
+              <Label className="mb-2 block text-dark-text-DEFAULT">Dietary Options</Label>
+              <div className="flex space-x-4 mt-2 text-dark-text-DEFAULT">
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="isVegetarian" 
                     checked={formData.isVegetarian} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegetarian', checked === true)}
                   />
-                  <Label htmlFor="isVegetarian">Vegetarian</Label>
+                  <Label htmlFor="isVegetarian" className="text-dark-text-DEFAULT">Vegetarian</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -301,7 +302,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isVegan} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegan', checked === true)}
                   />
-                  <Label htmlFor="isVegan">Vegan</Label>
+                  <Label htmlFor="isVegan" className="text-dark-text-DEFAULT">Vegan</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -309,13 +310,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isGlutenFree} 
                     onCheckedChange={(checked) => handleCheckboxChange('isGlutenFree', checked === true)}
                   />
-                  <Label htmlFor="isGlutenFree">Gluten Free</Label>
+                  <Label htmlFor="isGlutenFree" className="text-dark-text-DEFAULT">Gluten Free</Label>
                 </div>
               </div>
             </div>
             
             <div>
-              <Label className="mb-2 block">Allergens</Label>
+              <Label className="mb-2 block text-dark-text-DEFAULT">Allergens</Label>
               <div className="flex flex-wrap gap-2">
                 {allergens.map((allergen) => (
                   <div 
@@ -349,7 +350,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <Label>Ingredients</Label>
+                <Label className="text-dark-text-DEFAULT">Ingredients</Label>
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -362,12 +363,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               </div>
               
               <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-4 mb-1 px-2">
-                  <div className="col-span-4 text-sm text-gray-700">Name</div>
-                  <div className="col-span-2 text-sm text-gray-700">Amount</div>
-                  <div className="col-span-2 text-sm text-gray-700">Unit</div>
-                  <div className="col-span-2 text-sm text-gray-700">£/unit</div>
-                  <div className="col-span-1 text-sm text-gray-700 text-right">Total</div>
+                <div className="grid grid-cols-12 gap-4 mb-1 px-2 text-dark-text-muted">
+                  <div className="col-span-4 text-sm">Name</div>
+                  <div className="col-span-2 text-sm">Amount</div>
+                  <div className="col-span-2 text-sm">Unit</div>
+                  <div className="col-span-2 text-sm">£/unit</div>
+                  <div className="col-span-1 text-sm text-right">Total</div>
                   <div className="col-span-1"></div>
                 </div>
                 
@@ -493,8 +494,8 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>Save Recipe</Button>
+          <Button variant="outline" onClick={onClose} className="text-dark-text-DEFAULT">Cancel</Button>
+          <Button onClick={handleSave} className="text-white">Save Recipe</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
