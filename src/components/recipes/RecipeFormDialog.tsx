@@ -10,6 +10,8 @@ import { createEmptyRecipe, emptyIngredient, calculateTotals } from "./form/Reci
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from "@/lib/supabase";
+import { Switch } from "@/components/ui/switch";
+import { ArchiveIcon } from "lucide-react";
 
 interface RecipeFormDialogProps {
   open: boolean;
@@ -150,6 +152,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     return true;
   };
 
+  const toggleArchived = () => {
+    setFormData(prevData => ({
+      ...prevData,
+      archived: !prevData.archived
+    }));
+  };
+
   const handleSave = async () => {
     if (!validateForm()) return;
     
@@ -194,11 +203,22 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
-        <DialogHeader>
-          <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
-          <DialogDescription className="text-gray-600">
-            Fill in the details for this {moduleType === 'food' ? 'dish' : 'beverage'} recipe.
-          </DialogDescription>
+        <DialogHeader className="flex flex-row justify-between items-center">
+          <div>
+            <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Fill in the details for this {moduleType === 'food' ? 'dish' : 'beverage'} recipe.
+            </DialogDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">{formData.archived ? 'Archived' : 'Live'}</span>
+            <Switch 
+              checked={!formData.archived} 
+              onCheckedChange={() => toggleArchived()}
+              className="data-[state=checked]:bg-green-500"
+            />
+            <ArchiveIcon className="h-4 w-4 text-gray-500 ml-1" />
+          </div>
         </DialogHeader>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

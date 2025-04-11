@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -64,7 +65,8 @@ const FoodBible: React.FC = () => {
               actualMenuPrice: recipe.actual_menu_price || 0,
               grossProfitPercentage: recipe.gross_profit_percentage || 0
             },
-            moduleType: recipe.module_type
+            moduleType: recipe.module_type,
+            archived: recipe.archived || false
           };
         }
         const mappedIngredients: Ingredient[] = ingredientsData.map(ingredient => ({
@@ -72,7 +74,7 @@ const FoodBible: React.FC = () => {
           name: ingredient.name,
           amount: ingredient.amount,
           unit: ingredient.unit,
-          costPerUnit: ingredient.costPerUnit,
+          costPerUnit: ingredient.cost_per_unit,
           totalCost: ingredient.total_cost
         }));
         return {
@@ -97,7 +99,8 @@ const FoodBible: React.FC = () => {
             actualMenuPrice: recipe.actual_menu_price || 0,
             grossProfitPercentage: recipe.gross_profit_percentage || 0
           },
-          moduleType: recipe.module_type
+          moduleType: recipe.module_type,
+          archived: recipe.archived || false
         };
       }));
       setRecipes(recipesWithIngredients);
@@ -129,7 +132,8 @@ const FoodBible: React.FC = () => {
         total_recipe_cost: recipe.costing.totalRecipeCost,
         suggested_selling_price: recipe.costing.suggestedSellingPrice,
         actual_menu_price: recipe.costing.actualMenuPrice,
-        gross_profit_percentage: recipe.costing.grossProfitPercentage
+        gross_profit_percentage: recipe.costing.grossProfitPercentage,
+        archived: recipe.archived || false
       };
       const {
         error: recipeError
@@ -137,6 +141,18 @@ const FoodBible: React.FC = () => {
       if (recipeError) {
         throw recipeError;
       }
+      
+      // Delete existing ingredients first to avoid duplicates
+      const { error: deleteError } = await supabase
+        .from('recipe_ingredients')
+        .delete()
+        .eq('recipe_id', recipe.id);
+      
+      if (deleteError) {
+        console.error('Error deleting existing ingredients:', deleteError);
+      }
+      
+      // Insert all ingredients
       for (const ingredient of recipe.ingredients) {
         const ingredientData = {
           id: ingredient.id,
