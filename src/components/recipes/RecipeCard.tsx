@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import RecipePDF from "./RecipePDF";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -101,15 +103,23 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
           )}
         </PDFDownloadLink>
         <div className="flex gap-1 items-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`text-gray-800 ${recipe.postedToNoticeboard ? 'text-green-600' : ''}`} 
-            onClick={handleToggleNoticeboard}
-            title={recipe.postedToNoticeboard ? "Remove from Noticeboard" : "Post to Noticeboard"}
-          >
-            <Globe className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`text-gray-800 ${recipe.postedToNoticeboard ? 'text-green-600' : ''}`} 
+                  onClick={handleToggleNoticeboard}
+                >
+                  <Globe className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {recipe.postedToNoticeboard ? 'Posted to Noticeboard' : 'Not Posted to Noticeboard'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <div className="flex gap-1">
             <Button variant="ghost" size="sm" className="text-gray-800" onClick={(e) => {
               e.stopPropagation();
