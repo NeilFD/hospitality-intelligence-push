@@ -65,6 +65,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 value={ingredient.amount || ''}
                 onChange={(e) => onIngredientChange(index, 'amount', e.target.value === '' ? '' : Number(e.target.value))}
                 className="text-gray-900 bg-white border border-gray-300 rounded-none"
+                min={0}
               />
             </div>
             <div className="col-span-2">
@@ -95,12 +96,13 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 value={ingredient.costPerUnit || ''}
                 onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value === '' ? '' : Number(e.target.value))}
                 className="text-gray-900 bg-white border border-gray-300 rounded-none"
+                min={0}
               />
             </div>
             <div className="col-span-1 text-right pr-8 text-gray-900">
               £{(ingredient.totalCost || 0).toFixed(2)}
             </div>
-            <div className="col-span-1 flex justify-center">
+            <div className="col-span-1 flex justify-center pl-5">
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -108,7 +110,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 disabled={ingredients.length === 1}
                 className="p-0 h-8 w-8"
               >
-                <Trash2 className="h-4 w-4 text-red-500" />
+                <Trash2 className="h-4 w-4 text-[#9b87f5]" />
               </Button>
             </div>
           </div>
