@@ -112,7 +112,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
                   className={`text-gray-800 ${recipe.postedToNoticeboard ? 'text-green-600' : ''}`} 
                   onClick={handleToggleNoticeboard}
                 >
-                  <Globe className="h-4 w-4" />
+                  <Globe className={`h-4 w-4 ${recipe.postedToNoticeboard ? 'text-green-600 fill-green-100' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
