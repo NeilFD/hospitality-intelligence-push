@@ -79,27 +79,39 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prevData => ({
+      ...prevData,
       [name]: value
-    });
+    }));
+  };
+  
+  const handleCostingInputChange = (field: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setFormData(prevData => ({
+      ...prevData,
+      costing: {
+        ...prevData.costing,
+        [field]: numValue
+      }
+    }));
   };
   
   const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData({
-      ...formData,
+    setFormData(prevData => ({
+      ...prevData,
       [name]: checked
-    });
+    }));
   };
   
   const handleIngredientChange = (id: string, field: keyof Ingredient, value: string | number) => {
-    setFormData({
-      ...formData,
-      ingredients: formData.ingredients.map(ingredient => {
+    const numValue = field === 'name' ? value : (parseFloat(value as string) || 0);
+    
+    setFormData(prevData => {
+      const updatedIngredients = prevData.ingredients.map(ingredient => {
         if (ingredient.id === id) {
           const updatedIngredient = {
             ...ingredient,
-            [field]: value
+            [field]: numValue
           };
           
           if (field === 'amount' || field === 'costPerUnit') {
@@ -109,22 +121,27 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           return updatedIngredient;
         }
         return ingredient;
-      })
+      });
+      
+      return {
+        ...prevData,
+        ingredients: updatedIngredients
+      };
     });
   };
   
   const addIngredient = () => {
-    setFormData({
-      ...formData,
-      ingredients: [...formData.ingredients, emptyIngredient()]
-    });
+    setFormData(prevData => ({
+      ...prevData,
+      ingredients: [...prevData.ingredients, emptyIngredient()]
+    }));
   };
   
   const removeIngredient = (id: string) => {
-    setFormData({
-      ...formData,
-      ingredients: formData.ingredients.filter(ingredient => ingredient.id !== id)
-    });
+    setFormData(prevData => ({
+      ...prevData,
+      ingredients: prevData.ingredients.filter(ingredient => ingredient.id !== id)
+    }));
   };
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,10 +161,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
       ? formData.allergens.filter(a => a !== allergen)
       : [...formData.allergens, allergen];
     
-    setFormData({
-      ...formData,
+    setFormData(prevData => ({
+      ...prevData,
       allergens: updatedAllergens
-    });
+    }));
   };
   
   const calculateTotals = () => {
@@ -159,7 +176,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     
     const priceExVat = actualMenuPrice / 1.2;
     
-    const grossProfitPercentage = (priceExVat - totalRecipeCost) / priceExVat;
+    const grossProfitPercentage = priceExVat > 0 ? ((priceExVat - totalRecipeCost) / priceExVat) : 0;
     
     return {
       totalRecipeCost,
@@ -213,12 +230,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               <Label htmlFor="category" className="text-gray-900">Category</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => setFormData({...formData, category: value})}
+                onValueChange={(value) => setFormData(prevData => ({...prevData, category: value}))}
               >
                 <SelectTrigger id="category" className="text-gray-900">
                   <SelectValue placeholder="Select category" className="text-gray-900" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="text-gray-900">
                   {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
                     <SelectItem key={category.id} value={category.name} className="text-gray-900">
                       {category.name}
@@ -280,6 +297,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     id="isVegetarian" 
                     checked={formData.isVegetarian} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegetarian', checked === true)}
+                    className="pointer-events-auto"
                   />
                   <Label htmlFor="isVegetarian" className="text-gray-900">Vegetarian</Label>
                 </div>
@@ -288,6 +306,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     id="isVegan" 
                     checked={formData.isVegan} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegan', checked === true)}
+                    className="pointer-events-auto"
                   />
                   <Label htmlFor="isVegan" className="text-gray-900">Vegan</Label>
                 </div>
@@ -296,6 +315,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     id="isGlutenFree" 
                     checked={formData.isGlutenFree} 
                     onCheckedChange={(checked) => handleCheckboxChange('isGlutenFree', checked === true)}
+                    className="pointer-events-auto"
                   />
                   <Label htmlFor="isGlutenFree" className="text-gray-900">Gluten Free</Label>
                 </div>
@@ -326,7 +346,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               <Textarea 
                 id="method"
                 name="method"
-                value={formData.method}
+                value={formData.method || ''}
                 onChange={handleInputChange}
                 placeholder="Enter cooking instructions"
                 rows={6}
@@ -368,7 +388,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         placeholder="Name"
                         value={ingredient.name}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'name', e.target.value)}
-                        className="w-full text-gray-900"
+                        className="w-full text-gray-900 pointer-events-auto"
                       />
                     </div>
                     <div className="col-span-2">
@@ -376,8 +396,8 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         type="number"
                         placeholder="Amount"
                         value={ingredient.amount || ''}
-                        onChange={(e) => handleIngredientChange(ingredient.id, 'amount', parseFloat(e.target.value) || 0)}
-                        className="w-full text-gray-900"
+                        onChange={(e) => handleIngredientChange(ingredient.id, 'amount', e.target.value)}
+                        className="w-full text-gray-900 pointer-events-auto"
                       />
                     </div>
                     <div className="col-span-2">
@@ -385,10 +405,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         value={ingredient.unit}
                         onValueChange={(value) => handleIngredientChange(ingredient.id, 'unit', value)}
                       >
-                        <SelectTrigger className="w-full text-gray-900">
+                        <SelectTrigger className="w-full text-gray-900 pointer-events-auto">
                           <SelectValue placeholder="Unit" className="text-gray-900" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="text-gray-900">
                           <SelectItem value="g" className="text-gray-900">g</SelectItem>
                           <SelectItem value="kg" className="text-gray-900">kg</SelectItem>
                           <SelectItem value="ml" className="text-gray-900">ml</SelectItem>
@@ -403,8 +423,8 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         step="0.01"
                         placeholder="£/unit"
                         value={ingredient.costPerUnit || ''}
-                        onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', parseFloat(e.target.value) || 0)}
-                        className="w-full text-gray-900"
+                        onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', e.target.value)}
+                        className="w-full text-gray-900 pointer-events-auto"
                       />
                     </div>
                     <div className="col-span-1 text-right py-2 text-gray-900">
@@ -416,7 +436,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         size="sm"
                         onClick={() => removeIngredient(ingredient.id)}
                         disabled={formData.ingredients.length === 1}
-                        className="p-0 h-8 w-8"
+                        className="p-0 h-8 w-8 pointer-events-auto"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
@@ -437,15 +457,9 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 type="number"
                 step="0.01"
                 value={formData.costing.actualMenuPrice || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  costing: {
-                    ...formData.costing,
-                    actualMenuPrice: parseFloat(e.target.value) || 0
-                  }
-                })}
+                onChange={(e) => handleCostingInputChange('actualMenuPrice', e.target.value)}
                 placeholder="Enter menu price"
-                className="text-gray-900"
+                className="text-gray-900 pointer-events-auto"
               />
               <div className="text-sm text-gray-500 mt-1">
                 Suggested Price: £{calculateTotals().suggestedSellingPrice.toFixed(2)} (70% GP inc. VAT)
@@ -462,16 +476,9 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 name="timeToTableMinutes"
                 type="number"
                 value={formData.timeToTableMinutes || ''}
-                onChange={(e) => handleInputChange({
-                  ...e,
-                  target: {
-                    ...e.target,
-                    value: e.target.value,
-                    name: 'timeToTableMinutes'
-                  }
-                })}
+                onChange={handleInputChange}
                 placeholder="Enter preparation time"
-                className="text-gray-900"
+                className="text-gray-900 pointer-events-auto"
               />
             </div>
             
@@ -480,10 +487,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               <Input 
                 id="recommendedUpsell"
                 name="recommendedUpsell"
-                value={formData.recommendedUpsell}
+                value={formData.recommendedUpsell || ''}
                 onChange={handleInputChange}
                 placeholder="Enter recommended upsell"
-                className="text-gray-900"
+                className="text-gray-900 pointer-events-auto"
               />
             </div>
             
@@ -492,19 +499,19 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               <Textarea 
                 id="miseEnPlace"
                 name="miseEnPlace"
-                value={formData.miseEnPlace}
+                value={formData.miseEnPlace || ''}
                 onChange={handleInputChange}
                 placeholder="Enter mise en place details"
                 rows={4}
-                className="text-gray-900"
+                className="text-gray-900 pointer-events-auto"
               />
             </div>
           </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="text-gray-900">Cancel</Button>
-          <Button onClick={handleSave} className="text-gray-900">Save Recipe</Button>
+          <Button variant="outline" onClick={onClose} className="text-gray-900 pointer-events-auto">Cancel</Button>
+          <Button onClick={handleSave} className="text-gray-900 pointer-events-auto">Save Recipe</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
