@@ -15,6 +15,7 @@ import CreatePollForm from './CreatePollForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Recipe } from '@/types/recipe-types';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { supabase } from '@/lib/supabase';
 
 interface StickyNoteProps {
   note: TeamNote;
@@ -127,8 +128,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
         setIsDragging(true);
         // Store the note ID in the drag data
         e.dataTransfer.setData('text/plain', note.id);
-        // Custom drag image?
-        const dragImage = new Image();
+        // Custom drag image - fix for line 131
+        const dragImage = document.createElement('img');
         e.dataTransfer.setDragImage(dragImage, 0, 0);
       }}
       onDragEnd={() => setIsDragging(false)}
