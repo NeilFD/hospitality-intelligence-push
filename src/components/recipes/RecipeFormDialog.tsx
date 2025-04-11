@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -103,26 +102,19 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     }));
   };
   
-  const handleIngredientChange = (id: string, field: keyof Ingredient, value: string | number) => {
-    const numValue = field === 'name' ? value : (parseFloat(value as string) || 0);
-    
+  const handleIngredientChange = (index: number, field: keyof Ingredient, value: string | number) => {
+    const numValue = ['name', 'unit'].includes(field as string) ? value : parseFloat(value as string) || 0;
+
     setFormData(prevData => {
-      const updatedIngredients = prevData.ingredients.map(ingredient => {
-        if (ingredient.id === id) {
-          const updatedIngredient = {
-            ...ingredient,
-            [field]: numValue
-          };
-          
-          if (field === 'amount' || field === 'costPerUnit') {
-            updatedIngredient.totalCost = Number(updatedIngredient.amount) * Number(updatedIngredient.costPerUnit);
-          }
-          
-          return updatedIngredient;
-        }
-        return ingredient;
-      });
-      
+      const updatedIngredients = [...prevData.ingredients];
+      const ingredient = { ...updatedIngredients[index], [field]: numValue };
+
+      if (field === 'amount' || field === 'costPerUnit') {
+        ingredient.totalCost = Number(ingredient.amount) * Number(ingredient.costPerUnit);
+      }
+
+      updatedIngredients[index] = ingredient;
+
       return {
         ...prevData,
         ingredients: updatedIngredients
@@ -137,11 +129,15 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     }));
   };
   
-  const removeIngredient = (id: string) => {
-    setFormData(prevData => ({
-      ...prevData,
-      ingredients: prevData.ingredients.filter(ingredient => ingredient.id !== id)
-    }));
+  const removeIngredient = (index: number) => {
+    setFormData(prevData => {
+      const updatedIngredients = [...prevData.ingredients];
+      updatedIngredients.splice(index, 1);
+      return {
+        ...prevData,
+        ingredients: updatedIngredients
+      };
+    });
   };
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,7 +198,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     onSave(updatedRecipe);
   };
 
-  // Ensure all inputs have proper event handling and are not blocked by any overlays
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -376,13 +371,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                   <div className="col-span-1"></div>
                 </div>
                 
-                {formData.ingredients.map((ingredient) => (
-                  <div key={ingredient.id} className="grid grid-cols-12 gap-4 items-center">
+                {formData.ingredients.map((ingredient, index) => (
+                  <div key={ingredient.id || index} className="grid grid-cols-12 gap-4 items-center">
                     <div className="col-span-4">
                       <Input 
                         placeholder="Name"
                         value={ingredient.name}
-                        onChange={(e) => handleIngredientChange(ingredient.id, 'name', e.target.value)}
+                        onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
                       />
                     </div>
                     <div className="col-span-2">
@@ -390,13 +385,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         type="number"
                         placeholder="Amount"
                         value={ingredient.amount || ''}
-                        onChange={(e) => handleIngredientChange(ingredient.id, 'amount', e.target.value)}
+                        onChange={(e) => handleIngredientChange(index, 'amount', e.target.value)}
                       />
                     </div>
                     <div className="col-span-2">
                       <Select
                         value={ingredient.unit}
-                        onValueChange={(value) => handleIngredientChange(ingredient.id, 'unit', value)}
+                        onValueChange={(value) => handleIngredientChange(index, 'unit', value)}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Unit" />
@@ -416,17 +411,17 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         step="0.01"
                         placeholder="£/unit"
                         value={ingredient.costPerUnit || ''}
-                        onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', e.target.value)}
+                        onChange={(e) => handleIngredientChange(index, 'costPerUnit', e.target.value)}
                       />
                     </div>
                     <div className="col-span-1 text-right py-2">
-                      £{ingredient.totalCost.toFixed(2)}
+                      £{(ingredient.totalCost || 0).toFixed(2)}
                     </div>
                     <div className="col-span-1 flex justify-center">
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => removeIngredient(ingredient.id)}
+                        onClick={() => removeIngredient(index)}
                         disabled={formData.ingredients.length === 1}
                         className="p-0 h-8 w-8"
                       >
@@ -437,7 +432,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 ))}
                 
                 <div className="flex justify-end font-medium border-t border-gray-200 pt-2">
-                  Total: £{formData.ingredients.reduce((sum, ing) => sum + ing.totalCost, 0).toFixed(2)}
+                  Total: £{formData.ingredients.reduce((sum, ing) => sum + (ing.totalCost || 0), 0).toFixed(2)}
                 </div>
               </div>
             </div>
