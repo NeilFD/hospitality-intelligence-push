@@ -51,6 +51,9 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
                 {recipe.is_vegetarian && <Badge variant="outline" className="bg-green-50 text-green-800">Vegetarian</Badge>}
                 {recipe.is_vegan && <Badge variant="outline" className="bg-green-100 text-green-900">Vegan</Badge>}
                 {recipe.is_gluten_free && <Badge variant="outline" className="bg-yellow-50 text-yellow-800">Gluten Free</Badge>}
+                {!recipe.is_vegetarian && !recipe.is_vegan && !recipe.is_gluten_free && (
+                  <span className="text-gray-600">No dietary information available</span>
+                )}
               </div>
             </div>
             
@@ -107,12 +110,12 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
           </div>
         </div>
         
-        {recipe.recommendedUpsell && (
+        {recipe.recommended_upsell && (
           <div className="mt-4">
             <Separator />
             <div className="pt-2">
               <span className="text-sm font-medium text-gray-900">Recommended Upsell: </span>
-              <span className="text-sm text-gray-800">{recipe.recommendedUpsell}</span>
+              <span className="text-sm text-gray-800">{recipe.recommended_upsell}</span>
             </div>
           </div>
         )}
