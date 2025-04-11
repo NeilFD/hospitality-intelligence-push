@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -18,23 +19,35 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Fetch wages data
         const wagesData = await getMonthlyWages(year, month);
         
+        // Explicitly fetch the master records for the month to ensure we have the latest data
+        console.log(`Fetching master records for year=${year}, month=${month}`);
         const masterRecords = await fetchMasterRecordsByMonth(year, month);
+        
+        // Create a lookup map for easier access
         const masterRecordsByDate: Record<string, { foodRevenue: number; beverageRevenue: number }> = {};
         
         masterRecords.forEach(record => {
-          masterRecordsByDate[record.date] = {
+          const dateStr = record.date;
+          console.log(`Master record found for ${dateStr}: Food=${record.foodRevenue}, Bev=${record.beverageRevenue}`);
+          masterRecordsByDate[dateStr] = {
             foodRevenue: record.foodRevenue || 0,
             beverageRevenue: record.beverageRevenue || 0
           };
         });
         
+        // Update wages data with revenue from master records
         const updatedWagesData = wagesData.map(day => {
+          // Format the date string in YYYY-MM-DD format for lookups
           const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.day.toString().padStart(2, '0')}`;
+          console.log(`Looking up master record for ${dateStr}`);
+          
           const masterRecord = masterRecordsByDate[dateStr];
           
           if (masterRecord) {
+            console.log(`Found master record for ${dateStr}: updating with food=${masterRecord.foodRevenue}, bev=${masterRecord.beverageRevenue}`);
             return {
               ...day,
               foodRevenue: masterRecord.foodRevenue,
