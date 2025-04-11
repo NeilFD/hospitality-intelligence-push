@@ -1,3 +1,4 @@
+
 import { Recipe, MenuCategory, AllergenType } from '@/types/recipe-types';
 
 export const allergenTypes: AllergenType[] = [
