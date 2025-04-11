@@ -55,7 +55,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="Name"
                 value={ingredient.name}
                 onChange={(e) => onIngredientChange(index, 'name', e.target.value)}
-                className="text-gray-900 bg-white border border-gray-300 h-10"
+                className="text-gray-900 bg-white border border-gray-300 rounded-none"
               />
             </div>
             <div className="col-span-2">
@@ -64,7 +64,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="Amount"
                 value={ingredient.amount || ''}
                 onChange={(e) => onIngredientChange(index, 'amount', e.target.value)}
-                className="text-gray-900 bg-white border border-gray-300 h-10"
+                className="text-gray-900 bg-white border border-gray-300 rounded-none"
               />
             </div>
             <div className="col-span-2">
@@ -72,7 +72,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 value={ingredient.unit}
                 onValueChange={(value) => onIngredientChange(index, 'unit', value)}
               >
-                <SelectTrigger className="w-full text-gray-900 bg-white h-10">
+                <SelectTrigger className="w-full text-gray-900 bg-white rounded-none">
                   <SelectValue placeholder="Unit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -94,7 +94,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="£/unit"
                 value={ingredient.costPerUnit || ''}
                 onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value)}
-                className="text-gray-900 bg-white border border-gray-300 h-10"
+                className="text-gray-900 bg-white border border-gray-300 rounded-none"
               />
             </div>
             <div className="col-span-1 text-right pr-8 text-gray-900">
