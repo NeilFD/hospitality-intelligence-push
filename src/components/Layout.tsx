@@ -99,27 +99,33 @@ const Layout = ({
       case 'food':
       case 'beverage':
         const prefix = currentModule === 'food' ? 'Food' : 'Beverage';
-        return [{
-          name: `${prefix} Dashboard`,
-          path: `/${currentModule}/dashboard`,
-          icon: <Home className="mr-2 h-4 w-4" />
-        }, {
-          name: `${prefix} Input Settings`,
-          path: `/${currentModule}/input-settings`,
-          icon: <Settings className="mr-2 h-4 w-4" />
-        }, {
-          name: `${prefix} Month Summary`,
-          path: `/${currentModule}/month/${currentYear}/${currentMonth}`,
-          icon: <Calendar className="mr-2 h-4 w-4" />
-        }, {
-          name: `${prefix} Annual Summary`,
-          path: `/${currentModule}/annual-summary`,
-          icon: <ChartBar className="mr-2 h-4 w-4" />
-        }, {
-          name: `${prefix} Bible`,
-          path: `/${currentModule}/bible`,
-          icon: <Book className="mr-2 h-4 w-4" />
-        }];
+        return [
+          {
+            name: `${prefix} Dashboard`,
+            path: `/${currentModule}/dashboard`,
+            icon: <Home className="mr-2 h-4 w-4" />
+          },
+          {
+            name: `${prefix} Input Settings`,
+            path: `/${currentModule}/input-settings`,
+            icon: <Settings className="mr-2 h-4 w-4" />
+          },
+          {
+            name: `${prefix} Month Summary`,
+            path: `/${currentModule}/month/${currentYear}/${currentMonth}`,
+            icon: <Calendar className="mr-2 h-4 w-4" />
+          },
+          {
+            name: `${prefix} Annual Summary`,
+            path: `/${currentModule}/annual-summary`,
+            icon: <ChartBar className="mr-2 h-4 w-4" />
+          },
+          {
+            name: `${prefix} Bible`,
+            path: `/${currentModule}/bible`,
+            icon: <Book className="mr-2 h-4 w-4" />
+          }
+        ];
       case 'pl':
         return [{
           name: "P&L Dashboard",
