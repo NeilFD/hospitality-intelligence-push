@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,9 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     const suggestedSellingPrice = (totalRecipeCost / (1 - 0.7)) * 1.2;
     
     const actualMenuPrice = formData.costing.actualMenuPrice || suggestedSellingPrice;
+    
+    // Add the missing priceExVat variable
+    const priceExVat = actualMenuPrice / 1.2;
     
     const grossProfitPercentage = (priceExVat - totalRecipeCost) / priceExVat;
     
