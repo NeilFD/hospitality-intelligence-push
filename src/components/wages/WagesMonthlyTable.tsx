@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -59,33 +58,35 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   }, [year, month, getMonthlyWages]);
   
   const handleInputChange = async (day: number, field: string, value: string) => {
-    if (field === 'foodRevenue' || field === 'bevRevenue') {
-      toast.info('Revenue data can only be changed in the Master Input module');
-      return;
-    }
-    
-    const numValue = parseFloat(value) || 0;
-    
-    const dateObj = new Date(year, month - 1, day);
-    const dayOfWeek = dateObj.getDay();
-    const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    
-    const currentDay = monthlyData.find(d => d.day === day) || {
-      year, month, day,
-      date: new Date(year, month - 1, day).toISOString().split('T')[0],
-      dayOfWeek: getDayNameFromNumber(adjustedDayIndex),
-      fohWages: 0,
-      kitchenWages: 0,
-      foodRevenue: 0,
-      bevRevenue: 0
-    };
-    
-    const updatedDay = {
-      ...currentDay,
-      [field]: numValue
-    };
-    
     try {
+      if (field === 'foodRevenue' || field === 'bevRevenue') {
+        toast.info('Revenue data can only be changed in the Master Input module');
+        return;
+      }
+      
+      const numValue = parseFloat(value) || 0;
+      
+      const dateObj = new Date(year, month - 1, day);
+      const dayOfWeek = dateObj.getDay();
+      const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      
+      const currentDay = monthlyData.find(d => d.day === day) || {
+        year, month, day,
+        date: new Date(year, month - 1, day).toISOString().split('T')[0],
+        dayOfWeek: getDayNameFromNumber(adjustedDayIndex),
+        fohWages: 0,
+        kitchenWages: 0,
+        foodRevenue: 0,
+        bevRevenue: 0
+      };
+      
+      const updatedDay = {
+        ...currentDay,
+        [field]: numValue
+      };
+      
+      console.log(`Attempting to save data for day ${day}:`, updatedDay);
+      
       await setDailyWages(updatedDay);
       
       setMonthlyData(prevData => 
@@ -96,6 +97,20 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     } catch (error) {
       console.error('Failed to save data:', error);
       toast.error('Failed to save data');
+      
+      if (monthlyData && day) {
+        setMonthlyData(prevData => 
+          prevData.map(d => {
+            if (d.day === day) {
+              return {
+                ...d,
+                [field]: parseFloat(value) || 0
+              };
+            }
+            return d;
+          })
+        );
+      }
     }
   };
   
@@ -222,6 +237,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         min={0}
                         step="0.01"
                         autoComplete="off"
+                        key={`foh-${day.day}`}
                       />
                     </TableCell>
                     <TableCell className="text-right p-1">
@@ -233,6 +249,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         min={0}
                         step="0.01"
                         autoComplete="off"
+                        key={`kitchen-${day.day}`}
                       />
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(totalDailyWages)}</TableCell>
