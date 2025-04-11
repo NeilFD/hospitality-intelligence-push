@@ -187,6 +187,8 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         recipeToSave.imageUrl = imagePreview;
       }
       
+      console.log("Saving recipe to Supabase:", recipeToSave);
+      
       // Save recipe
       onSave(recipeToSave);
       

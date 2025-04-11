@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -115,6 +114,8 @@ const FoodBible: React.FC = () => {
 
   const saveRecipeToSupabase = async (recipe: Recipe, showToast: boolean = true) => {
     try {
+      console.log("Saving recipe to Supabase:", recipe);
+      
       const recipeData = {
         id: recipe.id,
         name: recipe.name,
@@ -135,12 +136,20 @@ const FoodBible: React.FC = () => {
         gross_profit_percentage: recipe.costing.grossProfitPercentage,
         archived: recipe.archived || false
       };
+      
+      console.log("Recipe data to insert:", recipeData);
+      
       const {
-        error: recipeError
-      } = await supabase.from('recipes').upsert([recipeData]);
+        error: recipeError,
+        data: insertedRecipe
+      } = await supabase.from('recipes').upsert([recipeData]).select();
+      
       if (recipeError) {
+        console.error("Error inserting recipe:", recipeError);
         throw recipeError;
       }
+      
+      console.log("Recipe saved successfully:", insertedRecipe);
       
       // Delete existing ingredients first to avoid duplicates
       const { error: deleteError } = await supabase
@@ -150,6 +159,7 @@ const FoodBible: React.FC = () => {
       
       if (deleteError) {
         console.error('Error deleting existing ingredients:', deleteError);
+        throw deleteError;
       }
       
       // Insert all ingredients
@@ -163,13 +173,19 @@ const FoodBible: React.FC = () => {
           cost_per_unit: ingredient.costPerUnit,
           total_cost: ingredient.totalCost
         };
+        
+        console.log("Saving ingredient:", ingredientData);
+        
         const {
           error: ingredientError
         } = await supabase.from('recipe_ingredients').upsert([ingredientData]);
+        
         if (ingredientError) {
           console.error('Error saving ingredient:', ingredientError);
+          throw ingredientError;
         }
       }
+      
       if (showToast) {
         toast.success('Recipe saved successfully');
       }
@@ -259,6 +275,7 @@ const FoodBible: React.FC = () => {
 
   const handleSaveRecipe = async (recipe: Recipe) => {
     try {
+      console.log("handleSaveRecipe called with:", recipe);
       await saveRecipeToSupabase(recipe);
       if (editingRecipe) {
         setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
