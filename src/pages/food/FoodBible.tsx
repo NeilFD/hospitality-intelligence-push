@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -142,16 +143,16 @@ const FoodBible: React.FC = () => {
       
       const {
         error: recipeError,
-        data: insertedRecipe
-      } = await supabase.from('recipes').upsert([recipeData]).select();
+      } = await supabase.from('recipes').upsert([recipeData]);
       
       if (recipeError) {
         console.error("Error inserting recipe:", recipeError);
         throw recipeError;
       }
       
-      console.log("Recipe saved successfully:", insertedRecipe);
+      console.log("Recipe saved successfully");
       
+      // Delete existing ingredients to avoid duplicates
       const { error: deleteError } = await supabase
         .from('recipe_ingredients')
         .delete()
@@ -162,6 +163,7 @@ const FoodBible: React.FC = () => {
         throw deleteError;
       }
       
+      // Insert all ingredients
       for (const ingredient of recipe.ingredients) {
         if (!ingredient.name || ingredient.name.trim() === '') {
           console.log("Skipping ingredient with empty name");
@@ -180,7 +182,7 @@ const FoodBible: React.FC = () => {
         
         const {
           error: ingredientError
-        } = await supabase.from('recipe_ingredients').upsert([ingredientData]);
+        } = await supabase.from('recipe_ingredients').insert([ingredientData]);
         
         if (ingredientError) {
           console.error('Error saving ingredient:', ingredientError);
@@ -281,6 +283,12 @@ const FoodBible: React.FC = () => {
   const handleSaveRecipe = async (recipe: Recipe) => {
     try {
       console.log("handleSaveRecipe called with:", recipe);
+      
+      // Ensure recipe has a valid ID
+      if (!recipe.id) {
+        recipe.id = uuidv4();
+      }
+      
       const saveResult = await saveRecipeToSupabase(recipe);
       console.log("Save result:", saveResult);
 
@@ -291,6 +299,10 @@ const FoodBible: React.FC = () => {
       }
       setFormOpen(false);
       setEditingRecipe(undefined);
+      
+      // Refresh recipes from database to ensure we have the latest data
+      fetchRecipes();
+      
       console.log("Recipe form closed, state updated");
     } catch (error) {
       console.error('Error in handleSaveRecipe:', error);
