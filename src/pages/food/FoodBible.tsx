@@ -6,16 +6,15 @@ import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
 import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
 import { sampleFoodRecipes, menuCategories, allergenTypes } from "@/data/sample-recipe-data";
-import { Plus, PanelLeft } from "lucide-react";
+import { Plus, PanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
-  SidebarProvider, 
-  Sidebar, 
-  SidebarContent, 
-  SidebarTrigger,
-  SidebarRail
-} from "@/components/ui/sidebar";
+  Drawer, 
+  DrawerContent, 
+  DrawerTrigger 
+} from "@/components/ui/drawer";
 
 const FoodBible: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -34,6 +33,7 @@ const FoodBible: React.FC = () => {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     fetchRecipes();
@@ -303,15 +303,40 @@ const FoodBible: React.FC = () => {
     setViewingRecipe(recipe);
   };
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex w-full min-h-svh">
-        <Sidebar 
-          className="border-r border-gray-200"
-          variant="sidebar" 
-          collapsible="icon"
-        >
-          <SidebarContent className="p-4 w-full">
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const DesktopSidebar = () => (
+    <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto ${sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
+      <div className={`p-4 ${!sidebarOpen && 'hidden'}`}>
+        <RecipeFilters
+          moduleType="food"
+          categories={menuCategories}
+          allergens={allergenTypes}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onLetterSelect={handleLetterSelect}
+          selectedLetter={selectedLetter}
+        />
+      </div>
+    </div>
+  );
+
+  const MobileSidebar = () => (
+    <>
+      <Button 
+        variant="outline"
+        size="icon"
+        className="fixed left-4 top-20 z-40 md:hidden shadow-md bg-white"
+        onClick={() => setSidebarOpen(true)}
+      >
+        <PanelLeft className="h-4 w-4" />
+      </Button>
+
+      <Drawer open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <DrawerContent className="max-h-[90vh]">
+          <div className="p-4 max-h-[80vh] overflow-y-auto">
             <RecipeFilters
               moduleType="food"
               categories={menuCategories}
@@ -321,17 +346,36 @@ const FoodBible: React.FC = () => {
               onLetterSelect={handleLetterSelect}
               selectedLetter={selectedLetter}
             />
-          </SidebarContent>
-          <SidebarRail />
-        </Sidebar>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
+  );
 
-        <div className="flex-1 container px-4 py-6 max-w-7xl mx-auto">
+  return (
+    <div className="flex w-full min-h-svh bg-background">
+      {isMobile ? <MobileSidebar /> : <DesktopSidebar />}
+      
+      <div className="flex-1 relative">
+        {!isMobile && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute left-0 top-6 z-10 h-8 w-8 rounded-r-md rounded-l-none border-l-0 p-0"
+            onClick={toggleSidebar}
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+        )}
+        
+        <div className="container px-4 py-6 max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
               <h1 className="text-3xl font-bold">Food Bible</h1>
               <p className="text-muted-foreground">Manage and explore food recipes</p>
             </div>
-            <Button onClick={handleAddRecipe} className="mt-4 md:mt-0">
+            <Button onClick={() => setFormOpen(true)} className="mt-4 md:mt-0">
               <Plus className="h-4 w-4 mr-2" />
               Add Recipe
             </Button>
@@ -351,7 +395,7 @@ const FoodBible: React.FC = () => {
                   <RecipeCard
                     key={recipe.id}
                     recipe={recipe}
-                    onClick={() => handleViewRecipe(recipe)}
+                    onClick={() => setViewingRecipe(recipe)}
                   />
                 ))}
               </div>
@@ -407,7 +451,7 @@ const FoodBible: React.FC = () => {
           onDelete={handleDeleteRecipe}
         />
       )}
-    </SidebarProvider>
+    </div>
   );
 };
 
