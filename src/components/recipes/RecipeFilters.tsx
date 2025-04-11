@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,7 +115,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
       </form>
       
       <div>
-        <Label htmlFor="category">Category</Label>
+        <Label htmlFor="category" className="text-tavern-blue-dark">Category</Label>
         <Select
           value={filters.category}
           onValueChange={handleCategoryChange}
@@ -136,7 +135,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
       </div>
       
       <div>
-        <Label className="mb-2 block">Dietary Requirements</Label>
+        <Label className="mb-2 block text-tavern-blue-dark">Dietary Requirements</Label>
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
@@ -169,7 +168,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
       </div>
       
       <div>
-        <Label className="mb-2 block">Allergens</Label>
+        <Label className="mb-2 block text-tavern-blue-dark">Allergens</Label>
         <div className="flex flex-wrap gap-2">
           {allergens.map((allergen) => (
             <Badge 
@@ -189,7 +188,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
       </div>
       
       <div>
-        <Label className="mb-2 block">A-Z</Label>
+        <Label className="mb-2 block text-tavern-blue-dark">A-Z</Label>
         <div className="flex flex-wrap gap-1">
           <Button 
             size="sm"
