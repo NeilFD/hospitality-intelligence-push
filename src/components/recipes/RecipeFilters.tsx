@@ -216,12 +216,18 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
             }}
             className="justify-start"
           >
-            <ToggleGroupItem value="live" className="flex items-center gap-1 text-sm">
+            <ToggleGroupItem 
+              value="live" 
+              className="flex items-center gap-1 text-sm"
+            >
               <span className="h-2 w-2 rounded-full bg-green-500"></span>
               Live
             </ToggleGroupItem>
-            <ToggleGroupItem value="archived" className="flex items-center gap-1 text-sm">
-              <Archive className="h-3 w-3" />
+            <ToggleGroupItem 
+              value="archived" 
+              className="flex items-center gap-1 text-sm bg-gray-600 text-white hover:bg-gray-700"
+            >
+              <Archive className="h-3 w-3 mr-1" />
               Archived
             </ToggleGroupItem>
           </ToggleGroup>
