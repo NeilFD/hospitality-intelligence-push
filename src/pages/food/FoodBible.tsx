@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -309,18 +310,33 @@ const FoodBible: React.FC = () => {
 
   return <div className="flex w-full min-h-svh bg-background">
     {!sidebarOpen && !isMobile && (
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="fixed left-4 top-20 z-40 shadow-md bg-white" 
-        onClick={() => {
-          setSidebarOpen(true);
-          setSidebarMaximized(false);
-        }}
-        title="Open sidebar"
-      >
-        <PanelLeft className="h-4 w-4" />
-      </Button>
+      <div className="fixed left-4 top-20 z-40 flex gap-2">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="shadow-md bg-white" 
+          onClick={() => {
+            setSidebarOpen(true);
+            setSidebarMaximized(false);
+          }}
+          title="Open sidebar"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          className="shadow-md bg-white"
+          onClick={() => {
+            setSidebarOpen(true);
+            setSidebarMaximized(!sidebarMaximized);
+          }}
+          title={sidebarMaximized ? "Restore sidebar" : "Maximize sidebar"}
+        >
+          {sidebarMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+      </div>
     )}
     
     {isMobile ? <MobileSidebar /> : <DesktopSidebar />}
