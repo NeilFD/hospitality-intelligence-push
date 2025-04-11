@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { RecipeFilterOptions, MenuCategory, AllergenType } from "@/types/recipe-types";
-import { Search, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, X, ChevronDown, ChevronUp, Minimize2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -32,10 +31,10 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   selectedLetter
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.searchTerm);
-  const [openCategory, setOpenCategory] = useState(true);
-  const [openDietary, setOpenDietary] = useState(true);
-  const [openAllergens, setOpenAllergens] = useState(true);
-  const [openAlphabet, setOpenAlphabet] = useState(true);
+  const [openCategory, setOpenCategory] = useState(false);
+  const [openDietary, setOpenDietary] = useState(false);
+  const [openAllergens, setOpenAllergens] = useState(false);
+  const [openAlphabet, setOpenAlphabet] = useState(false);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,8 +108,14 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
     <div className="flex justify-between items-center mb-2">
       <Label className="text-tavern-blue-dark font-medium text-base">{title}</Label>
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" size="sm" onClick={onClick} className="p-0 h-6 w-6">
-          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onClick} 
+          className="p-0 h-8 w-8 hover:bg-gray-100 rounded-full"
+          title={isOpen ? "Minimize" : "Expand"}
+        >
+          {isOpen ? <Minimize2 className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </CollapsibleTrigger>
     </div>
