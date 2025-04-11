@@ -136,18 +136,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   const computedCostingTotals = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
   
   const validateForm = () => {
-    if (!formData.name) {
-      toast.error('Please enter a recipe name');
-      return false;
-    }
-    if (!formData.category) {
-      toast.error('Please select a category');
-      return false;
-    }
-    if (formData.ingredients.some(i => !i.name)) {
-      toast.error('All ingredients must have a name');
-      return false;
-    }
     return true;
   };
 
@@ -159,12 +147,9 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   };
 
   const handleSave = async () => {
-    if (!validateForm()) return;
-    
     try {
       setIsSaving(true);
       
-      // Ensure all ingredients have IDs and valid data
       const recipeToSave: Recipe = {
         ...formData,
         ingredients: formData.ingredients.map(ingredient => ({
@@ -179,23 +164,19 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         archived: formData.archived || false
       };
       
-      // For new recipes, generate an ID
       if (!recipeToSave.id) {
         recipeToSave.id = uuidv4();
         recipeToSave.createdAt = new Date();
       }
       
-      // If image was updated, use the new preview 
       if (imagePreview) {
         recipeToSave.imageUrl = imagePreview;
       }
       
       console.log("Saving recipe to Supabase:", recipeToSave);
       
-      // Save recipe
       onSave(recipeToSave);
       
-      // Close the dialog
       onClose();
     } catch (error) {
       console.error('Error saving recipe:', error);

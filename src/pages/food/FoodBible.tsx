@@ -114,33 +114,34 @@ const FoodBible: React.FC = () => {
 
   const saveRecipeToSupabase = async (recipe: Recipe, showToast: boolean = true) => {
     try {
-      console.log("Saving recipe to Supabase:", recipe);
+      console.log("Starting saveRecipeToSupabase with recipe:", recipe);
       
       // Ensure recipe data is correctly formatted for storage
       const recipeData = {
         id: recipe.id,
-        name: recipe.name,
-        category: recipe.category,
-        allergens: recipe.allergens,
-        is_vegan: recipe.isVegan,
-        is_vegetarian: recipe.isVegetarian,
-        is_gluten_free: recipe.isGlutenFree,
-        recommended_upsell: recipe.recommendedUpsell,
-        time_to_table_minutes: recipe.timeToTableMinutes,
-        mise_en_place: recipe.miseEnPlace,
-        method: recipe.method,
-        image_url: recipe.imageUrl,
+        name: recipe.name || 'Unnamed Recipe',
+        category: recipe.category || 'Uncategorized',
+        allergens: recipe.allergens || [],
+        is_vegan: recipe.isVegan || false,
+        is_vegetarian: recipe.isVegetarian || false,
+        is_gluten_free: recipe.isGlutenFree || false,
+        recommended_upsell: recipe.recommendedUpsell || '',
+        time_to_table_minutes: recipe.timeToTableMinutes || 0,
+        mise_en_place: recipe.miseEnPlace || '',
+        method: recipe.method || '',
+        image_url: recipe.imageUrl || '',
         module_type: recipe.moduleType || 'food',
-        total_recipe_cost: recipe.costing.totalRecipeCost,
-        suggested_selling_price: recipe.costing.suggestedSellingPrice,
-        actual_menu_price: recipe.costing.actualMenuPrice,
-        gross_profit_percentage: recipe.costing.grossProfitPercentage,
+        total_recipe_cost: recipe.costing.totalRecipeCost || 0,
+        suggested_selling_price: recipe.costing.suggestedSellingPrice || 0,
+        actual_menu_price: recipe.costing.actualMenuPrice || 0,
+        gross_profit_percentage: recipe.costing.grossProfitPercentage || 0,
         archived: recipe.archived || false
       };
       
-      console.log("Recipe data to insert:", recipeData);
+      console.log("Recipe data formatted for Supabase:", recipeData);
       
       // Insert or update recipe in the recipes table
+      console.log("Upserting recipe into recipes table...");
       const {
         error: recipeError,
         data: insertedRecipe
@@ -154,6 +155,7 @@ const FoodBible: React.FC = () => {
       console.log("Recipe saved successfully:", insertedRecipe);
       
       // Delete existing ingredients first to avoid duplicates
+      console.log("Deleting existing ingredients for recipe:", recipe.id);
       const { error: deleteError } = await supabase
         .from('recipe_ingredients')
         .delete()
@@ -165,15 +167,22 @@ const FoodBible: React.FC = () => {
       }
       
       // Insert all ingredients with guaranteed unique IDs
+      console.log("Inserting ingredients for recipe:", recipe.id, "Ingredient count:", recipe.ingredients.length);
       for (const ingredient of recipe.ingredients) {
+        // Skip empty ingredient names
+        if (!ingredient.name || ingredient.name.trim() === '') {
+          console.log("Skipping ingredient with empty name");
+          continue;
+        }
+        
         const ingredientData = {
-          id: ingredient.id,
+          id: ingredient.id || uuidv4(),  // Ensure we have an ID
           recipe_id: recipe.id,
-          name: ingredient.name,
-          amount: ingredient.amount,
-          unit: ingredient.unit,
-          cost_per_unit: ingredient.costPerUnit,
-          total_cost: ingredient.totalCost
+          name: ingredient.name || '',
+          amount: ingredient.amount || 0,
+          unit: ingredient.unit || '',
+          cost_per_unit: ingredient.costPerUnit || 0,
+          total_cost: ingredient.totalCost || 0
         };
         
         console.log("Saving ingredient:", ingredientData);
@@ -184,13 +193,17 @@ const FoodBible: React.FC = () => {
         
         if (ingredientError) {
           console.error('Error saving ingredient:', ingredientError);
-          throw ingredientError;
+          // Continue with other ingredients even if one fails
+          toast.error(`Error saving ingredient ${ingredient.name}`);
         }
       }
       
       if (showToast) {
         toast.success('Recipe saved successfully');
       }
+      
+      console.log("Recipe and all ingredients saved successfully");
+      return true;
     } catch (error) {
       console.error('Error saving recipe:', error);
       if (showToast) {
@@ -278,16 +291,20 @@ const FoodBible: React.FC = () => {
   const handleSaveRecipe = async (recipe: Recipe) => {
     try {
       console.log("handleSaveRecipe called with:", recipe);
-      await saveRecipeToSupabase(recipe);
+      const saveResult = await saveRecipeToSupabase(recipe);
+      console.log("Save result:", saveResult);
 
       // Update UI with latest recipe data
       if (editingRecipe) {
+        console.log("Updating existing recipe in state");
         setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
       } else {
+        console.log("Adding new recipe to state");
         setRecipes(prevRecipes => [...prevRecipes, recipe]);
       }
       setFormOpen(false);
       setEditingRecipe(undefined);
+      console.log("Recipe form closed, state updated");
     } catch (error) {
       console.error('Error in handleSaveRecipe:', error);
       toast.error('Failed to save recipe. Please try again.');
