@@ -64,10 +64,22 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   
   const handleDietaryToggle = (type: 'isVegan' | 'isVegetarian' | 'isGlutenFree') => {
     const currentValue = filters[type];
-    onFilterChange({
-      ...filters,
-      [type]: currentValue === null ? true : (currentValue === true ? false : null)
-    });
+    if (currentValue === null) {
+      onFilterChange({
+        ...filters,
+        [type]: true
+      });
+    } else if (currentValue === true) {
+      onFilterChange({
+        ...filters,
+        [type]: false
+      });
+    } else {
+      onFilterChange({
+        ...filters,
+        [type]: null
+      });
+    }
   };
   
   const getDietaryButtonClass = (value: boolean | null) => {
@@ -79,17 +91,17 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   const getDietaryButtonLabel = (value: boolean | null, type: 'isVegetarian' | 'isVegan' | 'isGlutenFree') => {
     switch(type) {
       case 'isVegetarian':
+        if (value === null) return "Vegetarian";
         if (value === true) return "Vegetarian Only";
-        if (value === false) return "Non-Vegetarian";
-        return "All Dishes";
+        return "Non-Vegetarian";
       case 'isVegan':
+        if (value === null) return "Vegan";
         if (value === true) return "Vegan Only";
-        if (value === false) return "Non-Vegan";
-        return "All Dishes";
+        return "Non-Vegan";
       case 'isGlutenFree':
+        if (value === null) return "Gluten Free";
         if (value === true) return "Gluten-Free Only";
-        if (value === false) return "Contains Gluten";
-        return "All Dishes";
+        return "Contains Gluten";
     }
   };
   
