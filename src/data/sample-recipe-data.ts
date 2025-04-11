@@ -31,6 +31,6 @@ export const menuCategories: MenuCategory[] = [
   { id: '10', name: 'Mocktails', moduleType: 'beverage' }
 ];
 
-// Removed sample food and beverage recipes
+// Empty sample recipe arrays
 export const sampleFoodRecipes: Recipe[] = [];
 export const sampleBeverageRecipes: Recipe[] = [];
