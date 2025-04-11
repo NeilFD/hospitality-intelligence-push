@@ -567,6 +567,7 @@ export type Database = {
           mise_en_place: string | null
           module_type: string
           name: string
+          posted_to_noticeboard: boolean
           recommended_upsell: string | null
           suggested_selling_price: number
           time_to_table_minutes: number
@@ -589,6 +590,7 @@ export type Database = {
           mise_en_place?: string | null
           module_type: string
           name: string
+          posted_to_noticeboard?: boolean
           recommended_upsell?: string | null
           suggested_selling_price?: number
           time_to_table_minutes?: number
@@ -611,6 +613,7 @@ export type Database = {
           mise_en_place?: string | null
           module_type?: string
           name?: string
+          posted_to_noticeboard?: boolean
           recommended_upsell?: string | null
           suggested_selling_price?: number
           time_to_table_minutes?: number

@@ -1,21 +1,23 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Recipe } from "@/types/recipe-types";
 import { Button } from "@/components/ui/button";
-import { Mail, Share2, FileText } from "lucide-react";
+import { Mail, Share2, FileText, Globe } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import RecipePDF from "./RecipePDF";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface RecipeCardProps {
   recipe: Recipe;
   onClick: () => void;
+  onToggleNoticeboard?: () => void;
 }
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
+const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNoticeboard }) => {
   const handleEmailShare = () => {
     const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
     const body = encodeURIComponent(
@@ -44,6 +46,13 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
       `Menu price: ${formatCurrency(recipe.costing.actualMenuPrice)}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const handleToggleNoticeboard = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleNoticeboard) {
+      onToggleNoticeboard();
+    }
   };
 
   return (
@@ -91,19 +100,30 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
             </Button>
           )}
         </PDFDownloadLink>
-        <div className="flex gap-1">
-          <Button variant="ghost" size="sm" className="text-gray-800" onClick={(e) => {
-            e.stopPropagation();
-            handleEmailShare();
-          }}>
-            <Mail className="h-4 w-4" />
+        <div className="flex gap-1 items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`text-gray-800 ${recipe.postedToNoticeboard ? 'text-green-600' : ''}`} 
+            onClick={handleToggleNoticeboard}
+            title={recipe.postedToNoticeboard ? "Remove from Noticeboard" : "Post to Noticeboard"}
+          >
+            <Globe className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-gray-800" onClick={(e) => {
-            e.stopPropagation();
-            handleWhatsAppShare();
-          }}>
-            <Share2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" className="text-gray-800" onClick={(e) => {
+              e.stopPropagation();
+              handleEmailShare();
+            }}>
+              <Mail className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-800" onClick={(e) => {
+              e.stopPropagation();
+              handleWhatsAppShare();
+            }}>
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardFooter>
     </Card>

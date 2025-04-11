@@ -144,7 +144,8 @@ const FoodBible: React.FC = () => {
         suggested_selling_price: recipe.costing.suggestedSellingPrice || 0,
         actual_menu_price: recipe.costing.actualMenuPrice || 0,
         gross_profit_percentage: recipe.costing.grossProfitPercentage || 0,
-        archived: recipe.archived || false
+        archived: recipe.archived || false,
+        posted_to_noticeboard: recipe.postedToNoticeboard || false
       };
       
       console.log("Recipe data formatted for Supabase:", recipeData);
@@ -363,6 +364,35 @@ const FoodBible: React.FC = () => {
     setSidebarMaximized(!sidebarMaximized);
   };
 
+  const handleToggleNoticeboard = async (recipe: Recipe) => {
+    try {
+      const updatedRecipe = {
+        ...recipe,
+        postedToNoticeboard: !recipe.postedToNoticeboard
+      };
+
+      const { error } = await supabase
+        .from('recipes')
+        .update({ posted_to_noticeboard: updatedRecipe.postedToNoticeboard })
+        .eq('id', recipe.id);
+
+      if (error) throw error;
+
+      setRecipes(recipes.map(r => 
+        r.id === recipe.id ? updatedRecipe : r
+      ));
+
+      toast.success(
+        updatedRecipe.postedToNoticeboard 
+          ? 'Recipe posted to Noticeboard' 
+          : 'Recipe removed from Noticeboard'
+      );
+    } catch (error) {
+      console.error('Error toggling noticeboard status:', error);
+      toast.error('Failed to update noticeboard status');
+    }
+  };
+
   const DesktopSidebar = () => <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
     {sidebarOpen && (
       <div className="p-4">
@@ -446,7 +476,14 @@ const FoodBible: React.FC = () => {
                 <p className="text-gray-500">Loading recipes...</p>
               </div>
             </div> : filteredRecipes.length > 0 ? <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredRecipes.map(recipe => <RecipeCard key={recipe.id} recipe={recipe} onClick={() => setViewingRecipe(recipe)} />)}
+              {filteredRecipes.map(recipe => (
+                <RecipeCard 
+                  key={recipe.id} 
+                  recipe={recipe} 
+                  onClick={() => setViewingRecipe(recipe)}
+                  onToggleNoticeboard={() => handleToggleNoticeboard(recipe)}
+                />
+              ))}
             </div> : <div className="flex flex-col items-center justify-center py-12">
               <p className="text-lg text-gray-500">No recipes match your filters</p>
               <Button variant="outline" onClick={() => {

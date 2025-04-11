@@ -53,4 +53,5 @@ export interface Recipe {
   };
   moduleType: 'food' | 'beverage';
   archived?: boolean;
+  postedToNoticeboard?: boolean;
 }
