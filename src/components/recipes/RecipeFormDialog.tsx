@@ -350,7 +350,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="method">Method</Label>
+              <Label htmlFor="method" className="text-dark-text-DEFAULT">Method</Label>
               <Textarea 
                 id="method"
                 name="method"
@@ -358,6 +358,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 onChange={handleInputChange}
                 placeholder="Enter cooking instructions"
                 rows={6}
+                className="text-dark-text-DEFAULT focus:border-gray-400 pointer-events-auto"
               />
             </div>
           </div>
@@ -495,7 +496,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="miseEnPlace">Mise en Place</Label>
+              <Label htmlFor="miseEnPlace" className="text-dark-text-DEFAULT">Mise en Place</Label>
               <Textarea 
                 id="miseEnPlace"
                 name="miseEnPlace"
@@ -503,6 +504,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                 onChange={handleInputChange}
                 placeholder="Enter mise en place details"
                 rows={4}
+                className="text-dark-text-DEFAULT focus:border-gray-400 pointer-events-auto"
               />
             </div>
           </div>
