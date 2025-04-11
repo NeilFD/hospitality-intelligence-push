@@ -48,27 +48,35 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
   onImageUpload,
   onImageRemove
 }) => {
+  // Handle input changes individually to prevent propagation issues
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.stopPropagation();
+    onInputChange(e);
+  };
+
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="name" className="text-dark-text-DEFAULT">Recipe Name</Label>
+        <Label htmlFor="name" className="text-gray-900">Recipe Name</Label>
         <Input 
           id="name"
           name="name"
           value={name}
-          onChange={onInputChange}
+          onChange={handleInputChange}
           placeholder="Enter recipe name"
-          className="text-dark-text-DEFAULT bg-white"
+          className="text-gray-900 bg-white"
         />
       </div>
       
       <div>
-        <Label htmlFor="category" className="text-dark-text-DEFAULT">Category</Label>
+        <Label htmlFor="category" className="text-gray-900">Category</Label>
         <Select
           value={category}
-          onValueChange={onCategoryChange}
+          onValueChange={(value) => {
+            onCategoryChange(value);
+          }}
         >
-          <SelectTrigger id="category" className="text-dark-text-DEFAULT bg-white">
+          <SelectTrigger id="category" className="text-gray-900 bg-white">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
@@ -82,7 +90,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
       </div>
       
       <div>
-        <Label className="mb-2 block text-dark-text-DEFAULT">Image</Label>
+        <Label className="mb-2 block text-gray-900">Image</Label>
         <div className="flex items-center space-x-2">
           <div className="w-full">
             <Label 
@@ -106,7 +114,10 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               id="image-upload"
               type="file" 
               accept="image/*"
-              onChange={onImageUpload}
+              onChange={(e) => {
+                e.stopPropagation();
+                onImageUpload(e);
+              }}
               className="hidden"
             />
           </div>
@@ -114,8 +125,11 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={onImageRemove}
-              className="text-dark-text-DEFAULT"
+              onClick={(e) => {
+                e.stopPropagation();
+                onImageRemove();
+              }}
+              className="text-gray-900"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -124,17 +138,19 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
       </div>
       
       <div>
-        <Label className="mb-2 block text-dark-text-DEFAULT">Dietary Options</Label>
+        <Label className="mb-2 block text-gray-900">Dietary Options</Label>
         <div className="flex space-x-4 mt-2">
           <div className="flex items-center space-x-2">
             <Checkbox 
               id="isVegetarian" 
               checked={isVegetarian} 
-              onCheckedChange={(checked) => onCheckboxChange('isVegetarian', checked === true)}
+              onCheckedChange={(checked) => {
+                onCheckboxChange('isVegetarian', checked === true);
+              }}
             />
             <Label 
               htmlFor="isVegetarian" 
-              className="text-dark-text-DEFAULT cursor-pointer"
+              className="text-gray-900 cursor-pointer"
             >
               Vegetarian
             </Label>
@@ -143,11 +159,13 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             <Checkbox 
               id="isVegan" 
               checked={isVegan} 
-              onCheckedChange={(checked) => onCheckboxChange('isVegan', checked === true)}
+              onCheckedChange={(checked) => {
+                onCheckboxChange('isVegan', checked === true);
+              }}
             />
             <Label 
               htmlFor="isVegan" 
-              className="text-dark-text-DEFAULT cursor-pointer"
+              className="text-gray-900 cursor-pointer"
             >
               Vegan
             </Label>
@@ -156,11 +174,13 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             <Checkbox 
               id="isGlutenFree" 
               checked={isGlutenFree} 
-              onCheckedChange={(checked) => onCheckboxChange('isGlutenFree', checked === true)}
+              onCheckedChange={(checked) => {
+                onCheckboxChange('isGlutenFree', checked === true);
+              }}
             />
             <Label 
               htmlFor="isGlutenFree" 
-              className="text-dark-text-DEFAULT cursor-pointer"
+              className="text-gray-900 cursor-pointer"
             >
               Gluten Free
             </Label>
@@ -169,7 +189,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
       </div>
       
       <div>
-        <Label className="mb-2 block text-dark-text-DEFAULT">Allergens</Label>
+        <Label className="mb-2 block text-gray-900">Allergens</Label>
         <div className="flex flex-wrap gap-2">
           {allergenTypes.map((allergen) => (
             <div 
@@ -179,7 +199,10 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                   ? 'bg-red-100 text-red-800 border border-red-300' 
                   : 'bg-gray-100 text-gray-800 border border-gray-300'
               }`}
-              onClick={() => onAllergenToggle(allergen.name)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAllergenToggle(allergen.name);
+              }}
             >
               {allergen.name}
             </div>
@@ -188,15 +211,15 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
       </div>
       
       <div>
-        <Label htmlFor="method" className="text-dark-text-DEFAULT">Method</Label>
+        <Label htmlFor="method" className="text-gray-900">Method</Label>
         <Textarea 
           id="method"
           name="method"
           value={method || ''}
-          onChange={onInputChange}
+          onChange={handleInputChange}
           placeholder="Enter cooking instructions"
           rows={6}
-          className="text-dark-text-DEFAULT bg-white border border-gray-300"
+          className="text-gray-900 bg-white border border-gray-300"
         />
       </div>
     </div>

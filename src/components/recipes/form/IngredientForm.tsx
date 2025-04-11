@@ -21,17 +21,26 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
   onRemoveIngredient
 }) => {
   const totalCost = ingredients.reduce((sum, ing) => sum + (ing.totalCost || 0), 0);
+  
+  // Handle input changes to prevent propagation issues
+  const handleInputChange = (index: number, field: keyof Ingredient, e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onIngredientChange(index, field, e.target.value);
+  };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <Label className="text-dark-text-DEFAULT">Ingredients</Label>
+        <Label className="text-gray-900">Ingredients</Label>
         <Button 
           type="button" 
           variant="outline" 
           size="sm"
-          onClick={onAddIngredient}
-          className="text-dark-text-DEFAULT"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddIngredient();
+          }}
+          className="text-gray-900"
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Ingredient
@@ -39,7 +48,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
       </div>
       
       <div className="space-y-2">
-        <div className="grid grid-cols-12 gap-4 mb-1 px-2 text-dark-text-muted">
+        <div className="grid grid-cols-12 gap-4 mb-1 px-2 text-gray-600">
           <div className="col-span-4 text-sm">Name</div>
           <div className="col-span-2 text-sm">Amount</div>
           <div className="col-span-2 text-sm">Unit</div>
@@ -54,8 +63,8 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
               <Input 
                 placeholder="Name"
                 value={ingredient.name}
-                onChange={(e) => onIngredientChange(index, 'name', e.target.value)}
-                className="text-dark-text-DEFAULT bg-white border border-gray-300"
+                onChange={(e) => handleInputChange(index, 'name', e)}
+                className="text-gray-900 bg-white border border-gray-300"
               />
             </div>
             <div className="col-span-2">
@@ -63,16 +72,18 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 type="number"
                 placeholder="Amount"
                 value={ingredient.amount || ''}
-                onChange={(e) => onIngredientChange(index, 'amount', e.target.value)}
-                className="text-dark-text-DEFAULT bg-white border border-gray-300"
+                onChange={(e) => handleInputChange(index, 'amount', e)}
+                className="text-gray-900 bg-white border border-gray-300"
               />
             </div>
             <div className="col-span-2">
               <Select
                 value={ingredient.unit}
-                onValueChange={(value) => onIngredientChange(index, 'unit', value)}
+                onValueChange={(value) => {
+                  onIngredientChange(index, 'unit', value);
+                }}
               >
-                <SelectTrigger className="w-full text-dark-text-DEFAULT bg-white">
+                <SelectTrigger className="w-full text-gray-900 bg-white">
                   <SelectValue placeholder="Unit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -90,18 +101,21 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 step="0.01"
                 placeholder="£/unit"
                 value={ingredient.costPerUnit || ''}
-                onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value)}
-                className="text-dark-text-DEFAULT bg-white border border-gray-300"
+                onChange={(e) => handleInputChange(index, 'costPerUnit', e)}
+                className="text-gray-900 bg-white border border-gray-300"
               />
             </div>
-            <div className="col-span-1 text-right py-2 text-dark-text-DEFAULT">
+            <div className="col-span-1 text-right py-2 text-gray-900">
               £{(ingredient.totalCost || 0).toFixed(2)}
             </div>
             <div className="col-span-1 flex justify-center">
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => onRemoveIngredient(index)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveIngredient(index);
+                }}
                 disabled={ingredients.length === 1}
                 className="p-0 h-8 w-8"
               >
@@ -111,7 +125,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
           </div>
         ))}
         
-        <div className="flex justify-end font-medium border-t border-gray-200 pt-2 text-dark-text-DEFAULT">
+        <div className="flex justify-end font-medium border-t border-gray-200 pt-2 text-gray-900">
           Total: £{totalCost.toFixed(2)}
         </div>
       </div>

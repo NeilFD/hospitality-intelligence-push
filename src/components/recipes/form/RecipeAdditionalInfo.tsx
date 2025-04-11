@@ -25,18 +25,29 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
   onInputChange,
   onCostingChange
 }) => {
+  // Handle input changes individually to prevent propagation issues
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.stopPropagation();
+    onInputChange(e);
+  };
+  
+  const handleCostingChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onCostingChange(field, e.target.value);
+  };
+
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="actualMenuPrice" className="text-dark-text-DEFAULT">Menu Price (£)</Label>
+        <Label htmlFor="actualMenuPrice" className="text-gray-900">Menu Price (£)</Label>
         <Input 
           id="actualMenuPrice"
           type="number"
           step="0.01"
           value={actualMenuPrice || ''}
-          onChange={(e) => onCostingChange('actualMenuPrice', e.target.value)}
+          onChange={(e) => handleCostingChange('actualMenuPrice', e)}
           placeholder="Enter menu price"
-          className="text-dark-text-DEFAULT bg-white border border-gray-300"
+          className="text-gray-900 bg-white border border-gray-300"
         />
         <div className="text-sm text-gray-500 mt-1">
           Suggested Price: £{suggestedPrice.toFixed(2)} (70% GP inc. VAT)
@@ -47,40 +58,40 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
       </div>
       
       <div>
-        <Label htmlFor="timeToTableMinutes" className="text-dark-text-DEFAULT">Time to Table (mins)</Label>
+        <Label htmlFor="timeToTableMinutes" className="text-gray-900">Time to Table (mins)</Label>
         <Input 
           id="timeToTableMinutes"
           name="timeToTableMinutes"
           type="number"
           value={timeToTableMinutes || ''}
-          onChange={onInputChange}
+          onChange={handleInputChange}
           placeholder="Enter preparation time"
-          className="text-dark-text-DEFAULT bg-white border border-gray-300"
+          className="text-gray-900 bg-white border border-gray-300"
         />
       </div>
       
       <div>
-        <Label htmlFor="recommendedUpsell" className="text-dark-text-DEFAULT">Recommended Upsell</Label>
+        <Label htmlFor="recommendedUpsell" className="text-gray-900">Recommended Upsell</Label>
         <Input 
           id="recommendedUpsell"
           name="recommendedUpsell"
           value={recommendedUpsell || ''}
-          onChange={onInputChange}
+          onChange={handleInputChange}
           placeholder="Enter recommended upsell"
-          className="text-dark-text-DEFAULT bg-white border border-gray-300"
+          className="text-gray-900 bg-white border border-gray-300"
         />
       </div>
       
       <div>
-        <Label htmlFor="miseEnPlace" className="text-dark-text-DEFAULT">Mise en Place</Label>
+        <Label htmlFor="miseEnPlace" className="text-gray-900">Mise en Place</Label>
         <Textarea 
           id="miseEnPlace"
           name="miseEnPlace"
           value={miseEnPlace || ''}
-          onChange={onInputChange}
+          onChange={handleInputChange}
           placeholder="Enter mise en place details"
           rows={4}
-          className="text-dark-text-DEFAULT bg-white border border-gray-300"
+          className="text-gray-900 bg-white border border-gray-300"
         />
       </div>
     </div>

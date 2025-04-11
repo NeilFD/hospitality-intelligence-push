@@ -130,7 +130,8 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   
   const computedCostingTotals = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
   
-  const handleSave = () => {
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const costing = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
     
     const updatedRecipe: Recipe = {
@@ -145,18 +146,22 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     
     onSave(updatedRecipe);
   };
+  
+  const handleClose = () => {
+    onClose();
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white text-dark-text-DEFAULT" onClick={(e) => e.stopPropagation()}>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white text-gray-900" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
-          <DialogTitle className="text-dark-text-DEFAULT">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
-          <DialogDescription className="text-dark-text-muted">
+          <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
+          <DialogDescription className="text-gray-600">
             Fill in the details for this {moduleType === 'food' ? 'dish' : 'beverage'} recipe.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-dark-text-DEFAULT">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
           <RecipeBasicInfo 
             name={formData.name}
             category={formData.category}
@@ -202,8 +207,22 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="text-dark-text-DEFAULT">Cancel</Button>
-          <Button onClick={handleSave} className="text-white">Save Recipe</Button>
+          <Button 
+            variant="outline" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClose();
+            }} 
+            className="text-gray-900"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            className="text-white"
+          >
+            Save Recipe
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
