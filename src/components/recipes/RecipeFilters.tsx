@@ -76,10 +76,21 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
     return "bg-gray-100 border-gray-300 text-gray-600";
   };
   
-  const getDietaryButtonLabel = (value: boolean | null, positiveText: string) => {
-    if (value === true) return positiveText;
-    if (value === false) return `Not ${positiveText}`;
-    return `All`;
+  const getDietaryButtonLabel = (value: boolean | null, type: 'isVegetarian' | 'isVegan' | 'isGlutenFree') => {
+    switch(type) {
+      case 'isVegetarian':
+        if (value === true) return "Vegetarian Only";
+        if (value === false) return "Non-Vegetarian";
+        return "All Dishes";
+      case 'isVegan':
+        if (value === true) return "Vegan Only";
+        if (value === false) return "Non-Vegan";
+        return "All Dishes";
+      case 'isGlutenFree':
+        if (value === true) return "Gluten-Free Only";
+        if (value === false) return "Contains Gluten";
+        return "All Dishes";
+    }
   };
   
   const clearFilters = () => {
@@ -198,7 +209,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
               className={getDietaryButtonClass(filters.isVegetarian)}
               onClick={() => handleDietaryToggle('isVegetarian')}
             >
-              {getDietaryButtonLabel(filters.isVegetarian, 'Vegetarian')}
+              {getDietaryButtonLabel(filters.isVegetarian, 'isVegetarian')}
             </Button>
             <Button
               type="button"
@@ -207,7 +218,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
               className={getDietaryButtonClass(filters.isVegan)}
               onClick={() => handleDietaryToggle('isVegan')}
             >
-              {getDietaryButtonLabel(filters.isVegan, 'Vegan')}
+              {getDietaryButtonLabel(filters.isVegan, 'isVegan')}
             </Button>
             <Button
               type="button"
@@ -216,7 +227,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
               className={getDietaryButtonClass(filters.isGlutenFree)}
               onClick={() => handleDietaryToggle('isGlutenFree')}
             >
-              {getDietaryButtonLabel(filters.isGlutenFree, 'Gluten Free')}
+              {getDietaryButtonLabel(filters.isGlutenFree, 'isGlutenFree')}
             </Button>
           </div>
         </CollapsibleContent>
