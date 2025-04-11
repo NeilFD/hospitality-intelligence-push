@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -187,24 +186,25 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto text-gray-900">
         <DialogHeader>
-          <DialogTitle>{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
+          <DialogDescription className="text-gray-700">
             Fill in the details for this {moduleType === 'food' ? 'dish' : 'beverage'} recipe.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Recipe Name</Label>
+              <Label htmlFor="name" className="text-gray-900">Recipe Name</Label>
               <Input 
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Enter recipe name"
+                className="text-gray-900"
               />
             </div>
             
@@ -228,7 +228,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label className="mb-2 block">Image</Label>
+              <Label className="mb-2 block text-gray-900">Image</Label>
               <div className="flex items-center space-x-2">
                 <div className="w-full">
                   <Label 
@@ -272,7 +272,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             </div>
             
             <div>
-              <Label>Dietary Options</Label>
+              <Label className="mb-2 block text-gray-900">Dietary Options</Label>
               <div className="flex space-x-4 mt-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -280,7 +280,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isVegetarian} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegetarian', checked === true)}
                   />
-                  <Label htmlFor="isVegetarian">Vegetarian</Label>
+                  <Label htmlFor="isVegetarian" className="text-gray-900">Vegetarian</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -288,7 +288,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isVegan} 
                     onCheckedChange={(checked) => handleCheckboxChange('isVegan', checked === true)}
                   />
-                  <Label htmlFor="isVegan">Vegan</Label>
+                  <Label htmlFor="isVegan" className="text-gray-900">Vegan</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -296,13 +296,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                     checked={formData.isGlutenFree} 
                     onCheckedChange={(checked) => handleCheckboxChange('isGlutenFree', checked === true)}
                   />
-                  <Label htmlFor="isGlutenFree">Gluten Free</Label>
+                  <Label htmlFor="isGlutenFree" className="text-gray-900">Gluten Free</Label>
                 </div>
               </div>
             </div>
             
             <div>
-              <Label className="mb-2 block">Allergens</Label>
+              <Label className="mb-2 block text-gray-900">Allergens</Label>
               <div className="flex flex-wrap gap-2">
                 {allergens.map((allergen) => (
                   <div 
@@ -336,12 +336,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <Label>Ingredients</Label>
+                <Label className="text-gray-900">Ingredients</Label>
                 <Button 
                   type="button" 
                   variant="outline" 
                   size="sm"
                   onClick={addIngredient}
+                  className="text-gray-900"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Ingredient
@@ -350,11 +351,11 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               
               <div className="space-y-2">
                 <div className="grid grid-cols-12 gap-4 mb-1 px-2">
-                  <div className="col-span-4 text-sm text-gray-500">Name</div>
-                  <div className="col-span-2 text-sm text-gray-500">Amount</div>
-                  <div className="col-span-2 text-sm text-gray-500">Unit</div>
-                  <div className="col-span-2 text-sm text-gray-500">£/unit</div>
-                  <div className="col-span-1 text-sm text-gray-500 text-right">Total</div>
+                  <div className="col-span-4 text-sm text-gray-700">Name</div>
+                  <div className="col-span-2 text-sm text-gray-700">Amount</div>
+                  <div className="col-span-2 text-sm text-gray-700">Unit</div>
+                  <div className="col-span-2 text-sm text-gray-700">£/unit</div>
+                  <div className="col-span-1 text-sm text-gray-700 text-right">Total</div>
                   <div className="col-span-1"></div>
                 </div>
                 
@@ -496,8 +497,8 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>Save Recipe</Button>
+          <Button variant="outline" onClick={onClose} className="text-gray-900">Cancel</Button>
+          <Button onClick={handleSave} className="text-gray-900">Save Recipe</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
