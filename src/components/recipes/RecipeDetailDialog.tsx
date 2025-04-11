@@ -62,8 +62,8 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{recipe.name}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2">
+          <DialogTitle className="text-2xl text-gray-900">{recipe.name}</DialogTitle>
+          <DialogDescription className="flex items-center gap-2 text-gray-700">
             {recipe.category}
             <div className="flex gap-1 ml-auto">
               <Button variant="outline" size="sm" onClick={onEdit}>
@@ -131,79 +131,79 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
                 className="w-full h-64 object-cover rounded-md"
               />
             ) : (
-              <div className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-md">
-                <span className="text-gray-500">No image available</span>
+              <div className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-md text-gray-700">
+                No image available
               </div>
             )}
             
             <div className="mt-4 space-y-4">
               <div>
-                <h3 className="text-lg font-medium">Dietary Information</h3>
+                <h3 className="text-lg font-medium text-gray-900">Dietary Information</h3>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {recipe.isVegetarian && <Badge variant="outline" className="bg-green-50">Vegetarian</Badge>}
-                  {recipe.isVegan && <Badge variant="outline" className="bg-green-100">Vegan</Badge>}
-                  {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50">Gluten Free</Badge>}
+                  {recipe.isVegetarian && <Badge variant="outline" className="bg-green-50 text-green-800">Vegetarian</Badge>}
+                  {recipe.isVegan && <Badge variant="outline" className="bg-green-100 text-green-900">Vegan</Badge>}
+                  {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-800">Gluten Free</Badge>}
                 </div>
               </div>
               
               <div>
-                <h3 className="text-lg font-medium">Allergens</h3>
+                <h3 className="text-lg font-medium text-gray-900">Allergens</h3>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {recipe.allergens.map((allergen, index) => (
-                    <Badge key={index} variant="outline" className="bg-red-50">{allergen}</Badge>
+                    <Badge key={index} variant="outline" className="bg-red-50 text-red-800">{allergen}</Badge>
                   ))}
-                  {recipe.allergens.length === 0 && <span className="text-gray-500">No allergens listed</span>}
+                  {recipe.allergens.length === 0 && <span className="text-gray-700">No allergens listed</span>}
                 </div>
               </div>
               
               <div>
-                <h3 className="text-lg font-medium">Recipe Information</h3>
+                <h3 className="text-lg font-medium text-gray-900">Recipe Information</h3>
                 <dl className="mt-2 space-y-1">
                   <div className="flex">
-                    <dt className="w-1/2 text-gray-600">Time to Table:</dt>
-                    <dd>~{recipe.timeToTableMinutes} minutes</dd>
+                    <dt className="w-1/2 text-gray-700">Time to Table:</dt>
+                    <dd className="text-gray-900">~{recipe.timeToTableMinutes} minutes</dd>
                   </div>
                   <div className="flex">
-                    <dt className="w-1/2 text-gray-600">Recommended Upsell:</dt>
-                    <dd>{recipe.recommendedUpsell || 'None'}</dd>
+                    <dt className="w-1/2 text-gray-700">Recommended Upsell:</dt>
+                    <dd className="text-gray-900">{recipe.recommendedUpsell || 'None'}</dd>
                   </div>
                 </dl>
               </div>
               
               <div>
-                <h3 className="text-lg font-medium">Method</h3>
-                <p className="mt-2 whitespace-pre-line">{recipe.method}</p>
+                <h3 className="text-lg font-medium text-gray-900">Method</h3>
+                <p className="mt-2 whitespace-pre-line text-gray-800">{recipe.method}</p>
               </div>
             </div>
           </div>
           
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">Costing</h3>
+              <h3 className="text-lg font-medium text-gray-900">Costing</h3>
               <dl className="mt-2 space-y-1">
                 <div className="flex">
-                  <dt className="w-1/2 text-gray-600">Total Recipe Cost:</dt>
-                  <dd>{formatCurrency(recipe.costing.totalRecipeCost)}</dd>
+                  <dt className="w-1/2 text-gray-700">Total Recipe Cost:</dt>
+                  <dd className="text-gray-900">{formatCurrency(recipe.costing.totalRecipeCost)}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-1/2 text-gray-600">Suggested Selling Price:</dt>
-                  <dd>{formatCurrency(recipe.costing.suggestedSellingPrice)}</dd>
+                  <dt className="w-1/2 text-gray-700">Suggested Selling Price:</dt>
+                  <dd className="text-gray-900">{formatCurrency(recipe.costing.suggestedSellingPrice)}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-1/2 text-gray-600">Actual Menu Price:</dt>
-                  <dd>{formatCurrency(recipe.costing.actualMenuPrice)}</dd>
+                  <dt className="w-1/2 text-gray-700">Actual Menu Price:</dt>
+                  <dd className="text-gray-900">{formatCurrency(recipe.costing.actualMenuPrice)}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-1/2 text-gray-600">Gross Profit Percentage:</dt>
-                  <dd>{(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</dd>
+                  <dt className="w-1/2 text-gray-700">Gross Profit Percentage:</dt>
+                  <dd className="text-gray-900">{(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</dd>
                 </div>
               </dl>
             </div>
             
             <div>
-              <h3 className="text-lg font-medium">Ingredients</h3>
+              <h3 className="text-lg font-medium text-gray-900">Ingredients</h3>
               <div className="mt-2 border rounded-md">
-                <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 text-sm font-medium border-b">
+                <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 text-sm font-medium border-b text-gray-800">
                   <div className="col-span-5">Item</div>
                   <div className="col-span-2 text-right">Amount</div>
                   <div className="col-span-2">Unit</div>
@@ -212,7 +212,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
                 {recipe.ingredients.map((ingredient, index) => (
                   <div 
                     key={ingredient.id} 
-                    className={`grid grid-cols-12 px-3 py-2 text-sm ${
+                    className={`grid grid-cols-12 px-3 py-2 text-sm text-gray-800 ${
                       index < recipe.ingredients.length - 1 ? 'border-b' : ''
                     }`}
                   >
@@ -222,7 +222,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
                     <div className="col-span-3 text-right">{formatCurrency(ingredient.totalCost)}</div>
                   </div>
                 ))}
-                <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 text-sm font-medium">
+                <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 text-sm font-medium text-gray-800">
                   <div className="col-span-9 text-right">Total:</div>
                   <div className="col-span-3 text-right">
                     {formatCurrency(recipe.ingredients.reduce((sum, i) => sum + i.totalCost, 0))}
@@ -232,8 +232,8 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             </div>
             
             <div>
-              <h3 className="text-lg font-medium">Mise en Place</h3>
-              <p className="mt-2 whitespace-pre-line">{recipe.miseEnPlace}</p>
+              <h3 className="text-lg font-medium text-gray-900">Mise en Place</h3>
+              <p className="mt-2 whitespace-pre-line text-gray-800">{recipe.miseEnPlace}</p>
             </div>
           </div>
         </div>
@@ -244,3 +244,4 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
 };
 
 export default RecipeDetailDialog;
+
