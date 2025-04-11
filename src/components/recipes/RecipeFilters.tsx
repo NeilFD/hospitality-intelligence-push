@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { RecipeFilterOptions, MenuCategory, AllergenType } from "@/types/recipe-types";
-import { Search, X } from "lucide-react";
+import { Search, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface RecipeFiltersProps {
   moduleType: 'food' | 'beverage';
@@ -30,6 +32,10 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   selectedLetter
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.searchTerm);
+  const [openCategory, setOpenCategory] = useState(true);
+  const [openDietary, setOpenDietary] = useState(true);
+  const [openAllergens, setOpenAllergens] = useState(true);
+  const [openAlphabet, setOpenAlphabet] = useState(true);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +97,25 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
     onLetterSelect(null);
   };
 
+  const CollapsibleHeader = ({ 
+    title, 
+    isOpen, 
+    onClick 
+  }: { 
+    title: string; 
+    isOpen: boolean; 
+    onClick: () => void 
+  }) => (
+    <div className="flex justify-between items-center mb-2">
+      <Label className="text-tavern-blue-dark font-medium text-base">{title}</Label>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" onClick={onClick} className="p-0 h-6 w-6">
+          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+      </CollapsibleTrigger>
+    </div>
+  );
+
   return (
     <div className="space-y-4 pb-4 border-b">
       <form onSubmit={handleSearch} className="flex gap-2">
@@ -114,103 +139,111 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         )}
       </form>
       
-      <div>
-        <Label htmlFor="category" className="text-tavern-blue-dark">Category</Label>
-        <Select
-          value={filters.category}
-          onValueChange={handleCategoryChange}
-        >
-          <SelectTrigger id="category" className="w-full">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all_categories">All Categories</SelectItem>
-            {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
-              <SelectItem key={category.id} value={category.name}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Collapsible open={openCategory} onOpenChange={setOpenCategory}>
+        <CollapsibleHeader title="Category" isOpen={openCategory} onClick={() => setOpenCategory(!openCategory)} />
+        <CollapsibleContent>
+          <Select
+            value={filters.category}
+            onValueChange={handleCategoryChange}
+          >
+            <SelectTrigger id="category" className="w-full">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all_categories">All Categories</SelectItem>
+              {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
+                <SelectItem key={category.id} value={category.name}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CollapsibleContent>
+      </Collapsible>
       
-      <div>
-        <Label className="mb-2 block text-tavern-blue-dark">Dietary Requirements</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={getDietaryButtonClass(filters.isVegetarian)}
-            onClick={() => handleDietaryToggle('isVegetarian')}
-          >
-            {getDietaryButtonLabel(filters.isVegetarian, 'Vegetarian')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={getDietaryButtonClass(filters.isVegan)}
-            onClick={() => handleDietaryToggle('isVegan')}
-          >
-            {getDietaryButtonLabel(filters.isVegan, 'Vegan')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={getDietaryButtonClass(filters.isGlutenFree)}
-            onClick={() => handleDietaryToggle('isGlutenFree')}
-          >
-            {getDietaryButtonLabel(filters.isGlutenFree, 'Gluten Free')}
-          </Button>
-        </div>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-tavern-blue-dark">Allergens</Label>
-        <div className="flex flex-wrap gap-2">
-          {allergens.map((allergen) => (
-            <Badge 
-              key={allergen.id}
-              variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
-              className={`cursor-pointer ${
-                filters.allergens.includes(allergen.name) 
-                  ? "bg-tavern-blue text-white" 
-                  : "bg-gray-100 text-tavern-blue-dark"
-              }`}
-              onClick={() => handleAllergenToggle(allergen.name)}
-            >
-              {allergen.name}
-            </Badge>
-          ))}
-        </div>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-tavern-blue-dark">A-Z</Label>
-        <div className="flex flex-wrap gap-1">
-          <Button 
-            size="sm"
-            variant={selectedLetter === null ? "default" : "outline"}
-            className="w-8 h-8 p-0 text-xs"
-            onClick={() => onLetterSelect(null)}
-          >
-            All
-          </Button>
-          {alphabet.map((letter) => (
-            <Button 
-              key={letter}
+      <Collapsible open={openDietary} onOpenChange={setOpenDietary}>
+        <CollapsibleHeader title="Dietary Requirements" isOpen={openDietary} onClick={() => setOpenDietary(!openDietary)} />
+        <CollapsibleContent>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
               size="sm"
-              variant={selectedLetter === letter ? "default" : "outline"}
-              className="w-8 h-8 p-0 text-xs"
-              onClick={() => onLetterSelect(letter)}
+              className={getDietaryButtonClass(filters.isVegetarian)}
+              onClick={() => handleDietaryToggle('isVegetarian')}
             >
-              {letter}
+              {getDietaryButtonLabel(filters.isVegetarian, 'Vegetarian')}
             </Button>
-          ))}
-        </div>
-      </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={getDietaryButtonClass(filters.isVegan)}
+              onClick={() => handleDietaryToggle('isVegan')}
+            >
+              {getDietaryButtonLabel(filters.isVegan, 'Vegan')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={getDietaryButtonClass(filters.isGlutenFree)}
+              onClick={() => handleDietaryToggle('isGlutenFree')}
+            >
+              {getDietaryButtonLabel(filters.isGlutenFree, 'Gluten Free')}
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+      
+      <Collapsible open={openAllergens} onOpenChange={setOpenAllergens}>
+        <CollapsibleHeader title="Allergens" isOpen={openAllergens} onClick={() => setOpenAllergens(!openAllergens)} />
+        <CollapsibleContent>
+          <div className="flex flex-wrap gap-2">
+            {allergens.map((allergen) => (
+              <Badge 
+                key={allergen.id}
+                variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
+                className={`cursor-pointer ${
+                  filters.allergens.includes(allergen.name) 
+                    ? "bg-tavern-blue text-white" 
+                    : "bg-gray-100 text-tavern-blue-dark"
+                }`}
+                onClick={() => handleAllergenToggle(allergen.name)}
+              >
+                {allergen.name}
+              </Badge>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+      
+      <Collapsible open={openAlphabet} onOpenChange={setOpenAlphabet}>
+        <CollapsibleHeader title="A-Z" isOpen={openAlphabet} onClick={() => setOpenAlphabet(!openAlphabet)} />
+        <CollapsibleContent>
+          <div className="flex flex-wrap gap-1">
+            <Button 
+              size="sm"
+              variant={selectedLetter === null ? "default" : "outline"}
+              className="w-8 h-8 p-0 text-xs"
+              onClick={() => onLetterSelect(null)}
+            >
+              All
+            </Button>
+            {alphabet.map((letter) => (
+              <Button 
+                key={letter}
+                size="sm"
+                variant={selectedLetter === letter ? "default" : "outline"}
+                className="w-8 h-8 p-0 text-xs"
+                onClick={() => onLetterSelect(letter)}
+              >
+                {letter}
+              </Button>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };
