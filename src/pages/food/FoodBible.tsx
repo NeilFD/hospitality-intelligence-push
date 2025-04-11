@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+
 const FoodBible: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +31,11 @@ const FoodBible: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
+
   useEffect(() => {
     fetchRecipes();
   }, []);
+
   const fetchRecipes = async () => {
     try {
       setLoading(true);
@@ -112,6 +115,7 @@ const FoodBible: React.FC = () => {
       setLoading(false);
     }
   };
+
   const saveRecipeToSupabase = async (recipe: Recipe, showToast: boolean = true) => {
     try {
       const recipeData = {
@@ -167,6 +171,7 @@ const FoodBible: React.FC = () => {
       throw error;
     }
   };
+
   const deleteRecipeFromSupabase = async (recipeId: string) => {
     try {
       const {
@@ -182,6 +187,7 @@ const FoodBible: React.FC = () => {
       throw error;
     }
   };
+
   const filteredRecipes = useMemo(() => {
     return recipes.filter(recipe => {
       if (filters.searchTerm && !recipe.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
@@ -212,9 +218,11 @@ const FoodBible: React.FC = () => {
       return true;
     });
   }, [recipes, filters, selectedLetter]);
+
   const handleFilterChange = (newFilters: RecipeFilterOptions) => {
     setFilters(newFilters);
   };
+
   const handleLetterSelect = (letter: string | null) => {
     setSelectedLetter(letter);
     setFilters({
@@ -222,14 +230,17 @@ const FoodBible: React.FC = () => {
       letter
     });
   };
+
   const handleAddRecipe = () => {
     setEditingRecipe(undefined);
     setFormOpen(true);
   };
+
   const handleEditRecipe = (recipe: Recipe) => {
     setEditingRecipe(recipe);
     setFormOpen(true);
   };
+
   const handleSaveRecipe = async (recipe: Recipe) => {
     try {
       await saveRecipeToSupabase(recipe);
@@ -243,6 +254,7 @@ const FoodBible: React.FC = () => {
       console.error('Error in handleSaveRecipe:', error);
     }
   };
+
   const handleDeleteRecipe = async (recipe: Recipe) => {
     try {
       await deleteRecipeFromSupabase(recipe.id);
@@ -252,16 +264,36 @@ const FoodBible: React.FC = () => {
       console.error('Error in handleDeleteRecipe:', error);
     }
   };
+
   const handleViewRecipe = (recipe: Recipe) => {
     setViewingRecipe(recipe);
   };
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+
   const toggleMaximized = () => {
     setSidebarMaximized(!sidebarMaximized);
   };
+
   const DesktopSidebar = () => <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
+    {!sidebarOpen && (
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="absolute left-4 top-4 z-40" 
+        onClick={() => {
+          setSidebarOpen(true);
+          setSidebarMaximized(false);
+        }}
+        title="Open sidebar"
+      >
+        <Maximize2 className="h-4 w-4" />
+      </Button>
+    )}
+    
+    {sidebarOpen && (
       <div className={`p-4 ${!sidebarOpen && 'hidden'}`}>
         <div className="flex justify-end mb-2">
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-60 hover:opacity-100 mr-1" onClick={toggleMaximized} title={sidebarMaximized ? "Restore sidebar" : "Maximize sidebar"}>
@@ -273,72 +305,76 @@ const FoodBible: React.FC = () => {
         </div>
         <RecipeFilters moduleType="food" categories={menuCategories} allergens={allergenTypes} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
       </div>
-    </div>;
-  const MobileSidebar = () => <>
-      <Button variant="outline" size="icon" className="fixed left-4 top-20 z-40 md:hidden shadow-md bg-white" onClick={() => setSidebarOpen(true)}>
-        <PanelLeft className="h-4 w-4" />
-      </Button>
+    )}
+  </div>;
 
-      <Drawer open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <DrawerContent className="max-h-[90vh]">
-          <div className="p-4 max-h-[80vh] overflow-y-auto">
-            <RecipeFilters moduleType="food" categories={menuCategories} allergens={allergenTypes} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
-          </div>
-        </DrawerContent>
-      </Drawer>
-    </>;
+  const MobileSidebar = () => <>
+    <Button variant="outline" size="icon" className="fixed left-4 top-20 z-40 md:hidden shadow-md bg-white" onClick={() => setSidebarOpen(true)}>
+      <PanelLeft className="h-4 w-4" />
+    </Button>
+
+    <Drawer open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      <DrawerContent className="max-h-[90vh]">
+        <div className="p-4 max-h-[80vh] overflow-y-auto">
+          <RecipeFilters moduleType="food" categories={menuCategories} allergens={allergenTypes} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
+        </div>
+      </DrawerContent>
+    </Drawer>
+  </>;
+
   return <div className="flex w-full min-h-svh bg-background">
-      {isMobile ? <MobileSidebar /> : <DesktopSidebar />}
-      
-      <div className="flex-1 relative">
-        <div className="container px-4 py-6 max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold">Food Bible</h1>
-              <p className="text-muted-foreground">Manage and explore food recipes</p>
-            </div>
-            <Button onClick={() => setFormOpen(true)} className="mt-4 md:mt-0">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Recipe
-            </Button>
+    {isMobile ? <MobileSidebar /> : <DesktopSidebar />}
+    
+    <div className="flex-1 relative">
+      <div className="container px-4 py-6 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Food Bible</h1>
+            <p className="text-muted-foreground">Manage and explore food recipes</p>
           </div>
-          
-          <div className="w-full">
-            {loading ? <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading recipes...</p>
-                </div>
-              </div> : filteredRecipes.length > 0 ? <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRecipes.map(recipe => <RecipeCard key={recipe.id} recipe={recipe} onClick={() => setViewingRecipe(recipe)} />)}
-              </div> : <div className="flex flex-col items-center justify-center py-12">
-                <p className="text-lg text-gray-500">No recipes match your filters</p>
-                <Button variant="outline" onClick={() => {
-              setFilters({
-                searchTerm: "",
-                category: "all_categories",
-                allergens: [],
-                isVegan: null,
-                isVegetarian: null,
-                isGlutenFree: null,
-                letter: null
-              });
-              setSelectedLetter(null);
-            }} className="mt-4">
-                  Clear Filters
-                </Button>
-              </div>}
-          </div>
+          <Button onClick={() => setFormOpen(true)} className="mt-4 md:mt-0">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Recipe
+          </Button>
+        </div>
+        
+        <div className="w-full">
+          {loading ? <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading recipes...</p>
+              </div>
+            </div> : filteredRecipes.length > 0 ? <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredRecipes.map(recipe => <RecipeCard key={recipe.id} recipe={recipe} onClick={() => setViewingRecipe(recipe)} />)}
+            </div> : <div className="flex flex-col items-center justify-center py-12">
+              <p className="text-lg text-gray-500">No recipes match your filters</p>
+              <Button variant="outline" onClick={() => {
+                setFilters({
+                  searchTerm: "",
+                  category: "all_categories",
+                  allergens: [],
+                  isVegan: null,
+                  isVegetarian: null,
+                  isGlutenFree: null,
+                  letter: null
+                });
+                setSelectedLetter(null);
+              }} className="mt-4">
+                Clear Filters
+              </Button>
+            </div>}
         </div>
       </div>
       
       {formOpen && <RecipeFormDialog open={formOpen} onClose={() => setFormOpen(false)} onSave={handleSaveRecipe} recipe={editingRecipe} moduleType="food" categories={menuCategories} allergens={allergenTypes} />}
       
       {viewingRecipe && <RecipeDetailDialog open={!!viewingRecipe} onClose={() => setViewingRecipe(undefined)} recipe={viewingRecipe} onEdit={() => {
-      setViewingRecipe(undefined);
-      setEditingRecipe(viewingRecipe);
-      setFormOpen(true);
-    }} onDelete={handleDeleteRecipe} />}
-    </div>;
+        setViewingRecipe(undefined);
+        setEditingRecipe(viewingRecipe);
+        setFormOpen(true);
+      }} onDelete={handleDeleteRecipe} />}
+    </div>
+  </div>;
 };
+
 export default FoodBible;
