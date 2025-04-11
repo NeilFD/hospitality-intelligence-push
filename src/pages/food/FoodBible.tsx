@@ -278,28 +278,13 @@ const FoodBible: React.FC = () => {
   };
 
   const DesktopSidebar = () => <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
-    {!sidebarOpen && (
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="fixed left-4 top-20 z-40 md:flex hidden" 
-        onClick={() => {
-          setSidebarOpen(true);
-          setSidebarMaximized(false);
-        }}
-        title="Open sidebar"
-      >
-        <PanelLeft className="h-4 w-4" />
-      </Button>
-    )}
-    
     {sidebarOpen && (
-      <div className={`p-4 ${!sidebarOpen && 'hidden'}`}>
+      <div className="p-4">
         <div className="flex justify-end mb-2">
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-60 hover:opacity-100 mr-1" onClick={toggleMaximized} title={sidebarMaximized ? "Restore sidebar" : "Maximize sidebar"}>
             {sidebarMaximized ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
           </Button>
-          <Button variant="ghost" size="sm" onClick={toggleSidebar} title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"} className="h-6 w-6 p-0 opacity-60 hover:opacity-100 text-slate-900">
+          <Button variant="ghost" size="sm" onClick={toggleSidebar} title="Collapse sidebar" className="h-6 w-6 p-0 opacity-60 hover:opacity-100 text-slate-900">
             <ChevronLeft className="h-3 w-3" />
           </Button>
         </div>
@@ -323,6 +308,21 @@ const FoodBible: React.FC = () => {
   </>;
 
   return <div className="flex w-full min-h-svh bg-background">
+    {!sidebarOpen && !isMobile && (
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="fixed left-4 top-20 z-40 shadow-md bg-white" 
+        onClick={() => {
+          setSidebarOpen(true);
+          setSidebarMaximized(false);
+        }}
+        title="Open sidebar"
+      >
+        <PanelLeft className="h-4 w-4" />
+      </Button>
+    )}
+    
     {isMobile ? <MobileSidebar /> : <DesktopSidebar />}
     
     <div className="flex-1 relative">
