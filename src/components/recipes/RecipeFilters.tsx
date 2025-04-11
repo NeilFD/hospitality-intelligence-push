@@ -218,9 +218,9 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
           >
             <ToggleGroupItem 
               value="live" 
-              className="flex items-center gap-1 text-sm"
+              className="flex items-center gap-1 text-sm bg-gray-100 text-gray-800 data-[state=on]:bg-green-100 data-[state=on]:text-green-800"
             >
-              <span className="h-2 w-2 rounded-full bg-green-500"></span>
+              <span className="h-2 w-2 rounded-full bg-green-500 mr-1"></span>
               Live
             </ToggleGroupItem>
             <ToggleGroupItem 
