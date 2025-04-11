@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { v4 as uuidv4 } from 'uuid';
 
 const FoodBible: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -116,7 +117,6 @@ const FoodBible: React.FC = () => {
     try {
       console.log("Starting saveRecipeToSupabase with recipe:", recipe);
       
-      // Ensure recipe data is correctly formatted for storage
       const recipeData = {
         id: recipe.id,
         name: recipe.name || 'Unnamed Recipe',
@@ -140,8 +140,6 @@ const FoodBible: React.FC = () => {
       
       console.log("Recipe data formatted for Supabase:", recipeData);
       
-      // Insert or update recipe in the recipes table
-      console.log("Upserting recipe into recipes table...");
       const {
         error: recipeError,
         data: insertedRecipe
@@ -154,8 +152,6 @@ const FoodBible: React.FC = () => {
       
       console.log("Recipe saved successfully:", insertedRecipe);
       
-      // Delete existing ingredients first to avoid duplicates
-      console.log("Deleting existing ingredients for recipe:", recipe.id);
       const { error: deleteError } = await supabase
         .from('recipe_ingredients')
         .delete()
@@ -166,17 +162,14 @@ const FoodBible: React.FC = () => {
         throw deleteError;
       }
       
-      // Insert all ingredients with guaranteed unique IDs
-      console.log("Inserting ingredients for recipe:", recipe.id, "Ingredient count:", recipe.ingredients.length);
       for (const ingredient of recipe.ingredients) {
-        // Skip empty ingredient names
         if (!ingredient.name || ingredient.name.trim() === '') {
           console.log("Skipping ingredient with empty name");
           continue;
         }
         
         const ingredientData = {
-          id: ingredient.id || uuidv4(),  // Ensure we have an ID
+          id: ingredient.id || uuidv4(),
           recipe_id: recipe.id,
           name: ingredient.name || '',
           amount: ingredient.amount || 0,
@@ -185,15 +178,12 @@ const FoodBible: React.FC = () => {
           total_cost: ingredient.totalCost || 0
         };
         
-        console.log("Saving ingredient:", ingredientData);
-        
         const {
           error: ingredientError
         } = await supabase.from('recipe_ingredients').upsert([ingredientData]);
         
         if (ingredientError) {
           console.error('Error saving ingredient:', ingredientError);
-          // Continue with other ingredients even if one fails
           toast.error(`Error saving ingredient ${ingredient.name}`);
         }
       }
@@ -294,12 +284,9 @@ const FoodBible: React.FC = () => {
       const saveResult = await saveRecipeToSupabase(recipe);
       console.log("Save result:", saveResult);
 
-      // Update UI with latest recipe data
       if (editingRecipe) {
-        console.log("Updating existing recipe in state");
         setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
       } else {
-        console.log("Adding new recipe to state");
         setRecipes(prevRecipes => [...prevRecipes, recipe]);
       }
       setFormOpen(false);
