@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -6,7 +7,7 @@ import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
 import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
 import { sampleFoodRecipes, menuCategories, allergenTypes } from "@/data/sample-recipe-data";
-import { Plus, PanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, PanelLeft, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,6 +34,7 @@ const FoodBible: React.FC = () => {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
   
   useEffect(() => {
@@ -307,9 +309,33 @@ const FoodBible: React.FC = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const toggleMaximized = () => {
+    setSidebarMaximized(!sidebarMaximized);
+  };
+
   const DesktopSidebar = () => (
-    <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
+    <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
       <div className={`p-4 ${!sidebarOpen && 'hidden'}`}>
+        <div className="flex justify-end mb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 opacity-60 hover:opacity-100 mr-1"
+            onClick={toggleMaximized}
+            title={sidebarMaximized ? "Restore sidebar" : "Maximize sidebar"}
+          >
+            {sidebarMaximized ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+            onClick={toggleSidebar}
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </Button>
+        </div>
         <RecipeFilters
           moduleType="food"
           categories={menuCategories}
@@ -320,17 +346,6 @@ const FoodBible: React.FC = () => {
           selectedLetter={selectedLetter}
         />
       </div>
-      {!isMobile && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 right-2 h-6 w-6 p-0 opacity-60 hover:opacity-100"
-          onClick={toggleSidebar}
-          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </Button>
-      )}
     </div>
   );
 
