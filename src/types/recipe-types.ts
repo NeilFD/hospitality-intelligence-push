@@ -1,4 +1,3 @@
-
 export interface Ingredient {
   id: string;
   name: string;
@@ -8,37 +7,7 @@ export interface Ingredient {
   totalCost: number;
 }
 
-export interface RecipeMetadata {
-  id: string;
-  name: string;
-  category: string;
-  allergens: string[];
-  isVegan: boolean;
-  isVegetarian: boolean;
-  isGlutenFree: boolean;
-  recommendedUpsell: string;
-  timeToTableMinutes: number;
-  miseEnPlace: string;
-  createdAt: Date;
-  updatedAt: Date;
-  imageUrl?: string;
-}
-
-export interface RecipeCosting {
-  totalRecipeCost: number;
-  suggestedSellingPrice: number; // 70% markup including VAT
-  actualMenuPrice: number;
-  grossProfitPercentage: number;
-}
-
-export interface Recipe extends RecipeMetadata {
-  ingredients: Ingredient[];
-  method: string;
-  costing: RecipeCosting;
-  moduleType: 'food' | 'beverage';
-}
-
-export type RecipeFilterOptions = {
+export interface RecipeFilterOptions {
   searchTerm: string;
   category: string;
   allergens: string[];
@@ -46,15 +15,42 @@ export type RecipeFilterOptions = {
   isVegetarian: boolean | null;
   isGlutenFree: boolean | null;
   letter: string | null;
-};
+  status?: 'live' | 'archived';
+}
 
-export type MenuCategory = {
+export interface MenuCategory {
   id: string;
   name: string;
   moduleType: 'food' | 'beverage';
-};
+}
 
-export type AllergenType = {
+export interface AllergenType {
   id: string;
   name: string;
-};
+}
+
+export interface Recipe {
+  id: string;
+  name: string;
+  category: string;
+  allergens: string[];
+  isVegan: boolean;
+  isVegetarian: boolean;
+  isGlutenFree: boolean;
+  recommendedUpsell?: string;
+  timeToTableMinutes: number;
+  miseEnPlace?: string;
+  method?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  imageUrl?: string;
+  ingredients: Ingredient[];
+  costing: {
+    totalRecipeCost: number;
+    suggestedSellingPrice: number;
+    actualMenuPrice: number;
+    grossProfitPercentage: number;
+  };
+  moduleType: 'food' | 'beverage';
+  archived?: boolean;
+}

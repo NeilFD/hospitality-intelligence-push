@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,9 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { RecipeFilterOptions, MenuCategory, AllergenType } from "@/types/recipe-types";
-import { Search, X, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { Search, X, ChevronDown, ChevronUp, Filter, Archive } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Toggle } from "@/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface RecipeFiltersProps {
   moduleType: 'food' | 'beverage';
@@ -35,6 +38,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   const [openDietary, setOpenDietary] = useState(true);
   const [openAllergens, setOpenAllergens] = useState(true);
   const [openAlphabet, setOpenAlphabet] = useState(true);
+  const [openStatus, setOpenStatus] = useState(true);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +86,13 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
     }
   };
   
+  const handleStatusChange = (value: string) => {
+    onFilterChange({
+      ...filters,
+      status: value
+    });
+  };
+  
   const getDietaryButtonClass = (value: boolean | null) => {
     if (value === true) return "bg-green-100 border-green-500 text-green-800";
     if (value === false) return "bg-red-100 border-red-500 text-red-800";
@@ -113,7 +124,8 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
       isVegan: null,
       isVegetarian: null,
       isGlutenFree: null,
-      letter: null
+      letter: null,
+      status: "live"
     });
     setSearchTerm("");
     onLetterSelect(null);
@@ -150,7 +162,8 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
     (filters.isVegan !== null ? 1 : 0) + 
     (filters.isVegetarian !== null ? 1 : 0) + 
     (filters.isGlutenFree !== null ? 1 : 0) + 
-    (filters.letter !== null ? 1 : 0);
+    (filters.letter !== null ? 1 : 0) +
+    (filters.status !== "live" ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -165,7 +178,8 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         </h2>
         
         {(filters.searchTerm || filters.category !== "all_categories" || filters.allergens.length > 0 || 
-           filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null || selectedLetter) && (
+           filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null || 
+           selectedLetter || filters.status !== "live") && (
           <Button type="button" variant="ghost" size="sm" onClick={clearFilters} title="Clear all filters">
             <X className="h-4 w-4" />
             <span className="ml-1">Clear</span>
@@ -187,6 +201,29 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
           <Search className="h-4 w-4" />
         </Button>
       </form>
+      
+      <Collapsible open={openStatus} onOpenChange={setOpenStatus}>
+        <CollapsibleHeader title="Status" isOpen={openStatus} onClick={() => setOpenStatus(!openStatus)} />
+        <CollapsibleContent>
+          <ToggleGroup 
+            type="single" 
+            value={filters.status || "live"}
+            onValueChange={(value) => {
+              if (value) handleStatusChange(value);
+            }}
+            className="justify-start"
+          >
+            <ToggleGroupItem value="live" className="flex items-center gap-1 text-sm">
+              <span className="h-2 w-2 rounded-full bg-green-500"></span>
+              Live
+            </ToggleGroupItem>
+            <ToggleGroupItem value="archived" className="flex items-center gap-1 text-sm">
+              <Archive className="h-3 w-3" />
+              Archived
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </CollapsibleContent>
+      </Collapsible>
       
       <Collapsible open={openCategory} onOpenChange={setOpenCategory}>
         <CollapsibleHeader title="Category" isOpen={openCategory} onClick={() => setOpenCategory(!openCategory)} />

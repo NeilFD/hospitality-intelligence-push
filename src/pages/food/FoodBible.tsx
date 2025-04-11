@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -22,7 +23,8 @@ const FoodBible: React.FC = () => {
     isVegan: null,
     isVegetarian: null,
     isGlutenFree: null,
-    letter: null
+    letter: null,
+    status: "live"
   });
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -215,6 +217,12 @@ const FoodBible: React.FC = () => {
           }
         }
       }
+      if (filters.status === "live" && recipe.archived) {
+        return false;
+      }
+      if (filters.status === "archived" && !recipe.archived) {
+        return false;
+      }
       return true;
     });
   }, [recipes, filters, selectedLetter]);
@@ -371,7 +379,8 @@ const FoodBible: React.FC = () => {
                   isVegan: null,
                   isVegetarian: null,
                   isGlutenFree: null,
-                  letter: null
+                  letter: null,
+                  status: "live"
                 });
                 setSelectedLetter(null);
               }} className="mt-4">
