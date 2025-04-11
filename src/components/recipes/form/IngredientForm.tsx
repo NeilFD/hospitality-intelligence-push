@@ -31,6 +31,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
           variant="outline" 
           size="sm"
           onClick={onAddIngredient}
+          className="text-dark-text-DEFAULT"
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Ingredient
@@ -54,6 +55,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="Name"
                 value={ingredient.name}
                 onChange={(e) => onIngredientChange(index, 'name', e.target.value)}
+                className="text-dark-text-DEFAULT bg-white"
               />
             </div>
             <div className="col-span-2">
@@ -62,6 +64,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="Amount"
                 value={ingredient.amount || ''}
                 onChange={(e) => onIngredientChange(index, 'amount', e.target.value)}
+                className="text-dark-text-DEFAULT bg-white"
               />
             </div>
             <div className="col-span-2">
@@ -69,7 +72,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 value={ingredient.unit}
                 onValueChange={(value) => onIngredientChange(index, 'unit', value)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full text-dark-text-DEFAULT bg-white">
                   <SelectValue placeholder="Unit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -88,6 +91,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder="£/unit"
                 value={ingredient.costPerUnit || ''}
                 onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value)}
+                className="text-dark-text-DEFAULT bg-white"
               />
             </div>
             <div className="col-span-1 text-right py-2 text-dark-text-DEFAULT">

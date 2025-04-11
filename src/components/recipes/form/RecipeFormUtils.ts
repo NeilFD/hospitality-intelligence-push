@@ -38,10 +38,13 @@ export const createEmptyRecipe = (moduleType: 'food' | 'beverage'): Recipe => ({
 export const calculateTotals = (ingredients: Ingredient[], actualMenuPrice: number) => {
   const totalRecipeCost = ingredients.reduce((sum, ingredient) => sum + ingredient.totalCost, 0);
   
+  // Suggested selling price calculation (70% GP inc. VAT)
   const suggestedSellingPrice = (totalRecipeCost / (1 - 0.7)) * 1.2;
   
+  // Calculate price ex VAT for GP calculation
   const priceExVat = actualMenuPrice / 1.2;
   
+  // Calculate gross profit percentage
   const grossProfitPercentage = priceExVat > 0 ? ((priceExVat - totalRecipeCost) / priceExVat) : 0;
   
   return {

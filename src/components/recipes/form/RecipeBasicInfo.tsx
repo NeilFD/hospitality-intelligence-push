@@ -68,7 +68,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
           value={category}
           onValueChange={onCategoryChange}
         >
-          <SelectTrigger id="category">
+          <SelectTrigger id="category" className="text-dark-text-DEFAULT bg-white">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
@@ -115,6 +115,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               variant="ghost" 
               size="sm"
               onClick={onImageRemove}
+              className="text-dark-text-DEFAULT"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -195,7 +196,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
           onChange={onInputChange}
           placeholder="Enter cooking instructions"
           rows={6}
-          className="text-dark-text-DEFAULT focus:border-gray-400 pointer-events-auto"
+          className="text-dark-text-DEFAULT focus:border-gray-400 pointer-events-auto bg-white"
         />
       </div>
     </div>
