@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,10 +86,12 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   };
   
   const handleStatusChange = (value: string) => {
-    onFilterChange({
-      ...filters,
-      status: value
-    });
+    if (value === 'live' || value === 'archived') {
+      onFilterChange({
+        ...filters,
+        status: value
+      });
+    }
   };
   
   const getDietaryButtonClass = (value: boolean | null) => {
@@ -209,7 +210,9 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
             type="single" 
             value={filters.status || "live"}
             onValueChange={(value) => {
-              if (value) handleStatusChange(value);
+              if (value === 'live' || value === 'archived') {
+                handleStatusChange(value);
+              }
             }}
             className="justify-start"
           >
