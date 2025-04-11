@@ -6,7 +6,7 @@ import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
 import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
 import { sampleFoodRecipes, menuCategories, allergenTypes } from "@/data/sample-recipe-data";
-import { Plus, PanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, PanelLeft, ChevronLeft, ChevronRight, ArrowLeftToLine, ArrowRightToLine } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -358,15 +358,17 @@ const FoodBible: React.FC = () => {
       
       <div className="flex-1 relative">
         {!isMobile && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-0 top-16 z-10 h-8 w-8 rounded-r-md rounded-l-none border-l-0 p-0"
-            onClick={toggleSidebar}
-            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
+          <div className="fixed left-0 bottom-8 z-10 flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="bg-white/80 backdrop-blur-sm rounded-r-md rounded-l-none border-l-0 hover:bg-white"
+              onClick={toggleSidebar}
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {sidebarOpen ? <ArrowLeftToLine className="h-4 w-4" /> : <ArrowRightToLine className="h-4 w-4" />}
+            </Button>
+          </div>
         )}
         
         <div className="container px-4 py-6 max-w-7xl mx-auto">
