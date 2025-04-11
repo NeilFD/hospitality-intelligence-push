@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -361,7 +362,7 @@ const FoodBible: React.FC = () => {
           <Button
             variant="outline"
             size="icon"
-            className="absolute left-0 top-4 z-10 h-8 w-8 rounded-r-md rounded-l-none border-l-0 p-0"
+            className="absolute left-0 top-2 z-10 h-8 w-8 rounded-r-md rounded-l-none border-l-0 p-0"
             onClick={toggleSidebar}
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
