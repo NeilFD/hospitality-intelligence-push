@@ -86,9 +86,9 @@ const FoodBible: React.FC = () => {
           name: recipe.name,
           category: recipe.category,
           allergens: recipe.allergens || [],
-          isVegan: recipe.is_vegan,
-          isVegetarian: recipe.is_vevegetarian,
-          isGlutenFree: recipe.is_gluten_free,
+          isVegan: Boolean(recipe.is_vegan),
+          isVegetarian: Boolean(recipe.is_vegetarian),
+          isGlutenFree: Boolean(recipe.is_gluten_free),
           recommendedUpsell: recipe.recommended_upsell || '',
           timeToTableMinutes: recipe.time_to_table_minutes || 0,
           miseEnPlace: recipe.mise_en_place || '',
@@ -104,7 +104,8 @@ const FoodBible: React.FC = () => {
             grossProfitPercentage: recipe.gross_profit_percentage || 0
           },
           moduleType: recipe.module_type,
-          archived: recipe.archived || false
+          archived: recipe.archived || false,
+          postedToNoticeboard: recipe.posted_to_noticeboard || false
         };
       }));
       setRecipes(recipesWithIngredients);

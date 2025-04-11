@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Recipe, MenuCategory, AllergenType, Ingredient } from "@/types/recipe-t
 import { RecipeBasicInfo } from "./form/RecipeBasicInfo";
 import { RecipeAdditionalInfo } from "./form/RecipeAdditionalInfo";
 import { IngredientForm } from "./form/IngredientForm";
-import { createEmptyRecipe, emptyIngredient, calculateTotals } from "./form/RecipeFormUtils";
+import { createEmptyRecipe, emptyIngredient, calculateTotals, normalizeDietaryInfo } from "./form/RecipeFormUtils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from "@/lib/supabase";
@@ -38,7 +39,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   
   useEffect(() => {
     if (recipe) {
-      setFormData(recipe);
+      // Ensure dietary options are properly handled as boolean values
+      const normalizedRecipe = normalizeDietaryInfo(recipe);
+      console.log("Setting form data from recipe with dietary info:", 
+        "Vegetarian:", normalizedRecipe.isVegetarian, 
+        "Vegan:", normalizedRecipe.isVegan, 
+        "GlutenFree:", normalizedRecipe.isGlutenFree);
+      setFormData(normalizedRecipe);
       setImagePreview(recipe.imageUrl);
     } else {
       setFormData(createEmptyRecipe(moduleType));
@@ -66,6 +73,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   };
   
   const handleCheckboxChange = (name: string, checked: boolean) => {
+    console.log(`Checkbox ${name} changed to ${checked}`);
     setFormData(prevData => ({
       ...prevData,
       [name]: checked
@@ -150,8 +158,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     try {
       setIsSaving(true);
       
+      // Explicitly handle dietary information as boolean values
       const recipeToSave: Recipe = {
         ...formData,
+        isVegetarian: Boolean(formData.isVegetarian),
+        isVegan: Boolean(formData.isVegan),
+        isGlutenFree: Boolean(formData.isGlutenFree),
         ingredients: formData.ingredients.map(ingredient => ({
           ...ingredient,
           id: ingredient.id || uuidv4(),
@@ -173,7 +185,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         recipeToSave.imageUrl = imagePreview;
       }
       
-      console.log("Saving recipe to Supabase:", recipeToSave);
+      console.log("Saving recipe with dietary info:", 
+        "Vegetarian:", recipeToSave.isVegetarian, 
+        "Vegan:", recipeToSave.isVegan, 
+        "GlutenFree:", recipeToSave.isGlutenFree);
       
       onSave(recipeToSave);
       

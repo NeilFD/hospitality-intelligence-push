@@ -1,56 +1,79 @@
 
-import { v4 as uuidv4 } from "uuid";
 import { Recipe, Ingredient } from "@/types/recipe-types";
+import { v4 as uuidv4 } from 'uuid';
 
 export const emptyIngredient = (): Ingredient => ({
   id: uuidv4(),
-  name: "",
+  name: '',
   amount: 0,
-  unit: "g",
+  unit: 'pcs',
   costPerUnit: 0,
   totalCost: 0
 });
 
-export const createEmptyRecipe = (moduleType: 'food' | 'beverage'): Recipe => ({
-  id: uuidv4(),
-  name: "",
-  category: "",
-  allergens: [],
-  isVegan: false,
-  isVegetarian: false,
-  isGlutenFree: false,
-  recommendedUpsell: "",
-  timeToTableMinutes: 0,
-  miseEnPlace: "",
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  ingredients: [emptyIngredient()],
-  method: "",
-  costing: {
-    totalRecipeCost: 0,
-    suggestedSellingPrice: 0,
-    actualMenuPrice: 0,
-    grossProfitPercentage: 0
-  },
-  moduleType
-});
+export const createEmptyRecipe = (moduleType: 'food' | 'beverage'): Recipe => {
+  return {
+    id: '',
+    name: '',
+    category: '',
+    allergens: [],
+    isVegan: false,
+    isVegetarian: false,
+    isGlutenFree: false,
+    timeToTableMinutes: 10,
+    ingredients: [emptyIngredient()],
+    costing: {
+      totalRecipeCost: 0,
+      suggestedSellingPrice: 0,
+      actualMenuPrice: 0,
+      grossProfitPercentage: 0.7
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    moduleType
+  };
+};
 
-export const calculateTotals = (ingredients: Ingredient[], actualMenuPrice: number) => {
-  const totalRecipeCost = ingredients.reduce((sum, ingredient) => sum + ingredient.totalCost, 0);
+export const calculateTotals = (
+  ingredients: Ingredient[], 
+  actualMenuPrice: number = 0
+): {
+  totalRecipeCost: number;
+  suggestedSellingPrice: number;
+  actualMenuPrice: number;
+  grossProfitPercentage: number;
+} => {
+  // Calculate total recipe cost from ingredients
+  const totalRecipeCost = ingredients.reduce((sum, ingredient) => 
+    sum + (Number(ingredient.totalCost) || 0), 0);
   
-  // Suggested selling price calculation (70% GP inc. VAT)
-  const suggestedSellingPrice = (totalRecipeCost / (1 - 0.7)) * 1.2;
+  // Calculate suggested selling price (using 70% gross profit as default)
+  const suggestedSellingPrice = totalRecipeCost > 0 
+    ? totalRecipeCost / 0.3  // Aim for 70% profit margin
+    : 0;
   
-  // Calculate price ex VAT for GP calculation
-  const priceExVat = actualMenuPrice / 1.2;
+  // Use actual menu price from input, or fallback to suggested price
+  const finalMenuPrice = actualMenuPrice || suggestedSellingPrice;
   
   // Calculate gross profit percentage
-  const grossProfitPercentage = priceExVat > 0 ? ((priceExVat - totalRecipeCost) / priceExVat) : 0;
-  
+  const grossProfitPercentage = finalMenuPrice > 0
+    ? (finalMenuPrice - totalRecipeCost) / finalMenuPrice
+    : 0.7; // Default to 70%
+    
   return {
     totalRecipeCost,
     suggestedSellingPrice,
-    actualMenuPrice: actualMenuPrice || suggestedSellingPrice,
+    actualMenuPrice: finalMenuPrice,
     grossProfitPercentage
+  };
+};
+
+// Ensure dietary information is properly handled as booleans
+export const normalizeDietaryInfo = (recipe: Recipe): Recipe => {
+  return {
+    ...recipe,
+    isVegan: Boolean(recipe.isVegan),
+    isVegetarian: Boolean(recipe.isVegetarian),
+    isGlutenFree: Boolean(recipe.isGlutenFree)
   };
 };
