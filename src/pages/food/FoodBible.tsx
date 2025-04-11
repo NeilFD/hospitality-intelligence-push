@@ -6,7 +6,7 @@ import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
 import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
 import { sampleFoodRecipes, menuCategories, allergenTypes } from "@/data/sample-recipe-data";
-import { Plus, PanelLeft, ChevronLeft, ChevronRight, ArrowLeftToLine, ArrowRightToLine } from "lucide-react";
+import { Plus, PanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -308,7 +308,7 @@ const FoodBible: React.FC = () => {
   };
 
   const DesktopSidebar = () => (
-    <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto ${sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
+    <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
       <div className={`p-4 ${!sidebarOpen && 'hidden'}`}>
         <RecipeFilters
           moduleType="food"
@@ -320,6 +320,17 @@ const FoodBible: React.FC = () => {
           selectedLetter={selectedLetter}
         />
       </div>
+      {!isMobile && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-2 right-2 h-6 w-6 p-0 opacity-60 hover:opacity-100"
+          onClick={toggleSidebar}
+          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        </Button>
+      )}
     </div>
   );
 
@@ -357,20 +368,6 @@ const FoodBible: React.FC = () => {
       {isMobile ? <MobileSidebar /> : <DesktopSidebar />}
       
       <div className="flex-1 relative">
-        {!isMobile && (
-          <div className="fixed left-0 bottom-8 z-10 flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="bg-white/80 backdrop-blur-sm rounded-r-md rounded-l-none border-l-0 hover:bg-white"
-              onClick={toggleSidebar}
-              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              {sidebarOpen ? <ArrowLeftToLine className="h-4 w-4" /> : <ArrowRightToLine className="h-4 w-4" />}
-            </Button>
-          </div>
-        )}
-        
         <div className="container px-4 py-6 max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
