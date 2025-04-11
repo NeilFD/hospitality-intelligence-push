@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,9 +125,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       draggable={isDraggable}
       onDragStart={(e) => {
         setIsDragging(true);
-        // Store the note ID in the drag data
         e.dataTransfer.setData('text/plain', note.id);
-        // Custom drag image - fix for line 131
         const dragImage = document.createElement('img');
         e.dataTransfer.setDragImage(dragImage, 0, 0);
       }}
@@ -402,8 +399,13 @@ const TeamNoticeboard: React.FC = () => {
         .eq('posted_to_noticeboard', true)
         .eq('archived', false);
         
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching recipes for noticeboard:', error);
+        throw error;
+      }
+      
+      console.log('Fetched recipes for noticeboard:', data?.length || 0);
+      return data || [];
     }
   });
   
@@ -507,6 +509,8 @@ const TeamNoticeboard: React.FC = () => {
   const unpinnedNotes = [...(notes || [])].filter(note => !note.pinned)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+  const pinnedRecipes = recipes.filter((recipe: Recipe) => recipe.postedToNoticeboard);
+
   return (
     <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
       <div className="container mx-auto p-4">
@@ -581,7 +585,7 @@ const TeamNoticeboard: React.FC = () => {
             ) : (
               <>
                 {/* Pinned Section */}
-                {pinnedNotes.length > 0 && (
+                {(pinnedNotes.length > 0 || pinnedRecipes.length > 0) && (
                   <div 
                     className="mb-8 p-4 bg-gray-50/70 rounded-lg border border-dashed border-amber-300/50 backdrop-blur-sm"
                     onDragOver={(e) => e.preventDefault()}
@@ -604,13 +608,26 @@ const TeamNoticeboard: React.FC = () => {
                         />
                       ))}
                       
-                      {recipes.length > 0 && recipes.filter((r: Recipe) => r.postedToNoticeboard).map((recipe: Recipe) => (
+                      {pinnedRecipes.map((recipe: Recipe) => (
                         <div 
                           key={recipe.id} 
                           className="bg-white/70 backdrop-blur-sm border border-emerald-100 rounded-lg p-4 hover:shadow-md transition-shadow"
                         >
                           <h4 className="font-semibold text-gray-900">{recipe.name}</h4>
                           <p className="text-sm text-gray-600">{recipe.category}</p>
+                          {recipe.imageUrl && (
+                            <div className="mt-2 h-32 overflow-hidden rounded">
+                              <img 
+                                src={recipe.imageUrl} 
+                                alt={recipe.name} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error("Recipe image failed to load:", recipe.imageUrl);
+                                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                }}
+                              />
+                            </div>
+                          )}
                           <div className="mt-2">
                             <span className="text-xs text-gray-600 bg-emerald-50 px-2 py-1 rounded-full">Recipe from Food Bible</span>
                           </div>
