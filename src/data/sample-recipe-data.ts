@@ -1,4 +1,3 @@
-
 import { Recipe, MenuCategory, AllergenType } from '@/types/recipe-types';
 
 export const allergenTypes: AllergenType[] = [
@@ -19,16 +18,20 @@ export const allergenTypes: AllergenType[] = [
 ];
 
 export const menuCategories: MenuCategory[] = [
-  { id: '1', name: 'Starters', moduleType: 'food' },
-  { id: '2', name: 'Mains', moduleType: 'food' },
-  { id: '3', name: 'Desserts', moduleType: 'food' },
-  { id: '4', name: 'Sides', moduleType: 'food' },
-  { id: '5', name: 'Specials', moduleType: 'food' },
-  { id: '6', name: 'Cocktails', moduleType: 'beverage' },
-  { id: '7', name: 'Beers', moduleType: 'beverage' },
-  { id: '8', name: 'Wines', moduleType: 'beverage' },
-  { id: '9', name: 'Spirits', moduleType: 'beverage' },
-  { id: '10', name: 'Mocktails', moduleType: 'beverage' }
+  { id: "1", name: "Oysters", moduleType: "food" },
+  { id: "2", name: "Small Plates", moduleType: "food" },
+  { id: "3", name: "Tacos", moduleType: "food" },
+  { id: "4", name: "Large Plates", moduleType: "food" },
+  { id: "5", name: "Grill", moduleType: "food" },
+  { id: "6", name: "Salads", moduleType: "food" },
+  { id: "7", name: "Sides", moduleType: "food" },
+  { id: "8", name: "Puddings", moduleType: "food" },
+  { id: "9", name: "In and Out", moduleType: "food" },
+  { id: "10", name: "Cocktails", moduleType: "beverage" },
+  { id: "11", name: "Beer", moduleType: "beverage" },
+  { id: "12", name: "Wine", moduleType: "beverage" },
+  { id: "13", name: "Spirits", moduleType: "beverage" },
+  { id: "14", name: "Non-Alcoholic", moduleType: "beverage" },
 ];
 
 // Empty sample recipe arrays
