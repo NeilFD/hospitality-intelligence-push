@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,10 +31,10 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   selectedLetter
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.searchTerm);
-  const [openCategory, setOpenCategory] = useState(false);
-  const [openDietary, setOpenDietary] = useState(false);
-  const [openAllergens, setOpenAllergens] = useState(false);
-  const [openAlphabet, setOpenAlphabet] = useState(false);
+  const [openCategory, setOpenCategory] = useState(true);
+  const [openDietary, setOpenDietary] = useState(true);
+  const [openAllergens, setOpenAllergens] = useState(true);
+  const [openAlphabet, setOpenAlphabet] = useState(true);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +121,6 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
     </div>
   );
 
-  // Actual active filters count
   const activeFiltersCount = 
     (filters.category !== "all_categories" ? 1 : 0) + 
     (filters.allergens.length) + 
