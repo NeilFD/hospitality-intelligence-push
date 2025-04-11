@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -215,24 +216,30 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                     <TableCell className="text-right p-1">
                       <Input
                         type="number"
-                        value={day.fohWages || ''}
+                        value={day.fohWages !== undefined ? day.fohWages : ''}
                         onChange={(e) => handleInputChange(day.day, 'fohWages', e.target.value)}
                         className="w-24 ml-auto"
+                        min={0}
+                        step="0.01"
+                        autoComplete="off"
                       />
                     </TableCell>
                     <TableCell className="text-right p-1">
                       <Input
                         type="number"
-                        value={day.kitchenWages || ''}
+                        value={day.kitchenWages !== undefined ? day.kitchenWages : ''}
                         onChange={(e) => handleInputChange(day.day, 'kitchenWages', e.target.value)}
                         className="w-24 ml-auto"
+                        min={0}
+                        step="0.01"
+                        autoComplete="off"
                       />
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(totalDailyWages)}</TableCell>
                     <TableCell className="text-right p-1">
                       <Input
                         type="number"
-                        value={day.foodRevenue || ''}
+                        value={day.foodRevenue !== undefined ? day.foodRevenue : ''}
                         onChange={(e) => handleInputChange(day.day, 'foodRevenue', e.target.value)}
                         className="w-24 ml-auto bg-gray-50"
                         readOnly
@@ -241,7 +248,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                     <TableCell className="text-right p-1">
                       <Input
                         type="number"
-                        value={day.bevRevenue || ''}
+                        value={day.bevRevenue !== undefined ? day.bevRevenue : ''}
                         onChange={(e) => handleInputChange(day.day, 'bevRevenue', e.target.value)}
                         className="w-24 ml-auto bg-gray-50"
                         readOnly
