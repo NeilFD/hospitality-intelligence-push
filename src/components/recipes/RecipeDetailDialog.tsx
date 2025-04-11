@@ -5,23 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Recipe } from "@/types/recipe-types";
-import { Mail, Share2, FileText } from "lucide-react";
+import { Mail, Share2, FileText, Edit, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import RecipePDF from "./RecipePDF";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, 
+  AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface RecipeDetailDialogProps {
   open: boolean;
   onClose: () => void;
   recipe: Recipe;
   onEdit: () => void;
+  onDelete?: (recipe: Recipe) => void;
 }
 
 const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   open,
   onClose,
   recipe,
-  onEdit
+  onEdit,
+  onDelete
 }) => {
   const handleEmailShare = () => {
     const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
@@ -62,8 +67,38 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             {recipe.category}
             <div className="flex gap-1 ml-auto">
               <Button variant="outline" size="sm" onClick={onEdit}>
-                Edit Recipe
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
               </Button>
+              
+              {onDelete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Recipe</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{recipe.name}"? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => onDelete(recipe)} 
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              
               <PDFDownloadLink 
                 document={<RecipePDF recipe={recipe} />} 
                 fileName={`${recipe.name.toLowerCase().replace(/\s+/g, '-')}.pdf`}

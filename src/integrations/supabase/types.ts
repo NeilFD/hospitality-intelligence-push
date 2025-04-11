@@ -506,6 +506,116 @@ export type Database = {
           },
         ]
       }
+      recipe_ingredients: {
+        Row: {
+          amount: number
+          cost_per_unit: number
+          created_at: string
+          id: string
+          name: string
+          recipe_id: string
+          total_cost: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          name: string
+          recipe_id: string
+          total_cost?: number
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          name?: string
+          recipe_id?: string
+          total_cost?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          actual_menu_price: number
+          allergens: string[]
+          category: string
+          created_at: string
+          gross_profit_percentage: number
+          id: string
+          image_url: string | null
+          is_gluten_free: boolean
+          is_vegan: boolean
+          is_vegetarian: boolean
+          method: string | null
+          mise_en_place: string | null
+          module_type: string
+          name: string
+          recommended_upsell: string | null
+          suggested_selling_price: number
+          time_to_table_minutes: number
+          total_recipe_cost: number
+          updated_at: string
+        }
+        Insert: {
+          actual_menu_price?: number
+          allergens?: string[]
+          category: string
+          created_at?: string
+          gross_profit_percentage?: number
+          id?: string
+          image_url?: string | null
+          is_gluten_free?: boolean
+          is_vegan?: boolean
+          is_vegetarian?: boolean
+          method?: string | null
+          mise_en_place?: string | null
+          module_type: string
+          name: string
+          recommended_upsell?: string | null
+          suggested_selling_price?: number
+          time_to_table_minutes?: number
+          total_recipe_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_menu_price?: number
+          allergens?: string[]
+          category?: string
+          created_at?: string
+          gross_profit_percentage?: number
+          id?: string
+          image_url?: string | null
+          is_gluten_free?: boolean
+          is_vegan?: boolean
+          is_vegetarian?: boolean
+          method?: string | null
+          mise_en_place?: string | null
+          module_type?: string
+          name?: string
+          recommended_upsell?: string | null
+          suggested_selling_price?: number
+          time_to_table_minutes?: number
+          total_recipe_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           contact_name: string | null

@@ -1,15 +1,19 @@
-import React, { useState, useMemo } from "react";
+
+import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
 import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
-import { Recipe, RecipeFilterOptions } from "@/types/recipe-types";
+import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
 import { sampleFoodRecipes, menuCategories, allergenTypes } from "@/data/sample-recipe-data";
 import { Plus } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const FoodBible: React.FC = () => {
-  const [recipes, setRecipes] = useState<Recipe[]>(sampleFoodRecipes);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<RecipeFilterOptions>({
     searchTerm: "",
     category: "all_categories",
@@ -23,6 +27,194 @@ const FoodBible: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
+  
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+  
+  const fetchRecipes = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch recipes from Supabase
+      const { data: recipesData, error: recipesError } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('module_type', 'food');
+        
+      if (recipesError) {
+        throw recipesError;
+      }
+      
+      // For each recipe, fetch its ingredients
+      const recipesWithIngredients = await Promise.all(
+        recipesData.map(async (recipe) => {
+          const { data: ingredientsData, error: ingredientsError } = await supabase
+            .from('recipe_ingredients')
+            .select('*')
+            .eq('recipe_id', recipe.id);
+            
+          if (ingredientsError) {
+            console.error('Error fetching ingredients:', ingredientsError);
+            return {
+              ...recipe,
+              ingredients: [],
+              allergens: recipe.allergens || [],
+              costing: {
+                totalRecipeCost: recipe.total_recipe_cost || 0,
+                suggestedSellingPrice: recipe.suggested_selling_price || 0,
+                actualMenuPrice: recipe.actual_menu_price || 0,
+                grossProfitPercentage: recipe.gross_profit_percentage || 0,
+              },
+              moduleType: recipe.module_type
+            };
+          }
+          
+          // Map DB ingredient fields to frontend model
+          const mappedIngredients: Ingredient[] = ingredientsData.map(ingredient => ({
+            id: ingredient.id,
+            name: ingredient.name,
+            amount: ingredient.amount,
+            unit: ingredient.unit,
+            costPerUnit: ingredient.cost_per_unit,
+            totalCost: ingredient.total_cost
+          }));
+          
+          // Map DB recipe fields to frontend model
+          return {
+            id: recipe.id,
+            name: recipe.name,
+            category: recipe.category,
+            allergens: recipe.allergens || [],
+            isVegan: recipe.is_vegan,
+            isVegetarian: recipe.is_vegetarian,
+            isGlutenFree: recipe.is_gluten_free,
+            recommendedUpsell: recipe.recommended_upsell || '',
+            timeToTableMinutes: recipe.time_to_table_minutes || 0,
+            miseEnPlace: recipe.mise_en_place || '',
+            method: recipe.method || '',
+            createdAt: new Date(recipe.created_at),
+            updatedAt: new Date(recipe.updated_at),
+            imageUrl: recipe.image_url,
+            ingredients: mappedIngredients,
+            costing: {
+              totalRecipeCost: recipe.total_recipe_cost || 0,
+              suggestedSellingPrice: recipe.suggested_selling_price || 0,
+              actualMenuPrice: recipe.actual_menu_price || 0,
+              grossProfitPercentage: recipe.gross_profit_percentage || 0,
+            },
+            moduleType: recipe.module_type
+          };
+        })
+      );
+      
+      if (recipesWithIngredients.length === 0) {
+        // If no recipes in database, seed with sample data
+        setRecipes(sampleFoodRecipes);
+        sampleFoodRecipes.forEach(recipe => {
+          saveRecipeToSupabase(recipe, false);
+        });
+      } else {
+        setRecipes(recipesWithIngredients);
+      }
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+      toast.error('Failed to load recipes');
+      
+      // Fallback to sample data if fetch fails
+      setRecipes(sampleFoodRecipes);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const saveRecipeToSupabase = async (recipe: Recipe, showToast: boolean = true) => {
+    try {
+      // Map frontend model to DB fields
+      const recipeData = {
+        id: recipe.id,
+        name: recipe.name,
+        category: recipe.category,
+        allergens: recipe.allergens,
+        is_vegan: recipe.isVegan,
+        is_vegetarian: recipe.isVegetarian,
+        is_gluten_free: recipe.isGlutenFree,
+        recommended_upsell: recipe.recommendedUpsell,
+        time_to_table_minutes: recipe.timeToTableMinutes,
+        mise_en_place: recipe.miseEnPlace,
+        method: recipe.method,
+        image_url: recipe.imageUrl,
+        module_type: recipe.moduleType || 'food',
+        total_recipe_cost: recipe.costing.totalRecipeCost,
+        suggested_selling_price: recipe.costing.suggestedSellingPrice,
+        actual_menu_price: recipe.costing.actualMenuPrice,
+        gross_profit_percentage: recipe.costing.grossProfitPercentage,
+      };
+      
+      // Save or update the recipe
+      const { error: recipeError } = await supabase
+        .from('recipes')
+        .upsert([recipeData]);
+        
+      if (recipeError) {
+        throw recipeError;
+      }
+      
+      // Save or update each ingredient
+      for (const ingredient of recipe.ingredients) {
+        const ingredientData = {
+          id: ingredient.id,
+          recipe_id: recipe.id,
+          name: ingredient.name,
+          amount: ingredient.amount,
+          unit: ingredient.unit,
+          cost_per_unit: ingredient.costPerUnit,
+          total_cost: ingredient.totalCost
+        };
+        
+        const { error: ingredientError } = await supabase
+          .from('recipe_ingredients')
+          .upsert([ingredientData]);
+          
+        if (ingredientError) {
+          console.error('Error saving ingredient:', ingredientError);
+          // Continue with other ingredients even if one fails
+        }
+      }
+      
+      if (showToast) {
+        toast.success('Recipe saved successfully');
+      }
+      
+    } catch (error) {
+      console.error('Error saving recipe:', error);
+      if (showToast) {
+        toast.error('Failed to save recipe');
+      }
+      throw error;
+    }
+  };
+  
+  const deleteRecipeFromSupabase = async (recipeId: string) => {
+    try {
+      // Delete the recipe (cascade will remove ingredients)
+      const { error } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', recipeId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('Recipe deleted successfully');
+      
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      toast.error('Failed to delete recipe');
+      throw error;
+    }
+  };
   
   const filteredRecipes = useMemo(() => {
     return recipes.filter(recipe => {
@@ -84,13 +276,33 @@ const FoodBible: React.FC = () => {
     setFormOpen(true);
   };
   
-  const handleSaveRecipe = (recipe: Recipe) => {
-    if (editingRecipe) {
-      setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
-    } else {
-      setRecipes([...recipes, recipe]);
+  const handleSaveRecipe = async (recipe: Recipe) => {
+    try {
+      await saveRecipeToSupabase(recipe);
+      
+      if (editingRecipe) {
+        setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
+      } else {
+        setRecipes([...recipes, recipe]);
+      }
+      
+      setFormOpen(false);
+      
+    } catch (error) {
+      console.error('Error in handleSaveRecipe:', error);
+      // Toast is shown in saveRecipeToSupabase
     }
-    setFormOpen(false);
+  };
+  
+  const handleDeleteRecipe = async (recipe: Recipe) => {
+    try {
+      await deleteRecipeFromSupabase(recipe.id);
+      setRecipes(recipes.filter(r => r.id !== recipe.id));
+      setViewingRecipe(undefined);
+    } catch (error) {
+      console.error('Error in handleDeleteRecipe:', error);
+      // Toast is shown in deleteRecipeFromSupabase
+    }
   };
   
   const handleViewRecipe = (recipe: Recipe) => {
@@ -124,7 +336,14 @@ const FoodBible: React.FC = () => {
         </div>
         
         <div className="lg:col-span-3">
-          {filteredRecipes.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading recipes...</p>
+              </div>
+            </div>
+          ) : filteredRecipes.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredRecipes.map(recipe => (
                 <RecipeCard
@@ -142,7 +361,7 @@ const FoodBible: React.FC = () => {
                 onClick={() => {
                   setFilters({
                     searchTerm: "",
-                    category: "",
+                    category: "all_categories",
                     allergens: [],
                     isVegan: null,
                     isVegetarian: null,
@@ -182,6 +401,7 @@ const FoodBible: React.FC = () => {
             setEditingRecipe(viewingRecipe);
             setFormOpen(true);
           }}
+          onDelete={handleDeleteRecipe}
         />
       )}
     </div>
