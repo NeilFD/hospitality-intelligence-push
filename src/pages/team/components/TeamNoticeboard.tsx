@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { PlusCircle, Pin, Trash2, Image, Mic, Smile, BarChart2, MessageSquare } from 'lucide-react';
+import { PlusCircle, Pin, Trash2, Image, Mic, Smile, BarChart2, MessageSquare, Maximize2, Minimize2 } from 'lucide-react';
 import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile, getTeamMembers, getPolls, createNoteReply, getNoteReplies, deleteNoteReply } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -12,24 +13,40 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamPollCard from './TeamPoll';
 import CreatePollForm from './CreatePollForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Recipe } from '@/types/recipe-types';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 interface StickyNoteProps {
   note: TeamNote;
   onUpdate: (id: string, updates: Partial<TeamNote>) => void;
   onDelete: (id: string) => void;
   authorName?: string;
+  isDraggable?: boolean;
+  onSizeChange?: (size: 'small' | 'medium' | 'large') => void;
+  size?: 'small' | 'medium' | 'large';
 }
 
 const NOTE_COLORS = ['bg-yellow-100/70 hover:bg-yellow-200/80 backdrop-blur-sm border border-yellow-200/50', 'bg-pink-100/70 hover:bg-pink-200/80 backdrop-blur-sm border border-pink-200/50', 'bg-blue-100/70 hover:bg-blue-200/80 backdrop-blur-sm border border-blue-200/50', 'bg-green-100/70 hover:bg-green-200/80 backdrop-blur-sm border border-green-200/50', 'bg-purple-100/70 hover:bg-purple-200/80 backdrop-blur-sm border border-purple-200/50', 'bg-orange-100/70 hover:bg-orange-200/80 backdrop-blur-sm border border-orange-200/50'];
+
+const NOTE_SIZES = {
+  small: "min-h-[180px] max-w-[200px]",
+  medium: "min-h-[220px] max-w-[250px]",
+  large: "min-h-[260px] max-w-[300px]",
+};
 
 const StickyNote: React.FC<StickyNoteProps> = ({
   note,
   onUpdate,
   onDelete,
-  authorName
+  authorName,
+  isDraggable = true,
+  onSizeChange,
+  size = 'medium'
 }) => {
   const [showReplies, setShowReplies] = useState(false);
   const [replyContent, setReplyContent] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   
@@ -90,20 +107,61 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const handleDeleteReply = (replyId: string) => {
     deleteReplyMutation.mutate(replyId);
   };
+
+  const handleCycleSize = () => {
+    if (onSizeChange) {
+      const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large'];
+      const currentIndex = sizes.indexOf(size);
+      const nextSize = sizes[(currentIndex + 1) % sizes.length];
+      onSizeChange(nextSize);
+    }
+  };
   
   const glassStyle = "bg-opacity-60 backdrop-filter backdrop-blur-sm shadow-lg border border-opacity-30";
   
   return (
-    <div className={`${note.color || NOTE_COLORS[0]} ${glassStyle} rounded-lg p-4 transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative min-h-[200px] max-w-[250px] flex flex-col`}>
+    <div 
+      className={`${note.color || NOTE_COLORS[0]} ${glassStyle} rounded-lg p-4 transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative flex flex-col ${NOTE_SIZES[size]} ${isDraggable ? 'cursor-move' : ''}`}
+      draggable={isDraggable}
+      onDragStart={(e) => {
+        setIsDragging(true);
+        // Store the note ID in the drag data
+        e.dataTransfer.setData('text/plain', note.id);
+        // Custom drag image?
+        const dragImage = new Image();
+        e.dataTransfer.setDragImage(dragImage, 0, 0);
+      }}
+      onDragEnd={() => setIsDragging(false)}
+    >
       <div className="flex justify-between items-start mb-2">
-        <Button variant="ghost" size="icon" className={`h-6 w-6 ${note.pinned ? 'text-amber-600' : 'text-gray-400'}`} onClick={() => onUpdate(note.id, {
-          pinned: !note.pinned
-        })}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`h-6 w-6 ${note.pinned ? 'text-amber-600' : 'text-gray-400'}`} 
+          onClick={() => onUpdate(note.id, {
+            pinned: !note.pinned
+          })}
+        >
           <Pin size={16} />
         </Button>
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-red-500" onClick={() => onDelete(note.id)}>
-          <Trash2 size={16} />
-        </Button>
+        <div className="flex gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 text-gray-700"
+            onClick={handleCycleSize}
+          >
+            {size === 'large' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 text-gray-400 hover:text-red-500" 
+            onClick={() => onDelete(note.id)}
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
       </div>
       
       <div className="flex-grow">
@@ -319,7 +377,10 @@ const TeamNoticeboard: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
   const [activeTab, setActiveTab] = useState('notes');
+  const [noteSizes, setNoteSizes] = useState<Record<string, 'small' | 'medium' | 'large'>>({});
+  const [notesLayout, setNotesLayout] = useState<Record<string, { x: number, y: number }>>({});
   const queryClient = useQueryClient();
+  
   const {
     data: notes = [],
     isLoading: notesLoading
@@ -327,6 +388,24 @@ const TeamNoticeboard: React.FC = () => {
     queryKey: ['teamNotes'],
     queryFn: getNotes
   });
+
+  const {
+    data: recipes = [],
+    isLoading: recipesLoading
+  } = useQuery({
+    queryKey: ['noticeboard-recipes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('posted_to_noticeboard', true)
+        .eq('archived', false);
+        
+      if (error) throw error;
+      return data;
+    }
+  });
+  
   const {
     data: polls = [],
     isLoading: pollsLoading
@@ -334,13 +413,16 @@ const TeamNoticeboard: React.FC = () => {
     queryKey: ['teamPolls'],
     queryFn: getPolls
   });
+  
   const {
     data: teamMembers = []
   } = useQuery({
     queryKey: ['teamMembers'],
     queryFn: getTeamMembers
   });
+  
   const userNameMap = Object.fromEntries(teamMembers.map(member => [member.id, member.first_name]));
+  
   const updateNoteMutation = useMutation({
     mutationFn: ({
       id,
@@ -359,6 +441,7 @@ const TeamNoticeboard: React.FC = () => {
       toast.error(`Failed to update note: ${error.message}`);
     }
   });
+  
   const deleteNoteMutation = useMutation({
     mutationFn: (id: string) => deleteNote(id),
     onSuccess: () => {
@@ -371,23 +454,60 @@ const TeamNoticeboard: React.FC = () => {
       toast.error(`Failed to delete note: ${error.message}`);
     }
   });
+  
   const handleUpdate = (id: string, updates: Partial<TeamNote>) => {
     updateNoteMutation.mutate({
       id,
       updates
     });
   };
+  
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this note?')) {
       deleteNoteMutation.mutate(id);
     }
   };
-  const sortedNotes = [...(notes || [])].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
-  return <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
+
+  const handleNoteSize = (id: string, size: 'small' | 'medium' | 'large') => {
+    setNoteSizes(prev => ({
+      ...prev,
+      [id]: size
+    }));
+  };
+
+  const handleDrop = (e: React.DragEvent, targetArea: 'pinned' | 'regular') => {
+    e.preventDefault();
+    const noteId = e.dataTransfer.getData('text/plain');
+    
+    // Find the note
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    // If dropping in pinned area, pin the note
+    if (targetArea === 'pinned' && !note.pinned) {
+      updateNoteMutation.mutate({
+        id: noteId,
+        updates: { pinned: true }
+      });
+    }
+    
+    // If dropping in regular area, unpin the note
+    if (targetArea === 'regular' && note.pinned) {
+      updateNoteMutation.mutate({
+        id: noteId,
+        updates: { pinned: false }
+      });
+    }
+  };
+  
+  const pinnedNotes = [...(notes || [])].filter(note => note.pinned)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  
+  const unpinnedNotes = [...(notes || [])].filter(note => !note.pinned)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return (
+    <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
       <div className="container mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex justify-between items-center mb-8">
@@ -451,19 +571,84 @@ const TeamNoticeboard: React.FC = () => {
           </div>
           
           <TabsContent value="notes">
-            {notesLoading ? <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[200px] w-full border border-gray-200/50"></div>)}
-              </div> : <>
-                {sortedNotes.length === 0 ? <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">No notes yet. Create the first one!</p>
-                    <Button onClick={() => setShowCreateForm(true)}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      New Note
-                    </Button>
-                  </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {sortedNotes.map(note => <StickyNote key={note.id} note={note} onUpdate={handleUpdate} onDelete={handleDelete} authorName={userNameMap[note.author_id]} />)}
-                  </div>}
-              </>}
+            {notesLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[200px] w-full border border-gray-200/50"></div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Pinned Section */}
+                {pinnedNotes.length > 0 && (
+                  <div 
+                    className="mb-8 p-4 bg-gray-50/70 rounded-lg border border-dashed border-amber-300/50 backdrop-blur-sm"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleDrop(e, 'pinned')}
+                  >
+                    <h3 className="text-lg font-medium text-amber-800 mb-4 flex items-center">
+                      <Pin className="h-4 w-4 mr-2" /> Pinned Items
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {pinnedNotes.map(note => (
+                        <StickyNote 
+                          key={note.id} 
+                          note={note} 
+                          onUpdate={handleUpdate} 
+                          onDelete={handleDelete} 
+                          authorName={userNameMap[note.author_id]}
+                          size={noteSizes[note.id] || 'medium'}
+                          onSizeChange={(size) => handleNoteSize(note.id, size)}
+                        />
+                      ))}
+                      
+                      {recipes.length > 0 && recipes.filter((r: Recipe) => r.postedToNoticeboard).map((recipe: Recipe) => (
+                        <div 
+                          key={recipe.id} 
+                          className="bg-white/70 backdrop-blur-sm border border-emerald-100 rounded-lg p-4 hover:shadow-md transition-shadow"
+                        >
+                          <h4 className="font-semibold text-gray-900">{recipe.name}</h4>
+                          <p className="text-sm text-gray-600">{recipe.category}</p>
+                          <div className="mt-2">
+                            <span className="text-xs text-gray-600 bg-emerald-50 px-2 py-1 rounded-full">Recipe from Food Bible</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Regular Notes */}
+                <div 
+                  className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6`}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDrop(e, 'regular')}
+                >
+                  {notes.length === 0 ? (
+                    <div className="col-span-full text-center py-12">
+                      <p className="text-gray-500 mb-4">No notes yet. Create the first one!</p>
+                      <Button onClick={() => setShowCreateForm(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        New Note
+                      </Button>
+                    </div>
+                  ) : (
+                    unpinnedNotes.map(note => (
+                      <StickyNote 
+                        key={note.id} 
+                        note={note} 
+                        onUpdate={handleUpdate} 
+                        onDelete={handleDelete} 
+                        authorName={userNameMap[note.author_id]}
+                        size={noteSizes[note.id] || 'medium'}
+                        onSizeChange={(size) => handleNoteSize(note.id, size)}
+                      />
+                    ))
+                  )}
+                </div>
+              </>
+            )}
           </TabsContent>
           
           <TabsContent value="polls">
@@ -483,7 +668,8 @@ const TeamNoticeboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </ScrollArea>;
+    </ScrollArea>
+  );
 };
 
 export default TeamNoticeboard;
