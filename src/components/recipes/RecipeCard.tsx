@@ -47,7 +47,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   };
 
   return (
-    <Card className="w-full h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer text-gray-800" onClick={onClick}>
+    <Card className="w-full h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer text-gray-900" onClick={onClick}>
       <div className="w-full h-48 overflow-hidden bg-gray-100">
         {recipe.imageUrl ? (
           <img 
@@ -56,22 +56,22 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-600">
+          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-700">
             No image available
           </div>
         )}
       </div>
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-xl text-gray-900">{recipe.name}</CardTitle>
-        <CardDescription className="text-gray-600">{recipe.category}</CardDescription>
+        <CardDescription className="text-gray-700">{recipe.category}</CardDescription>
       </CardHeader>
       <CardContent className="p-4 pt-0 flex-grow">
         <div className="flex flex-wrap gap-1 mb-3">
-          {recipe.isVegetarian && <Badge variant="outline" className="bg-green-50 text-green-800">Vegetarian</Badge>}
-          {recipe.isVegan && <Badge variant="outline" className="bg-green-100 text-green-900">Vegan</Badge>}
-          {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-800">Gluten Free</Badge>}
+          {recipe.isVegetarian && <Badge variant="outline" className="bg-green-50 text-green-900">Vegetarian</Badge>}
+          {recipe.isVegan && <Badge variant="outline" className="bg-green-100 text-green-950">Vegan</Badge>}
+          {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-900">Gluten Free</Badge>}
         </div>
-        <div className="text-sm text-gray-700 mb-2">
+        <div className="text-sm text-gray-800 mb-2">
           <p>Cost: {formatCurrency(recipe.costing.totalRecipeCost)}</p>
           <p>Menu Price: {formatCurrency(recipe.costing.actualMenuPrice)}</p>
           <p>GP: {(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</p>
@@ -85,20 +85,20 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
           className="hover:no-underline"
         >
           {({ loading }) => (
-            <Button variant="ghost" size="sm" disabled={loading} className="text-gray-700">
+            <Button variant="ghost" size="sm" disabled={loading} className="text-gray-800">
               <FileText className="h-4 w-4 mr-1" />
               {loading ? 'Loading...' : 'PDF'}
             </Button>
           )}
         </PDFDownloadLink>
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" className="text-gray-700" onClick={(e) => {
+          <Button variant="ghost" size="sm" className="text-gray-800" onClick={(e) => {
             e.stopPropagation();
             handleEmailShare();
           }}>
             <Mail className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-gray-700" onClick={(e) => {
+          <Button variant="ghost" size="sm" className="text-gray-800" onClick={(e) => {
             e.stopPropagation();
             handleWhatsAppShare();
           }}>
@@ -111,4 +111,3 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
 };
 
 export default RecipeCard;
-
