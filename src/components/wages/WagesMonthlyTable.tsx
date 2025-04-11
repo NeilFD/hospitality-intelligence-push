@@ -8,7 +8,7 @@ import { formatCurrency, getDayNameFromNumber } from '@/lib/date-utils';
 import { toast } from "sonner";
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { fetchMasterRecordsByMonth } from '@/services/master-record-service';
+import { fetchMasterRecordsByMonth, fetchMasterDailyRecord } from '@/services/master-record-service';
 
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
   const [isLoading, setIsLoading] = React.useState(true);
@@ -39,12 +39,30 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         });
         
         // Update wages data with revenue from master records
-        const updatedWagesData = wagesData.map(day => {
+        const updatedWagesData = await Promise.all(wagesData.map(async (day) => {
           // Format the date string in YYYY-MM-DD format for lookups
           const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.day.toString().padStart(2, '0')}`;
           console.log(`Looking up master record for ${dateStr}`);
           
-          const masterRecord = masterRecordsByDate[dateStr];
+          let masterRecord = masterRecordsByDate[dateStr];
+          
+          // If no master record was found in the batch fetch, try fetching it individually
+          // This is especially important for recently added records
+          if (!masterRecord || (masterRecord.foodRevenue === 0 && masterRecord.beverageRevenue === 0)) {
+            console.log(`No master record found in batch fetch for ${dateStr}, trying individual fetch`);
+            try {
+              const individualRecord = await fetchMasterDailyRecord(dateStr);
+              if (individualRecord) {
+                console.log(`Individual fetch successful for ${dateStr}: Food=${individualRecord.foodRevenue}, Bev=${individualRecord.beverageRevenue}`);
+                masterRecord = {
+                  foodRevenue: individualRecord.foodRevenue || 0,
+                  beverageRevenue: individualRecord.beverageRevenue || 0
+                };
+              }
+            } catch (error) {
+              console.error(`Error fetching individual master record for ${dateStr}:`, error);
+            }
+          }
           
           if (masterRecord) {
             console.log(`Found master record for ${dateStr}: updating with food=${masterRecord.foodRevenue}, bev=${masterRecord.beverageRevenue}`);
@@ -56,7 +74,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
           }
           
           return day;
-        });
+        }));
         
         setMonthlyData(updatedWagesData);
       } catch (error) {
