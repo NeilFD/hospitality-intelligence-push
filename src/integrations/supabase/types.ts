@@ -554,6 +554,7 @@ export type Database = {
         Row: {
           actual_menu_price: number
           allergens: string[]
+          archived: boolean
           category: string
           created_at: string
           gross_profit_percentage: number
@@ -575,6 +576,7 @@ export type Database = {
         Insert: {
           actual_menu_price?: number
           allergens?: string[]
+          archived?: boolean
           category: string
           created_at?: string
           gross_profit_percentage?: number
@@ -596,6 +598,7 @@ export type Database = {
         Update: {
           actual_menu_price?: number
           allergens?: string[]
+          archived?: boolean
           category?: string
           created_at?: string
           gross_profit_percentage?: number

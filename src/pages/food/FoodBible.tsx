@@ -151,7 +151,7 @@ const FoodBible: React.FC = () => {
 
       const { error: upsertError } = await supabase
         .from('recipes')
-        .upsert([recipeData], { onConflict: 'id' });
+        .upsert([recipeData]);
       
       if (upsertError) {
         console.error("Error upserting recipe:", upsertError);
@@ -174,37 +174,37 @@ const FoodBible: React.FC = () => {
         console.error('Exception while deleting ingredients:', deleteError);
       }
       
-      console.log(`Inserting ${recipe.ingredients.length} ingredients`);
-      const ingredientPromises = recipe.ingredients.map(async (ingredient) => {
-        if (!ingredient.name || ingredient.name.trim() === '') {
-          console.log("Skipping ingredient with empty name");
-          return null;
+      if (recipe.ingredients && recipe.ingredients.length > 0) {
+        console.log(`Inserting ${recipe.ingredients.length} ingredients`);
+        const ingredientsToInsert = recipe.ingredients
+          .filter(ingredient => ingredient.name && ingredient.name.trim() !== '')
+          .map(ingredient => ({
+            id: ingredient.id || uuidv4(),
+            recipe_id: recipe.id,
+            name: ingredient.name || '',
+            amount: ingredient.amount || 0,
+            unit: ingredient.unit || '',
+            cost_per_unit: ingredient.costPerUnit || 0,
+            total_cost: ingredient.totalCost || 0
+          }));
+        
+        if (ingredientsToInsert.length > 0) {
+          console.log("Ingredients prepared for insertion:", ingredientsToInsert);
+          
+          const { error: ingredientsError } = await supabase
+            .from('recipe_ingredients')
+            .insert(ingredientsToInsert);
+          
+          if (ingredientsError) {
+            console.error('Error saving ingredients:', ingredientsError);
+            throw ingredientsError;
+          }
+          
+          console.log("Ingredients saved successfully");
+        } else {
+          console.log("No valid ingredients to save");
         }
-        
-        const ingredientData = {
-          id: ingredient.id || uuidv4(),
-          recipe_id: recipe.id,
-          name: ingredient.name || '',
-          amount: ingredient.amount || 0,
-          unit: ingredient.unit || '',
-          cost_per_unit: ingredient.costPerUnit || 0,
-          total_cost: ingredient.totalCost || 0
-        };
-        
-        console.log("Saving ingredient:", ingredientData);
-        
-        const { error: ingredientError } = await supabase
-          .from('recipe_ingredients')
-          .insert([ingredientData]);
-        
-        if (ingredientError) {
-          console.error('Error saving ingredient:', ingredientError);
-          return false;
-        }
-        return true;
-      });
-      
-      await Promise.all(ingredientPromises);
+      }
       
       if (showToast) {
         toast.success('Recipe saved successfully');
@@ -223,13 +223,28 @@ const FoodBible: React.FC = () => {
 
   const deleteRecipeFromSupabase = async (recipeId: string) => {
     try {
-      const {
-        error
-      } = await supabase.from('recipes').delete().eq('id', recipeId);
+      const { error: ingredientsError } = await supabase
+        .from('recipe_ingredients')
+        .delete()
+        .eq('recipe_id', recipeId);
+        
+      if (ingredientsError) {
+        console.error('Error deleting ingredients:', ingredientsError);
+        throw ingredientsError;
+      }
+      
+      const { error } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', recipeId);
+        
       if (error) {
+        console.error('Error deleting recipe:', error);
         throw error;
       }
+      
       toast.success('Recipe deleted successfully');
+      return true;
     } catch (error) {
       console.error('Error deleting recipe:', error);
       toast.error('Failed to delete recipe');
