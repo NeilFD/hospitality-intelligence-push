@@ -357,55 +357,73 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               </div>
               
               <div className="space-y-2">
+                {/* Table-like header for ingredients */}
+                <div className="grid grid-cols-12 gap-2 mb-1 px-2">
+                  <div className="col-span-4 text-sm text-gray-500">Name</div>
+                  <div className="col-span-2 text-sm text-gray-500">Amount</div>
+                  <div className="col-span-1 text-sm text-gray-500">Unit</div>
+                  <div className="col-span-2 text-sm text-gray-500">£/unit</div>
+                  <div className="col-span-2 text-sm text-gray-500 text-right">Total</div>
+                  <div className="col-span-1"></div>
+                </div>
+                
                 {formData.ingredients.map((ingredient) => (
-                  <div key={ingredient.id} className="flex items-center space-x-2">
-                    <Input 
-                      placeholder="Name"
-                      value={ingredient.name}
-                      onChange={(e) => handleIngredientChange(ingredient.id, 'name', e.target.value)}
-                      className="flex-grow"
-                    />
-                    <Input 
-                      type="number"
-                      placeholder="Amount"
-                      value={ingredient.amount || ''}
-                      onChange={(e) => handleIngredientChange(ingredient.id, 'amount', parseFloat(e.target.value) || 0)}
-                      className="w-20"
-                    />
-                    <Select
-                      value={ingredient.unit}
-                      onValueChange={(value) => handleIngredientChange(ingredient.id, 'unit', value)}
-                    >
-                      <SelectTrigger className="w-16">
-                        <SelectValue placeholder="Unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="g">g</SelectItem>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="ml">ml</SelectItem>
-                        <SelectItem value="l">L</SelectItem>
-                        <SelectItem value="pcs">pcs</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input 
-                      type="number"
-                      step="0.01"
-                      placeholder="£/unit"
-                      value={ingredient.costPerUnit || ''}
-                      onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', parseFloat(e.target.value) || 0)}
-                      className="w-20"
-                    />
-                    <div className="w-16 text-right">
+                  <div key={ingredient.id} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-4">
+                      <Input 
+                        placeholder="Name"
+                        value={ingredient.name}
+                        onChange={(e) => handleIngredientChange(ingredient.id, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Input 
+                        type="number"
+                        placeholder="Amount"
+                        value={ingredient.amount || ''}
+                        onChange={(e) => handleIngredientChange(ingredient.id, 'amount', parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Select
+                        value={ingredient.unit}
+                        onValueChange={(value) => handleIngredientChange(ingredient.id, 'unit', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="g">g</SelectItem>
+                          <SelectItem value="kg">kg</SelectItem>
+                          <SelectItem value="ml">ml</SelectItem>
+                          <SelectItem value="l">L</SelectItem>
+                          <SelectItem value="pcs">pcs</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        placeholder="£/unit"
+                        value={ingredient.costPerUnit || ''}
+                        onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="col-span-2 text-right py-2">
                       £{ingredient.totalCost.toFixed(2)}
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => removeIngredient(ingredient.id)}
-                      disabled={formData.ingredients.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    <div className="col-span-1 flex justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => removeIngredient(ingredient.id)}
+                        disabled={formData.ingredients.length === 1}
+                        className="p-0 h-8 w-8"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 
