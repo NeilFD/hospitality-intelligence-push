@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -73,7 +72,7 @@ const FoodBible: React.FC = () => {
           name: ingredient.name,
           amount: ingredient.amount,
           unit: ingredient.unit,
-          costPerUnit: ingredient.cost_per_unit,
+          costPerUnit: ingredient.costPerUnit,
           totalCost: ingredient.total_cost
         }));
         return {
@@ -101,18 +100,11 @@ const FoodBible: React.FC = () => {
           moduleType: recipe.module_type
         };
       }));
-      if (recipesWithIngredients.length === 0) {
-        setRecipes(sampleFoodRecipes);
-        sampleFoodRecipes.forEach(recipe => {
-          saveRecipeToSupabase(recipe, false);
-        });
-      } else {
-        setRecipes(recipesWithIngredients);
-      }
+      setRecipes(recipesWithIngredients);
     } catch (error) {
       console.error('Error fetching recipes:', error);
       toast.error('Failed to load recipes');
-      setRecipes(sampleFoodRecipes);
+      setRecipes([]);
     } finally {
       setLoading(false);
     }
