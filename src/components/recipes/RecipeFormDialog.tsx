@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -348,22 +349,23 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               </div>
               
               <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-3 mb-1 px-2">
-                  <div className="col-span-3 text-sm text-gray-500">Name</div>
+                <div className="grid grid-cols-12 gap-4 mb-1 px-2">
+                  <div className="col-span-4 text-sm text-gray-500">Name</div>
                   <div className="col-span-2 text-sm text-gray-500">Amount</div>
                   <div className="col-span-2 text-sm text-gray-500">Unit</div>
                   <div className="col-span-2 text-sm text-gray-500">£/unit</div>
-                  <div className="col-span-2 text-sm text-gray-500 text-right">Total</div>
+                  <div className="col-span-1 text-sm text-gray-500 text-right">Total</div>
                   <div className="col-span-1"></div>
                 </div>
                 
                 {formData.ingredients.map((ingredient) => (
-                  <div key={ingredient.id} className="grid grid-cols-12 gap-3 items-center">
-                    <div className="col-span-3">
+                  <div key={ingredient.id} className="grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-4">
                       <Input 
                         placeholder="Name"
                         value={ingredient.name}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'name', e.target.value)}
+                        className="w-full"
                       />
                     </div>
                     <div className="col-span-2">
@@ -402,7 +404,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         className="w-full"
                       />
                     </div>
-                    <div className="col-span-2 text-right py-2">
+                    <div className="col-span-1 text-right py-2">
                       £{ingredient.totalCost.toFixed(2)}
                     </div>
                     <div className="col-span-1 flex justify-center">
