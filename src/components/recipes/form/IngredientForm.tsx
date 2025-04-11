@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,16 +57,19 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 className="text-gray-900 bg-white border border-gray-300 rounded-none"
               />
             </div>
+            
             <div className="col-span-2">
               <Input 
                 type="number"
-                placeholder="Amount"
+                placeholder=""
                 value={ingredient.amount || ''}
                 onChange={(e) => onIngredientChange(index, 'amount', e.target.value === '' ? '' : Number(e.target.value))}
-                className="text-gray-900 bg-white border border-gray-300 rounded-none"
+                className="text-gray-900 bg-white border border-gray-300 rounded-none appearance-none"
                 min={0}
+                step="any"
               />
             </div>
+            
             <div className="col-span-2">
               <Select
                 value={ingredient.unit}
@@ -88,21 +90,24 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="col-span-2">
               <Input 
                 type="number"
-                step="0.01"
-                placeholder="£/unit"
+                placeholder=""
                 value={ingredient.costPerUnit || ''}
                 onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value === '' ? '' : Number(e.target.value))}
-                className="text-gray-900 bg-white border border-gray-300 rounded-none"
+                className="text-gray-900 bg-white border border-gray-300 rounded-none appearance-none"
                 min={0}
+                step="any"
               />
             </div>
+            
             <div className="col-span-1 text-right pr-8 text-gray-900">
               £{(ingredient.totalCost || 0).toFixed(2)}
             </div>
-            <div className="col-span-1 flex justify-center pl-5">
+            
+            <div className="col-span-1 flex justify-center pl-8">
               <Button 
                 variant="ghost" 
                 size="sm"
