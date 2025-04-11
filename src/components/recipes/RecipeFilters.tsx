@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,7 +175,11 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
             <Badge 
               key={allergen.id}
               variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
-              className="cursor-pointer"
+              className={`cursor-pointer ${
+                filters.allergens.includes(allergen.name) 
+                  ? "bg-tavern-blue text-white" 
+                  : "bg-gray-100 text-tavern-blue-dark"
+              }`}
               onClick={() => handleAllergenToggle(allergen.name)}
             >
               {allergen.name}
