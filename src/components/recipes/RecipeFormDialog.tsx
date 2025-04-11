@@ -381,7 +381,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         placeholder="Name"
                         value={ingredient.name}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'name', e.target.value)}
-                        className="w-full"
                       />
                     </div>
                     <div className="col-span-2">
@@ -390,7 +389,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         placeholder="Amount"
                         value={ingredient.amount || ''}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'amount', e.target.value)}
-                        className="w-full"
                       />
                     </div>
                     <div className="col-span-2">
@@ -417,7 +415,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
                         placeholder="£/unit"
                         value={ingredient.costPerUnit || ''}
                         onChange={(e) => handleIngredientChange(ingredient.id, 'costPerUnit', e.target.value)}
-                        className="w-full"
                       />
                     </div>
                     <div className="col-span-1 text-right py-2">
