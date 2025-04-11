@@ -310,7 +310,7 @@ const FoodBible: React.FC = () => {
 
   return <div className="flex w-full min-h-svh bg-background">
     {!sidebarOpen && !isMobile && (
-      <div className="fixed left-[290px] top-24 z-40 flex gap-2">
+      <div className="fixed left-[290px] top-[86px] z-40 flex gap-2">
         <Button 
           variant="outline" 
           size="icon" 
