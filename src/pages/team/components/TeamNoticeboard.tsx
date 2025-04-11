@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Recipe } from '@/types/recipe-types';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { supabase } from '@/lib/supabase';
+import RecipeCardExpanded from './RecipeCardExpanded';
 
 interface StickyNoteProps {
   note: TeamNote;
@@ -378,6 +379,8 @@ const TeamNoticeboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('notes');
   const [noteSizes, setNoteSizes] = useState<Record<string, 'small' | 'medium' | 'large'>>({});
   const [notesLayout, setNotesLayout] = useState<Record<string, { x: number, y: number }>>({});
+  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
   const queryClient = useQueryClient();
   
   const {
@@ -518,6 +521,11 @@ const TeamNoticeboard: React.FC = () => {
   console.log('Recipes data:', recipes);
   console.log('Recipe count:', recipes?.length || 0);
 
+  const handleRecipeClick = (recipe: any) => {
+    setSelectedRecipe(recipe);
+    setIsRecipeModalOpen(true);
+  };
+
   return (
     <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
       <div className="container mx-auto p-4">
@@ -618,7 +626,8 @@ const TeamNoticeboard: React.FC = () => {
                       {recipes.map((recipe: any) => (
                         <div 
                           key={recipe.id} 
-                          className="bg-white/70 backdrop-blur-sm border border-emerald-100 rounded-lg p-4 hover:shadow-md transition-shadow"
+                          className="bg-white/70 backdrop-blur-sm border border-emerald-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => handleRecipeClick(recipe)}
                         >
                           <h4 className="font-semibold text-gray-900">{recipe.name}</h4>
                           <p className="text-sm text-gray-600">{recipe.category}</p>
@@ -638,6 +647,7 @@ const TeamNoticeboard: React.FC = () => {
                           <div className="mt-2">
                             <span className="text-xs text-gray-600 bg-emerald-50 px-2 py-1 rounded-full">Recipe from Food Bible</span>
                           </div>
+                          <div className="mt-2 text-xs text-blue-600">Click for full recipe details</div>
                         </div>
                       ))}
                     </div>
@@ -693,6 +703,13 @@ const TeamNoticeboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Recipe Modal */}
+      <RecipeCardExpanded 
+        recipe={selectedRecipe}
+        isOpen={isRecipeModalOpen}
+        onClose={() => setIsRecipeModalOpen(false)}
+      />
     </ScrollArea>
   );
 };
