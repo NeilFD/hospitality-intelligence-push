@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -7,9 +6,16 @@ import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
 import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
 import { sampleFoodRecipes, menuCategories, allergenTypes } from "@/data/sample-recipe-data";
-import { Plus } from "lucide-react";
+import { Plus, PanelLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { 
+  SidebarProvider, 
+  Sidebar, 
+  SidebarContent, 
+  SidebarTrigger,
+  SidebarRail
+} from "@/components/ui/sidebar";
 
 const FoodBible: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -27,6 +33,7 @@ const FoodBible: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   useEffect(() => {
     fetchRecipes();
@@ -36,7 +43,6 @@ const FoodBible: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch recipes from Supabase
       const { data: recipesData, error: recipesError } = await supabase
         .from('recipes')
         .select('*')
@@ -46,7 +52,6 @@ const FoodBible: React.FC = () => {
         throw recipesError;
       }
       
-      // For each recipe, fetch its ingredients
       const recipesWithIngredients = await Promise.all(
         recipesData.map(async (recipe) => {
           const { data: ingredientsData, error: ingredientsError } = await supabase
@@ -70,7 +75,6 @@ const FoodBible: React.FC = () => {
             };
           }
           
-          // Map DB ingredient fields to frontend model
           const mappedIngredients: Ingredient[] = ingredientsData.map(ingredient => ({
             id: ingredient.id,
             name: ingredient.name,
@@ -80,7 +84,6 @@ const FoodBible: React.FC = () => {
             totalCost: ingredient.total_cost
           }));
           
-          // Map DB recipe fields to frontend model
           return {
             id: recipe.id,
             name: recipe.name,
@@ -109,7 +112,6 @@ const FoodBible: React.FC = () => {
       );
       
       if (recipesWithIngredients.length === 0) {
-        // If no recipes in database, seed with sample data
         setRecipes(sampleFoodRecipes);
         sampleFoodRecipes.forEach(recipe => {
           saveRecipeToSupabase(recipe, false);
@@ -121,7 +123,6 @@ const FoodBible: React.FC = () => {
       console.error('Error fetching recipes:', error);
       toast.error('Failed to load recipes');
       
-      // Fallback to sample data if fetch fails
       setRecipes(sampleFoodRecipes);
     } finally {
       setLoading(false);
@@ -130,7 +131,6 @@ const FoodBible: React.FC = () => {
   
   const saveRecipeToSupabase = async (recipe: Recipe, showToast: boolean = true) => {
     try {
-      // Map frontend model to DB fields
       const recipeData = {
         id: recipe.id,
         name: recipe.name,
@@ -151,7 +151,6 @@ const FoodBible: React.FC = () => {
         gross_profit_percentage: recipe.costing.grossProfitPercentage,
       };
       
-      // Save or update the recipe
       const { error: recipeError } = await supabase
         .from('recipes')
         .upsert([recipeData]);
@@ -160,7 +159,6 @@ const FoodBible: React.FC = () => {
         throw recipeError;
       }
       
-      // Save or update each ingredient
       for (const ingredient of recipe.ingredients) {
         const ingredientData = {
           id: ingredient.id,
@@ -178,7 +176,6 @@ const FoodBible: React.FC = () => {
           
         if (ingredientError) {
           console.error('Error saving ingredient:', ingredientError);
-          // Continue with other ingredients even if one fails
         }
       }
       
@@ -197,7 +194,6 @@ const FoodBible: React.FC = () => {
   
   const deleteRecipeFromSupabase = async (recipeId: string) => {
     try {
-      // Delete the recipe (cascade will remove ingredients)
       const { error } = await supabase
         .from('recipes')
         .delete()
@@ -290,7 +286,6 @@ const FoodBible: React.FC = () => {
       
     } catch (error) {
       console.error('Error in handleSaveRecipe:', error);
-      // Toast is shown in saveRecipeToSupabase
     }
   };
   
@@ -301,7 +296,6 @@ const FoodBible: React.FC = () => {
       setViewingRecipe(undefined);
     } catch (error) {
       console.error('Error in handleDeleteRecipe:', error);
-      // Toast is shown in deleteRecipeFromSupabase
     }
   };
   
@@ -310,72 +304,81 @@ const FoodBible: React.FC = () => {
   };
 
   return (
-    <div className="container px-4 py-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Food Bible</h1>
-          <p className="text-muted-foreground">Manage and explore food recipes</p>
-        </div>
-        <Button onClick={handleAddRecipe} className="mt-4 md:mt-0">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Recipe
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1">
-          <RecipeFilters
-            moduleType="food"
-            categories={menuCategories}
-            allergens={allergenTypes}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onLetterSelect={handleLetterSelect}
-            selectedLetter={selectedLetter}
-          />
-        </div>
-        
-        <div className="lg:col-span-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading recipes...</p>
+    <SidebarProvider defaultOpen={true}>
+      <div className="flex w-full min-h-svh">
+        <Sidebar 
+          className="border-r border-gray-200"
+          variant="sidebar" 
+          collapsible="icon"
+        >
+          <SidebarContent className="p-4 w-full">
+            <RecipeFilters
+              moduleType="food"
+              categories={menuCategories}
+              allergens={allergenTypes}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onLetterSelect={handleLetterSelect}
+              selectedLetter={selectedLetter}
+            />
+          </SidebarContent>
+          <SidebarRail />
+        </Sidebar>
+
+        <div className="flex-1 container px-4 py-6 max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Food Bible</h1>
+              <p className="text-muted-foreground">Manage and explore food recipes</p>
+            </div>
+            <Button onClick={handleAddRecipe} className="mt-4 md:mt-0">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Recipe
+            </Button>
+          </div>
+          
+          <div className="w-full">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading recipes...</p>
+                </div>
               </div>
-            </div>
-          ) : filteredRecipes.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredRecipes.map(recipe => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  onClick={() => handleViewRecipe(recipe)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <p className="text-lg text-gray-500">No recipes match your filters</p>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setFilters({
-                    searchTerm: "",
-                    category: "all_categories",
-                    allergens: [],
-                    isVegan: null,
-                    isVegetarian: null,
-                    isGlutenFree: null,
-                    letter: null
-                  });
-                  setSelectedLetter(null);
-                }}
-                className="mt-4"
-              >
-                Clear Filters
-              </Button>
-            </div>
-          )}
+            ) : filteredRecipes.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredRecipes.map(recipe => (
+                  <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    onClick={() => handleViewRecipe(recipe)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <p className="text-lg text-gray-500">No recipes match your filters</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setFilters({
+                      searchTerm: "",
+                      category: "all_categories",
+                      allergens: [],
+                      isVegan: null,
+                      isVegetarian: null,
+                      isGlutenFree: null,
+                      letter: null
+                    });
+                    setSelectedLetter(null);
+                  }}
+                  className="mt-4"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
@@ -404,7 +407,7 @@ const FoodBible: React.FC = () => {
           onDelete={handleDeleteRecipe}
         />
       )}
-    </div>
+    </SidebarProvider>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { RecipeFilterOptions, MenuCategory, AllergenType } from "@/types/recipe-types";
-import { Search, X, ChevronDown, ChevronUp, Minimize2 } from "lucide-react";
+import { Search, X, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -115,14 +116,42 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
           className="p-0 h-8 w-8 hover:bg-gray-100 rounded-full"
           title={isOpen ? "Minimize" : "Expand"}
         >
-          {isOpen ? <Minimize2 className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </CollapsibleTrigger>
     </div>
   );
 
+  // Actual active filters count
+  const activeFiltersCount = 
+    (filters.category !== "all_categories" ? 1 : 0) + 
+    (filters.allergens.length) + 
+    (filters.isVegan !== null ? 1 : 0) + 
+    (filters.isVegetarian !== null ? 1 : 0) + 
+    (filters.isGlutenFree !== null ? 1 : 0) + 
+    (filters.letter !== null ? 1 : 0);
+
   return (
-    <div className="space-y-4 pb-4 border-b">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold flex items-center">
+          <Filter className="mr-2 h-4 w-4" /> Filters
+          {activeFiltersCount > 0 && (
+            <Badge variant="secondary" className="ml-2">
+              {activeFiltersCount}
+            </Badge>
+          )}
+        </h2>
+        
+        {(filters.searchTerm || filters.category !== "all_categories" || filters.allergens.length > 0 || 
+           filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null || selectedLetter) && (
+          <Button type="button" variant="ghost" size="sm" onClick={clearFilters} title="Clear all filters">
+            <X className="h-4 w-4" />
+            <span className="ml-1">Clear</span>
+          </Button>
+        )}
+      </div>
+      
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="flex-grow">
           <Input 
@@ -136,12 +165,6 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         <Button type="submit" size="sm">
           <Search className="h-4 w-4" />
         </Button>
-        {(filters.searchTerm || filters.category !== "all_categories" || filters.allergens.length > 0 || 
-           filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null) && (
-          <Button type="button" variant="ghost" size="sm" onClick={clearFilters} title="Clear all filters">
-            <X className="h-4 w-4" />
-          </Button>
-        )}
       </form>
       
       <Collapsible open={openCategory} onOpenChange={setOpenCategory}>
