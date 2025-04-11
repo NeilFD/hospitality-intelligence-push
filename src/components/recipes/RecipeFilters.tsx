@@ -93,122 +93,128 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
 
   return (
     <div className="space-y-4 pb-4 border-b">
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <div className="flex-grow">
-          <Input 
-            type="text" 
-            placeholder={`Search ${moduleType === 'food' ? 'dishes' : 'beverages'}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <Button type="submit" size="sm">
-          <Search className="h-4 w-4" />
-        </Button>
-        {(filters.searchTerm || filters.category !== "all_categories" || filters.allergens.length > 0 || 
-           filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null) && (
-          <Button type="button" variant="ghost" size="sm" onClick={clearFilters} title="Clear all filters">
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </form>
-      
-      <div>
-        <Label htmlFor="category" className="text-tavern-blue-dark">Category</Label>
-        <Select
-          value={filters.category}
-          onValueChange={handleCategoryChange}
-        >
-          <SelectTrigger id="category" className="w-full">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all_categories">All Categories</SelectItem>
-            {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
-              <SelectItem key={category.id} value={category.name}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-tavern-blue-dark">Dietary Requirements</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={getDietaryButtonClass(filters.isVegetarian)}
-            onClick={() => handleDietaryToggle('isVegetarian')}
-          >
-            {getDietaryButtonLabel(filters.isVegetarian, 'Vegetarian')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={getDietaryButtonClass(filters.isVegan)}
-            onClick={() => handleDietaryToggle('isVegan')}
-          >
-            {getDietaryButtonLabel(filters.isVegan, 'Vegan')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={getDietaryButtonClass(filters.isGlutenFree)}
-            onClick={() => handleDietaryToggle('isGlutenFree')}
-          >
-            {getDietaryButtonLabel(filters.isGlutenFree, 'Gluten Free')}
-          </Button>
-        </div>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-tavern-blue-dark">Allergens</Label>
-        <div className="flex flex-wrap gap-2">
-          {allergens.map((allergen) => (
-            <Badge 
-              key={allergen.id}
-              variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
-              className={`cursor-pointer ${
-                filters.allergens.includes(allergen.name) 
-                  ? "bg-tavern-blue text-white" 
-                  : "bg-gray-100 text-tavern-blue-dark"
-              }`}
-              onClick={() => handleAllergenToggle(allergen.name)}
-            >
-              {allergen.name}
-            </Badge>
-          ))}
-        </div>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-tavern-blue-dark">A-Z</Label>
-        <div className="flex flex-wrap gap-1">
-          <Button 
-            size="sm"
-            variant={selectedLetter === null ? "default" : "outline"}
-            className="w-8 h-8 p-0 text-xs"
-            onClick={() => onLetterSelect(null)}
-          >
-            All
-          </Button>
-          {alphabet.map((letter) => (
-            <Button 
-              key={letter}
-              size="sm"
-              variant={selectedLetter === letter ? "default" : "outline"}
-              className="w-8 h-8 p-0 text-xs"
-              onClick={() => onLetterSelect(letter)}
-            >
-              {letter}
+      <div className="space-y-4">
+        <div className="bg-white p-3 rounded-lg shadow-sm">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <div className="flex-grow">
+              <Input 
+                type="text" 
+                placeholder={`Search ${moduleType === 'food' ? 'dishes' : 'beverages'}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <Button type="submit" size="sm">
+              <Search className="h-4 w-4" />
             </Button>
-          ))}
+            {(filters.searchTerm || filters.category !== "all_categories" || filters.allergens.length > 0 || 
+              filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null) && (
+              <Button type="button" variant="ghost" size="sm" onClick={clearFilters} title="Clear all filters">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </form>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <Label htmlFor="category" className="text-tavern-blue-dark mb-2 block">Category</Label>
+            <Select
+              value={filters.category}
+              onValueChange={handleCategoryChange}
+            >
+              <SelectTrigger id="category" className="w-full">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all_categories">All Categories</SelectItem>
+                {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <Label className="mb-2 block text-tavern-blue-dark">Dietary Requirements</Label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={getDietaryButtonClass(filters.isVegetarian)}
+                onClick={() => handleDietaryToggle('isVegetarian')}
+              >
+                {getDietaryButtonLabel(filters.isVegetarian, 'Vegetarian')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={getDietaryButtonClass(filters.isVegan)}
+                onClick={() => handleDietaryToggle('isVegan')}
+              >
+                {getDietaryButtonLabel(filters.isVegan, 'Vegan')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={getDietaryButtonClass(filters.isGlutenFree)}
+                onClick={() => handleDietaryToggle('isGlutenFree')}
+              >
+                {getDietaryButtonLabel(filters.isGlutenFree, 'Gluten Free')}
+              </Button>
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <Label className="mb-2 block text-tavern-blue-dark">Allergens</Label>
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+              {allergens.map((allergen) => (
+                <Badge 
+                  key={allergen.id}
+                  variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
+                  className={`cursor-pointer ${
+                    filters.allergens.includes(allergen.name) 
+                      ? "bg-tavern-blue text-white" 
+                      : "bg-gray-100 text-tavern-blue-dark"
+                  }`}
+                  onClick={() => handleAllergenToggle(allergen.name)}
+                >
+                  {allergen.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <Label className="mb-2 block text-tavern-blue-dark">A-Z</Label>
+            <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+              <Button 
+                size="sm"
+                variant={selectedLetter === null ? "default" : "outline"}
+                className="w-8 h-8 p-0 text-xs"
+                onClick={() => onLetterSelect(null)}
+              >
+                All
+              </Button>
+              {alphabet.map((letter) => (
+                <Button 
+                  key={letter}
+                  size="sm"
+                  variant={selectedLetter === letter ? "default" : "outline"}
+                  className="w-8 h-8 p-0 text-xs"
+                  onClick={() => onLetterSelect(letter)}
+                >
+                  {letter}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
