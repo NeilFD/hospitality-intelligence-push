@@ -65,7 +65,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder=""
                 value={ingredient.amount || ''}
                 onChange={(e) => onIngredientChange(index, 'amount', e.target.value === '' ? '' : Number(e.target.value))}
-                className="text-gray-900 bg-white border border-gray-300 rounded-none appearance-none"
+                className="text-gray-900 bg-white border border-gray-300 rounded-none appearance-none remove-number-arrows"
                 min={0}
                 step="any"
               />
@@ -98,7 +98,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 placeholder=""
                 value={ingredient.costPerUnit || ''}
                 onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value === '' ? '' : Number(e.target.value))}
-                className="text-gray-900 bg-white border border-gray-300 rounded-none appearance-none"
+                className="text-gray-900 bg-white border border-gray-300 rounded-none appearance-none remove-number-arrows"
                 min={0}
                 step="any"
               />
