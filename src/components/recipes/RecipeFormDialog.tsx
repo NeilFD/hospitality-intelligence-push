@@ -148,7 +148,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white text-dark-text-DEFAULT">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white text-dark-text-DEFAULT" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle className="text-dark-text-DEFAULT">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
           <DialogDescription className="text-dark-text-muted">

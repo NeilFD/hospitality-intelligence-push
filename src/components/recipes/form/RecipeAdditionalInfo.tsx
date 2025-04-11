@@ -36,7 +36,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           value={actualMenuPrice || ''}
           onChange={(e) => onCostingChange('actualMenuPrice', e.target.value)}
           placeholder="Enter menu price"
-          className="text-dark-text-DEFAULT bg-white"
+          className="text-dark-text-DEFAULT bg-white border border-gray-300"
         />
         <div className="text-sm text-gray-500 mt-1">
           Suggested Price: £{suggestedPrice.toFixed(2)} (70% GP inc. VAT)
@@ -55,7 +55,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           value={timeToTableMinutes || ''}
           onChange={onInputChange}
           placeholder="Enter preparation time"
-          className="text-dark-text-DEFAULT bg-white"
+          className="text-dark-text-DEFAULT bg-white border border-gray-300"
         />
       </div>
       
@@ -67,7 +67,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           value={recommendedUpsell || ''}
           onChange={onInputChange}
           placeholder="Enter recommended upsell"
-          className="text-dark-text-DEFAULT bg-white"
+          className="text-dark-text-DEFAULT bg-white border border-gray-300"
         />
       </div>
       
@@ -80,7 +80,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           onChange={onInputChange}
           placeholder="Enter mise en place details"
           rows={4}
-          className="text-dark-text-DEFAULT focus:border-gray-400 pointer-events-auto bg-white"
+          className="text-dark-text-DEFAULT bg-white border border-gray-300"
         />
       </div>
     </div>

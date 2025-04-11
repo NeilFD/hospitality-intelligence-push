@@ -58,7 +58,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
           value={name}
           onChange={onInputChange}
           placeholder="Enter recipe name"
-          className="text-dark-text-DEFAULT"
+          className="text-dark-text-DEFAULT bg-white"
         />
       </div>
       
@@ -196,7 +196,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
           onChange={onInputChange}
           placeholder="Enter cooking instructions"
           rows={6}
-          className="text-dark-text-DEFAULT focus:border-gray-400 pointer-events-auto bg-white"
+          className="text-dark-text-DEFAULT bg-white border border-gray-300"
         />
       </div>
     </div>
