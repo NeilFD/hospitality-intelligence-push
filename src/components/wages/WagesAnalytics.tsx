@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useWagesStore } from './WagesStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,12 +68,12 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
   }, [year, month, getMonthlyWages, getWeekdayTotals]);
   
   const totals = monthlyData.reduce((acc, day) => {
-    acc.fohWages += day.fohWages;
-    acc.kitchenWages += day.kitchenWages;
-    acc.totalWages += (day.fohWages + day.kitchenWages);
-    acc.foodRevenue += day.foodRevenue;
-    acc.bevRevenue += day.bevRevenue;
-    acc.totalRevenue += (day.foodRevenue + day.bevRevenue);
+    acc.fohWages += day.fohWages || 0;
+    acc.kitchenWages += day.kitchenWages || 0;
+    acc.totalWages += (day.fohWages || 0) + (day.kitchenWages || 0);
+    acc.foodRevenue += day.foodRevenue || 0;
+    acc.bevRevenue += day.bevRevenue || 0;
+    acc.totalRevenue += (day.foodRevenue || 0) + (day.bevRevenue || 0);
     return acc;
   }, { 
     fohWages: 0, 
@@ -83,6 +82,14 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
     foodRevenue: 0, 
     bevRevenue: 0, 
     totalRevenue: 0 
+  });
+  
+  console.log('WagesAnalytics - Calculated totals:', {
+    foodRevenue: totals.foodRevenue,
+    bevRevenue: totals.bevRevenue,
+    totalRevenue: totals.totalRevenue,
+    totalWages: totals.totalWages,
+    days: monthlyData.length
   });
   
   const wagesChartData = [
@@ -101,12 +108,12 @@ export function WagesAnalytics({ year, month, viewType }: WagesAnalyticsProps) {
   
   const dailyChartData = monthlyData.map(day => ({
     name: `${day.day}`,
-    fohWages: day.fohWages,
-    kitchenWages: day.kitchenWages,
-    totalWages: day.fohWages + day.kitchenWages,
-    totalRevenue: day.foodRevenue + day.bevRevenue,
-    percentage: day.foodRevenue + day.bevRevenue > 0 
-      ? ((day.fohWages + day.kitchenWages) / (day.foodRevenue + day.bevRevenue)) * 100 
+    fohWages: day.fohWages || 0,
+    kitchenWages: day.kitchenWages || 0,
+    totalWages: (day.fohWages || 0) + (day.kitchenWages || 0),
+    totalRevenue: (day.foodRevenue || 0) + (day.bevRevenue || 0),
+    percentage: (day.foodRevenue || 0) + (day.bevRevenue || 0) > 0 
+      ? (((day.fohWages || 0) + (day.kitchenWages || 0)) / ((day.foodRevenue || 0) + (day.bevRevenue || 0))) * 100 
       : 0
   }));
 
