@@ -14,11 +14,13 @@ import FoodInputSettings from "@/pages/food/InputSettings";
 import FoodMonthSummary from "@/pages/food/MonthSummary";
 import FoodAnnualSummary from "@/pages/food/AnnualSummary";
 import FoodWeeklyTracker from "@/pages/food/WeeklyTracker";
+import FoodBible from "@/pages/food/FoodBible";
 import BeverageDashboard from "@/pages/beverage/Dashboard";
 import BeverageInputSettings from "@/pages/beverage/InputSettings";
 import BeverageMonthSummary from "@/pages/beverage/MonthSummary";
 import BeverageAnnualSummary from "@/pages/beverage/AnnualSummary";
 import BeverageWeeklyTracker from "@/pages/beverage/WeeklyTracker";
+import BeverageBible from "@/pages/beverage/BeverageBible";
 import PLDashboard from "@/pages/pl/Dashboard";
 import WagesDashboard from "@/pages/wages/WagesDashboard";
 import PerformanceDashboard from "@/pages/performance/Dashboard";
@@ -58,6 +60,7 @@ function App() {
             <Route path="/food/month/:year/:month" element={<RequireAuth><Layout><FoodMonthSummary /></Layout></RequireAuth>} />
             <Route path="/food/annual-summary" element={<RequireAuth><Layout><FoodAnnualSummary /></Layout></RequireAuth>} />
             <Route path="/food/week/:year/:month/:week" element={<RequireAuth><Layout><FoodWeeklyTracker /></Layout></RequireAuth>} />
+            <Route path="/food/bible" element={<RequireAuth><Layout><FoodBible /></Layout></RequireAuth>} />
             
             {/* Beverage Routes */}
             <Route path="/beverage/dashboard" element={<RequireAuth><Layout><BeverageDashboard /></Layout></RequireAuth>} />
@@ -65,6 +68,7 @@ function App() {
             <Route path="/beverage/month/:year/:month" element={<RequireAuth><Layout><BeverageMonthSummary /></Layout></RequireAuth>} />
             <Route path="/beverage/annual-summary" element={<RequireAuth><Layout><BeverageAnnualSummary /></Layout></RequireAuth>} />
             <Route path="/beverage/week/:year/:month/:week" element={<RequireAuth><Layout><BeverageWeeklyTracker /></Layout></RequireAuth>} />
+            <Route path="/beverage/bible" element={<RequireAuth><Layout><BeverageBible /></Layout></RequireAuth>} />
             
             {/* P&L Routes */}
             <Route path="/pl/dashboard" element={<RequireAuth><Layout><PLDashboard /></Layout></RequireAuth>} />

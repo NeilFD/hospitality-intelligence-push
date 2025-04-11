@@ -115,6 +115,10 @@ const Layout = ({
           name: `${prefix} Annual Summary`,
           path: `/${currentModule}/annual-summary`,
           icon: <ChartBar className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Bible`,
+          path: `/${currentModule}/bible`,
+          icon: <Book className="mr-2 h-4 w-4" />
         }];
       case 'pl':
         return [{
