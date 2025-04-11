@@ -22,12 +22,6 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
 }) => {
   const totalCost = ingredients.reduce((sum, ing) => sum + (ing.totalCost || 0), 0);
   
-  // Handle input changes to prevent propagation issues
-  const handleInputChange = (index: number, field: keyof Ingredient, e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    onIngredientChange(index, field, e.target.value);
-  };
-
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
@@ -36,10 +30,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
           type="button" 
           variant="outline" 
           size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddIngredient();
-          }}
+          onClick={onAddIngredient}
           className="text-gray-900"
         >
           <Plus className="h-4 w-4 mr-1" />
@@ -63,7 +54,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
               <Input 
                 placeholder="Name"
                 value={ingredient.name}
-                onChange={(e) => handleInputChange(index, 'name', e)}
+                onChange={(e) => onIngredientChange(index, 'name', e.target.value)}
                 className="text-gray-900 bg-white border border-gray-300"
               />
             </div>
@@ -72,16 +63,14 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 type="number"
                 placeholder="Amount"
                 value={ingredient.amount || ''}
-                onChange={(e) => handleInputChange(index, 'amount', e)}
+                onChange={(e) => onIngredientChange(index, 'amount', e.target.value)}
                 className="text-gray-900 bg-white border border-gray-300"
               />
             </div>
             <div className="col-span-2">
               <Select
                 value={ingredient.unit}
-                onValueChange={(value) => {
-                  onIngredientChange(index, 'unit', value);
-                }}
+                onValueChange={(value) => onIngredientChange(index, 'unit', value)}
               >
                 <SelectTrigger className="w-full text-gray-900 bg-white">
                   <SelectValue placeholder="Unit" />
@@ -101,7 +90,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 step="0.01"
                 placeholder="£/unit"
                 value={ingredient.costPerUnit || ''}
-                onChange={(e) => handleInputChange(index, 'costPerUnit', e)}
+                onChange={(e) => onIngredientChange(index, 'costPerUnit', e.target.value)}
                 className="text-gray-900 bg-white border border-gray-300"
               />
             </div>
@@ -112,10 +101,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemoveIngredient(index);
-                }}
+                onClick={() => onRemoveIngredient(index)}
                 disabled={ingredients.length === 1}
                 className="p-0 h-8 w-8"
               >

@@ -130,8 +130,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   
   const computedCostingTotals = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
   
-  const handleSave = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleSave = () => {
     const costing = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
     
     const updatedRecipe: Recipe = {
@@ -146,14 +145,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     
     onSave(updatedRecipe);
   };
-  
-  const handleClose = () => {
-    onClose();
-  };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white text-gray-900" onClick={(e) => e.stopPropagation()}>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
           <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
           <DialogDescription className="text-gray-600">
@@ -161,7 +156,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <RecipeBasicInfo 
             name={formData.name}
             category={formData.category}
@@ -209,16 +204,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         <DialogFooter>
           <Button 
             variant="outline" 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClose();
-            }} 
+            onClick={onClose}
             className="text-gray-900"
           >
             Cancel
           </Button>
           <Button 
-            onClick={handleSave} 
+            onClick={handleSave}
             className="text-white"
           >
             Save Recipe

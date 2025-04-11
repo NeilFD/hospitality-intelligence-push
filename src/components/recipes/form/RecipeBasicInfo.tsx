@@ -48,12 +48,6 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
   onImageUpload,
   onImageRemove
 }) => {
-  // Handle input changes individually to prevent propagation issues
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.stopPropagation();
-    onInputChange(e);
-  };
-
   return (
     <div className="space-y-4">
       <div>
@@ -62,9 +56,9 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
           id="name"
           name="name"
           value={name}
-          onChange={handleInputChange}
+          onChange={onInputChange}
           placeholder="Enter recipe name"
-          className="text-gray-900 bg-white"
+          className="text-gray-900 bg-white border border-gray-300"
         />
       </div>
       
@@ -72,9 +66,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
         <Label htmlFor="category" className="text-gray-900">Category</Label>
         <Select
           value={category}
-          onValueChange={(value) => {
-            onCategoryChange(value);
-          }}
+          onValueChange={onCategoryChange}
         >
           <SelectTrigger id="category" className="text-gray-900 bg-white">
             <SelectValue placeholder="Select category" />
@@ -114,10 +106,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               id="image-upload"
               type="file" 
               accept="image/*"
-              onChange={(e) => {
-                e.stopPropagation();
-                onImageUpload(e);
-              }}
+              onChange={onImageUpload}
               className="hidden"
             />
           </div>
@@ -125,10 +114,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onImageRemove();
-              }}
+              onClick={onImageRemove}
               className="text-gray-900"
             >
               <X className="h-4 w-4" />
@@ -199,10 +185,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                   ? 'bg-red-100 text-red-800 border border-red-300' 
                   : 'bg-gray-100 text-gray-800 border border-gray-300'
               }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAllergenToggle(allergen.name);
-              }}
+              onClick={() => onAllergenToggle(allergen.name)}
             >
               {allergen.name}
             </div>
@@ -216,7 +199,7 @@ export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
           id="method"
           name="method"
           value={method || ''}
-          onChange={handleInputChange}
+          onChange={onInputChange}
           placeholder="Enter cooking instructions"
           rows={6}
           className="text-gray-900 bg-white border border-gray-300"

@@ -9,6 +9,10 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       ...props
     } : props;
     
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+    };
+    
     return (
       <input
         type={type}
@@ -17,6 +21,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className
         )}
         ref={ref}
+        onClick={handleClick}
         {...inputProps}
       />
     )

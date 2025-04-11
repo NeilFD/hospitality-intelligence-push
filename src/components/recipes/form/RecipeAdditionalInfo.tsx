@@ -25,17 +25,6 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
   onInputChange,
   onCostingChange
 }) => {
-  // Handle input changes individually to prevent propagation issues
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.stopPropagation();
-    onInputChange(e);
-  };
-  
-  const handleCostingChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    onCostingChange(field, e.target.value);
-  };
-
   return (
     <div className="space-y-4">
       <div>
@@ -45,7 +34,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           type="number"
           step="0.01"
           value={actualMenuPrice || ''}
-          onChange={(e) => handleCostingChange('actualMenuPrice', e)}
+          onChange={(e) => onCostingChange('actualMenuPrice', e.target.value)}
           placeholder="Enter menu price"
           className="text-gray-900 bg-white border border-gray-300"
         />
@@ -64,7 +53,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           name="timeToTableMinutes"
           type="number"
           value={timeToTableMinutes || ''}
-          onChange={handleInputChange}
+          onChange={onInputChange}
           placeholder="Enter preparation time"
           className="text-gray-900 bg-white border border-gray-300"
         />
@@ -76,7 +65,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           id="recommendedUpsell"
           name="recommendedUpsell"
           value={recommendedUpsell || ''}
-          onChange={handleInputChange}
+          onChange={onInputChange}
           placeholder="Enter recommended upsell"
           className="text-gray-900 bg-white border border-gray-300"
         />
@@ -88,7 +77,7 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
           id="miseEnPlace"
           name="miseEnPlace"
           value={miseEnPlace || ''}
-          onChange={handleInputChange}
+          onChange={onInputChange}
           placeholder="Enter mise en place details"
           rows={4}
           className="text-gray-900 bg-white border border-gray-300"
