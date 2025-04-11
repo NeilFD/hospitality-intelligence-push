@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +108,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
               £{(ingredient.totalCost || 0).toFixed(2)}
             </div>
             
-            <div className="col-span-1 flex justify-center pl-8">
+            <div className="col-span-1 flex justify-center pl-6">
               <Button 
                 variant="ghost" 
                 size="sm"
