@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -195,7 +196,7 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
               <Textarea
                 id="description"
                 name="description"
-                rows={6}
+                rows={10}
                 value={formData.description || ''}
                 onChange={handleInputChange}
                 placeholder="Describe the hospitality guide, its purpose, and detailed procedure..."
