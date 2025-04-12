@@ -6,26 +6,26 @@ import { Label } from '@/components/ui/label';
 
 interface RecipeAdditionalInfoProps {
   recommendedUpsell: string;
-  onRecommendedUpsellChange: (value: string) => void;
   timeToTableMinutes: number;
-  onTimeToTableMinutesChange: (value: number) => void;
   miseEnPlace: string;
-  onMiseEnPlaceChange: (value: string) => void;
   method: string;
-  onMethodChange: (value: string) => void;
   moduleType: string;
+  onRecommendedUpsellChange: (value: string) => void;
+  onTimeToTableMinutesChange: (value: number) => void;
+  onMiseEnPlaceChange: (value: string) => void;
+  onMethodChange: (value: string) => void;
 }
 
 const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
   recommendedUpsell,
-  onRecommendedUpsellChange,
   timeToTableMinutes,
-  onTimeToTableMinutesChange,
   miseEnPlace,
-  onMiseEnPlaceChange,
   method,
-  onMethodChange,
-  moduleType
+  moduleType,
+  onRecommendedUpsellChange,
+  onTimeToTableMinutesChange,
+  onMiseEnPlaceChange,
+  onMethodChange
 }) => {
   // Get appropriate labels for the fields based on module type
   const getLabels = () => {

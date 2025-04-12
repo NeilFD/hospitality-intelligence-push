@@ -8,29 +8,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Recipe } from '@/types/recipe-types';
 
 interface RecipeBasicInfoProps {
-  recipe: Partial<Recipe>;
-  categories: string[];
+  name: string;
+  category: string;
+  isVegan: boolean;
+  isVegetarian: boolean;
+  isGlutenFree: boolean;
   allergens: string[];
-  onNameChange: (name: string) => void;
-  onCategoryChange: (category: string) => void;
-  onAllergensChange: (allergens: string[]) => void;
-  onVeganChange: (isVegan: boolean) => void;
-  onVegetarianChange: (isVegetarian: boolean) => void;
-  onGlutenFreeChange: (isGlutenFree: boolean) => void;
+  method: string;
+  imagePreview?: string;
+  categories: any[];
+  allergenTypes: any[];
   moduleType: string;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onCategoryChange: (value: string) => void;
+  onCheckboxChange: (name: string, checked: boolean) => void;
+  onAllergenToggle: (allergen: string) => void;
+  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageRemove: () => void;
 }
 
 const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
-  recipe,
-  categories,
+  name,
+  category,
+  isVegan,
+  isVegetarian,
+  isGlutenFree,
   allergens,
-  onNameChange,
+  method,
+  imagePreview,
+  categories,
+  allergenTypes,
+  moduleType,
+  onInputChange,
   onCategoryChange,
-  onAllergensChange,
-  onVeganChange,
-  onVegetarianChange,
-  onGlutenFreeChange,
-  moduleType
+  onCheckboxChange,
+  onAllergenToggle,
+  onImageUpload,
+  onImageRemove
 }) => {
   return (
     <div className="space-y-4">
@@ -41,13 +55,14 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
 
       <div className="grid gap-4">
         <div>
-          <Label htmlFor="recipeName">
+          <Label htmlFor="name">
             {moduleType === 'hospitality' ? 'Guide Name' : 'Recipe Name'}
           </Label>
           <Input 
-            id="recipeName" 
-            value={recipe.name || ''} 
-            onChange={(e) => onNameChange(e.target.value)}
+            id="name" 
+            name="name"
+            value={name} 
+            onChange={onInputChange}
             placeholder={moduleType === 'hospitality' ? "Enter guide name..." : "Enter recipe name..."}
             className="mt-1"
           />
@@ -58,7 +73,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             {moduleType === 'hospitality' ? 'Service Category' : 'Category'}
           </Label>
           <Select 
-            value={recipe.category || 'Uncategorized'} 
+            value={category || 'Uncategorized'} 
             onValueChange={onCategoryChange}
           >
             <SelectTrigger id="category" className="w-full mt-1">
@@ -66,9 +81,9 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Uncategorized">Uncategorized</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
+              {categories.map((cat) => (
+                <SelectItem key={typeof cat === 'string' ? cat : cat.id} value={typeof cat === 'string' ? cat : cat.name}>
+                  {typeof cat === 'string' ? cat : cat.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -80,22 +95,19 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             <div>
               <Label className="mb-1 block">Contains Allergens</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
-                {allergens.map((allergen) => (
-                  <div key={allergen} className="flex items-center space-x-2">
+                {allergenTypes.map((allergen) => (
+                  <div key={typeof allergen === 'string' ? allergen : allergen.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id={`allergen-${allergen}`}
-                      checked={recipe.allergens?.includes(allergen) || false}
+                      id={`allergen-${typeof allergen === 'string' ? allergen : allergen.name}`}
+                      checked={allergens?.includes(typeof allergen === 'string' ? allergen : allergen.name) || false}
                       onChange={(e) => {
-                        const newAllergens = e.target.checked
-                          ? [...(recipe.allergens || []), allergen]
-                          : (recipe.allergens || []).filter(a => a !== allergen);
-                        onAllergensChange(newAllergens);
+                        onAllergenToggle(typeof allergen === 'string' ? allergen : allergen.name);
                       }}
                       className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <Label htmlFor={`allergen-${allergen}`} className="text-sm font-medium">
-                      {allergen}
+                    <Label htmlFor={`allergen-${typeof allergen === 'string' ? allergen : allergen.name}`} className="text-sm font-medium">
+                      {typeof allergen === 'string' ? allergen : allergen.name}
                     </Label>
                   </div>
                 ))}
@@ -106,8 +118,8 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               <div>
                 <Label>Vegan</Label>
                 <RadioGroup
-                  value={recipe.isVegan ? 'yes' : 'no'}
-                  onValueChange={(value) => onVeganChange(value === 'yes')}
+                  value={isVegan ? 'yes' : 'no'}
+                  onValueChange={(value) => onCheckboxChange('isVegan', value === 'yes')}
                   className="flex space-x-4 mt-1"
                 >
                   <div className="flex items-center space-x-2">
@@ -124,8 +136,8 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               <div>
                 <Label>Vegetarian</Label>
                 <RadioGroup
-                  value={recipe.isVegetarian ? 'yes' : 'no'}
-                  onValueChange={(value) => onVegetarianChange(value === 'yes')}
+                  value={isVegetarian ? 'yes' : 'no'}
+                  onValueChange={(value) => onCheckboxChange('isVegetarian', value === 'yes')}
                   className="flex space-x-4 mt-1"
                 >
                   <div className="flex items-center space-x-2">
@@ -142,8 +154,8 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               <div>
                 <Label>Gluten Free</Label>
                 <RadioGroup
-                  value={recipe.isGlutenFree ? 'yes' : 'no'}
-                  onValueChange={(value) => onGlutenFreeChange(value === 'yes')}
+                  value={isGlutenFree ? 'yes' : 'no'}
+                  onValueChange={(value) => onCheckboxChange('isGlutenFree', value === 'yes')}
                   className="flex space-x-4 mt-1"
                 >
                   <div className="flex items-center space-x-2">
@@ -159,6 +171,50 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             </div>
           </>
         )}
+        
+        {/* Image upload section */}
+        <div>
+          <Label className="mb-1 block">Image</Label>
+          <div className="mt-1">
+            {imagePreview ? (
+              <div className="relative">
+                <img 
+                  src={imagePreview} 
+                  alt="Recipe preview" 
+                  className="w-full h-48 object-cover rounded-md"
+                />
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={onImageRemove}
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <div className="space-y-1 text-center">
+                  <div className="flex text-sm text-gray-600">
+                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                      <span>Upload an image</span>
+                      <input 
+                        id="file-upload" 
+                        name="file-upload" 
+                        type="file" 
+                        className="sr-only"
+                        accept="image/*" 
+                        onChange={onImageUpload}
+                      />
+                    </label>
+                    <p className="pl-1">or drag and drop</p>
+                  </div>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

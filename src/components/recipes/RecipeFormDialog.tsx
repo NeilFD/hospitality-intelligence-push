@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Recipe, MenuCategory, AllergenType, Ingredient } from "@/types/recipe-types";
-import { RecipeBasicInfo } from "./form/RecipeBasicInfo";
-import { RecipeAdditionalInfo } from "./form/RecipeAdditionalInfo";
+import RecipeBasicInfo from "./form/RecipeBasicInfo";
+import RecipeAdditionalInfo from "./form/RecipeAdditionalInfo";
 import IngredientForm from "./form/IngredientForm";
 import { createEmptyRecipe, emptyIngredient, calculateTotals, normalizeDietaryInfo } from "./form/RecipeFormUtils";
 import { toast } from "sonner";
@@ -18,9 +17,9 @@ interface RecipeFormDialogProps {
   onClose: () => void;
   onSave: (recipe: Recipe) => void;
   recipe?: Recipe;
-  moduleType: 'food' | 'beverage';
-  categories: MenuCategory[];
-  allergens: AllergenType[];
+  moduleType: 'food' | 'beverage' | 'hospitality';
+  categories: MenuCategory[] | string[];
+  allergens: AllergenType[] | string[];
 }
 
 const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
@@ -204,9 +203,9 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader className="flex flex-row justify-between items-center">
           <div>
-            <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
+            <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : moduleType === 'beverage' ? 'Beverage' : 'Hospitality'} Recipe</DialogTitle>
             <DialogDescription className="text-gray-600">
-              Fill in the details for this {moduleType === 'food' ? 'dish' : 'beverage'} recipe.
+              Fill in the details for this {moduleType === 'food' ? 'dish' : moduleType === 'beverage' ? 'beverage' : 'hospitality guide'}.
             </DialogDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -247,21 +246,20 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           <div className="space-y-4">
             <IngredientForm 
               ingredients={formData.ingredients}
-              onIngredientChange={handleIngredientChange}
-              onAddIngredient={addIngredient}
-              onRemoveIngredient={removeIngredient}
+              onIngredientsChange={(ingredients) => setFormData(prev => ({ ...prev, ingredients }))}
+              moduleType={moduleType}
             />
             
             <RecipeAdditionalInfo 
-              timeToTableMinutes={formData.timeToTableMinutes}
               recommendedUpsell={formData.recommendedUpsell || ""}
+              timeToTableMinutes={formData.timeToTableMinutes}
               miseEnPlace={formData.miseEnPlace || ""}
-              actualMenuPrice={formData.costing.actualMenuPrice}
-              suggestedPrice={computedCostingTotals.suggestedSellingPrice}
-              grossProfitPercentage={computedCostingTotals.grossProfitPercentage}
-              onInputChange={handleInputChange}
-              onCostingChange={handleCostingInputChange}
+              method={formData.method || ""}
               moduleType={moduleType}
+              onRecommendedUpsellChange={(value) => setFormData(prev => ({ ...prev, recommendedUpsell: value }))}
+              onTimeToTableMinutesChange={(value) => setFormData(prev => ({ ...prev, timeToTableMinutes: value }))}
+              onMiseEnPlaceChange={(value) => setFormData(prev => ({ ...prev, miseEnPlace: value }))}
+              onMethodChange={(value) => setFormData(prev => ({ ...prev, method: value }))}
             />
           </div>
         </div>
