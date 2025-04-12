@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +51,12 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        pastel: {
+          green: "#F2FCE2",
+          yellow: "#FFF9C2",
+          blue: "#E6F2FF",
+          purple: "#F3E5F5",
         },
         tavern: {
           blue: "#48495E",
