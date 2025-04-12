@@ -22,10 +22,15 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   };
 
   return (
-    <img 
-      src="/lovable-uploads/69a5215d-88c2-4e73-880a-f0820234832d.png" 
-      alt="Hi Logo" 
-      className={cn(sizeClasses[size], 'object-contain', className)} 
-    />
+    <div 
+      className={cn(
+        sizeClasses[size], 
+        'bg-[#806cac] flex items-center justify-center rounded-lg', 
+        className
+      )}
+    >
+      <span className="text-white font-bold text-3xl">Hi</span>
+    </div>
   );
 };
+
