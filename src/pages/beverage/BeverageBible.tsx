@@ -31,7 +31,7 @@ const BeverageBible: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed to false to make sidebar closed by default
   const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
 
