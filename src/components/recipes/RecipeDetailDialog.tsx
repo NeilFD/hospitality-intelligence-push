@@ -1,215 +1,207 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
 import { Recipe } from '@/types/recipe-types';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Clock, Utensils, BarChart4, Trash2, FileEdit, AlertCircle, Check } from 'lucide-react';
+import { Separator } from '../ui/separator';
+import { format } from 'date-fns';
+import { ArchiveIcon, ChefHat, Clock, Download, Edit, Star, Trash2, ConciergeBell, BookOpen } from 'lucide-react';
 import RecipePDF from './RecipePDF';
 
 interface RecipeDetailDialogProps {
-  recipe: Recipe;
   open: boolean;
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: (recipe: Recipe) => void;
+  recipe: Recipe;
+  onEdit?: (recipe: Recipe) => void;
+  onDelete?: (recipe: Recipe) => void;
+  onArchive?: (recipe: Recipe) => void;
 }
 
 const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
-  recipe,
   open,
   onClose,
+  recipe,
   onEdit,
   onDelete,
+  onArchive,
 }) => {
-  if (!recipe) return null;
-  
+  const totalCost = recipe.ingredients.reduce((sum, ing) => sum + (ing.totalCost || 0), 0);
   const isHospitality = recipe.moduleType === 'hospitality';
-  const isBeverage = recipe.moduleType === 'beverage';
   
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-    }).format(amount);
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(recipe);
+    }
+    onClose();
+  };
+  
+  const handleDelete = () => {
+    if (onDelete && window.confirm(`Are you sure you want to delete this ${isHospitality ? 'guide' : 'recipe'}?`)) {
+      onDelete(recipe);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-slate-900">{recipe.name}</DialogTitle>
-          <div className="flex flex-wrap gap-2 mt-2">
-            <Badge variant="secondary">{recipe.category || 'Uncategorized'}</Badge>
-            {recipe.timeToTableMinutes > 0 && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {recipe.timeToTableMinutes} min
-              </Badge>
-            )}
-            {!isHospitality && (
-              <>
-                {recipe.isVegan && (
-                  <Badge className="bg-green-600">Vegan</Badge>
-                )}
-                {recipe.isVegetarian && (
-                  <Badge className="bg-green-500">Vegetarian</Badge>
-                )}
-                {recipe.isGlutenFree && (
-                  <Badge className="bg-amber-600">Gluten Free</Badge>
-                )}
-              </>
-            )}
+          <div className="flex items-center gap-2">
+            {isHospitality ? 
+              <ConciergeBell className="h-6 w-6 text-blue-600" /> : 
+              recipe.moduleType === 'beverage' ? 
+              <BookOpen className="h-6 w-6 text-purple-600" /> : 
+              <ChefHat className="h-6 w-6 text-green-600" />
+            }
+            <DialogTitle className="text-xl font-bold">{recipe.name}</DialogTitle>
           </div>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6">
-            {recipe.imageUrl && (
-              <div className="aspect-video w-full overflow-hidden rounded-md">
-                <img 
-                  src={recipe.imageUrl} 
-                  alt={recipe.name} 
-                  className="w-full h-full object-cover"
-                />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Image */}
+          {recipe.imageUrl && (
+            <div className="overflow-hidden rounded-md aspect-video">
+              <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover" />
+            </div>
+          )}
+          
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg">Details</h3>
+              <Separator className="my-2" />
+              
+              <div className="grid grid-cols-2 gap-2">
+                <span className="text-muted-foreground">Category:</span>
+                <span>{recipe.category || 'Uncategorized'}</span>
+                
+                {!isHospitality && (
+                  <>
+                    <span className="text-muted-foreground">Vegan:</span>
+                    <span>{recipe.isVegan ? 'Yes' : 'No'}</span>
+                    
+                    <span className="text-muted-foreground">Vegetarian:</span>
+                    <span>{recipe.isVegetarian ? 'Yes' : 'No'}</span>
+                    
+                    <span className="text-muted-foreground">Gluten Free:</span>
+                    <span>{recipe.isGlutenFree ? 'Yes' : 'No'}</span>
+                  </>
+                )}
+                
+                <span className="text-muted-foreground">Created:</span>
+                <span>{format(new Date(recipe.createdAt), 'MMM d, yyyy')}</span>
               </div>
-            )}
-            
-            {recipe.method && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
-                <div className="whitespace-pre-line text-gray-700">
-                  {recipe.method}
-                </div>
-              </div>
-            )}
-            
-            {recipe.ingredients && recipe.ingredients.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
-                <div className="space-y-2">
-                  {recipe.ingredients.map((ingredient, index) => (
-                    <div key={ingredient.id || index} className="flex justify-between py-2 border-b border-gray-100">
-                      <div>
-                        <span className="font-medium">{ingredient.name}</span>
-                        {ingredient.amount && ingredient.unit && (
-                          <span className="text-gray-600 ml-2">
-                            {ingredient.amount} {ingredient.unit}
-                          </span>
-                        )}
-                      </div>
-                      {!isHospitality && ingredient.totalCost > 0 && (
-                        <div className="text-gray-600">
-                          {formatCurrency(ingredient.totalCost)}
-                        </div>
-                      )}
-                      {isHospitality && ingredient.costPerUnit > 0 && (
-                        <div className="text-gray-600">
-                          Importance: {ingredient.costPerUnit}/10
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {recipe.miseEnPlace && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">
-                  {isHospitality ? 'Required Tools/Resources' : 
-                   isBeverage ? 'Garnish' : 
-                   'Mise en Place'}
-                </h3>
-                <div className="whitespace-pre-line text-gray-700">
-                  {recipe.miseEnPlace}
-                </div>
-              </div>
-            )}
+            </div>
             
             {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">Allergens</h3>
+                <h3 className="font-semibold text-lg">Allergens</h3>
+                <Separator className="my-2" />
                 <div className="flex flex-wrap gap-2">
                   {recipe.allergens.map(allergen => (
-                    <Badge key={allergen} variant="outline" className="bg-red-50 text-red-800 border-red-200">
+                    <span key={allergen} className="px-2 py-1 bg-red-100 text-red-800 rounded-md text-sm">
                       {allergen}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               </div>
             )}
             
-            {recipe.recommendedUpsell && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
-                <div className="text-gray-700">{recipe.recommendedUpsell}</div>
-              </div>
-            )}
-            
-            {!isHospitality && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Costing</h3>
-                <Card className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm text-gray-500">Total Recipe Cost</div>
-                      <div className="font-semibold">{formatCurrency(recipe.costing.totalRecipeCost)}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">Suggested Selling Price</div>
-                      <div className="font-semibold">{formatCurrency(recipe.costing.suggestedSellingPrice)}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">Actual Menu Price</div>
-                      <div className="font-semibold">{formatCurrency(recipe.costing.actualMenuPrice)}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500">Gross Profit %</div>
-                      <div className="font-semibold">{recipe.costing.grossProfitPercentage}%</div>
-                    </div>
-                  </div>
-                </Card>
+            {recipe.timeToTableMinutes > 0 && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>{isHospitality ? 'Duration' : 'Time to table'}: {recipe.timeToTableMinutes} minutes</span>
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
         
-        <DialogFooter className="gap-2 sm:gap-0">
-          <div className="flex flex-wrap gap-2 justify-end w-full">
-            <RecipePDF recipe={recipe} />
-            <Button variant="outline" onClick={onEdit} className="flex items-center gap-2">
-              <FileEdit className="h-4 w-4" />
-              Edit {isHospitality ? 'Guide' : 'Recipe'}
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="flex items-center gap-2">
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete this {isHospitality ? 'hospitality guide' : 'recipe'}.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => onDelete(recipe)} 
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+        {/* Ingredients */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg">{isHospitality ? 'Steps/Procedures' : 'Ingredients'}</h3>
+          <Separator className="my-2" />
+          
+          {recipe.ingredients.length > 0 ? (
+            <div className="space-y-2">
+              {recipe.ingredients.map((ingredient, index) => (
+                <div key={ingredient.id} className="flex items-center gap-2">
+                  <span className="font-medium">{index + 1}.</span>
+                  <span className="flex-grow">{ingredient.name}</span>
+                  
+                  {!isHospitality && (
+                    <span className="text-sm text-gray-600">
+                      {ingredient.amount} {ingredient.unit} (£{ingredient.totalCost.toFixed(2)})
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No {isHospitality ? 'steps' : 'ingredients'} added.</p>
+          )}
+        </div>
+        
+        {/* Method */}
+        {recipe.method && (
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
+            <Separator className="my-2" />
+            <p className="whitespace-pre-line">{recipe.method}</p>
+          </div>
+        )}
+        
+        {/* Costing */}
+        {!isHospitality && (
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Costing</h3>
+            <Separator className="my-2" />
+            
+            <div className="grid grid-cols-2 gap-2">
+              <span className="text-muted-foreground">Total Cost:</span>
+              <span className="font-medium">£{totalCost.toFixed(2)}</span>
+              
+              <span className="text-muted-foreground">Suggested Price:</span>
+              <span className="font-medium">£{recipe.costing.suggestedSellingPrice.toFixed(2)}</span>
+              
+              <span className="text-muted-foreground">Menu Price:</span>
+              <span className="font-medium">£{recipe.costing.actualMenuPrice.toFixed(2)}</span>
+              
+              <span className="text-muted-foreground">Gross Profit:</span>
+              <span className="font-medium">{(recipe.costing.grossProfitPercentage * 100).toFixed(0)}%</span>
+            </div>
+          </div>
+        )}
+        
+        <DialogFooter className="flex justify-between items-center">
+          <div className="flex gap-2">
+            {onDelete && (
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
+            
+            {onArchive && (
+              <Button variant="outline" onClick={() => onArchive(recipe)}>
+                <ArchiveIcon className="h-4 w-4 mr-2" />
+                {recipe.archived ? 'Unarchive' : 'Archive'}
+              </Button>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <RecipePDF recipe={recipe}>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            </RecipePDF>
+            
+            {onEdit && (
+              <Button onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>
