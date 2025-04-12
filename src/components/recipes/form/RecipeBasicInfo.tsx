@@ -7,6 +7,7 @@ import { FormField } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Recipe } from '@/types/recipe-types';
 import { Button } from '@/components/ui/button';
+import { Check, Circle } from 'lucide-react';
 
 interface RecipeBasicInfoProps {
   name: string;
@@ -94,80 +95,139 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
         {moduleType !== 'hospitality' && (
           <>
             <div>
-              <Label className="mb-1 block">Contains Allergens</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
-                {allergenTypes.map((allergen) => (
-                  <div key={typeof allergen === 'string' ? allergen : allergen.id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`allergen-${typeof allergen === 'string' ? allergen : allergen.name}`}
-                      checked={allergens?.includes(typeof allergen === 'string' ? allergen : allergen.name) || false}
-                      onChange={(e) => {
-                        onAllergenToggle(typeof allergen === 'string' ? allergen : allergen.name);
-                      }}
-                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <Label htmlFor={`allergen-${typeof allergen === 'string' ? allergen : allergen.name}`} className="text-sm font-medium">
-                      {typeof allergen === 'string' ? allergen : allergen.name}
-                    </Label>
-                  </div>
-                ))}
+              <Label className="mb-2 block">Contains Allergens</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+                {allergenTypes.map((allergen) => {
+                  const allergenName = typeof allergen === 'string' ? allergen : allergen.name;
+                  const isSelected = allergens?.includes(allergenName) || false;
+                  
+                  return (
+                    <div 
+                      key={allergenName}
+                      onClick={() => onAllergenToggle(allergenName)}
+                      className={`
+                        flex items-center gap-2 p-2 rounded-md cursor-pointer border transition-colors
+                        ${isSelected 
+                          ? 'bg-blue-100 border-blue-500 text-blue-800' 
+                          : 'bg-white border-gray-300 text-gray-800 hover:bg-gray-50'}
+                      `}
+                    >
+                      <div className={`
+                        h-5 w-5 rounded flex items-center justify-center border
+                        ${isSelected 
+                          ? 'bg-blue-500 border-blue-600' 
+                          : 'bg-white border-gray-300'}
+                      `}>
+                        {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
+                      </div>
+                      <span className="text-sm font-medium">{allergenName}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div>
-                <Label>Vegan</Label>
-                <RadioGroup
-                  value={isVegan ? 'yes' : 'no'}
-                  onValueChange={(value) => onCheckboxChange('isVegan', value === 'yes')}
-                  className="flex space-x-4 mt-1"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="vegan-yes" />
-                    <Label htmlFor="vegan-yes">Yes</Label>
+                <Label className="mb-2 block">Vegan</Label>
+                <div className="flex gap-4 mt-1">
+                  <div 
+                    onClick={() => onCheckboxChange('isVegan', true)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div className={`
+                      h-5 w-5 rounded-full flex items-center justify-center border
+                      ${isVegan 
+                        ? 'bg-green-500 border-green-600' 
+                        : 'bg-white border-gray-300'}
+                    `}>
+                      {isVegan && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
+                    </div>
+                    <span>Yes</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="vegan-no" />
-                    <Label htmlFor="vegan-no">No</Label>
+                  <div 
+                    onClick={() => onCheckboxChange('isVegan', false)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div className={`
+                      h-5 w-5 rounded-full flex items-center justify-center border
+                      ${!isVegan 
+                        ? 'bg-green-500 border-green-600' 
+                        : 'bg-white border-gray-300'}
+                    `}>
+                      {!isVegan && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
+                    </div>
+                    <span>No</span>
                   </div>
-                </RadioGroup>
+                </div>
               </div>
 
               <div>
-                <Label>Vegetarian</Label>
-                <RadioGroup
-                  value={isVegetarian ? 'yes' : 'no'}
-                  onValueChange={(value) => onCheckboxChange('isVegetarian', value === 'yes')}
-                  className="flex space-x-4 mt-1"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="vegetarian-yes" />
-                    <Label htmlFor="vegetarian-yes">Yes</Label>
+                <Label className="mb-2 block">Vegetarian</Label>
+                <div className="flex gap-4 mt-1">
+                  <div 
+                    onClick={() => onCheckboxChange('isVegetarian', true)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div className={`
+                      h-5 w-5 rounded-full flex items-center justify-center border
+                      ${isVegetarian 
+                        ? 'bg-green-500 border-green-600' 
+                        : 'bg-white border-gray-300'}
+                    `}>
+                      {isVegetarian && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
+                    </div>
+                    <span>Yes</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="vegetarian-no" />
-                    <Label htmlFor="vegetarian-no">No</Label>
+                  <div 
+                    onClick={() => onCheckboxChange('isVegetarian', false)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div className={`
+                      h-5 w-5 rounded-full flex items-center justify-center border
+                      ${!isVegetarian 
+                        ? 'bg-green-500 border-green-600' 
+                        : 'bg-white border-gray-300'}
+                    `}>
+                      {!isVegetarian && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
+                    </div>
+                    <span>No</span>
                   </div>
-                </RadioGroup>
+                </div>
               </div>
 
               <div>
-                <Label>Gluten Free</Label>
-                <RadioGroup
-                  value={isGlutenFree ? 'yes' : 'no'}
-                  onValueChange={(value) => onCheckboxChange('isGlutenFree', value === 'yes')}
-                  className="flex space-x-4 mt-1"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="gluten-free-yes" />
-                    <Label htmlFor="gluten-free-yes">Yes</Label>
+                <Label className="mb-2 block">Gluten Free</Label>
+                <div className="flex gap-4 mt-1">
+                  <div 
+                    onClick={() => onCheckboxChange('isGlutenFree', true)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div className={`
+                      h-5 w-5 rounded-full flex items-center justify-center border
+                      ${isGlutenFree 
+                        ? 'bg-green-500 border-green-600' 
+                        : 'bg-white border-gray-300'}
+                    `}>
+                      {isGlutenFree && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
+                    </div>
+                    <span>Yes</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="gluten-free-no" />
-                    <Label htmlFor="gluten-free-no">No</Label>
+                  <div 
+                    onClick={() => onCheckboxChange('isGlutenFree', false)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div className={`
+                      h-5 w-5 rounded-full flex items-center justify-center border
+                      ${!isGlutenFree 
+                        ? 'bg-green-500 border-green-600' 
+                        : 'bg-white border-gray-300'}
+                    `}>
+                      {!isGlutenFree && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
+                    </div>
+                    <span>No</span>
                   </div>
-                </RadioGroup>
+                </div>
               </div>
             </div>
           </>

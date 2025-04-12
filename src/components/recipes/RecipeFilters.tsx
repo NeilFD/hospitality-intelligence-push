@@ -12,7 +12,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface RecipeFiltersProps {
-  moduleType: 'food' | 'beverage';
+  moduleType: 'food' | 'beverage' | 'hospitality';
   categories: MenuCategory[];
   allergens: AllergenType[];
   filters: RecipeFilterOptions;
@@ -192,7 +192,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         <div className="flex-grow">
           <Input 
             type="text" 
-            placeholder={`Search ${moduleType === 'food' ? 'dishes' : 'beverages'}...`}
+            placeholder={`Search ${moduleType === 'food' ? 'dishes' : moduleType === 'beverage' ? 'beverages' : 'guides'}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
@@ -256,62 +256,66 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         </CollapsibleContent>
       </Collapsible>
       
-      <Collapsible open={openDietary} onOpenChange={setOpenDietary}>
-        <CollapsibleHeader title="Dietary Requirements" isOpen={openDietary} onClick={() => setOpenDietary(!openDietary)} />
-        <CollapsibleContent>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={getDietaryButtonClass(filters.isVegetarian)}
-              onClick={() => handleDietaryToggle('isVegetarian')}
-            >
-              {getDietaryButtonLabel(filters.isVegetarian, 'isVegetarian')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={getDietaryButtonClass(filters.isVegan)}
-              onClick={() => handleDietaryToggle('isVegan')}
-            >
-              {getDietaryButtonLabel(filters.isVegan, 'isVegan')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={getDietaryButtonClass(filters.isGlutenFree)}
-              onClick={() => handleDietaryToggle('isGlutenFree')}
-            >
-              {getDietaryButtonLabel(filters.isGlutenFree, 'isGlutenFree')}
-            </Button>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-      
-      <Collapsible open={openAllergens} onOpenChange={setOpenAllergens}>
-        <CollapsibleHeader title="Allergens" isOpen={openAllergens} onClick={() => setOpenAllergens(!openAllergens)} />
-        <CollapsibleContent>
-          <div className="flex flex-wrap gap-2">
-            {allergens.map((allergen) => (
-              <Badge 
-                key={allergen.id}
-                variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
-                className={`cursor-pointer ${
-                  filters.allergens.includes(allergen.name) 
-                    ? "bg-tavern-blue text-white" 
-                    : "bg-gray-100 text-tavern-blue-dark"
-                }`}
-                onClick={() => handleAllergenToggle(allergen.name)}
-              >
-                {allergen.name}
-              </Badge>
-            ))}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      {moduleType !== 'hospitality' && (
+        <>
+          <Collapsible open={openDietary} onOpenChange={setOpenDietary}>
+            <CollapsibleHeader title="Dietary Requirements" isOpen={openDietary} onClick={() => setOpenDietary(!openDietary)} />
+            <CollapsibleContent>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={getDietaryButtonClass(filters.isVegetarian)}
+                  onClick={() => handleDietaryToggle('isVegetarian')}
+                >
+                  {getDietaryButtonLabel(filters.isVegetarian, 'isVegetarian')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={getDietaryButtonClass(filters.isVegan)}
+                  onClick={() => handleDietaryToggle('isVegan')}
+                >
+                  {getDietaryButtonLabel(filters.isVegan, 'isVegan')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={getDietaryButtonClass(filters.isGlutenFree)}
+                  onClick={() => handleDietaryToggle('isGlutenFree')}
+                >
+                  {getDietaryButtonLabel(filters.isGlutenFree, 'isGlutenFree')}
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+          
+          <Collapsible open={openAllergens} onOpenChange={setOpenAllergens}>
+            <CollapsibleHeader title="Allergens" isOpen={openAllergens} onClick={() => setOpenAllergens(!openAllergens)} />
+            <CollapsibleContent>
+              <div className="flex flex-wrap gap-2">
+                {allergens.map((allergen) => (
+                  <Badge 
+                    key={allergen.id}
+                    variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
+                    className={`cursor-pointer ${
+                      filters.allergens.includes(allergen.name) 
+                        ? "bg-tavern-blue text-white" 
+                        : "bg-gray-100 text-tavern-blue-dark"
+                    }`}
+                    onClick={() => handleAllergenToggle(allergen.name)}
+                  >
+                    {allergen.name}
+                  </Badge>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </>
+      )}
       
       <Collapsible open={openAlphabet} onOpenChange={setOpenAlphabet}>
         <CollapsibleHeader title="A-Z" isOpen={openAlphabet} onClick={() => setOpenAlphabet(!openAlphabet)} />
