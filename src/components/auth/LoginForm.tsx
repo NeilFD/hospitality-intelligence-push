@@ -68,7 +68,7 @@ export default function LoginForm() {
       }} whileTap={{
         scale: 0.97
       }} className="pt-2 relative overflow-hidden group">
-          <Button type="submit" disabled={isLoading} className="w-full transition-all duration-300 relative overflow-hidden text-hi-purple font-bold bg-green-400 hover:bg-green-300">
+          <Button type="submit" disabled={isLoading} className="w-full transition-all duration-300 relative overflow-hidden text-hi-purple font-bold bg-green-300 hover:bg-green-200">
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
         </motion.div>
