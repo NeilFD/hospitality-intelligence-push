@@ -30,7 +30,7 @@ const HospitalityBible: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
 
@@ -124,7 +124,7 @@ const HospitalityBible: React.FC = () => {
             actualMenuPrice: recipe.actual_menu_price || 0,
             grossProfitPercentage: recipe.gross_profit_percentage || 0
           },
-          moduleType: recipe.module_type,
+          moduleType: 'hospitality',
           archived: recipe.archived || false,
           postedToNoticeboard: recipe.posted_to_noticeboard || false
         };
