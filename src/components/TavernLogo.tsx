@@ -20,6 +20,16 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
     '3xl': 'h-64 w-64',
     '4xl': 'h-96 w-96'
   };
+  
+  const textSizeClasses = {
+    sm: 'text-xl',
+    md: 'text-2xl',
+    lg: 'text-6xl',
+    xl: 'text-6xl',
+    '2xl': 'text-7xl',
+    '3xl': 'text-8xl',
+    '4xl': 'text-9xl'
+  };
 
   return (
     <div 
@@ -29,7 +39,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
         className
       )}
     >
-      <span className="text-white font-bold text-6xl">Hi</span>
+      <span className={cn("text-white font-bold", textSizeClasses[size])}>Hi</span>
     </div>
   );
 };
