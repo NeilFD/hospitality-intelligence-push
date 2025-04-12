@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SendHorizonal, Sparkles, User, Share2, Bot as BotIcon } from 'lucide-react';
+import { SendHorizonal, Sparkles, User, Share2, Bot as BotIcon, UserRound } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { useWagesStore } from '@/components/wages/WagesStore';
@@ -836,7 +836,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
             >
               {!message.isUser && 
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pastel-blue/80 to-pastel-purple/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
-                  <BotIcon className="h-4 w-4 text-tavern-blue-dark" />
+                  <UserRound className="h-4 w-4 text-tavern-blue-dark" />
                 </div>
               }
               
@@ -889,7 +889,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
           {isLoading && (
             <div className="flex justify-start gap-2 animate-pulse">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-tavern-blue-light/80 to-tavern-blue/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
-                <BotIcon className="h-4 w-4 text-tavern-blue-dark" />
+                <UserRound className="h-4 w-4 text-tavern-blue-dark" />
               </div>
               <div className="frost-panel rounded-2xl rounded-tl-sm p-4 flex gap-2 min-w-[100px]">
                 <span className="w-2 h-2 bg-tavern-blue-light rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
