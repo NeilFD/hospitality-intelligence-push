@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -159,7 +158,7 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
           </div>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
               <Label htmlFor="name">Guide Name</Label>
@@ -192,25 +191,12 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="description">Description and Detailed Procedure</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={10}
-                value={formData.description || ''}
-                onChange={handleInputChange}
-                placeholder="Describe the hospitality guide, its purpose, and detailed procedure..."
-                className="mt-1"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="department">Department</Label>
               <Select 
                 value={formData.department || ''} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
               >
-                <SelectTrigger id="department" className="mt-1">
+                <SelectTrigger id="department" className="w-full mt-1">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -223,8 +209,65 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
             </div>
 
             <div>
+              <Label htmlFor="description">Description and Detailed Procedure</Label>
+              <Textarea
+                id="description"
+                name="description"
+                rows={10}
+                value={formData.description || ''}
+                onChange={handleInputChange}
+                placeholder="Describe the hospitality guide, its purpose, and detailed procedure..."
+                className="mt-1"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <Label>Steps/Procedures</Label>
+                <Button 
+                  type="button" 
+                  onClick={addStep}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" /> Add Step
+                </Button>
+              </div>
+              
+              <div className="space-y-2 mt-1 flex-grow">
+                {formData.steps.map((step, index) => (
+                  <div key={step.id} className="flex items-start gap-2">
+                    <div className="flex-shrink-0 mt-2">{index + 1}.</div>
+                    <Input 
+                      value={step.name}
+                      onChange={(e) => handleStepChange(index, e.target.value)}
+                      placeholder={`Step ${index + 1}...`}
+                      className="flex-grow"
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={() => removeStep(index)}
+                      size="icon"
+                      variant="ghost"
+                      className="flex-shrink-0 h-8 w-8 p-0 text-gray-500 hover:text-red-500"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {formData.steps.length === 0 && (
+                  <p className="text-sm text-gray-500 italic">No steps added yet. Click "Add Step" to start.</p>
+                )}
+              </div>
+            </div>
+
+            <div>
               <Label>Guide Image</Label>
-              <div className="mt-2 flex items-center">
+              <div className="mt-2">
                 {imagePreview ? (
                   <div className="relative">
                     <img src={imagePreview} alt="Preview" className="h-32 w-32 object-cover rounded-md" />
@@ -256,49 +299,6 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
                       className="hidden" 
                     />
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Steps/Procedures</Label>
-                <Button 
-                  type="button" 
-                  onClick={addStep}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add Step
-                </Button>
-              </div>
-              
-              <div className="space-y-2 mt-1">
-                {formData.steps.map((step, index) => (
-                  <div key={step.id} className="flex items-start gap-2">
-                    <div className="flex-shrink-0 mt-2">{index + 1}.</div>
-                    <Input 
-                      value={step.name}
-                      onChange={(e) => handleStepChange(index, e.target.value)}
-                      placeholder={`Step ${index + 1}...`}
-                      className="flex-grow"
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={() => removeStep(index)}
-                      size="icon"
-                      variant="ghost"
-                      className="flex-shrink-0 h-8 w-8 p-0 text-gray-500 hover:text-red-500"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                {formData.steps.length === 0 && (
-                  <p className="text-sm text-gray-500 italic">No steps added yet. Click "Add Step" to start.</p>
                 )}
               </div>
             </div>

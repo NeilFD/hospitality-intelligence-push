@@ -1,27 +1,19 @@
-
-export interface HospitalityGuide {
-  id: string;
-  name: string;
-  category: string;
-  description?: string;
-  timeToCompleteMinutes: number;
-  steps: HospitalityStep[];
-  detailedProcedure?: string;
-  imageUrl?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  archived: boolean;
-  postedToNoticeboard: boolean;
-}
-
 export interface HospitalityStep {
   id: string;
   name: string;
 }
 
-export interface HospitalityFilterOptions {
-  searchTerm: string;
+export interface HospitalityGuide {
+  id: string;
+  name: string;
   category: string;
-  letter: string | null;
-  status?: 'live' | 'archived';
+  description: string;
+  steps: HospitalityStep[];
+  department?: string;
+  timeToCompleteMinutes: number;
+  detailedProcedure?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  imageUrl?: string;
+  archived?: boolean;
 }
