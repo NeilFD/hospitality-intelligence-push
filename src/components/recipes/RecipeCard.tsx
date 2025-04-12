@@ -106,14 +106,17 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
         <CardDescription className="text-gray-700">{recipe.category}</CardDescription>
       </CardHeader>
       <CardContent className="p-4 pt-0 flex-grow">
-        <div className="flex flex-wrap gap-1 mb-3">
-          {recipe.isVegetarian && <Badge variant="outline" className="bg-green-50 text-green-900">Vegetarian</Badge>}
-          {recipe.isVegan && <Badge variant="outline" className="bg-green-100 text-green-950">Vegan</Badge>}
-          {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-900">Gluten Free</Badge>}
-        </div>
+        {/* Display dietary badges only for food/beverage recipes */}
+        {recipe.moduleType !== 'hospitality' && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {recipe.isVegetarian && <Badge variant="outline" className="bg-green-50 text-green-900">Vegetarian</Badge>}
+            {recipe.isVegan && <Badge variant="outline" className="bg-green-100 text-green-950">Vegan</Badge>}
+            {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-900">Gluten Free</Badge>}
+          </div>
+        )}
         
-        {/* Add allergen information */}
-        {recipe.allergens && recipe.allergens.length > 0 && (
+        {/* Display allergens only for food/beverage recipes */}
+        {recipe.moduleType !== 'hospitality' && recipe.allergens && recipe.allergens.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {recipe.allergens.map((allergen, index) => (
               <Badge key={index} variant="outline" className="bg-red-50 text-red-900">
@@ -123,11 +126,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
           </div>
         )}
         
-        <div className="text-sm text-gray-800 mb-2">
-          <p>Cost: {formatCurrency(recipe.costing.totalRecipeCost)}</p>
-          <p>Menu Price: {formatCurrency(recipe.costing.actualMenuPrice)}</p>
-          <p>GP: {(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</p>
-        </div>
+        {/* Show costing info only if it's not a hospitality guide or hideCosting is false */}
+        {!recipe.hideCosting && recipe.moduleType !== 'hospitality' && (
+          <div className="text-sm text-gray-800 mb-2">
+            <p>Cost: {formatCurrency(recipe.costing.totalRecipeCost)}</p>
+            <p>Menu Price: {formatCurrency(recipe.costing.actualMenuPrice)}</p>
+            <p>GP: {(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</p>
+          </div>
+        )}
       </CardContent>
       <Separator />
       <CardFooter className="p-3 flex justify-between">

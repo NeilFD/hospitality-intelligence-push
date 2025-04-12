@@ -2,10 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
-import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
-import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
 import { MenuCategory } from "@/types/recipe-types";
-import { HospitalityGuide, HospitalityStep, HospitalityFilterOptions } from "@/types/hospitality-types";
+import { HospitalityGuide, HospitalityFilterOptions } from "@/types/hospitality-types";
 import { Plus, PanelLeft, ChevronLeft, Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -395,21 +393,15 @@ const HospitalityBible: React.FC = () => {
                     isVegetarian: false,
                     isGlutenFree: false,
                     timeToTableMinutes: guide.timeToCompleteMinutes,
-                    ingredients: guide.steps.map(step => ({
-                      id: step.id,
-                      name: step.name,
-                      amount: 0,
-                      unit: '',
-                      costPerUnit: 0,
-                      totalCost: 0
-                    })),
+                    ingredients: [],
                     method: guide.detailedProcedure,
                     costing: {
                       totalRecipeCost: 0,
                       suggestedSellingPrice: 0,
                       actualMenuPrice: 0,
                       grossProfitPercentage: 0
-                    }
+                    },
+                    hideCosting: true
                   }}
                   onClick={() => handleViewGuide(guide)}
                   onToggleNoticeboard={() => handleToggleNoticeboard(guide)}
