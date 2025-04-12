@@ -78,15 +78,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
-            {recipe.method && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
-                <div className="whitespace-pre-line text-gray-700">
-                  {recipe.method}
-                </div>
-              </div>
-            )}
-            
             {recipe.ingredients && recipe.ingredients.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
@@ -117,39 +108,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
-            {recipe.miseEnPlace && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">
-                  {isHospitality ? 'Required Tools/Resources' : 
-                   isBeverage ? 'Garnish' : 
-                   'Mise en Place'}
-                </h3>
-                <div className="whitespace-pre-line text-gray-700">
-                  {recipe.miseEnPlace}
-                </div>
-              </div>
-            )}
-            
-            {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">Allergens</h3>
-                <div className="flex flex-wrap gap-2">
-                  {recipe.allergens.map(allergen => (
-                    <Badge key={allergen} variant="outline" className="bg-red-50 text-red-800 border-red-200">
-                      {allergen}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {recipe.recommendedUpsell && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
-                <div className="text-gray-700">{recipe.recommendedUpsell}</div>
-              </div>
-            )}
-            
             {!isHospitality && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Costing</h3>
@@ -173,6 +131,48 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
                     </div>
                   </div>
                 </Card>
+              </div>
+            )}
+            
+            {recipe.method && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
+                <div className="whitespace-pre-line text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">
+                  {recipe.method}
+                </div>
+              </div>
+            )}
+            
+            {recipe.miseEnPlace && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">
+                  {isHospitality ? 'Required Tools/Resources' : 
+                   isBeverage ? 'Garnish' : 
+                   'Mise en Place'}
+                </h3>
+                <div className="whitespace-pre-line text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">
+                  {recipe.miseEnPlace}
+                </div>
+              </div>
+            )}
+            
+            {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">Allergens</h3>
+                <div className="flex flex-wrap gap-2">
+                  {recipe.allergens.map(allergen => (
+                    <Badge key={allergen} variant="outline" className="bg-red-50 text-red-800 border-red-200">
+                      {allergen}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {recipe.recommendedUpsell && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
+                <div className="text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.recommendedUpsell}</div>
               </div>
             )}
           </div>
