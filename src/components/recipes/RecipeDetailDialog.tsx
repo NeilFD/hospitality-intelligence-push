@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">{recipe.name}</DialogTitle>
           <div className="flex flex-wrap gap-2 mt-2">
-            <Badge variant="secondary" className="bg-green-500">{recipe.category || 'Uncategorized'}</Badge>
+            <Badge variant="secondary" className="bg-green-500 text-white">{recipe.category || 'Uncategorized'}</Badge>
             {recipe.timeToTableMinutes > 0 && <Badge variant="outline" className="flex items-center gap-1 bg-green-500 text-white">
                 <Clock className="h-3 w-3" />
                 {recipe.timeToTableMinutes} min
