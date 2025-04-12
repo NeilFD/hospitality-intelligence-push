@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -123,7 +122,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   
   return (
     <div 
-      className={`${note.color || NOTE_COLORS[0]} ${glassStyle} rounded-lg p-4 transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative flex flex-col ${NOTE_SIZES[size]} ${isDraggable ? 'cursor-move' : ''}`}
+      className={`${note.color || NOTE_COLORS[0]} ${glassStyle} rounded-lg p-4 transform transition-all duration-200 hover:scale-105 hover:shadow-lg relative flex flex-col ${NOTE_SIZES[size]} ${isDraggable ? 'cursor-move' : ''} bg-opacity-10 backdrop-blur-xl`}
       draggable={isDraggable}
       onDragStart={(e) => {
         setIsDragging(true);
