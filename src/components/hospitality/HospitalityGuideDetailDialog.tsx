@@ -63,15 +63,15 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
               
               <div className="grid grid-cols-2 gap-2">
                 <span className="text-muted-foreground">Category:</span>
-                <span>{guide.category || 'Uncategorized'}</span>
+                <span className="text-tavern-blue-dark">{guide.category || 'Uncategorized'}</span>
                 
                 <span className="text-muted-foreground">Created:</span>
-                <span>{format(new Date(guide.createdAt), 'MMM d, yyyy')}</span>
+                <span className="text-tavern-blue-dark">{format(new Date(guide.createdAt), 'MMM d, yyyy')}</span>
                 
                 {guide.department && (
                   <>
                     <span className="text-muted-foreground">Department:</span>
-                    <span>{guide.department}</span>
+                    <span className="text-tavern-blue-dark">{guide.department}</span>
                   </>
                 )}
               </div>
@@ -81,14 +81,14 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
               <div>
                 <h3 className="font-semibold text-lg">Description</h3>
                 <Separator className="my-2" />
-                <p className="text-gray-700">{guide.description}</p>
+                <p className="text-tavern-blue-dark">{guide.description}</p>
               </div>
             )}
             
             {guide.timeToCompleteMinutes > 0 && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                <span>Duration: {guide.timeToCompleteMinutes} minutes</span>
+                <span className="text-tavern-blue-dark">Duration: {guide.timeToCompleteMinutes} minutes</span>
               </div>
             )}
           </div>
@@ -102,8 +102,8 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
             <div className="space-y-2">
               {guide.steps.map((step, index) => (
                 <div key={step.id} className="flex items-center gap-2">
-                  <span className="font-medium">{index + 1}.</span>
-                  <span className="flex-grow">{step.name}</span>
+                  <span className="font-medium text-tavern-blue-dark">{index + 1}.</span>
+                  <span className="flex-grow text-tavern-blue-dark">{step.name}</span>
                 </div>
               ))}
             </div>
@@ -116,7 +116,7 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Detailed Procedure</h3>
             <Separator className="my-2" />
-            <p className="whitespace-pre-line">{guide.detailedProcedure}</p>
+            <p className="whitespace-pre-line text-tavern-blue-dark">{guide.detailedProcedure}</p>
           </div>
         )}
         
