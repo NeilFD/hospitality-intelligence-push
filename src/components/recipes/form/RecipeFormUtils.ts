@@ -1,3 +1,4 @@
+
 import { Recipe, Ingredient } from "@/types/recipe-types";
 import { HospitalityGuide, HospitalityStep } from "@/types/hospitality-types";
 import { v4 as uuidv4 } from 'uuid';
@@ -16,7 +17,7 @@ export const emptyHospitalityStep = (): HospitalityStep => ({
   name: ''
 });
 
-export const createEmptyRecipe = (moduleType: 'food' | 'beverage'): Recipe => {
+export const createEmptyRecipe = (moduleType: 'food' | 'beverage' | 'hospitality'): Recipe => {
   return {
     id: '',
     name: '',

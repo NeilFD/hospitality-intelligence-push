@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -13,6 +12,8 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { v4 as uuidv4 } from 'uuid';
+import HospitalityGuideFormDialog from "@/components/hospitality/HospitalityGuideFormDialog";
+import HospitalityGuideDetailDialog from "@/components/hospitality/HospitalityGuideDetailDialog";
 
 const HospitalityBible: React.FC = () => {
   const [guides, setGuides] = useState<HospitalityGuide[]>([]);
@@ -31,7 +32,6 @@ const HospitalityBible: React.FC = () => {
   const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
 
-  // Service style categories for hospitality
   const hospitalityCategories: MenuCategory[] = [
     { id: "h1", name: "Customer Service", moduleType: "hospitality" },
     { id: "h2", name: "Complaint Handling", moduleType: "hospitality" },
@@ -285,7 +285,6 @@ const HospitalityBible: React.FC = () => {
     }
   };
 
-  // Components for sidebar display based on screen size
   const DesktopSidebar = () => <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
     {sidebarOpen && (
       <div className="p-4">
@@ -433,7 +432,6 @@ const HospitalityBible: React.FC = () => {
         </div>
       </div>
       
-      {/* This part needs to be updated with a custom guide form */}
       {formOpen && (
         <HospitalityGuideFormDialog 
           open={formOpen} 
@@ -444,7 +442,6 @@ const HospitalityBible: React.FC = () => {
         />
       )}
       
-      {/* This part needs to be updated with a custom guide detail dialog */}
       {viewingGuide && (
         <HospitalityGuideDetailDialog 
           open={!!viewingGuide} 
