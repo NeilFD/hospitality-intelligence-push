@@ -22,7 +22,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   };
 
   return <div className={cn('flex items-center justify-center', className)}>
-      <div className={`${sizeClasses[size]} bg-[#806cac] text-white flex items-center justify-center rounded-full overflow-hidden`}>
+      <div className={`${sizeClasses[size]} overflow-hidden`}>
         <img src="/lovable-uploads/69a5215d-88c2-4e73-880a-f0820234832d.png" alt="Hi Logo" className="w-full h-full object-contain" />
       </div>
     </div>;
