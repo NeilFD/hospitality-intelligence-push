@@ -1,10 +1,12 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+
 interface SidebarLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
+
 export const SidebarLogo: React.FC<SidebarLogoProps> = ({
   className,
   size = 'md'
