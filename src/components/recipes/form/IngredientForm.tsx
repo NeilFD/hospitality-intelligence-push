@@ -302,7 +302,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                       onChange={(e) => setActualMenuPrice(parseFloat(e.target.value) || 0)}
                       step="0.01"
                       min="0"
-                      className="border border-gray-300 bg-white text-gray-900"
+                      className="border border-gray-300 bg-white text-gray-900 w-full"
                     />
                   </div>
                   <div className="mt-2 flex items-center justify-between">

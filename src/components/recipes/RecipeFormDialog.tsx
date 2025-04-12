@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -219,7 +220,52 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           </div>
         </DialogHeader>
         
+        {/* Image at the top */}
+        <div className="mb-4">
+          {imagePreview ? (
+            <div className="w-full h-48 relative">
+              <img 
+                src={imagePreview} 
+                alt="Recipe preview" 
+                className="w-full h-48 object-cover rounded-md"
+              />
+              <Button 
+                variant="destructive" 
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => {
+                  setImagePreview(undefined);
+                  setImageFile(null);
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md h-48">
+              <div className="space-y-1 text-center flex flex-col items-center justify-center">
+                <div className="flex text-sm text-gray-600">
+                  <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                    <span>Upload an image</span>
+                    <input 
+                      id="file-upload" 
+                      name="file-upload" 
+                      type="file" 
+                      className="sr-only"
+                      accept="image/*" 
+                      onChange={handleImageChange}
+                    />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+              </div>
+            </div>
+          )}
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Left Column: Basic Info without image */}
           <RecipeBasicInfo 
             name={formData.name}
             category={formData.category}
@@ -228,7 +274,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             isGlutenFree={formData.isGlutenFree}
             allergens={formData.allergens}
             method={formData.method || ""}
-            imagePreview={imagePreview}
+            imagePreview={undefined} // Don't show image here anymore
             categories={categories}
             allergenTypes={allergens}
             moduleType={moduleType}
@@ -243,25 +289,29 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             }}
           />
           
+          {/* Right Column: Ingredients first, then Additional Info */}
           <div className="space-y-4">
             <IngredientForm 
               ingredients={formData.ingredients}
               onIngredientsChange={(ingredients) => setFormData(prev => ({ ...prev, ingredients }))}
               moduleType={moduleType}
             />
-            
-            <RecipeAdditionalInfo 
-              recommendedUpsell={formData.recommendedUpsell || ""}
-              timeToTableMinutes={formData.timeToTableMinutes}
-              miseEnPlace={formData.miseEnPlace || ""}
-              method={formData.method || ""}
-              moduleType={moduleType}
-              onRecommendedUpsellChange={(value) => setFormData(prev => ({ ...prev, recommendedUpsell: value }))}
-              onTimeToTableMinutesChange={(value) => setFormData(prev => ({ ...prev, timeToTableMinutes: value }))}
-              onMiseEnPlaceChange={(value) => setFormData(prev => ({ ...prev, miseEnPlace: value }))}
-              onMethodChange={(value) => setFormData(prev => ({ ...prev, method: value }))}
-            />
           </div>
+        </div>
+
+        {/* Method and additional info below */}
+        <div className="mt-4">
+          <RecipeAdditionalInfo 
+            recommendedUpsell={formData.recommendedUpsell || ""}
+            timeToTableMinutes={formData.timeToTableMinutes}
+            miseEnPlace={formData.miseEnPlace || ""}
+            method={formData.method || ""}
+            moduleType={moduleType}
+            onRecommendedUpsellChange={(value) => setFormData(prev => ({ ...prev, recommendedUpsell: value }))}
+            onTimeToTableMinutesChange={(value) => setFormData(prev => ({ ...prev, timeToTableMinutes: value }))}
+            onMiseEnPlaceChange={(value) => setFormData(prev => ({ ...prev, miseEnPlace: value }))}
+            onMethodChange={(value) => setFormData(prev => ({ ...prev, method: value }))}
+          />
         </div>
         
         <DialogFooter>

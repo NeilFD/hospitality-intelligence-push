@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -231,49 +232,6 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
             </div>
           </>
         )}
-        
-        <div>
-          <Label className="mb-1 block text-gray-900">Image</Label>
-          <div className="mt-1">
-            {imagePreview ? (
-              <div className="relative">
-                <img 
-                  src={imagePreview} 
-                  alt="Recipe preview" 
-                  className="w-full h-48 object-cover rounded-md"
-                />
-                <Button 
-                  variant="destructive" 
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={onImageRemove}
-                >
-                  Remove
-                </Button>
-              </div>
-            ) : (
-              <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  <div className="flex text-sm text-gray-600">
-                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                      <span>Upload an image</span>
-                      <input 
-                        id="file-upload" 
-                        name="file-upload" 
-                        type="file" 
-                        className="sr-only"
-                        accept="image/*" 
-                        onChange={onImageUpload}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
-                  </div>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
