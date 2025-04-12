@@ -11,9 +11,8 @@ export default function AnalyticsModules() {
       description: "Financial performance forecasting, expense pattern detection, and category breakdowns.",
       icon: <CircleDollarSign className="h-8 w-8 text-white" />,
       path: "/performance/pl-analysis",
-      color: "from-hi-purple/90 to-hi-purple-dark/90",
-      hover: "from-hi-purple to-hi-purple-dark/95",
-      bgColor: "bg-hi-purple",
+      color: "bg-hi-purple",
+      hoverColor: "bg-hi-purple-dark",
       borderColor: "border-hi-purple/20"
     },
     {
@@ -21,9 +20,8 @@ export default function AnalyticsModules() {
       description: "Labor efficiency analysis, wage-to-revenue ratio insights, and predictive scheduling.",
       icon: <User className="h-8 w-8 text-white" />,
       path: "/performance/wage-optimization",
-      color: "from-pastel-blue/90 to-pastel-blue-dark/90",
-      hover: "from-pastel-blue to-pastel-blue-dark/95",
-      bgColor: "bg-pastel-blue-dark",
+      color: "bg-pastel-blue-dark",
+      hoverColor: "bg-pastel-blue-dark/90",
       borderColor: "border-pastel-blue-dark/20"
     },
     {
@@ -31,9 +29,8 @@ export default function AnalyticsModules() {
       description: "GP performance insights, supplier analysis, and inventory optimization.",
       icon: <BarChart className="h-8 w-8 text-white" />,
       path: "/performance/fb-analysis",
-      color: "from-pastel-green/90 to-pastel-green-dark/90",
-      hover: "from-pastel-green to-pastel-green-dark/95",
-      bgColor: "bg-pastel-green-dark",
+      color: "bg-pastel-green-dark",
+      hoverColor: "bg-pastel-green-dark/90",
       borderColor: "border-pastel-green/20"
     },
     {
@@ -41,9 +38,8 @@ export default function AnalyticsModules() {
       description: "Custom data exploration with natural language queries and advanced data visualizations.",
       icon: <Bot className="h-8 w-8 text-white" />,
       path: "/performance/data-explorer",
-      color: "from-hi-purple-light/90 to-hi-purple/90",
-      hover: "from-hi-purple-light to-hi-purple/95",
-      bgColor: "bg-hi-purple-light",
+      color: "bg-hi-purple-light",
+      hoverColor: "bg-hi-purple-light/90",
       borderColor: "border-hi-purple-light/20"
     }
   ];
@@ -60,10 +56,10 @@ export default function AnalyticsModules() {
             key={index} 
             className={`rounded-xl overflow-hidden border ${module.borderColor} shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1`}
           >
-            <CardHeader className={`${module.bgColor} p-5`}>
+            <CardHeader className={`${module.color} p-5`}>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-lg font-medium text-white">{module.title}</CardTitle>
-                <div className={`rounded-full p-2 ${module.bgColor}`}>
+                <div className={`rounded-full p-2 ${module.color}`}>
                   {module.icon}
                 </div>
               </div>
@@ -72,7 +68,7 @@ export default function AnalyticsModules() {
               <CardDescription className="mb-5 text-sm min-h-[70px] text-gray-600">
                 {module.description}
               </CardDescription>
-              <Button asChild className={`w-full justify-between bg-gradient-to-r ${module.color} hover:bg-gradient-to-r hover:${module.hover} text-white shadow-sm`}>
+              <Button asChild className={`w-full justify-between ${module.color} hover:${module.hoverColor} text-white shadow-sm`}>
                 <Link to={module.path}>
                   Explore <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -84,3 +80,4 @@ export default function AnalyticsModules() {
     </div>
   );
 }
+
