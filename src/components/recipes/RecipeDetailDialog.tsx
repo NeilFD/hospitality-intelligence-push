@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Card } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Clock, Utensils, BarChart4, Trash2, FileEdit, AlertCircle, Check } from 'lucide-react';
 import RecipePDF from './RecipePDF';
-
 interface RecipeDetailDialogProps {
   recipe: Recipe;
   open: boolean;
@@ -17,7 +15,6 @@ interface RecipeDetailDialogProps {
   onEdit: () => void;
   onDelete: (recipe: Recipe) => void;
 }
-
 const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   recipe,
   open,
@@ -28,14 +25,12 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   if (!recipe) return null;
   const isHospitality = recipe.moduleType === 'hospitality';
   const isBeverage = recipe.moduleType === 'beverage';
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP'
     }).format(amount);
   };
-
   return <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
@@ -47,9 +42,9 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
                 {recipe.timeToTableMinutes} min
               </Badge>}
             {!isHospitality && <>
-                {recipe.isVegan && <Badge className="bg-green-600 text-white">Vegan</Badge>}
+                {recipe.isVegan && <Badge className="text-white bg-green-500">Vegan</Badge>}
                 {recipe.isVegetarian && <Badge className="bg-green-500 text-white">Vegetarian</Badge>}
-                {recipe.isGlutenFree && <Badge className="bg-amber-600 text-white">Gluten Free</Badge>}
+                {recipe.isGlutenFree && <Badge className="text-white bg-green-500">Gluten Free</Badge>}
               </>}
           </div>
         </DialogHeader>
@@ -177,5 +172,4 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
       </DialogContent>
     </Dialog>;
 };
-
 export default RecipeDetailDialog;
