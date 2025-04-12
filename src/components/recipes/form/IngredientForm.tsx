@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,7 +71,6 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
       [field]: value
     };
     
-    // Auto-calculate total cost if amount and cost per unit are set
     if (field === 'amount' || field === 'costPerUnit') {
       const amount = field === 'amount' ? value : newIngredients[index].amount;
       const costPerUnit = field === 'costPerUnit' ? value : newIngredients[index].costPerUnit;
@@ -85,21 +83,15 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
     onIngredientsChange(newIngredients);
   };
 
-  // Calculate total recipe cost
   const totalRecipeCost = ingredients.reduce((total, ingredient) => {
     return total + (ingredient.totalCost || 0);
   }, 0);
 
-  // Calculate recommended selling price at 70% GP inc VAT
-  // Formula: Cost / (1 - 0.7) = Selling price before VAT
-  // Then add 20% VAT: Selling price before VAT * 1.2
   const recommendedSellingPrice = totalRecipeCost > 0 ? (totalRecipeCost / 0.3) * 1.2 : 0;
 
-  // Calculate GP% based on actual menu price
   const actualGpPercentage = actualMenuPrice > 0 ? 
     ((actualMenuPrice / 1.2 - totalRecipeCost) / (actualMenuPrice / 1.2)) * 100 : 0;
 
-  // Labels based on the module type
   const getLabels = () => {
     if (moduleType === 'hospitality') {
       return {
@@ -262,7 +254,6 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                   </TableRow>
                 ))}
                 
-                {/* Add ingredient button row */}
                 <TableRow>
                   <TableCell colSpan={moduleType !== 'hospitality' ? 6 : 4} className="text-center py-2">
                     <Button 
@@ -281,9 +272,9 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
           
           {moduleType !== 'hospitality' && (
             <div className="mt-6 border-t pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label className="text-gray-900 font-medium block mb-2">Total Recipe Cost</Label>
+                  <Label className="text-gray-900 font-medium block mb-2 truncate">Recipe Cost</Label>
                   <Input 
                     value={`£${totalRecipeCost.toFixed(2)}`}
                     readOnly
@@ -292,7 +283,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                 </div>
                 
                 <div>
-                  <Label className="text-gray-900 font-medium block mb-2">Recommended Selling Price (70% GP inc VAT)</Label>
+                  <Label className="text-gray-900 font-medium block mb-2 truncate">Selling Price (70% GP)</Label>
                   <Input 
                     value={`£${recommendedSellingPrice.toFixed(2)}`}
                     readOnly
@@ -301,7 +292,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                 </div>
 
                 <div>
-                  <Label className="text-gray-900 font-medium block mb-2">Actual Menu Price</Label>
+                  <Label className="text-gray-900 font-medium block mb-2 truncate">Menu Price</Label>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-900">£</span>
                     <Input
@@ -313,9 +304,9 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                       className="border border-gray-300 bg-white text-gray-900"
                     />
                   </div>
-                  <div className="mt-2">
-                    <Label className="text-gray-900 font-medium">Calculated GP%:</Label>
-                    <span className="ml-2 text-gray-900 font-semibold">
+                  <div className="mt-2 flex items-center justify-between">
+                    <Label className="text-gray-900 font-medium">GP%:</Label>
+                    <span className="text-gray-900 font-semibold ml-2">
                       {actualGpPercentage.toFixed(2)}%
                     </span>
                   </div>
