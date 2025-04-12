@@ -1,12 +1,11 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
 import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
-import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
-import { menuCategories, allergenTypes } from "@/data/sample-recipe-data";
+import { Recipe, RecipeFilterOptions, Ingredient, MenuCategory } from "@/types/recipe-types";
+import { allergenTypes } from "@/data/sample-recipe-data";
 import { Plus, PanelLeft, ChevronLeft, Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -36,17 +35,17 @@ const HospitalityBible: React.FC = () => {
   const isMobile = useIsMobile();
 
   // Service style categories for hospitality
-  const hospitalityCategories = [
-    "Customer Service",
-    "Complaint Handling",
-    "Table Service",
-    "Bar Service",
-    "Opening Procedures",
-    "Closing Procedures",
-    "Till Operations",
-    "Hosting",
-    "Special Events",
-    "Staff Training"
+  const hospitalityCategories: MenuCategory[] = [
+    { id: "h1", name: "Customer Service", moduleType: "hospitality" },
+    { id: "h2", name: "Complaint Handling", moduleType: "hospitality" },
+    { id: "h3", name: "Table Service", moduleType: "hospitality" },
+    { id: "h4", name: "Bar Service", moduleType: "hospitality" },
+    { id: "h5", name: "Opening Procedures", moduleType: "hospitality" },
+    { id: "h6", name: "Closing Procedures", moduleType: "hospitality" },
+    { id: "h7", name: "Till Operations", moduleType: "hospitality" },
+    { id: "h8", name: "Hosting", moduleType: "hospitality" },
+    { id: "h9", name: "Special Events", moduleType: "hospitality" },
+    { id: "h10", name: "Staff Training", moduleType: "hospitality" }
   ];
 
   useEffect(() => {
@@ -505,13 +504,31 @@ const HospitalityBible: React.FC = () => {
         </div>
       </div>
       
-      {formOpen && <RecipeFormDialog open={formOpen} onClose={() => setFormOpen(false)} onSave={handleSaveRecipe} recipe={editingRecipe} moduleType="hospitality" categories={hospitalityCategories} allergens={[]} />}
+      {formOpen && (
+        <RecipeFormDialog 
+          open={formOpen} 
+          onClose={() => setFormOpen(false)} 
+          onSave={handleSaveRecipe} 
+          recipe={editingRecipe} 
+          moduleType="hospitality" 
+          categories={hospitalityCategories} 
+          allergens={[]} 
+        />
+      )}
       
-      {viewingRecipe && <RecipeDetailDialog open={!!viewingRecipe} onClose={() => setViewingRecipe(undefined)} recipe={{...viewingRecipe, moduleType: 'hospitality'}} onEdit={() => {
-        setViewingRecipe(undefined);
-        setEditingRecipe(viewingRecipe);
-        setFormOpen(true);
-      }} onDelete={handleDeleteRecipe} />}
+      {viewingRecipe && (
+        <RecipeDetailDialog 
+          open={!!viewingRecipe} 
+          onClose={() => setViewingRecipe(undefined)} 
+          recipe={{...viewingRecipe, moduleType: 'hospitality'}} 
+          onEdit={() => {
+            setViewingRecipe(undefined);
+            setEditingRecipe(viewingRecipe);
+            setFormOpen(true);
+          }} 
+          onDelete={handleDeleteRecipe} 
+        />
+      )}
     </div>
   </div>;
 };

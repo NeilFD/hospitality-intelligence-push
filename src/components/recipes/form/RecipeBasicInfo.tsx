@@ -5,7 +5,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { FormField } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Recipe } from '@/types/recipe-types';
+import { Recipe, MenuCategory } from '@/types/recipe-types';
 
 interface RecipeBasicInfoProps {
   name: string;

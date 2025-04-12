@@ -11,7 +11,7 @@ export const emptyIngredient = (): Ingredient => ({
   totalCost: 0
 });
 
-export const createEmptyRecipe = (moduleType: 'food' | 'beverage'): Recipe => {
+export const createEmptyRecipe = (moduleType: 'food' | 'beverage' | 'hospitality'): Recipe => {
   return {
     id: '',
     name: '',
