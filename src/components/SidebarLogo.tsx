@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { cn } from '@/lib/utils';
 interface SidebarLogoProps {
@@ -16,6 +17,6 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
     '2xl': 'h-24 w-24'
   };
   return <div className={cn(sizeClasses[size], 'flex flex-col items-center justify-center', className)}>
-      <img alt="Hi" className="w-full h-full" src="/lovable-uploads/4234e734-6ccc-48b7-8f35-d14a78ef4afc.png" />
+      <img alt="Hi" className="w-full h-full object-cover" src="/lovable-uploads/4234e734-6ccc-48b7-8f35-d14a78ef4afc.png" />
     </div>;
 };
