@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -48,6 +47,13 @@ const HospitalityBible: React.FC = () => {
     "Special Events",
     "Staff Training"
   ];
+
+  // Create hospitalityCategories as MenuCategory objects
+  const hospitalityCategoryObjects = hospitalityCategories.map(category => ({
+    id: category.toLowerCase().replace(/\s+/g, '-'),
+    name: category,
+    moduleType: 'hospitality' as const
+  }));
 
   useEffect(() => {
     fetchRecipes();
@@ -404,7 +410,7 @@ const HospitalityBible: React.FC = () => {
             <ChevronLeft className="h-3 w-3" />
           </Button>
         </div>
-        <RecipeFilters moduleType="hospitality" categories={hospitalityCategories} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
+        <RecipeFilters moduleType="hospitality" categories={hospitalityCategoryObjects} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
       </div>
     )}
   </div>;
@@ -417,7 +423,7 @@ const HospitalityBible: React.FC = () => {
     <Drawer open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <DrawerContent className="max-h-[90vh]">
         <div className="p-4 max-h-[80vh] overflow-y-auto">
-          <RecipeFilters moduleType="hospitality" categories={hospitalityCategories} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
+          <RecipeFilters moduleType="hospitality" categories={hospitalityCategoryObjects} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
         </div>
       </DrawerContent>
     </Drawer>
@@ -505,13 +511,27 @@ const HospitalityBible: React.FC = () => {
         </div>
       </div>
       
-      {formOpen && <RecipeFormDialog open={formOpen} onClose={() => setFormOpen(false)} onSave={handleSaveRecipe} recipe={editingRecipe} moduleType="hospitality" categories={hospitalityCategories} allergens={[]} />}
+      {formOpen && <RecipeFormDialog 
+        open={formOpen} 
+        onClose={() => setFormOpen(false)} 
+        onSave={handleSaveRecipe} 
+        recipe={editingRecipe} 
+        moduleType="hospitality" 
+        categories={hospitalityCategoryObjects} 
+        allergens={[]} 
+      />}
       
-      {viewingRecipe && <RecipeDetailDialog open={!!viewingRecipe} onClose={() => setViewingRecipe(undefined)} recipe={{...viewingRecipe, moduleType: 'hospitality'}} onEdit={() => {
-        setViewingRecipe(undefined);
-        setEditingRecipe(viewingRecipe);
-        setFormOpen(true);
-      }} onDelete={handleDeleteRecipe} />}
+      {viewingRecipe && <RecipeDetailDialog 
+        open={!!viewingRecipe} 
+        onClose={() => setViewingRecipe(undefined)} 
+        recipe={{...viewingRecipe, moduleType: 'hospitality'}} 
+        onEdit={() => {
+          setViewingRecipe(undefined);
+          setEditingRecipe(viewingRecipe);
+          setFormOpen(true);
+        }} 
+        onDelete={handleDeleteRecipe} 
+      />}
     </div>
   </div>;
 };

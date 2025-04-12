@@ -6,70 +6,62 @@ export const emptyIngredient = (): Ingredient => ({
   id: uuidv4(),
   name: '',
   amount: 0,
-  unit: 'pcs',
+  unit: '',
   costPerUnit: 0,
   totalCost: 0
 });
 
-export const createEmptyRecipe = (moduleType: 'food' | 'beverage'): Recipe => {
+export const createEmptyRecipe = (moduleType: 'food' | 'beverage' | 'hospitality'): Recipe => {
   return {
     id: '',
     name: '',
-    category: '',
+    category: 'Uncategorized',
     allergens: [],
     isVegan: false,
     isVegetarian: false,
     isGlutenFree: false,
-    timeToTableMinutes: 10,
+    recommendedUpsell: '',
+    timeToTableMinutes: 0,
+    miseEnPlace: '',
+    method: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    imageUrl: '',
     ingredients: [emptyIngredient()],
     costing: {
       totalRecipeCost: 0,
       suggestedSellingPrice: 0,
       actualMenuPrice: 0,
-      grossProfitPercentage: 0.7
+      grossProfitPercentage: 0
     },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    moduleType
+    moduleType: moduleType,
+    archived: false,
+    postedToNoticeboard: false
   };
 };
 
-export const calculateTotals = (
-  ingredients: Ingredient[], 
-  actualMenuPrice: number = 0
-): {
-  totalRecipeCost: number;
-  suggestedSellingPrice: number;
-  actualMenuPrice: number;
-  grossProfitPercentage: number;
-} => {
-  // Calculate total recipe cost from ingredients
-  const totalRecipeCost = ingredients.reduce((sum, ingredient) => 
-    sum + (Number(ingredient.totalCost) || 0), 0);
+export const calculateTotals = (ingredients: Ingredient[], actualMenuPrice: number) => {
+  const totalRecipeCost = ingredients.reduce((total, ingredient) => {
+    return total + (ingredient.totalCost || 0);
+  }, 0);
   
-  // Calculate suggested selling price (using 70% gross profit as default)
-  const suggestedSellingPrice = totalRecipeCost > 0 
-    ? totalRecipeCost / 0.3  // Aim for 70% profit margin
-    : 0;
+  const suggestedSellingPrice = totalRecipeCost * 3; // 3x markup as a suggestion
   
-  // Use actual menu price from input, or fallback to suggested price
-  const finalMenuPrice = actualMenuPrice || suggestedSellingPrice;
+  const grossProfitPercentage = 
+    actualMenuPrice > 0 
+      ? ((actualMenuPrice - totalRecipeCost) / actualMenuPrice) * 100 
+      : 0;
   
-  // Calculate gross profit percentage
-  const grossProfitPercentage = finalMenuPrice > 0
-    ? (finalMenuPrice - totalRecipeCost) / finalMenuPrice
-    : 0.7; // Default to 70%
-    
   return {
     totalRecipeCost,
     suggestedSellingPrice,
-    actualMenuPrice: finalMenuPrice,
-    grossProfitPercentage
+    actualMenuPrice,
+    grossProfitPercentage: Math.round(grossProfitPercentage * 100) / 100 // 2 decimal places
   };
 };
 
-// Ensure dietary information is properly handled as booleans
 export const normalizeDietaryInfo = (recipe: Recipe): Recipe => {
+  // Convert any non-boolean dietary values to boolean
   return {
     ...recipe,
     isVegan: Boolean(recipe.isVegan),

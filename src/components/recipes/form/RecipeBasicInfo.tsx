@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { FormField } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Recipe } from '@/types/recipe-types';
+import { Button } from '@/components/ui/button';
 
 interface RecipeBasicInfoProps {
   name: string;
