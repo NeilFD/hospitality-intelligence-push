@@ -17,11 +17,14 @@ export interface HospitalityGuide {
   updatedAt: Date;
   imageUrl?: string;
   archived?: boolean;
+  postedToNoticeboard?: boolean;
 }
 
 export type HospitalityFilterOptions = {
+  searchTerm?: string;
   department?: string;
   category?: string;
   archived?: boolean;
+  letter?: string | null;
+  status?: 'live' | 'archived';
 };
-

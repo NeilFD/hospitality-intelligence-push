@@ -45,6 +45,7 @@ export const createEmptyHospitalityGuide = (): HospitalityGuide => {
     id: '',
     name: '',
     category: '',
+    description: '',
     timeToCompleteMinutes: 10,
     steps: [emptyHospitalityStep()],
     createdAt: new Date(),
