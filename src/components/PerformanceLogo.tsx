@@ -36,7 +36,7 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
       )}
     >
       <span className={cn(
-        "text-white font-bold", 
+        "text-white font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2", 
         textSizeClasses[size]
       )}>Hi</span>
     </div>
