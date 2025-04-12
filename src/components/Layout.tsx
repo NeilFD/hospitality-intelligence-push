@@ -192,7 +192,7 @@ const Layout = ({
     return <>{children}</>;
   }
   
-  const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
+  const Sidebar = <div className="h-full flex flex-col bg-[#D6BCFA]">
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
         <p className="text-[#e0d9f0] text-sm mt-1">Hospitality Intelligence</p>
