@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { PlusCircle, Pin, Trash2, Image, Mic, Smile, BarChart2, MessageSquare, Maximize2, Minimize2, Edit2 } from 'lucide-react';
+import { PlusCircle, Pin, Trash2, Image, Mic, Smile, BarChart2, MessageSquare, Maximize2, Minimize2 } from 'lucide-react';
 import { TeamNote, getNotes, createNote, updateNote, deleteNote, uploadTeamFile, getTeamMembers, getPolls, createNoteReply, getNoteReplies, deleteNoteReply } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,8 +17,6 @@ import { Recipe } from '@/types/recipe-types';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { supabase } from '@/lib/supabase';
 import RecipeCardExpanded from './RecipeCardExpanded';
-import HospitalityGuideCardExpanded from './HospitalityGuideCardExpanded';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface StickyNoteProps {
   note: TeamNote;
@@ -50,13 +49,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [replyContent, setReplyContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editedContent, setEditedContent] = useState(note.content);
-  const [editedType, setEditedType] = useState<'text' | 'image' | 'voice' | 'gif'>(note.type);
-  const [editedFile, setEditedFile] = useState<File | null>(null);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const { data: replies = [], isLoading: repliesLoading } = useQuery({
     queryKey: ['noteReplies', note.id],
@@ -102,30 +96,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       toast.error(`Failed to delete reply: ${error.message}`);
     }
   });
-
-  const editNoteMutation = useMutation({
-    mutationFn: async () => {
-      let updateData: Partial<TeamNote> = { content: editedContent };
-      
-      if (editedType !== note.type) {
-        updateData.type = editedType;
-      }
-      
-      if (editedFile && editedType !== 'text') {
-        const attachmentUrl = await uploadTeamFile(editedFile, 'notes');
-        updateData.attachment_url = attachmentUrl;
-      }
-      
-      return onUpdate(note.id, updateData);
-    },
-    onSuccess: () => {
-      setIsEditModalOpen(false);
-      toast.success('Note updated successfully');
-    },
-    onError: (error) => {
-      toast.error(`Failed to update note: ${error.message}`);
-    }
-  });
   
   const handleAddReply = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,37 +118,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       onSizeChange(nextSize);
     }
   };
-
-  const handleEditClick = () => {
-    setEditedContent(note.content);
-    setEditedType(note.type);
-    setIsEditModalOpen(true);
-  };
-
-  const handleSaveEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editedContent.trim()) {
-      toast.error('Note content cannot be empty');
-      return;
-    }
-    editNoteMutation.mutate();
-  };
-
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setEditedFile(e.target.files[0]);
-    }
-  };
   
   const glassStyle = "bg-opacity-60 backdrop-filter backdrop-blur-sm shadow-lg border border-opacity-30";
-  
-  const isAuthor = user && user.id === note.author_id;
   
   return (
     <div 
@@ -204,16 +145,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           <Pin size={16} />
         </Button>
         <div className="flex gap-1">
-          {isAuthor && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6 text-gray-700"
-              onClick={handleEditClick}
-            >
-              <Edit2 size={16} />
-            </Button>
-          )}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -326,106 +257,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           </div>
         )}
       </div>
-
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Note</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSaveEdit} className="space-y-4">
-            <div className="flex space-x-2 mb-4">
-              <Button 
-                type="button" 
-                variant={editedType === 'text' ? 'default' : 'outline'} 
-                size="sm" 
-                onClick={() => setEditedType('text')}
-              >
-                Text
-              </Button>
-              <Button 
-                type="button" 
-                variant={editedType === 'image' ? 'default' : 'outline'} 
-                size="sm" 
-                onClick={() => setEditedType('image')}
-              >
-                <Image className="h-4 w-4 mr-1" />
-                Image
-              </Button>
-              <Button 
-                type="button" 
-                variant={editedType === 'voice' ? 'default' : 'outline'} 
-                size="sm" 
-                onClick={() => setEditedType('voice')}
-              >
-                <Mic className="h-4 w-4 mr-1" />
-                Voice
-              </Button>
-              <Button 
-                type="button" 
-                variant={editedType === 'gif' ? 'default' : 'outline'} 
-                size="sm" 
-                onClick={() => setEditedType('gif')}
-              >
-                <Smile className="h-4 w-4 mr-1" />
-                GIF
-              </Button>
-            </div>
-
-            <Textarea 
-              placeholder="Edit note content..." 
-              value={editedContent} 
-              onChange={(e) => setEditedContent(e.target.value)}
-              className="min-h-[100px] font-['Special_Elite'] text-gray-800"
-            />
-
-            {(editedType === 'image' || editedType === 'voice' || editedType === 'gif') && (
-              <>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  accept={editedType === 'image' || editedType === 'gif' ? 'image/*' : 'audio/*'} 
-                  className="hidden" 
-                />
-                
-                <div className="flex flex-col space-y-2">
-                  {note.attachment_url && (
-                    <div className="text-sm text-gray-600 bg-gray-100 p-2 rounded-md flex justify-between items-center">
-                      <span>Current file: {editedType === 'image' || editedType === 'gif' ? 'Image' : 'Audio'}</span>
-                      <span className="text-xs text-gray-500">(Leave empty to keep current file)</span>
-                    </div>
-                  )}
-                  
-                  <Button 
-                    type="button" 
-                    onClick={triggerFileInput} 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    {editedFile ? editedFile.name : `Select new ${editedType === 'voice' ? 'audio' : 'file'}`}
-                  </Button>
-                </div>
-              </>
-            )}
-
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsEditModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={editNoteMutation.isPending || !editedContent.trim()}
-              >
-                {editNoteMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
@@ -550,8 +381,6 @@ const TeamNoticeboard: React.FC = () => {
   const [notesLayout, setNotesLayout] = useState<Record<string, { x: number, y: number }>>({});
   const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
-  const [selectedGuide, setSelectedGuide] = useState<any>(null);
-  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const queryClient = useQueryClient();
   
   const {
@@ -584,33 +413,6 @@ const TeamNoticeboard: React.FC = () => {
         return data || [];
       } catch (error) {
         console.error('Exception in fetching recipes:', error);
-        return [];
-      }
-    }
-  });
-  
-  const {
-    data: hospitalityGuides = [],
-    isLoading: guidesLoading
-  } = useQuery({
-    queryKey: ['noticeboard-hospitality-guides'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('hospitality_guides')
-          .select('*')
-          .eq('posted_to_noticeboard', true)
-          .eq('archived', false);
-          
-        if (error) {
-          console.error('Error fetching hospitality guides for noticeboard:', error);
-          throw error;
-        }
-        
-        console.log('Fetched hospitality guides for noticeboard:', data?.length || 0);
-        return data || [];
-      } catch (error) {
-        console.error('Exception in fetching hospitality guides:', error);
         return [];
       }
     }
@@ -724,11 +526,6 @@ const TeamNoticeboard: React.FC = () => {
     setIsRecipeModalOpen(true);
   };
 
-  const handleHospitalityGuideClick = (guide: any) => {
-    setSelectedGuide(guide);
-    setIsGuideModalOpen(true);
-  };
-
   return (
     <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
       <div className="container mx-auto p-4">
@@ -794,7 +591,7 @@ const TeamNoticeboard: React.FC = () => {
           </div>
           
           <TabsContent value="notes">
-            {notesLoading || recipesLoading || guidesLoading ? (
+            {notesLoading || recipesLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[200px] w-full border border-gray-200/50"></div>
@@ -802,7 +599,8 @@ const TeamNoticeboard: React.FC = () => {
               </div>
             ) : (
               <>
-                {(pinnedNotes.length > 0 || recipes.length > 0 || hospitalityGuides.length > 0) && (
+                {/* Pinned Section */}
+                {(pinnedNotes.length > 0 || recipes.length > 0) && (
                   <div 
                     className="mb-8 p-4 bg-gray-50/70 rounded-lg border border-dashed border-amber-300/50 backdrop-blur-sm"
                     onDragOver={(e) => e.preventDefault()}
@@ -852,38 +650,11 @@ const TeamNoticeboard: React.FC = () => {
                           <div className="mt-2 text-xs text-blue-600">Click for full recipe details</div>
                         </div>
                       ))}
-
-                      {hospitalityGuides.map((guide: any) => (
-                        <div 
-                          key={guide.id} 
-                          className="bg-white/70 backdrop-blur-sm border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                          onClick={() => handleHospitalityGuideClick(guide)}
-                        >
-                          <h4 className="font-semibold text-gray-900">{guide.name}</h4>
-                          <p className="text-sm text-gray-600">{guide.category || 'Uncategorized'}</p>
-                          {guide.image_url && (
-                            <div className="mt-2 h-32 overflow-hidden rounded">
-                              <img 
-                                src={guide.image_url} 
-                                alt={guide.name} 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  console.error("Guide image failed to load:", guide.image_url);
-                                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                                }}
-                              />
-                            </div>
-                          )}
-                          <div className="mt-2">
-                            <span className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded-full">Guide from Hospitality Bible</span>
-                          </div>
-                          <div className="mt-2 text-xs text-blue-600">Click for full guide details</div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 )}
                 
+                {/* Regular Notes */}
                 <div 
                   className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6`}
                   onDragOver={(e) => e.preventDefault()}
@@ -933,19 +704,12 @@ const TeamNoticeboard: React.FC = () => {
         </Tabs>
       </div>
       
+      {/* Recipe Modal */}
       <RecipeCardExpanded 
         recipe={selectedRecipe}
         isOpen={isRecipeModalOpen}
         onClose={() => setIsRecipeModalOpen(false)}
       />
-
-      {selectedGuide && (
-        <HospitalityGuideCardExpanded 
-          guide={selectedGuide}
-          isOpen={isGuideModalOpen}
-          onClose={() => setIsGuideModalOpen(false)}
-        />
-      )}
     </ScrollArea>
   );
 };

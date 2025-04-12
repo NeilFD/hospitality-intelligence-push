@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Recipe, MenuCategory, AllergenType, Ingredient } from "@/types/recipe-types";
-import RecipeBasicInfo from "./form/RecipeBasicInfo";
-import RecipeAdditionalInfo from "./form/RecipeAdditionalInfo";
-import IngredientForm from "./form/IngredientForm";
+import { RecipeBasicInfo } from "./form/RecipeBasicInfo";
+import { RecipeAdditionalInfo } from "./form/RecipeAdditionalInfo";
+import { IngredientForm } from "./form/IngredientForm";
 import { createEmptyRecipe, emptyIngredient, calculateTotals, normalizeDietaryInfo } from "./form/RecipeFormUtils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
@@ -17,8 +17,8 @@ interface RecipeFormDialogProps {
   onClose: () => void;
   onSave: (recipe: Recipe) => void;
   recipe?: Recipe;
-  moduleType: 'food' | 'beverage' | 'hospitality';
-  categories: MenuCategory[] | string[];
+  moduleType: 'food' | 'beverage';
+  categories: MenuCategory[];
   allergens: AllergenType[];
 }
 
@@ -141,6 +141,10 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   
   const computedCostingTotals = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
   
+  const validateForm = () => {
+    return true;
+  };
+
   const toggleArchived = () => {
     setFormData(prevData => ({
       ...prevData,
@@ -199,11 +203,9 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader className="flex flex-row justify-between items-center">
           <div>
-            <DialogTitle className="text-gray-900">
-              {recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : moduleType === 'beverage' ? 'Beverage' : 'Hospitality'} {moduleType === 'hospitality' ? 'Guide' : 'Recipe'}
-            </DialogTitle>
+            <DialogTitle className="text-gray-900">{recipe ? 'Edit' : 'Add'} {moduleType === 'food' ? 'Food' : 'Beverage'} Recipe</DialogTitle>
             <DialogDescription className="text-gray-600">
-              Fill in the details for this {moduleType === 'food' ? 'dish' : moduleType === 'beverage' ? 'beverage' : 'hospitality guide'}.
+              Fill in the details for this {moduleType === 'food' ? 'dish' : 'beverage'} recipe.
             </DialogDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -247,7 +249,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               onIngredientChange={handleIngredientChange}
               onAddIngredient={addIngredient}
               onRemoveIngredient={removeIngredient}
-              moduleType={moduleType}
             />
             
             <RecipeAdditionalInfo 

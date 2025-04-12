@@ -248,51 +248,6 @@ export type Database = {
           },
         ]
       }
-      hospitality_guides: {
-        Row: {
-          archived: boolean
-          category: string
-          created_at: string
-          description: string | null
-          detailed_procedure: string | null
-          id: string
-          image_url: string | null
-          name: string
-          posted_to_noticeboard: boolean
-          steps: Json | null
-          time_to_complete_minutes: number | null
-          updated_at: string
-        }
-        Insert: {
-          archived?: boolean
-          category: string
-          created_at?: string
-          description?: string | null
-          detailed_procedure?: string | null
-          id?: string
-          image_url?: string | null
-          name: string
-          posted_to_noticeboard?: boolean
-          steps?: Json | null
-          time_to_complete_minutes?: number | null
-          updated_at?: string
-        }
-        Update: {
-          archived?: boolean
-          category?: string
-          created_at?: string
-          description?: string | null
-          detailed_procedure?: string | null
-          id?: string
-          image_url?: string | null
-          name?: string
-          posted_to_noticeboard?: boolean
-          steps?: Json | null
-          time_to_complete_minutes?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       master_daily_records: {
         Row: {
           average_cover_spend: number | null

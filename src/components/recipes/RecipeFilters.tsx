@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { RecipeFilterOptions, MenuCategory, AllergenType } from "@/types/recipe-types";
-import { HospitalityFilterOptions } from "@/types/hospitality-types";
 import { Search, X, ChevronDown, ChevronUp, Filter, Archive } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -14,11 +12,11 @@ import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface RecipeFiltersProps {
-  moduleType: 'food' | 'beverage' | 'hospitality';
+  moduleType: 'food' | 'beverage';
   categories: MenuCategory[];
   allergens: AllergenType[];
-  filters: RecipeFilterOptions | HospitalityFilterOptions;
-  onFilterChange: (filters: RecipeFilterOptions | HospitalityFilterOptions) => void;
+  filters: RecipeFilterOptions;
+  onFilterChange: (filters: RecipeFilterOptions) => void;
   onLetterSelect: (letter: string | null) => void;
   selectedLetter: string | null;
 }
@@ -41,11 +39,6 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   const [openAlphabet, setOpenAlphabet] = useState(true);
   const [openStatus, setOpenStatus] = useState(true);
   
-  // Check if this is a recipe filter (has allergens and dietary properties)
-  const isRecipeFilter = (filter: any): filter is RecipeFilterOptions => {
-    return 'allergens' in filter && 'isVegan' in filter;
-  };
-  
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onFilterChange({
@@ -62,8 +55,6 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   };
   
   const handleAllergenToggle = (allergen: string) => {
-    if (!isRecipeFilter(filters)) return;
-    
     const updatedAllergens = filters.allergens.includes(allergen)
       ? filters.allergens.filter(a => a !== allergen)
       : [...filters.allergens, allergen];
@@ -75,8 +66,6 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   };
   
   const handleDietaryToggle = (type: 'isVegan' | 'isVegetarian' | 'isGlutenFree') => {
-    if (!isRecipeFilter(filters)) return;
-    
     const currentValue = filters[type];
     if (currentValue === null) {
       onFilterChange({
@@ -129,25 +118,16 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   };
   
   const clearFilters = () => {
-    if (isRecipeFilter(filters)) {
-      onFilterChange({
-        searchTerm: "",
-        category: "all_categories",
-        allergens: [],
-        isVegan: null,
-        isVegetarian: null,
-        isGlutenFree: null,
-        letter: null,
-        status: "live"
-      });
-    } else {
-      onFilterChange({
-        searchTerm: "",
-        category: "all_categories",
-        letter: null,
-        status: "live"
-      });
-    }
+    onFilterChange({
+      searchTerm: "",
+      category: "all_categories",
+      allergens: [],
+      isVegan: null,
+      isVegetarian: null,
+      isGlutenFree: null,
+      letter: null,
+      status: "live"
+    });
     setSearchTerm("");
     onLetterSelect(null);
   };
@@ -179,10 +159,10 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
 
   const activeFiltersCount = 
     (filters.category !== "all_categories" ? 1 : 0) + 
-    (isRecipeFilter(filters) ? filters.allergens.length : 0) + 
-    (isRecipeFilter(filters) && filters.isVegan !== null ? 1 : 0) + 
-    (isRecipeFilter(filters) && filters.isVegetarian !== null ? 1 : 0) + 
-    (isRecipeFilter(filters) && filters.isGlutenFree !== null ? 1 : 0) + 
+    (filters.allergens.length) + 
+    (filters.isVegan !== null ? 1 : 0) + 
+    (filters.isVegetarian !== null ? 1 : 0) + 
+    (filters.isGlutenFree !== null ? 1 : 0) + 
     (filters.letter !== null ? 1 : 0) +
     (filters.status !== "live" ? 1 : 0);
 
@@ -198,11 +178,8 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
           )}
         </h2>
         
-        {(filters.searchTerm || filters.category !== "all_categories" || 
-           (isRecipeFilter(filters) && filters.allergens.length > 0) || 
-           (isRecipeFilter(filters) && filters.isVegan !== null) || 
-           (isRecipeFilter(filters) && filters.isVegetarian !== null) || 
-           (isRecipeFilter(filters) && filters.isGlutenFree !== null) || 
+        {(filters.searchTerm || filters.category !== "all_categories" || filters.allergens.length > 0 || 
+           filters.isVegan !== null || filters.isVegetarian !== null || filters.isGlutenFree !== null || 
            selectedLetter || filters.status !== "live") && (
           <Button type="button" variant="ghost" size="sm" onClick={clearFilters} title="Clear all filters">
             <X className="h-4 w-4" />
@@ -215,7 +192,7 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         <div className="flex-grow">
           <Input 
             type="text" 
-            placeholder={`Search ${moduleType === 'food' ? 'dishes' : moduleType === 'beverage' ? 'beverages' : 'guides'}...`}
+            placeholder={`Search ${moduleType === 'food' ? 'dishes' : 'beverages'}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
@@ -279,66 +256,62 @@ const RecipeFilters: React.FC<RecipeFiltersProps> = ({
         </CollapsibleContent>
       </Collapsible>
       
-      {moduleType !== 'hospitality' && isRecipeFilter(filters) && (
-        <Collapsible open={openDietary} onOpenChange={setOpenDietary}>
-          <CollapsibleHeader title="Dietary Requirements" isOpen={openDietary} onClick={() => setOpenDietary(!openDietary)} />
-          <CollapsibleContent>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={getDietaryButtonClass(filters.isVegetarian)}
-                onClick={() => handleDietaryToggle('isVegetarian')}
-              >
-                {getDietaryButtonLabel(filters.isVegetarian, 'isVegetarian')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={getDietaryButtonClass(filters.isVegan)}
-                onClick={() => handleDietaryToggle('isVegan')}
-              >
-                {getDietaryButtonLabel(filters.isVegan, 'isVegan')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={getDietaryButtonClass(filters.isGlutenFree)}
-                onClick={() => handleDietaryToggle('isGlutenFree')}
-              >
-                {getDietaryButtonLabel(filters.isGlutenFree, 'isGlutenFree')}
-              </Button>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+      <Collapsible open={openDietary} onOpenChange={setOpenDietary}>
+        <CollapsibleHeader title="Dietary Requirements" isOpen={openDietary} onClick={() => setOpenDietary(!openDietary)} />
+        <CollapsibleContent>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={getDietaryButtonClass(filters.isVegetarian)}
+              onClick={() => handleDietaryToggle('isVegetarian')}
+            >
+              {getDietaryButtonLabel(filters.isVegetarian, 'isVegetarian')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={getDietaryButtonClass(filters.isVegan)}
+              onClick={() => handleDietaryToggle('isVegan')}
+            >
+              {getDietaryButtonLabel(filters.isVegan, 'isVegan')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={getDietaryButtonClass(filters.isGlutenFree)}
+              onClick={() => handleDietaryToggle('isGlutenFree')}
+            >
+              {getDietaryButtonLabel(filters.isGlutenFree, 'isGlutenFree')}
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
       
-      {moduleType !== 'hospitality' && allergens.length > 0 && (
-        <Collapsible open={openAllergens} onOpenChange={setOpenAllergens}>
-          <CollapsibleHeader title="Allergens" isOpen={openAllergens} onClick={() => setOpenAllergens(!openAllergens)} />
-          <CollapsibleContent>
-            <div className="flex flex-wrap gap-2">
-              {allergens.map((allergen) => (
-                <Badge 
-                  key={allergen.id}
-                  variant={isRecipeFilter(filters) && filters.allergens.includes(allergen.name) ? "default" : "outline"}
-                  className={`cursor-pointer ${
-                    isRecipeFilter(filters) && filters.allergens.includes(allergen.name) 
-                      ? "bg-tavern-blue text-white" 
-                      : "bg-gray-100 text-tavern-blue-dark"
-                  }`}
-                  onClick={() => handleAllergenToggle(allergen.name)}
-                >
-                  {allergen.name}
-                </Badge>
-              ))}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+      <Collapsible open={openAllergens} onOpenChange={setOpenAllergens}>
+        <CollapsibleHeader title="Allergens" isOpen={openAllergens} onClick={() => setOpenAllergens(!openAllergens)} />
+        <CollapsibleContent>
+          <div className="flex flex-wrap gap-2">
+            {allergens.map((allergen) => (
+              <Badge 
+                key={allergen.id}
+                variant={filters.allergens.includes(allergen.name) ? "default" : "outline"}
+                className={`cursor-pointer ${
+                  filters.allergens.includes(allergen.name) 
+                    ? "bg-tavern-blue text-white" 
+                    : "bg-gray-100 text-tavern-blue-dark"
+                }`}
+                onClick={() => handleAllergenToggle(allergen.name)}
+              >
+                {allergen.name}
+              </Badge>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
       
       <Collapsible open={openAlphabet} onOpenChange={setOpenAlphabet}>
         <CollapsibleHeader title="A-Z" isOpen={openAlphabet} onClick={() => setOpenAlphabet(!openAlphabet)} />

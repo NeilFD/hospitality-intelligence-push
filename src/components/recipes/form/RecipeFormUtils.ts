@@ -1,6 +1,5 @@
 
 import { Recipe, Ingredient } from "@/types/recipe-types";
-import { HospitalityGuide, HospitalityGuideStep } from "@/types/hospitality-types";
 import { v4 as uuidv4 } from 'uuid';
 
 export const emptyIngredient = (): Ingredient => ({
@@ -12,12 +11,7 @@ export const emptyIngredient = (): Ingredient => ({
   totalCost: 0
 });
 
-export const emptyHospitalityStep = (): HospitalityGuideStep => ({
-  id: uuidv4(),
-  name: ''
-});
-
-export const createEmptyRecipe = (moduleType: 'food' | 'beverage' | 'hospitality'): Recipe => {
+export const createEmptyRecipe = (moduleType: 'food' | 'beverage'): Recipe => {
   return {
     id: '',
     name: '',
@@ -37,21 +31,6 @@ export const createEmptyRecipe = (moduleType: 'food' | 'beverage' | 'hospitality
     createdAt: new Date(),
     updatedAt: new Date(),
     moduleType
-  };
-};
-
-export const createEmptyHospitalityGuide = (): HospitalityGuide => {
-  return {
-    id: '',
-    name: '',
-    category: '',
-    description: '',
-    timeToCompleteMinutes: 10,
-    steps: [emptyHospitalityStep()],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    archived: false,
-    postedToNoticeboard: false
   };
 };
 

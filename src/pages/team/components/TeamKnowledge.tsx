@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Book, Utensils, Wine, ConciergeBell, ArrowRight } from 'lucide-react';
+import { Book, Utensils, Wine, Conciergebell, ArrowRight } from 'lucide-react';
 
 const TeamKnowledge: React.FC = () => {
   return (
@@ -49,7 +49,7 @@ const TeamKnowledge: React.FC = () => {
       <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-b from-blue-50 to-blue-100 border-none rounded-xl">
         <CardHeader className="pt-6 pb-0 px-6">
           <div className="bg-blue-500 text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform hover:scale-105 transition-transform">
-            <ConciergeBell className="h-8 w-8" />
+            <Conciergebell className="h-8 w-8" />
           </div>
           <CardTitle className="text-2xl font-bold text-blue-800">Hospitality Bible</CardTitle>
         </CardHeader>
