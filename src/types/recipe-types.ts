@@ -1,3 +1,4 @@
+
 export interface Ingredient {
   id: string;
   name: string;
@@ -13,10 +14,16 @@ export type MenuCategory = {
   moduleType: 'food' | 'beverage' | 'hospitality';
 };
 
+export type AllergenType = {
+  id: string;
+  name: string;
+};
+
 export type RecipeFilterOptions = {
   searchTerm?: string;
   category?: string;
   allergen?: string;
+  allergens?: string[];
   isVegan?: boolean;
   isVegetarian?: boolean;
   isGlutenFree?: boolean;
@@ -49,5 +56,7 @@ export interface Recipe {
   archived?: boolean;
   moduleType: 'food' | 'beverage' | 'hospitality';
   postedToNoticeboard?: boolean;
-  hideCosting?: boolean; // Add this property
+  hideCosting?: boolean;
+  recommendedUpsell?: string;
+  miseEnPlace?: string;
 }

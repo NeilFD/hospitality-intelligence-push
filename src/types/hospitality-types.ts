@@ -1,30 +1,30 @@
 
-export interface HospitalityStep {
+export interface HospitalityGuideStep {
   id: string;
   name: string;
+  description?: string;
+  imageUrl?: string;
 }
 
 export interface HospitalityGuide {
   id: string;
   name: string;
   category: string;
-  description: string;
-  steps: HospitalityStep[];
-  department?: string;
+  description?: string;
   timeToCompleteMinutes: number;
+  steps: HospitalityGuideStep[];
   detailedProcedure?: string;
+  department?: string;
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
-  imageUrl?: string;
   archived?: boolean;
   postedToNoticeboard?: boolean;
 }
 
 export type HospitalityFilterOptions = {
   searchTerm?: string;
-  department?: string;
   category?: string;
-  archived?: boolean;
   letter?: string | null;
   status?: 'live' | 'archived';
 };
