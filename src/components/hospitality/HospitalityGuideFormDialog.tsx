@@ -12,7 +12,7 @@ import { MenuCategory } from "@/types/recipe-types";
 import { createEmptyHospitalityGuide, emptyHospitalityStep } from "@/components/recipes/form/RecipeFormUtils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
-import { X, Plus, ArchiveIcon } from "lucide-react";
+import { X, Plus, ArchiveIcon, ImageUp } from "lucide-react";
 
 interface HospitalityGuideFormDialogProps {
   open: boolean;
@@ -189,14 +189,14 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description and Detailed Procedure</Label>
               <Textarea
                 id="description"
                 name="description"
-                rows={3}
+                rows={6}
                 value={formData.description || ''}
                 onChange={handleInputChange}
-                placeholder="Brief description of this guide..."
+                placeholder="Describe the hospitality guide, its purpose, and detailed procedure..."
                 className="mt-1"
               />
             </div>
@@ -213,19 +213,6 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
                   timeToCompleteMinutes: parseInt(e.target.value) || 0 
                 }))}
                 placeholder="0"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="detailedProcedure">Detailed Procedure</Label>
-              <Textarea
-                id="detailedProcedure"
-                name="detailedProcedure"
-                rows={6}
-                value={formData.detailedProcedure || ''}
-                onChange={handleInputChange}
-                placeholder="Describe detailed procedure and instructions..."
                 className="mt-1"
               />
             </div>
@@ -250,8 +237,11 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
                   </div>
                 ) : (
                   <div>
-                    <label htmlFor="image-upload" className="cursor-pointer bg-gray-200 hover:bg-gray-300 rounded-md px-4 py-2 inline-block">
-                      Upload Image
+                    <label 
+                      htmlFor="image-upload" 
+                      className="cursor-pointer bg-primary text-white rounded-md px-4 py-2 inline-flex items-center gap-2 hover:bg-primary/90 transition-colors"
+                    >
+                      <ImageUp className="h-5 w-5" /> Upload Image
                     </label>
                     <input 
                       type="file" 
@@ -333,3 +323,4 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
 };
 
 export default HospitalityGuideFormDialog;
+
