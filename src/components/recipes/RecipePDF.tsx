@@ -1,9 +1,10 @@
 
 import React, { ReactNode } from 'react';
 import { Recipe } from '@/types/recipe-types';
+import { HospitalityGuide } from '@/types/hospitality-types';
 
 interface RecipePDFProps {
-  recipe: Recipe;
+  recipe: Recipe | HospitalityGuide;
   children?: ReactNode;
 }
 

@@ -1,11 +1,12 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
 import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
 import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
-import { Recipe, RecipeFilterOptions, Ingredient, MenuCategory } from "@/types/recipe-types";
-import { allergenTypes } from "@/data/sample-recipe-data";
+import { MenuCategory } from "@/types/recipe-types";
+import { HospitalityGuide, HospitalityStep, HospitalityFilterOptions } from "@/types/hospitality-types";
 import { Plus, PanelLeft, ChevronLeft, Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -14,22 +15,18 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { v4 as uuidv4 } from 'uuid';
 
 const HospitalityBible: React.FC = () => {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [guides, setGuides] = useState<HospitalityGuide[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<RecipeFilterOptions>({
+  const [filters, setFilters] = useState<HospitalityFilterOptions>({
     searchTerm: "",
     category: "all_categories",
-    allergens: [],
-    isVegan: null,
-    isVegetarian: null,
-    isGlutenFree: null,
     letter: null,
     status: "live"
   });
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
-  const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
+  const [editingGuide, setEditingGuide] = useState<HospitalityGuide | undefined>(undefined);
+  const [viewingGuide, setViewingGuide] = useState<HospitalityGuide | undefined>(undefined);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
@@ -49,184 +46,90 @@ const HospitalityBible: React.FC = () => {
   ];
 
   useEffect(() => {
-    fetchRecipes();
+    fetchGuides();
   }, []);
 
-  const fetchRecipes = async () => {
+  const fetchGuides = async () => {
     try {
       setLoading(true);
       console.log("Fetching hospitality guides from Supabase...");
       const {
-        data: recipesData,
-        error: recipesError
-      } = await supabase.from('recipes').select('*').eq('module_type', 'hospitality');
-      if (recipesError) {
-        throw recipesError;
+        data: guidesData,
+        error: guidesError
+      } = await supabase.from('hospitality_guides').select('*');
+      
+      if (guidesError) {
+        throw guidesError;
       }
       
-      console.log(`Fetched ${recipesData?.length || 0} hospitality guides`);
+      console.log(`Fetched ${guidesData?.length || 0} hospitality guides`);
       
-      const recipesWithIngredients = await Promise.all((recipesData || []).map(async recipe => {
-        const {
-          data: ingredientsData,
-          error: ingredientsError
-        } = await supabase.from('recipe_ingredients').select('*').eq('recipe_id', recipe.id);
-        if (ingredientsError) {
-          console.error('Error fetching steps:', ingredientsError);
-          return {
-            ...recipe,
-            ingredients: [],
-            allergens: recipe.allergens || [],
-            costing: {
-              totalRecipeCost: recipe.total_recipe_cost || 0,
-              suggestedSellingPrice: recipe.suggested_selling_price || 0,
-              actualMenuPrice: recipe.actual_menu_price || 0,
-              grossProfitPercentage: recipe.gross_profit_percentage || 0
-            },
-            moduleType: recipe.module_type,
-            archived: recipe.archived || false
-          };
-        }
-        const mappedIngredients: Ingredient[] = ingredientsData.map(ingredient => ({
-          id: ingredient.id,
-          name: ingredient.name,
-          amount: ingredient.amount,
-          unit: ingredient.unit,
-          costPerUnit: ingredient.cost_per_unit,
-          totalCost: ingredient.total_cost
-        }));
+      const mappedGuides: HospitalityGuide[] = (guidesData || []).map(guide => {
         return {
-          id: recipe.id,
-          name: recipe.name,
-          category: recipe.category,
-          allergens: recipe.allergens || [],
-          isVegan: Boolean(recipe.is_vegan),
-          isVegetarian: Boolean(recipe.is_vegetarian),
-          isGlutenFree: Boolean(recipe.is_gluten_free),
-          recommendedUpsell: recipe.recommended_upsell || '',
-          timeToTableMinutes: recipe.time_to_table_minutes || 0,
-          miseEnPlace: recipe.mise_en_place || '',
-          method: recipe.method || '',
-          createdAt: new Date(recipe.created_at),
-          updatedAt: new Date(recipe.updated_at),
-          imageUrl: recipe.image_url,
-          ingredients: mappedIngredients,
-          costing: {
-            totalRecipeCost: recipe.total_recipe_cost || 0,
-            suggestedSellingPrice: recipe.suggested_selling_price || 0,
-            actualMenuPrice: recipe.actual_menu_price || 0,
-            grossProfitPercentage: recipe.gross_profit_percentage || 0
-          },
-          moduleType: recipe.module_type,
-          archived: recipe.archived || false,
-          postedToNoticeboard: recipe.posted_to_noticeboard || false
+          id: guide.id,
+          name: guide.name,
+          category: guide.category,
+          description: guide.description || '',
+          timeToCompleteMinutes: guide.time_to_complete_minutes || 0,
+          steps: Array.isArray(guide.steps) ? guide.steps : [],
+          detailedProcedure: guide.detailed_procedure || '',
+          imageUrl: guide.image_url,
+          createdAt: new Date(guide.created_at),
+          updatedAt: new Date(guide.updated_at),
+          archived: guide.archived || false,
+          postedToNoticeboard: guide.posted_to_noticeboard || false
         };
-      }));
-      setRecipes(recipesWithIngredients);
+      });
+      
+      setGuides(mappedGuides);
     } catch (error) {
       console.error('Error fetching hospitality guides:', error);
       toast.error('Failed to load hospitality guides');
-      setRecipes([]);
+      setGuides([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const saveGuideToSupabase = async (recipe: Recipe, showToast: boolean = true) => {
+  const saveGuideToSupabase = async (guide: HospitalityGuide, showToast: boolean = true) => {
     try {
-      console.log("Starting saveGuideToSupabase with guide:", recipe);
+      console.log("Starting saveGuideToSupabase with guide:", guide);
       
-      if (!recipe.id) {
-        recipe.id = uuidv4();
-        console.log("Generated new guide ID:", recipe.id);
+      if (!guide.id) {
+        guide.id = uuidv4();
+        console.log("Generated new guide ID:", guide.id);
       }
       
-      const recipeData = {
-        id: recipe.id,
-        name: recipe.name || 'Unnamed Guide',
-        category: recipe.category || 'Uncategorized',
-        allergens: recipe.allergens || [],
-        is_vegan: recipe.isVegan || false,
-        is_vegetarian: recipe.isVegetarian || false,
-        is_gluten_free: recipe.isGlutenFree || false,
-        recommended_upsell: recipe.recommendedUpsell || '',
-        time_to_table_minutes: recipe.timeToTableMinutes || 0,
-        mise_en_place: recipe.miseEnPlace || '',
-        method: recipe.method || '',
-        image_url: recipe.imageUrl || '',
-        module_type: 'hospitality',
-        total_recipe_cost: recipe.costing.totalRecipeCost || 0,
-        suggested_selling_price: recipe.costing.suggestedSellingPrice || 0,
-        actual_menu_price: recipe.costing.actualMenuPrice || 0,
-        gross_profit_percentage: recipe.costing.grossProfitPercentage || 0,
-        archived: recipe.archived || false,
-        posted_to_noticeboard: recipe.postedToNoticeboard || false
+      const guideData = {
+        id: guide.id,
+        name: guide.name || 'Unnamed Guide',
+        category: guide.category || 'Uncategorized',
+        description: guide.description || '',
+        time_to_complete_minutes: guide.timeToCompleteMinutes || 0,
+        steps: guide.steps || [],
+        detailed_procedure: guide.detailedProcedure || '',
+        image_url: guide.imageUrl || '',
+        archived: guide.archived || false,
+        posted_to_noticeboard: guide.postedToNoticeboard || false
       };
       
-      console.log("Guide data formatted for Supabase:", recipeData);
+      console.log("Guide data formatted for Supabase:", guideData);
 
       const { error: upsertError } = await supabase
-        .from('recipes')
-        .upsert([recipeData]);
+        .from('hospitality_guides')
+        .upsert([guideData]);
       
       if (upsertError) {
         console.error("Error upserting guide:", upsertError);
         throw upsertError;
       }
       
-      console.log("Guide saved successfully with ID:", recipe.id);
-
-      try {
-        console.log(`Deleting existing steps for guide ${recipe.id}`);
-        const { error: deleteError } = await supabase
-          .from('recipe_ingredients')
-          .delete()
-          .eq('recipe_id', recipe.id);
-        
-        if (deleteError) {
-          console.error('Error deleting existing steps:', deleteError);
-        }
-      } catch (deleteError) {
-        console.error('Exception while deleting steps:', deleteError);
-      }
-      
-      if (recipe.ingredients && recipe.ingredients.length > 0) {
-        console.log(`Inserting ${recipe.ingredients.length} steps`);
-        const ingredientsToInsert = recipe.ingredients
-          .filter(ingredient => ingredient.name && ingredient.name.trim() !== '')
-          .map(ingredient => ({
-            id: ingredient.id || uuidv4(),
-            recipe_id: recipe.id,
-            name: ingredient.name || '',
-            amount: ingredient.amount || 0,
-            unit: ingredient.unit || '',
-            cost_per_unit: ingredient.costPerUnit || 0,
-            total_cost: ingredient.totalCost || 0
-          }));
-        
-        if (ingredientsToInsert.length > 0) {
-          console.log("Steps prepared for insertion:", ingredientsToInsert);
-          
-          const { error: ingredientsError } = await supabase
-            .from('recipe_ingredients')
-            .insert(ingredientsToInsert);
-          
-          if (ingredientsError) {
-            console.error('Error saving steps:', ingredientsError);
-            throw ingredientsError;
-          }
-          
-          console.log("Steps saved successfully");
-        } else {
-          console.log("No valid steps to save");
-        }
-      }
+      console.log("Guide saved successfully with ID:", guide.id);
       
       if (showToast) {
         toast.success('Hospitality guide saved successfully');
       }
       
-      console.log("Guide and all steps saved successfully");
       return true;
     } catch (error) {
       console.error('Error saving guide:', error);
@@ -237,22 +140,12 @@ const HospitalityBible: React.FC = () => {
     }
   };
 
-  const deleteGuideFromSupabase = async (recipeId: string) => {
+  const deleteGuideFromSupabase = async (guideId: string) => {
     try {
-      const { error: ingredientsError } = await supabase
-        .from('recipe_ingredients')
-        .delete()
-        .eq('recipe_id', recipeId);
-        
-      if (ingredientsError) {
-        console.error('Error deleting steps:', ingredientsError);
-        throw ingredientsError;
-      }
-      
       const { error } = await supabase
-        .from('recipes')
+        .from('hospitality_guides')
         .delete()
-        .eq('id', recipeId);
+        .eq('id', guideId);
         
       if (error) {
         console.error('Error deleting guide:', error);
@@ -268,28 +161,28 @@ const HospitalityBible: React.FC = () => {
     }
   };
 
-  const filteredRecipes = useMemo(() => {
-    return recipes.filter(recipe => {
-      if (filters.searchTerm && !recipe.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
+  const filteredGuides = useMemo(() => {
+    return guides.filter(guide => {
+      if (filters.searchTerm && !guide.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
         return false;
       }
-      if (filters.category && filters.category !== "all_categories" && recipe.category !== filters.category) {
+      if (filters.category && filters.category !== "all_categories" && guide.category !== filters.category) {
         return false;
       }
-      if (selectedLetter && !recipe.name.toUpperCase().startsWith(selectedLetter)) {
+      if (selectedLetter && !guide.name.toUpperCase().startsWith(selectedLetter)) {
         return false;
       }
-      if (filters.status === "live" && recipe.archived) {
+      if (filters.status === "live" && guide.archived) {
         return false;
       }
-      if (filters.status === "archived" && !recipe.archived) {
+      if (filters.status === "archived" && !guide.archived) {
         return false;
       }
       return true;
     });
-  }, [recipes, filters, selectedLetter]);
+  }, [guides, filters, selectedLetter]);
 
-  const handleFilterChange = (newFilters: RecipeFilterOptions) => {
+  const handleFilterChange = (newFilters: HospitalityFilterOptions) => {
     setFilters(newFilters);
   };
 
@@ -301,58 +194,58 @@ const HospitalityBible: React.FC = () => {
     });
   };
 
-  const handleAddRecipe = () => {
-    setEditingRecipe(undefined);
+  const handleAddGuide = () => {
+    setEditingGuide(undefined);
     setFormOpen(true);
   };
 
-  const handleEditRecipe = (recipe: Recipe) => {
-    setEditingRecipe(recipe);
+  const handleEditGuide = (guide: HospitalityGuide) => {
+    setEditingGuide(guide);
     setFormOpen(true);
   };
 
-  const handleSaveRecipe = async (recipe: Recipe) => {
+  const handleSaveGuide = async (guide: HospitalityGuide) => {
     try {
-      console.log("handleSaveRecipe called with:", recipe);
+      console.log("handleSaveGuide called with:", guide);
       
-      if (!recipe.id) {
-        recipe.id = uuidv4();
-        console.log("Generated new guide ID in handleSaveRecipe:", recipe.id);
+      if (!guide.id) {
+        guide.id = uuidv4();
+        console.log("Generated new guide ID in handleSaveGuide:", guide.id);
       }
       
-      await saveGuideToSupabase(recipe);
+      await saveGuideToSupabase(guide);
       
-      if (editingRecipe) {
-        setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
+      if (editingGuide) {
+        setGuides(guides.map(g => g.id === guide.id ? guide : g));
       } else {
-        setRecipes(prevRecipes => [...prevRecipes, recipe]);
+        setGuides(prevGuides => [...prevGuides, guide]);
       }
       
       setFormOpen(false);
-      setEditingRecipe(undefined);
+      setEditingGuide(undefined);
       
       console.log("Refreshing guides from database after save");
-      await fetchRecipes();
+      await fetchGuides();
       
       console.log("Guide form closed, state updated");
     } catch (error) {
-      console.error('Error in handleSaveRecipe:', error);
+      console.error('Error in handleSaveGuide:', error);
       toast.error('Failed to save hospitality guide. Please try again.');
     }
   };
 
-  const handleDeleteRecipe = async (recipe: Recipe) => {
+  const handleDeleteGuide = async (guide: HospitalityGuide) => {
     try {
-      await deleteGuideFromSupabase(recipe.id);
-      setRecipes(recipes.filter(r => r.id !== recipe.id));
-      setViewingRecipe(undefined);
+      await deleteGuideFromSupabase(guide.id);
+      setGuides(guides.filter(g => g.id !== guide.id));
+      setViewingGuide(undefined);
     } catch (error) {
-      console.error('Error in handleDeleteRecipe:', error);
+      console.error('Error in handleDeleteGuide:', error);
     }
   };
 
-  const handleViewRecipe = (recipe: Recipe) => {
-    setViewingRecipe(recipe);
+  const handleViewGuide = (guide: HospitalityGuide) => {
+    setViewingGuide(guide);
   };
 
   const toggleSidebar = () => {
@@ -363,26 +256,26 @@ const HospitalityBible: React.FC = () => {
     setSidebarMaximized(!sidebarMaximized);
   };
 
-  const handleToggleNoticeboard = async (recipe: Recipe) => {
+  const handleToggleNoticeboard = async (guide: HospitalityGuide) => {
     try {
-      const updatedRecipe = {
-        ...recipe,
-        postedToNoticeboard: !recipe.postedToNoticeboard
+      const updatedGuide = {
+        ...guide,
+        postedToNoticeboard: !guide.postedToNoticeboard
       };
 
       const { error } = await supabase
-        .from('recipes')
-        .update({ posted_to_noticeboard: updatedRecipe.postedToNoticeboard })
-        .eq('id', recipe.id);
+        .from('hospitality_guides')
+        .update({ posted_to_noticeboard: updatedGuide.postedToNoticeboard })
+        .eq('id', guide.id);
 
       if (error) throw error;
 
-      setRecipes(recipes.map(r => 
-        r.id === recipe.id ? updatedRecipe : r
+      setGuides(guides.map(g => 
+        g.id === guide.id ? updatedGuide : g
       ));
 
       toast.success(
-        updatedRecipe.postedToNoticeboard 
+        updatedGuide.postedToNoticeboard 
           ? 'Guide posted to Noticeboard' 
           : 'Guide removed from Noticeboard'
       );
@@ -392,6 +285,7 @@ const HospitalityBible: React.FC = () => {
     }
   };
 
+  // Components for sidebar display based on screen size
   const DesktopSidebar = () => <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
     {sidebarOpen && (
       <div className="p-4">
@@ -403,7 +297,15 @@ const HospitalityBible: React.FC = () => {
             <ChevronLeft className="h-3 w-3" />
           </Button>
         </div>
-        <RecipeFilters moduleType="hospitality" categories={hospitalityCategories} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
+        <RecipeFilters 
+          moduleType="hospitality" 
+          categories={hospitalityCategories} 
+          allergens={[]} 
+          filters={filters as any} 
+          onFilterChange={handleFilterChange} 
+          onLetterSelect={handleLetterSelect} 
+          selectedLetter={selectedLetter} 
+        />
       </div>
     )}
   </div>;
@@ -416,7 +318,15 @@ const HospitalityBible: React.FC = () => {
     <Drawer open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <DrawerContent className="max-h-[90vh]">
         <div className="p-4 max-h-[80vh] overflow-y-auto">
-          <RecipeFilters moduleType="hospitality" categories={hospitalityCategories} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
+          <RecipeFilters 
+            moduleType="hospitality" 
+            categories={hospitalityCategories} 
+            allergens={[]} 
+            filters={filters as any} 
+            onFilterChange={handleFilterChange} 
+            onLetterSelect={handleLetterSelect} 
+            selectedLetter={selectedLetter} 
+          />
         </div>
       </DrawerContent>
     </Drawer>
@@ -462,7 +372,7 @@ const HospitalityBible: React.FC = () => {
             <h1 className="text-3xl font-bold">Hospitality Bible</h1>
             <p className="text-muted-foreground">Service guides, standards and training materials</p>
           </div>
-          <Button onClick={() => setFormOpen(true)} className="mt-4 md:mt-0">
+          <Button onClick={handleAddGuide} className="mt-4 md:mt-0">
             <Plus className="h-4 w-4 mr-2" />
             Add Hospitality Guide
           </Button>
@@ -474,13 +384,36 @@ const HospitalityBible: React.FC = () => {
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
                 <p className="text-gray-500">Loading hospitality guides...</p>
               </div>
-            </div> : filteredRecipes.length > 0 ? <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredRecipes.map(recipe => (
+            </div> : filteredGuides.length > 0 ? <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredGuides.map(guide => (
                 <RecipeCard 
-                  key={recipe.id} 
-                  recipe={{...recipe, moduleType: 'hospitality'}}
-                  onClick={() => setViewingRecipe(recipe)}
-                  onToggleNoticeboard={() => handleToggleNoticeboard(recipe)}
+                  key={guide.id} 
+                  recipe={{
+                    ...guide,
+                    moduleType: 'hospitality',
+                    allergens: [],
+                    isVegan: false,
+                    isVegetarian: false,
+                    isGlutenFree: false,
+                    timeToTableMinutes: guide.timeToCompleteMinutes,
+                    ingredients: guide.steps.map(step => ({
+                      id: step.id,
+                      name: step.name,
+                      amount: 0,
+                      unit: '',
+                      costPerUnit: 0,
+                      totalCost: 0
+                    })),
+                    method: guide.detailedProcedure,
+                    costing: {
+                      totalRecipeCost: 0,
+                      suggestedSellingPrice: 0,
+                      actualMenuPrice: 0,
+                      grossProfitPercentage: 0
+                    }
+                  }}
+                  onClick={() => handleViewGuide(guide)}
+                  onToggleNoticeboard={() => handleToggleNoticeboard(guide)}
                 />
               ))}
             </div> : <div className="flex flex-col items-center justify-center py-12">
@@ -489,10 +422,6 @@ const HospitalityBible: React.FC = () => {
                 setFilters({
                   searchTerm: "",
                   category: "all_categories",
-                  allergens: [],
-                  isVegan: null,
-                  isVegetarian: null,
-                  isGlutenFree: null,
                   letter: null,
                   status: "live"
                 });
@@ -504,29 +433,29 @@ const HospitalityBible: React.FC = () => {
         </div>
       </div>
       
+      {/* This part needs to be updated with a custom guide form */}
       {formOpen && (
-        <RecipeFormDialog 
+        <HospitalityGuideFormDialog 
           open={formOpen} 
           onClose={() => setFormOpen(false)} 
-          onSave={handleSaveRecipe} 
-          recipe={editingRecipe} 
-          moduleType="hospitality" 
+          onSave={handleSaveGuide} 
+          guide={editingGuide} 
           categories={hospitalityCategories} 
-          allergens={[]} 
         />
       )}
       
-      {viewingRecipe && (
-        <RecipeDetailDialog 
-          open={!!viewingRecipe} 
-          onClose={() => setViewingRecipe(undefined)} 
-          recipe={{...viewingRecipe, moduleType: 'hospitality'}} 
+      {/* This part needs to be updated with a custom guide detail dialog */}
+      {viewingGuide && (
+        <HospitalityGuideDetailDialog 
+          open={!!viewingGuide} 
+          onClose={() => setViewingGuide(undefined)} 
+          guide={viewingGuide} 
           onEdit={() => {
-            setViewingRecipe(undefined);
-            setEditingRecipe(viewingRecipe);
+            setViewingGuide(undefined);
+            setEditingGuide(viewingGuide);
             setFormOpen(true);
           }} 
-          onDelete={handleDeleteRecipe} 
+          onDelete={handleDeleteGuide} 
         />
       )}
     </div>
