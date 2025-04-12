@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Clock, Utensils, BarChart4, Trash2, FileEdit, AlertCircle, Check } from 'lucide-react';
 import RecipePDF from './RecipePDF';
+
 interface RecipeDetailDialogProps {
   recipe: Recipe;
   open: boolean;
@@ -15,6 +16,7 @@ interface RecipeDetailDialogProps {
   onEdit: () => void;
   onDelete: (recipe: Recipe) => void;
 }
+
 const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   recipe,
   open,
@@ -25,19 +27,21 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   if (!recipe) return null;
   const isHospitality = recipe.moduleType === 'hospitality';
   const isBeverage = recipe.moduleType === 'beverage';
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP'
     }).format(amount);
   };
+
   return <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">{recipe.name}</DialogTitle>
           <div className="flex flex-wrap gap-2 mt-2">
             <Badge variant="secondary" className="bg-green-500">{recipe.category || 'Uncategorized'}</Badge>
-            {recipe.timeToTableMinutes > 0 && <Badge variant="outline" className="flex items-center gap-1 bg-green-500">
+            {recipe.timeToTableMinutes > 0 && <Badge variant="outline" className="flex items-center gap-1 bg-green-500 text-white">
                 <Clock className="h-3 w-3" />
                 {recipe.timeToTableMinutes} min
               </Badge>}
@@ -172,4 +176,5 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
       </DialogContent>
     </Dialog>;
 };
+
 export default RecipeDetailDialog;
