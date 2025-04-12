@@ -41,7 +41,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-slate-900">{recipe.name}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-gray-900">{recipe.name}</DialogTitle>
           <div className="flex flex-wrap gap-2 mt-2">
             <Badge variant="secondary">{recipe.category || 'Uncategorized'}</Badge>
             {recipe.timeToTableMinutes > 0 && (
@@ -80,7 +80,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             
             {recipe.method && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
                 <div className="whitespace-pre-line text-gray-700">
                   {recipe.method}
                 </div>
@@ -89,12 +89,12 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             
             {recipe.ingredients && recipe.ingredients.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
                 <div className="space-y-2">
                   {recipe.ingredients.map((ingredient, index) => (
                     <div key={ingredient.id || index} className="flex justify-between py-2 border-b border-gray-100">
                       <div>
-                        <span className="font-medium">{ingredient.name}</span>
+                        <span className="font-medium text-gray-900">{ingredient.name}</span>
                         {ingredient.amount && ingredient.unit && (
                           <span className="text-gray-600 ml-2">
                             {ingredient.amount} {ingredient.unit}
@@ -119,7 +119,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             
             {recipe.miseEnPlace && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">
                   {isHospitality ? 'Required Tools/Resources' : 
                    isBeverage ? 'Garnish' : 
                    'Mise en Place'}
@@ -132,7 +132,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             
             {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">Allergens</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">Allergens</h3>
                 <div className="flex flex-wrap gap-2">
                   {recipe.allergens.map(allergen => (
                     <Badge key={allergen} variant="outline" className="bg-red-50 text-red-800 border-red-200">
@@ -145,31 +145,31 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             
             {recipe.recommendedUpsell && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
                 <div className="text-gray-700">{recipe.recommendedUpsell}</div>
               </div>
             )}
             
             {!isHospitality && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">Costing</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">Costing</h3>
                 <Card className="p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm text-gray-500">Total Recipe Cost</div>
-                      <div className="font-semibold">{formatCurrency(recipe.costing.totalRecipeCost)}</div>
+                      <div className="text-sm text-gray-600">Total Recipe Cost</div>
+                      <div className="font-semibold text-gray-900">{formatCurrency(recipe.costing.totalRecipeCost)}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500">Suggested Selling Price</div>
-                      <div className="font-semibold">{formatCurrency(recipe.costing.suggestedSellingPrice)}</div>
+                      <div className="text-sm text-gray-600">Suggested Selling Price</div>
+                      <div className="font-semibold text-gray-900">{formatCurrency(recipe.costing.suggestedSellingPrice)}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500">Actual Menu Price</div>
-                      <div className="font-semibold">{formatCurrency(recipe.costing.actualMenuPrice)}</div>
+                      <div className="text-sm text-gray-600">Actual Menu Price</div>
+                      <div className="font-semibold text-gray-900">{formatCurrency(recipe.costing.actualMenuPrice)}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500">Gross Profit %</div>
-                      <div className="font-semibold">{recipe.costing.grossProfitPercentage}%</div>
+                      <div className="text-sm text-gray-600">Gross Profit %</div>
+                      <div className="font-semibold text-gray-900">{recipe.costing.grossProfitPercentage}%</div>
                     </div>
                   </div>
                 </Card>
@@ -194,7 +194,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle className="text-gray-900">Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete this {isHospitality ? 'hospitality guide' : 'recipe'}.
                   </AlertDialogDescription>
