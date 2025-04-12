@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { HospitalityGuide } from '@/types/hospitality-types';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { ArchiveIcon, Clock, Download, Edit, Trash2, ConciergeBell } from 'lucide-react';
+import { ArchiveIcon, Clock, Download, Edit, Trash2, ConciergeBell, Globe } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import RecipePDF from '@/components/recipes/RecipePDF';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HospitalityGuideDetailDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface HospitalityGuideDetailDialogProps {
   onEdit?: (guide: HospitalityGuide) => void;
   onDelete?: (guide: HospitalityGuide) => void;
   onArchive?: (guide: HospitalityGuide) => void;
+  onToggleNoticeboard?: (guide: HospitalityGuide) => void;
 }
 
 const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> = ({
@@ -25,6 +27,7 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
   onEdit,
   onDelete,
   onArchive,
+  onToggleNoticeboard,
 }) => {
   const handleEdit = () => {
     if (onEdit) {
@@ -138,6 +141,26 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
           </div>
           
           <div className="flex gap-2">
+            {onToggleNoticeboard && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => onToggleNoticeboard(guide)}
+                      className={guide.postedToNoticeboard ? "text-green-600" : ""}
+                    >
+                      <Globe className={`h-4 w-4 mr-2 ${guide.postedToNoticeboard ? "text-green-600 fill-green-100" : ""}`} />
+                      {guide.postedToNoticeboard ? "Remove from Noticeboard" : "Post to Noticeboard"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {guide.postedToNoticeboard ? 'Posted to Staff Noticeboard' : 'Not posted to Staff Noticeboard'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            
             <PDFDownloadLink 
               document={
                 <RecipePDF recipe={{

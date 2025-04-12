@@ -419,6 +419,33 @@ const TeamNoticeboard: React.FC = () => {
   });
   
   const {
+    data: hospitalityGuides = [],
+    isLoading: guidesLoading
+  } = useQuery({
+    queryKey: ['noticeboard-hospitality-guides'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('hospitality_guides')
+          .select('*')
+          .eq('posted_to_noticeboard', true)
+          .eq('archived', false);
+          
+        if (error) {
+          console.error('Error fetching hospitality guides for noticeboard:', error);
+          throw error;
+        }
+        
+        console.log('Fetched hospitality guides for noticeboard:', data?.length || 0);
+        return data || [];
+      } catch (error) {
+        console.error('Exception in fetching hospitality guides:', error);
+        return [];
+      }
+    }
+  });
+  
+  const {
     data: polls = [],
     isLoading: pollsLoading
   } = useQuery({
@@ -526,6 +553,20 @@ const TeamNoticeboard: React.FC = () => {
     setIsRecipeModalOpen(true);
   };
 
+  const handleHospitalityGuideClick = (guide: any) => {
+    const formattedGuide = {
+      ...guide,
+      imageUrl: guide.image_url,
+      steps: guide.steps || [],
+      timeToTableMinutes: guide.time_to_complete_minutes,
+      method: guide.detailed_procedure,
+      category: guide.category || 'Uncategorized',
+      moduleType: 'hospitality'
+    };
+    setSelectedRecipe(formattedGuide);
+    setIsRecipeModalOpen(true);
+  };
+
   return (
     <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
       <div className="container mx-auto p-4">
@@ -591,7 +632,7 @@ const TeamNoticeboard: React.FC = () => {
           </div>
           
           <TabsContent value="notes">
-            {notesLoading || recipesLoading ? (
+            {notesLoading || recipesLoading || guidesLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} className="bg-gray-100/50 backdrop-blur-sm animate-pulse rounded-lg h-[200px] w-full border border-gray-200/50"></div>
@@ -600,7 +641,7 @@ const TeamNoticeboard: React.FC = () => {
             ) : (
               <>
                 {/* Pinned Section */}
-                {(pinnedNotes.length > 0 || recipes.length > 0) && (
+                {(pinnedNotes.length > 0 || recipes.length > 0 || hospitalityGuides.length > 0) && (
                   <div 
                     className="mb-8 p-4 bg-gray-50/70 rounded-lg border border-dashed border-amber-300/50 backdrop-blur-sm"
                     onDragOver={(e) => e.preventDefault()}
@@ -648,6 +689,34 @@ const TeamNoticeboard: React.FC = () => {
                             <span className="text-xs text-gray-600 bg-emerald-50 px-2 py-1 rounded-full">Recipe from Food Bible</span>
                           </div>
                           <div className="mt-2 text-xs text-blue-600">Click for full recipe details</div>
+                        </div>
+                      ))}
+
+                      {hospitalityGuides.map((guide: any) => (
+                        <div 
+                          key={guide.id} 
+                          className="bg-white/70 backdrop-blur-sm border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => handleHospitalityGuideClick(guide)}
+                        >
+                          <h4 className="font-semibold text-gray-900">{guide.name}</h4>
+                          <p className="text-sm text-gray-600">{guide.category || 'Uncategorized'}</p>
+                          {guide.image_url && (
+                            <div className="mt-2 h-32 overflow-hidden rounded">
+                              <img 
+                                src={guide.image_url} 
+                                alt={guide.name} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error("Guide image failed to load:", guide.image_url);
+                                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div className="mt-2">
+                            <span className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded-full">Guide from Hospitality Bible</span>
+                          </div>
+                          <div className="mt-2 text-xs text-blue-600">Click for full guide details</div>
                         </div>
                       ))}
                     </div>

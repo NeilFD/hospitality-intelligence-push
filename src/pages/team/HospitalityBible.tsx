@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -453,6 +452,7 @@ const HospitalityBible: React.FC = () => {
             setFormOpen(true);
           }} 
           onDelete={handleDeleteGuide} 
+          onToggleNoticeboard={handleToggleNoticeboard}
         />
       )}
     </div>
