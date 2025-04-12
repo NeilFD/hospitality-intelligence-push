@@ -142,7 +142,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                     `}>
                       {isVegan && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
                     </div>
-                    <span>Yes</span>
+                    <span className="text-gray-900">Yes</span>
                   </div>
                   <div 
                     onClick={() => onCheckboxChange('isVegan', false)}
@@ -156,7 +156,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                     `}>
                       {!isVegan && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
                     </div>
-                    <span>No</span>
+                    <span className="text-gray-900">No</span>
                   </div>
                 </div>
               </div>
@@ -176,7 +176,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                     `}>
                       {isVegetarian && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
                     </div>
-                    <span>Yes</span>
+                    <span className="text-gray-900">Yes</span>
                   </div>
                   <div 
                     onClick={() => onCheckboxChange('isVegetarian', false)}
@@ -190,7 +190,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                     `}>
                       {!isVegetarian && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
                     </div>
-                    <span>No</span>
+                    <span className="text-gray-900">No</span>
                   </div>
                 </div>
               </div>
@@ -210,7 +210,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                     `}>
                       {isGlutenFree && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
                     </div>
-                    <span>Yes</span>
+                    <span className="text-gray-900">Yes</span>
                   </div>
                   <div 
                     onClick={() => onCheckboxChange('isGlutenFree', false)}
@@ -224,7 +224,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
                     `}>
                       {!isGlutenFree && <Circle className="h-2.5 w-2.5 fill-white text-white" />}
                     </div>
-                    <span>No</span>
+                    <span className="text-gray-900">No</span>
                   </div>
                 </div>
               </div>
