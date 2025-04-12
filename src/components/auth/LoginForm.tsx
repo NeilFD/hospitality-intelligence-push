@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -39,7 +38,7 @@ export default function LoginForm() {
   return (
     <div className="backdrop-blur-xl bg-white/25 border border-white/30 rounded-2xl p-8 shadow-xl">
       <motion.h1 
-        className="text-3xl font-bold text-white text-center mb-6" 
+        className="text-3xl font-bold text-gray-800 text-center mb-6" 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         transition={{ delay: 0.3 }}
@@ -50,7 +49,7 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <motion.div 
-            className="bg-red-400/20 backdrop-blur-sm text-white p-4 rounded-xl text-sm border border-red-400/30"
+            className="bg-red-400/20 backdrop-blur-sm text-gray-800 p-4 rounded-xl text-sm border border-red-400/30"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
@@ -59,7 +58,7 @@ export default function LoginForm() {
         )}
         
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-white/90">Email</Label>
+          <Label htmlFor="email" className="text-gray-700">Email</Label>
           <motion.div whileHover="focus" whileFocus="focus">
             <motion.div variants={inputVariants}>
               <Input 
@@ -69,14 +68,14 @@ export default function LoginForm() {
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
                 required 
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 transition-all duration-300" 
+                className="bg-white/10 border-white/20 text-gray-800 placeholder:text-gray-500 focus:bg-white/15 transition-all duration-300" 
               />
             </motion.div>
           </motion.div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-white/90">Password</Label>
+          <Label htmlFor="password" className="text-gray-700">Password</Label>
           <motion.div whileHover="focus" whileFocus="focus">
             <motion.div variants={inputVariants}>
               <Input 
@@ -86,7 +85,7 @@ export default function LoginForm() {
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
                 required 
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 transition-all duration-300" 
+                className="bg-white/10 border-white/20 text-gray-800 placeholder:text-gray-500 focus:bg-white/15 transition-all duration-300" 
               />
             </motion.div>
           </motion.div>
@@ -99,21 +98,20 @@ export default function LoginForm() {
         >
           <Button 
             type="submit" 
-            className="w-full bg-gradient-to-r from-[#FDE1D3] to-[#FFDEE2] text-[#705b9b] hover:from-[#FDE1D3] hover:to-[#FFDEE2]/90 hover:shadow-lg transition-all duration-300 relative overflow-hidden" 
+            className="w-full bg-green-500 text-white hover:bg-green-600 transition-all duration-300 relative overflow-hidden" 
             disabled={isLoading}
           >
-            <span className="absolute inset-x-0 top-0 h-0.5 bg-white/30 animate-shimmer" />
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
         </motion.div>
         
         <div className="flex items-center justify-center space-x-1 pt-2">
-          <p className="text-center text-sm text-white/70">
+          <p className="text-center text-sm text-gray-600">
             Don't have an account?
           </p>
           <Button 
             variant="link" 
-            className="p-0 text-[#D3E4FD] hover:text-white" 
+            className="p-0 text-green-600 hover:text-green-700" 
             onClick={() => navigate('/register')}
           >
             Register
