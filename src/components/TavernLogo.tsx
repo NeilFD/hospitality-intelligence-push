@@ -25,12 +25,11 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
     <div 
       className={cn(
         sizeClasses[size], 
-        'bg-[#806cac] flex items-center justify-center rounded-lg', 
+        'bg-hi-purple flex items-center justify-center rounded-lg', 
         className
       )}
     >
-      <span className="text-white font-bold text-3xl">Hi</span>
+      <span className="text-white font-bold text-6xl">Hi</span>
     </div>
   );
 };
-
