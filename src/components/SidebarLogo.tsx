@@ -23,14 +23,14 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
     <div 
       className={cn(
         sizeClasses[size], 
-        'flex flex-col items-center justify-center relative', 
+        'flex flex-col items-center justify-center', 
         className
       )}
     >
       <img 
-        src="/lovable-uploads/961a56b6-b951-4f59-b386-636a8d01fb1c.png" 
+        src="/lovable-uploads/db99edaf-26df-47e0-9251-892661b64c7b.png" 
         alt="Hi" 
-        className="w-full h-full object-contain"
+        className="w-full h-full"
       />
     </div>
   );
