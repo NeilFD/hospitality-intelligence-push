@@ -23,7 +23,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   
   const textSizeClasses = {
     sm: 'text-xl',
-    md: 'text-3xl',  // Changed from text-2xl to text-3xl to make it slightly bigger
+    md: 'text-3xl',
     lg: 'text-6xl',
     xl: 'text-6xl',
     '2xl': 'text-7xl',
@@ -39,7 +39,10 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
         className
       )}
     >
-      <span className={cn("text-white font-bold", textSizeClasses[size])}>Hi</span>
+      <span className={cn(
+        "text-white font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2", 
+        textSizeClasses[size]
+      )}>Hi</span>
     </div>
   );
 };
