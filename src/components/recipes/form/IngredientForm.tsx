@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,13 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Ingredient } from '@/types/recipe-types';
 import { Trash2, Plus } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface IngredientFormProps {
   ingredients: Ingredient[];
@@ -14,11 +21,31 @@ interface IngredientFormProps {
   moduleType: string;
 }
 
+const commonUnits = [
+  { value: 'g', label: 'Grams (g)' },
+  { value: 'kg', label: 'Kilograms (kg)' },
+  { value: 'ml', label: 'Milliliters (ml)' },
+  { value: 'l', label: 'Liters (l)' },
+  { value: 'pcs', label: 'Pieces' },
+  { value: 'tbsp', label: 'Tablespoon' },
+  { value: 'tsp', label: 'Teaspoon' },
+  { value: 'cup', label: 'Cup' },
+  { value: 'oz', label: 'Ounce (oz)' },
+  { value: 'lb', label: 'Pound (lb)' },
+  { value: 'pinch', label: 'Pinch' },
+  { value: 'slice', label: 'Slice' },
+  { value: 'clove', label: 'Clove' },
+  { value: 'bunch', label: 'Bunch' },
+  { value: 'sprig', label: 'Sprig' },
+];
+
 const IngredientForm: React.FC<IngredientFormProps> = ({
   ingredients,
   onIngredientsChange,
   moduleType
 }) => {
+  const [actualMenuPrice, setActualMenuPrice] = useState<number>(0);
+  
   const addIngredient = () => {
     const newIngredient: Ingredient = {
       id: `temp-${Date.now()}`,
@@ -69,7 +96,6 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
   const recommendedSellingPrice = totalRecipeCost > 0 ? (totalRecipeCost / 0.3) * 1.2 : 0;
 
   // Calculate GP% based on actual menu price
-  const actualMenuPrice = 0; // This would come from the recipe data
   const actualGpPercentage = actualMenuPrice > 0 ? 
     ((actualMenuPrice / 1.2 - totalRecipeCost) / (actualMenuPrice / 1.2)) * 100 : 0;
 
@@ -128,7 +154,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%] text-gray-900">{labels.name}</TableHead>
+                <TableHead className="w-[30%] text-gray-900">{labels.name}</TableHead>
                 <TableHead className="text-gray-900">{labels.amount}</TableHead>
                 <TableHead className="text-gray-900">{labels.unit}</TableHead>
                 {moduleType !== 'hospitality' && (
@@ -148,6 +174,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                       value={ingredient.name}
                       onChange={(e) => updateIngredient(index, 'name', e.target.value)}
                       placeholder={labels.placeholder}
+                      className="border border-gray-300 rounded-md bg-white text-gray-900"
                     />
                   </TableCell>
                   <TableCell>
@@ -155,14 +182,37 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                       type="number"
                       value={ingredient.amount || ''}
                       onChange={(e) => updateIngredient(index, 'amount', parseFloat(e.target.value) || 0)}
+                      className="border border-gray-300 rounded-md bg-white text-gray-900"
+                      step="any"
+                      min="0"
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      value={ingredient.unit}
-                      onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
-                      placeholder={moduleType === 'hospitality' ? "mins/hours/etc." : "g/ml/pieces/etc."}
-                    />
+                    {moduleType === 'hospitality' ? (
+                      <Input
+                        value={ingredient.unit}
+                        onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                        placeholder="mins/hours/etc."
+                        className="border border-gray-300 rounded-md bg-white text-gray-900"
+                      />
+                    ) : (
+                      <Select 
+                        value={ingredient.unit} 
+                        onValueChange={(value) => updateIngredient(index, 'unit', value)}
+                      >
+                        <SelectTrigger className="border border-gray-300 rounded-md bg-white text-gray-900">
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white text-gray-900">
+                          {commonUnits.map((unit) => (
+                            <SelectItem key={unit.value} value={unit.value}>
+                              {unit.label}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="custom">Custom...</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </TableCell>
                   {moduleType !== 'hospitality' && (
                     <>
@@ -172,6 +222,8 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                           value={ingredient.costPerUnit || ''}
                           onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
                           step="0.01"
+                          min="0"
+                          className="border border-gray-300 rounded-md bg-white text-gray-900"
                         />
                       </TableCell>
                       <TableCell>
@@ -179,7 +231,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                           type="number"
                           value={ingredient.totalCost?.toFixed(2) || 0}
                           readOnly
-                          className="bg-gray-50"
+                          className="bg-gray-50 border border-gray-300 rounded-md text-gray-900"
                         />
                       </TableCell>
                     </>
@@ -192,6 +244,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                         onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
                         min="1"
                         max="10"
+                        className="border border-gray-300 rounded-md bg-white text-gray-900"
                       />
                     </TableCell>
                   )}
@@ -226,17 +279,39 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
           
           {moduleType !== 'hospitality' && (
             <div className="mt-6 border-t pt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div>
                   <Label className="text-gray-900 font-medium">Total Recipe Cost</Label>
-                  <div className="mt-1 bg-gray-50 border border-gray-200 rounded p-2 text-gray-900 font-semibold">
+                  <div className="mt-1 bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 font-semibold">
                     £{totalRecipeCost.toFixed(2)}
                   </div>
                 </div>
+                
                 <div>
-                  <Label className="text-gray-900 font-medium">Recommended Selling Price (70% GP)</Label>
-                  <div className="mt-1 bg-gray-50 border border-gray-200 rounded p-2 text-gray-900 font-semibold">
+                  <Label className="text-gray-900 font-medium">Recommended Selling Price (70% GP inc VAT)</Label>
+                  <div className="mt-1 bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 font-semibold">
                     £{recommendedSellingPrice.toFixed(2)}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-gray-900 font-medium">Actual Menu Price</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-900">£</span>
+                    <Input
+                      type="number"
+                      value={actualMenuPrice || ''}
+                      onChange={(e) => setActualMenuPrice(parseFloat(e.target.value) || 0)}
+                      step="0.01"
+                      min="0"
+                      className="border border-gray-300 rounded-md bg-white text-gray-900"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <Label className="text-gray-900 font-medium">Calculated GP%:</Label>
+                    <span className="ml-2 text-gray-900 font-semibold">
+                      {actualGpPercentage.toFixed(2)}%
+                    </span>
                   </div>
                 </div>
               </div>
