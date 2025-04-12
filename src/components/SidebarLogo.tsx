@@ -1,12 +1,9 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
-
 interface SidebarLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
-
 export const SidebarLogo: React.FC<SidebarLogoProps> = ({
   className,
   size = 'md'
@@ -18,20 +15,7 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
     xl: 'h-20 w-20',
     '2xl': 'h-24 w-24'
   };
-
-  return (
-    <div 
-      className={cn(
-        sizeClasses[size], 
-        'flex flex-col items-center justify-center', 
-        className
-      )}
-    >
-      <img 
-        src="/lovable-uploads/db99edaf-26df-47e0-9251-892661b64c7b.png" 
-        alt="Hi" 
-        className="w-full h-full"
-      />
-    </div>
-  );
+  return <div className={cn(sizeClasses[size], 'flex flex-col items-center justify-center', className)}>
+      <img alt="Hi" className="w-full h-full" src="/lovable-uploads/4234e734-6ccc-48b7-8f35-d14a78ef4afc.png" />
+    </div>;
 };
