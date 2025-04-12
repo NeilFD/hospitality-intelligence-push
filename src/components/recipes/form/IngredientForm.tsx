@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Ingredient } from '@/types/recipe-types';
 import { Trash2, Plus } from 'lucide-react';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 interface IngredientFormProps {
   ingredients: Ingredient[];
@@ -57,6 +58,21 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
     onIngredientsChange(newIngredients);
   };
 
+  // Calculate total recipe cost
+  const totalRecipeCost = ingredients.reduce((total, ingredient) => {
+    return total + (ingredient.totalCost || 0);
+  }, 0);
+
+  // Calculate recommended selling price at 70% GP inc VAT
+  // Formula: Cost / (1 - 0.7) = Selling price before VAT
+  // Then add 20% VAT: Selling price before VAT * 1.2
+  const recommendedSellingPrice = totalRecipeCost > 0 ? (totalRecipeCost / 0.3) * 1.2 : 0;
+
+  // Calculate GP% based on actual menu price
+  const actualMenuPrice = 0; // This would come from the recipe data
+  const actualGpPercentage = actualMenuPrice > 0 ? 
+    ((actualMenuPrice / 1.2 - totalRecipeCost) / (actualMenuPrice / 1.2)) * 100 : 0;
+
   // Labels based on the module type
   const getLabels = () => {
     if (moduleType === 'hospitality') {
@@ -103,117 +119,131 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
   return (
     <div className="space-y-4">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">{labels.title}</h2>
+        <h2 className="text-xl font-semibold mb-2 text-gray-900">{labels.title}</h2>
         <p className="text-muted-foreground">{labels.description}</p>
       </div>
 
-      <div className="space-y-4">
-        {ingredients.map((ingredient, index) => (
-          <Card key={ingredient.id || index} className="relative">
-            <CardHeader className="p-4 pb-0">
-              <div className="flex justify-between items-center">
-                <Label className="font-semibold">
-                  {moduleType === 'hospitality' ? `Step ${index + 1}` : `Ingredient ${index + 1}`}
-                </Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeIngredient(index)}
-                  className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-2">
-              <div className="grid gap-4">
-                <div>
-                  <Label htmlFor={`ingredient-name-${index}`}>{labels.name}</Label>
-                  <Input
-                    id={`ingredient-name-${index}`}
-                    value={ingredient.name}
-                    onChange={(e) => updateIngredient(index, 'name', e.target.value)}
-                    placeholder={labels.placeholder}
-                    className="mt-1"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor={`ingredient-amount-${index}`}>{labels.amount}</Label>
+      <Card>
+        <CardContent className="p-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40%] text-gray-900">{labels.name}</TableHead>
+                <TableHead className="text-gray-900">{labels.amount}</TableHead>
+                <TableHead className="text-gray-900">{labels.unit}</TableHead>
+                {moduleType !== 'hospitality' && (
+                  <>
+                    <TableHead className="text-gray-900">{labels.costPerUnit}</TableHead>
+                    <TableHead className="text-gray-900">{labels.totalCost}</TableHead>
+                  </>
+                )}
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ingredients.map((ingredient, index) => (
+                <TableRow key={ingredient.id || index}>
+                  <TableCell>
                     <Input
-                      id={`ingredient-amount-${index}`}
+                      value={ingredient.name}
+                      onChange={(e) => updateIngredient(index, 'name', e.target.value)}
+                      placeholder={labels.placeholder}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
                       type="number"
                       value={ingredient.amount || ''}
                       onChange={(e) => updateIngredient(index, 'amount', parseFloat(e.target.value) || 0)}
-                      className="mt-1"
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor={`ingredient-unit-${index}`}>{labels.unit}</Label>
+                  </TableCell>
+                  <TableCell>
                     <Input
-                      id={`ingredient-unit-${index}`}
                       value={ingredient.unit}
                       onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
                       placeholder={moduleType === 'hospitality' ? "mins/hours/etc." : "g/ml/pieces/etc."}
-                      className="mt-1"
                     />
-                  </div>
-                </div>
-                {moduleType !== 'hospitality' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor={`ingredient-cost-${index}`}>{labels.costPerUnit}</Label>
+                  </TableCell>
+                  {moduleType !== 'hospitality' && (
+                    <>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={ingredient.costPerUnit || ''}
+                          onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
+                          step="0.01"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={ingredient.totalCost?.toFixed(2) || 0}
+                          readOnly
+                          className="bg-gray-50"
+                        />
+                      </TableCell>
+                    </>
+                  )}
+                  {moduleType === 'hospitality' && (
+                    <TableCell>
                       <Input
-                        id={`ingredient-cost-${index}`}
                         type="number"
                         value={ingredient.costPerUnit || ''}
                         onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
-                        step="0.01"
-                        className="mt-1"
+                        min="1"
+                        max="10"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor={`ingredient-total-${index}`}>{labels.totalCost}</Label>
-                      <Input
-                        id={`ingredient-total-${index}`}
-                        type="number"
-                        value={ingredient.totalCost?.toFixed(2) || 0}
-                        readOnly
-                        className="mt-1 bg-gray-50"
-                      />
-                    </div>
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeIngredient(index)}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              
+              {/* Add ingredient button row */}
+              <TableRow>
+                <TableCell colSpan={moduleType !== 'hospitality' ? 6 : 4} className="text-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={addIngredient}
+                    className="w-full flex items-center justify-center"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {labels.addButton}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+          
+          {moduleType !== 'hospitality' && (
+            <div className="mt-6 border-t pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-gray-900 font-medium">Total Recipe Cost</Label>
+                  <div className="mt-1 bg-gray-50 border border-gray-200 rounded p-2 text-gray-900 font-semibold">
+                    £{totalRecipeCost.toFixed(2)}
                   </div>
-                )}
-                {moduleType === 'hospitality' && (
-                  <div>
-                    <Label htmlFor={`ingredient-cost-${index}`}>{labels.costPerUnit}</Label>
-                    <Input
-                      id={`ingredient-cost-${index}`}
-                      type="number"
-                      value={ingredient.costPerUnit || ''}
-                      onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
-                      min="1"
-                      max="10"
-                      className="mt-1"
-                    />
+                </div>
+                <div>
+                  <Label className="text-gray-900 font-medium">Recommended Selling Price (70% GP)</Label>
+                  <div className="mt-1 bg-gray-50 border border-gray-200 rounded p-2 text-gray-900 font-semibold">
+                    £{recommendedSellingPrice.toFixed(2)}
                   </div>
-                )}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div>
-        <Button 
-          variant="outline" 
-          onClick={addIngredient}
-          className="w-full flex items-center justify-center"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {labels.addButton}
-        </Button>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
