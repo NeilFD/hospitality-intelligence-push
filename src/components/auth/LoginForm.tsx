@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -98,7 +99,7 @@ export default function LoginForm() {
         >
           <Button 
             type="submit" 
-            className="w-full bg-green-500 text-white hover:bg-green-600 transition-all duration-300 relative overflow-hidden" 
+            className="w-full bg-white text-hi-purple hover:bg-white/90 transition-all duration-300 relative overflow-hidden" 
             disabled={isLoading}
           >
             {isLoading ? 'Logging in...' : 'Login'}
@@ -111,7 +112,7 @@ export default function LoginForm() {
           </p>
           <Button 
             variant="link" 
-            className="p-0 text-green-600 hover:text-green-700" 
+            className="p-0 text-hi-purple hover:text-hi-purple-dark" 
             onClick={() => navigate('/register')}
           >
             Register
@@ -121,3 +122,4 @@ export default function LoginForm() {
     </div>
   );
 }
+
