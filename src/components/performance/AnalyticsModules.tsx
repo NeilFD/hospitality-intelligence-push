@@ -11,38 +11,38 @@ export default function AnalyticsModules() {
       description: "Financial performance forecasting, expense pattern detection, and category breakdowns.",
       icon: <CircleDollarSign className="h-10 w-10 text-white" />,
       path: "/performance/pl-analysis",
-      color: "from-blue-600 to-indigo-700",
-      hover: "from-blue-700 to-indigo-800"
+      color: "from-hi-purple-light to-hi-purple-dark",
+      hover: "from-hi-purple to-hi-purple-dark"
     },
     {
       title: "Wage Optimization",
       description: "Labor efficiency analysis, wage-to-revenue ratio insights, and predictive scheduling.",
       icon: <User className="h-10 w-10 text-white" />,
       path: "/performance/wage-optimization",
-      color: "from-orange-500 to-amber-600",
-      hover: "from-orange-600 to-amber-700"
+      color: "from-hi-purple-light/90 to-hi-purple/90",
+      hover: "from-hi-purple-light to-hi-purple"
     },
     {
       title: "Food & Beverage Analysis",
       description: "GP performance insights, supplier analysis, and inventory optimization.",
       icon: <BarChart className="h-10 w-10 text-white" />,
       path: "/performance/fb-analysis",
-      color: "from-green-600 to-emerald-700",
-      hover: "from-green-700 to-emerald-800"
+      color: "from-hi-purple to-hi-purple-dark/90",
+      hover: "from-hi-purple-dark to-hi-purple-dark"
     },
     {
       title: "Data Explorer",
       description: "Custom data exploration with natural language queries and advanced data visualizations.",
       icon: <Bot className="h-10 w-10 text-white" />,
       path: "/performance/data-explorer",
-      color: "from-purple-600 to-violet-700",
-      hover: "from-purple-700 to-violet-800"
+      color: "from-[#9d89c9] to-[#705b9b]",
+      hover: "from-[#9d89c9] to-[#604c8c]"
     }
   ];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-tavern-blue flex items-center gap-2">
+      <h2 className="text-2xl font-semibold text-hi-purple flex items-center gap-2">
         <TrendingUp className="h-6 w-6" />
         Analytics Modules
       </h2>
