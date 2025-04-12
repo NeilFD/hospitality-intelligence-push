@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,35 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
             </div>
 
             <div>
+              <Label htmlFor="description">Description and Detailed Procedure</Label>
+              <Textarea
+                id="description"
+                name="description"
+                rows={10}
+                value={formData.description || ''}
+                onChange={handleInputChange}
+                placeholder="Describe the hospitality guide, its purpose, and detailed procedure..."
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="timeToCompleteMinutes">Time Required (minutes)</Label>
+              <Input 
+                id="timeToCompleteMinutes"
+                name="timeToCompleteMinutes"
+                type="number"
+                value={formData.timeToCompleteMinutes} 
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  timeToCompleteMinutes: parseInt(e.target.value) || 0 
+                }))}
+                placeholder="0"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
               <Label>Guide Image</Label>
               <div className="mt-2 flex items-center">
                 {imagePreview ? (
@@ -226,35 +256,6 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
                   </div>
                 )}
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description and Detailed Procedure</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={10}
-                value={formData.description || ''}
-                onChange={handleInputChange}
-                placeholder="Describe the hospitality guide, its purpose, and detailed procedure..."
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="timeToCompleteMinutes">Time Required (minutes)</Label>
-              <Input 
-                id="timeToCompleteMinutes"
-                name="timeToCompleteMinutes"
-                type="number"
-                value={formData.timeToCompleteMinutes} 
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  timeToCompleteMinutes: parseInt(e.target.value) || 0 
-                }))}
-                placeholder="0"
-                className="mt-1"
-              />
             </div>
           </div>
           
