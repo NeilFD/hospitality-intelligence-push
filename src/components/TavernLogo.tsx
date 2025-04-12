@@ -14,7 +14,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   const sizeClasses = {
     sm: 'h-8 w-8',
     md: 'h-12 w-12',
-    lg: 'h-24 w-24', // Increased from h-20 w-20 to match the main window logo
+    lg: 'h-24 w-24',
     xl: 'h-24 w-24',
     '2xl': 'h-40 w-40',
     '3xl': 'h-64 w-64',
@@ -22,8 +22,8 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   };
 
   return <div className={cn('flex items-center justify-center', className)}>
-      <div className={`${sizeClasses[size]} bg-tavern-blue text-white flex items-center justify-center rounded-full overflow-hidden`}>
-        <img src="/lovable-uploads/e551531e-e30f-49d3-8197-b94fe8312491.png" alt="The Tavern Logo" className="w-full h-full object-contain" />
+      <div className={`${sizeClasses[size]} bg-[#806cac] text-white flex items-center justify-center rounded-full overflow-hidden`}>
+        <img src="/lovable-uploads/69a5215d-88c2-4e73-880a-f0820234832d.png" alt="Hi Logo" className="w-full h-full object-contain" />
       </div>
     </div>;
 };

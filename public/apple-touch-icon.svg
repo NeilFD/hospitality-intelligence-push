@@ -1,7 +1,7 @@
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
-  <rect width="180" height="180" fill="#48495E"/> <!-- Tavern Blue Background -->
+  <rect width="180" height="180" fill="#806cac" rx="36" ry="36"/>
   <text x="90" y="115" text-anchor="middle" fill="white" font-size="90" font-weight="bold" font-family="Arial, sans-serif">
-    TAV
+    Hi
   </text>
 </svg>

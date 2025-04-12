@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/services/auth-service';
+
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,6 +17,7 @@ export default function LoginForm() {
     clearError
   } = useAuthStore();
   const navigate = useNavigate();
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
@@ -25,12 +28,14 @@ export default function LoginForm() {
       // Error is handled by the login function
     }
   };
+  
   const inputVariants = {
     focus: {
       scale: 1.02,
       boxShadow: "0 0 0 2px rgba(165, 192, 226, 0.5)"
     }
   };
+  
   return <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-xl">
       <motion.h1 className="text-3xl font-bold text-white text-center mb-6" initial={{
       opacity: 0
@@ -38,7 +43,7 @@ export default function LoginForm() {
       opacity: 1
     }} transition={{
       delay: 0.3
-    }}>The Tavern</motion.h1>
+    }}>Hi</motion.h1>
       
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <motion.div className="bg-red-400/20 backdrop-blur-sm text-white p-4 rounded-xl text-sm border border-red-400/30" initial={{
@@ -74,7 +79,7 @@ export default function LoginForm() {
       }} whileTap={{
         scale: 0.97
       }} className="pt-2 relative overflow-hidden group">
-          <Button type="submit" className="w-full bg-gradient-to-r from-tavern-green/90 to-tavern-blue-light/90 text-white hover:from-tavern-green hover:to-tavern-blue-light hover:shadow-lg transition-all duration-300 relative overflow-hidden" disabled={isLoading}>
+          <Button type="submit" className="w-full bg-gradient-to-r from-[#806cac]/90 to-[#9d89c9]/90 text-white hover:from-[#806cac] hover:to-[#9d89c9] hover:shadow-lg transition-all duration-300 relative overflow-hidden" disabled={isLoading}>
             <span className="absolute inset-x-0 top-0 h-0.5 bg-white/30 animate-shimmer" />
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
@@ -84,7 +89,7 @@ export default function LoginForm() {
           <p className="text-center text-sm text-white/70">
             Don't have an account?
           </p>
-          <Button variant="link" className="p-0 text-tavern-green-light hover:text-white" onClick={() => navigate('/register')}>
+          <Button variant="link" className="p-0 text-[#9d89c9] hover:text-white" onClick={() => navigate('/register')}>
             Register
           </Button>
         </div>

@@ -76,12 +76,12 @@ export default function Dashboard() {
 
   return (
     <div className="container py-4 space-y-4">
-      <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center">The Tavern Kitchen Tracker</h1>
+      <h1 className="text-3xl font-bold text-[#806cac] mb-4 text-center">Hi Kitchen Tracker</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
-            <CardTitle className="text-tavern-blue-dark text-xl">
+        <Card className="shadow-md border-[#9d89c9]/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-[#9d89c9]/5 backdrop-blur-sm">
+          <CardHeader className="pb-2 border-b border-[#9d89c9]/20 bg-white/40">
+            <CardTitle className="text-[#806cac] text-xl">
               Current Month
             </CardTitle>
           </CardHeader>
@@ -107,7 +107,7 @@ export default function Dashboard() {
               className="w-full h-24" 
               gpMode={true}
             />
-            <Button asChild className="w-full bg-tavern-blue hover:bg-tavern-blue-dark rounded-lg shadow-sm transition-all duration-300">
+            <Button asChild className="w-full bg-[#806cac] hover:bg-[#705b9b] rounded-lg shadow-sm transition-all duration-300">
               <Link to={`/month/${currentYear}/${currentMonth}`}>
                 View Month Details <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -115,9 +115,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
-            <CardTitle className="text-tavern-blue-dark text-xl">
+        <Card className="shadow-md border-[#9d89c9]/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-[#9d89c9]/5 backdrop-blur-sm">
+          <CardHeader className="pb-2 border-b border-[#9d89c9]/20 bg-white/40">
+            <CardTitle className="text-[#806cac] text-xl">
               Annual Performance
             </CardTitle>
           </CardHeader>
@@ -143,7 +143,7 @@ export default function Dashboard() {
               className="w-full h-24" 
               gpMode={true}
             />
-            <Button asChild variant="outline" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white rounded-lg shadow-sm transition-all duration-300">
+            <Button asChild variant="outline" className="w-full border-[#806cac] text-[#806cac] hover:bg-[#806cac] hover:text-white rounded-lg shadow-sm transition-all duration-300">
               <Link to="/annual-summary">
                 View Annual Summary <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

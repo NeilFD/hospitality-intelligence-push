@@ -191,22 +191,22 @@ const Layout = ({
     return <>{children}</>;
   }
   
-  const Sidebar = <div className="h-full flex flex-col bg-[#48495E]">
+  const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
       <div className="p-4 flex flex-col items-center">
         <TavernLogo size="md" className="mb-3" />
-        {!sidebarCollapsed && <p className="text-tavern-blue-light text-sm mt-1">Pub Tracker</p>}
+        {!sidebarCollapsed && <p className="text-[#e0d9f0] text-sm mt-1">Hospitality Intelligence</p>}
       </div>
-      <Separator className="bg-tavern-blue-light/20" />
+      <Separator className="bg-[#9d89c9]/20" />
       
       <div className="p-2 my-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+          {!sidebarCollapsed && <p className="text-xs font-semibold text-[#e0d9f0] uppercase tracking-wider">
               Modules
             </p>}
         </div>
         
         <nav className="space-y-1">
-          {moduleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? "bg-white text-[#48495E] font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined} onClick={() => handleModuleSelect(item.type as ModuleType)}>
+          {moduleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? "bg-white text-[#806cac] font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined} onClick={() => handleModuleSelect(item.type as ModuleType)}>
               <div className={sidebarCollapsed ? "mx-auto" : ""}>
                 {item.icon}
               </div>
@@ -215,17 +215,17 @@ const Layout = ({
         </nav>
       </div>
       
-      <Separator className="bg-tavern-blue-light/20" />
+      <Separator className="bg-[#9d89c9]/20" />
       
       <div className="flex-1 p-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className="text-xs font-semibold text-tavern-blue-light uppercase tracking-wider">
+          {!sidebarCollapsed && <p className="text-xs font-semibold text-[#e0d9f0] uppercase tracking-wider">
               {sortedModules.find(m => m.type === currentModule)?.name || 'Navigation'}
             </p>}
         </div>
         
         <nav className="space-y-1">
-          {getModuleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? "bg-tavern-blue-dark text-white font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined}>
+          {getModuleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined}>
               <div className={sidebarCollapsed ? "mx-auto" : ""}>
                 {item.icon}
               </div>
@@ -235,7 +235,7 @@ const Layout = ({
       </div>
       
       <div className="p-4">
-        {!sidebarCollapsed && <p className="text-xs text-tavern-blue-light">© 2025 The Tavern</p>}
+        {!sidebarCollapsed && <p className="text-xs text-[#e0d9f0]">© 2025 Hi</p>}
       </div>
     </div>;
     

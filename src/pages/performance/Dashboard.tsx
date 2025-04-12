@@ -127,15 +127,15 @@ export default function PerformanceDashboard() {
   return <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gradient-to-br from-tavern-blue/60 to-tavern-blue-dark/80 rounded-lg shadow-glass">
+          <div className="p-1.5 bg-gradient-to-br from-[#806cac]/60 to-[#705b9b]/80 rounded-lg shadow-glass">
             <Sparkles className="h-5 w-5 text-white/90" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-tavern-blue via-tavern-blue-dark to-tavern-blue bg-clip-text text-transparent">Performance & Analysis</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#806cac] via-[#705b9b] to-[#806cac] bg-clip-text text-transparent">Performance & Analysis</h1>
         </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" className="hidden sm:flex items-center gap-2 glass-button" asChild>
             <Link to="/performance/conversation-history">
-              <History className="h-4 w-4 text-tavern-blue-dark" />
+              <History className="h-4 w-4 text-[#705b9b]" />
               <span>Chat History</span>
             </Link>
           </Button>
@@ -144,7 +144,7 @@ export default function PerformanceDashboard() {
       </div>
       
       {!hasFoodData && !hasBevData && <Alert variant="default" className="neo-glass">
-          <AlertTriangle className="h-4 w-4 text-tavern-amber" />
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertTitle>Data Availability Warning</AlertTitle>
           <AlertDescription>
             No food or beverage data found for analysis. The AI assistant may have limited insights to offer.

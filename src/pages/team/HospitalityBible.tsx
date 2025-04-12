@@ -34,7 +34,6 @@ const HospitalityBible: React.FC = () => {
   const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
 
-  // Service style categories for hospitality
   const hospitalityCategories = [
     "Customer Service",
     "Complaint Handling",
@@ -48,7 +47,6 @@ const HospitalityBible: React.FC = () => {
     "Staff Training"
   ];
 
-  // Create hospitalityCategories as MenuCategory objects
   const hospitalityCategoryObjects = hospitalityCategories.map(category => ({
     id: category.toLowerCase().replace(/\s+/g, '-'),
     name: category,

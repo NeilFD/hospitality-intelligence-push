@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 export default function Login() {
   return (
     <div 
-      className="min-h-screen w-full flex items-center justify-center p-4 bg-tavern-blue"
+      className="min-h-screen w-full flex items-center justify-center p-4 bg-[#806cac]"
     >
       <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-xl">
         <motion.div 

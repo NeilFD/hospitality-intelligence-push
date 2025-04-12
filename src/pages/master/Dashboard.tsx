@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
@@ -59,14 +58,14 @@ const MasterDashboard = () => {
             Central data management for revenue, covers, weather, and operational notes
           </p>
         </div>
-        <Button onClick={() => goToWeek(currentYear, currentMonth, currentWeekIndex >= 0 ? currentWeekIndex + 1 : 1)} className="bg-tavern-blue hover:bg-tavern-blue-dark">
+        <Button onClick={() => goToWeek(currentYear, currentMonth, currentWeekIndex >= 0 ? currentWeekIndex + 1 : 1)} className="bg-[#806cac] hover:bg-[#705b9b]">
           <PlusCircle className="mr-2 h-4 w-4" />
           Current Week Input
         </Button>
       </div>
       
       {/* Month navigation */}
-      <Card className="mb-6 border-tavern-blue/10">
+      <Card className="mb-6 border-[#806cac]/10">
         <CardHeader className="pb-3 border-b">
           <div className="flex items-center justify-between">
             <CardTitle>Daily Info</CardTitle>
@@ -74,7 +73,7 @@ const MasterDashboard = () => {
               <Button variant="outline" size="icon" onClick={goToPreviousMonth} className="h-8 w-8">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant={isCurrentMonth ? "default" : "outline"} size="sm" onClick={goToCurrentMonth} className={isCurrentMonth ? "bg-tavern-blue hover:bg-tavern-blue-dark" : ""}>Month</Button>
+              <Button variant={isCurrentMonth ? "default" : "outline"} size="sm" onClick={goToCurrentMonth} className={isCurrentMonth ? "bg-[#806cac] hover:bg-[#705b9b]" : ""}>Month</Button>
               <Button variant="outline" size="icon" onClick={goToNextMonth} className="h-8 w-8">
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -84,11 +83,11 @@ const MasterDashboard = () => {
         <CardContent className="pt-4">
           <div className="flex flex-col md:flex-row items-center justify-between mb-4">
             <div className="flex items-center mb-4 md:mb-0">
-              <Calendar className="mr-2 h-4 w-4 text-tavern-blue" />
+              <Calendar className="mr-2 h-4 w-4 text-[#806cac]" />
               <h2 className="text-xl font-semibold">{monthRangeDisplay}</h2>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => goToMonth(currentYear, currentMonth)} className="border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white">
+              <Button variant="outline" onClick={() => goToMonth(currentYear, currentMonth)} className="border-[#806cac] text-[#806cac] hover:bg-[#806cac] hover:text-white">
                 View Month Summary
               </Button>
             </div>
@@ -121,7 +120,7 @@ const MasterDashboard = () => {
         const endDate = new Date(week.endDate);
         return <Card key={`week-${weekNumber}`} className={`
                 transition-all duration-200 hover:shadow-md
-                ${isCurrentWeek ? 'border-tavern-blue bg-tavern-blue/5' : 'border-gray-200'}
+                ${isCurrentWeek ? 'border-[#806cac] bg-[#806cac]/5' : 'border-gray-200'}
               `}>
               <CardContent className="p-0">
                 <div className="p-4 flex flex-col h-full">
@@ -129,7 +128,7 @@ const MasterDashboard = () => {
                     <div>
                       <div className="flex items-center">
                         <h3 className="text-lg font-medium">Week {weekNumber}</h3>
-                        {isCurrentWeek && <span className="ml-2 bg-tavern-blue text-white text-xs px-2 py-1 rounded-full">
+                        {isCurrentWeek && <span className="ml-2 bg-[#806cac] text-white text-xs px-2 py-1 rounded-full">
                             Current
                           </span>}
                       </div>
@@ -138,12 +137,12 @@ const MasterDashboard = () => {
                         {startDate.getFullYear() !== endDate.getFullYear() && <span> {format(endDate, 'yyyy')}</span>}
                       </p>
                     </div>
-                    <div className="text-tavern-blue/70">
+                    <div className="text-[#806cac]/70">
                       <Calendar className="h-5 w-5" />
                     </div>
                   </div>
                   <div className="mt-auto">
-                    <Button onClick={() => goToWeek(currentYear, currentMonth, weekNumber)} variant={isCurrentWeek ? "default" : "outline"} className={`w-full ${isCurrentWeek ? 'bg-tavern-blue hover:bg-tavern-blue-dark' : 'border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white'}`}>
+                    <Button onClick={() => goToWeek(currentYear, currentMonth, weekNumber)} variant={isCurrentWeek ? "default" : "outline"} className={`w-full ${isCurrentWeek ? 'bg-[#806cac] hover:bg-[#705b9b]' : 'border-[#806cac] text-[#806cac] hover:bg-[#806cac] hover:text-white'}`}>
                       {isCurrentWeek ? 'Input Data' : 'View/Edit'}
                     </Button>
                   </div>
@@ -173,15 +172,15 @@ const MasterDashboard = () => {
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
         const isHighlighted = i === 0;
-        return <Card key={`month-${i}`} className={`transition-all duration-200 hover:shadow-md ${isHighlighted ? 'border-tavern-blue/30' : ''}`}>
+        return <Card key={`month-${i}`} className={`transition-all duration-200 hover:shadow-md ${isHighlighted ? 'border-[#806cac]/30' : ''}`}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center justify-between">
                   <span>{format(date, 'MMMM yyyy')}</span>
-                  <Calendar className="h-4 w-4 text-tavern-blue/70" />
+                  <Calendar className="h-4 w-4 text-[#806cac]/70" />
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" size="sm" className="w-full border-tavern-blue text-tavern-blue hover:bg-tavern-blue hover:text-white" onClick={() => goToMonth(year, month)}>
+                <Button variant="outline" size="sm" className="w-full border-[#806cac] text-[#806cac] hover:bg-[#806cac] hover:text-white" onClick={() => goToMonth(year, month)}>
                   View Summary
                 </Button>
               </CardContent>
