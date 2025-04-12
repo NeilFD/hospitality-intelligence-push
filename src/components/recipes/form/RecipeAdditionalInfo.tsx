@@ -13,6 +13,7 @@ interface RecipeAdditionalInfoProps {
   grossProfitPercentage: number;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onCostingChange: (field: string, value: string) => void;
+  moduleType?: 'food' | 'beverage';
 }
 
 export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
@@ -23,7 +24,8 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
   suggestedPrice,
   grossProfitPercentage,
   onInputChange,
-  onCostingChange
+  onCostingChange,
+  moduleType = 'food'
 }) => {
   return (
     <div className="space-y-4">
@@ -72,13 +74,15 @@ export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
       </div>
       
       <div>
-        <Label htmlFor="miseEnPlace" className="text-gray-900">Mise en Place</Label>
+        <Label htmlFor="miseEnPlace" className="text-gray-900">
+          {moduleType === 'beverage' ? 'Garnish' : 'Mise en Place'}
+        </Label>
         <Textarea 
           id="miseEnPlace"
           name="miseEnPlace"
           value={miseEnPlace || ''}
           onChange={onInputChange}
-          placeholder="Enter mise en place details"
+          placeholder={moduleType === 'beverage' ? 'Enter garnish details' : 'Enter mise en place details'}
           rows={4}
           className="text-gray-900 bg-white border border-gray-300"
         />

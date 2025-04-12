@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
   
   useEffect(() => {
     if (recipe) {
-      // Ensure dietary options are properly handled as boolean values
       const normalizedRecipe = normalizeDietaryInfo(recipe);
       console.log("Setting form data from recipe with dietary info:", 
         "Vegetarian:", normalizedRecipe.isVegetarian, 
@@ -158,7 +156,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     try {
       setIsSaving(true);
       
-      // Explicitly handle dietary information as boolean values
       const recipeToSave: Recipe = {
         ...formData,
         isVegetarian: Boolean(formData.isVegetarian),
@@ -263,6 +260,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
               grossProfitPercentage={computedCostingTotals.grossProfitPercentage}
               onInputChange={handleInputChange}
               onCostingChange={handleCostingInputChange}
+              moduleType={moduleType}
             />
           </div>
         </div>

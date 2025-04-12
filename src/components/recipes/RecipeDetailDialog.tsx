@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -232,7 +231,9 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             </div>
             
             <div>
-              <h3 className="text-lg font-medium text-gray-900">Mise en Place</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                {recipe.moduleType === 'beverage' ? 'Garnish' : 'Mise en Place'}
+              </h3>
               <p className="mt-2 whitespace-pre-line text-gray-800">{recipe.miseEnPlace}</p>
             </div>
           </div>
@@ -244,4 +245,3 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
 };
 
 export default RecipeDetailDialog;
-
