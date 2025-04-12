@@ -32,15 +32,7 @@ export default function LoginForm() {
     }
   };
   return <div className="backdrop-blur-xl bg-white/25 border border-white/30 rounded-2xl p-8 shadow-xl">
-      <motion.h1 initial={{
-      opacity: 0
-    }} animate={{
-      opacity: 1
-    }} transition={{
-      delay: 0.3
-    }} className="text-3xl text-center mb-6 text-hi-purple font-extrabold">
-        Hi
-      </motion.h1>
+      
       
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <motion.div className="bg-red-400/20 backdrop-blur-sm text-gray-800 p-4 rounded-xl text-sm border border-red-400/30" initial={{
