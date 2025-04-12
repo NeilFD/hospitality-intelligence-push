@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -11,7 +12,7 @@ import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
 import ChatInterface from '@/components/performance/ChatInterface';
 import KeyInsights from '@/components/performance/KeyInsights';
 import AnalyticsModules from '@/components/performance/AnalyticsModules';
-import { TavernLogo } from '@/components/TavernLogo';
+import { PerformanceLogo } from '@/components/PerformanceLogo';
 
 export default function PerformanceDashboard() {
   const {
@@ -138,7 +139,7 @@ export default function PerformanceDashboard() {
               <span>Chat History</span>
             </Link>
           </Button>
-          <TavernLogo size="md" className="hidden md:block animate-float" />
+          <PerformanceLogo size="md" className="hidden md:block animate-float" />
         </div>
       </div>
       
