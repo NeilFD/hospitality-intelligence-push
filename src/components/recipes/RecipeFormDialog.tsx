@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Recipe, MenuCategory, AllergenType, Ingredient } from "@/types/recipe-types";
-import { RecipeBasicInfo } from "./form/RecipeBasicInfo";
-import { RecipeAdditionalInfo } from "./form/RecipeAdditionalInfo";
-import { IngredientForm } from "./form/IngredientForm";
+import RecipeBasicInfo from "./form/RecipeBasicInfo";
+import RecipeAdditionalInfo from "./form/RecipeAdditionalInfo";
+import IngredientForm from "./form/IngredientForm";
 import { createEmptyRecipe, emptyIngredient, calculateTotals, normalizeDietaryInfo } from "./form/RecipeFormUtils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
@@ -17,8 +18,8 @@ interface RecipeFormDialogProps {
   onClose: () => void;
   onSave: (recipe: Recipe) => void;
   recipe?: Recipe;
-  moduleType: 'food' | 'beverage';
-  categories: MenuCategory[];
+  moduleType: 'food' | 'beverage' | 'hospitality';
+  categories: MenuCategory[] | string[];
   allergens: AllergenType[];
 }
 

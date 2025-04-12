@@ -1,3 +1,4 @@
+
 export interface Ingredient {
   id: string;
   name: string;
@@ -21,7 +22,7 @@ export interface RecipeFilterOptions {
 export interface MenuCategory {
   id: string;
   name: string;
-  moduleType: 'food' | 'beverage';
+  moduleType: 'food' | 'beverage' | 'hospitality';
 }
 
 export interface AllergenType {
@@ -51,7 +52,7 @@ export interface Recipe {
     actualMenuPrice: number;
     grossProfitPercentage: number;
   };
-  moduleType: 'food' | 'beverage';
+  moduleType: 'food' | 'beverage' | 'hospitality';
   archived?: boolean;
   postedToNoticeboard?: boolean;
 }
