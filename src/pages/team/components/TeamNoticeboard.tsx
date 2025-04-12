@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import { Recipe } from '@/types/recipe-types';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { supabase } from '@/lib/supabase';
 import RecipeCardExpanded from './RecipeCardExpanded';
+import HospitalityGuideCardExpanded from './HospitalityGuideCardExpanded';
 
 interface StickyNoteProps {
   note: TeamNote;
@@ -381,6 +381,8 @@ const TeamNoticeboard: React.FC = () => {
   const [notesLayout, setNotesLayout] = useState<Record<string, { x: number, y: number }>>({});
   const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+  const [selectedGuide, setSelectedGuide] = useState<any>(null);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const queryClient = useQueryClient();
   
   const {
@@ -554,17 +556,8 @@ const TeamNoticeboard: React.FC = () => {
   };
 
   const handleHospitalityGuideClick = (guide: any) => {
-    const formattedGuide = {
-      ...guide,
-      imageUrl: guide.image_url,
-      steps: guide.steps || [],
-      timeToTableMinutes: guide.time_to_complete_minutes,
-      method: guide.detailed_procedure,
-      category: guide.category || 'Uncategorized',
-      moduleType: 'hospitality'
-    };
-    setSelectedRecipe(formattedGuide);
-    setIsRecipeModalOpen(true);
+    setSelectedGuide(guide);
+    setIsGuideModalOpen(true);
   };
 
   return (
@@ -640,7 +633,6 @@ const TeamNoticeboard: React.FC = () => {
               </div>
             ) : (
               <>
-                {/* Pinned Section */}
                 {(pinnedNotes.length > 0 || recipes.length > 0 || hospitalityGuides.length > 0) && (
                   <div 
                     className="mb-8 p-4 bg-gray-50/70 rounded-lg border border-dashed border-amber-300/50 backdrop-blur-sm"
@@ -723,7 +715,6 @@ const TeamNoticeboard: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Regular Notes */}
                 <div 
                   className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6`}
                   onDragOver={(e) => e.preventDefault()}
@@ -773,12 +764,19 @@ const TeamNoticeboard: React.FC = () => {
         </Tabs>
       </div>
       
-      {/* Recipe Modal */}
       <RecipeCardExpanded 
         recipe={selectedRecipe}
         isOpen={isRecipeModalOpen}
         onClose={() => setIsRecipeModalOpen(false)}
       />
+
+      {selectedGuide && (
+        <HospitalityGuideCardExpanded 
+          guide={selectedGuide}
+          isOpen={isGuideModalOpen}
+          onClose={() => setIsGuideModalOpen(false)}
+        />
+      )}
     </ScrollArea>
   );
 };
