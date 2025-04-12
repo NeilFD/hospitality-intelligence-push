@@ -18,14 +18,6 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
     xl: 'h-20 w-20',
     '2xl': 'h-24 w-24'
   };
-  
-  const textSizeClasses = {
-    sm: 'text-xl',
-    md: 'text-3xl',
-    lg: 'text-4xl',
-    xl: 'text-5xl',
-    '2xl': 'text-6xl'
-  };
 
   return (
     <div 
@@ -35,10 +27,11 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
         className
       )}
     >
-      <span className={cn(
-        "text-white font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2", 
-        textSizeClasses[size]
-      )}>Hi</span>
+      <img 
+        src="/lovable-uploads/961a56b6-b951-4f59-b386-636a8d01fb1c.png" 
+        alt="Hi" 
+        className="w-3/4 h-3/4 object-contain absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+      />
     </div>
   );
 };
