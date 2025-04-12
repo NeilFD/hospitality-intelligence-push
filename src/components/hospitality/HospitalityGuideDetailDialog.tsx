@@ -6,6 +6,7 @@ import { HospitalityGuide } from '@/types/hospitality-types';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { ArchiveIcon, Clock, Download, Edit, Trash2, ConciergeBell } from 'lucide-react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import RecipePDF from '@/components/recipes/RecipePDF';
 
 interface HospitalityGuideDetailDialogProps {
@@ -66,6 +67,13 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
                 
                 <span className="text-muted-foreground">Created:</span>
                 <span>{format(new Date(guide.createdAt), 'MMM d, yyyy')}</span>
+                
+                {guide.department && (
+                  <>
+                    <span className="text-muted-foreground">Department:</span>
+                    <span>{guide.department}</span>
+                  </>
+                )}
               </div>
             </div>
             
@@ -90,7 +98,7 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
           <h3 className="font-semibold text-lg">Steps/Procedures</h3>
           <Separator className="my-2" />
           
-          {guide.steps.length > 0 ? (
+          {guide.steps && guide.steps.length > 0 ? (
             <div className="space-y-2">
               {guide.steps.map((step, index) => (
                 <div key={step.id} className="flex items-center gap-2">
@@ -130,35 +138,43 @@ const HospitalityGuideDetailDialog: React.FC<HospitalityGuideDetailDialogProps> 
           </div>
           
           <div className="flex gap-2">
-            <RecipePDF recipe={{
-              ...guide,
-              moduleType: 'hospitality',
-              allergens: [],
-              isVegan: false,
-              isVegetarian: false,
-              isGlutenFree: false,
-              timeToTableMinutes: guide.timeToCompleteMinutes,
-              ingredients: guide.steps.map(step => ({
-                id: step.id,
-                name: step.name,
-                amount: 0,
-                unit: '',
-                costPerUnit: 0,
-                totalCost: 0
-              })),
-              method: guide.detailedProcedure,
-              costing: {
-                totalRecipeCost: 0,
-                suggestedSellingPrice: 0,
-                actualMenuPrice: 0,
-                grossProfitPercentage: 0
+            <PDFDownloadLink 
+              document={
+                <RecipePDF recipe={{
+                  ...guide,
+                  moduleType: 'hospitality',
+                  allergens: [],
+                  isVegan: false,
+                  isVegetarian: false,
+                  isGlutenFree: false,
+                  timeToTableMinutes: guide.timeToCompleteMinutes,
+                  ingredients: guide.steps.map(step => ({
+                    id: step.id,
+                    name: step.name,
+                    amount: 0,
+                    unit: '',
+                    costPerUnit: 0,
+                    totalCost: 0
+                  })),
+                  method: guide.detailedProcedure,
+                  costing: {
+                    totalRecipeCost: 0,
+                    suggestedSellingPrice: 0,
+                    actualMenuPrice: 0,
+                    grossProfitPercentage: 0
+                  },
+                  hideCosting: true
+                }} />
               }
-            }}>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
-            </RecipePDF>
+              fileName={`${guide.name.toLowerCase().replace(/\s+/g, '-')}-guide.pdf`}
+            >
+              {({ loading }) => (
+                <Button variant="outline" disabled={loading}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {loading ? "Generating..." : "Download PDF"}
+                </Button>
+              )}
+            </PDFDownloadLink>
             
             {onEdit && (
               <Button onClick={handleEdit}>

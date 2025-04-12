@@ -26,19 +26,31 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
   // Ensure we have the latest state from the database
   useEffect(() => {
     const fetchRecipeStatus = async () => {
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('posted_to_noticeboard')
-        .eq('id', recipe.id)
-        .single();
-        
-      if (data && !error) {
-        setIsPinned(data.posted_to_noticeboard || false);
+      if (recipe.moduleType === 'hospitality') {
+        const { data, error } = await supabase
+          .from('hospitality_guides')
+          .select('posted_to_noticeboard')
+          .eq('id', recipe.id)
+          .single();
+          
+        if (data && !error) {
+          setIsPinned(data.posted_to_noticeboard || false);
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('recipes')
+          .select('posted_to_noticeboard')
+          .eq('id', recipe.id)
+          .single();
+          
+        if (data && !error) {
+          setIsPinned(data.posted_to_noticeboard || false);
+        }
       }
     };
     
     fetchRecipeStatus();
-  }, [recipe.id]);
+  }, [recipe.id, recipe.moduleType]);
 
   // Use the state variable instead of directly using recipe.postedToNoticeboard
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -393,7 +394,14 @@ const HospitalityBible: React.FC = () => {
                     isVegetarian: false,
                     isGlutenFree: false,
                     timeToTableMinutes: guide.timeToCompleteMinutes,
-                    ingredients: [],
+                    ingredients: guide.steps.map(step => ({
+                      id: step.id,
+                      name: step.name,
+                      amount: 0,
+                      unit: '',
+                      costPerUnit: 0,
+                      totalCost: 0
+                    })),
                     method: guide.detailedProcedure,
                     costing: {
                       totalRecipeCost: 0,
