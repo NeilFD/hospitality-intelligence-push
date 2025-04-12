@@ -1,244 +1,217 @@
-import React from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Recipe } from "@/types/recipe-types";
-import { Mail, Share2, FileText, Edit, Trash2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import RecipePDF from "./RecipePDF";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, 
-  AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Recipe } from '@/types/recipe-types';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Clock, Utensils, BarChart4, Trash2, FileEdit, AlertCircle, Check } from 'lucide-react';
+import RecipePDF from './RecipePDF';
 
 interface RecipeDetailDialogProps {
+  recipe: Recipe;
   open: boolean;
   onClose: () => void;
-  recipe: Recipe;
   onEdit: () => void;
-  onDelete?: (recipe: Recipe) => void;
+  onDelete: (recipe: Recipe) => void;
 }
 
 const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
+  recipe,
   open,
   onClose,
-  recipe,
   onEdit,
-  onDelete
+  onDelete,
 }) => {
-  const handleEmailShare = () => {
-    const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
-    const body = encodeURIComponent(
-      `Check out this recipe for ${recipe.name}!\n\n` +
-      `Category: ${recipe.category}\n` +
-      `Allergens: ${recipe.allergens.join(', ')}\n` +
-      `Vegetarian: ${recipe.isVegetarian ? 'Yes' : 'No'}\n` +
-      `Vegan: ${recipe.isVegan ? 'Yes' : 'No'}\n` +
-      `Gluten Free: ${recipe.isGlutenFree ? 'Yes' : 'No'}\n\n` +
-      `Recipe cost: ${formatCurrency(recipe.costing.totalRecipeCost)}\n` +
-      `Menu price: ${formatCurrency(recipe.costing.actualMenuPrice)}\n\n` +
-      `Method: ${recipe.method}`
-    );
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  };
-
-  const handleWhatsAppShare = () => {
-    const text = encodeURIComponent(
-      `*Recipe: ${recipe.name}*\n\n` +
-      `Category: ${recipe.category}\n` +
-      `Allergens: ${recipe.allergens.join(', ')}\n` +
-      `Vegetarian: ${recipe.isVegetarian ? 'Yes' : 'No'}\n` +
-      `Vegan: ${recipe.isVegan ? 'Yes' : 'No'}\n` +
-      `Gluten Free: ${recipe.isGlutenFree ? 'Yes' : 'No'}\n\n` +
-      `Recipe cost: ${formatCurrency(recipe.costing.totalRecipeCost)}\n` +
-      `Menu price: ${formatCurrency(recipe.costing.actualMenuPrice)}`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+  if (!recipe) return null;
+  
+  const isHospitality = recipe.moduleType === 'hospitality';
+  const isBeverage = recipe.moduleType === 'beverage';
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+    }).format(amount);
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-gray-900">{recipe.name}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2 text-gray-700">
-            {recipe.category}
-            <div className="flex gap-1 ml-auto">
-              <Button variant="outline" size="sm" onClick={onEdit}>
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
-              
-              {onDelete && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Recipe</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete "{recipe.name}"? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => onDelete(recipe)} 
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-              
-              <PDFDownloadLink 
-                document={<RecipePDF recipe={recipe} />} 
-                fileName={`${recipe.name.toLowerCase().replace(/\s+/g, '-')}.pdf`}
-              >
-                {({ loading }) => (
-                  <Button variant="outline" size="sm" disabled={loading}>
-                    <FileText className="h-4 w-4 mr-1" />
-                    {loading ? 'Loading...' : 'Download PDF'}
-                  </Button>
+          <DialogTitle className="text-2xl font-bold text-slate-900">{recipe.name}</DialogTitle>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Badge variant="secondary">{recipe.category || 'Uncategorized'}</Badge>
+            {recipe.timeToTableMinutes > 0 && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {recipe.timeToTableMinutes} min
+              </Badge>
+            )}
+            {!isHospitality && (
+              <>
+                {recipe.isVegan && (
+                  <Badge className="bg-green-600">Vegan</Badge>
                 )}
-              </PDFDownloadLink>
-              <Button variant="outline" size="sm" onClick={handleEmailShare}>
-                <Mail className="h-4 w-4 mr-1" />
-                Email
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleWhatsAppShare}>
-                <Share2 className="h-4 w-4 mr-1" />
-                WhatsApp
-              </Button>
-            </div>
-          </DialogDescription>
+                {recipe.isVegetarian && (
+                  <Badge className="bg-green-500">Vegetarian</Badge>
+                )}
+                {recipe.isGlutenFree && (
+                  <Badge className="bg-amber-600">Gluten Free</Badge>
+                )}
+              </>
+            )}
+          </div>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            {recipe.imageUrl ? (
-              <img 
-                src={recipe.imageUrl} 
-                alt={recipe.name} 
-                className="w-full h-64 object-cover rounded-md"
-              />
-            ) : (
-              <div className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-md text-gray-700">
-                No image available
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6">
+            {recipe.imageUrl && (
+              <div className="aspect-video w-full overflow-hidden rounded-md">
+                <img 
+                  src={recipe.imageUrl} 
+                  alt={recipe.name} 
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
             
-            <div className="mt-4 space-y-4">
+            {recipe.method && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Dietary Information</h3>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {recipe.isVegetarian && <Badge variant="outline" className="bg-green-50 text-green-800">Vegetarian</Badge>}
-                  {recipe.isVegan && <Badge variant="outline" className="bg-green-100 text-green-900">Vegan</Badge>}
-                  {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-800">Gluten Free</Badge>}
+                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
+                <div className="whitespace-pre-line text-gray-700">
+                  {recipe.method}
                 </div>
               </div>
-              
+            )}
+            
+            {recipe.ingredients && recipe.ingredients.length > 0 && (
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Allergens</h3>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {recipe.allergens.map((allergen, index) => (
-                    <Badge key={index} variant="outline" className="bg-red-50 text-red-800">{allergen}</Badge>
+                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
+                <div className="space-y-2">
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <div key={ingredient.id || index} className="flex justify-between py-2 border-b border-gray-100">
+                      <div>
+                        <span className="font-medium">{ingredient.name}</span>
+                        {ingredient.amount && ingredient.unit && (
+                          <span className="text-gray-600 ml-2">
+                            {ingredient.amount} {ingredient.unit}
+                          </span>
+                        )}
+                      </div>
+                      {!isHospitality && ingredient.totalCost > 0 && (
+                        <div className="text-gray-600">
+                          {formatCurrency(ingredient.totalCost)}
+                        </div>
+                      )}
+                      {isHospitality && ingredient.costPerUnit > 0 && (
+                        <div className="text-gray-600">
+                          Importance: {ingredient.costPerUnit}/10
+                        </div>
+                      )}
+                    </div>
                   ))}
-                  {recipe.allergens.length === 0 && <span className="text-gray-700">No allergens listed</span>}
                 </div>
               </div>
-              
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Recipe Information</h3>
-                <dl className="mt-2 space-y-1">
-                  <div className="flex">
-                    <dt className="w-1/2 text-gray-700">Time to Table:</dt>
-                    <dd className="text-gray-900">~{recipe.timeToTableMinutes} minutes</dd>
-                  </div>
-                  <div className="flex">
-                    <dt className="w-1/2 text-gray-700">Recommended Upsell:</dt>
-                    <dd className="text-gray-900">{recipe.recommendedUpsell || 'None'}</dd>
-                  </div>
-                </dl>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Method</h3>
-                <p className="mt-2 whitespace-pre-line text-gray-800">{recipe.method}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">Costing</h3>
-              <dl className="mt-2 space-y-1">
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-700">Total Recipe Cost:</dt>
-                  <dd className="text-gray-900">{formatCurrency(recipe.costing.totalRecipeCost)}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-700">Suggested Selling Price:</dt>
-                  <dd className="text-gray-900">{formatCurrency(recipe.costing.suggestedSellingPrice)}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-700">Actual Menu Price:</dt>
-                  <dd className="text-gray-900">{formatCurrency(recipe.costing.actualMenuPrice)}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-700">Gross Profit Percentage:</dt>
-                  <dd className="text-gray-900">{(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</dd>
-                </div>
-              </dl>
-            </div>
+            )}
             
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">Ingredients</h3>
-              <div className="mt-2 border rounded-md">
-                <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 text-sm font-medium border-b text-gray-800">
-                  <div className="col-span-5">Item</div>
-                  <div className="col-span-2 text-right">Amount</div>
-                  <div className="col-span-2">Unit</div>
-                  <div className="col-span-3 text-right">Cost</div>
-                </div>
-                {recipe.ingredients.map((ingredient, index) => (
-                  <div 
-                    key={ingredient.id} 
-                    className={`grid grid-cols-12 px-3 py-2 text-sm text-gray-800 ${
-                      index < recipe.ingredients.length - 1 ? 'border-b' : ''
-                    }`}
-                  >
-                    <div className="col-span-5">{ingredient.name}</div>
-                    <div className="col-span-2 text-right">{ingredient.amount}</div>
-                    <div className="col-span-2">{ingredient.unit}</div>
-                    <div className="col-span-3 text-right">{formatCurrency(ingredient.totalCost)}</div>
-                  </div>
-                ))}
-                <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 text-sm font-medium text-gray-800">
-                  <div className="col-span-9 text-right">Total:</div>
-                  <div className="col-span-3 text-right">
-                    {formatCurrency(recipe.ingredients.reduce((sum, i) => sum + i.totalCost, 0))}
-                  </div>
+            {recipe.miseEnPlace && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">
+                  {isHospitality ? 'Required Tools/Resources' : 
+                   isBeverage ? 'Garnish' : 
+                   'Mise en Place'}
+                </h3>
+                <div className="whitespace-pre-line text-gray-700">
+                  {recipe.miseEnPlace}
                 </div>
               </div>
-            </div>
+            )}
             
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">
-                {recipe.moduleType === 'beverage' ? 'Garnish' : 'Mise en Place'}
-              </h3>
-              <p className="mt-2 whitespace-pre-line text-gray-800">{recipe.miseEnPlace}</p>
-            </div>
+            {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Allergens</h3>
+                <div className="flex flex-wrap gap-2">
+                  {recipe.allergens.map(allergen => (
+                    <Badge key={allergen} variant="outline" className="bg-red-50 text-red-800 border-red-200">
+                      {allergen}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {recipe.recommendedUpsell && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
+                <div className="text-gray-700">{recipe.recommendedUpsell}</div>
+              </div>
+            )}
+            
+            {!isHospitality && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Costing</h3>
+                <Card className="p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-500">Total Recipe Cost</div>
+                      <div className="font-semibold">{formatCurrency(recipe.costing.totalRecipeCost)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Suggested Selling Price</div>
+                      <div className="font-semibold">{formatCurrency(recipe.costing.suggestedSellingPrice)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Actual Menu Price</div>
+                      <div className="font-semibold">{formatCurrency(recipe.costing.actualMenuPrice)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Gross Profit %</div>
+                      <div className="font-semibold">{recipe.costing.grossProfitPercentage}%</div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
-        </div>
+        </ScrollArea>
         
+        <DialogFooter className="gap-2 sm:gap-0">
+          <div className="flex flex-wrap gap-2 justify-end w-full">
+            <RecipePDF recipe={recipe} />
+            <Button variant="outline" onClick={onEdit} className="flex items-center gap-2">
+              <FileEdit className="h-4 w-4" />
+              Edit {isHospitality ? 'Guide' : 'Recipe'}
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this {isHospitality ? 'hospitality guide' : 'recipe'}.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => onDelete(recipe)} 
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,210 +1,167 @@
 
-import React from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { MenuCategory, AllergenType } from "@/types/recipe-types";
-import { X, Upload } from "lucide-react";
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { FormField } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Recipe } from '@/types/recipe-types';
 
 interface RecipeBasicInfoProps {
-  name: string;
-  category: string;
-  isVegan: boolean;
-  isVegetarian: boolean;
-  isGlutenFree: boolean;
+  recipe: Partial<Recipe>;
+  categories: string[];
   allergens: string[];
-  method: string;
-  imagePreview?: string;
-  categories: MenuCategory[];
-  allergenTypes: AllergenType[];
-  moduleType: 'food' | 'beverage';
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onCategoryChange: (value: string) => void;
-  onCheckboxChange: (name: string, checked: boolean) => void;
-  onAllergenToggle: (allergen: string) => void;
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onImageRemove: () => void;
+  onNameChange: (name: string) => void;
+  onCategoryChange: (category: string) => void;
+  onAllergensChange: (allergens: string[]) => void;
+  onVeganChange: (isVegan: boolean) => void;
+  onVegetarianChange: (isVegetarian: boolean) => void;
+  onGlutenFreeChange: (isGlutenFree: boolean) => void;
+  moduleType: string;
 }
 
-export const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
-  name,
-  category,
-  isVegan,
-  isVegetarian,
-  isGlutenFree,
-  allergens,
-  method,
-  imagePreview,
+const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
+  recipe,
   categories,
-  allergenTypes,
-  moduleType,
-  onInputChange,
+  allergens,
+  onNameChange,
   onCategoryChange,
-  onCheckboxChange,
-  onAllergenToggle,
-  onImageUpload,
-  onImageRemove
+  onAllergensChange,
+  onVeganChange,
+  onVegetarianChange,
+  onGlutenFreeChange,
+  moduleType
 }) => {
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="name" className="text-gray-900">Recipe Name</Label>
-        <Input 
-          id="name"
-          name="name"
-          value={name}
-          onChange={onInputChange}
-          placeholder="Enter recipe name"
-          className="text-gray-900 bg-white border border-gray-300"
-        />
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">{moduleType === 'hospitality' ? 'Guide Details' : 'Recipe Details'}</h2>
+        <p className="text-muted-foreground">Basic information about {moduleType === 'hospitality' ? 'this service guide' : 'this recipe'}</p>
       </div>
-      
-      <div>
-        <Label htmlFor="category" className="text-gray-900">Category</Label>
-        <Select
-          value={category}
-          onValueChange={onCategoryChange}
-        >
-          <SelectTrigger id="category" className="text-gray-900 bg-white">
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.filter(cat => cat.moduleType === moduleType).map((category) => (
-              <SelectItem key={category.id} value={category.name}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-gray-900">Image</Label>
-        <div className="flex items-center space-x-2">
-          <div className="w-full">
-            <Label 
-              htmlFor="image-upload"
-              className="flex justify-center items-center border-2 border-dashed border-gray-300 rounded-md h-32 cursor-pointer hover:border-gray-400 transition-colors"
-            >
-              {imagePreview ? (
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-                  className="h-full w-full object-cover rounded-md" 
-                />
-              ) : (
-                <div className="flex flex-col items-center text-gray-500">
-                  <Upload className="h-10 w-10 mb-2" />
-                  <span>Upload Image</span>
-                </div>
-              )}
-            </Label>
-            <Input 
-              id="image-upload"
-              type="file" 
-              accept="image/*"
-              onChange={onImageUpload}
-              className="hidden"
-            />
-          </div>
-          {imagePreview && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={onImageRemove}
-              className="text-gray-900"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+
+      <div className="grid gap-4">
+        <div>
+          <Label htmlFor="recipeName">
+            {moduleType === 'hospitality' ? 'Guide Name' : 'Recipe Name'}
+          </Label>
+          <Input 
+            id="recipeName" 
+            value={recipe.name || ''} 
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder={moduleType === 'hospitality' ? "Enter guide name..." : "Enter recipe name..."}
+            className="mt-1"
+          />
         </div>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-gray-900">Dietary Options</Label>
-        <div className="flex space-x-4 mt-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="isVegetarian" 
-              checked={isVegetarian} 
-              onCheckedChange={(checked) => {
-                onCheckboxChange('isVegetarian', checked === true);
-              }}
-            />
-            <Label 
-              htmlFor="isVegetarian" 
-              className="text-gray-900 cursor-pointer"
-            >
-              Vegetarian
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="isVegan" 
-              checked={isVegan} 
-              onCheckedChange={(checked) => {
-                onCheckboxChange('isVegan', checked === true);
-              }}
-            />
-            <Label 
-              htmlFor="isVegan" 
-              className="text-gray-900 cursor-pointer"
-            >
-              Vegan
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="isGlutenFree" 
-              checked={isGlutenFree} 
-              onCheckedChange={(checked) => {
-                onCheckboxChange('isGlutenFree', checked === true);
-              }}
-            />
-            <Label 
-              htmlFor="isGlutenFree" 
-              className="text-gray-900 cursor-pointer"
-            >
-              Gluten Free
-            </Label>
-          </div>
+
+        <div>
+          <Label htmlFor="category">
+            {moduleType === 'hospitality' ? 'Service Category' : 'Category'}
+          </Label>
+          <Select 
+            value={recipe.category || 'Uncategorized'} 
+            onValueChange={onCategoryChange}
+          >
+            <SelectTrigger id="category" className="w-full mt-1">
+              <SelectValue placeholder={moduleType === 'hospitality' ? 'Select service category' : 'Select a category'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Uncategorized">Uncategorized</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-      
-      <div>
-        <Label className="mb-2 block text-gray-900">Allergens</Label>
-        <div className="flex flex-wrap gap-2">
-          {allergenTypes.map((allergen) => (
-            <div 
-              key={allergen.id} 
-              className={`px-3 py-1.5 rounded-full text-sm cursor-pointer ${
-                allergens.includes(allergen.name) 
-                  ? 'bg-red-100 text-red-800 border border-red-300' 
-                  : 'bg-gray-100 text-gray-800 border border-gray-300'
-              }`}
-              onClick={() => onAllergenToggle(allergen.name)}
-            >
-              {allergen.name}
+
+        {moduleType !== 'hospitality' && (
+          <>
+            <div>
+              <Label className="mb-1 block">Contains Allergens</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
+                {allergens.map((allergen) => (
+                  <div key={allergen} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`allergen-${allergen}`}
+                      checked={recipe.allergens?.includes(allergen) || false}
+                      onChange={(e) => {
+                        const newAllergens = e.target.checked
+                          ? [...(recipe.allergens || []), allergen]
+                          : (recipe.allergens || []).filter(a => a !== allergen);
+                        onAllergensChange(newAllergens);
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <Label htmlFor={`allergen-${allergen}`} className="text-sm font-medium">
+                      {allergen}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="method" className="text-gray-900">Method</Label>
-        <Textarea 
-          id="method"
-          name="method"
-          value={method || ''}
-          onChange={onInputChange}
-          placeholder="Enter cooking instructions"
-          rows={6}
-          className="text-gray-900 bg-white border border-gray-300"
-        />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Vegan</Label>
+                <RadioGroup
+                  value={recipe.isVegan ? 'yes' : 'no'}
+                  onValueChange={(value) => onVeganChange(value === 'yes')}
+                  className="flex space-x-4 mt-1"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="vegan-yes" />
+                    <Label htmlFor="vegan-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="vegan-no" />
+                    <Label htmlFor="vegan-no">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div>
+                <Label>Vegetarian</Label>
+                <RadioGroup
+                  value={recipe.isVegetarian ? 'yes' : 'no'}
+                  onValueChange={(value) => onVegetarianChange(value === 'yes')}
+                  className="flex space-x-4 mt-1"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="vegetarian-yes" />
+                    <Label htmlFor="vegetarian-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="vegetarian-no" />
+                    <Label htmlFor="vegetarian-no">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div>
+                <Label>Gluten Free</Label>
+                <RadioGroup
+                  value={recipe.isGlutenFree ? 'yes' : 'no'}
+                  onValueChange={(value) => onGlutenFreeChange(value === 'yes')}
+                  className="flex space-x-4 mt-1"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="gluten-free-yes" />
+                    <Label htmlFor="gluten-free-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="gluten-free-no" />
+                    <Label htmlFor="gluten-free-no">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 };
+
+export default RecipeBasicInfo;

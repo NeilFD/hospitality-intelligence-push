@@ -1,92 +1,130 @@
 
-import React from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface RecipeAdditionalInfoProps {
-  timeToTableMinutes: number;
   recommendedUpsell: string;
+  onRecommendedUpsellChange: (value: string) => void;
+  timeToTableMinutes: number;
+  onTimeToTableMinutesChange: (value: number) => void;
   miseEnPlace: string;
-  actualMenuPrice: number;
-  suggestedPrice: number;
-  grossProfitPercentage: number;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onCostingChange: (field: string, value: string) => void;
-  moduleType?: 'food' | 'beverage';
+  onMiseEnPlaceChange: (value: string) => void;
+  method: string;
+  onMethodChange: (value: string) => void;
+  moduleType: string;
 }
 
-export const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
-  timeToTableMinutes,
+const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
   recommendedUpsell,
+  onRecommendedUpsellChange,
+  timeToTableMinutes,
+  onTimeToTableMinutesChange,
   miseEnPlace,
-  actualMenuPrice,
-  suggestedPrice,
-  grossProfitPercentage,
-  onInputChange,
-  onCostingChange,
-  moduleType = 'food'
+  onMiseEnPlaceChange,
+  method,
+  onMethodChange,
+  moduleType
 }) => {
+  // Get appropriate labels for the fields based on module type
+  const getLabels = () => {
+    if (moduleType === 'hospitality') {
+      return {
+        title: 'Additional Guide Information',
+        description: 'Add more details to your hospitality guide',
+        upsellLabel: 'Related Services',
+        upsellPlaceholder: 'Suggest related services or experiences',
+        timeLabel: 'Time Required (minutes)',
+        miseLabel: 'Required Tools/Resources',
+        misePlaceholder: 'List any tools or resources needed',
+        methodLabel: 'Detailed Procedure',
+        methodPlaceholder: 'Describe the procedure in detail'
+      };
+    } else if (moduleType === 'beverage') {
+      return {
+        title: 'Additional Recipe Information',
+        description: 'Add more details to your beverage recipe',
+        upsellLabel: 'Recommended Upsell',
+        upsellPlaceholder: 'Suggest pairings or add-ons',
+        timeLabel: 'Time to Table (minutes)',
+        miseLabel: 'Garnish',
+        misePlaceholder: 'Describe the garnish for this beverage',
+        methodLabel: 'Method',
+        methodPlaceholder: 'Describe the preparation method in detail'
+      };
+    } else {
+      return {
+        title: 'Additional Recipe Information',
+        description: 'Add more details to your food recipe',
+        upsellLabel: 'Recommended Upsell',
+        upsellPlaceholder: 'Suggest pairings or add-ons',
+        timeLabel: 'Time to Table (minutes)',
+        miseLabel: 'Mise en Place',
+        misePlaceholder: 'Describe the preparation before cooking',
+        methodLabel: 'Method',
+        methodPlaceholder: 'Describe the cooking method in detail'
+      };
+    }
+  };
+
+  const labels = getLabels();
+
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="actualMenuPrice" className="text-gray-900">Menu Price (£)</Label>
-        <Input 
-          id="actualMenuPrice"
-          type="number"
-          step="0.01"
-          value={actualMenuPrice || ''}
-          onChange={(e) => onCostingChange('actualMenuPrice', e.target.value)}
-          placeholder="Enter menu price"
-          className="text-gray-900 bg-white border border-gray-300"
-        />
-        <div className="text-sm text-gray-500 mt-1">
-          Suggested Price: £{suggestedPrice.toFixed(2)} (70% GP inc. VAT)
-        </div>
-        <div className="text-sm text-gray-500">
-          Actual GP: {(grossProfitPercentage * 100).toFixed(1)}%
-        </div>
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">{labels.title}</h2>
+        <p className="text-muted-foreground">{labels.description}</p>
       </div>
-      
+
       <div>
-        <Label htmlFor="timeToTableMinutes" className="text-gray-900">Time to Table (mins)</Label>
-        <Input 
-          id="timeToTableMinutes"
-          name="timeToTableMinutes"
+        <Label htmlFor="recommendedUpsell">{labels.upsellLabel}</Label>
+        <Input
+          id="recommendedUpsell"
+          value={recommendedUpsell}
+          onChange={(e) => onRecommendedUpsellChange(e.target.value)}
+          placeholder={labels.upsellPlaceholder}
+          className="mt-1"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="timeToTable">{labels.timeLabel}</Label>
+        <Input
+          id="timeToTable"
           type="number"
           value={timeToTableMinutes || ''}
-          onChange={onInputChange}
-          placeholder="Enter preparation time"
-          className="text-gray-900 bg-white border border-gray-300"
+          onChange={(e) => onTimeToTableMinutesChange(Number(e.target.value))}
+          min="0"
+          className="mt-1"
         />
       </div>
-      
+
       <div>
-        <Label htmlFor="recommendedUpsell" className="text-gray-900">Recommended Upsell</Label>
-        <Input 
-          id="recommendedUpsell"
-          name="recommendedUpsell"
-          value={recommendedUpsell || ''}
-          onChange={onInputChange}
-          placeholder="Enter recommended upsell"
-          className="text-gray-900 bg-white border border-gray-300"
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="miseEnPlace" className="text-gray-900">
-          {moduleType === 'beverage' ? 'Garnish' : 'Mise en Place'}
-        </Label>
-        <Textarea 
+        <Label htmlFor="miseEnPlace">{labels.miseLabel}</Label>
+        <Textarea
           id="miseEnPlace"
-          name="miseEnPlace"
-          value={miseEnPlace || ''}
-          onChange={onInputChange}
-          placeholder={moduleType === 'beverage' ? 'Enter garnish details' : 'Enter mise en place details'}
-          rows={4}
-          className="text-gray-900 bg-white border border-gray-300"
+          value={miseEnPlace}
+          onChange={(e) => onMiseEnPlaceChange(e.target.value)}
+          placeholder={labels.misePlaceholder}
+          className="mt-1"
+          rows={3}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="method">{labels.methodLabel}</Label>
+        <Textarea
+          id="method"
+          value={method}
+          onChange={(e) => onMethodChange(e.target.value)}
+          placeholder={labels.methodPlaceholder}
+          className="mt-1"
+          rows={6}
         />
       </div>
     </div>
   );
 };
+
+export default RecipeAdditionalInfo;

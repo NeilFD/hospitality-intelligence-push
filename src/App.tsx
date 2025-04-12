@@ -32,6 +32,7 @@ import TeamDashboard from "./pages/team/Dashboard";
 import Noticeboard from "./pages/team/Noticeboard";
 import Chat from "./pages/team/Chat";
 import Knowledge from "./pages/team/Knowledge";
+import Hospitality from "./pages/team/Hospitality";
 import MasterDashboard from "./pages/master/Dashboard";
 import WeeklyInput from "./pages/master/WeeklyInput";
 import MonthSummary from "./pages/master/MonthSummary";
@@ -95,6 +96,7 @@ function App() {
             <Route path="/team/noticeboard" element={<RequireAuth><Layout><Noticeboard /></Layout></RequireAuth>} />
             <Route path="/team/chat" element={<RequireAuth><Layout><Chat /></Layout></RequireAuth>} />
             <Route path="/team/knowledge" element={<RequireAuth><Layout><Knowledge /></Layout></RequireAuth>} />
+            <Route path="/team/hospitality-bible" element={<RequireAuth><Layout><Hospitality /></Layout></RequireAuth>} />
           </Routes>
         </Router>
       </AuthProvider>
