@@ -7,9 +7,9 @@ import { motion } from 'framer-motion';
 export default function Login() {
   return (
     <div 
-      className="min-h-screen w-full flex items-center justify-center p-4 bg-[#806cac]"
+      className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-[#806cac] via-[#9d89c9] to-[#d3e4fd]"
     >
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-xl">
+      <div className="w-full max-w-md bg-white/15 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-xl">
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

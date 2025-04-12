@@ -60,6 +60,8 @@ export default {
           blue: "#E6F2FF",
           "blue-dark": "#4A6FA5",
           purple: "#F3E5F5",
+          peach: "#FDE1D3",
+          pink: "#FFDEE2",
         },
         tavern: {
           blue: "#48495E",

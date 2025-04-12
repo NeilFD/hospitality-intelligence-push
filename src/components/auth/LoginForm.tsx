@@ -32,35 +32,45 @@ export default function LoginForm() {
   const inputVariants = {
     focus: {
       scale: 1.02,
-      boxShadow: "0 0 0 2px rgba(165, 192, 226, 0.5)"
+      boxShadow: "0 0 0 2px rgba(211, 228, 253, 0.5)"
     }
   };
   
-  return <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-xl">
-      <motion.h1 className="text-3xl font-bold text-white text-center mb-6" initial={{
-      opacity: 0
-    }} animate={{
-      opacity: 1
-    }} transition={{
-      delay: 0.3
-    }}>Hi</motion.h1>
+  return (
+    <div className="backdrop-blur-xl bg-white/25 border border-white/30 rounded-2xl p-8 shadow-xl">
+      <motion.h1 
+        className="text-3xl font-bold text-white text-center mb-6" 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        transition={{ delay: 0.3 }}
+      >
+        Hi
+      </motion.h1>
       
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && <motion.div className="bg-red-400/20 backdrop-blur-sm text-white p-4 rounded-xl text-sm border border-red-400/30" initial={{
-        opacity: 0,
-        y: -10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }}>
+        {error && (
+          <motion.div 
+            className="bg-red-400/20 backdrop-blur-sm text-white p-4 rounded-xl text-sm border border-red-400/30"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             {error}
-          </motion.div>}
+          </motion.div>
+        )}
         
         <div className="space-y-2">
           <Label htmlFor="email" className="text-white/90">Email</Label>
           <motion.div whileHover="focus" whileFocus="focus">
             <motion.div variants={inputVariants}>
-              <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 transition-all duration-300" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="Enter your email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                required 
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 transition-all duration-300" 
+              />
             </motion.div>
           </motion.div>
         </div>
@@ -69,17 +79,29 @@ export default function LoginForm() {
           <Label htmlFor="password" className="text-white/90">Password</Label>
           <motion.div whileHover="focus" whileFocus="focus">
             <motion.div variants={inputVariants}>
-              <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 transition-all duration-300" />
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="Enter your password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                required 
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 transition-all duration-300" 
+              />
             </motion.div>
           </motion.div>
         </div>
         
-        <motion.div whileHover={{
-        scale: 1.03
-      }} whileTap={{
-        scale: 0.97
-      }} className="pt-2 relative overflow-hidden group">
-          <Button type="submit" className="w-full bg-gradient-to-r from-[#806cac]/90 to-[#9d89c9]/90 text-white hover:from-[#806cac] hover:to-[#9d89c9] hover:shadow-lg transition-all duration-300 relative overflow-hidden" disabled={isLoading}>
+        <motion.div 
+          whileHover={{ scale: 1.03 }} 
+          whileTap={{ scale: 0.97 }} 
+          className="pt-2 relative overflow-hidden group"
+        >
+          <Button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-[#FDE1D3] to-[#FFDEE2] text-[#705b9b] hover:from-[#FDE1D3] hover:to-[#FFDEE2]/90 hover:shadow-lg transition-all duration-300 relative overflow-hidden" 
+            disabled={isLoading}
+          >
             <span className="absolute inset-x-0 top-0 h-0.5 bg-white/30 animate-shimmer" />
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
@@ -89,10 +111,15 @@ export default function LoginForm() {
           <p className="text-center text-sm text-white/70">
             Don't have an account?
           </p>
-          <Button variant="link" className="p-0 text-[#9d89c9] hover:text-white" onClick={() => navigate('/register')}>
+          <Button 
+            variant="link" 
+            className="p-0 text-[#D3E4FD] hover:text-white" 
+            onClick={() => navigate('/register')}
+          >
             Register
           </Button>
         </div>
       </form>
-    </div>;
+    </div>
+  );
 }
