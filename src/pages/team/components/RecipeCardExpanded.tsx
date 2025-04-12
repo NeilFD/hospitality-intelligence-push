@@ -7,7 +7,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
 interface RecipeCardExpandedProps {
-  recipe: any;
+  recipe: Recipe | any;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -18,6 +18,20 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
   onClose 
 }) => {
   if (!recipe) return null;
+
+  // Handle both the data structure from recipe card and from noticeboard
+  const isVegetarian = recipe.isVegetarian || recipe.is_vegetarian;
+  const isVegan = recipe.isVegan || recipe.is_vegan;
+  const isGlutenFree = recipe.isGlutenFree || recipe.is_gluten_free;
+  const timeToTableMinutes = recipe.timeToTableMinutes || recipe.time_to_table_minutes;
+  const totalRecipeCost = recipe.costing?.totalRecipeCost || recipe.total_recipe_cost;
+  const actualMenuPrice = recipe.costing?.actualMenuPrice || recipe.actual_menu_price;
+  const grossProfitPercentage = recipe.costing?.grossProfitPercentage || recipe.gross_profit_percentage;
+  const imageUrl = recipe.imageUrl || recipe.image_url;
+  const allergens = recipe.allergens || [];
+  const recommendedUpsell = recipe.recommendedUpsell || recipe.recommended_upsell;
+  const miseEnPlace = recipe.miseEnPlace || recipe.mise_en_place;
+  const method = recipe.method || '';
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -29,13 +43,13 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           <div>
-            {recipe.image_url ? (
+            {imageUrl ? (
               <img 
-                src={recipe.image_url} 
+                src={imageUrl} 
                 alt={recipe.name} 
                 className="w-full h-48 object-cover rounded-md"
                 onError={(e) => {
-                  console.error("Recipe image failed to load:", recipe.image_url);
+                  console.error("Recipe image failed to load:", imageUrl);
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
@@ -48,10 +62,10 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
             <div className="mt-4">
               <h3 className="font-medium text-gray-900 mb-2">Dietary Information</h3>
               <div className="flex flex-wrap gap-2">
-                {recipe.is_vegetarian && <Badge variant="outline" className="bg-green-50 text-green-800">Vegetarian</Badge>}
-                {recipe.is_vegan && <Badge variant="outline" className="bg-green-100 text-green-900">Vegan</Badge>}
-                {recipe.is_gluten_free && <Badge variant="outline" className="bg-yellow-50 text-yellow-800">Gluten Free</Badge>}
-                {!recipe.is_vegetarian && !recipe.is_vegan && !recipe.is_gluten_free && (
+                {isVegetarian && <Badge variant="outline" className="bg-green-50 text-green-800">Vegetarian</Badge>}
+                {isVegan && <Badge variant="outline" className="bg-green-100 text-green-900">Vegan</Badge>}
+                {isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-800">Gluten Free</Badge>}
+                {!isVegetarian && !isVegan && !isGlutenFree && (
                   <span className="text-gray-600">No dietary information available</span>
                 )}
               </div>
@@ -60,8 +74,8 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
             <div className="mt-4">
               <h3 className="font-medium text-gray-900 mb-2">Allergens</h3>
               <div className="flex flex-wrap gap-2">
-                {recipe.allergens && recipe.allergens.length > 0 ? (
-                  recipe.allergens.map((allergen: string, index: number) => (
+                {allergens && allergens.length > 0 ? (
+                  allergens.map((allergen: string, index: number) => (
                     <Badge key={index} variant="outline" className="bg-red-50 text-red-800">{allergen}</Badge>
                   ))
                 ) : (
@@ -75,47 +89,55 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
             <div>
               <h3 className="font-medium text-gray-900 mb-2">Recipe Information</h3>
               <dl className="space-y-1">
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-600">Time to Table:</dt>
-                  <dd className="text-gray-900">~{recipe.time_to_table_minutes} minutes</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-600">Recipe Cost:</dt>
-                  <dd className="text-gray-900">{formatCurrency(recipe.total_recipe_cost || 0)}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-600">Menu Price:</dt>
-                  <dd className="text-gray-900">{formatCurrency(recipe.actual_menu_price || 0)}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-1/2 text-gray-600">GP:</dt>
-                  <dd className="text-gray-900">{(recipe.gross_profit_percentage * 100).toFixed(1)}%</dd>
-                </div>
+                {timeToTableMinutes > 0 && (
+                  <div className="flex">
+                    <dt className="w-1/2 text-gray-600">Time to Table:</dt>
+                    <dd className="text-gray-900">~{timeToTableMinutes} minutes</dd>
+                  </div>
+                )}
+                {totalRecipeCost !== undefined && (
+                  <div className="flex">
+                    <dt className="w-1/2 text-gray-600">Recipe Cost:</dt>
+                    <dd className="text-gray-900">{formatCurrency(totalRecipeCost || 0)}</dd>
+                  </div>
+                )}
+                {actualMenuPrice !== undefined && (
+                  <div className="flex">
+                    <dt className="w-1/2 text-gray-600">Menu Price:</dt>
+                    <dd className="text-gray-900">{formatCurrency(actualMenuPrice || 0)}</dd>
+                  </div>
+                )}
+                {grossProfitPercentage !== undefined && (
+                  <div className="flex">
+                    <dt className="w-1/2 text-gray-600">GP:</dt>
+                    <dd className="text-gray-900">{typeof grossProfitPercentage === 'number' ? (grossProfitPercentage * 100).toFixed(1) : '0'}%</dd>
+                  </div>
+                )}
               </dl>
             </div>
             
-            {recipe.method && (
+            {method && (
               <div className="mt-4">
                 <h3 className="font-medium text-gray-900 mb-2">Method</h3>
-                <p className="text-gray-800 text-sm whitespace-pre-line">{recipe.method}</p>
+                <p className="text-gray-800 text-sm whitespace-pre-line">{method}</p>
               </div>
             )}
             
-            {recipe.mise_en_place && (
+            {miseEnPlace && (
               <div className="mt-4">
                 <h3 className="font-medium text-gray-900 mb-2">Mise en Place</h3>
-                <p className="text-gray-800 text-sm whitespace-pre-line">{recipe.mise_en_place}</p>
+                <p className="text-gray-800 text-sm whitespace-pre-line">{miseEnPlace}</p>
               </div>
             )}
           </div>
         </div>
         
-        {recipe.recommended_upsell && (
+        {recommendedUpsell && (
           <div className="mt-4">
             <Separator />
             <div className="pt-2">
               <span className="text-sm font-medium text-gray-900">Recommended Upsell: </span>
-              <span className="text-sm text-gray-800">{recipe.recommended_upsell}</span>
+              <span className="text-sm text-gray-800">{recommendedUpsell}</span>
             </div>
           </div>
         )}
