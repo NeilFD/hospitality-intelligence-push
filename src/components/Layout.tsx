@@ -6,6 +6,7 @@ import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLef
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { SidebarLogo } from "./SidebarLogo";
 import { TavernLogo } from "./TavernLogo";
 import { useAuthStore } from "@/services/auth-service";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -193,9 +194,10 @@ const Layout = ({
   
   const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
       <div className="p-4 flex flex-col items-center">
-        <TavernLogo size="md" className="mb-3" />
+        <SidebarLogo size="md" className="mb-3" />
         {!sidebarCollapsed && <p className="text-[#e0d9f0] text-sm mt-1">Hospitality Intelligence</p>}
       </div>
+      
       <Separator className="bg-[#9d89c9]/20" />
       
       <div className="p-2 my-2">
