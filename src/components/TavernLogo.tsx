@@ -23,7 +23,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   
   const textSizeClasses = {
     sm: 'text-xl',
-    md: 'text-2xl',
+    md: 'text-3xl',  // Changed from text-2xl to text-3xl to make it slightly bigger
     lg: 'text-6xl',
     xl: 'text-6xl',
     '2xl': 'text-7xl',
