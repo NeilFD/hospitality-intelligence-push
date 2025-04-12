@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -51,13 +50,13 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
   return (
     <div className="space-y-4">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">{moduleType === 'hospitality' ? 'Guide Details' : 'Recipe Details'}</h2>
-        <p className="text-muted-foreground">Basic information about {moduleType === 'hospitality' ? 'this service guide' : 'this recipe'}</p>
+        <h2 className="text-xl font-semibold mb-2 text-gray-900">{moduleType === 'hospitality' ? 'Guide Details' : 'Recipe Details'}</h2>
+        <p className="text-gray-700">Basic information about {moduleType === 'hospitality' ? 'this service guide' : 'this recipe'}</p>
       </div>
 
       <div className="grid gap-4">
         <div>
-          <Label htmlFor="name">
+          <Label htmlFor="name" className="text-gray-900">
             {moduleType === 'hospitality' ? 'Guide Name' : 'Recipe Name'}
           </Label>
           <Input 
@@ -71,7 +70,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="category">
+          <Label htmlFor="category" className="text-gray-900">
             {moduleType === 'hospitality' ? 'Service Category' : 'Category'}
           </Label>
           <Select 
@@ -95,7 +94,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
         {moduleType !== 'hospitality' && (
           <>
             <div>
-              <Label className="mb-2 block">Contains Allergens</Label>
+              <Label className="mb-2 block text-gray-900">Contains Allergens</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
                 {allergenTypes.map((allergen) => {
                   const allergenName = typeof allergen === 'string' ? allergen : allergen.name;
@@ -129,7 +128,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div>
-                <Label className="mb-2 block">Vegan</Label>
+                <Label className="mb-2 block text-gray-900">Vegan</Label>
                 <div className="flex gap-4 mt-1">
                   <div 
                     onClick={() => onCheckboxChange('isVegan', true)}
@@ -163,7 +162,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               </div>
 
               <div>
-                <Label className="mb-2 block">Vegetarian</Label>
+                <Label className="mb-2 block text-gray-900">Vegetarian</Label>
                 <div className="flex gap-4 mt-1">
                   <div 
                     onClick={() => onCheckboxChange('isVegetarian', true)}
@@ -197,7 +196,7 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
               </div>
 
               <div>
-                <Label className="mb-2 block">Gluten Free</Label>
+                <Label className="mb-2 block text-gray-900">Gluten Free</Label>
                 <div className="flex gap-4 mt-1">
                   <div 
                     onClick={() => onCheckboxChange('isGlutenFree', true)}
@@ -233,9 +232,8 @@ const RecipeBasicInfo: React.FC<RecipeBasicInfoProps> = ({
           </>
         )}
         
-        {/* Image upload section */}
         <div>
-          <Label className="mb-1 block">Image</Label>
+          <Label className="mb-1 block text-gray-900">Image</Label>
           <div className="mt-1">
             {imagePreview ? (
               <div className="relative">
