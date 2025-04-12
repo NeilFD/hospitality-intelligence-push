@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -57,14 +56,12 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
         </DialogHeader>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Image */}
           {recipe.imageUrl && (
             <div className="overflow-hidden rounded-md aspect-video">
               <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover" />
             </div>
           )}
           
-          {/* Basic Info */}
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold text-lg">Details</h3>
@@ -115,7 +112,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
           </div>
         </div>
         
-        {/* Ingredients */}
         <div className="space-y-4">
           <h3 className="font-semibold text-lg">{isHospitality ? 'Steps/Procedures' : 'Ingredients'}</h3>
           <Separator className="my-2" />
@@ -140,7 +136,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
           )}
         </div>
         
-        {/* Method */}
         {recipe.method && (
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
@@ -149,7 +144,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
           </div>
         )}
         
-        {/* Costing */}
         {!isHospitality && (
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Costing</h3>
