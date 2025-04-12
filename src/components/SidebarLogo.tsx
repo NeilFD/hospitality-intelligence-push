@@ -30,7 +30,7 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
       <img 
         src="/lovable-uploads/961a56b6-b951-4f59-b386-636a8d01fb1c.png" 
         alt="Hi" 
-        className="w-3/4 h-3/4 object-contain"
+        className="w-full h-full object-contain"
       />
     </div>
   );
