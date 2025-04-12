@@ -28,7 +28,7 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
       )}
     >
       <img 
-        src="/lovable-uploads/b92ba31a-a7de-4208-9fb9-2a5db82c5729.png" 
+        src="/lovable-uploads/961a56b6-b951-4f59-b386-636a8d01fb1c.png" 
         alt="Hi" 
         className="w-3/4 h-3/4 object-contain absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
       />
