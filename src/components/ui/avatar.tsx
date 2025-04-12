@@ -1,6 +1,7 @@
 
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
+import { UserRound } from "lucide-react"  // Using UserRound which looks more female-friendly
 
 import { cn } from "@/lib/utils"
 
@@ -34,7 +35,7 @@ AvatarImage.displayName = AvatarPrimitive.Image.displayName
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
@@ -42,8 +43,11 @@ const AvatarFallback = React.forwardRef<
       className
     )}
     {...props}
-  />
+  >
+    {children || <UserRound className="h-6 w-6 text-gray-500" />}
+  </AvatarPrimitive.Fallback>
 ))
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
 export { Avatar, AvatarImage, AvatarFallback }
+
