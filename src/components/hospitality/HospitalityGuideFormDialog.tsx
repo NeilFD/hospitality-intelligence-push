@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { MenuCategory } from "@/types/recipe-types";
 import { createEmptyHospitalityGuide, emptyHospitalityStep } from "@/components/recipes/form/RecipeFormUtils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
-import { X, Plus, ArchiveIcon, ImageUp } from "lucide-react";
+import { X, Plus, ArchiveIcon, ImageUp, ConciergeBell } from "lucide-react";
 
 interface HospitalityGuideFormDialogProps {
   open: boolean;
@@ -137,13 +136,16 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader className="flex flex-row justify-between items-center">
-          <div>
-            <DialogTitle className="text-gray-900">
-              {guide ? 'Edit' : 'Add'} Hospitality Guide
-            </DialogTitle>
-            <DialogDescription className="text-gray-600">
-              Fill in the details for this hospitality guide.
-            </DialogDescription>
+          <div className="flex items-center gap-3">
+            <ConciergeBell className="h-8 w-8 text-blue-600" />
+            <div>
+              <DialogTitle className="text-gray-900">
+                {guide ? 'Edit' : 'Add'} Hospitality Guide
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Fill in the details for this hospitality guide.
+              </DialogDescription>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">{formData.archived ? 'Archived' : 'Live'}</span>
@@ -323,4 +325,3 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
 };
 
 export default HospitalityGuideFormDialog;
-
