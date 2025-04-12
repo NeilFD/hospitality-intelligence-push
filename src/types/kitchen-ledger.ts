@@ -1,3 +1,4 @@
+
 export interface Supplier {
   id: string;
   name: string;
@@ -45,8 +46,8 @@ export interface AnnualRecord {
   months: MonthlyRecord[];
 }
 
-// Update the ModuleType to include the new 'team' module
-export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master' | 'team';
+// Update the ModuleType to include 'hospitality'
+export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master' | 'team' | 'hospitality';
 
 export interface Module {
   id: string;

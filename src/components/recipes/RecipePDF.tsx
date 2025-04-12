@@ -1,4 +1,5 @@
 
+
 import React, { ReactNode } from 'react';
 import { Recipe } from '@/types/recipe-types';
 
@@ -16,3 +17,4 @@ const RecipePDF: React.FC<RecipePDFProps> = ({ recipe, children }) => {
 };
 
 export default RecipePDF;
+
