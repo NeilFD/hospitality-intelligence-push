@@ -151,7 +151,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
-      text: "Hello, I'm Cleo! Ask me anything about your business performance and I'll analyze the data for you.",
+      text: "Hey, Im Hi, Ask me anything about your business performance and I'll analyse the data for you.",
       isUser: false,
       timestamp: new Date()
     }
