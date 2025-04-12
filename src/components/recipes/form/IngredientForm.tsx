@@ -216,7 +216,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                             onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
                             step="0.01"
                             min="0"
-                            className="border border-gray-300 bg-white text-gray-900"
+                            className="border border-gray-300 bg-white text-gray-900 w-full"
                           />
                         </TableCell>
                         <TableCell className="py-2">
