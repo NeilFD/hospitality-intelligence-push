@@ -822,7 +822,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
         <div className="p-2 bg-tavern-blue/20 rounded-full backdrop-blur-sm animate-float">
           <Sparkles className="text-tavern-blue-dark h-5 w-5" />
         </div>
-        <h3 className="font-semibold text-tavern-blue-dark text-lg">Cleo - Performance Assistant</h3>
+        <h3 className="font-semibold text-tavern-blue-dark text-lg">Hi, your performance assistant</h3>
         {isSyncing && <span className="text-xs text-tavern-blue-dark ml-auto animate-pulse">Syncing data...</span>}
       </div>
       
@@ -835,7 +835,7 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
               style={{animationDelay: `${index * 0.05}s`}}
             >
               {!message.isUser && 
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-tavern-blue-light/80 to-tavern-blue/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pastel-blue/80 to-pastel-purple/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
                   <BotIcon className="h-4 w-4 text-tavern-blue-dark" />
                 </div>
               }
