@@ -195,7 +195,7 @@ const Layout = ({
   const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
-        {!sidebarCollapsed && <p className="text-[#e0d9f0] text-sm mt-1">Hospitality Intelligence</p>}
+        <p className="text-[#e0d9f0] text-sm mt-1">Hospitality Intelligence</p>
       </div>
       
       <Separator className="bg-[#9d89c9]/20" />

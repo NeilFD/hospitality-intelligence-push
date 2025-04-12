@@ -31,12 +31,12 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
     <div 
       className={cn(
         sizeClasses[size], 
-        'bg-hi-purple flex items-center justify-center rounded-lg', 
+        'bg-hi-purple flex flex-col items-center justify-center rounded-lg relative', 
         className
       )}
     >
       <span className={cn(
-        "text-white font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2", 
+        "text-white font-bold", 
         textSizeClasses[size]
       )}>Hi</span>
     </div>
