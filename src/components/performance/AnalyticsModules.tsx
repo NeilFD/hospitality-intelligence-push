@@ -38,9 +38,9 @@ export default function AnalyticsModules() {
       description: "Custom data exploration with natural language queries and advanced data visualizations.",
       icon: <Bot className="h-8 w-8 text-white" />,
       path: "/performance/data-explorer",
-      color: "bg-hi-purple-light",
-      hoverColor: "bg-hi-purple-light/90",
-      borderColor: "border-hi-purple-light/20"
+      color: "bg-sky-500", // Changed from bg-hi-purple-light
+      hoverColor: "bg-sky-600", // Added complementary hover state
+      borderColor: "border-sky-500/20" // Updated border color to match
     }
   ];
 
