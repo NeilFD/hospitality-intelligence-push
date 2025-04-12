@@ -39,7 +39,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">{recipe.name}</DialogTitle>
           <div className="flex flex-wrap gap-2 mt-2">
@@ -53,21 +53,22 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             {!isHospitality && (
               <>
                 {recipe.isVegan && (
-                  <Badge className="bg-green-600">Vegan</Badge>
+                  <Badge className="bg-green-600 text-white">Vegan</Badge>
                 )}
                 {recipe.isVegetarian && (
-                  <Badge className="bg-green-500">Vegetarian</Badge>
+                  <Badge className="bg-green-500 text-white">Vegetarian</Badge>
                 )}
                 {recipe.isGlutenFree && (
-                  <Badge className="bg-amber-600">Gluten Free</Badge>
+                  <Badge className="bg-amber-600 text-white">Gluten Free</Badge>
                 )}
               </>
             )}
           </div>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 pr-4 overflow-y-auto">
           <div className="space-y-6">
+            {/* Image at the top */}
             {recipe.imageUrl && (
               <div className="aspect-video w-full overflow-hidden rounded-md">
                 <img 
@@ -78,6 +79,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
+            {/* Ingredients section */}
             {recipe.ingredients && recipe.ingredients.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
@@ -108,6 +110,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
+            {/* Costing section */}
             {!isHospitality && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Costing</h3>
@@ -134,6 +137,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
+            {/* Method section */}
             {recipe.method && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
@@ -143,6 +147,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
+            {/* Mise En Place section */}
             {recipe.miseEnPlace && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">
@@ -156,6 +161,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
+            {/* Allergens section */}
             {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Allergens</h3>
@@ -169,6 +175,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
+            {/* Recommended Upsell section */}
             {recipe.recommendedUpsell && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
@@ -178,7 +185,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
           </div>
         </ScrollArea>
         
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="mt-6 gap-2 sm:gap-0">
           <div className="flex flex-wrap gap-2 justify-end w-full">
             <RecipePDF recipe={recipe} />
             <Button variant="outline" onClick={onEdit} className="flex items-center gap-2">
