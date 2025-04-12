@@ -1,3 +1,4 @@
+
 export interface HospitalityStep {
   id: string;
   name: string;
@@ -17,3 +18,10 @@ export interface HospitalityGuide {
   imageUrl?: string;
   archived?: boolean;
 }
+
+export type HospitalityFilterOptions = {
+  department?: string;
+  category?: string;
+  archived?: boolean;
+};
+

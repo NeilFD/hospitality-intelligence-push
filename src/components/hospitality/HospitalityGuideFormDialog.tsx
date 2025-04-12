@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -267,7 +268,7 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
 
             <div>
               <Label>Guide Image</Label>
-              <div className="mt-2">
+              <div className="mt-2 flex justify-start items-center">
                 {imagePreview ? (
                   <div className="relative">
                     <img src={imagePreview} alt="Preview" className="h-32 w-32 object-cover rounded-md" />
@@ -284,22 +285,20 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <div>
-                    <label 
-                      htmlFor="image-upload" 
-                      className="cursor-pointer bg-primary text-white rounded-md px-4 py-2 inline-flex items-center gap-2 hover:bg-primary/90 transition-colors"
-                    >
-                      <ImageUp className="h-5 w-5" /> Upload Image
-                    </label>
-                    <input 
-                      type="file" 
-                      id="image-upload" 
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden" 
-                    />
-                  </div>
+                  <label 
+                    htmlFor="image-upload" 
+                    className="cursor-pointer bg-primary text-white rounded-md px-4 py-2 inline-flex items-center gap-2 hover:bg-primary/90 transition-colors"
+                  >
+                    <ImageUp className="h-5 w-5" /> Upload Image
+                  </label>
                 )}
+                <input 
+                  type="file" 
+                  id="image-upload" 
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden" 
+                />
               </div>
             </div>
           </div>
@@ -328,3 +327,4 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
 };
 
 export default HospitalityGuideFormDialog;
+
