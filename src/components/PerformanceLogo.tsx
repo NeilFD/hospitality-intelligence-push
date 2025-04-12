@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface PerformanceLogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
 export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
@@ -13,22 +13,18 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
 }) => {
   const sizeClasses = {
     sm: 'h-8 w-8',
-    md: 'h-24 w-24',
-    lg: 'h-32 w-32',
-    xl: 'h-40 w-40',
-    '2xl': 'h-48 w-48',
-    '3xl': 'h-64 w-64',
-    '4xl': 'h-96 w-96'
+    md: 'h-12 w-12',
+    lg: 'h-16 w-16',
+    xl: 'h-20 w-20',
+    '2xl': 'h-24 w-24'
   };
   
   const textSizeClasses = {
     sm: 'text-xl',
-    md: 'text-6xl',
-    lg: 'text-7xl',
-    xl: 'text-8xl',
-    '2xl': 'text-9xl',
-    '3xl': 'text-[120px]',
-    '4xl': 'text-[144px]'
+    md: 'text-3xl',
+    lg: 'text-4xl',
+    xl: 'text-5xl',
+    '2xl': 'text-6xl'
   };
 
   return (
@@ -40,7 +36,7 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
       )}
     >
       <span className={cn(
-        "text-white font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2", 
+        "text-white font-bold", 
         textSizeClasses[size]
       )}>Hi</span>
     </div>
