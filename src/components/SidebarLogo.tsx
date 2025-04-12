@@ -16,11 +16,11 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
     xl: 'h-20 w-20',
     '2xl': 'h-24 w-24'
   };
-  return <div className={cn(sizeClasses[size], 'flex flex-col items-center justify-center', className)}>
-      <img 
-        alt="Hi" 
-        className="w-full h-full object-cover rounded-lg" 
-        src="/lovable-uploads/4234e734-6ccc-48b7-8f35-d14a78ef4afc.png" 
-      />
-    </div>;
+  return (
+    <img 
+      alt="Hi" 
+      className={cn(sizeClasses[size], className)}
+      src="/lovable-uploads/4234e734-6ccc-48b7-8f35-d14a78ef4afc.png" 
+    />
+  );
 };
