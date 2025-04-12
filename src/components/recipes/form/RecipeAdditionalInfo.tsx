@@ -73,12 +73,12 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
   return (
     <div className="space-y-4">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">{labels.title}</h2>
-        <p className="text-muted-foreground">{labels.description}</p>
+        <h2 className="text-xl font-semibold mb-2 text-gray-900">{labels.title}</h2>
+        <p className="text-gray-700">{labels.description}</p>
       </div>
 
       <div>
-        <Label htmlFor="recommendedUpsell">{labels.upsellLabel}</Label>
+        <Label htmlFor="recommendedUpsell" className="text-gray-900">{labels.upsellLabel}</Label>
         <Input
           id="recommendedUpsell"
           value={recommendedUpsell}
@@ -89,7 +89,7 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="timeToTable">{labels.timeLabel}</Label>
+        <Label htmlFor="timeToTable" className="text-gray-900">{labels.timeLabel}</Label>
         <Input
           id="timeToTable"
           type="number"
@@ -101,7 +101,7 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="miseEnPlace">{labels.miseLabel}</Label>
+        <Label htmlFor="miseEnPlace" className="text-gray-900">{labels.miseLabel}</Label>
         <Textarea
           id="miseEnPlace"
           value={miseEnPlace}
@@ -113,7 +113,7 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="method">{labels.methodLabel}</Label>
+        <Label htmlFor="method" className="text-gray-900">{labels.methodLabel}</Label>
         <Textarea
           id="method"
           value={method}
@@ -128,3 +128,4 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
 };
 
 export default RecipeAdditionalInfo;
+
