@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -175,7 +176,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                         type="number"
                         value={ingredient.amount || ''}
                         onChange={(e) => updateIngredient(index, 'amount', parseFloat(e.target.value) || 0)}
-                        className="border border-gray-300 bg-white text-gray-900"
+                        className="border border-gray-300 bg-white text-gray-900 w-full"
                         step="any"
                         min="0"
                       />
@@ -224,7 +225,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                             type="number"
                             value={ingredient.totalCost?.toFixed(2) || 0}
                             readOnly
-                            className="bg-gray-50 border border-gray-300 text-gray-900"
+                            className="bg-gray-50 border border-gray-300 text-gray-900 w-full"
                           />
                         </TableCell>
                       </>
