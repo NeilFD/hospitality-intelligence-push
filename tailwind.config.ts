@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -54,8 +55,10 @@ export default {
         },
         pastel: {
           green: "#F2FCE2",
+          "green-dark": "#5B9B58",
           yellow: "#FFF9C2",
           blue: "#E6F2FF",
+          "blue-dark": "#4A6FA5",
           purple: "#F3E5F5",
         },
         tavern: {
