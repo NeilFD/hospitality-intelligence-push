@@ -32,13 +32,13 @@ export default function LoginForm() {
     }
   };
   return <div className="backdrop-blur-xl bg-white/25 border border-white/30 rounded-2xl p-8 shadow-xl">
-      <motion.h1 className="text-3xl font-bold text-gray-800 text-center mb-6" initial={{
+      <motion.h1 initial={{
       opacity: 0
     }} animate={{
       opacity: 1
     }} transition={{
       delay: 0.3
-    }}>
+    }} className="text-3xl text-center mb-6 text-hi-purple font-extrabold">
         Hi
       </motion.h1>
       
