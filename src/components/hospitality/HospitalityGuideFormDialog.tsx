@@ -205,19 +205,21 @@ const HospitalityGuideFormDialog: React.FC<HospitalityGuideFormDialogProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="timeToCompleteMinutes">Time Required (minutes)</Label>
-              <Input 
-                id="timeToCompleteMinutes"
-                name="timeToCompleteMinutes"
-                type="number"
-                value={formData.timeToCompleteMinutes} 
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  timeToCompleteMinutes: parseInt(e.target.value) || 0 
-                }))}
-                placeholder="0"
-                className="mt-1"
-              />
+              <Label htmlFor="department">Department</Label>
+              <Select 
+                value={formData.department || ''} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
+              >
+                <SelectTrigger id="department" className="mt-1">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Management">Management</SelectItem>
+                  <SelectItem value="FOH">FOH</SelectItem>
+                  <SelectItem value="Bar">Bar</SelectItem>
+                  <SelectItem value="Kitchen">Kitchen</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
