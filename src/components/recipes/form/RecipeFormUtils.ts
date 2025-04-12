@@ -1,6 +1,6 @@
 
 import { Recipe, Ingredient } from "@/types/recipe-types";
-import { HospitalityGuide, HospitalityStep } from "@/types/hospitality-types";
+import { HospitalityGuide, HospitalityGuideStep } from "@/types/hospitality-types";
 import { v4 as uuidv4 } from 'uuid';
 
 export const emptyIngredient = (): Ingredient => ({
@@ -12,7 +12,7 @@ export const emptyIngredient = (): Ingredient => ({
   totalCost: 0
 });
 
-export const emptyHospitalityStep = (): HospitalityStep => ({
+export const emptyHospitalityStep = (): HospitalityGuideStep => ({
   id: uuidv4(),
   name: ''
 });
