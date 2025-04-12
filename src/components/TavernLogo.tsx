@@ -25,7 +25,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
     <div 
       className={cn(
         sizeClasses[size], 
-        'bg-hi-purple flex items-center justify-center rounded-lg', 
+        'flex items-center justify-center', 
         className
       )}
     >

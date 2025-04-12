@@ -23,7 +23,7 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
     <div 
       className={cn(
         sizeClasses[size], 
-        'bg-hi-purple flex items-center justify-center rounded-lg relative animate-float', 
+        'flex items-center justify-center relative animate-float', 
         className
       )}
     >

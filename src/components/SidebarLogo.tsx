@@ -23,7 +23,7 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
     <div 
       className={cn(
         sizeClasses[size], 
-        'bg-hi-purple flex flex-col items-center justify-center rounded-lg relative', 
+        'flex flex-col items-center justify-center relative', 
         className
       )}
     >
