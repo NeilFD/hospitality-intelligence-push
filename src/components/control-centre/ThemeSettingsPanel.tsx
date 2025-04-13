@@ -461,7 +461,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'presets' 
-                  ? 'bg-purple-700 text-white' 
+                  ? 'bg-purple-700 text-purple-900 shadow-md' 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
@@ -487,7 +487,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'custom' 
-                  ? 'bg-purple-700 text-white' 
+                  ? 'bg-purple-700 text-purple-900 shadow-md' 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
