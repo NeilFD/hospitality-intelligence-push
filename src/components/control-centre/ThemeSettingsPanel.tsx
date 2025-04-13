@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -368,6 +367,14 @@ export function ThemeSettingsPanel({
         toast.error('Failed to save theme settings');
         return;
       }
+      
+      // Apply theme immediately after saving
+      // Dispatch a custom event to notify other components about the theme change
+      const themeEvent = new CustomEvent('app-theme-updated', {
+        detail: { theme: activeTheme }
+      });
+      window.dispatchEvent(themeEvent);
+      
       toast.success('Theme settings saved successfully');
     } catch (error) {
       console.error('Error saving theme settings:', error);
@@ -385,7 +392,7 @@ export function ThemeSettingsPanel({
     }, 3000);
   };
   const applyPresetTheme = (preset: PresetTheme) => {
-    // Update hex values
+    // Update hex values in UI state only, without applying the theme
     setActiveTheme(prev => ({
       ...prev,
       name: preset.name,
@@ -404,7 +411,9 @@ export function ThemeSettingsPanel({
     setSidebarRgb(hexToRgb(preset.colors.sidebar));
     setButtonRgb(hexToRgb(preset.colors.button));
     setTextRgb(hexToRgb(preset.colors.text));
-    toast.success(`${preset.name} theme applied! Remember to save your changes.`);
+    
+    // Notify user that they need to save to apply the theme
+    toast.info(`${preset.name} theme selected. Click 'Save Theme' to apply.`);
   };
 
   // RGB Slider Component for reusability

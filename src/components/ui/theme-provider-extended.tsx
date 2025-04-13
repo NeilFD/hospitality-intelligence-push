@@ -62,6 +62,19 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     };
 
     loadActiveTheme();
+
+    // Set up listener for theme updates
+    const handleThemeUpdate = () => {
+      loadActiveTheme();
+    };
+    
+    // Listen for custom theme update event
+    window.addEventListener('app-theme-updated', handleThemeUpdate);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('app-theme-updated', handleThemeUpdate);
+    };
   }, []);
 
   // Make sure the Layout component has access to the router context
