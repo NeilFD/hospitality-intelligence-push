@@ -14,7 +14,7 @@ const Index = () => {
   // Special case handling for direct routes
   // We check if we're trying to go to Control Centre
   const path = window.location.pathname;
-  if (path === '/control-centre') {
+  if (path === '/control-centre' || path.includes('/control-centre/')) {
     return null; // Let the App router handle this directly
   }
   
