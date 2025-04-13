@@ -46,6 +46,9 @@ interface AuthState {
   disableDevMode: () => void;
 }
 
+// Default Developer GOD ID - must be a valid UUID format
+const DEV_GOD_ID = '00000000-0000-0000-0000-000000000000';
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   // Initialize with null values instead of GOD profile
   user: null,
@@ -57,28 +60,75 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => set({ error: null }),
   
-  enableDevMode: () => {
-    set({
-      user: { id: '00000000-0000-0000-0000-000000000000', email: 'dev@example.com' },
-      profile: null,
-      isAuthenticated: true,
-      isLoading: false,
-      developerMode: true
-    });
-    localStorage.setItem('tavern-dev-mode', 'enabled');
+  enableDevMode: async () => {
+    set({ isLoading: true });
     
-    supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', '00000000-0000-0000-0000-000000000000')
-      .single()
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Error loading Developer GOD profile:', error);
-        } else if (data) {
-          set({ profile: data });
+    try {
+      // First, check if the Developer GOD profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', DEV_GOD_ID)
+        .single();
+      
+      // If profile doesn't exist, create it
+      if (checkError || !existingProfile) {
+        console.log('Developer GOD profile not found, creating it...');
+        
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: DEV_GOD_ID,
+            first_name: 'Developer',
+            last_name: 'GOD',
+            role: 'GOD',
+            job_title: 'System Administrator',
+            about_me: 'I am the Developer GOD account, used for system administration and testing.'
+          })
+          .select();
+          
+        if (insertError) {
+          console.error('Error creating Developer GOD profile:', insertError);
+          set({ 
+            error: 'Failed to create Developer GOD profile',
+            isLoading: false 
+          });
+          return;
         }
+      }
+      
+      // Now fetch the profile (either existing or newly created)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', DEV_GOD_ID)
+        .single();
+      
+      if (profileError) {
+        console.error('Error loading Developer GOD profile:', profileError);
+        set({ 
+          error: 'Error loading developer profile', 
+          isLoading: false 
+        });
+        return;
+      }
+      
+      // Set the developer mode
+      set({
+        user: { id: DEV_GOD_ID, email: 'dev@example.com' },
+        profile: profileData,
+        isAuthenticated: true,
+        isLoading: false,
+        developerMode: true
       });
+      localStorage.setItem('tavern-dev-mode', 'enabled');
+    } catch (error) {
+      console.error('Error enabling developer mode:', error);
+      set({ 
+        isLoading: false,
+        error: 'Failed to enable developer mode'
+      });
+    }
   },
   
   disableDevMode: () => {
@@ -257,7 +307,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', '00000000-0000-0000-0000-000000000000')
+          .eq('id', DEV_GOD_ID)
           .single();
           
         if (profileError) {
@@ -270,7 +320,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
         
         set({
-          user: { id: '00000000-0000-0000-0000-000000000000', email: 'dev@example.com' },
+          user: { id: DEV_GOD_ID, email: 'dev@example.com' },
           profile: profileData,
           isAuthenticated: true,
           isLoading: false,
