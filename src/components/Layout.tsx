@@ -21,23 +21,6 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-// Define ControlCentreLink BEFORE it's used
-const ControlCentreLink = () => (
-  <Link 
-    to="/control-centre" 
-    className={cn(
-      "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-      location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
-    )}
-    title={sidebarCollapsed ? "Control Centre" : undefined}
-  >
-    <div className={sidebarCollapsed ? "mx-auto" : ""}>
-      <Sliders className="h-4 w-4 mr-2" />
-    </div>
-    {!sidebarCollapsed && <span>Control Centre</span>}
-  </Link>
-);
-
 const Layout = ({
   children
 }: LayoutProps) => {
