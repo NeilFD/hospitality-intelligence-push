@@ -668,7 +668,7 @@ export function ThemeSettingsPanel({
                     px-4 
                     rounded-lg 
                     text-lg 
-                    font-semibold 
+                    font-normal 
                     shadow-sm 
                     transition-all 
                     duration-300 
@@ -770,7 +770,7 @@ export function ThemeSettingsPanel({
                       px-4 
                       rounded-lg 
                       text-lg 
-                      font-semibold 
+                      font-normal 
                       shadow-sm 
                       transition-all 
                       duration-300 
