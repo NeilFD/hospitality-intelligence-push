@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,13 +22,11 @@ export default function ProfilePage() {
   const [role, setRole] = useState<AuthServiceRole>(profile?.role as AuthServiceRole || 'Team Member');
   const [isSaving, setIsSaving] = useState(false);
   
-  // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   
-  // Update state when profile data changes
   useEffect(() => {
     if (profile) {
       setFirstName(profile.first_name || '');
@@ -73,7 +70,6 @@ export default function ProfilePage() {
   };
 
   const handleChangePassword = async () => {
-    // Validation checks
     if (!currentPassword) {
       toast.error('Current password is required');
       return;
@@ -97,9 +93,7 @@ export default function ProfilePage() {
     setIsChangingPassword(true);
     
     try {
-      // For development mode with the GOD user, simulate password change
       if (user?.id === 'dev-god-user') {
-        // Verify the current password (for development, use a simple check)
         const devGodPassword = localStorage.getItem('dev-god-password') || 'password123';
         
         if (currentPassword !== devGodPassword) {
@@ -108,14 +102,23 @@ export default function ProfilePage() {
           return;
         }
         
-        // Store the new password in localStorage for the development GOD user
-        localStorage.setItem('dev-god-password', newPassword);
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            password_hash: await supabase.rpc('crypt', [newPassword, supabase.rpc('gen_salt', ['bf'])])
+          })
+          .eq('id', user.id);
         
-        // Simulate a delay
+        if (updateError) {
+          console.error('Error updating password hash:', updateError);
+          toast.error('Failed to update password');
+          setIsChangingPassword(false);
+          return;
+        }
+        
         await new Promise(resolve => setTimeout(resolve, 800));
         toast.success('Password updated successfully (Development mode)');
         
-        // Clear password fields
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
@@ -124,8 +127,7 @@ export default function ProfilePage() {
         return;
       }
       
-      // For real users, use Supabase to update the password
-      const { error } = await supabase.auth.updateUser({
+      const { data, error } = await supabase.auth.updateUser({
         password: newPassword
       });
       
@@ -133,9 +135,20 @@ export default function ProfilePage() {
         throw error;
       }
       
+      const { error: hashUpdateError } = await supabase
+        .from('profiles')
+        .update({ 
+          password_hash: await supabase.rpc('crypt', [newPassword, supabase.rpc('gen_salt', ['bf'])])
+        })
+        .eq('id', user?.id);
+      
+      if (hashUpdateError) {
+        console.error('Error storing password hash:', hashUpdateError);
+        toast.error('Error storing password details');
+      }
+      
       toast.success('Password updated successfully');
       
-      // Clear password fields
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -147,7 +160,6 @@ export default function ProfilePage() {
     }
   };
   
-  // Check if the current user has GOD role to show role selector
   const isGodUser = profile?.role === 'GOD';
   
   return (
@@ -306,7 +318,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
           
-          {/* New Password Change Card */}
           <Card>
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
