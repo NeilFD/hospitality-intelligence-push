@@ -42,6 +42,44 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Get the HTML element to detect current theme
+  const htmlElement = document.documentElement;
+  const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
+  const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
+  const hasSunsetOrangeTheme = htmlElement.classList.contains('theme-sunset-orange');
+  const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
+  const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
+  
+  // Determine button background color based on theme
+  const getButtonBgColor = () => {
+    if (hasForestGreenTheme) return "bg-[#1b5e20] hover:bg-[#2e7d32]";
+    if (hasOceanBlueTheme) return "bg-[#1565c0] hover:bg-[#1976d2]";
+    if (hasSunsetOrangeTheme) return "bg-[#e65100] hover:bg-[#ef6c00]";
+    if (hasBerryPurpleTheme) return "bg-[#6a1b9a] hover:bg-[#8e24aa]";
+    if (hasDarkModeTheme) return "bg-[#333333] hover:bg-[#444444]";
+    return "bg-[#8e44ad] hover:bg-[#7d3c98]"; // Default purple
+  };
+
+  // Determine active tab highlight color based on theme
+  const getActiveTabColor = () => {
+    if (hasForestGreenTheme) return "data-[state=active]:bg-[#2e7d32]";
+    if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1976d2]";
+    if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#ef6c00]";
+    if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#8e24aa]";
+    if (hasDarkModeTheme) return "data-[state=active]:bg-[#444444]";
+    return "data-[state=active]:bg-[#8e44ad]"; // Default purple
+  };
+
+  // Determine text color based on theme
+  const getTextColor = () => {
+    if (hasForestGreenTheme) return "text-[#1b5e20]";
+    if (hasOceanBlueTheme) return "text-[#1565c0]";
+    if (hasSunsetOrangeTheme) return "text-[#e65100]";
+    if (hasBerryPurpleTheme) return "text-[#6a1b9a]";
+    if (hasDarkModeTheme) return "text-white";
+    return "text-[#8e44ad]"; // Default purple
+  };
+
   useEffect(() => {
     const fetchThemes = async () => {
       try {
@@ -234,13 +272,13 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
             <TabsList className="mb-6 w-full grid grid-cols-2">
               <TabsTrigger 
                 value="presets" 
-                className="bg-[#f0f2f5] text-[#4a5568] hover:bg-[#e2e8f0] transition-colors duration-200 font-medium data-[state=active]:bg-[#8e44ad] data-[state=active]:text-white data-[state=active]:shadow-sm"
+                className={`${getButtonBgColor()} text-white transition-colors duration-200 font-medium ${getActiveTabColor()} data-[state=active]:shadow-sm`}
               >
                 Theme Presets
               </TabsTrigger>
               <TabsTrigger 
                 value="custom" 
-                className="bg-[#f0f2f5] text-[#4a5568] hover:bg-[#e2e8f0] transition-colors duration-200 font-medium data-[state=active]:bg-[#8e44ad] data-[state=active]:text-white data-[state=active]:shadow-sm"
+                className={`${getButtonBgColor()} text-white transition-colors duration-200 font-medium ${getActiveTabColor()} data-[state=active]:shadow-sm`}
               >
                 Custom Theme
               </TabsTrigger>
@@ -253,7 +291,11 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
                     key={theme.id}
                     className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
                       selectedThemeId === theme.id 
-                        ? 'ring-2 ring-offset-2 ring-[#8e44ad] bg-purple-50' 
+                        ? `ring-2 ring-offset-2 ring-[${hasForestGreenTheme ? '#1b5e20' : 
+                                                        hasOceanBlueTheme ? '#1565c0' : 
+                                                        hasSunsetOrangeTheme ? '#e65100' : 
+                                                        hasBerryPurpleTheme ? '#6a1b9a' : 
+                                                        hasDarkModeTheme ? '#333333' : '#8e44ad'}] bg-purple-50` 
                         : 'hover:border-[#8e44ad]/50 hover:bg-purple-50/30'
                     }`}
                     onClick={() => handleThemeSelection(theme.id)}
@@ -261,7 +303,7 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="font-medium">{theme.name}</h3>
                       {selectedThemeId === theme.id && (
-                        <Check className="h-4 w-4 text-[#8e44ad]" />
+                        <Check className={`h-4 w-4 ${getTextColor()}`} />
                       )}
                     </div>
                     <div className="flex gap-2 mb-3">
@@ -459,7 +501,7 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         <Button 
           onClick={applyTheme} 
           disabled={saving || !selectedThemeId}
-          className="bg-[#8e44ad] hover:bg-[#7d3c98] text-white"
+          className={`${getButtonBgColor()} text-white`}
         >
           {saving ? 'Applying...' : 'Apply Theme Changes'}
         </Button>
