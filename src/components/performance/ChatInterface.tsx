@@ -568,21 +568,20 @@ export default function ChatInterface({
 
     let totalRevenue = 0;
     let totalStaffAllowance = 0;
-    let trackerData = [];
-
-    for (const day of trackerData || []) {
+    let localTrackerData = foodTrackerData || [];
+    for (const day of localTrackerData) {
       if (day.date) {
         totalRevenue += Number(day.revenue || 0);
         totalStaffAllowance += Number(day.staff_food_allowance || 0);
       }
     }
 
-    let monthData = {
+    let localMonthData = {
       revenue: 0,
       cost: 0,
       gpPercentage: 0
     };
-    let annualData = {
+    let localAnnualData = {
       revenue: 0,
       cost: 0,
       gpPercentage: 0
@@ -609,10 +608,10 @@ export default function ChatInterface({
       }
       console.log("Food tracker month total revenue:", trackerRevenue);
       console.log("Food cost (from store):", totalCost);
-      monthData.revenue = trackerRevenue;
-      monthData.cost = totalCost;
-      monthData.gpPercentage = calculateGP(trackerRevenue, totalCost);
-      return monthData;
+      localMonthData.revenue = trackerRevenue;
+      localMonthData.cost = totalCost;
+      localMonthData.gpPercentage = calculateGP(trackerRevenue, totalCost);
+      return localMonthData;
     }
 
     if (window.bevStore) {
@@ -625,34 +624,34 @@ export default function ChatInterface({
                 if (week.days) {
                   week.days.forEach(day => {
                     if (day.revenue !== undefined) {
-                      annualData.revenue += Number(day.revenue);
+                      localAnnualData.revenue += Number(day.revenue);
                     }
                     if (day.purchases) {
                       const dayPurchases = Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0);
-                      annualData.cost += dayPurchases;
+                      localAnnualData.cost += dayPurchases;
                     }
                   });
                 }
               });
             }
           });
-          annualData.gpPercentage = calculateGP(annualData.revenue, annualData.cost);
+          localAnnualData.gpPercentage = calculateGP(localAnnualData.revenue, localAnnualData.cost);
           const bevMonth = bevData.months.find(m => m.year === currentYear && m.month === currentMonth);
           if (bevMonth && bevMonth.weeks) {
             bevMonth.weeks.forEach(week => {
               if (week.days) {
                 week.days.forEach(day => {
                   if (day.revenue !== undefined) {
-                    monthData.revenue += Number(day.revenue);
+                    localMonthData.revenue += Number(day.revenue);
                   }
                   const dayPurchases = day.purchases ? Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
                   const creditNotes = day.creditNotes ? day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
                   const staffFoodAmount = day.staffFoodAllowance || 0;
-                  monthData.cost += dayPurchases - creditNotes + staffFoodAmount;
+                  localMonthData.cost += dayPurchases - creditNotes + staffFoodAmount;
                 });
               }
             });
-            monthData.gpPercentage = calculateGP(monthData.revenue, monthData.cost);
+            localMonthData.gpPercentage = calculateGP(localMonthData.revenue, localMonthData.cost);
           }
         }
       } catch (error) {
@@ -792,7 +791,79 @@ export default function ChatInterface({
       
       <ScrollArea ref={scrollAreaRef} className="flex-1 h-64 p-4 overflow-y-auto chat-container">
         <div className="space-y-5">
-          {messages.map((message, index) => <div key={index} className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'} animate-scale-in`} style={{
-          animationDelay: `${index * 0.05}s`
-        }}>
-              {!message.isUser && <div className="
+          {messages.map((message, index) => (
+            <div 
+              key={index} 
+              className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'} animate-scale-in`} 
+              style={{
+                animationDelay: `${index * 0.05}s`
+              }}
+            >
+              {!message.isUser && (
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue-light/20 flex items-center justify-center">
+                  <BotIcon className="w-4 h-4 text-tavern-blue-dark" />
+                </div>
+              )}
+              
+              <div className={`relative max-w-[85%] p-3 rounded-xl ${message.isUser 
+                ? 'bg-tavern-blue/90 text-white' 
+                : 'bg-white/90 text-gray-800 shadow-sm'
+              }`}>
+                <div className="whitespace-pre-wrap break-words text-sm">{message.text}</div>
+                
+                {!message.isUser && (
+                  <div className="flex justify-end mt-2 pt-2 border-t border-gray-200/30 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => shareViaEmail(message.text)}
+                    >
+                      <Share2 className="mr-1 h-3 w-3" />
+                      Share
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {message.isUser && (
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue/20 flex items-center justify-center">
+                  <UserRound className="w-4 h-4 text-tavern-blue" />
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex items-center gap-2 justify-start">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue-light/20 flex items-center justify-center">
+                <BotIcon className="w-4 h-4 text-tavern-blue-dark" />
+              </div>
+              <div className="bg-white/90 p-3 rounded-xl max-w-[85%] shadow-sm">
+                <div className="flex gap-1 items-center text-tavern-blue-dark">
+                  <div className="h-2 w-2 rounded-full bg-current animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                  <div className="h-2 w-2 rounded-full bg-current animate-bounce" style={{ animationDelay: "100ms" }}></div>
+                  <div className="h-2 w-2 rounded-full bg-current animate-bounce" style={{ animationDelay: "200ms" }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+      
+      <div className="p-4 border-t border-white/20 bg-white/40 backdrop-blur-md">
+        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+          <Input
+            placeholder="Ask Hi about your business performance..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="flex-1 bg-white/80 border-white/60 focus:border-tavern-blue-light"
+          />
+          <Button type="submit" className="glass-button" disabled={isLoading} size="icon">
+            <SendHorizonal className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
