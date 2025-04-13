@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -85,8 +86,19 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     if (controlCentreData && !isLoadingTargets) {
       console.log("Control Centre Data:", controlCentreData.targetSettings);
       setBusinessTargets(controlCentreData.targetSettings);
+      
+      // When Control Centre data is loaded, directly update target values
+      if (moduleType === 'food' && controlCentreData.targetSettings?.foodGpTarget) {
+        const foodGpTarget = Math.round(controlCentreData.targetSettings.foodGpTarget);
+        setGpTarget(foodGpTarget);
+        setCostTarget(100 - foodGpTarget);
+      } else if (moduleType === 'beverage' && controlCentreData.targetSettings?.beverageGpTarget) {
+        const bevGpTarget = Math.round(controlCentreData.targetSettings.beverageGpTarget);
+        setGpTarget(bevGpTarget);
+        setCostTarget(100 - bevGpTarget);
+      }
     }
-  }, [controlCentreData, isLoadingTargets]);
+  }, [controlCentreData, isLoadingTargets, moduleType]);
 
   // Mutations for suppliers
   const createSupplierMutation = useMutation({
@@ -161,7 +173,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   }, [supabaseSuppliers, isFetchingSuppliers]);
 
-  // Set GP and Cost targets based on monthly settings or business targets
+  // Set data based on monthly settings or business targets
   useEffect(() => {
     // First priority: Use monthly_settings if available
     if (monthlySettings && !isFetchingSettings) {
@@ -173,16 +185,17 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       setCostTarget(Math.round(monthlySettings.cost_target * 100));
       setStaffAllowance(monthlySettings.staff_food_allowance);
     } 
-    // Second priority: Use business targets from Control Centre
+    // If no monthly settings, use the most recent business targets
     else if (businessTargets) {
       console.log("Using business targets:", businessTargets);
-      if (moduleType === 'food') {
-        // Ensure we're using the current business target value
-        setGpTarget(Math.round(businessTargets.foodGpTarget));
-        setCostTarget(100 - Math.round(businessTargets.foodGpTarget));
-      } else if (moduleType === 'beverage') {
-        setGpTarget(Math.round(businessTargets.beverageGpTarget));
-        setCostTarget(100 - Math.round(businessTargets.beverageGpTarget));
+      if (moduleType === 'food' && businessTargets.foodGpTarget) {
+        const foodGpTarget = Math.round(businessTargets.foodGpTarget);
+        setGpTarget(foodGpTarget);
+        setCostTarget(100 - foodGpTarget);
+      } else if (moduleType === 'beverage' && businessTargets.beverageGpTarget) {
+        const bevGpTarget = Math.round(businessTargets.beverageGpTarget);
+        setGpTarget(bevGpTarget);
+        setCostTarget(100 - bevGpTarget);
       }
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
@@ -196,9 +209,10 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   }, [monthlySettings, isFetchingSettings, businessTargets, moduleType, monthRecord]);
 
   const handleMonthChange = (year: number, month: number) => {
-    // Invalidate the queries when month changes
+    // Force refetch of all data when month changes
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', year, month, moduleType] });
     queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
+    queryClient.removeQueries({ queryKey: ['control-centre-data'] });
     setCurrentYear(year);
     setCurrentMonth(month);
   };
@@ -336,9 +350,10 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     
     toast.success("Settings saved successfully");
     
-    // Immediately refresh data to ensure UI is up to date
+    // Force full refresh of all relevant data
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', currentYear, currentMonth, moduleType] });
     queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
+    queryClient.removeQueries({ queryKey: ['control-centre-data'] });
   };
 
   const pageTitle = modulePrefix ? `${modulePrefix} Input Settings` : "Input Settings";
