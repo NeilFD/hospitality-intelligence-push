@@ -308,30 +308,13 @@ export function ThemeSettingsPanel({
       const filePath = `${fileName}`;
 
       const {
-        data: bucketsList
-      } = await supabase.storage.listBuckets();
-      const logosBucketExists = bucketsList?.some(bucket => bucket.name === 'logos');
-      if (!logosBucketExists) {
-        const {
-          error: createBucketError
-        } = await supabase.storage.createBucket('logos', {
-          public: true
-        });
-        if (createBucketError) {
-          console.error('Error creating logos bucket:', createBucketError);
-          toast.error('Error creating logos storage');
-          setUploading(false);
-          return;
-        }
-      }
-
-      const {
         error: uploadError,
         data
       } = await supabase.storage.from('logos').upload(filePath, file, {
         cacheControl: '3600',
         upsert: true
       });
+      
       if (uploadError) {
         console.error('Error uploading logo:', uploadError);
         toast.error('Error uploading logo');
@@ -342,11 +325,13 @@ export function ThemeSettingsPanel({
       const {
         data: publicUrlData
       } = supabase.storage.from('logos').getPublicUrl(filePath);
+      
       if (!publicUrlData || !publicUrlData.publicUrl) {
         toast.error('Error getting logo URL');
         setUploading(false);
         return;
       }
+      
       const logoUrl = publicUrlData.publicUrl;
 
       setActiveTheme(prev => ({
