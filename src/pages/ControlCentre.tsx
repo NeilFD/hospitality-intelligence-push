@@ -26,22 +26,35 @@ export default function ControlCentre() {
   const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
   const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
   
-  const getButtonColor = () => {
-    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20]";
-    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0]";
-    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100]";
-    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a]";
-    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333]";
-    return "bg-[#6c3483] text-white hover:bg-[#5b2c70]";
+  const getPermissionsTabStyle = () => {
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
+    return "bg-[#6c3483] text-white hover:bg-[#5b2c70] data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white data-[state=active]:shadow-md";
   };
 
-  const getActiveTabColor = () => {
-    if (hasForestGreenTheme) return "data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white";
-    if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1565c0] data-[state=active]:text-white";
-    if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#e65100] data-[state=active]:text-white";
-    if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white";
-    if (hasDarkModeTheme) return "data-[state=active]:bg-[#333333] data-[state=active]:text-white";
-    return "data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white";
+  const getThemeTabStyle = () => {
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
+    return "bg-[#6c3483] text-white hover:bg-[#5b2c70] data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white data-[state=active]:shadow-md";
+  };
+  
+  const getTargetsTabStyle = () => {
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
+    return "bg-[#6c3483] text-white hover:bg-[#5b2c70] data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white data-[state=active]:shadow-md";
+  };
+  
+  const getDatabaseTabStyle = () => {
+    return "bg-[#d63384] text-white hover:bg-[#c2185b] font-medium transition-colors duration-200 data-[state=active]:bg-[#a61d6c] data-[state=active]:text-white data-[state=active]:shadow-md";
   };
 
   useEffect(() => {
@@ -79,25 +92,25 @@ export default function ControlCentre() {
         <TabsList className="mb-6">
           <TabsTrigger 
             value="permissions" 
-            className={`${getButtonColor()} font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
+            className={`font-medium transition-colors duration-200 ${getPermissionsTabStyle()}`}
           >
             Permissions
           </TabsTrigger>
           <TabsTrigger 
             value="theme" 
-            className={`${getButtonColor()} font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
+            className={`font-medium transition-colors duration-200 ${getThemeTabStyle()}`}
           >
             Brand & Theme
           </TabsTrigger>
           <TabsTrigger 
             value="targets" 
-            className={`${getButtonColor()} font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
+            className={`font-medium transition-colors duration-200 ${getTargetsTabStyle()}`}
           >
             Business Targets
           </TabsTrigger>
           {isGodUser && <TabsTrigger 
             value="database" 
-            className="bg-[#d63384] text-white hover:bg-[#c2185b] font-medium transition-colors duration-200 data-[state=active]:bg-[#a61d6c] data-[state=active]:text-white data-[state=active]:shadow-md"
+            className={getDatabaseTabStyle()}
           >
             Database
           </TabsTrigger>}
