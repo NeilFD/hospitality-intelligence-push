@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -77,13 +76,14 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   // Load business targets from Control Centre
   useEffect(() => {
     if (controlCentreData && !isLoadingTargets) {
+      console.log("Control Centre Data:", controlCentreData.targetSettings);
       setBusinessTargets(controlCentreData.targetSettings);
       
       // Set default values from business targets based on module type
-      if (moduleType === 'food') {
+      if (moduleType === 'food' && controlCentreData.targetSettings) {
         setGpTarget(Math.round(controlCentreData.targetSettings.foodGpTarget));
         setCostTarget(100 - Math.round(controlCentreData.targetSettings.foodGpTarget));
-      } else if (moduleType === 'beverage') {
+      } else if (moduleType === 'beverage' && controlCentreData.targetSettings) {
         setGpTarget(Math.round(controlCentreData.targetSettings.beverageGpTarget));
         setCostTarget(100 - Math.round(controlCentreData.targetSettings.beverageGpTarget));
       }
@@ -168,12 +168,12 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     if (monthlySettings && !isFetchingSettings) {
       setSettingsId(monthlySettings.id);
       
-      // Convert from decimal to percentage for display
+      // If we have monthly settings, use those values
       setGpTarget(Math.round(monthlySettings.gp_target * 100));
       setCostTarget(Math.round(monthlySettings.cost_target * 100));
       setStaffAllowance(monthlySettings.staff_food_allowance);
     } else {
-      // If no settings found in Supabase, use local state or business targets
+      // If no settings found in Supabase, use business targets from Control Centre
       if (businessTargets) {
         if (moduleType === 'food') {
           setGpTarget(Math.round(businessTargets.foodGpTarget));
@@ -183,6 +183,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
           setCostTarget(100 - Math.round(businessTargets.beverageGpTarget));
         }
       } else {
+        // Fallback to local state
         setGpTarget(Math.round(monthRecord.gpTarget * 100));
         setCostTarget(Math.round(monthRecord.costTarget * 100));
       }
@@ -214,6 +215,8 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   }, [monthRecord, isLoading, monthlySettings, businessTargets, moduleType]);
 
   const handleMonthChange = (year: number, month: number) => {
+    // Invalidate the queries when month changes
+    queryClient.invalidateQueries({ queryKey: ['monthly-settings', year, month, moduleType] });
     setCurrentYear(year);
     setCurrentMonth(month);
   };
