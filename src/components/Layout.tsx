@@ -42,7 +42,6 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
-  // Move the ControlCentreLink component definition inside Layout to access the location and sidebarCollapsed
   const ControlCentreLink = () => (
     <Link 
       to="/control-centre" 
