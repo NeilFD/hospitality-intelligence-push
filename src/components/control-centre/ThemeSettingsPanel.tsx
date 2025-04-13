@@ -554,19 +554,19 @@ export function ThemeSettingsPanel({
     const htmlElement = document.documentElement;
     
     if (htmlElement.classList.contains('theme-forest-green')) {
-      return "bg-[#e8f5e9] border-[#2e7d32]/30 focus:ring-[#2e7d32]/50";
+      return "bg-transparent border-[#2e7d32]/30 focus:ring-[#2e7d32]/50";
     } else if (htmlElement.classList.contains('theme-ocean-blue')) {
-      return "bg-[#e3f2fd] border-[#1976d2]/30 focus:ring-[#1976d2]/50";
+      return "bg-transparent border-[#1976d2]/30 focus:ring-[#1976d2]/50";
     } else if (htmlElement.classList.contains('theme-sunset-orange')) {
-      return "bg-[#fff3e0] border-[#ef6c00]/30 focus:ring-[#ef6c00]/50";
+      return "bg-transparent border-[#ef6c00]/30 focus:ring-[#ef6c00]/50";
     } else if (htmlElement.classList.contains('theme-berry-purple')) {
-      return "bg-[#f3e5f5] border-[#8e24aa]/30 focus:ring-[#8e24aa]/50";
+      return "bg-transparent border-[#8e24aa]/30 focus:ring-[#8e24aa]/50";
     } else if (htmlElement.classList.contains('theme-dark-mode')) {
-      return "bg-[#424242]/10 border-[#333333]/30 focus:ring-[#333333]/50";
+      return "bg-transparent border-[#333333]/30 focus:ring-[#333333]/50";
     } else if (htmlElement.classList.contains('theme-hi-purple')) {
-      return "bg-[#e0d9f0] border-[#9d89c9]/30 focus:ring-[#9d89c9]/50";
+      return "bg-transparent border-[#9d89c9]/30 focus:ring-[#9d89c9]/50";
     } else {
-      return "bg-muted/30 border-primary/30 focus:ring-primary/50";
+      return "bg-transparent border-primary/30 focus:ring-primary/50";
     }
   };
 
