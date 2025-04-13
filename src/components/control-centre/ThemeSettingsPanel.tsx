@@ -155,8 +155,6 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         throw updateError;
       }
       
-      toast.success('Theme applied successfully');
-      
       // Apply the theme without a full page reload
       const selectedTheme = themes.find(theme => theme.id === selectedThemeId);
       if (selectedTheme) {
@@ -181,6 +179,8 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
           html.classList.add('theme-dark-mode');
         }
       }
+      
+      toast.success('Theme applied successfully');
     } catch (error) {
       console.error('Error applying theme:', error);
       toast.error('Failed to apply theme');

@@ -44,34 +44,35 @@ function App() {
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <ThemeProviderExtended>
           <Router>
-            <Layout>
-              <Toaster richColors />
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Dashboard />} />
-                
-                {/* Auth Routes */}
-                <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-                <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-                
-                {/* App Routes */}
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/control-centre" element={<ControlCentre />} />
-                
-                {/* Food Module Routes */}
-                <Route path="/food/dashboard" element={<Dashboard />} />
-                <Route path="/food/input-settings" element={<Dashboard />} />
-                <Route path="/food/month/:year/:month" element={<Dashboard />} />
-                <Route path="/food/annual-summary" element={<AnnualSummary />} />
-                <Route path="/food/bible" element={<Dashboard />} />
-                
-                {/* Wages Module Routes */}
-                <Route path="/wages/dashboard" element={<WagesDashboard />} />
-                
-                {/* Not Found Route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Layout><Dashboard /></Layout>} />
+              
+              {/* Auth Routes */}
+              <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+              <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+              
+              {/* App Routes - All wrapped with Layout */}
+              <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
+              
+              {/* Food Module Routes */}
+              <Route path="/food/dashboard" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/food/input-settings" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/food/month/:year/:month" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/food/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
+              <Route path="/food/bible" element={<Layout><Dashboard /></Layout>} />
+              
+              {/* Master Module Routes */}
+              <Route path="/master/dashboard" element={<Layout><Dashboard /></Layout>} />
+              
+              {/* Wages Module Routes */}
+              <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
+              
+              {/* Not Found Route */}
+              <Route path="*" element={<Layout><NotFound /></Layout>} />
+            </Routes>
+            <Toaster richColors />
           </Router>
         </ThemeProviderExtended>
       </ThemeProvider>
