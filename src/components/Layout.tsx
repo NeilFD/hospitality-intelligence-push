@@ -120,20 +120,19 @@ const Layout = ({
   
   const ControlCentreLink = () => {
     return (
-      <a 
-        href="/control-centre" 
+      <Link 
+        to="/control-centre" 
         className={cn(
           "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
           location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
         )}
         title={sidebarCollapsed ? "Control Centre" : undefined}
-        onClick={handleControlCentreClick}
       >
         <div className={sidebarCollapsed ? "mx-auto" : ""}>
           <Sliders className="h-4 w-4 mr-2" />
         </div>
         {!sidebarCollapsed && <span>Control Centre</span>}
-      </a>
+      </Link>
     );
   };
   
