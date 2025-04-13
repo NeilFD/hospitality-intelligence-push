@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -235,11 +234,11 @@
   }
 
   .text-primary-content {
-    @apply text-tavern-blue;
+    @apply text-hi-purple;
   }
 
   .text-secondary-content {
-    @apply text-tavern-blue-light;
+    @apply text-hi-purple-light;
   }
 
   .remove-number-arrows::-webkit-outer-spin-button,

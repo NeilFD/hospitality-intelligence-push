@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -77,7 +76,6 @@ export default {
           "purple-light": "#9d89c9",
           "purple-dark": "#705b9b"
         },
-        // Add Forest Green theme colors
         forest: {
           green: "#1b5e20",
           "green-light": "#4c8c4a",
