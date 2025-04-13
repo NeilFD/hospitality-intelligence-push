@@ -49,10 +49,11 @@ export const getControlCentreData = async () => {
   
   const currentTheme = themes.find(theme => theme.isActive) || null;
   
-  // Fetch target settings
+  // Fetch target settings from business_targets table
   const { data: targetData, error: targetError } = await supabase
     .from('business_targets')
     .select('*')
+    .eq('id', 1)
     .single();
     
   let targetSettings: TargetSettings = {
@@ -117,44 +118,21 @@ export const updatePermissionMatrix = async (permissionMatrix: PermissionMatrix[
 // Add a function to update target settings
 export const updateTargetSettings = async (targetSettings: TargetSettings) => {
   try {
-    // First check if business_targets table exists
-    const { count, error: checkError } = await supabase
-      .from('business_targets')
-      .select('*', { count: 'exact', head: true });
-      
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Error checking business_targets table:', checkError);
-      return { error: checkError };
-    }
-    
     const data = {
       food_gp_target: targetSettings.foodGpTarget,
       beverage_gp_target: targetSettings.beverageGpTarget,
       wage_cost_target: targetSettings.wageCostTarget,
-      updated_at: new Date().toISOString()
     };
     
-    let result;
+    // Update the existing record (we only ever have one record with id=1)
+    const { error } = await supabase
+      .from('business_targets')
+      .update(data)
+      .eq('id', 1);
     
-    // If no records exist, insert a new one
-    if (!count || count === 0) {
-      result = await supabase
-        .from('business_targets')
-        .insert({
-          id: 1, // Use a fixed ID for the single record
-          ...data
-        });
-    } else {
-      // Otherwise update the existing record
-      result = await supabase
-        .from('business_targets')
-        .update(data)
-        .eq('id', 1);
-    }
-    
-    if (result.error) {
-      console.error('Error updating target settings:', result.error);
-      return { error: result.error };
+    if (error) {
+      console.error('Error updating target settings:', error);
+      return { error };
     }
     
     return { success: true };

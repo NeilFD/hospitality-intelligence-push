@@ -160,6 +160,33 @@ export type Database = {
         }
         Relationships: []
       }
+      business_targets: {
+        Row: {
+          beverage_gp_target: number
+          created_at: string
+          food_gp_target: number
+          id: number
+          updated_at: string
+          wage_cost_target: number
+        }
+        Insert: {
+          beverage_gp_target?: number
+          created_at?: string
+          food_gp_target?: number
+          id: number
+          updated_at?: string
+          wage_cost_target?: number
+        }
+        Update: {
+          beverage_gp_target?: number
+          created_at?: string
+          food_gp_target?: number
+          id?: number
+          updated_at?: string
+          wage_cost_target?: number
+        }
+        Relationships: []
+      }
       credit_notes: {
         Row: {
           amount: number | null
