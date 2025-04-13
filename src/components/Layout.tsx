@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -43,7 +42,6 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
-  // Get the HTML element with class names to detect current theme
   const htmlElement = document.documentElement;
   const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
   const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
@@ -51,74 +49,67 @@ const Layout = ({
   const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
   const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
   
-  // Determine sidebar background color based on theme
   const getSidebarBgColor = () => {
     if (hasForestGreenTheme) return "bg-[#1b5e20]";
     if (hasOceanBlueTheme) return "bg-[#1565c0]";
     if (hasSunsetOrangeTheme) return "bg-[#e65100]";
     if (hasBerryPurpleTheme) return "bg-[#6a1b9a]";
     if (hasDarkModeTheme) return "bg-[#1a1a1a]";
-    return "bg-[#806cac]"; // Default purple
+    return "bg-[#806cac]";
   };
   
-  // Determine sidebar hover color based on theme
   const getSidebarHoverColor = () => {
     if (hasForestGreenTheme) return "bg-[#2e7d32]/20";
     if (hasOceanBlueTheme) return "bg-[#1976d2]/20";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]/20";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa]/20";
     if (hasDarkModeTheme) return "bg-white/10";
-    return "bg-white/10"; // Default
+    return "bg-white/10";
   };
   
-  // Determine active item background color based on theme
   const getActiveItemBgColor = () => {
     if (hasForestGreenTheme) return "bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa]";
     if (hasDarkModeTheme) return "bg-[#333333]";
-    return "bg-[#705b9b]"; // Default
+    return "bg-[#705b9b]";
   };
   
-  // Determine module active item background color based on theme
   const getModuleActiveBgColor = () => {
     if (hasForestGreenTheme) return "bg-white text-[#1b5e20]";
     if (hasOceanBlueTheme) return "bg-white text-[#1565c0]";
     if (hasSunsetOrangeTheme) return "bg-white text-[#e65100]";
     if (hasBerryPurpleTheme) return "bg-white text-[#6a1b9a]";
     if (hasDarkModeTheme) return "bg-white text-[#1a1a1a]";
-    return "bg-white text-[#806cac]"; // Default
+    return "bg-white text-[#806cac]";
   };
   
-  // Determine control center background color based on theme
   const getControlCenterBgColor = () => {
     if (hasForestGreenTheme) return "bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa]";
     if (hasDarkModeTheme) return "bg-[#333333]";
-    return "bg-[#705b9b]"; // Default
+    return "bg-[#705b9b]";
   };
   
-  // Determine text color based on theme
   const getTextColor = () => {
     if (hasForestGreenTheme) return "text-[#e8f5e9]";
     if (hasOceanBlueTheme) return "text-[#e3f2fd]";
     if (hasSunsetOrangeTheme) return "text-[#fff3e0]";
     if (hasBerryPurpleTheme) return "text-[#f3e5f5]";
     if (hasDarkModeTheme) return "text-[#f5f5f5]";
-    return "text-[#e0d9f0]"; // Default
+    return "text-[#e0d9f0]";
   };
   
-  // Determine separator color based on theme
   const getSeparatorBgColor = () => {
     if (hasForestGreenTheme) return "bg-[#4c8c4a]/20";
     if (hasOceanBlueTheme) return "bg-[#42a5f5]/20";
     if (hasSunsetOrangeTheme) return "bg-[#ff9800]/20";
     if (hasBerryPurpleTheme) return "bg-[#ab47bc]/20";
     if (hasDarkModeTheme) return "bg-white/20";
-    return "bg-[#9d89c9]/20"; // Default
+    return "bg-[#9d89c9]/20";
   };
   
   const handleControlCentreClick = (e: React.MouseEvent) => {
@@ -242,11 +233,6 @@ const Layout = ({
             name: `${prefix} Bible`,
             path: `/${currentModule}/bible`,
             icon: <Book className="mr-2 h-4 w-4" />
-          },
-          {
-            name: `${prefix} Weekly Tracker`,
-            path: `/${currentModule}/weekly-tracker`,
-            icon: <Calendar className="mr-2 h-4 w-4" />
           }
         ];
       case 'pl':
