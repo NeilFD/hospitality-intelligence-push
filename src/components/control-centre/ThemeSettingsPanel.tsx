@@ -196,42 +196,6 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     }
   };
   
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleLogoUpload(files[0]);
-    }
-  };
-
-  const handleLogoUpload = async (file: File) => {
-    try {
-      setUploading(true);
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target && typeof e.target.result === 'string') {
-          setLogoPreview(e.target.result);
-        }
-      };
-      reader.readAsDataURL(file);
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success('Logo uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast.error('Failed to upload logo');
-    } finally {
-      setUploading(false);
-    }
-  };
-  
   const resetLogo = () => {
     setLogoPreview(null);
     toast.success('Logo reset to default');
