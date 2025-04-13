@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
-import { AlertTriangle, Copy, Check } from 'lucide-react';
+import { AlertTriangle, Copy, Check, Clock } from 'lucide-react';
 
 export function DatabasePanel() {
   const [duplicating, setDuplicating] = useState(false);
@@ -16,6 +16,7 @@ export function DatabasePanel() {
   const [success, setSuccess] = useState(false);
   const [connectionString, setConnectionString] = useState('');
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [versionHistory, setVersionHistory] = useState<{date: Date, connectionString: string}[]>([]);
   
   const initiateDbDuplication = () => {
     setAlertDialogOpen(true);
@@ -44,8 +45,16 @@ export function DatabasePanel() {
       // For now, just simulate a delay and show a success message
       await new Promise(resolve => setTimeout(resolve, 3000));
       
+      const newConnectionString = 'postgresql://user:password@host:port/new_database';
+      
+      // Add the new version to the history
+      setVersionHistory(prev => [
+        { date: new Date(), connectionString: newConnectionString },
+        ...prev
+      ]);
+      
       setSuccess(true);
-      setConnectionString('postgresql://user:password@host:port/new_database');
+      setConnectionString(newConnectionString);
       toast.success('Database structure duplicated successfully');
     } catch (error) {
       console.error('Error duplicating database:', error);
@@ -60,6 +69,19 @@ export function DatabasePanel() {
     setSuccess(false);
     setConfirmText('');
     setConnectionString('');
+  };
+
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(date);
   };
 
   return (
@@ -157,6 +179,37 @@ export function DatabasePanel() {
                 <Button variant="outline" onClick={resetForm}>
                   Done
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Version History Section */}
+          {versionHistory.length > 0 && (
+            <div className="mt-8 border-t pt-6">
+              <div className="flex items-center mb-4">
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                <h3 className="text-lg font-medium">Version History</h3>
+              </div>
+              <div className="space-y-3">
+                {versionHistory.map((version, index) => (
+                  <div key={index} className="bg-muted/50 p-3 rounded-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">{formatDate(version.date)}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => navigator.clipboard.writeText(version.connectionString)}
+                        className="h-7 px-2"
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        <span className="text-xs">Copy</span>
+                      </Button>
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {version.connectionString}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
