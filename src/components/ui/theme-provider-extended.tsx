@@ -27,7 +27,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           .from('themes')
           .select('name, primary_color, secondary_color, accent_color, custom_font')
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('Error loading active theme:', error);
