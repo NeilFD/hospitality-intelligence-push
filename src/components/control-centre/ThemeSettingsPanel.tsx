@@ -68,6 +68,17 @@ const presetThemes: PresetTheme[] = [{
     button: '#616161',
     text: '#f5f5f5'
   }
+}, {
+  id: 'hi-purple',
+  name: 'Hi Purple',
+  colors: {
+    primary: '#806cac',
+    secondary: '#e0d9f0',
+    accent: '#9d89c9',
+    sidebar: '#705b9b',
+    button: '#9d89c9',
+    text: '#1A1F2C'
+  }
 }];
 
 const hexToRgb = (hex: string): {
@@ -108,7 +119,7 @@ export function ThemeSettingsPanel({
     accentColor: '#007bff',
     sidebarColor: '#333333',
     buttonColor: '#007bff',
-    textColor: '#000000',
+    textColor: '#212121',
     logoUrl: '',
     customFont: 'Arial, sans-serif',
     isDefault: true,
@@ -377,7 +388,7 @@ export function ThemeSettingsPanel({
   const applyThemeDirectly = (themeName: string) => {
     const html = document.documentElement;
     
-    const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
+    const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode', 'theme-hi-purple'];
     themeClasses.forEach(cls => {
       html.classList.remove(cls);
     });
@@ -392,8 +403,11 @@ export function ThemeSettingsPanel({
       html.classList.add('theme-berry-purple');
     } else if (themeName === 'Dark Mode') {
       html.classList.add('theme-dark-mode');
+    } else if (themeName === 'Hi Purple') {
+      html.classList.add('theme-hi-purple');
     }
     
+    document.dispatchEvent(new Event('themeClassChanged'));
     console.log('Theme applied directly:', themeName);
   };
 

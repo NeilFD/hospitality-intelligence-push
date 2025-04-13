@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -42,73 +43,123 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
-  const htmlElement = document.documentElement;
-  const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
-  const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
-  const hasSunsetOrangeTheme = htmlElement.classList.contains('theme-sunset-orange');
-  const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
-  const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
+  const [themeState, setThemeState] = useState({
+    hasForestGreenTheme: false,
+    hasOceanBlueTheme: false,
+    hasSunsetOrangeTheme: false,
+    hasBerryPurpleTheme: false,
+    hasDarkModeTheme: false,
+    hasHiPurpleTheme: false
+  });
+  
+  useEffect(() => {
+    const checkThemeClasses = () => {
+      const htmlElement = document.documentElement;
+      setThemeState({
+        hasForestGreenTheme: htmlElement.classList.contains('theme-forest-green'),
+        hasOceanBlueTheme: htmlElement.classList.contains('theme-ocean-blue'),
+        hasSunsetOrangeTheme: htmlElement.classList.contains('theme-sunset-orange'),
+        hasBerryPurpleTheme: htmlElement.classList.contains('theme-berry-purple'),
+        hasDarkModeTheme: htmlElement.classList.contains('theme-dark-mode'),
+        hasHiPurpleTheme: htmlElement.classList.contains('theme-hi-purple')
+      });
+    };
+    
+    checkThemeClasses();
+    
+    // Listen for theme changes
+    const handleThemeChange = () => {
+      checkThemeClasses();
+    };
+    
+    document.addEventListener('themeClassChanged', handleThemeChange);
+    
+    return () => {
+      document.removeEventListener('themeClassChanged', handleThemeChange);
+    };
+  }, []);
   
   const getSidebarBgColor = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#1b5e20]";
     if (hasOceanBlueTheme) return "bg-[#1565c0]";
     if (hasSunsetOrangeTheme) return "bg-[#e65100]";
     if (hasBerryPurpleTheme) return "bg-[#6a1b9a]";
     if (hasDarkModeTheme) return "bg-[#1a1a1a]";
+    if (hasHiPurpleTheme) return "bg-[#806cac]";
     return "bg-[#806cac]";
   };
   
   const getSidebarHoverColor = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#2e7d32]/20";
     if (hasOceanBlueTheme) return "bg-[#1976d2]/20";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]/20";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa]/20";
     if (hasDarkModeTheme) return "bg-white/10";
+    if (hasHiPurpleTheme) return "bg-white/10";
     return "bg-white/10";
   };
   
   const getActiveItemBgColor = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa]";
     if (hasDarkModeTheme) return "bg-[#333333]";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9]";
     return "bg-[#705b9b]";
   };
   
   const getModuleActiveBgColor = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-white text-[#1b5e20]";
     if (hasOceanBlueTheme) return "bg-white text-[#1565c0]";
     if (hasSunsetOrangeTheme) return "bg-white text-[#e65100]";
     if (hasBerryPurpleTheme) return "bg-white text-[#6a1b9a]";
     if (hasDarkModeTheme) return "bg-white text-[#1a1a1a]";
+    if (hasHiPurpleTheme) return "bg-white text-[#806cac]";
     return "bg-white text-[#806cac]";
   };
   
   const getControlCenterBgColor = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa]";
     if (hasDarkModeTheme) return "bg-[#333333]";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9]";
     return "bg-[#705b9b]";
   };
   
   const getTextColor = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "text-[#e8f5e9]";
     if (hasOceanBlueTheme) return "text-[#e3f2fd]";
     if (hasSunsetOrangeTheme) return "text-[#fff3e0]";
     if (hasBerryPurpleTheme) return "text-[#f3e5f5]";
     if (hasDarkModeTheme) return "text-[#f5f5f5]";
+    if (hasHiPurpleTheme) return "text-[#e0d9f0]";
     return "text-[#e0d9f0]";
   };
   
   const getSeparatorBgColor = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#4c8c4a]/20";
     if (hasOceanBlueTheme) return "bg-[#42a5f5]/20";
     if (hasSunsetOrangeTheme) return "bg-[#ff9800]/20";
     if (hasBerryPurpleTheme) return "bg-[#ab47bc]/20";
     if (hasDarkModeTheme) return "bg-white/20";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9]/20";
     return "bg-[#9d89c9]/20";
   };
   

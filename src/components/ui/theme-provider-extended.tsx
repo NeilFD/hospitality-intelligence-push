@@ -51,6 +51,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Apply theme class
         applyThemeClass(themeName);
         
+        // Force a rerender of components that depend on theme classes
+        document.dispatchEvent(new Event('themeClassChanged'));
+        
         console.log('Theme applied immediately from event:', themeName);
       } else {
         // Fallback to database call if no theme in event
@@ -63,7 +66,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       const html = document.documentElement;
       
       // Remove any existing theme classes
-      const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
+      const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode', 'theme-hi-purple'];
       themeClasses.forEach(cls => {
         html.classList.remove(cls);
       });
@@ -79,6 +82,8 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.add('theme-berry-purple');
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
+      } else if (themeName === 'Hi Purple') {
+        html.classList.add('theme-hi-purple');
       }
     };
     
