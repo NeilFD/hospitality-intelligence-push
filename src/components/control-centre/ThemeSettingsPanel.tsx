@@ -375,6 +375,9 @@ export function ThemeSettingsPanel({
       });
       window.dispatchEvent(themeEvent);
       
+      // Directly apply the theme without waiting for navigation
+      applyThemeToHTML(activeTheme.name);
+      
       toast.success('Theme settings saved successfully');
     } catch (error) {
       console.error('Error saving theme settings:', error);
@@ -414,6 +417,32 @@ export function ThemeSettingsPanel({
     
     // Notify user that they need to save to apply the theme
     toast.info(`${preset.name} theme selected. Click 'Save Theme' to apply.`);
+  };
+
+  // Function to directly apply theme to HTML
+  const applyThemeToHTML = (themeName: string) => {
+    const html = document.documentElement;
+    
+    // Remove any existing theme classes
+    const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
+    themeClasses.forEach(cls => {
+      html.classList.remove(cls);
+    });
+    
+    // Add the new theme class based on the theme name
+    if (themeName === 'Forest Green') {
+      html.classList.add('theme-forest-green');
+    } else if (themeName === 'Ocean Blue') {
+      html.classList.add('theme-ocean-blue');
+    } else if (themeName === 'Sunset Orange') {
+      html.classList.add('theme-sunset-orange');
+    } else if (themeName === 'Berry Purple') {
+      html.classList.add('theme-berry-purple');
+    } else if (themeName === 'Dark Mode') {
+      html.classList.add('theme-dark-mode');
+    }
+    
+    console.log('Theme applied immediately:', themeName);
   };
 
   // RGB Slider Component for reusability

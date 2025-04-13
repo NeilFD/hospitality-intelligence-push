@@ -65,6 +65,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
 
     // Set up listener for theme updates
     const handleThemeUpdate = () => {
+      console.log("Theme update event received");
       loadActiveTheme();
     };
     
