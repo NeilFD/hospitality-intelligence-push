@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,41 +55,41 @@ export default function ControlCentre() {
   const getPermissionsTabStyle = () => {
     const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
     
-    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
-    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
   };
 
   const getThemeTabStyle = () => {
     const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
     
-    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
-    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
   };
   
   const getTargetsTabStyle = () => {
     const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
     
-    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
-    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
   };
   
   const getDatabaseTabStyle = () => {
-    return "bg-rose-500 text-white hover:bg-rose-600 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md ml-auto mr-0";
+    return "bg-rose-500 text-white hover:bg-rose-600 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md ml-auto mr-0 no-underline";
   };
 
   useEffect(() => {

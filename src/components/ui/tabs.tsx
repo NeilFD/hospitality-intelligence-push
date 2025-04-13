@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 
@@ -13,40 +12,25 @@ const TabsList = React.forwardRef<
   const [themeStyles, setThemeStyles] = React.useState(() => {
     const htmlElement = document.documentElement;
     if (htmlElement.classList.contains('theme-forest-green')) {
-      return "bg-[#e8f5e9]/50";
+      return "bg-transparent";
     } else if (htmlElement.classList.contains('theme-ocean-blue')) {
-      return "bg-[#e3f2fd]/50";
+      return "bg-transparent";
     } else if (htmlElement.classList.contains('theme-sunset-orange')) {
-      return "bg-[#fff3e0]/50";
+      return "bg-transparent";
     } else if (htmlElement.classList.contains('theme-berry-purple')) {
-      return "bg-[#f3e5f5]/50";
+      return "bg-transparent";
     } else if (htmlElement.classList.contains('theme-dark-mode')) {
-      return "bg-[#424242]/50";
+      return "bg-transparent";
     } else if (htmlElement.classList.contains('theme-hi-purple')) {
-      return "bg-[#e0d9f0]/50";
+      return "bg-transparent";
     } else {
-      return "bg-muted";
+      return "bg-transparent";
     }
   });
   
   React.useEffect(() => {
     const handleThemeChange = () => {
-      const htmlElement = document.documentElement;
-      if (htmlElement.classList.contains('theme-forest-green')) {
-        setThemeStyles("bg-[#e8f5e9]/50");
-      } else if (htmlElement.classList.contains('theme-ocean-blue')) {
-        setThemeStyles("bg-[#e3f2fd]/50");
-      } else if (htmlElement.classList.contains('theme-sunset-orange')) {
-        setThemeStyles("bg-[#fff3e0]/50");
-      } else if (htmlElement.classList.contains('theme-berry-purple')) {
-        setThemeStyles("bg-[#f3e5f5]/50");
-      } else if (htmlElement.classList.contains('theme-dark-mode')) {
-        setThemeStyles("bg-[#424242]/50");
-      } else if (htmlElement.classList.contains('theme-hi-purple')) {
-        setThemeStyles("bg-[#e0d9f0]/50");
-      } else {
-        setThemeStyles("bg-muted");
-      }
+      setThemeStyles("bg-transparent");
     };
     
     document.addEventListener('themeClassChanged', handleThemeChange);
