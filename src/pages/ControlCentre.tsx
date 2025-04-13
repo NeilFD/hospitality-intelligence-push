@@ -50,7 +50,7 @@ export default function ControlCentre() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
-          <TabsTrigger value="permissions" className="bg-purple-700 hover:bg-purple-600">Permissions</TabsTrigger>
+          <TabsTrigger value="permissions" className="bg-purple-700 hover:bg-purple-600 text-slate-50">Permissions</TabsTrigger>
           <TabsTrigger value="theme">Brand & Theme</TabsTrigger>
           <TabsTrigger value="targets">Business Targets</TabsTrigger>
           {isGodUser && <TabsTrigger value="database">Database</TabsTrigger>}
