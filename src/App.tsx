@@ -22,6 +22,14 @@ import Index from '@/pages/Index';
 // Import PL dashboard component
 import PLDashboard from '@/pages/pl/Dashboard';
 
+// Import Performance and Team components
+import PerformanceDashboard from '@/pages/performance/Dashboard';
+import TeamDashboard from '@/pages/team/Dashboard';
+import TeamNoticeboard from '@/pages/team/Noticeboard';
+import TeamChat from '@/pages/team/Chat';
+import TeamKnowledge from '@/pages/team/Knowledge';
+import Hospitality from '@/pages/team/Hospitality';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -83,14 +91,15 @@ function App() {
               {/* Wages Module Routes */}
               <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
               
-              {/* Performance Module Routes */}
-              <Route path="/performance/dashboard" element={<Layout><Dashboard /></Layout>} />
+              {/* Performance Module Routes - Fix to use proper component */}
+              <Route path="/performance/dashboard" element={<Layout><PerformanceDashboard /></Layout>} />
               
-              {/* Team Module Routes */}
-              <Route path="/team/dashboard" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/team/noticeboard" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/team/chat" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/team/knowledge" element={<Layout><Dashboard /></Layout>} />
+              {/* Team Module Routes - Fix to use proper components */}
+              <Route path="/team/dashboard" element={<Layout><TeamDashboard /></Layout>} />
+              <Route path="/team/noticeboard" element={<Layout><TeamNoticeboard /></Layout>} />
+              <Route path="/team/chat" element={<Layout><TeamChat /></Layout>} />
+              <Route path="/team/knowledge" element={<Layout><TeamKnowledge /></Layout>} />
+              <Route path="/team/hospitality" element={<Layout><Hospitality /></Layout>} />
               
               {/* Not Found Route - Must be last */}
               <Route path="*" element={<Layout><NotFound /></Layout>} />
