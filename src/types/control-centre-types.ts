@@ -1,3 +1,4 @@
+
 export interface PermissionMatrix {
   roleId: 'GOD' | 'Super User' | 'Manager' | 'Team Member';
   modulePermissions: ModulePermission[];

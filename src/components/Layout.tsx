@@ -10,7 +10,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import SidebarLogo from "./SidebarLogo"; // Change the import to use default import
+import SidebarLogo from "./SidebarLogo"; 
 import { TavernLogo } from "./TavernLogo";
 import { useAuthStore } from "@/services/auth-service";
 import { 
@@ -27,6 +27,7 @@ import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
 import { ModuleIcon } from "./ModuleIcons";
 import NotificationsDropdown from "./notifications/NotificationsDropdown";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
 
 interface LayoutProps {
   children: ReactNode;
@@ -412,6 +413,18 @@ const Layout = ({
     };
 
     fetchCompanyName();
+
+    const handleCompanyNameUpdate = (event: any) => {
+      if (event.detail && event.detail.companyName) {
+        setCompanyName(event.detail.companyName);
+      }
+    };
+
+    window.addEventListener('company-name-updated', handleCompanyNameUpdate);
+    
+    return () => {
+      window.removeEventListener('company-name-updated', handleCompanyNameUpdate);
+    };
   }, []);
 
   const Sidebar = <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
