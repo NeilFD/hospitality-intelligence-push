@@ -31,33 +31,35 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const monthRecord = useMonthRecord(currentYear, currentMonth, moduleType);
   
-  const [gpTarget, setGpTarget] = useState(Math.round(monthRecord.gpTarget * 100));
-  const [costTarget, setCostTarget] = useState(Math.round(monthRecord.costTarget * 100));
+  const [gpTarget, setGpTarget] = useState(0);
+  const [costTarget, setCostTarget] = useState(0);
   const [staffAllowance, setStaffAllowance] = useState(monthRecord.staffFoodAllowance);
   const [suppliers, setSuppliers] = useState(monthRecord.suppliers);
   const [isLoading, setIsLoading] = useState(true);
   const [budgetFile, setBudgetFile] = useState<File | null>(null);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const { processBudget } = useBudgetProcessor();
-  const [businessTargets, setBusinessTargets] = useState<any>(null);
+  
+  const [controlCentreGpTarget, setControlCentreGpTarget] = useState<number | null>(null);
 
-  // Fetch business targets from Control Centre
   const { data: controlCentreData, isLoading: isLoadingTargets } = useQuery({
     queryKey: ['control-centre-data'],
     queryFn: async () => {
       try {
+        console.log("Fetching control centre data...");
         const data = await getControlCentreData();
-        console.log("Fetched Control Centre Data:", data);
+        console.log("Control Centre Data received:", data);
         return data;
       } catch (error) {
         console.error("Error fetching control centre data:", error);
         return null;
       }
     },
-    staleTime: 0 // Force a fresh fetch each time
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
-  // Fetch suppliers from Supabase
   const { data: supabaseSuppliers, isLoading: isFetchingSuppliers } = useQuery({
     queryKey: ['suppliers', moduleType],
     queryFn: async () => {
@@ -66,7 +68,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
-  // Fetch monthly settings from Supabase
   const { data: monthlySettings, isLoading: isFetchingSettings } = useQuery({
     queryKey: ['monthly-settings', currentYear, currentMonth, moduleType],
     queryFn: async () => {
@@ -78,18 +79,26 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
         console.error('Error fetching monthly settings:', error);
         return null;
       }
-    }
+    },
+    staleTime: 0
   });
 
-  // Immediately store business targets when Control Centre data is loaded
   useEffect(() => {
     if (controlCentreData && !isLoadingTargets) {
-      console.log("Control Centre Data:", controlCentreData.targetSettings);
-      setBusinessTargets(controlCentreData.targetSettings);
+      console.log("Processing Control Centre Data:", controlCentreData.targetSettings);
+      
+      if (moduleType === 'food' && controlCentreData.targetSettings?.foodGpTarget) {
+        const targetValue = Math.round(controlCentreData.targetSettings.foodGpTarget);
+        console.log(`Setting control centre food GP target: ${targetValue}%`);
+        setControlCentreGpTarget(targetValue);
+      } else if (moduleType === 'beverage' && controlCentreData.targetSettings?.beverageGpTarget) {
+        const targetValue = Math.round(controlCentreData.targetSettings.beverageGpTarget);
+        console.log(`Setting control centre beverage GP target: ${targetValue}%`);
+        setControlCentreGpTarget(targetValue);
+      }
     }
-  }, [controlCentreData, isLoadingTargets]);
+  }, [controlCentreData, isLoadingTargets, moduleType]);
 
-  // Mutations for suppliers
   const createSupplierMutation = useMutation({
     mutationFn: createSupplier,
     onSuccess: () => {
@@ -123,7 +132,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
-  // Mutations for monthly settings
   const createMonthlySettingsMutation = useMutation({
     mutationFn: createMonthlySettings,
     onSuccess: (data) => {
@@ -147,7 +155,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
-  // Load suppliers from Supabase
   useEffect(() => {
     if (supabaseSuppliers && !isFetchingSuppliers) {
       const mappedSuppliers = supabaseSuppliers.map(s => ({
@@ -162,47 +169,33 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   }, [supabaseSuppliers, isFetchingSuppliers]);
 
-  // Set data based on monthly settings or business targets
   useEffect(() => {
-    // First priority: Use monthly_settings if available
+    console.log("Settings data changed, recalculating targets with priority:");
+    console.log("- Monthly settings:", monthlySettings);
+    console.log("- Control Centre target:", controlCentreGpTarget);
+    
     if (monthlySettings && !isFetchingSettings) {
-      console.log("Using monthly settings:", monthlySettings);
+      console.log("PRIORITY 1: Using monthly settings from database");
       setSettingsId(monthlySettings.id);
-      
-      // If we have monthly settings, use those values
       setGpTarget(Math.round(monthlySettings.gp_target * 100));
       setCostTarget(Math.round(monthlySettings.cost_target * 100));
       setStaffAllowance(monthlySettings.staff_food_allowance);
     } 
-    // If no monthly settings, use the business targets from control center
-    else if (controlCentreData && controlCentreData.targetSettings) {
-      console.log("Using direct control centre data:", controlCentreData.targetSettings);
-      
-      if (moduleType === 'food' && controlCentreData.targetSettings.foodGpTarget) {
-        const foodGpValue = Math.round(controlCentreData.targetSettings.foodGpTarget);
-        console.log(`Setting food GP target to ${foodGpValue}%`);
-        setGpTarget(foodGpValue);
-        setCostTarget(100 - foodGpValue);
-      } else if (moduleType === 'beverage' && controlCentreData.targetSettings.beverageGpTarget) {
-        const bevGpValue = Math.round(controlCentreData.targetSettings.beverageGpTarget);
-        console.log(`Setting beverage GP target to ${bevGpValue}%`);
-        setGpTarget(bevGpValue);
-        setCostTarget(100 - bevGpValue);
-      }
-      
+    else if (controlCentreGpTarget !== null) {
+      console.log(`PRIORITY 2: Using Control Centre GP target: ${controlCentreGpTarget}%`);
+      setGpTarget(controlCentreGpTarget);
+      setCostTarget(100 - controlCentreGpTarget);
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
-    // Fallback to local state
     else {
-      console.log("Using local state (monthRecord)");
+      console.log("PRIORITY 3: Using local state fallback");
       setGpTarget(Math.round(monthRecord.gpTarget * 100));
       setCostTarget(Math.round(monthRecord.costTarget * 100));
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
-  }, [monthlySettings, isFetchingSettings, controlCentreData, moduleType, monthRecord]);
+  }, [monthlySettings, isFetchingSettings, controlCentreGpTarget, monthRecord]);
 
   const handleMonthChange = (year: number, month: number) => {
-    // Force refetch of all data when month changes
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', year, month, moduleType] });
     queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
     queryClient.removeQueries({ queryKey: ['control-centre-data'] });
@@ -262,7 +255,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     const newCostTarget = costTarget / 100;
     const newStaffAllowance = parseFloat(staffAllowance.toString());
     
-    // Update Supabase settings
     const settingsData = {
       year: currentYear,
       month: currentMonth,
@@ -274,14 +266,12 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     
     try {
       if (settingsId) {
-        // Update existing settings
         console.log("Updating existing settings with ID:", settingsId);
         await updateMonthlySettingsMutation.mutateAsync({
           id: settingsId,
           updates: settingsData
         });
       } else {
-        // Create new settings
         console.log("Creating new settings");
         await createMonthlySettingsMutation.mutateAsync(settingsData);
       }
@@ -289,7 +279,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       console.error('Error saving settings to Supabase:', error);
     }
     
-    // Also update local state for immediate UI updates
     useStore.setState(state => {
       const updatedMonths = state.annualRecord.months.map(month => {
         if (month.year === currentYear && month.month === currentMonth) {
@@ -313,7 +302,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       };
     });
     
-    // Save suppliers to Supabase
     const validSuppliers = suppliers.filter(s => s.name.trim() !== '');
     
     for (const supplier of validSuppliers) {
@@ -343,7 +331,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     
     toast.success("Settings saved successfully");
     
-    // Force full refresh of all relevant data
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', currentYear, currentMonth, moduleType] });
     queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
     queryClient.removeQueries({ queryKey: ['control-centre-data'] });
@@ -351,7 +338,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
 
   const pageTitle = modulePrefix ? `${modulePrefix} Input Settings` : "Input Settings";
 
-  // Determine if we should disable the target input fields
   const isGpTargetReadOnly = moduleType === 'food' || moduleType === 'beverage';
   
   return (
