@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
@@ -55,7 +54,6 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
   const isMobile = useIsMobile();
   const [minimized, setMinimized] = React.useState(isMobile ? true : false);
 
-  // Update theme colors logic to be more precise
   const [themeColors, setThemeColors] = React.useState(() => {
     const htmlElement = document.documentElement;
     if (htmlElement.classList.contains('theme-forest-green')) {
@@ -103,8 +101,8 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         selectedBg: 'bg-[#7E69AB]/90',
         selectedHover: 'hover:bg-[#7E69AB]/80',
         selectedText: 'text-white',
-        hoverBg: 'hover:bg-[#7E69AB]/10',
-        hoverText: 'hover:text-[#7E69AB]'
+        hoverBg: 'hover:bg-[#86e0b3]',
+        hoverText: 'hover:text-[#48495E]'
       };
     }
     // Default theme
@@ -112,12 +110,11 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
       selectedBg: 'bg-[#7E69AB]/90',
       selectedHover: 'hover:bg-[#7E69AB]/80',
       selectedText: 'text-white',
-      hoverBg: 'hover:bg-[#7E69AB]/10',
-      hoverText: 'hover:text-[#7E69AB]'
+      hoverBg: 'hover:bg-[#86e0b3]',
+      hoverText: 'hover:text-[#48495E]'
     };
   });
 
-  // Update colors when theme changes
   React.useEffect(() => {
     const handleThemeChange = () => {
       const htmlElement = document.documentElement;
@@ -170,7 +167,6 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
           hoverText: 'hover:text-[#48495E]'
         });
       } else {
-        // Default theme
         setThemeColors({
           selectedBg: 'bg-[#7E69AB]',
           selectedHover: 'hover:bg-[#7E69AB]/90',
