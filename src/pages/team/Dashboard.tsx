@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +9,24 @@ import { getTeamMembers } from '@/services/team-service';
 import { UserProfile } from '@/types/supabase-types';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuthStore } from '@/services/auth-service';
 
 const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const { profile } = useAuthStore();
+
+  // Helper function to check if current user can see a specific role
+  const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
+    const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
+    const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
+    const seeRoleValue = roleHierarchy[roleToSee] || 0;
+    
+    // Users can see their own role level and below
+    return currentRoleValue >= seeRoleValue;
+  };
 
   useEffect(() => {
     const fetchTeamMembers = async () => {
@@ -24,7 +37,11 @@ const TeamDashboard: React.FC = () => {
         const members = await getTeamMembers();
         
         if (members && Array.isArray(members)) {
-          setTeamMembers(members);
+          // Filter members based on user's role - can only see their level and below
+          const filteredMembers = members.filter(member => 
+            canSeeRole(profile?.role, member.role || 'Team Member')
+          );
+          setTeamMembers(filteredMembers);
         } else {
           setError('Invalid data format received');
         }
@@ -38,8 +55,19 @@ const TeamDashboard: React.FC = () => {
     };
     
     fetchTeamMembers();
-  }, []);
+  }, [profile]);
 
+  // Get available roles for filtering based on user's role
+  const getAvailableRoleFilters = () => {
+    const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member'];
+    
+    if (!profile || !profile.role) return ['Team Member'];
+    
+    // Return only the roles the user can see based on their own role
+    return allRoles.filter(role => canSeeRole(profile.role, role));
+  };
+
+  // Filter members based on selected role filter
   const filteredMembers = roleFilter === 'all' 
     ? teamMembers 
     : teamMembers.filter(member => member.role === roleFilter);
@@ -69,9 +97,9 @@ const TeamDashboard: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="Owner">Owner</SelectItem>
-                <SelectItem value="Head Chef">Head Chef</SelectItem>
-                <SelectItem value="Staff">Staff</SelectItem>
+                {getAvailableRoleFilters().map(role => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -108,7 +136,7 @@ const TeamDashboard: React.FC = () => {
                 <span className="text-sm font-medium text-gray-800">
                   {member.first_name} {member.last_name}
                 </span>
-                <span className="text-xs text-gray-500">{member.role}</span>
+                <span className="text-xs text-gray-500">{member.role || 'Team Member'}</span>
               </Link>
             ))
           )}

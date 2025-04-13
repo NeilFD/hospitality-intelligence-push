@@ -23,8 +23,8 @@ import {
 
 import { cn } from "@/lib/utils"
 
-type Role = 'Owner' | 'Manager' | 'Team Member';
-type AuthServiceRole = 'Owner' | 'Head Chef' | 'Staff';
+type Role = 'GOD' | 'Super User' | 'Manager' | 'Team Member';
+type AuthServiceRole = 'GOD' | 'Super User' | 'Manager' | 'Team Member';
 
 interface ProfileData {
   id: string;
@@ -46,6 +46,7 @@ export default function Profile() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<Role>('Team Member');
+  const [availableRoles, setAvailableRoles] = useState<Role[]>(['Team Member']);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [jobTitle, setJobTitle] = useState('');
   const [favouriteDish, setFavouriteDish] = useState('');
@@ -55,19 +56,27 @@ export default function Profile() {
   const [viewedProfile, setViewedProfile] = useState<ProfileData | null>(null);
   const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
 
-  const convertRoleToAuthServiceRole = (newRole: Role): AuthServiceRole => {
-    switch (newRole) {
-      case 'Owner': return 'Owner';
-      case 'Manager': return 'Head Chef';
-      case 'Team Member': return 'Staff';
-      default: return 'Staff';
-    }
+  // Helper function to check if a role is available for assignment based on current user's role
+  const canAssignRole = (currentUserRole: AuthServiceRole | null | undefined, roleToAssign: Role): boolean => {
+    const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
+    const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
+    const assignRoleValue = roleHierarchy[roleToAssign] || 0;
+    
+    // Can only assign roles lower than your own level
+    return currentRoleValue > assignRoleValue;
   };
 
-  const convertAuthServiceRoleToRole = (authRole: AuthServiceRole | string | null): Role => {
-    if (authRole === 'Owner') return 'Owner';
-    if (authRole === 'Head Chef' || authRole === 'Manager') return 'Manager';
-    return 'Team Member';
+  // Helper function to determine which roles can be displayed/assigned
+  const getAvailableRoles = (currentUserRole: AuthServiceRole | null | undefined): Role[] => {
+    const allRoles: Role[] = ['GOD', 'Super User', 'Manager', 'Team Member'];
+    const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
+    const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
+
+    // GOD can assign all roles
+    if (currentUserRole === 'GOD') return allRoles;
+    
+    // Others can only see/assign roles below their level
+    return allRoles.filter(role => roleHierarchy[role] <= currentRoleValue);
   };
 
   useEffect(() => {
@@ -81,20 +90,23 @@ export default function Profile() {
         console.error('Error parsing birth date:', error);
       }
     }
+    
+    // Set available roles based on current user's role
+    if (profile) {
+      setAvailableRoles(getAvailableRoles(profile.role));
+    }
   }, [profile]);
 
   const handleUpdateProfile = async () => {
     try {
       setIsLoading(true);
       
-      const authServiceRole = convertRoleToAuthServiceRole(role);
-      
       const formattedBirthDate = birthDate ? format(birthDate, 'MM-dd') : null;
       
       await updateProfile({
         firstName,
         lastName,
-        role: authServiceRole,
+        role,
         avatarUrl,
         jobTitle,
         birthDate: formattedBirthDate,
@@ -148,24 +160,24 @@ export default function Profile() {
           setFirstName(data.first_name || '');
           setLastName(data.last_name || '');
           
-          setRole(convertAuthServiceRoleToRole(data.role));
+          setRole(data.role || 'Team Member');
           setAvatarUrl(data.avatar_url);
           setJobTitle(data.job_title || '');
           setFavouriteDish(data.favourite_dish || '');
           setFavouriteDrink(data.favourite_drink || '');
           setAboutMe(data.about_me || '');
           
-          if (data.birth_date) {
+          if (data.birth_date_month) {
             try {
-              const parsedDate = parse(data.birth_date, 'yyyy-MM-dd', new Date());
+              const parsedDate = parse(data.birth_date_month, 'MM-dd', new Date());
               if (!isNaN(parsedDate.getTime())) {
                 setBirthDate(parsedDate);
                 console.log('Birth date parsed successfully:', parsedDate);
               } else {
-                console.error('Invalid birth date format:', data.birth_date);
+                console.error('Invalid birth date format:', data.birth_date_month);
               }
             } catch (error) {
-              console.error('Error parsing birth date:', error, data.birth_date);
+              console.error('Error parsing birth date:', error, data.birth_date_month);
             }
           }
         }
@@ -186,7 +198,7 @@ export default function Profile() {
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
         
-        setRole(convertAuthServiceRoleToRole(profile.role));
+        setRole(profile.role || 'Team Member');
         setAvatarUrl(profile.avatar_url);
         setJobTitle(profile.job_title || '');
         setFavouriteDish(profile.favourite_dish || '');
@@ -195,6 +207,9 @@ export default function Profile() {
       }
     }
   }, [userId, user, profile]);
+
+  // Determine if current user can see and edit the role field
+  const canManageRoles = profile && profile.role && ['GOD', 'Super User'].includes(profile.role);
 
   if (isLoading) {
     return (
@@ -248,23 +263,30 @@ export default function Profile() {
               disabled={!isEditing}
             />
           </div>
-          <div className="grid gap-2">
-            <Label>Role</Label>
-            {isEditing ? (
-              <Select value={role} onValueChange={(value) => setRole(value as Role)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Owner">Owner</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Team Member">Team Member</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input type="text" value={role} disabled />
-            )}
-          </div>
+          
+          {/* Only show role field if user has permission to see/edit it */}
+          {canManageRoles && (
+            <div className="grid gap-2">
+              <Label>Role</Label>
+              {isEditing ? (
+                <Select value={role} onValueChange={(value) => setRole(value as Role)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.map((availableRole) => (
+                      <SelectItem key={availableRole} value={availableRole}>
+                        {availableRole}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input type="text" value={role} disabled />
+              )}
+            </div>
+          )}
+          
           <div className="grid gap-2">
             <Label htmlFor="jobTitle">Job Title</Label>
             <Input

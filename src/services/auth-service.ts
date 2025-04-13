@@ -1,26 +1,26 @@
-
 import { supabase, signIn, signUp, signOut, getCurrentUser, getProfile } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 import { create } from 'zustand';
 import { User } from '@supabase/supabase-js';
 
+export type AuthServiceRole = 'GOD' | 'Super User' | 'Manager' | 'Team Member';
+
 interface AuthState {
   user: User | null;
   profile: UserProfile | null;
-  isLoading: boolean;
-  error: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  loadUser: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
-  loadUser: () => Promise<void>;
-  updateProfile: (updates: { 
-    firstName?: string; 
-    lastName?: string; 
-    role?: 'Owner' | 'Head Chef' | 'Staff'; 
+  updateProfile: (updates: {
+    firstName?: string;
+    lastName?: string;
+    role?: AuthServiceRole;
     avatarUrl?: string;
     jobTitle?: string;
-    birthDate?: string;
+    birthDate?: string | null;
     favouriteDish?: string;
     favouriteDrink?: string;
     aboutMe?: string;
@@ -31,10 +31,10 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
+  isAuthenticated: false,
   isLoading: true,
   error: null,
-  isAuthenticated: false,
-  
+
   login: async (email: string, password: string) => {
     try {
       set({ isLoading: true, error: null });
@@ -139,42 +139,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   updateProfile: async (updates) => {
     const { user } = get();
-    if (!user) return;
-    
+    if (!user) throw new Error('User not authenticated');
+
     try {
-      set({ isLoading: true });
-      
-      const updateData = {
-        first_name: updates.firstName,
-        last_name: updates.lastName,
-        role: updates.role,
-        avatar_url: updates.avatarUrl,
-        job_title: updates.jobTitle,
-        birth_date: updates.birthDate,
-        favourite_dish: updates.favouriteDish,
-        favourite_drink: updates.favouriteDrink,
-        about_me: updates.aboutMe
-      };
-      
-      console.log('Updating profile with data:', updateData);
-      
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .update(updateData)
-        .eq('id', user.id);
-      
+        .update({
+          first_name: updates.firstName,
+          last_name: updates.lastName,
+          role: updates.role,
+          avatar_url: updates.avatarUrl,
+          job_title: updates.jobTitle,
+          birth_date_month: updates.birthDate,
+          favourite_dish: updates.favouriteDish,
+          favourite_drink: updates.favouriteDrink,
+          about_me: updates.aboutMe
+        })
+        .eq('id', user.id)
+        .select();
+
       if (error) throw error;
-      
-      // Reload the user profile after update
-      await get().loadUser();
-      
-      set({ isLoading: false });
+
+      if (data && data.length > 0) {
+        set((state) => ({
+          ...state,
+          profile: {
+            ...state.profile,
+            first_name: updates.firstName || state.profile?.first_name || '',
+            last_name: updates.lastName || state.profile?.last_name || '',
+            role: updates.role || state.profile?.role,
+            avatar_url: updates.avatarUrl || state.profile?.avatar_url,
+            job_title: updates.jobTitle || state.profile?.job_title,
+            birth_date: updates.birthDate || state.profile?.birth_date,
+            favourite_dish: updates.favouriteDish || state.profile?.favourite_dish,
+            favourite_drink: updates.favouriteDrink || state.profile?.favourite_drink,
+            about_me: updates.aboutMe || state.profile?.about_me
+          } as UserProfile
+        }));
+      }
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      set({
-        error: error.message || 'Failed to update profile',
-        isLoading: false
-      });
+      throw new Error(error.message);
     }
   },
   

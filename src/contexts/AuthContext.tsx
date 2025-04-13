@@ -5,6 +5,7 @@ import { useAuthStore } from '@/services/auth-service';
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
+  userRole?: 'GOD' | 'Super User' | 'Manager' | 'Team Member';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,10 +23,14 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, profile } = useAuthStore();
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      isLoading,
+      userRole: profile?.role as 'GOD' | 'Super User' | 'Manager' | 'Team Member' | undefined 
+    }}>
       {children}
     </AuthContext.Provider>
   );
