@@ -172,16 +172,10 @@ const Layout = ({
     return "bg-[#9d89c9]/20";
   };
   
-  const handleControlCentreClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.location.href = '/control-centre';
-  };
-  
   const ControlCentreLink = () => {
     return (
-      <a 
-        href="/control-centre" 
-        onClick={handleControlCentreClick}
+      <Link 
+        to="/control-centre"
         className={cn(
           "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
           location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
@@ -191,7 +185,7 @@ const Layout = ({
           <Sliders className="h-4 w-4 mr-2" />
         </div>
         {!sidebarCollapsed && <span>Control Centre</span>}
-      </a>
+      </Link>
     );
   };
   
@@ -514,9 +508,8 @@ const Layout = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <a 
-                    href="/control-centre" 
-                    onClick={handleControlCentreClick}
+                  <Link 
+                    to="/control-centre"
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
                       location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
@@ -525,7 +518,7 @@ const Layout = ({
                     <div className="mx-auto">
                       <Sliders className="h-4 w-4" />
                     </div>
-                  </a>
+                  </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   <p>Control Centre</p>
