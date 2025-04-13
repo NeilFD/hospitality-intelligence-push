@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   
   const [controlCentreGpTarget, setControlCentreGpTarget] = useState<number | null>(null);
 
+  // Query for Control Centre data with force refresh
   const { data: controlCentreData, isLoading: isLoadingTargets } = useQuery({
     queryKey: ['control-centre-data'],
     queryFn: async () => {
@@ -55,8 +57,8 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
         return null;
       }
     },
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 0, // Always consider data stale
+    refetchOnMount: 'always', // Force refetch on mount
     refetchOnWindowFocus: true
   });
 
@@ -83,11 +85,13 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     staleTime: 0
   });
 
+  // Extract GP target from Control Centre data
   useEffect(() => {
     if (controlCentreData && !isLoadingTargets) {
       console.log("Processing Control Centre Data:", controlCentreData.targetSettings);
       
       if (moduleType === 'food' && controlCentreData.targetSettings?.foodGpTarget) {
+        // Use Math.round to ensure we get a clean integer value
         const targetValue = Math.round(controlCentreData.targetSettings.foodGpTarget);
         console.log(`Setting control centre food GP target: ${targetValue}%`);
         setControlCentreGpTarget(targetValue);
@@ -99,6 +103,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   }, [controlCentreData, isLoadingTargets, moduleType]);
 
+  // Create supplier mutation
   const createSupplierMutation = useMutation({
     mutationFn: createSupplier,
     onSuccess: () => {
@@ -110,6 +115,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
+  // Update supplier mutation
   const updateSupplierMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string, updates: any }) => updateSupplier(id, updates),
     onSuccess: () => {
@@ -121,6 +127,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
+  // Delete supplier mutation
   const deleteSupplierMutation = useMutation({
     mutationFn: deleteSupplier,
     onSuccess: () => {
@@ -132,6 +139,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
+  // Create monthly settings mutation
   const createMonthlySettingsMutation = useMutation({
     mutationFn: createMonthlySettings,
     onSuccess: (data) => {
@@ -144,6 +152,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
+  // Update monthly settings mutation
   const updateMonthlySettingsMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string, updates: any }) => updateMonthlySettings(id, updates),
     onSuccess: () => {
@@ -155,6 +164,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
+  // Load suppliers
   useEffect(() => {
     if (supabaseSuppliers && !isFetchingSuppliers) {
       const mappedSuppliers = supabaseSuppliers.map(s => ({
@@ -169,45 +179,58 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   }, [supabaseSuppliers, isFetchingSuppliers]);
 
+  // Set target values - THIS IS THE KEY EFFECT THAT WAS CAUSING THE ISSUE
   useEffect(() => {
-    console.log("Settings data changed, recalculating targets with priority:");
-    console.log("- Monthly settings:", monthlySettings);
-    console.log("- Control Centre target:", controlCentreGpTarget);
-    
-    if (monthlySettings && !isFetchingSettings) {
-      console.log("PRIORITY 1: Using monthly settings from database");
+    // This is the critical change - use the Control Centre data first if available
+    if (controlCentreGpTarget !== null && (moduleType === 'food' || moduleType === 'beverage')) {
+      console.log(`Using Control Centre GP target value: ${controlCentreGpTarget}%`);
+      setGpTarget(controlCentreGpTarget);
+      setCostTarget(100 - controlCentreGpTarget);
+      
+      // Only update staff allowance if no monthly settings exist
+      if (!monthlySettings) {
+        setStaffAllowance(monthRecord.staffFoodAllowance);
+      }
+    }
+    // Next priority: monthly settings from database
+    else if (monthlySettings && !isFetchingSettings) {
+      console.log("Using monthly settings from database");
       setSettingsId(monthlySettings.id);
       setGpTarget(Math.round(monthlySettings.gp_target * 100));
       setCostTarget(Math.round(monthlySettings.cost_target * 100));
       setStaffAllowance(monthlySettings.staff_food_allowance);
     } 
-    else if (controlCentreGpTarget !== null) {
-      console.log(`PRIORITY 2: Using Control Centre GP target: ${controlCentreGpTarget}%`);
-      setGpTarget(controlCentreGpTarget);
-      setCostTarget(100 - controlCentreGpTarget);
-      setStaffAllowance(monthRecord.staffFoodAllowance);
-    }
+    // Last resort: use local state
     else {
-      console.log("PRIORITY 3: Using local state fallback");
+      console.log("Using local state fallback");
       setGpTarget(Math.round(monthRecord.gpTarget * 100));
       setCostTarget(Math.round(monthRecord.costTarget * 100));
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
-  }, [monthlySettings, isFetchingSettings, controlCentreGpTarget, monthRecord]);
+  }, [monthlySettings, isFetchingSettings, controlCentreGpTarget, moduleType, monthRecord]);
 
+  // IMPORTANT: This separate effect ensures staff allowance is correctly set even if we use Control Centre GP values
+  useEffect(() => {
+    if (monthlySettings && !isFetchingSettings) {
+      setStaffAllowance(monthlySettings.staff_food_allowance);
+    }
+  }, [monthlySettings, isFetchingSettings]);
+
+  // Change month handler
   const handleMonthChange = (year: number, month: number) => {
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', year, month, moduleType] });
     queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
-    queryClient.removeQueries({ queryKey: ['control-centre-data'] });
     setCurrentYear(year);
     setCurrentMonth(month);
   };
 
+  // Add supplier handler
   const handleAddSupplier = () => {
     const newSupplier = { id: uuidv4(), name: '' };
     setSuppliers([...suppliers, newSupplier]);
   };
 
+  // Remove supplier handler
   const handleRemoveSupplier = (id: string) => {
     const supplierToDelete = supabaseSuppliers?.find(s => s.id === id);
     if (supplierToDelete) {
@@ -216,10 +239,12 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     setSuppliers(suppliers.filter(s => s.id !== id));
   };
 
+  // Update supplier name handler
   const handleSupplierNameChange = (id: string, name: string) => {
     setSuppliers(suppliers.map(s => s.id === id ? { ...s, name } : s));
   };
   
+  // Budget file handler
   const handleBudgetFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -228,6 +253,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   };
   
+  // Budget upload handler
   const handleBudgetUpload = async () => {
     if (!budgetFile) return;
     
@@ -243,6 +269,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   };
 
+  // Save settings handler
   const handleSaveSettings = async () => {
     console.log("Saving settings with values:", {
       gpTarget: gpTarget / 100,
@@ -333,7 +360,6 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', currentYear, currentMonth, moduleType] });
     queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
-    queryClient.removeQueries({ queryKey: ['control-centre-data'] });
   };
 
   const pageTitle = modulePrefix ? `${modulePrefix} Input Settings` : "Input Settings";
