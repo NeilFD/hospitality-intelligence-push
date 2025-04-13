@@ -13,7 +13,6 @@ import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
 import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image } from 'lucide-react';
 
-// Preset themes
 const presetThemes: PresetTheme[] = [{
   id: 'forest-green',
   name: 'Forest Green',
@@ -71,7 +70,6 @@ const presetThemes: PresetTheme[] = [{
   }
 }];
 
-// Helper to convert hex to RGB for sliders
 const hexToRgb = (hex: string): {
   r: number;
   g: number;
@@ -89,7 +87,6 @@ const hexToRgb = (hex: string): {
   };
 };
 
-// Helper to convert RGB to hex for input field
 const rgbToHex = (r: number, g: number, b: number): string => {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 };
@@ -118,7 +115,6 @@ export function ThemeSettingsPanel({
     isActive: true
   });
 
-  // RGB state values for sliders
   const [primaryRgb, setPrimaryRgb] = useState(hexToRgb(activeTheme.primaryColor));
   const [secondaryRgb, setSecondaryRgb] = useState(hexToRgb(activeTheme.secondaryColor));
   const [accentRgb, setAccentRgb] = useState(hexToRgb(activeTheme.accentColor));
@@ -129,11 +125,12 @@ export function ThemeSettingsPanel({
   const [saving, setSaving] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("presets");
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [presetSelectAnimation, setPresetSelectAnimation] = useState(false);
 
   useEffect(() => {
     if (currentTheme) {
       setActiveTheme(currentTheme);
-      // Update RGB values for sliders
       setPrimaryRgb(hexToRgb(currentTheme.primaryColor));
       setSecondaryRgb(hexToRgb(currentTheme.secondaryColor));
       setAccentRgb(hexToRgb(currentTheme.accentColor));
@@ -149,7 +146,6 @@ export function ThemeSettingsPanel({
       value
     } = e.target;
 
-    // For hex input fields, also update the corresponding RGB state
     if (name === 'primaryColor') {
       setPrimaryRgb(hexToRgb(value));
     } else if (name === 'secondaryColor') {
@@ -169,7 +165,6 @@ export function ThemeSettingsPanel({
     }));
   };
 
-  // Handle RGB slider changes
   const handlePrimaryRgbChange = (values: number[]) => {
     const [r, g, b] = values;
     setPrimaryRgb({
@@ -268,12 +263,10 @@ export function ThemeSettingsPanel({
       setUploading(true);
       const file = e.target.files[0];
 
-      // Generate a unique file name for the logo
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Check if logos bucket exists, create if doesn't
       const {
         data: bucketsList
       } = await supabase.storage.listBuckets();
@@ -292,7 +285,6 @@ export function ThemeSettingsPanel({
         }
       }
 
-      // Upload the file to the 'logos' bucket in Supabase Storage
       const {
         error: uploadError,
         data
@@ -307,7 +299,6 @@ export function ThemeSettingsPanel({
         return;
       }
 
-      // Get the public URL of the uploaded file
       const {
         data: publicUrlData
       } = supabase.storage.from('logos').getPublicUrl(filePath);
@@ -318,16 +309,13 @@ export function ThemeSettingsPanel({
       }
       const logoUrl = publicUrlData.publicUrl;
 
-      // Update the activeTheme state with the new logo URL
       setActiveTheme(prev => ({
         ...prev,
         logoUrl
       }));
 
-      // Save the logo URL in localStorage for immediate use
       localStorage.setItem('app-logo-url', logoUrl);
 
-      // Dispatch a custom event to notify other components about the logo change
       const logoEvent = new CustomEvent('app-logo-updated', {
         detail: {
           logoUrl
@@ -342,11 +330,11 @@ export function ThemeSettingsPanel({
       setUploading(false);
     }
   };
+
   const saveTheme = async () => {
     try {
       setSaving(true);
 
-      // Update the theme in the database
       const {
         data,
         error
@@ -362,19 +350,20 @@ export function ThemeSettingsPanel({
         custom_font: activeTheme.customFont,
         is_active: activeTheme.isActive
       }).eq('id', activeTheme.id);
+      
       if (error) {
         console.error('Error updating theme:', error);
         toast.error('Failed to save theme settings');
         return;
       }
       
-      // Apply theme immediately after saving
-      // Dispatch a custom event to notify other components about the theme change
       const themeEvent = new CustomEvent('app-theme-updated', {
         detail: { theme: activeTheme }
       });
       console.log("Dispatching theme event with data:", activeTheme);
       window.dispatchEvent(themeEvent);
+      
+      applyThemeDirectly(activeTheme.name);
       
       toast.success('Theme settings saved successfully');
     } catch (error) {
@@ -384,50 +373,15 @@ export function ThemeSettingsPanel({
       setSaving(false);
     }
   };
-  const handleCopyClick = () => {
-    navigator.clipboard.writeText(JSON.stringify(activeTheme, null, 2));
-    setIsCopied(true);
-    toast.success('Theme settings copied to clipboard');
-    setTimeout(() => {
-      setIsCopied(false);
-    }, 3000);
-  };
-  const applyPresetTheme = (preset: PresetTheme) => {
-    // Update hex values in UI state only, without applying the theme
-    setActiveTheme(prev => ({
-      ...prev,
-      name: preset.name,
-      primaryColor: preset.colors.primary,
-      secondaryColor: preset.colors.secondary,
-      accentColor: preset.colors.accent,
-      sidebarColor: preset.colors.sidebar,
-      buttonColor: preset.colors.button,
-      textColor: preset.colors.text
-    }));
 
-    // Update RGB values for sliders
-    setPrimaryRgb(hexToRgb(preset.colors.primary));
-    setSecondaryRgb(hexToRgb(preset.colors.secondary));
-    setAccentRgb(hexToRgb(preset.colors.accent));
-    setSidebarRgb(hexToRgb(preset.colors.sidebar));
-    setButtonRgb(hexToRgb(preset.colors.button));
-    setTextRgb(hexToRgb(preset.colors.text));
-    
-    // Notify user that they need to save to apply the theme
-    toast.info(`${preset.name} theme selected. Click 'Save Theme' to apply.`);
-  };
-
-  // Function to directly apply theme to HTML
-  const applyThemeToHTML = (themeName: string) => {
+  const applyThemeDirectly = (themeName: string) => {
     const html = document.documentElement;
     
-    // Remove any existing theme classes
     const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
     themeClasses.forEach(cls => {
       html.classList.remove(cls);
     });
     
-    // Add the new theme class based on the theme name
     if (themeName === 'Forest Green') {
       html.classList.add('theme-forest-green');
     } else if (themeName === 'Ocean Blue') {
@@ -440,10 +394,46 @@ export function ThemeSettingsPanel({
       html.classList.add('theme-dark-mode');
     }
     
-    console.log('Theme applied immediately:', themeName);
+    console.log('Theme applied directly:', themeName);
   };
 
-  // RGB Slider Component for reusability
+  const handleCopyClick = () => {
+    navigator.clipboard.writeText(JSON.stringify(activeTheme, null, 2));
+    setIsCopied(true);
+    toast.success('Theme settings copied to clipboard');
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 3000);
+  };
+
+  const applyPresetTheme = (preset: PresetTheme) => {
+    setActiveTheme(prev => ({
+      ...prev,
+      name: preset.name,
+      primaryColor: preset.colors.primary,
+      secondaryColor: preset.colors.secondary,
+      accentColor: preset.colors.accent,
+      sidebarColor: preset.colors.sidebar,
+      buttonColor: preset.colors.button,
+      textColor: preset.colors.text
+    }));
+
+    setPrimaryRgb(hexToRgb(preset.colors.primary));
+    setSecondaryRgb(hexToRgb(preset.colors.secondary));
+    setAccentRgb(hexToRgb(preset.colors.accent));
+    setSidebarRgb(hexToRgb(preset.colors.sidebar));
+    setButtonRgb(hexToRgb(preset.colors.button));
+    setTextRgb(hexToRgb(preset.colors.text));
+    
+    setSelectedPreset(preset.id);
+    setPresetSelectAnimation(true);
+    setTimeout(() => setPresetSelectAnimation(false), 800);
+    
+    toast.info(`${preset.name} theme selected. Click 'Save Theme' to apply.`, {
+      position: 'top-center',
+    });
+  };
+
   const ColorSliderGroup = ({
     name,
     rgbValues,
@@ -544,41 +534,55 @@ export function ThemeSettingsPanel({
             </TabsTrigger>
           </TabsList>
           
-          {/* Preset Themes Tab */}
           <TabsContent value="presets" className="space-y-6">
             <div className="grid gap-6">
-              {/* Theme Name Field */}
               <div className="grid gap-4">
                 <Label htmlFor="name">Theme Name</Label>
                 <Input type="text" id="name" name="name" value={activeTheme.name} onChange={handleInputChange} />
               </div>
               
-              {/* Preset Themes Gallery */}
               <div>
                 <h3 className="text-lg font-medium mb-3 flex items-center">
                   <Palette className="mr-2 h-5 w-5" />
                   Select a Preset Theme
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {presetThemes.map(theme => <div key={theme.id} className="border rounded-md overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => applyPresetTheme(theme)}>
-                      <div className="h-24" style={{
-                    backgroundColor: theme.colors.primary
-                  }}>
+                  {presetThemes.map(theme => (
+                    <div 
+                      key={theme.id} 
+                      className={`
+                        border rounded-md overflow-hidden cursor-pointer 
+                        transition-all duration-300 
+                        ${selectedPreset === theme.id ? 'ring-4 ring-purple-500 shadow-lg transform scale-105' : 'hover:shadow-md'}
+                        ${presetSelectAnimation && selectedPreset === theme.id ? 'animate-pulse' : ''}
+                      `}
+                      onClick={() => applyPresetTheme(theme)}
+                    >
+                      <div className="h-24 relative" style={{
+                        backgroundColor: theme.colors.primary
+                      }}>
                         <div className="h-8 w-full" style={{
-                      backgroundColor: theme.colors.sidebar
-                    }}></div>
+                          backgroundColor: theme.colors.sidebar
+                        }}></div>
                         <div className="flex justify-center mt-2">
                           <div className="h-8 w-16 rounded" style={{
-                        backgroundColor: theme.colors.button
-                      }}></div>
+                            backgroundColor: theme.colors.button
+                          }}></div>
                         </div>
+                        {selectedPreset === theme.id && (
+                          <div className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md">
+                            <Check className="h-4 w-4 text-green-600" />
+                          </div>
+                        )}
                       </div>
-                      <div className="p-2 text-center text-sm font-medium">{theme.name}</div>
-                    </div>)}
+                      <div className={`p-2 text-center text-sm font-medium ${selectedPreset === theme.id ? 'bg-purple-100' : ''}`}>
+                        {theme.name}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
               
-              {/* Logo Upload Section */}
               <div className="space-y-4 p-6 border rounded-lg">
                 <h3 className="text-lg font-medium mb-3 flex items-center">
                   <Image className="mr-2 h-5 w-5" />
@@ -610,7 +614,6 @@ export function ThemeSettingsPanel({
                 </div>
               </div>
               
-              {/* Font Selection */}
               <div className="grid gap-4">
                 <Label htmlFor="customFont">Custom Font</Label>
                 <Select onValueChange={handleSelectChange} defaultValue={activeTheme.customFont || undefined}>
@@ -625,7 +628,6 @@ export function ThemeSettingsPanel({
                 </Select>
               </div>
               
-              {/* Active Switch */}
               <div className="flex items-center justify-between">
                 <Label htmlFor="isActive">Active Theme</Label>
                 <Switch id="isActive" checked={activeTheme.isActive} onCheckedChange={handleSwitchChange} />
@@ -633,9 +635,7 @@ export function ThemeSettingsPanel({
             </div>
           </TabsContent>
           
-          {/* Custom Colors Tab */}
           <TabsContent value="custom" className="space-y-6">
-            {/* Primary Color */}
             <div className="grid gap-2">
               <Label htmlFor="primaryColor" className="flex items-center">
                 <div className="w-4 h-4 mr-2 rounded-full" style={{
@@ -654,7 +654,6 @@ export function ThemeSettingsPanel({
               </div>
             </div>
             
-            {/* Secondary Color */}
             <div className="grid gap-2">
               <Label htmlFor="secondaryColor" className="flex items-center">
                 <div className="w-4 h-4 mr-2 rounded-full" style={{
@@ -673,7 +672,6 @@ export function ThemeSettingsPanel({
               </div>
             </div>
             
-            {/* Accent Color */}
             <div className="grid gap-2">
               <Label htmlFor="accentColor" className="flex items-center">
                 <div className="w-4 h-4 mr-2 rounded-full" style={{
@@ -692,7 +690,6 @@ export function ThemeSettingsPanel({
               </div>
             </div>
             
-            {/* Sidebar Color */}
             <div className="grid gap-2">
               <Label htmlFor="sidebarColor" className="flex items-center">
                 <div className="w-4 h-4 mr-2 rounded-full" style={{
@@ -711,7 +708,6 @@ export function ThemeSettingsPanel({
               </div>
             </div>
             
-            {/* Button Color */}
             <div className="grid gap-2">
               <Label htmlFor="buttonColor" className="flex items-center">
                 <div className="w-4 h-4 mr-2 rounded-full" style={{
@@ -730,7 +726,6 @@ export function ThemeSettingsPanel({
               </div>
             </div>
             
-            {/* Text Color */}
             <div className="grid gap-2">
               <Label htmlFor="textColor" className="flex items-center">
                 <div className="w-4 h-4 mr-2 rounded-full" style={{
@@ -757,14 +752,20 @@ export function ThemeSettingsPanel({
           </TabsContent>
         </Tabs>
         
-        {/* Action Buttons - Shown on both tabs */}
         <div className="flex justify-between pt-4 border-t">
           <Button variant="outline" onClick={handleCopyClick}>
             {isCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
             {isCopied ? "Copied!" : "Copy Settings"}
           </Button>
-          <Button onClick={saveTheme} disabled={saving}>
+          <Button 
+            onClick={saveTheme} 
+            disabled={saving}
+            className={`relative ${selectedPreset ? 'bg-purple-700 hover:bg-purple-800' : ''}`}
+          >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {selectedPreset && !saving && (
+              <span className="absolute inset-0 bg-purple-500 animate-pulse rounded-md opacity-30"></span>
+            )}
             Save Theme
           </Button>
         </div>
