@@ -10,7 +10,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import SidebarLogo from "./SidebarLogo"; 
+import SidebarLogo from "./SidebarLogo"; // Change the import to use default import
 import { TavernLogo } from "./TavernLogo";
 import { useAuthStore } from "@/services/auth-service";
 import { 
@@ -27,7 +27,6 @@ import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
 import { ModuleIcon } from "./ModuleIcons";
 import NotificationsDropdown from "./notifications/NotificationsDropdown";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { supabase } from "@/lib/supabase";
 
 interface LayoutProps {
   children: ReactNode;
@@ -388,49 +387,10 @@ const Layout = ({
         </span>}
     </div>;
 
-  const [companyName, setCompanyName] = useState('Hospitality Intelligence');
-
-  useEffect(() => {
-    const fetchCompanyName = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('themes')
-          .select('company_name')
-          .eq('is_active', true)
-          .single();
-
-        if (error) {
-          console.error('Error fetching company name:', error);
-          return;
-        }
-
-        if (data && data.company_name) {
-          setCompanyName(data.company_name);
-        }
-      } catch (err) {
-        console.error('Error in fetchCompanyName:', err);
-      }
-    };
-
-    fetchCompanyName();
-
-    const handleCompanyNameUpdate = (event: any) => {
-      if (event.detail && event.detail.companyName) {
-        setCompanyName(event.detail.companyName);
-      }
-    };
-
-    window.addEventListener('company-name-updated', handleCompanyNameUpdate);
-    
-    return () => {
-      window.removeEventListener('company-name-updated', handleCompanyNameUpdate);
-    };
-  }, []);
-
   const Sidebar = <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
-        <p className={cn("text-sm mt-1", getTextColor())}>{companyName}</p>
+        <p className={cn("text-sm mt-1", getTextColor())}>Hospitality Intelligence</p>
       </div>
       
       <Separator className={getSeparatorBgColor()} />
