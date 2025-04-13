@@ -47,7 +47,7 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
   
   return (
     <img 
-      alt="Hi" 
+      alt="Logo" 
       className={cn(sizeClasses[size], className)}
       src={logoUrl || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png"} 
     />

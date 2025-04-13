@@ -140,7 +140,17 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `logos/${fileName}`;
+      const filePath = `${fileName}`;
+      
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const logoBucketExists = buckets?.some(bucket => bucket.name === 'logos');
+      
+      if (!logoBucketExists) {
+        toast.error('Logo upload failed: Storage bucket not configured');
+        console.error('Logos bucket not found. Please run the SQL migration first.');
+        setUploading(false);
+        return;
+      }
       
       const { error: uploadError, data } = await supabase.storage
         .from('logos')

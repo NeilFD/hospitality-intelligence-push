@@ -55,7 +55,7 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
     >
       <img 
         src={logoUrl || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png"} 
-        alt="Hi" 
+        alt="Logo" 
         className="w-3/4 h-3/4 object-contain absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
       />
     </div>
