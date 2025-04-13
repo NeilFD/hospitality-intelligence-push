@@ -19,6 +19,9 @@ import ControlCentre from '@/pages/ControlCentre';
 import WagesDashboard from '@/pages/wages/WagesDashboard';
 import Index from '@/pages/Index';
 
+// Import PL dashboard component
+import PLDashboard from '@/pages/pl/Dashboard';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -74,8 +77,8 @@ function App() {
               {/* Master Module Routes */}
               <Route path="/master/dashboard" element={<Layout><Dashboard /></Layout>} />
               
-              {/* P&L Module Routes */}
-              <Route path="/pl/dashboard" element={<Layout><Dashboard /></Layout>} />
+              {/* P&L Module Routes - Ensure we're using the correct component */}
+              <Route path="/pl/dashboard" element={<Layout><PLDashboard /></Layout>} />
               
               {/* Wages Module Routes */}
               <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
@@ -89,7 +92,7 @@ function App() {
               <Route path="/team/chat" element={<Layout><Dashboard /></Layout>} />
               <Route path="/team/knowledge" element={<Layout><Dashboard /></Layout>} />
               
-              {/* Not Found Route */}
+              {/* Not Found Route - Must be last */}
               <Route path="*" element={<Layout><NotFound /></Layout>} />
             </Routes>
             <Toaster richColors />

@@ -17,7 +17,11 @@ const Index = () => {
     return <Navigate to="/food/dashboard" replace />;
   }
   
-  return <Navigate to={`/${currentModule}/dashboard`} replace />;
+  // Create a direct path to the dashboard based on the current module
+  const dashboardPath = `/${currentModule}/dashboard`;
+  console.log('Redirecting to dashboard path:', dashboardPath);
+  
+  return <Navigate to={dashboardPath} replace />;
 };
 
 export default Index;

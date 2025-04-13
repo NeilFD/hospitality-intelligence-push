@@ -62,10 +62,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     loadActiveTheme();
   }, []);
 
-  // We need to force a re-render when the location changes
-  // to ensure the theme is properly applied after navigation
+  // Log the current route for debugging purposes
   useEffect(() => {
-    console.log('Current route:', location.pathname);
+    console.log('Current route in ThemeProviderExtended:', location.pathname);
   }, [location]);
 
   return <>{children}</>;
