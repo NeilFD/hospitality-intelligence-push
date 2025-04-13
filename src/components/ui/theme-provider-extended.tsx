@@ -15,7 +15,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       try {
         const { data, error } = await supabase
           .from('themes')
-          .select('name, primary_color, secondary_color, accent_color')
+          .select('name, primary_color, secondary_color, accent_color, custom_font')
           .eq('is_active', true)
           .single();
         
@@ -28,7 +28,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           // Apply theme class to the html element
           applyThemeClass(data.name);
           
-          console.log('Applied theme:', data.name);
+          // Apply custom font if available
+          if (data.custom_font) {
+            applyCustomFont(data.custom_font);
+          }
+          
+          console.log('Applied theme:', data.name, 'with font:', data.custom_font);
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
@@ -46,10 +51,17 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       // If we have theme details in the event, apply them directly without database call
       if (event.detail && event.detail.theme && event.detail.theme.name) {
         const themeName = event.detail.theme.name;
-        console.log("Applying theme from event:", themeName);
+        const customFont = event.detail.theme.customFont;
+        
+        console.log("Applying theme from event:", themeName, "with font:", customFont);
         
         // Apply theme class
         applyThemeClass(themeName);
+        
+        // Apply custom font if available
+        if (customFont) {
+          applyCustomFont(customFont);
+        }
         
         // Force a rerender of components that depend on theme classes
         document.dispatchEvent(new Event('themeClassChanged'));
@@ -85,9 +97,15 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       } else if (themeName === 'Hi Purple') {
         html.classList.add('theme-hi-purple');
       }
+    };
+    
+    // Helper function to apply custom font
+    const applyCustomFont = (fontFamily: string) => {
+      // Add the font to the html element style
+      document.documentElement.style.setProperty('--app-font-family', fontFamily);
+      document.documentElement.style.fontFamily = fontFamily;
       
-      // Dispatch an event to notify components of theme change
-      document.dispatchEvent(new Event('themeClassChanged'));
+      console.log('Applied custom font:', fontFamily);
     };
     
     // Listen for custom theme update event

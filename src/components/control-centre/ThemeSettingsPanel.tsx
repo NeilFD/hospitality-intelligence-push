@@ -397,6 +397,11 @@ export function ThemeSettingsPanel({
         return;
       }
       
+      if (activeTheme.customFont) {
+        document.documentElement.style.setProperty('--app-font-family', activeTheme.customFont);
+        document.documentElement.style.fontFamily = activeTheme.customFont;
+      }
+      
       const themeEvent = new CustomEvent('app-theme-updated', {
         detail: { theme: activeTheme }
       });
