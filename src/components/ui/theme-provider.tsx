@@ -51,6 +51,24 @@ export function ThemeProvider({
 
   // Listen for theme updates from ThemeProviderExtended
   useEffect(() => {
+    // Apply any saved theme from localStorage on initial load
+    const applyPersistedApplicationTheme = () => {
+      const savedThemeName = localStorage.getItem('app-active-theme');
+      if (savedThemeName) {
+        console.log('ThemeProvider: Found saved application theme:', savedThemeName);
+        // This will trigger 'themeClassChanged' in the extended provider
+        const themeEvent = new CustomEvent('app-theme-updated', {
+          detail: { theme: { name: savedThemeName } }
+        });
+        window.dispatchEvent(themeEvent);
+      }
+    };
+    
+    // Wait a short moment to ensure DOM is ready
+    const timer = setTimeout(() => {
+      applyPersistedApplicationTheme();
+    }, 100);
+    
     const handleThemeUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       if (customEvent.detail && customEvent.detail.theme) {
@@ -66,6 +84,7 @@ export function ThemeProvider({
     window.addEventListener('app-theme-updated', handleThemeUpdate);
     
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('app-theme-updated', handleThemeUpdate);
     };
   }, []);
