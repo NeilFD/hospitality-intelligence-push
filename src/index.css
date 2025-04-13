@@ -35,7 +35,7 @@
  
     --radius: 0.5rem;
     
-    --app-font-family: inherit;
+    --app-font-family: system-ui, sans-serif;
   }
  
   .dark {
@@ -81,5 +81,14 @@
   
   html {
     font-family: var(--app-font-family, system-ui, sans-serif);
+  }
+  
+  .font-inherit * {
+    font-family: inherit;
+  }
+  
+  /* Ensure headings, buttons, and other elements inherit font family */
+  h1, h2, h3, h4, h5, h6, button, input, select, textarea {
+    font-family: inherit;
   }
 }

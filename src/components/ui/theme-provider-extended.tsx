@@ -101,9 +101,42 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     
     // Helper function to apply custom font
     const applyCustomFont = (fontFamily: string) => {
-      // Add the font to the html element style
+      // Check if we need to load specific Google Fonts
+      const loadGoogleFonts = () => {
+        const fontName = fontFamily.split(',')[0].trim().replace(/["']/g, '');
+        
+        // Only add the link if it doesn't exist yet
+        if (!document.querySelector(`link[href*="${fontName}"]`)) {
+          // Convert spaces to + for URL
+          const formattedFontName = fontName.replace(/\s+/g, '+');
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${formattedFontName}:wght@400;700&display=swap`;
+          document.head.appendChild(link);
+          console.log(`Added Google Font link for: ${fontName}`);
+        }
+      };
+      
+      // Load Google Fonts for specific font families
+      if (
+        fontFamily.includes('Playfair Display') || 
+        fontFamily.includes('Roboto') || 
+        fontFamily.includes('Open Sans') ||
+        fontFamily.includes('Montserrat') ||
+        fontFamily.includes('Poppins') ||
+        fontFamily.includes('Lato') ||
+        fontFamily.includes('Source Sans Pro') ||
+        fontFamily.includes('Courier Prime')
+      ) {
+        loadGoogleFonts();
+      }
+      
+      // Add the font to the html element style and :root CSS variables
       document.documentElement.style.setProperty('--app-font-family', fontFamily);
       document.documentElement.style.fontFamily = fontFamily;
+      
+      // Apply to body as well to ensure it propagates
+      document.body.style.fontFamily = fontFamily;
       
       console.log('Applied custom font:', fontFamily);
     };

@@ -400,6 +400,17 @@ export function ThemeSettingsPanel({
       if (activeTheme.customFont) {
         document.documentElement.style.setProperty('--app-font-family', activeTheme.customFont);
         document.documentElement.style.fontFamily = activeTheme.customFont;
+        document.body.style.fontFamily = activeTheme.customFont;
+        
+        const fontName = activeTheme.customFont.split(',')[0].trim().replace(/["']/g, '');
+        if (!document.querySelector(`link[href*="${fontName}"]`)) {
+          const formattedFontName = fontName.replace(/\s+/g, '+');
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${formattedFontName}:wght@400;700&display=swap`;
+          document.head.appendChild(link);
+          console.log(`Added Google Font link for: ${fontName}`);
+        }
       }
       
       const themeEvent = new CustomEvent('app-theme-updated', {
