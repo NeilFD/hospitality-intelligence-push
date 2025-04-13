@@ -35,10 +35,14 @@ export default function LoginForm() {
       // If dev login is checked, set the email to dev email
       if (isDevLogin) {
         await login('dev@example.com', password);
-        navigate('/');
+        if (!error) {
+          navigate('/');
+        }
       } else {
         await login(email, password);
-        navigate('/');
+        if (!error) {
+          navigate('/');
+        }
       }
     } catch (err) {
       // Error is handled by the login function
@@ -132,10 +136,10 @@ export default function LoginForm() {
       }} className="pt-2 relative overflow-hidden group">
         <Button 
           type="submit" 
-          disabled={isSubmitting} 
+          disabled={isSubmitting || isLoading} 
           className="w-full transition-all duration-300 relative overflow-hidden text-hi-purple font-bold bg-green-300 hover:bg-green-200"
         >
-          {isSubmitting ? 'Logging in...' : 'Login'}
+          {isSubmitting || isLoading ? 'Logging in...' : 'Login'}
         </Button>
       </motion.div>
       
