@@ -133,47 +133,34 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       
       console.log('Applying theme with ID:', selectedThemeId);
       
-      // First get all theme IDs to update them to inactive
-      const { data: allThemes, error: fetchError } = await supabase
+      // First update all themes to inactive
+      const { error: resetError } = await supabase
         .from('themes')
-        .select('id');
+        .update({ is_active: false })
+        .neq('id', selectedThemeId); // Update all rows except the selected one
       
-      if (fetchError) {
-        console.error('Error fetching themes for reset:', fetchError);
-        throw fetchError;
+      if (resetError) {
+        console.error('Error resetting themes:', resetError);
+        throw resetError;
       }
       
-      if (allThemes && allThemes.length > 0) {
-        // Update all themes to inactive
-        const { error: resetError } = await supabase
-          .from('themes')
-          .update({ is_active: false });
-        
-        if (resetError) {
-          console.error('Error resetting themes:', resetError);
-          throw resetError;
-        }
-        
-        // Then set the selected theme to active
-        const { error: updateError } = await supabase
-          .from('themes')
-          .update({ is_active: true })
-          .eq('id', selectedThemeId);
-        
-        if (updateError) {
-          console.error('Error activating theme:', updateError);
-          throw updateError;
-        }
-        
-        toast.success('Theme applied successfully');
-        
-        // Reload the page to apply the new theme
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        toast.error('No themes found to update');
+      // Then set the selected theme to active
+      const { error: updateError } = await supabase
+        .from('themes')
+        .update({ is_active: true })
+        .eq('id', selectedThemeId);
+      
+      if (updateError) {
+        console.error('Error activating theme:', updateError);
+        throw updateError;
       }
+      
+      toast.success('Theme applied successfully');
+      
+      // Reload the page to apply the new theme
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error applying theme:', error);
       toast.error('Failed to apply theme');
