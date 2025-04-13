@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   enableDevMode: () => {
     set({
-      user: { id: 'dev-god-user', email: 'dev@example.com' },
+      user: { id: '00000000-0000-0000-0000-000000000000', email: 'dev@example.com' },
       profile: null,
       isAuthenticated: true,
       isLoading: false,
@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     supabase
       .from('profiles')
       .select('*')
-      .eq('id', 'dev-god-user')
+      .eq('id', '00000000-0000-0000-0000-000000000000')
       .single()
       .then(({ data, error }) => {
         if (error) {
@@ -116,7 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', 'dev-god-user')
+            .eq('id', '00000000-0000-0000-0000-000000000000')
             .single();
             
           if (profileError) {
@@ -126,7 +126,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
           
           set({
-            user: { id: 'dev-god-user', email: 'dev@example.com' },
+            user: { id: '00000000-0000-0000-0000-000000000000', email: 'dev@example.com' },
             profile: profileData,
             isAuthenticated: true,
             isLoading: false,
@@ -257,7 +257,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', 'dev-god-user')
+          .eq('id', '00000000-0000-0000-0000-000000000000')
           .single();
           
         if (profileError) {
@@ -270,7 +270,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
         
         set({
-          user: { id: 'dev-god-user', email: 'dev@example.com' },
+          user: { id: '00000000-0000-0000-0000-000000000000', email: 'dev@example.com' },
           profile: profileData,
           isAuthenticated: true,
           isLoading: false,
@@ -340,7 +340,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { error } = await supabase
           .from('profiles')
           .update(profileData)
-          .eq('id', 'dev-god-user');
+          .eq('id', '00000000-0000-0000-0000-000000000000');
           
         if (error) {
           set({ error: error.message, isLoading: false });
@@ -350,7 +350,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { data: updatedProfile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', 'dev-god-user')
+          .eq('id', '00000000-0000-0000-0000-000000000000')
           .single();
           
         set({

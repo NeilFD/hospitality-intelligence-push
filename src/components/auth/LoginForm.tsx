@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -25,7 +26,7 @@ export default function LoginForm() {
     setIsSubmitting(false);
   }, []);
   
-  // Reset isSubmitting when login process completes
+  // Reset isSubmitting when login process completes or errors
   useEffect(() => {
     if (!isLoading) {
       setIsSubmitting(false);
