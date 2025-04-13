@@ -428,10 +428,6 @@ export function ThemeSettingsPanel({
     setSelectedPreset(preset.id);
     setPresetSelectAnimation(true);
     setTimeout(() => setPresetSelectAnimation(false), 800);
-    
-    toast.info(`${preset.name} theme selected. Click 'Save Theme' to apply.`, {
-      position: 'top-center',
-    });
   };
 
   const ColorSliderGroup = ({

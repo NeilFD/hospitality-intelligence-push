@@ -26,31 +26,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         if (data) {
           // Apply theme class to the html element
-          const html = document.documentElement;
-          
-          // Remove any existing theme classes
-          const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
-          themeClasses.forEach(cls => {
-            html.classList.remove(cls);
-          });
-          
-          // Add the new theme class based on the theme name
-          if (data.name === 'Forest Green') {
-            html.classList.add('theme-forest-green');
-            console.log('Applied Forest Green theme');
-          } else if (data.name === 'Ocean Blue') {
-            html.classList.add('theme-ocean-blue');
-            console.log('Applied Ocean Blue theme');
-          } else if (data.name === 'Sunset Orange') {
-            html.classList.add('theme-sunset-orange');
-            console.log('Applied Sunset Orange theme');
-          } else if (data.name === 'Berry Purple') {
-            html.classList.add('theme-berry-purple');
-            console.log('Applied Berry Purple theme');
-          } else if (data.name === 'Dark Mode') {
-            html.classList.add('theme-dark-mode');
-            console.log('Applied Dark Mode theme');
-          }
+          applyThemeClass(data.name);
           
           console.log('Applied theme:', data.name);
         }
@@ -72,32 +48,37 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         const themeName = event.detail.theme.name;
         console.log("Applying theme from event:", themeName);
         
-        // Apply theme class to the html element
-        const html = document.documentElement;
-        
-        // Remove any existing theme classes
-        const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
-        themeClasses.forEach(cls => {
-          html.classList.remove(cls);
-        });
-        
-        // Add the new theme class based on the theme name
-        if (themeName === 'Forest Green') {
-          html.classList.add('theme-forest-green');
-        } else if (themeName === 'Ocean Blue') {
-          html.classList.add('theme-ocean-blue');
-        } else if (themeName === 'Sunset Orange') {
-          html.classList.add('theme-sunset-orange');
-        } else if (themeName === 'Berry Purple') {
-          html.classList.add('theme-berry-purple');
-        } else if (themeName === 'Dark Mode') {
-          html.classList.add('theme-dark-mode');
-        }
+        // Apply theme class
+        applyThemeClass(themeName);
         
         console.log('Theme applied immediately from event:', themeName);
       } else {
         // Fallback to database call if no theme in event
         loadActiveTheme();
+      }
+    };
+    
+    // Helper function to apply theme class
+    const applyThemeClass = (themeName: string) => {
+      const html = document.documentElement;
+      
+      // Remove any existing theme classes
+      const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
+      themeClasses.forEach(cls => {
+        html.classList.remove(cls);
+      });
+      
+      // Add the new theme class based on the theme name
+      if (themeName === 'Forest Green') {
+        html.classList.add('theme-forest-green');
+      } else if (themeName === 'Ocean Blue') {
+        html.classList.add('theme-ocean-blue');
+      } else if (themeName === 'Sunset Orange') {
+        html.classList.add('theme-sunset-orange');
+      } else if (themeName === 'Berry Purple') {
+        html.classList.add('theme-berry-purple');
+      } else if (themeName === 'Dark Mode') {
+        html.classList.add('theme-dark-mode');
       }
     };
     
