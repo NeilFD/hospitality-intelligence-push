@@ -15,6 +15,7 @@ import NotFound from '@/pages/NotFound';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import AnnualSummary from '@/pages/food/AnnualSummary';
+import ControlCentre from '@/pages/ControlCentre';
 
 const queryClient = new QueryClient();
 
@@ -54,7 +55,7 @@ function App() {
                 
                 {/* App Routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/control-centre" element={<Dashboard />} />
+                <Route path="/control-centre" element={<ControlCentre />} />
                 
                 {/* Food Module Routes */}
                 <Route path="/food/dashboard" element={<Dashboard />} />
