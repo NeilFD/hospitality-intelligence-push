@@ -31,6 +31,7 @@ export interface ThemeSettings {
   logoUrl: string | null;
   customFont: string | null;
   isDefault: boolean;
+  isActive: boolean; // Added this missing property
 }
 
 export interface TargetSettings {

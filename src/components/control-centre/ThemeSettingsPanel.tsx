@@ -36,20 +36,9 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   const [isCopied, setIsCopied] = useState(false);
   
   useEffect(() => {
-    setActiveTheme(currentTheme || {
-      id: '',
-      name: 'Default',
-      primaryColor: '#ffffff',
-      secondaryColor: '#f0f0f0',
-      accentColor: '#007bff',
-      sidebarColor: '#333333',
-      buttonColor: '#007bff',
-      textColor: '#000000',
-      logoUrl: '',
-      customFont: 'Arial, sans-serif',
-      isDefault: true,
-      isActive: true
-    });
+    if (currentTheme) {
+      setActiveTheme(currentTheme);
+    }
   }, [currentTheme]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -127,10 +116,10 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       localStorage.setItem('app-logo-url', logoUrl);
       
       // Dispatch a custom event to notify other components about the logo change
-      const event = new CustomEvent('app-logo-updated', { 
+      const logoEvent = new CustomEvent('app-logo-updated', { 
         detail: { logoUrl } 
       });
-      window.dispatchEvent(event);
+      window.dispatchEvent(logoEvent);
       
       toast.success('Logo uploaded successfully');
     } catch (error) {
