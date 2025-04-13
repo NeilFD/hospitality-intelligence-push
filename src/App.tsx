@@ -43,8 +43,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <ThemeProviderExtended>
-          <Router>
+        <Router>
+          <ThemeProviderExtended>
             <Routes>
               {/* Root route with redirect */}
               <Route path="/" element={<Index />} />
@@ -93,8 +93,8 @@ function App() {
               <Route path="*" element={<Layout><NotFound /></Layout>} />
             </Routes>
             <Toaster richColors />
-          </Router>
-        </ThemeProviderExtended>
+          </ThemeProviderExtended>
+        </Router>
       </ThemeProvider>
     </QueryClientProvider>
   );
