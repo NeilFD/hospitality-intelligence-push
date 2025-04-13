@@ -1212,6 +1212,19 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
+      duplicate_database_structure: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_database_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          schema_name: string
+          total_tables: number
+          total_functions: number
+          total_triggers: number
+        }[]
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown

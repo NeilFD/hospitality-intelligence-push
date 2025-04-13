@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { AlertTriangle, Copy, Check, Clock } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export function DatabasePanel() {
   const [duplicating, setDuplicating] = useState(false);
@@ -41,11 +42,16 @@ export function DatabasePanel() {
     try {
       setDuplicating(true);
       
-      // Here we would call the function to duplicate the database
-      // For now, just simulate a delay and show a success message
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Call the database function to duplicate the database structure
+      const { data, error } = await supabase
+        .rpc('duplicate_database_structure');
       
-      const newConnectionString = 'postgresql://user:password@host:port/new_database';
+      if (error) {
+        throw error;
+      }
+      
+      // Get the new connection string from the function result
+      const newConnectionString = data;
       
       // Add the new version to the history
       setVersionHistory(prev => [
