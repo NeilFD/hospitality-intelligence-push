@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { format, parse } from 'date-fns';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Edit, Check, User } from 'lucide-react';
 import { toast } from "sonner";
-import { useAuthStore } from '@/services/auth-service';
+import { useAuthStore, AuthServiceRole } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,8 +24,7 @@ import {
 
 import { cn } from "@/lib/utils"
 
-type Role = 'GOD' | 'Super User' | 'Manager' | 'Team Member';
-type AuthServiceRole = 'GOD' | 'Super User' | 'Manager' | 'Team Member';
+type Role = AuthServiceRole;
 
 interface ProfileData {
   id: string;
@@ -93,7 +93,7 @@ export default function Profile() {
     
     // Set available roles based on current user's role
     if (profile) {
-      setAvailableRoles(getAvailableRoles(profile.role));
+      setAvailableRoles(getAvailableRoles(profile.role as AuthServiceRole));
     }
   }, [profile]);
 
@@ -160,7 +160,7 @@ export default function Profile() {
           setFirstName(data.first_name || '');
           setLastName(data.last_name || '');
           
-          setRole(data.role || 'Team Member');
+          setRole((data.role as Role) || 'Team Member');
           setAvatarUrl(data.avatar_url);
           setJobTitle(data.job_title || '');
           setFavouriteDish(data.favourite_dish || '');
@@ -198,7 +198,7 @@ export default function Profile() {
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
         
-        setRole(profile.role || 'Team Member');
+        setRole((profile.role as Role) || 'Team Member');
         setAvatarUrl(profile.avatar_url);
         setJobTitle(profile.job_title || '');
         setFavouriteDish(profile.favourite_dish || '');

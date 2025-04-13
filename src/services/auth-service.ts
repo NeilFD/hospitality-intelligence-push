@@ -1,3 +1,4 @@
+
 import { supabase, signIn, signUp, signOut, getCurrentUser, getProfile } from '@/lib/supabase';
 import { UserProfile } from '@/types/supabase-types';
 import { create } from 'zustand';
@@ -10,6 +11,7 @@ interface AuthState {
   profile: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  error: string | null; // Added error property
   loadUser: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
