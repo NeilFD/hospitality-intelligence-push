@@ -124,7 +124,7 @@ export default function ControlCentre() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 flex w-full">
+        <TabsList className="mb-6 flex w-full gap-2">
           <TabsTrigger 
             value="permissions" 
             className={`font-medium transition-colors duration-200 ${getPermissionsTabStyle()}`}
