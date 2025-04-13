@@ -276,8 +276,6 @@ const Layout = ({
           {profile.first_name || 'User'}
         </span>}
     </div>;
-    
-  const renderProfileAndNotifications = isAuthenticated && profile;
 
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
@@ -295,39 +293,39 @@ const Layout = ({
             <div className="absolute top-2 left-0 right-0 flex justify-between px-4">
               <div className="w-8"></div>
               <TavernLogo size="md" />
-              {renderProfileAndNotifications && <div className="flex items-center gap-2">
-                  <NotificationsDropdown />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
-                        <ProfileAvatar />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end">
-                      <div className="flex items-center justify-start gap-2 p-2">
-                        <div className="flex flex-col space-y-0.5 leading-none">
-                          <p className="text-sm font-medium">
-                            {profile?.first_name} {profile?.last_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {user?.email} - {profile?.role || 'User'}
-                          </p>
-                        </div>
+              <div className="flex items-center gap-2">
+                <NotificationsDropdown />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
+                      <ProfileAvatar />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-0.5 leading-none">
+                        <p className="text-sm font-medium">
+                          {profile?.first_name} {profile?.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {user?.email} - {profile?.role || 'User'}
+                        </p>
                       </div>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/profile" className="cursor-pointer flex w-full items-center">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Logout</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>}
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             {children}
           </div>
@@ -342,39 +340,39 @@ const Layout = ({
               </Button>
               <TavernLogo size="lg" />
               
-              {renderProfileAndNotifications && <div className="flex items-center gap-3">
-                  <NotificationsDropdown />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
-                        <ProfileAvatar />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end">
-                      <div className="flex items-center justify-start gap-2 p-2">
-                        <div className="flex flex-col space-y-0.5 leading-none">
-                          <p className="text-sm font-medium">
-                            {profile?.first_name} {profile?.last_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {user?.email} - {profile?.role || 'User'}
-                          </p>
-                        </div>
+              <div className="flex items-center gap-3">
+                <NotificationsDropdown />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
+                      <ProfileAvatar />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-0.5 leading-none">
+                        <p className="text-sm font-medium">
+                          {profile?.first_name} {profile?.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {user?.email} - {profile?.role || 'User'}
+                        </p>
                       </div>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/profile" className="cursor-pointer flex w-full items-center">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Logout</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>}
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             {children}
           </div>
