@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/services/auth-service';
-import { Layout } from '@/components/Layout';
+import Layout from '@/components/Layout';  // Changed from { Layout } to default import
 import { supabase } from '@/lib/supabase';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from "@/components/ui/theme-provider";
