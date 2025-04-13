@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 
@@ -50,7 +51,10 @@ const defaultGodProfile: Profile = {
   last_name: 'GOD',
   role: 'GOD',
   job_title: 'System Developer',
-  avatar_url: '',
+  avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Developer',
+  favourite_dish: 'Code Spaghetti',
+  favourite_drink: 'Coffee',
+  about_me: 'I am the supreme developer with access to everything!'
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -144,10 +148,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
+      // In development mode, return to the default GOD user instead of actual logout
+      console.log('Development mode: Returning to default GOD user instead of actual logout');
       set({
-        user: null,
-        profile: null,
-        isAuthenticated: false,
+        user: { id: 'dev-god-user', email: 'dev@example.com' },
+        profile: defaultGodProfile,
+        isAuthenticated: true,
         isLoading: false,
       });
     } catch (error: any) {
@@ -160,8 +166,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadUser: async () => {
     try {
-      // For development, always load the default GOD user
       console.log('Development mode: Loading default GOD user');
+      // For development, always load the default GOD user
       set({
         user: { id: 'dev-god-user', email: 'dev@example.com' },
         profile: defaultGodProfile,
@@ -217,6 +223,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
+      // In development mode, just update the local state without making Supabase calls
+      if (get().user?.id === 'dev-god-user') {
+        console.log('Development mode: Updating local GOD profile', profileData);
+        const updatedProfile = {
+          ...get().profile,
+          ...profileData
+        };
+        set({
+          profile: updatedProfile,
+          isLoading: false,
+        });
+        return;
+      }
+      
+      // For real users, update the profile in Supabase
       const { user } = get();
       
       if (!user) {

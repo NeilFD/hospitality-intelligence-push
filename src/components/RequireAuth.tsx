@@ -23,6 +23,12 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   
+  // In development mode with the GOD user, always allow access
+  if (profile?.role === 'GOD') {
+    console.log('GOD user detected - granting access to protected route');
+    return <>{children}</>;
+  }
+  
   if (!isAuthenticated) {
     // Redirect to login but save the current location they were trying to access
     return <Navigate to="/login" state={{ from: location }} replace />;

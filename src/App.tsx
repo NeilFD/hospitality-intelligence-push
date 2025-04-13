@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Outlet, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { UserProvider } from './contexts/UserContext';
@@ -12,48 +11,16 @@ import { Toaster } from "@/components/ui/toaster";
 import ControlCentre from "./pages/ControlCentre";
 import RequireAuth from "./components/auth/RequireAuth";
 import Index from './pages/Index';
-
-// Import actual components
-import Dashboard from './pages/Dashboard';
-import TeamDashboard from './pages/team/Dashboard';
-import AnnualSummaryPage from './pages/AnnualSummary';
-import MonthSummary from './pages/MonthSummary';
-import InputSettings from './pages/InputSettings';
-
-// Import food-specific pages
-import FoodDashboard from './pages/food/Dashboard';
-import FoodInputSettings from './pages/food/InputSettings';
-import FoodMonthSummary from './pages/food/MonthSummary'; 
-import FoodAnnualSummary from './pages/food/AnnualSummary';
-import FoodBible from './pages/food/FoodBible';
-
-// Import beverage-specific pages
-import BeverageDashboard from './pages/beverage/Dashboard';
-import BeverageInputSettings from './pages/beverage/InputSettings';
-import BeverageMonthSummary from './pages/beverage/MonthSummary';
-import BeverageAnnualSummary from './pages/beverage/AnnualSummary';
-import BeverageBible from './pages/beverage/BeverageBible';
-
-// Import performance pages
-import PerformanceDashboard from './pages/performance/Dashboard';
-
-// Import P&L pages
-import PLDashboard from './pages/pl/Dashboard';
-
-// Import wages pages
-import WagesDashboard from './pages/wages/WagesDashboard';
-
-// Import Master pages
-import MasterDashboard from './pages/master/Dashboard';
-import MasterMonthSummary from './pages/master/MonthSummary';
-import MasterWeeklyInput from './pages/master/WeeklyInput';
-
-// Import team pages
-import TeamChat from './pages/team/Chat';
-import TeamNoticeboard from './pages/team/Noticeboard';
-import TeamKnowledge from './pages/team/Knowledge';
+import { useAuthStore } from './services/auth-service';
 
 function App() {
+  const { loadUser } = useAuthStore();
+
+  useEffect(() => {
+    console.log("App initializing: Loading default GOD user");
+    loadUser();
+  }, [loadUser]);
+
   return (
     <Router>
       <AuthProvider>
@@ -98,12 +65,8 @@ function App() {
                 <Route path="team/chat" element={<TeamChat />} />
                 <Route path="team/knowledge" element={<TeamKnowledge />} />
                 
-                {/* Control Centre route */}
-                <Route path="control-centre" element={
-                  <RequireAuth requiredRole="Super User">
-                    <ControlCentre />
-                  </RequireAuth>
-                } />
+                {/* Control Centre route - no longer requires special auth since we're in dev mode */}
+                <Route path="control-centre" element={<ControlCentre />} />
                 
               </Route>
               

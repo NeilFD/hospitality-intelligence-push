@@ -44,7 +44,9 @@ const Layout = ({
   
   useEffect(() => {
     console.log('Current user profile:', profile);
-  }, [profile]);
+    console.log('Is authenticated:', isAuthenticated);
+    console.log('Current user:', user);
+  }, [profile, isAuthenticated, user]);
   
   useEffect(() => {
     console.log('Modules in sidebar:', modules);
@@ -89,7 +91,7 @@ const Layout = ({
   const handleLogout = async () => {
     await logout();
     toast.success('You have been logged out');
-    navigate('/login');
+    navigate('/');
   };
   
   const getUserInitials = () => {
@@ -196,7 +198,7 @@ const Layout = ({
     return <>{children}</>;
   }
   
-  const isAdminUser = true; // Always show admin options
+  const isAdminUser = true;
 
   const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
       <div className="p-4 flex flex-col items-center">
@@ -292,10 +294,7 @@ const Layout = ({
               <div className="w-8"></div>
               <TavernLogo size="md" />
               {isAuthenticated && <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" className="relative">
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
-                  </Button>
+                  <NotificationsDropdown />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
@@ -342,10 +341,7 @@ const Layout = ({
               <TavernLogo size="lg" />
               
               {isAuthenticated && <div className="flex items-center gap-3">
-                  <Button variant="outline" size="icon" className="relative">
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
-                  </Button>
+                  <NotificationsDropdown />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
