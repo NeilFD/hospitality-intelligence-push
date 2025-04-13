@@ -42,14 +42,16 @@ export default function LoginForm() {
       // If dev login is checked, set the email to dev email
       if (isDevLogin) {
         await login('dev@example.com', password);
-        if (!error) {
-          navigate('/');
-        }
       } else {
         await login(email, password);
-        if (!error) {
-          navigate('/');
-        }
+      }
+      
+      // Only navigate if there's no error
+      if (!error) {
+        navigate('/');
+      } else {
+        // Explicitly set isSubmitting to false on error
+        setIsSubmitting(false);
       }
     } catch (err) {
       // Error is handled by the login function
