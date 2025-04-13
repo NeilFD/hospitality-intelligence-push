@@ -92,7 +92,8 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         
         const transformedThemes = data.map(theme => ({
           id: theme.id,
-          name: theme.name,
+          // If the theme name is 'Tavern Purple', change it to 'Hi Purple'
+          name: theme.name === 'Tavern Purple' ? 'Hi Purple' : theme.name,
           primaryColor: theme.primary_color,
           secondaryColor: theme.secondary_color,
           accentColor: theme.accent_color,
