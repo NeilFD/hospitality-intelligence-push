@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,6 +139,26 @@ export function ThemeSettingsPanel({
   const [activeTab, setActiveTab] = useState("presets");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [presetSelectAnimation, setPresetSelectAnimation] = useState(false);
+
+  useEffect(() => {
+    // Load Courier Prime font
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap';
+    
+    // Check if the link is already in the document
+    if (!document.head.querySelector('link[href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap"]')) {
+      document.head.appendChild(link);
+    }
+    
+    return () => {
+      // Only remove if we added it
+      const existingLink = document.head.querySelector('link[href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap"]');
+      if (existingLink && existingLink === link) {
+        document.head.removeChild(link);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (currentTheme) {

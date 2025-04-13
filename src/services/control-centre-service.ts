@@ -2,7 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
-// Available fonts remain the same
+// Available fonts with added typewriter font
 export const availableFonts: { name: string; value: string }[] = [
   { name: 'Default System Font', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif' },
   { name: 'Inter', value: 'Inter, system-ui, sans-serif' },
@@ -12,6 +12,7 @@ export const availableFonts: { name: string; value: string }[] = [
   { name: 'Montserrat', value: 'Montserrat, system-ui, sans-serif' },
   { name: 'Poppins', value: 'Poppins, system-ui, sans-serif' },
   { name: 'Lato', value: 'Lato, system-ui, sans-serif' },
+  { name: 'Courier Prime', value: '"Courier Prime", "Courier New", monospace' },
 ];
 
 // Modify getControlCentreData to fetch themes from database
