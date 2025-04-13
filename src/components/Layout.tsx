@@ -387,10 +387,37 @@ const Layout = ({
         </span>}
     </div>;
 
+  const [companyName, setCompanyName] = useState('Hospitality Intelligence');
+
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('themes')
+          .select('company_name')
+          .eq('is_active', true)
+          .single();
+
+        if (error) {
+          console.error('Error fetching company name:', error);
+          return;
+        }
+
+        if (data && data.company_name) {
+          setCompanyName(data.company_name);
+        }
+      } catch (err) {
+        console.error('Error in fetchCompanyName:', err);
+      }
+    };
+
+    fetchCompanyName();
+  }, []);
+
   const Sidebar = <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
-        <p className={cn("text-sm mt-1", getTextColor())}>Hospitality Intelligence</p>
+        <p className={cn("text-sm mt-1", getTextColor())}>{companyName}</p>
       </div>
       
       <Separator className={getSeparatorBgColor()} />
