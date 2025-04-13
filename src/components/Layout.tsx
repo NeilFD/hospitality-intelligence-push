@@ -172,12 +172,6 @@ const Layout = ({
     return "bg-[#9d89c9]/20";
   };
   
-  const handleControlCentreClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log('Control Centre clicked, navigating to /control-centre');
-    navigate('/control-centre');
-  };
-  
   const ControlCentreLink = () => {
     return (
       <Link 
@@ -521,7 +515,6 @@ const Layout = ({
                       "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
                       location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
                     )}
-                    onClick={handleControlCentreClick}
                   >
                     <div className="mx-auto">
                       <Sliders className="h-4 w-4" />
