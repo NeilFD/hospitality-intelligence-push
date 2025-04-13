@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -118,6 +119,11 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   };
   
   const applyTheme = async () => {
+    if (!selectedThemeId) {
+      toast.error('Please select a theme first');
+      return;
+    }
+
     if (profile?.role !== 'GOD' && profile?.role !== 'Super User') {
       toast.error('You do not have permission to change themes');
       return;
@@ -126,15 +132,34 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     try {
       setSaving(true);
       
-      const { error } = await supabase.rpc('set_active_theme', { 
-        theme_id: selectedThemeId 
-      });
+      // Directly call the update query instead of using RPC
+      const { error } = await supabase
+        .from('themes')
+        .update({ is_active: false })
+        .neq('id', 'placeholder');  // Update all rows
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error resetting themes:', error);
+        throw error;
+      }
+      
+      // Then set the selected theme to active
+      const { error: updateError } = await supabase
+        .from('themes')
+        .update({ is_active: true })
+        .eq('id', selectedThemeId);
+      
+      if (updateError) {
+        console.error('Error activating theme:', updateError);
+        throw updateError;
+      }
       
       toast.success('Theme applied successfully');
       
-      window.location.reload();
+      // Reload the page to apply the new theme
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error applying theme:', error);
       toast.error('Failed to apply theme');
