@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { toast } from 'sonner';
 import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-types';
 import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
-import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette } from 'lucide-react';
+import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders } from 'lucide-react';
 
 interface ThemeSettingsPanelProps {
   currentTheme: ThemeSettings | null;
@@ -81,6 +82,23 @@ const presetThemes: PresetTheme[] = [
   }
 ];
 
+// Helper to convert hex to RGB for sliders
+const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : { r: 0, g: 0, b: 0 };
+};
+
+// Helper to convert RGB to hex for input field
+const rgbToHex = (r: number, g: number, b: number): string => {
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+};
+
 export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSettingsPanelProps) {
   const [activeTheme, setActiveTheme] = useState<ThemeSettings>(currentTheme || {
     id: '',
@@ -96,6 +114,15 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     isDefault: true,
     isActive: true
   });
+  
+  // RGB state values for sliders
+  const [primaryRgb, setPrimaryRgb] = useState(hexToRgb(activeTheme.primaryColor));
+  const [secondaryRgb, setSecondaryRgb] = useState(hexToRgb(activeTheme.secondaryColor));
+  const [accentRgb, setAccentRgb] = useState(hexToRgb(activeTheme.accentColor));
+  const [sidebarRgb, setSidebarRgb] = useState(hexToRgb(activeTheme.sidebarColor));
+  const [buttonRgb, setButtonRgb] = useState(hexToRgb(activeTheme.buttonColor));
+  const [textRgb, setTextRgb] = useState(hexToRgb(activeTheme.textColor));
+  
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -103,15 +130,81 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   useEffect(() => {
     if (currentTheme) {
       setActiveTheme(currentTheme);
+      // Update RGB values for sliders
+      setPrimaryRgb(hexToRgb(currentTheme.primaryColor));
+      setSecondaryRgb(hexToRgb(currentTheme.secondaryColor));
+      setAccentRgb(hexToRgb(currentTheme.accentColor));
+      setSidebarRgb(hexToRgb(currentTheme.sidebarColor));
+      setButtonRgb(hexToRgb(currentTheme.buttonColor));
+      setTextRgb(hexToRgb(currentTheme.textColor));
     }
   }, [currentTheme]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // For hex input fields, also update the corresponding RGB state
+    if (name === 'primaryColor') {
+      setPrimaryRgb(hexToRgb(value));
+    } else if (name === 'secondaryColor') {
+      setSecondaryRgb(hexToRgb(value));
+    } else if (name === 'accentColor') {
+      setAccentRgb(hexToRgb(value));
+    } else if (name === 'sidebarColor') {
+      setSidebarRgb(hexToRgb(value));
+    } else if (name === 'buttonColor') {
+      setButtonRgb(hexToRgb(value));
+    } else if (name === 'textColor') {
+      setTextRgb(hexToRgb(value));
+    }
+    
     setActiveTheme(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  
+  // Handle RGB slider changes
+  const handlePrimaryRgbChange = (values: number[]) => {
+    const [r, g, b] = values;
+    setPrimaryRgb({ r, g, b });
+    const hex = rgbToHex(r, g, b);
+    setActiveTheme(prev => ({ ...prev, primaryColor: hex }));
+  };
+  
+  const handleSecondaryRgbChange = (values: number[]) => {
+    const [r, g, b] = values;
+    setSecondaryRgb({ r, g, b });
+    const hex = rgbToHex(r, g, b);
+    setActiveTheme(prev => ({ ...prev, secondaryColor: hex }));
+  };
+  
+  const handleAccentRgbChange = (values: number[]) => {
+    const [r, g, b] = values;
+    setAccentRgb({ r, g, b });
+    const hex = rgbToHex(r, g, b);
+    setActiveTheme(prev => ({ ...prev, accentColor: hex }));
+  };
+  
+  const handleSidebarRgbChange = (values: number[]) => {
+    const [r, g, b] = values;
+    setSidebarRgb({ r, g, b });
+    const hex = rgbToHex(r, g, b);
+    setActiveTheme(prev => ({ ...prev, sidebarColor: hex }));
+  };
+  
+  const handleButtonRgbChange = (values: number[]) => {
+    const [r, g, b] = values;
+    setButtonRgb({ r, g, b });
+    const hex = rgbToHex(r, g, b);
+    setActiveTheme(prev => ({ ...prev, buttonColor: hex }));
+  };
+  
+  const handleTextRgbChange = (values: number[]) => {
+    const [r, g, b] = values;
+    setTextRgb({ r, g, b });
+    const hex = rgbToHex(r, g, b);
+    setActiveTheme(prev => ({ ...prev, textColor: hex }));
   };
   
   const handleSelectChange = (value: string) => {
@@ -259,6 +352,7 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   };
 
   const applyPresetTheme = (preset: PresetTheme) => {
+    // Update hex values
     setActiveTheme(prev => ({
       ...prev,
       name: preset.name,
@@ -270,8 +364,66 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       textColor: preset.colors.text
     }));
     
+    // Update RGB values for sliders
+    setPrimaryRgb(hexToRgb(preset.colors.primary));
+    setSecondaryRgb(hexToRgb(preset.colors.secondary));
+    setAccentRgb(hexToRgb(preset.colors.accent));
+    setSidebarRgb(hexToRgb(preset.colors.sidebar));
+    setButtonRgb(hexToRgb(preset.colors.button));
+    setTextRgb(hexToRgb(preset.colors.text));
+    
     toast.success(`${preset.name} theme applied! Remember to save your changes.`);
   };
+
+  // RGB Slider Component for reusability
+  const ColorSliderGroup = ({ 
+    name, 
+    rgbValues, 
+    onChange
+  }: { 
+    name: string, 
+    rgbValues: { r: number, g: number, b: number }, 
+    onChange: (values: number[]) => void 
+  }) => (
+    <div className="space-y-2">
+      <div className="flex items-center">
+        <div className="w-6 h-6 mr-2" style={{ backgroundColor: `rgb(${rgbValues.r}, 0, 0)` }}></div>
+        <Slider 
+          defaultValue={[rgbValues.r]} 
+          max={255} 
+          step={1}
+          value={[rgbValues.r]} 
+          onValueChange={(values) => onChange([values[0], rgbValues.g, rgbValues.b])}
+          className="flex-1"
+        />
+        <span className="ml-2 w-8 text-center text-xs">{rgbValues.r}</span>
+      </div>
+      <div className="flex items-center">
+        <div className="w-6 h-6 mr-2" style={{ backgroundColor: `rgb(0, ${rgbValues.g}, 0)` }}></div>
+        <Slider 
+          defaultValue={[rgbValues.g]} 
+          max={255} 
+          step={1}
+          value={[rgbValues.g]} 
+          onValueChange={(values) => onChange([rgbValues.r, values[0], rgbValues.b])}
+          className="flex-1"
+        />
+        <span className="ml-2 w-8 text-center text-xs">{rgbValues.g}</span>
+      </div>
+      <div className="flex items-center">
+        <div className="w-6 h-6 mr-2" style={{ backgroundColor: `rgb(0, 0, ${rgbValues.b})` }}></div>
+        <Slider 
+          defaultValue={[rgbValues.b]} 
+          max={255} 
+          step={1}
+          value={[rgbValues.b]} 
+          onValueChange={(values) => onChange([rgbValues.r, rgbValues.g, values[0]])}
+          className="flex-1"
+        />
+        <span className="ml-2 w-8 text-center text-xs">{rgbValues.b}</span>
+      </div>
+    </div>
+  );
 
   return (
     <Card>
@@ -313,70 +465,160 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
           />
         </div>
         
-        <div className="grid gap-4">
-          <Label htmlFor="primaryColor">Primary Color</Label>
-          <Input 
-            type="color" 
-            id="primaryColor" 
-            name="primaryColor"
-            value={activeTheme.primaryColor} 
-            onChange={handleInputChange} 
-          />
+        {/* Primary Color */}
+        <div className="grid gap-2">
+          <Label htmlFor="primaryColor" className="flex items-center">
+            <Sliders className="h-4 w-4 mr-2" />
+            Primary Color
+          </Label>
+          <div className="flex space-x-2 items-center">
+            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.primaryColor }}></div>
+            <Input 
+              type="text" 
+              id="primaryColor" 
+              name="primaryColor"
+              value={activeTheme.primaryColor} 
+              onChange={handleInputChange} 
+              className="flex-grow"
+            />
+          </div>
+          <div className="mt-2">
+            <ColorSliderGroup 
+              name="primary" 
+              rgbValues={primaryRgb} 
+              onChange={handlePrimaryRgbChange} 
+            />
+          </div>
         </div>
         
-        <div className="grid gap-4">
-          <Label htmlFor="secondaryColor">Secondary Color</Label>
-          <Input 
-            type="color" 
-            id="secondaryColor" 
-            name="secondaryColor"
-            value={activeTheme.secondaryColor} 
-            onChange={handleInputChange} 
-          />
+        {/* Secondary Color */}
+        <div className="grid gap-2">
+          <Label htmlFor="secondaryColor" className="flex items-center">
+            <Sliders className="h-4 w-4 mr-2" />
+            Secondary Color
+          </Label>
+          <div className="flex space-x-2 items-center">
+            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.secondaryColor }}></div>
+            <Input 
+              type="text" 
+              id="secondaryColor" 
+              name="secondaryColor"
+              value={activeTheme.secondaryColor} 
+              onChange={handleInputChange} 
+              className="flex-grow"
+            />
+          </div>
+          <div className="mt-2">
+            <ColorSliderGroup 
+              name="secondary" 
+              rgbValues={secondaryRgb} 
+              onChange={handleSecondaryRgbChange} 
+            />
+          </div>
         </div>
         
-        <div className="grid gap-4">
-          <Label htmlFor="accentColor">Accent Color</Label>
-          <Input 
-            type="color" 
-            id="accentColor" 
-            name="accentColor"
-            value={activeTheme.accentColor} 
-            onChange={handleInputChange} 
-          />
+        {/* Accent Color */}
+        <div className="grid gap-2">
+          <Label htmlFor="accentColor" className="flex items-center">
+            <Sliders className="h-4 w-4 mr-2" />
+            Accent Color
+          </Label>
+          <div className="flex space-x-2 items-center">
+            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.accentColor }}></div>
+            <Input 
+              type="text" 
+              id="accentColor" 
+              name="accentColor"
+              value={activeTheme.accentColor} 
+              onChange={handleInputChange} 
+              className="flex-grow"
+            />
+          </div>
+          <div className="mt-2">
+            <ColorSliderGroup 
+              name="accent" 
+              rgbValues={accentRgb} 
+              onChange={handleAccentRgbChange} 
+            />
+          </div>
         </div>
         
-        <div className="grid gap-4">
-          <Label htmlFor="sidebarColor">Sidebar Color</Label>
-          <Input 
-            type="color" 
-            id="sidebarColor" 
-            name="sidebarColor"
-            value={activeTheme.sidebarColor} 
-            onChange={handleInputChange} 
-          />
+        {/* Sidebar Color */}
+        <div className="grid gap-2">
+          <Label htmlFor="sidebarColor" className="flex items-center">
+            <Sliders className="h-4 w-4 mr-2" />
+            Sidebar Color
+          </Label>
+          <div className="flex space-x-2 items-center">
+            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.sidebarColor }}></div>
+            <Input 
+              type="text" 
+              id="sidebarColor" 
+              name="sidebarColor"
+              value={activeTheme.sidebarColor} 
+              onChange={handleInputChange} 
+              className="flex-grow"
+            />
+          </div>
+          <div className="mt-2">
+            <ColorSliderGroup 
+              name="sidebar" 
+              rgbValues={sidebarRgb} 
+              onChange={handleSidebarRgbChange} 
+            />
+          </div>
         </div>
         
-        <div className="grid gap-4">
-          <Label htmlFor="buttonColor">Button Color</Label>
-          <Input 
-            type="color" 
-            id="buttonColor" 
-            name="buttonColor"
-            value={activeTheme.buttonColor} 
-            onChange={handleInputChange} 
-          />
+        {/* Button Color */}
+        <div className="grid gap-2">
+          <Label htmlFor="buttonColor" className="flex items-center">
+            <Sliders className="h-4 w-4 mr-2" />
+            Button Color
+          </Label>
+          <div className="flex space-x-2 items-center">
+            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.buttonColor }}></div>
+            <Input 
+              type="text" 
+              id="buttonColor" 
+              name="buttonColor"
+              value={activeTheme.buttonColor} 
+              onChange={handleInputChange} 
+              className="flex-grow"
+            />
+          </div>
+          <div className="mt-2">
+            <ColorSliderGroup 
+              name="button" 
+              rgbValues={buttonRgb} 
+              onChange={handleButtonRgbChange} 
+            />
+          </div>
         </div>
         
-        <div className="grid gap-4">
-          <Label htmlFor="textColor">Text Color</Label>
-          <Input 
-            type="color" 
-            id="textColor" 
-            name="textColor"
-            value={activeTheme.textColor} 
-            onChange={handleInputChange} 
-          />
+        {/* Text Color */}
+        <div className="grid gap-2">
+          <Label htmlFor="textColor" className="flex items-center">
+            <Sliders className="h-4 w-4 mr-2" />
+            Text Color
+          </Label>
+          <div className="flex space-x-2 items-center">
+            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.textColor }}></div>
+            <Input 
+              type="text" 
+              id="textColor" 
+              name="textColor"
+              value={activeTheme.textColor} 
+              onChange={handleInputChange} 
+              className="flex-grow"
+            />
+          </div>
+          <div className="mt-2">
+            <ColorSliderGroup 
+              name="text" 
+              rgbValues={textRgb} 
+              onChange={handleTextRgbChange} 
+            />
+          </div>
         </div>
         
         <div className="grid gap-4">
