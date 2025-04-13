@@ -64,9 +64,41 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     loadActiveTheme();
 
     // Set up listener for theme updates
-    const handleThemeUpdate = () => {
-      console.log("Theme update event received");
-      loadActiveTheme();
+    const handleThemeUpdate = (event: any) => {
+      console.log("Theme update event received", event.detail);
+      
+      // If we have theme details in the event, apply them directly without database call
+      if (event.detail && event.detail.theme && event.detail.theme.name) {
+        const themeName = event.detail.theme.name;
+        console.log("Applying theme from event:", themeName);
+        
+        // Apply theme class to the html element
+        const html = document.documentElement;
+        
+        // Remove any existing theme classes
+        const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
+        themeClasses.forEach(cls => {
+          html.classList.remove(cls);
+        });
+        
+        // Add the new theme class based on the theme name
+        if (themeName === 'Forest Green') {
+          html.classList.add('theme-forest-green');
+        } else if (themeName === 'Ocean Blue') {
+          html.classList.add('theme-ocean-blue');
+        } else if (themeName === 'Sunset Orange') {
+          html.classList.add('theme-sunset-orange');
+        } else if (themeName === 'Berry Purple') {
+          html.classList.add('theme-berry-purple');
+        } else if (themeName === 'Dark Mode') {
+          html.classList.add('theme-dark-mode');
+        }
+        
+        console.log('Theme applied immediately from event:', themeName);
+      } else {
+        // Fallback to database call if no theme in event
+        loadActiveTheme();
+      }
     };
     
     // Listen for custom theme update event

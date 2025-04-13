@@ -373,10 +373,8 @@ export function ThemeSettingsPanel({
       const themeEvent = new CustomEvent('app-theme-updated', {
         detail: { theme: activeTheme }
       });
+      console.log("Dispatching theme event with data:", activeTheme);
       window.dispatchEvent(themeEvent);
-      
-      // Directly apply the theme without waiting for navigation
-      applyThemeToHTML(activeTheme.name);
       
       toast.success('Theme settings saved successfully');
     } catch (error) {
