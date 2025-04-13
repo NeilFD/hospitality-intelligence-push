@@ -520,6 +520,26 @@ export function ThemeSettingsPanel({
     }
   };
 
+  const getThemeNameInputClasses = () => {
+    const htmlElement = document.documentElement;
+    
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return "bg-[#e8f5e9] border-[#2e7d32]/30 focus:ring-[#2e7d32]/50";
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return "bg-[#e3f2fd] border-[#1976d2]/30 focus:ring-[#1976d2]/50";
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return "bg-[#fff3e0] border-[#ef6c00]/30 focus:ring-[#ef6c00]/50";
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return "bg-[#f3e5f5] border-[#8e24aa]/30 focus:ring-[#8e24aa]/50";
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return "bg-[#424242]/10 border-[#333333]/30 focus:ring-[#333333]/50";
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return "bg-[#e0d9f0] border-[#9d89c9]/30 focus:ring-[#9d89c9]/50";
+    } else {
+      return "bg-muted/30 border-primary/30 focus:ring-primary/50";
+    }
+  };
+
   return <Card>
       <CardHeader>
         <CardTitle>Brand & Theme Settings</CardTitle>
@@ -587,8 +607,33 @@ export function ThemeSettingsPanel({
           <TabsContent value="presets" className="space-y-6">
             <div className="grid gap-6">
               <div className="grid gap-4">
-                <Label htmlFor="name">Theme Name</Label>
-                <Input type="text" id="name" name="name" value={activeTheme.name} onChange={handleInputChange} />
+                <Label htmlFor="name" className="flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-muted-foreground" />
+                  Theme Name
+                </Label>
+                <Input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  value={activeTheme.name} 
+                  onChange={handleInputChange} 
+                  className={`
+                    w-full 
+                    py-3 
+                    px-4 
+                    rounded-lg 
+                    text-lg 
+                    font-semibold 
+                    shadow-sm 
+                    transition-all 
+                    duration-300 
+                    border-2 
+                    focus:outline-none 
+                    focus:ring-2 
+                    ${getThemeNameInputClasses()}
+                  `}
+                  placeholder="Enter a theme name"
+                />
               </div>
               
               <div>
