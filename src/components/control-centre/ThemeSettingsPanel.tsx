@@ -461,7 +461,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'presets' 
-                  ? 'bg-purple-700 text-purple-100 shadow-md' 
+                  ? 'bg-purple-700 text-white' 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
@@ -472,8 +472,8 @@ export function ThemeSettingsPanel({
                 font-medium
                 border
                 ${activeTab === 'presets' 
-                  ? 'border-purple-800 text-purple-100' 
-                  : 'border-purple-200 text-purple-900 hover:border-purple-300 hover:text-purple-950'}
+                  ? 'border-purple-800' 
+                  : 'border-purple-200 hover:border-purple-300'}
               `}
             >
               <Palette className="h-4 w-4" />
@@ -487,7 +487,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'custom' 
-                  ? 'bg-purple-700 text-purple-100 shadow-md' 
+                  ? 'bg-purple-700 text-white' 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
@@ -498,8 +498,8 @@ export function ThemeSettingsPanel({
                 font-medium
                 border
                 ${activeTab === 'custom' 
-                  ? 'border-purple-800 text-purple-100' 
-                  : 'border-purple-200 text-purple-900 hover:border-purple-300 hover:text-purple-950'}
+                  ? 'border-purple-800' 
+                  : 'border-purple-200 hover:border-purple-300'}
               `}
             >
               <Sliders className="h-4 w-4" />
