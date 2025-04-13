@@ -9,6 +9,7 @@ import { useAuthStore, AuthServiceRole } from '@/services/auth-service';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from '@/lib/supabase';
 
 export default function ProfilePage() {
   const { profile, user, updateProfile } = useAuthStore();
@@ -21,6 +22,12 @@ export default function ProfilePage() {
   const [favoriteDrink, setFavoriteDrink] = useState(profile?.favourite_drink || '');
   const [role, setRole] = useState<AuthServiceRole>(profile?.role as AuthServiceRole || 'Team Member');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   
   // Update state when profile data changes
   useEffect(() => {
@@ -62,6 +69,69 @@ export default function ProfilePage() {
       toast.error('Failed to update profile');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    // Validation checks
+    if (!currentPassword) {
+      toast.error('Current password is required');
+      return;
+    }
+    
+    if (!newPassword) {
+      toast.error('New password is required');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    
+    try {
+      // For development mode with the GOD user, just simulate password change
+      if (user?.id === 'dev-god-user') {
+        // Simulate a delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        toast.success('Password updated successfully (Development mode)');
+        
+        // Clear password fields
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        
+        setIsChangingPassword(false);
+        return;
+      }
+      
+      // For real users, use Supabase to update the password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('Password updated successfully');
+      
+      // Clear password fields
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast.error(error.message || 'Failed to change password');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
   
@@ -107,7 +177,7 @@ export default function ProfilePage() {
         </div>
         
         <div className="md:col-span-2">
-          <Card>
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
               <CardDescription>
@@ -219,6 +289,62 @@ export default function ProfilePage() {
               <div className="flex justify-end">
                 <Button onClick={handleSaveProfile} disabled={isSaving}>
                   {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* New Password Change Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Change Password</CardTitle>
+              <CardDescription>
+                Update your account password
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  onClick={handleChangePassword} 
+                  disabled={isChangingPassword}
+                  variant="outline"
+                >
+                  {isChangingPassword ? 'Updating...' : 'Update Password'}
                 </Button>
               </div>
             </CardContent>
