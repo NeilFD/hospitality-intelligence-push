@@ -1,14 +1,15 @@
 
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '@/services/auth-service';
+import { useAuthStore, AuthServiceRole } from '@/services/auth-service';
 
 interface RequireAuthProps {
   children: React.ReactNode;
+  requiredRole?: AuthServiceRole;
 }
 
-export default function RequireAuth({ children }: RequireAuthProps) {
-  const { isAuthenticated, isLoading, loadUser } = useAuthStore();
+const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
+  const { isAuthenticated, isLoading, loadUser, profile } = useAuthStore();
   const location = useLocation();
   
   useEffect(() => {
@@ -27,5 +28,19 @@ export default function RequireAuth({ children }: RequireAuthProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
+  // If a specific role is required, check if the user has it
+  if (requiredRole && profile) {
+    const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
+    const userRoleValue = profile.role ? roleHierarchy[profile.role as AuthServiceRole] || 0 : 0;
+    const requiredRoleValue = roleHierarchy[requiredRole] || 0;
+    
+    // If user's role value is less than required role value, they don't have permission
+    if (userRoleValue < requiredRoleValue) {
+      return <Navigate to="/" replace />;
+    }
+  }
+  
   return <>{children}</>;
-}
+};
+
+export default RequireAuth;

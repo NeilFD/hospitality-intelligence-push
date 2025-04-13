@@ -1,26 +1,101 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Outlet } from 'react-router-dom';
-import { ThemeProvider } from "@/components/ui/theme-provider"
+import { ThemeProvider } from "@/components/ui/theme-provider";
 import { UserProvider } from './contexts/UserContext';
 import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
 import ProfilePage from './pages/ProfilePage';
-import KitchenLedger from './pages/kitchen-ledger/KitchenLedger';
-import SuppliersPage from './pages/kitchen-ledger/SuppliersPage';
-import MonthlySettingsPage from './pages/kitchen-ledger/MonthlySettingsPage';
-import AnnualSummaryPage from './pages/kitchen-ledger/AnnualSummaryPage';
-import InputSettingsPage from './pages/kitchen-ledger/InputSettingsPage';
-import PlDashboard from './pages/pl/PlDashboard';
-import WagesDashboard from './pages/wages/WagesDashboard';
-import PerformanceDashboard from './pages/performance/PerformanceDashboard';
-import TeamDashboard from './pages/team/TeamDashboard';
-import Noticeboard from './pages/team/Noticeboard';
-import TeamChat from './pages/team/TeamChat';
-import KnowledgeBase from './pages/team/KnowledgeBase';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 import ControlCentre from "./pages/ControlCentre";
 import RequireAuth from "./components/auth/RequireAuth";
+
+// Stub components for the routes that we don't have yet
+// These will be replaced when the actual components are developed
+const KitchenLedger = ({ moduleType = 'food' }: { moduleType?: string }) => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Kitchen Ledger - {moduleType}</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const SuppliersPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Suppliers - {moduleType}</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const MonthlySettingsPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Monthly Settings - {moduleType}</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const AnnualSummaryPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Annual Summary - {moduleType}</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const InputSettingsPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Input Settings - {moduleType}</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const PlDashboard = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">P&L Dashboard</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const WagesDashboard = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Wages Dashboard</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const PerformanceDashboard = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Performance Dashboard</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const TeamDashboard = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Team Dashboard</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const Noticeboard = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Noticeboard</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const TeamChat = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Team Chat</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
+
+const KnowledgeBase = () => (
+  <div className="p-8">
+    <h1 className="text-2xl font-bold mb-4">Knowledge Base</h1>
+    <p>This module will be implemented soon.</p>
+  </div>
+);
 
 function App() {
   return (

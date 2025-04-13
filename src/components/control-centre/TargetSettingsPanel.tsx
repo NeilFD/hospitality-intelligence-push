@@ -148,18 +148,18 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
             </p>
             
             <div className="flex items-center gap-3">
-              <Button as="label" htmlFor="budgetFile" variant="outline" disabled={uploading}>
+              <Button component="label" htmlFor="budgetFile" variant="outline" disabled={uploading}>
                 <FileUp className="mr-2 h-4 w-4" />
                 {uploading ? 'Uploading...' : 'Select Budget File'}
+                <input 
+                  type="file" 
+                  id="budgetFile" 
+                  className="hidden" 
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileChange}
+                />
               </Button>
               {fileName && <span className="text-sm text-muted-foreground">{fileName}</span>}
-              <input 
-                type="file" 
-                id="budgetFile" 
-                className="hidden" 
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileChange}
-              />
             </div>
             
             <div className="mt-4 bg-muted/50 p-4 rounded-md">

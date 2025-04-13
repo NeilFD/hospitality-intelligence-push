@@ -71,7 +71,7 @@ export function DatabasePanel() {
                 This tool allows you to duplicate the entire Supabase database structure (tables, relationships, functions, etc.) without any data. This is useful for creating a new instance of the application with the same structure but without any existing data.
               </p>
               
-              <Alert variant="warning">
+              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Important Warning</AlertTitle>
                 <AlertDescription>
