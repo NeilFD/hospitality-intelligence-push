@@ -177,6 +177,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     else if (businessTargets) {
       console.log("Using business targets:", businessTargets);
       if (moduleType === 'food') {
+        // Ensure we're using the current business target value
         setGpTarget(Math.round(businessTargets.foodGpTarget));
         setCostTarget(100 - Math.round(businessTargets.foodGpTarget));
       } else if (moduleType === 'beverage') {
@@ -197,6 +198,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const handleMonthChange = (year: number, month: number) => {
     // Invalidate the queries when month changes
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', year, month, moduleType] });
+    queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
     setCurrentYear(year);
     setCurrentMonth(month);
   };
@@ -336,6 +338,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     
     // Immediately refresh data to ensure UI is up to date
     queryClient.invalidateQueries({ queryKey: ['monthly-settings', currentYear, currentMonth, moduleType] });
+    queryClient.invalidateQueries({ queryKey: ['control-centre-data'] });
   };
 
   const pageTitle = modulePrefix ? `${modulePrefix} Input Settings` : "Input Settings";
