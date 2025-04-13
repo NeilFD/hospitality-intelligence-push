@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet } from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet, Sliders } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -192,6 +192,8 @@ const Layout = ({
     return <>{children}</>;
   }
   
+  const isAdminUser = profile?.role === 'GOD' || profile?.role === 'Super User';
+
   const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
@@ -235,6 +237,27 @@ const Layout = ({
             </Link>)}
         </nav>
       </div>
+      
+      {isAdminUser && (
+        <>
+          <Separator className="bg-[#9d89c9]/20" />
+          <div className="p-2">
+            <Link 
+              to="/control-centre" 
+              className={cn(
+                "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+                location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
+              )}
+              title={sidebarCollapsed ? "Control Centre" : undefined}
+            >
+              <div className={sidebarCollapsed ? "mx-auto" : ""}>
+                <Sliders className="h-4 w-4 mr-2" />
+              </div>
+              {!sidebarCollapsed && <span>Control Centre</span>}
+            </Link>
+          </div>
+        </>
+      )}
       
       <div className="p-4">
         {!sidebarCollapsed && <p className="text-xs text-[#e0d9f0]">© 2025 Hi</p>}

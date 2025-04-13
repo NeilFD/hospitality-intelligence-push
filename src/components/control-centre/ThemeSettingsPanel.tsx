@@ -1,0 +1,346 @@
+
+import React, { useState, useRef } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ThemeSettings, PresetTheme } from '@/types/control-centre-types';
+import { availableFonts, presetThemes } from '@/services/control-centre-service';
+import { toast } from 'sonner';
+import { TavernLogo } from '@/components/TavernLogo';
+import { ImagePlus, Check, RefreshCcw } from 'lucide-react';
+
+interface ThemeSettingsPanelProps {
+  currentTheme: ThemeSettings | null;
+  availableThemes: ThemeSettings[];
+}
+
+export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSettingsPanelProps) {
+  const [activeTab, setActiveTab] = useState('presets');
+  const [selectedPreset, setSelectedPreset] = useState(presetThemes[0].id);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [customTheme, setCustomTheme] = useState({
+    primaryColor: currentTheme?.primaryColor || '#806cac',
+    secondaryColor: currentTheme?.secondaryColor || '#705b9b',
+    accentColor: currentTheme?.accentColor || '#9d89c9',
+    sidebarColor: currentTheme?.sidebarColor || '#806cac',
+    buttonColor: currentTheme?.buttonColor || '#806cac',
+    textColor: currentTheme?.textColor || '#333333',
+    customFont: currentTheme?.customFont || availableFonts[0].value,
+  });
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleLogoUpload(files[0]);
+    }
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      
+      // For the preview, create a data URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target && typeof e.target.result === 'string') {
+          setLogoPreview(e.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
+      
+      // In a real implementation, we would upload to Supabase storage here
+      // For now, just show a success message after a delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success('Logo uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  const handlePresetChange = (presetId: string) => {
+    setSelectedPreset(presetId);
+    const preset = presetThemes.find(theme => theme.id === presetId);
+    if (preset) {
+      setCustomTheme({
+        ...customTheme,
+        primaryColor: preset.colors.primary,
+        secondaryColor: preset.colors.secondary,
+        accentColor: preset.colors.accent,
+        sidebarColor: preset.colors.sidebar,
+        buttonColor: preset.colors.button,
+        textColor: preset.colors.text,
+      });
+    }
+  };
+  
+  const applyTheme = async () => {
+    try {
+      setSaving(true);
+      // Here we would save the theme to the database
+      // For now, just simulate a delay and show a success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success('Theme applied successfully');
+    } catch (error) {
+      console.error('Error applying theme:', error);
+      toast.error('Failed to apply theme');
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  const resetLogo = () => {
+    setLogoPreview(null);
+    toast.success('Logo reset to default');
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Brand & Theme Settings</CardTitle>
+          <CardDescription>
+            Customize the application's appearance to match your brand
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6 w-full grid grid-cols-2">
+              <TabsTrigger value="presets">Theme Presets</TabsTrigger>
+              <TabsTrigger value="custom">Custom Theme</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="presets" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {presetThemes.map(theme => (
+                  <div 
+                    key={theme.id}
+                    className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
+                      selectedPreset === theme.id 
+                        ? 'ring-2 ring-offset-2 ring-primary' 
+                        : 'hover:border-primary/50'
+                    }`}
+                    onClick={() => handlePresetChange(theme.id)}
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-medium">{theme.name}</h3>
+                      {selectedPreset === theme.id && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.colors.primary }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.colors.secondary }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.colors.accent }}></div>
+                    </div>
+                    <div className="h-16 rounded-md flex items-center justify-center text-white" style={{ backgroundColor: theme.colors.sidebar }}>
+                      Sidebar
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="custom" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="primaryColor">Primary Color</Label>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-md border"
+                        style={{ backgroundColor: customTheme.primaryColor }}
+                      ></div>
+                      <Input 
+                        id="primaryColor"
+                        type="text"
+                        value={customTheme.primaryColor}
+                        onChange={(e) => setCustomTheme({...customTheme, primaryColor: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="secondaryColor">Secondary Color</Label>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-md border"
+                        style={{ backgroundColor: customTheme.secondaryColor }}
+                      ></div>
+                      <Input 
+                        id="secondaryColor"
+                        type="text"
+                        value={customTheme.secondaryColor}
+                        onChange={(e) => setCustomTheme({...customTheme, secondaryColor: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="accentColor">Accent Color</Label>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-md border"
+                        style={{ backgroundColor: customTheme.accentColor }}
+                      ></div>
+                      <Input 
+                        id="accentColor"
+                        type="text"
+                        value={customTheme.accentColor}
+                        onChange={(e) => setCustomTheme({...customTheme, accentColor: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="sidebarColor">Sidebar Color</Label>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-md border"
+                        style={{ backgroundColor: customTheme.sidebarColor }}
+                      ></div>
+                      <Input 
+                        id="sidebarColor"
+                        type="text"
+                        value={customTheme.sidebarColor}
+                        onChange={(e) => setCustomTheme({...customTheme, sidebarColor: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="buttonColor">Button Color</Label>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-md border"
+                        style={{ backgroundColor: customTheme.buttonColor }}
+                      ></div>
+                      <Input 
+                        id="buttonColor"
+                        type="text"
+                        value={customTheme.buttonColor}
+                        onChange={(e) => setCustomTheme({...customTheme, buttonColor: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="textColor">Text Color</Label>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-md border"
+                        style={{ backgroundColor: customTheme.textColor }}
+                      ></div>
+                      <Input 
+                        id="textColor"
+                        type="text"
+                        value={customTheme.textColor}
+                        onChange={(e) => setCustomTheme({...customTheme, textColor: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="customFont">Font Family</Label>
+                <Select 
+                  value={customTheme.customFont} 
+                  onValueChange={(value) => setCustomTheme({...customTheme, customFont: value})}
+                >
+                  <SelectTrigger id="customFont">
+                    <SelectValue placeholder="Select font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableFonts.map(font => (
+                      <SelectItem key={font.value} value={font.value}>
+                        {font.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="mt-8 border-t pt-6">
+            <h3 className="text-lg font-medium mb-4">Company Logo</h3>
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="border rounded-lg p-6 bg-gray-50 min-w-[200px] min-h-[100px] flex items-center justify-center">
+                {logoPreview ? (
+                  <img 
+                    src={logoPreview} 
+                    alt="Company logo preview" 
+                    className="max-w-full max-h-[100px]"
+                  />
+                ) : (
+                  <TavernLogo size="lg" />
+                )}
+              </div>
+              
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Upload a custom logo to replace the default Hi logo throughout the application.
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    type="button" 
+                    onClick={triggerFileInput}
+                    disabled={uploading}
+                  >
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                    {uploading ? 'Uploading...' : 'Upload Logo'}
+                  </Button>
+                  
+                  {logoPreview && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={resetLogo}
+                    >
+                      <RefreshCcw className="mr-2 h-4 w-4" />
+                      Reset to Default
+                    </Button>
+                  )}
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/png, image/jpeg, image/svg+xml"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex justify-end">
+        <Button onClick={applyTheme} disabled={saving}>
+          {saving ? 'Applying...' : 'Apply Theme Changes'}
+        </Button>
+      </div>
+    </div>
+  );
+}

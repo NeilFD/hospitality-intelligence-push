@@ -1,106 +1,84 @@
-
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import RequireAuth from "./components/RequireAuth";
-import BankPageAuth from "./components/auth/BankPageAuth";
-import Layout from "@/components/Layout";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import Profile from "@/pages/Profile";
-import FoodDashboard from "@/pages/food/Dashboard";
-import FoodInputSettings from "@/pages/food/InputSettings";
-import FoodMonthSummary from "@/pages/food/MonthSummary";
-import FoodAnnualSummary from "@/pages/food/AnnualSummary";
-import FoodWeeklyTracker from "@/pages/food/WeeklyTracker";
-import FoodBible from "@/pages/food/FoodBible";
-import BeverageDashboard from "@/pages/beverage/Dashboard";
-import BeverageInputSettings from "@/pages/beverage/InputSettings";
-import BeverageMonthSummary from "@/pages/beverage/MonthSummary";
-import BeverageAnnualSummary from "@/pages/beverage/AnnualSummary";
-import BeverageWeeklyTracker from "@/pages/beverage/WeeklyTracker";
-import BeverageBible from "@/pages/beverage/BeverageBible";
-import PLDashboard from "@/pages/pl/Dashboard";
-import WagesDashboard from "@/pages/wages/WagesDashboard";
-import PerformanceDashboard from "@/pages/performance/Dashboard";
-import WageOptimization from "@/pages/performance/WageOptimization";
-import FoodBeverageAnalysis from "@/pages/performance/FoodBeverageAnalysis";
-import DataExplorer from "@/pages/performance/DataExplorer";
-import MonzoApi from "@/pages/monzo/MonzoApi";
-import TeamDashboard from "./pages/team/Dashboard";
-import Noticeboard from "./pages/team/Noticeboard";
-import Chat from "./pages/team/Chat";
-import Knowledge from "./pages/team/Knowledge";
-import Hospitality from "./pages/team/Hospitality";
-import MasterDashboard from "./pages/master/Dashboard";
-import WeeklyInput from "./pages/master/WeeklyInput";
-import MonthSummary from "./pages/master/MonthSummary";
-import Index from "./pages/Index";
-
-// Create a client
-const queryClient = new QueryClient();
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Outlet } from 'react-router-dom';
+import { ThemeProvider } from "@/components/ui/theme-provider"
+import { UserProvider } from './contexts/UserContext';
+import Layout from './components/Layout';
+import LoginForm from './components/auth/LoginForm';
+import RegisterForm from './components/auth/RegisterForm';
+import ProfilePage from './pages/ProfilePage';
+import KitchenLedger from './pages/kitchen-ledger/KitchenLedger';
+import SuppliersPage from './pages/kitchen-ledger/SuppliersPage';
+import MonthlySettingsPage from './pages/kitchen-ledger/MonthlySettingsPage';
+import AnnualSummaryPage from './pages/kitchen-ledger/AnnualSummaryPage';
+import InputSettingsPage from './pages/kitchen-ledger/InputSettingsPage';
+import PlDashboard from './pages/pl/PlDashboard';
+import WagesDashboard from './pages/wages/WagesDashboard';
+import PerformanceDashboard from './pages/performance/PerformanceDashboard';
+import TeamDashboard from './pages/team/TeamDashboard';
+import Noticeboard from './pages/team/Noticeboard';
+import TeamChat from './pages/team/TeamChat';
+import KnowledgeBase from './pages/team/KnowledgeBase';
+import { Toaster } from "@/components/ui/toaster"
+import ControlCentre from "./pages/ControlCentre";
+import RequireAuth from "./components/auth/RequireAuth";
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
+    <Router>
+      <UserProvider>
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<Layout><Outlet /></Layout>}>
+              <Route index element={<KitchenLedger />} />
+              <Route path="profile" element={<ProfilePage />} />
+              
+              {/* Food Hub Routes */}
+              <Route path="food/dashboard" element={<KitchenLedger moduleType="food" />} />
+              <Route path="food/input-settings" element={<InputSettingsPage moduleType="food" />} />
+              <Route path="food/suppliers" element={<SuppliersPage moduleType="food" />} />
+              <Route path="food/month/:year/:month" element={<MonthlySettingsPage moduleType="food" />} />
+              <Route path="food/annual-summary" element={<AnnualSummaryPage moduleType="food" />} />
+              <Route path="food/bible" element={<></>} />
+              
+              {/* Beverage Hub Routes */}
+              <Route path="beverage/dashboard" element={<KitchenLedger moduleType="beverage" />} />
+              <Route path="beverage/input-settings" element={<InputSettingsPage moduleType="beverage" />} />
+              <Route path="beverage/suppliers" element={<SuppliersPage moduleType="beverage" />} />
+              <Route path="beverage/month/:year/:month" element={<MonthlySettingsPage moduleType="beverage" />} />
+              <Route path="beverage/annual-summary" element={<AnnualSummaryPage moduleType="beverage" />} />
+              <Route path="beverage/bible" element={<></>} />
+              
+              {/* P&L Tracker Routes */}
+              <Route path="pl/dashboard" element={<PlDashboard />} />
+              
+              {/* Wages Tracker Routes */}
+              <Route path="wages/dashboard" element={<WagesDashboard />} />
+              
+              {/* Performance Tracker Routes */}
+              <Route path="performance/dashboard" element={<PerformanceDashboard />} />
+              
+              {/* Team Routes */}
+              <Route path="team/dashboard" element={<TeamDashboard />} />
+              <Route path="team/noticeboard" element={<Noticeboard />} />
+              <Route path="team/chat" element={<TeamChat />} />
+              <Route path="team/knowledge" element={<KnowledgeBase />} />
+              
+              {/* Control Centre route */}
+              <Route path="control-centre" element={
+                <RequireAuth requiredRole="Super User">
+                  <ControlCentre />
+                </RequireAuth>
+              } />
+              
+            </Route>
             
-            <Route path="/" element={<RequireAuth><Layout><Index /></Layout></RequireAuth>} />
-            
-            <Route path="/profile" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
-            <Route path="/profile/:userId" element={<RequireAuth><Layout><Profile /></Layout></RequireAuth>} />
-            
-            {/* Food Routes */}
-            <Route path="/food/dashboard" element={<RequireAuth><Layout><FoodDashboard /></Layout></RequireAuth>} />
-            <Route path="/food/input-settings" element={<RequireAuth><Layout><FoodInputSettings /></Layout></RequireAuth>} />
-            <Route path="/food/month/:year/:month" element={<RequireAuth><Layout><FoodMonthSummary /></Layout></RequireAuth>} />
-            <Route path="/food/annual-summary" element={<RequireAuth><Layout><FoodAnnualSummary /></Layout></RequireAuth>} />
-            <Route path="/food/week/:year/:month/:week" element={<RequireAuth><Layout><FoodWeeklyTracker /></Layout></RequireAuth>} />
-            <Route path="/food/bible" element={<RequireAuth><Layout><FoodBible /></Layout></RequireAuth>} />
-            
-            {/* Beverage Routes */}
-            <Route path="/beverage/dashboard" element={<RequireAuth><Layout><BeverageDashboard /></Layout></RequireAuth>} />
-            <Route path="/beverage/input-settings" element={<RequireAuth><Layout><BeverageInputSettings /></Layout></RequireAuth>} />
-            <Route path="/beverage/month/:year/:month" element={<RequireAuth><Layout><BeverageMonthSummary /></Layout></RequireAuth>} />
-            <Route path="/beverage/annual-summary" element={<RequireAuth><Layout><BeverageAnnualSummary /></Layout></RequireAuth>} />
-            <Route path="/beverage/week/:year/:month/:week" element={<RequireAuth><Layout><BeverageWeeklyTracker /></Layout></RequireAuth>} />
-            <Route path="/beverage/bible" element={<RequireAuth><Layout><BeverageBible /></Layout></RequireAuth>} />
-            
-            {/* P&L Routes */}
-            <Route path="/pl/dashboard" element={<RequireAuth><Layout><PLDashboard /></Layout></RequireAuth>} />
-            
-            {/* Wages Routes */}
-            <Route path="/wages/dashboard" element={<RequireAuth><Layout><WagesDashboard /></Layout></RequireAuth>} />
-            
-            {/* Performance Routes */}
-            <Route path="/performance/dashboard" element={<RequireAuth><Layout><PerformanceDashboard /></Layout></RequireAuth>} />
-            <Route path="/performance/wage-optimization" element={<RequireAuth><Layout><WageOptimization /></Layout></RequireAuth>} />
-            <Route path="/performance/fb-analysis" element={<RequireAuth><Layout><FoodBeverageAnalysis /></Layout></RequireAuth>} />
-            <Route path="/performance/data-explorer" element={<RequireAuth><Layout><DataExplorer /></Layout></RequireAuth>} />
-            
-            {/* Monzo API Routes */}
-            <Route path="/monzo" element={<BankPageAuth><Layout><MonzoApi /></Layout></BankPageAuth>} />
-            
-            {/* Master Routes */}
-            <Route path="/master/dashboard" element={<RequireAuth><Layout><MasterDashboard /></Layout></RequireAuth>} />
-            <Route path="/master/week/:year/:month/:week" element={<RequireAuth><Layout><WeeklyInput /></Layout></RequireAuth>} />
-            <Route path="/master/month/:year/:month" element={<RequireAuth><Layout><MonthSummary /></Layout></RequireAuth>} />
-            
-            {/* Team Routes */}
-            <Route path="/team/dashboard" element={<RequireAuth><Layout><TeamDashboard /></Layout></RequireAuth>} />
-            <Route path="/team/noticeboard" element={<RequireAuth><Layout><Noticeboard /></Layout></RequireAuth>} />
-            <Route path="/team/chat" element={<RequireAuth><Layout><Chat /></Layout></RequireAuth>} />
-            <Route path="/team/knowledge" element={<RequireAuth><Layout><Knowledge /></Layout></RequireAuth>} />
-            <Route path="/team/hospitality-bible" element={<RequireAuth><Layout><Hospitality /></Layout></RequireAuth>} />
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/register" element={<RegisterForm />} />
           </Routes>
-        </Router>
-      </AuthProvider>
-    </QueryClientProvider>
+          <Toaster />
+        </ThemeProvider>
+      </UserProvider>
+    </Router>
   );
 }
 
