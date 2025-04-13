@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,7 +41,6 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get the HTML element to detect current theme
   const htmlElement = document.documentElement;
   const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
   const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
@@ -50,34 +48,31 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
   const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
   
-  // Determine button background color based on theme
   const getButtonBgColor = () => {
     if (hasForestGreenTheme) return "bg-[#1b5e20] hover:bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "bg-[#1565c0] hover:bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "bg-[#e65100] hover:bg-[#ef6c00]";
     if (hasBerryPurpleTheme) return "bg-[#6a1b9a] hover:bg-[#8e24aa]";
     if (hasDarkModeTheme) return "bg-[#333333] hover:bg-[#444444]";
-    return "bg-[#8e44ad] hover:bg-[#7d3c98]"; // Default purple
+    return "bg-[#8e44ad] hover:bg-[#7d3c98]";
   };
 
-  // Determine active tab highlight color based on theme
   const getActiveTabColor = () => {
     if (hasForestGreenTheme) return "data-[state=active]:bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#ef6c00]";
     if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#8e24aa]";
     if (hasDarkModeTheme) return "data-[state=active]:bg-[#444444]";
-    return "data-[state=active]:bg-[#8e44ad]"; // Default purple
+    return "data-[state=active]:bg-[#8e44ad]";
   };
 
-  // Determine text color based on theme
   const getTextColor = () => {
     if (hasForestGreenTheme) return "text-[#1b5e20]";
     if (hasOceanBlueTheme) return "text-[#1565c0]";
     if (hasSunsetOrangeTheme) return "text-[#e65100]";
     if (hasBerryPurpleTheme) return "text-[#6a1b9a]";
     if (hasDarkModeTheme) return "text-white";
-    return "text-[#8e44ad]"; // Default purple
+    return "text-[#8e44ad]";
   };
 
   useEffect(() => {
@@ -92,7 +87,6 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         
         const transformedThemes = data.map(theme => ({
           id: theme.id,
-          // If the theme name is 'Tavern Purple', change it to 'Hi Purple'
           name: theme.name === 'Tavern Purple' ? 'Hi Purple' : theme.name,
           primaryColor: theme.primary_color,
           secondaryColor: theme.secondary_color,
@@ -144,9 +138,48 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       };
       reader.readAsDataURL(file);
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+      
+      if (selectedThemeId) {
+        const { error: updateError } = await supabase
+          .from('themes')
+          .update({ logo_url: publicUrl })
+          .eq('id', selectedThemeId);
+          
+        if (updateError) {
+          throw updateError;
+        }
+        
+        setThemes(prevThemes => 
+          prevThemes.map(theme => 
+            theme.id === selectedThemeId 
+              ? {...theme, logoUrl: publicUrl} 
+              : theme
+          )
+        );
+      }
       
       toast.success('Logo uploaded successfully');
+      
+      localStorage.setItem('app-logo-url', publicUrl);
+      
+      window.dispatchEvent(new CustomEvent('app-logo-updated', { 
+        detail: { logoUrl: publicUrl } 
+      }));
     } catch (error) {
       console.error('Error uploading logo:', error);
       toast.error('Failed to upload logo');
@@ -157,6 +190,13 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   
   const handleThemeSelection = (themeId: string) => {
     setSelectedThemeId(themeId);
+    
+    const selectedTheme = themes.find(theme => theme.id === themeId);
+    if (selectedTheme && selectedTheme.logoUrl) {
+      setLogoPreview(selectedTheme.logoUrl);
+    } else {
+      setLogoPreview(null);
+    }
   };
   
   const applyTheme = async () => {
@@ -173,20 +213,16 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     try {
       setSaving(true);
       
-      console.log('Applying theme with ID:', selectedThemeId);
-      
-      // First update all themes to inactive
       const { error: resetError } = await supabase
         .from('themes')
         .update({ is_active: false })
-        .neq('id', selectedThemeId); // Update all rows except the selected one
+        .neq('id', selectedThemeId);
       
       if (resetError) {
         console.error('Error resetting themes:', resetError);
         throw resetError;
       }
       
-      // Then set the selected theme to active
       const { error: updateError } = await supabase
         .from('themes')
         .update({ is_active: true })
@@ -197,18 +233,15 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         throw updateError;
       }
       
-      // Apply the theme without a full page reload
       const selectedTheme = themes.find(theme => theme.id === selectedThemeId);
       if (selectedTheme) {
         const html = document.documentElement;
         
-        // Remove any existing theme classes
         const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
         themeClasses.forEach(cls => {
           html.classList.remove(cls);
         });
         
-        // Add the new theme class based on the theme name
         if (selectedTheme.name === 'Forest Green') {
           html.classList.add('theme-forest-green');
         } else if (selectedTheme.name === 'Ocean Blue') {
@@ -220,12 +253,17 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         } else if (selectedTheme.name === 'Dark Mode') {
           html.classList.add('theme-dark-mode');
         }
+        
+        if (selectedTheme.logoUrl) {
+          localStorage.setItem('app-logo-url', selectedTheme.logoUrl);
+          
+          window.dispatchEvent(new CustomEvent('app-logo-updated', { 
+            detail: { logoUrl: selectedTheme.logoUrl } 
+          }));
+        }
       }
       
       toast.success('Theme applied successfully');
-      
-      // Don't navigate away or reload the page after applying the theme
-      // This ensures we stay on the same page and routing isn't affected
       
     } catch (error) {
       console.error('Error applying theme:', error);
@@ -235,9 +273,40 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     }
   };
   
-  const resetLogo = () => {
-    setLogoPreview(null);
-    toast.success('Logo reset to default');
+  const resetLogo = async () => {
+    try {
+      setLogoPreview(null);
+      
+      if (selectedThemeId) {
+        const { error: updateError } = await supabase
+          .from('themes')
+          .update({ logo_url: null })
+          .eq('id', selectedThemeId);
+          
+        if (updateError) {
+          throw updateError;
+        }
+        
+        setThemes(prevThemes => 
+          prevThemes.map(theme => 
+            theme.id === selectedThemeId 
+              ? {...theme, logoUrl: null} 
+              : theme
+          )
+        );
+      }
+      
+      localStorage.removeItem('app-logo-url');
+      
+      window.dispatchEvent(new CustomEvent('app-logo-updated', { 
+        detail: { logoUrl: null } 
+      }));
+      
+      toast.success('Logo reset to default');
+    } catch (error) {
+      console.error('Error resetting logo:', error);
+      toast.error('Failed to reset logo');
+    }
   };
 
   if (profile?.role !== 'GOD' && profile?.role !== 'Super User') {
