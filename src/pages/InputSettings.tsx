@@ -18,6 +18,7 @@ import {
   fetchMonthlySettings, createMonthlySettings, updateMonthlySettings
 } from '@/services/kitchen-service';
 import { useBudgetProcessor } from '@/utils/budget/hooks';
+import { getControlCentreData } from '@/services/control-centre-service';
 
 interface InputSettingsProps {
   modulePrefix?: string;
@@ -39,6 +40,16 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   const [budgetFile, setBudgetFile] = useState<File | null>(null);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const { processBudget } = useBudgetProcessor();
+  const [businessTargets, setBusinessTargets] = useState<any>(null);
+
+  // Fetch business targets from Control Centre
+  const { data: controlCentreData, isLoading: isLoadingTargets } = useQuery({
+    queryKey: ['control-centre-data'],
+    queryFn: async () => {
+      const data = await getControlCentreData();
+      return data;
+    }
+  });
 
   // Fetch suppliers from Supabase
   const { data: supabaseSuppliers, isLoading: isFetchingSuppliers } = useQuery({
@@ -62,6 +73,22 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       }
     }
   });
+
+  // Load business targets from Control Centre
+  useEffect(() => {
+    if (controlCentreData && !isLoadingTargets) {
+      setBusinessTargets(controlCentreData.targetSettings);
+      
+      // Set default values from business targets based on module type
+      if (moduleType === 'food') {
+        setGpTarget(Math.round(controlCentreData.targetSettings.foodGpTarget));
+        setCostTarget(100 - Math.round(controlCentreData.targetSettings.foodGpTarget));
+      } else if (moduleType === 'beverage') {
+        setGpTarget(Math.round(controlCentreData.targetSettings.beverageGpTarget));
+        setCostTarget(100 - Math.round(controlCentreData.targetSettings.beverageGpTarget));
+      }
+    }
+  }, [controlCentreData, isLoadingTargets, moduleType]);
 
   // Mutations for suppliers
   const createSupplierMutation = useMutation({
@@ -146,25 +173,45 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       setCostTarget(Math.round(monthlySettings.cost_target * 100));
       setStaffAllowance(monthlySettings.staff_food_allowance);
     } else {
-      // If no settings found in Supabase, use local state
-      setGpTarget(Math.round(monthRecord.gpTarget * 100));
-      setCostTarget(Math.round(monthRecord.costTarget * 100));
+      // If no settings found in Supabase, use local state or business targets
+      if (businessTargets) {
+        if (moduleType === 'food') {
+          setGpTarget(Math.round(businessTargets.foodGpTarget));
+          setCostTarget(100 - Math.round(businessTargets.foodGpTarget));
+        } else if (moduleType === 'beverage') {
+          setGpTarget(Math.round(businessTargets.beverageGpTarget));
+          setCostTarget(100 - Math.round(businessTargets.beverageGpTarget));
+        }
+      } else {
+        setGpTarget(Math.round(monthRecord.gpTarget * 100));
+        setCostTarget(Math.round(monthRecord.costTarget * 100));
+      }
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
-  }, [monthlySettings, isFetchingSettings, monthRecord]);
+  }, [monthlySettings, isFetchingSettings, monthRecord, businessTargets, moduleType]);
 
   // Update local state when month changes
   useEffect(() => {
     if (!monthlySettings) {
-      setGpTarget(Math.round(monthRecord.gpTarget * 100));
-      setCostTarget(Math.round(monthRecord.costTarget * 100));
+      if (businessTargets) {
+        if (moduleType === 'food') {
+          setGpTarget(Math.round(businessTargets.foodGpTarget));
+          setCostTarget(100 - Math.round(businessTargets.foodGpTarget));
+        } else if (moduleType === 'beverage') {
+          setGpTarget(Math.round(businessTargets.beverageGpTarget));
+          setCostTarget(100 - Math.round(businessTargets.beverageGpTarget));
+        }
+      } else {
+        setGpTarget(Math.round(monthRecord.gpTarget * 100));
+        setCostTarget(Math.round(monthRecord.costTarget * 100));
+      }
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
     
     if (isLoading) {
       setSuppliers([...monthRecord.suppliers]);
     }
-  }, [monthRecord, isLoading, monthlySettings]);
+  }, [monthRecord, isLoading, monthlySettings, businessTargets, moduleType]);
 
   const handleMonthChange = (year: number, month: number) => {
     setCurrentYear(year);
@@ -298,6 +345,9 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
 
   const pageTitle = modulePrefix ? `${modulePrefix} Input Settings` : "Input Settings";
 
+  // Determine if we should disable the target input fields
+  const isGpTargetReadOnly = moduleType === 'food' || moduleType === 'beverage';
+  
   return (
     <div className="container py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -328,7 +378,14 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
                   setGpTarget(value);
                   setCostTarget(100 - value);
                 }}
+                readOnly={isGpTargetReadOnly}
+                className={isGpTargetReadOnly ? "bg-gray-100" : ""}
               />
+              {isGpTargetReadOnly && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Value set in Control Centre
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="costTarget">Cost Target (%)</Label>
@@ -343,7 +400,14 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
                   setCostTarget(value);
                   setGpTarget(100 - value);
                 }}
+                readOnly={isGpTargetReadOnly}
+                className={isGpTargetReadOnly ? "bg-gray-100" : ""}
               />
+              {isGpTargetReadOnly && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Value set in Control Centre
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="staffAllowance">Staff {moduleType === 'food' ? 'Food' : moduleType === 'beverage' ? 'Beverage' : ''} Allowance (£)</Label>

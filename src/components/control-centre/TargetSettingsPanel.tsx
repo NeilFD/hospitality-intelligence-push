@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { TargetSettings } from '@/types/control-centre-types';
 import { toast } from 'sonner';
 import { FileUp, Percent } from 'lucide-react';
+import { updateTargetSettings } from '@/services/control-centre-service';
 
 interface TargetSettingsPanelProps {
   targetSettings: TargetSettings;
@@ -33,9 +34,8 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
   const saveSettings = async () => {
     try {
       setSaving(true);
-      // Here we would save the settings to the database
-      // For now, just simulate a delay and show a success message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save settings to the database
+      await updateTargetSettings(settings);
       toast.success('Business targets saved successfully');
     } catch (error) {
       console.error('Error saving business targets:', error);

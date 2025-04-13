@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
@@ -50,15 +49,34 @@ export const getControlCentreData = async () => {
   
   const currentTheme = themes.find(theme => theme.isActive) || null;
   
+  // Fetch target settings
+  const { data: targetData, error: targetError } = await supabase
+    .from('business_targets')
+    .select('*')
+    .single();
+    
+  let targetSettings: TargetSettings = {
+    foodGpTarget: 68,
+    beverageGpTarget: 72,
+    wageCostTarget: 28,
+  };
+  
+  if (targetData && !targetError) {
+    targetSettings = {
+      foodGpTarget: targetData.food_gp_target || 68,
+      beverageGpTarget: targetData.beverage_gp_target || 72,
+      wageCostTarget: targetData.wage_cost_target || 28,
+    };
+  } else if (targetError && targetError.code !== 'PGRST116') {
+    // PGRST116 is "no rows returned" which is expected if no targets are set yet
+    console.error('Error fetching target settings:', targetError);
+  }
+  
   return {
     permissionMatrix,
     currentTheme,
     availableThemes: themes,
-    targetSettings: {
-      foodGpTarget: 68,
-      beverageGpTarget: 72,
-      wageCostTarget: 28,
-    },
+    targetSettings,
   };
 };
 
@@ -92,6 +110,51 @@ export const updatePermissionMatrix = async (permissionMatrix: PermissionMatrix[
     }
   } catch (error) {
     console.error('Error in updatePermissionMatrix:', error);
+    throw error;
+  }
+};
+
+// Add a function to update target settings
+export const updateTargetSettings = async (targetSettings: TargetSettings): Promise<void> => {
+  try {
+    // Check if business_targets table exists
+    const { data: tableExists, error: tableCheckError } = await supabase
+      .from('business_targets')
+      .select('id')
+      .limit(1);
+      
+    if (tableCheckError && tableCheckError.code !== 'PGRST116') {
+      // If error is not "no rows returned"
+      console.error('Error checking business_targets table:', tableCheckError);
+      
+      // Create the table if it doesn't exist
+      const { error: createTableError } = await supabase.rpc('create_business_targets_table');
+      if (createTableError) {
+        console.error('Error creating business_targets table:', createTableError);
+        throw createTableError;
+      }
+    }
+    
+    // Upsert the target settings
+    const { error: upsertError } = await supabase
+      .from('business_targets')
+      .upsert(
+        {
+          id: 1, // Single row for all business targets
+          food_gp_target: targetSettings.foodGpTarget,
+          beverage_gp_target: targetSettings.beverageGpTarget,
+          wage_cost_target: targetSettings.wageCostTarget,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'id' }
+      );
+      
+    if (upsertError) {
+      console.error('Error updating target settings:', upsertError);
+      throw upsertError;
+    }
+  } catch (error) {
+    console.error('Error in updateTargetSettings:', error);
     throw error;
   }
 };
