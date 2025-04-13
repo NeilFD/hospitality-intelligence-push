@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -70,7 +71,7 @@ function App() {
               {/* App Routes - All wrapped with Layout */}
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
               
-              {/* Control Centre Route - Ensuring it's directly under Layout */}
+              {/* Control Centre Route - Making sure it's rendered correctly */}
               <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
               
               {/* Food Module Routes */}
