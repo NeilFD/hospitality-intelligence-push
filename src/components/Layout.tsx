@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -43,25 +42,28 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
-  const handleControlCentreClick = () => {
+  const handleControlCentreClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Control Centre clicked, navigating to /control-centre');
     navigate('/control-centre');
   };
   
   const ControlCentreLink = () => {
     return (
-      <Link 
-        to="/control-centre" 
+      <a 
+        href="/control-centre" 
         className={cn(
           "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
           location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
         )}
         title={sidebarCollapsed ? "Control Centre" : undefined}
+        onClick={handleControlCentreClick}
       >
         <div className={sidebarCollapsed ? "mx-auto" : ""}>
           <Sliders className="h-4 w-4 mr-2" />
         </div>
         {!sidebarCollapsed && <span>Control Centre</span>}
-      </Link>
+      </a>
     );
   };
   
