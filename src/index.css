@@ -96,6 +96,130 @@
     --input: 120 12% 90%;
     --ring: 147 30% 24%;
   }
+  
+  /* Ocean Blue Theme */
+  .theme-ocean-blue {
+    --background: 200 60% 95%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 64% 27%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 64% 27%;
+
+    --primary: 210 64% 27%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 199 69% 51%;
+    --secondary-foreground: 210 64% 27%;
+
+    --muted: 200 60% 93%;
+    --muted-foreground: 210 40% 50%;
+
+    --accent: 199 69% 51%;
+    --accent-foreground: 210 64% 27%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 200 59% 90%;
+    --input: 200 59% 90%;
+    --ring: 210 64% 27%;
+  }
+  
+  /* Sunset Orange Theme */
+  .theme-sunset-orange {
+    --background: 35 100% 95%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 25 86% 28%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 86% 28%;
+
+    --primary: 25 86% 38%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 35 100% 50%;
+    --secondary-foreground: 25 86% 28%;
+
+    --muted: 35 80% 93%;
+    --muted-foreground: 25 70% 40%;
+
+    --accent: 35 100% 50%;
+    --accent-foreground: 25 86% 28%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 35 80% 90%;
+    --input: 35 80% 90%;
+    --ring: 25 86% 38%;
+  }
+  
+  /* Berry Purple Theme */
+  .theme-berry-purple {
+    --background: 280 60% 95%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 280 67% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 280 67% 25%;
+
+    --primary: 280 67% 35%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 280 80% 60%;
+    --secondary-foreground: 280 67% 25%;
+
+    --muted: 280 40% 93%;
+    --muted-foreground: 280 40% 45%;
+
+    --accent: 280 80% 60%;
+    --accent-foreground: 280 67% 25%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 280 40% 90%;
+    --input: 280 40% 90%;
+    --ring: 280 67% 35%;
+  }
+  
+  /* Dark Mode Theme */
+  .theme-dark-mode {
+    --background: 220 20% 10%;
+    --foreground: 220 20% 98%;
+
+    --card: 220 20% 15%;
+    --card-foreground: 220 20% 98%;
+
+    --popover: 220 20% 15%;
+    --popover-foreground: 220 20% 98%;
+
+    --primary: 220 80% 50%;
+    --primary-foreground: 220 20% 98%;
+
+    --secondary: 220 40% 30%;
+    --secondary-foreground: 220 20% 98%;
+
+    --muted: 220 20% 20%;
+    --muted-foreground: 220 20% 70%;
+
+    --accent: 220 80% 50%;
+    --accent-foreground: 220 20% 98%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 220 20% 98%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 220 80% 50%;
+  }
 
   * {
     @apply border-border;

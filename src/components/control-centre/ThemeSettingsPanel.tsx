@@ -157,10 +157,30 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       
       toast.success('Theme applied successfully');
       
-      // Reload the page to apply the new theme
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Apply the theme without a full page reload
+      const selectedTheme = themes.find(theme => theme.id === selectedThemeId);
+      if (selectedTheme) {
+        const html = document.documentElement;
+        
+        // Remove any existing theme classes
+        const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
+        themeClasses.forEach(cls => {
+          html.classList.remove(cls);
+        });
+        
+        // Add the new theme class based on the theme name
+        if (selectedTheme.name === 'Forest Green') {
+          html.classList.add('theme-forest-green');
+        } else if (selectedTheme.name === 'Ocean Blue') {
+          html.classList.add('theme-ocean-blue');
+        } else if (selectedTheme.name === 'Sunset Orange') {
+          html.classList.add('theme-sunset-orange');
+        } else if (selectedTheme.name === 'Berry Purple') {
+          html.classList.add('theme-berry-purple');
+        } else if (selectedTheme.name === 'Dark Mode') {
+          html.classList.add('theme-dark-mode');
+        }
+      }
     } catch (error) {
       console.error('Error applying theme:', error);
       toast.error('Failed to apply theme');

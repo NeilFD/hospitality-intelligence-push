@@ -16,6 +16,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import AnnualSummary from '@/pages/food/AnnualSummary';
 import ControlCentre from '@/pages/ControlCentre';
+import WagesDashboard from '@/pages/wages/WagesDashboard';
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,9 @@ function App() {
                 <Route path="/food/month/:year/:month" element={<Dashboard />} />
                 <Route path="/food/annual-summary" element={<AnnualSummary />} />
                 <Route path="/food/bible" element={<Dashboard />} />
+                
+                {/* Wages Module Routes */}
+                <Route path="/wages/dashboard" element={<WagesDashboard />} />
                 
                 {/* Not Found Route */}
                 <Route path="*" element={<NotFound />} />
