@@ -109,6 +109,7 @@ function App() {
               <Route path="/master/dashboard" element={<Layout><MasterDashboard /></Layout>} />
               <Route path="/master/month-summary" element={<Layout><MasterMonthSummary /></Layout>} />
               <Route path="/master/weekly-input" element={<Layout><MasterWeeklyInput /></Layout>} />
+              <Route path="/master/weekly-input/:year/:month/:week" element={<Layout><MasterWeeklyInput /></Layout>} />
               
               {/* P&L Module Routes */}
               <Route path="/pl/dashboard" element={<Layout><PLDashboard /></Layout>} />
