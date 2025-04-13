@@ -12,6 +12,7 @@ import {
   fetchTrackerPurchases,
   fetchTrackerCreditNotes 
 } from '@/services/kitchen-service';
+import { TrackerSummary, ModuleType } from '@/types/kitchen-ledger';
 
 interface WeeklySummary {
   week: string;
@@ -21,12 +22,6 @@ interface WeeklySummary {
   foodGP: number;
   bevGP: number;
   combinedGP: number;
-}
-
-interface TrackerSummary {
-  revenue: number;
-  cost: number;
-  gpPercentage: number;
 }
 
 export default function KeyInsights() {
