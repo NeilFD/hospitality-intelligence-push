@@ -43,6 +43,84 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
+  // Get the HTML element with class names to detect current theme
+  const htmlElement = document.documentElement;
+  const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
+  const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
+  const hasSunsetOrangeTheme = htmlElement.classList.contains('theme-sunset-orange');
+  const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
+  const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
+  
+  // Determine sidebar background color based on theme
+  const getSidebarBgColor = () => {
+    if (hasForestGreenTheme) return "bg-[#1b5e20]";
+    if (hasOceanBlueTheme) return "bg-[#1565c0]";
+    if (hasSunsetOrangeTheme) return "bg-[#e65100]";
+    if (hasBerryPurpleTheme) return "bg-[#6a1b9a]";
+    if (hasDarkModeTheme) return "bg-[#1a1a1a]";
+    return "bg-[#806cac]"; // Default purple
+  };
+  
+  // Determine sidebar hover color based on theme
+  const getSidebarHoverColor = () => {
+    if (hasForestGreenTheme) return "bg-[#2e7d32]/20";
+    if (hasOceanBlueTheme) return "bg-[#1976d2]/20";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00]/20";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa]/20";
+    if (hasDarkModeTheme) return "bg-white/10";
+    return "bg-white/10"; // Default
+  };
+  
+  // Determine active item background color based on theme
+  const getActiveItemBgColor = () => {
+    if (hasForestGreenTheme) return "bg-[#2e7d32]";
+    if (hasOceanBlueTheme) return "bg-[#1976d2]";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa]";
+    if (hasDarkModeTheme) return "bg-[#333333]";
+    return "bg-[#705b9b]"; // Default
+  };
+  
+  // Determine module active item background color based on theme
+  const getModuleActiveBgColor = () => {
+    if (hasForestGreenTheme) return "bg-white text-[#1b5e20]";
+    if (hasOceanBlueTheme) return "bg-white text-[#1565c0]";
+    if (hasSunsetOrangeTheme) return "bg-white text-[#e65100]";
+    if (hasBerryPurpleTheme) return "bg-white text-[#6a1b9a]";
+    if (hasDarkModeTheme) return "bg-white text-[#1a1a1a]";
+    return "bg-white text-[#806cac]"; // Default
+  };
+  
+  // Determine control center background color based on theme
+  const getControlCenterBgColor = () => {
+    if (hasForestGreenTheme) return "bg-[#2e7d32]";
+    if (hasOceanBlueTheme) return "bg-[#1976d2]";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa]";
+    if (hasDarkModeTheme) return "bg-[#333333]";
+    return "bg-[#705b9b]"; // Default
+  };
+  
+  // Determine text color based on theme
+  const getTextColor = () => {
+    if (hasForestGreenTheme) return "text-[#e8f5e9]";
+    if (hasOceanBlueTheme) return "text-[#e3f2fd]";
+    if (hasSunsetOrangeTheme) return "text-[#fff3e0]";
+    if (hasBerryPurpleTheme) return "text-[#f3e5f5]";
+    if (hasDarkModeTheme) return "text-[#f5f5f5]";
+    return "text-[#e0d9f0]"; // Default
+  };
+  
+  // Determine separator color based on theme
+  const getSeparatorBgColor = () => {
+    if (hasForestGreenTheme) return "bg-[#4c8c4a]/20";
+    if (hasOceanBlueTheme) return "bg-[#42a5f5]/20";
+    if (hasSunsetOrangeTheme) return "bg-[#ff9800]/20";
+    if (hasBerryPurpleTheme) return "bg-[#ab47bc]/20";
+    if (hasDarkModeTheme) return "bg-white/20";
+    return "bg-[#9d89c9]/20"; // Default
+  };
+  
   const handleControlCentreClick = (e: React.MouseEvent) => {
     e.preventDefault();
     console.log('Control Centre clicked, navigating to /control-centre');
@@ -55,7 +133,7 @@ const Layout = ({
         href="/control-centre" 
         className={cn(
           "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-          location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
+          location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
         )}
         title={sidebarCollapsed ? "Control Centre" : undefined}
         onClick={handleControlCentreClick}
@@ -116,8 +194,10 @@ const Layout = ({
   
   const handleLogout = async () => {
     try {
-      await logout();
-      toast.success('You have been logged out');
+      if (isAuthenticated) {
+        await logout();
+        toast.success('You have been logged out');
+      }
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
@@ -255,31 +335,31 @@ const Layout = ({
   const isAdminUser = true;
   
   const ProfileAvatar = () => <div className="flex flex-col items-center">
-      <Avatar className="h-9 w-9 bg-tavern-blue text-white">
+      <Avatar className="h-9 w-9 bg-primary text-white">
         {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
       </Avatar>
-      {profile && <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
+      {profile && <span className="text-primary hover:text-primary/80 transition-colors duration-300 text-xs mt-1 font-medium">
           {profile.first_name || 'User'}
         </span>}
     </div>;
 
-  const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
+  const Sidebar = <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
-        <p className="text-[#e0d9f0] text-sm mt-1">Hospitality Intelligence</p>
+        <p className={cn("text-sm mt-1", getTextColor())}>Hospitality Intelligence</p>
       </div>
       
-      <Separator className="bg-[#9d89c9]/20" />
+      <Separator className={getSeparatorBgColor()} />
       
       <div className="p-2 my-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className="text-xs font-semibold text-[#e0d9f0] uppercase tracking-wider">
+          {!sidebarCollapsed && <p className={cn("text-xs font-semibold uppercase tracking-wider", getTextColor())}>
               Modules
             </p>}
         </div>
         
         <nav className="space-y-1">
-          {moduleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? "bg-white text-[#806cac] font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined} onClick={() => handleModuleSelect(item.type as ModuleType)}>
+          {moduleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor())} title={sidebarCollapsed ? item.name : undefined} onClick={() => handleModuleSelect(item.type as ModuleType)}>
               <div className={sidebarCollapsed ? "mx-auto" : ""}>
                 {item.icon}
               </div>
@@ -288,17 +368,17 @@ const Layout = ({
         </nav>
       </div>
       
-      <Separator className="bg-[#9d89c9]/20" />
+      <Separator className={getSeparatorBgColor()} />
       
       <div className="flex-1 p-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className="text-xs font-semibold text-[#e0d9f0] uppercase tracking-wider">
+          {!sidebarCollapsed && <p className={cn("text-xs font-semibold uppercase tracking-wider", getTextColor())}>
               {sortedModules.find(m => m.type === currentModule)?.name || 'Navigation'}
             </p>}
         </div>
         
         <nav className="space-y-1">
-          {getModuleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10")} title={sidebarCollapsed ? item.name : undefined}>
+          {getModuleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())} title={sidebarCollapsed ? item.name : undefined}>
               <div className={sidebarCollapsed ? "mx-auto" : ""}>
                 {item.icon}
               </div>
@@ -308,14 +388,14 @@ const Layout = ({
       </div>
       
       <>
-        <Separator className="bg-[#9d89c9]/20" />
+        <Separator className={getSeparatorBgColor()} />
         <div className="p-2">
           <ControlCentreLink />
         </div>
       </>
       
       <div className="p-4">
-        {!sidebarCollapsed && <p className="text-xs text-[#e0d9f0]">© 2025 Hi</p>}
+        {!sidebarCollapsed && <p className={cn("text-xs", getTextColor())}>© 2025 Hi</p>}
       </div>
     </div>;
 
@@ -387,7 +467,7 @@ const Layout = ({
           </div>
           <div className="flex-1 overflow-auto relative">
             <div className="flex items-center justify-between px-8 py-2">
-              <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-gray-800">
+              <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-primary">
                 {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
               <TavernLogo size="lg" />
