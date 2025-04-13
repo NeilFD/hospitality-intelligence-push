@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ThemeSettings, PresetTheme } from '@/types/control-centre-types';
-import { availableFonts, presetThemes } from '@/services/control-centre-service';
+import { ThemeSettings } from '@/types/control-centre-types';
+import { availableFonts } from '@/services/control-centre-service';
 import { toast } from 'sonner';
 import { TavernLogo } from '@/components/TavernLogo';
 import { ImagePlus, Check, RefreshCcw } from 'lucide-react';
@@ -49,9 +49,24 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         
         if (error) throw error;
         
-        setThemes(data as ThemeSettings[]);
+        const transformedThemes = data.map(theme => ({
+          id: theme.id,
+          name: theme.name,
+          primaryColor: theme.primary_color,
+          secondaryColor: theme.secondary_color,
+          accentColor: theme.accent_color,
+          sidebarColor: theme.sidebar_color,
+          buttonColor: theme.button_color,
+          textColor: theme.text_color,
+          logoUrl: theme.logo_url,
+          customFont: theme.custom_font,
+          isDefault: false,
+          isActive: theme.is_active
+        }));
         
-        const activeTheme = data.find(theme => theme.is_active);
+        setThemes(transformedThemes);
+        
+        const activeTheme = transformedThemes.find(theme => theme.isActive);
         if (activeTheme) setSelectedThemeId(activeTheme.id);
       } catch (error) {
         console.error('Error fetching themes:', error);
@@ -197,11 +212,11 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
                       )}
                     </div>
                     <div className="flex gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.primary_color }}></div>
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.secondary_color }}></div>
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.accent_color }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.primaryColor }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.secondaryColor }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.accentColor }}></div>
                     </div>
-                    <div className="h-16 rounded-md flex items-center justify-center text-white" style={{ backgroundColor: theme.sidebar_color }}>
+                    <div className="h-16 rounded-md flex items-center justify-center text-white" style={{ backgroundColor: theme.sidebarColor }}>
                       Sidebar
                     </div>
                   </div>

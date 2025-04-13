@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
@@ -13,9 +14,6 @@ export const availableFonts: { name: string; value: string }[] = [
   { name: 'Lato', value: 'Lato, system-ui, sans-serif' },
 ];
 
-// Remove hardcoded presetThemes, now stored in database
-export const presetThemes: PresetTheme[] = [];
-
 // Modify getControlCentreData to fetch themes from database
 export const getControlCentreData = async () => {
   // Initialize database if needed
@@ -24,7 +22,7 @@ export const getControlCentreData = async () => {
   const permissionMatrix = await getPermissionMatrix();
   
   // Fetch current active theme and available themes
-  const { data: themes, error: themeError } = await supabase
+  const { data: themesData, error: themeError } = await supabase
     .from('themes')
     .select('*')
     .order('created_at');
@@ -33,12 +31,28 @@ export const getControlCentreData = async () => {
     console.error('Error fetching themes:', themeError);
   }
   
-  const currentTheme = themes?.find(theme => theme.is_active) || null;
+  // Transform database column names to match ThemeSettings interface
+  const themes = themesData?.map(themeData => ({
+    id: themeData.id,
+    name: themeData.name,
+    primaryColor: themeData.primary_color,
+    secondaryColor: themeData.secondary_color,
+    accentColor: themeData.accent_color,
+    sidebarColor: themeData.sidebar_color,
+    buttonColor: themeData.button_color,
+    textColor: themeData.text_color,
+    logoUrl: themeData.logo_url,
+    customFont: themeData.custom_font,
+    isDefault: false, // Not in DB schema but in interface
+    isActive: themeData.is_active
+  })) || [];
+  
+  const currentTheme = themes.find(theme => theme.isActive) || null;
   
   return {
     permissionMatrix,
     currentTheme,
-    availableThemes: themes || [],
+    availableThemes: themes,
     targetSettings: {
       foodGpTarget: 68,
       beverageGpTarget: 72,
