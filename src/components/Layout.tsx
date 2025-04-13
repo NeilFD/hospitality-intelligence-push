@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -114,9 +115,14 @@ const Layout = ({
   };
   
   const handleLogout = async () => {
-    await logout();
-    toast.success('You have been logged out');
-    navigate('/');
+    try {
+      await logout();
+      toast.success('You have been logged out');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to log out. Please try again.');
+    }
   };
   
   const getUserInitials = () => {
@@ -338,26 +344,36 @@ const Layout = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
-                    <div className="flex items-center justify-start gap-2 p-2">
-                      <div className="flex flex-col space-y-0.5 leading-none">
-                        <p className="text-sm font-medium">
-                          {profile?.first_name} {profile?.last_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {user?.email} - {profile?.role || 'User'}
-                        </p>
+                    {isAuthenticated && profile ? (
+                      <>
+                        <div className="flex items-center justify-start gap-2 p-2">
+                          <div className="flex flex-col space-y-0.5 leading-none">
+                            <p className="text-sm font-medium">
+                              {profile?.first_name} {profile?.last_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {user?.email} - {profile?.role || 'User'}
+                            </p>
+                          </div>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-start gap-2 p-2">
+                        <div className="flex flex-col space-y-0.5 leading-none">
+                          <p className="text-sm font-medium">Not logged in</p>
+                        </div>
                       </div>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="cursor-pointer flex w-full items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Logout</span>
+                      <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -385,26 +401,36 @@ const Layout = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
-                    <div className="flex items-center justify-start gap-2 p-2">
-                      <div className="flex flex-col space-y-0.5 leading-none">
-                        <p className="text-sm font-medium">
-                          {profile?.first_name} {profile?.last_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {user?.email} - {profile?.role || 'User'}
-                        </p>
+                    {isAuthenticated && profile ? (
+                      <>
+                        <div className="flex items-center justify-start gap-2 p-2">
+                          <div className="flex flex-col space-y-0.5 leading-none">
+                            <p className="text-sm font-medium">
+                              {profile?.first_name} {profile?.last_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {user?.email} - {profile?.role || 'User'}
+                            </p>
+                          </div>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-start gap-2 p-2">
+                        <div className="flex flex-col space-y-0.5 leading-none">
+                          <p className="text-sm font-medium">Not logged in</p>
+                        </div>
                       </div>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="cursor-pointer flex w-full items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Logout</span>
+                      <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
