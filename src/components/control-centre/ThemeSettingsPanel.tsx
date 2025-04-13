@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -6,15 +7,79 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from 'sonner';
-import { ThemeSettings } from '@/types/control-centre-types';
+import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-types';
 import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
-import { Check, ChevronsUpDown, Copy, Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette } from 'lucide-react';
 
 interface ThemeSettingsPanelProps {
   currentTheme: ThemeSettings | null;
   availableThemes: ThemeSettings[];
 }
+
+// Preset themes
+const presetThemes: PresetTheme[] = [
+  {
+    id: 'forest-green',
+    name: 'Forest Green',
+    colors: {
+      primary: '#1b5e20',
+      secondary: '#e8f5e9',
+      accent: '#66bb6a',
+      sidebar: '#2e7d32',
+      button: '#43a047',
+      text: '#212121'
+    }
+  },
+  {
+    id: 'ocean-blue',
+    name: 'Ocean Blue',
+    colors: {
+      primary: '#1565c0',
+      secondary: '#e3f2fd',
+      accent: '#42a5f5',
+      sidebar: '#1976d2',
+      button: '#2196f3',
+      text: '#212121'
+    }
+  },
+  {
+    id: 'sunset-orange',
+    name: 'Sunset Orange',
+    colors: {
+      primary: '#e65100',
+      secondary: '#fff3e0',
+      accent: '#ff9800',
+      sidebar: '#ef6c00',
+      button: '#f57c00',
+      text: '#212121'
+    }
+  },
+  {
+    id: 'berry-purple',
+    name: 'Berry Purple',
+    colors: {
+      primary: '#6a1b9a',
+      secondary: '#f3e5f5',
+      accent: '#ab47bc',
+      sidebar: '#8e24aa',
+      button: '#9c27b0',
+      text: '#212121'
+    }
+  },
+  {
+    id: 'dark-mode',
+    name: 'Dark Mode',
+    colors: {
+      primary: '#212121',
+      secondary: '#424242',
+      accent: '#757575',
+      sidebar: '#333333',
+      button: '#616161',
+      text: '#f5f5f5'
+    }
+  }
+];
 
 export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSettingsPanelProps) {
   const [activeTheme, setActiveTheme] = useState<ThemeSettings>(currentTheme || {
@@ -63,19 +128,36 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     }));
   };
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      if (!event.target.files || event.target.files.length === 0) {
+      if (!e.target.files || e.target.files.length === 0) {
         return;
       }
       
       setUploading(true);
-      const file = event.target.files[0];
+      const file = e.target.files[0];
       
       // Generate a unique file name for the logo
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
+      
+      // Check if logos bucket exists, create if doesn't
+      const { data: bucketsList } = await supabase.storage.listBuckets();
+      const logosBucketExists = bucketsList?.some(bucket => bucket.name === 'logos');
+      
+      if (!logosBucketExists) {
+        const { error: createBucketError } = await supabase.storage.createBucket('logos', {
+          public: true
+        });
+        
+        if (createBucketError) {
+          console.error('Error creating logos bucket:', createBucketError);
+          toast.error('Error creating logos storage');
+          setUploading(false);
+          return;
+        }
+      }
       
       // Upload the file to the 'logos' bucket in Supabase Storage
       const { error: uploadError, data } = await supabase.storage
@@ -176,6 +258,21 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     }, 3000);
   };
 
+  const applyPresetTheme = (preset: PresetTheme) => {
+    setActiveTheme(prev => ({
+      ...prev,
+      name: preset.name,
+      primaryColor: preset.colors.primary,
+      secondaryColor: preset.colors.secondary,
+      accentColor: preset.colors.accent,
+      sidebarColor: preset.colors.sidebar,
+      buttonColor: preset.colors.button,
+      textColor: preset.colors.text
+    }));
+    
+    toast.success(`${preset.name} theme applied! Remember to save your changes.`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -185,6 +282,26 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Preset Themes Section */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-3 flex items-center">
+            <Palette className="mr-2 h-5 w-5" />
+            Preset Themes
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {presetThemes.map(theme => (
+              <div 
+                key={theme.id} 
+                className="border rounded-md overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => applyPresetTheme(theme)}
+              >
+                <div className="h-16" style={{ backgroundColor: theme.colors.primary }}></div>
+                <div className="p-2 text-center text-sm font-medium">{theme.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
         <div className="grid gap-4">
           <Label htmlFor="name">Theme Name</Label>
           <Input 
@@ -276,9 +393,9 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         
         <div className="grid gap-4">
           <Label htmlFor="customFont">Custom Font</Label>
-          <Select onValueChange={handleSelectChange}>
+          <Select onValueChange={handleSelectChange} defaultValue={activeTheme.customFont || undefined}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a font" defaultValue={activeTheme.customFont} />
+              <SelectValue placeholder="Select a font" />
             </SelectTrigger>
             <SelectContent>
               {availableFonts.map((font) => (
