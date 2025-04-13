@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -461,7 +462,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'presets' 
-                  ? 'bg-purple-700 text-purple-900 shadow-md' 
+                  ? 'bg-purple-700 text-white shadow-md' 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
@@ -487,7 +488,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'custom' 
-                  ? 'bg-purple-700 text-purple-900 shadow-md' 
+                  ? 'bg-purple-700 text-white shadow-md' 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
