@@ -1,27 +1,85 @@
-
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
-export interface ControlCentreState {
-  permissionMatrix: PermissionMatrix[];
-  currentTheme: ThemeSettings | null;
-  availableThemes: ThemeSettings[];
-  targetSettings: TargetSettings;
-  isLoading: boolean;
-  error: string | null;
-  fetchPermissionMatrix: () => Promise<void>;
-  updatePermissionMatrix: (permissionMatrix: PermissionMatrix[]) => Promise<void>;
-  fetchThemes: () => Promise<void>;
-  createTheme: (theme: Omit<ThemeSettings, 'id'>) => Promise<void>;
-  updateTheme: (theme: ThemeSettings) => Promise<void>;
-  setActiveTheme: (themeId: string) => Promise<void>;
-  deleteTheme: (themeId: string) => Promise<void>;
-  uploadLogo: (file: File) => Promise<string | null>;
-  fetchTargetSettings: () => Promise<void>;
-  updateTargetSettings: (settings: TargetSettings) => Promise<void>;
-  duplicateDatabase: () => Promise<void>;
-  clearError: () => void;
-}
+// Available fonts remain the same
+export const availableFonts: { name: string; value: string }[] = [
+  { name: 'Default System Font', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif' },
+  { name: 'Inter', value: 'Inter, system-ui, sans-serif' },
+  { name: 'Roboto', value: 'Roboto, system-ui, sans-serif' },
+  { name: 'Open Sans', value: '"Open Sans", system-ui, sans-serif' },
+  { name: 'Playfair Display', value: '"Playfair Display", serif' },
+  { name: 'Montserrat', value: 'Montserrat, system-ui, sans-serif' },
+  { name: 'Poppins', value: 'Poppins, system-ui, sans-serif' },
+  { name: 'Lato', value: 'Lato, system-ui, sans-serif' },
+];
+
+// Remove hardcoded presetThemes, now stored in database
+export const presetThemes: PresetTheme[] = [];
+
+// Modify getControlCentreData to fetch themes from database
+export const getControlCentreData = async () => {
+  // Initialize database if needed
+  
+  // Get permission matrix from database
+  const permissionMatrix = await getPermissionMatrix();
+  
+  // Fetch current active theme and available themes
+  const { data: themes, error: themeError } = await supabase
+    .from('themes')
+    .select('*')
+    .order('created_at');
+  
+  if (themeError) {
+    console.error('Error fetching themes:', themeError);
+  }
+  
+  const currentTheme = themes?.find(theme => theme.is_active) || null;
+  
+  return {
+    permissionMatrix,
+    currentTheme,
+    availableThemes: themes || [],
+    targetSettings: {
+      foodGpTarget: 68,
+      beverageGpTarget: 72,
+      wageCostTarget: 28,
+    },
+  };
+};
+
+// Helper function to get permission matrix from database
+export const getPermissionMatrix = async (): Promise<PermissionMatrix[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_permission_matrix');
+    
+    if (error) {
+      console.error('Error getting permission matrix:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPermissionMatrix:', error);
+    return [];
+  }
+};
+
+// Helper function to update permission matrix in database
+export const updatePermissionMatrix = async (permissionMatrix: PermissionMatrix[]): Promise<void> => {
+  try {
+    const { error } = await supabase.rpc('update_permission_matrix', {
+      matrix: permissionMatrix
+    });
+    
+    if (error) {
+      console.error('Error updating permission matrix:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in updatePermissionMatrix:', error);
+    throw error;
+  }
+};
 
 // Initialize basic data if needed
 const initializeControlCentreDatabase = async () => {
@@ -186,147 +244,4 @@ const initializeControlCentreDatabase = async () => {
   } catch (error) {
     console.error('Error initializing control centre database:', error);
   }
-};
-
-// Helper function to get permission matrix from database
-export const getPermissionMatrix = async (): Promise<PermissionMatrix[]> => {
-  try {
-    const { data, error } = await supabase.rpc('get_permission_matrix');
-    
-    if (error) {
-      console.error('Error getting permission matrix:', error);
-      throw error;
-    }
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error in getPermissionMatrix:', error);
-    return [];
-  }
-};
-
-// Helper function to update permission matrix in database
-export const updatePermissionMatrix = async (permissionMatrix: PermissionMatrix[]): Promise<void> => {
-  try {
-    const { error } = await supabase.rpc('update_permission_matrix', {
-      matrix: permissionMatrix
-    });
-    
-    if (error) {
-      console.error('Error updating permission matrix:', error);
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error in updatePermissionMatrix:', error);
-    throw error;
-  }
-};
-
-// Get available fonts
-export const availableFonts: { name: string; value: string }[] = [
-  { name: 'Default System Font', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif' },
-  { name: 'Inter', value: 'Inter, system-ui, sans-serif' },
-  { name: 'Roboto', value: 'Roboto, system-ui, sans-serif' },
-  { name: 'Open Sans', value: '"Open Sans", system-ui, sans-serif' },
-  { name: 'Playfair Display', value: '"Playfair Display", serif' },
-  { name: 'Montserrat', value: 'Montserrat, system-ui, sans-serif' },
-  { name: 'Poppins', value: 'Poppins, system-ui, sans-serif' },
-  { name: 'Lato', value: 'Lato, system-ui, sans-serif' },
-];
-
-// Preset themes
-export const presetThemes = [
-  {
-    id: 'default',
-    name: 'Tavern Purple',
-    colors: {
-      primary: '#806cac',
-      secondary: '#705b9b',
-      accent: '#9d89c9',
-      sidebar: '#806cac',
-      button: '#806cac',
-      text: '#333333',
-    }
-  },
-  {
-    id: 'forest',
-    name: 'Forest Green',
-    colors: {
-      primary: '#2c7a4e',
-      secondary: '#1e5631',
-      accent: '#4ca975',
-      sidebar: '#2c7a4e',
-      button: '#2c7a4e',
-      text: '#333333',
-    }
-  },
-  {
-    id: 'ocean',
-    name: 'Ocean Blue',
-    colors: {
-      primary: '#0369a1',
-      secondary: '#075985',
-      accent: '#38bdf8',
-      sidebar: '#0369a1',
-      button: '#0369a1',
-      text: '#333333',
-    }
-  },
-  {
-    id: 'sunset',
-    name: 'Sunset Orange',
-    colors: {
-      primary: '#ea580c',
-      secondary: '#c2410c',
-      accent: '#fb923c',
-      sidebar: '#ea580c',
-      button: '#ea580c',
-      text: '#333333',
-    }
-  },
-  {
-    id: 'berry',
-    name: 'Berry Purple',
-    colors: {
-      primary: '#7e22ce',
-      secondary: '#6b21a8',
-      accent: '#a855f7',
-      sidebar: '#7e22ce',
-      button: '#7e22ce',
-      text: '#333333',
-    }
-  },
-  {
-    id: 'dark',
-    name: 'Dark Mode',
-    colors: {
-      primary: '#27272a',
-      secondary: '#18181b',
-      accent: '#3f3f46',
-      sidebar: '#18181b',
-      button: '#3f3f46',
-      text: '#f4f4f5',
-    }
-  },
-];
-
-// This service will be expanded with actual database operations
-// For now, it returns mock data to get the UI working
-export const getControlCentreData = async () => {
-  // Initialize database if needed
-  await initializeControlCentreDatabase();
-  
-  // Get permission matrix from database
-  const permissionMatrix = await getPermissionMatrix();
-  
-  return {
-    permissionMatrix,
-    currentTheme: presetThemes[0],
-    availableThemes: presetThemes,
-    targetSettings: {
-      foodGpTarget: 68,
-      beverageGpTarget: 72,
-      wageCostTarget: 28,
-    },
-  };
 };

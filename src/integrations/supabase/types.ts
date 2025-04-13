@@ -1149,6 +1149,54 @@ export type Database = {
         }
         Relationships: []
       }
+      themes: {
+        Row: {
+          accent_color: string
+          button_color: string
+          created_at: string
+          custom_font: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          primary_color: string
+          secondary_color: string
+          sidebar_color: string
+          text_color: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color: string
+          button_color: string
+          created_at?: string
+          custom_font?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          primary_color: string
+          secondary_color: string
+          sidebar_color: string
+          text_color: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          button_color?: string
+          created_at?: string
+          custom_font?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          primary_color?: string
+          secondary_color?: string
+          sidebar_color?: string
+          text_color?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tracker_credit_notes: {
         Row: {
           amount: number
@@ -1482,6 +1530,10 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
+      }
+      set_active_theme: {
+        Args: { theme_id: string }
+        Returns: undefined
       }
       sparsevec_out: {
         Args: { "": unknown }

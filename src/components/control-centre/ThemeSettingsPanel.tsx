@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,8 @@ import { availableFonts, presetThemes } from '@/services/control-centre-service'
 import { toast } from 'sonner';
 import { TavernLogo } from '@/components/TavernLogo';
 import { ImagePlus, Check, RefreshCcw } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/services/auth-service';
 
 interface ThemeSettingsPanelProps {
   currentTheme: ThemeSettings | null;
@@ -19,8 +20,10 @@ interface ThemeSettingsPanelProps {
 }
 
 export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSettingsPanelProps) {
+  const { profile } = useAuthStore();
   const [activeTab, setActiveTab] = useState('presets');
-  const [selectedPreset, setSelectedPreset] = useState(presetThemes[0].id);
+  const [themes, setThemes] = useState<ThemeSettings[]>([]);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -35,6 +38,29 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchThemes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('themes')
+          .select('*')
+          .order('created_at');
+        
+        if (error) throw error;
+        
+        setThemes(data as ThemeSettings[]);
+        
+        const activeTheme = data.find(theme => theme.is_active);
+        if (activeTheme) setSelectedThemeId(activeTheme.id);
+      } catch (error) {
+        console.error('Error fetching themes:', error);
+        toast.error('Failed to load themes');
+      }
+    };
+
+    fetchThemes();
+  }, []);
 
   const triggerFileInput = () => {
     if (fileInputRef.current) {
@@ -53,7 +79,6 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     try {
       setUploading(true);
       
-      // For the preview, create a data URL
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target && typeof e.target.result === 'string') {
@@ -62,8 +87,6 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       };
       reader.readAsDataURL(file);
       
-      // In a real implementation, we would upload to Supabase storage here
-      // For now, just show a success message after a delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast.success('Logo uploaded successfully');
@@ -75,29 +98,28 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     }
   };
   
-  const handlePresetChange = (presetId: string) => {
-    setSelectedPreset(presetId);
-    const preset = presetThemes.find(theme => theme.id === presetId);
-    if (preset) {
-      setCustomTheme({
-        ...customTheme,
-        primaryColor: preset.colors.primary,
-        secondaryColor: preset.colors.secondary,
-        accentColor: preset.colors.accent,
-        sidebarColor: preset.colors.sidebar,
-        buttonColor: preset.colors.button,
-        textColor: preset.colors.text,
-      });
-    }
+  const handleThemeSelection = (themeId: string) => {
+    setSelectedThemeId(themeId);
   };
   
   const applyTheme = async () => {
+    if (profile?.role !== 'GOD' && profile?.role !== 'Super User') {
+      toast.error('You do not have permission to change themes');
+      return;
+    }
+
     try {
       setSaving(true);
-      // Here we would save the theme to the database
-      // For now, just simulate a delay and show a success message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const { error } = await supabase.rpc('set_active_theme', { 
+        theme_id: selectedThemeId 
+      });
+      
+      if (error) throw error;
+      
       toast.success('Theme applied successfully');
+      
+      window.location.reload();
     } catch (error) {
       console.error('Error applying theme:', error);
       toast.error('Failed to apply theme');
@@ -110,6 +132,25 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     setLogoPreview(null);
     toast.success('Logo reset to default');
   };
+
+  if (profile?.role !== 'GOD' && profile?.role !== 'Super User') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Brand & Theme Settings</CardTitle>
+          <CardDescription>
+            Access restricted to GOD and Super User roles
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-6 bg-red-50 text-red-800 rounded-md">
+            <p className="font-medium">Access Denied</p>
+            <p className="mt-1">You do not have permission to modify theme settings.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -139,28 +180,28 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
             
             <TabsContent value="presets" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {presetThemes.map(theme => (
+                {themes.map(theme => (
                   <div 
                     key={theme.id}
                     className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                      selectedPreset === theme.id 
+                      selectedThemeId === theme.id 
                         ? 'ring-2 ring-offset-2 ring-[#8e44ad] bg-purple-50' 
                         : 'hover:border-[#8e44ad]/50 hover:bg-purple-50/30'
                     }`}
-                    onClick={() => handlePresetChange(theme.id)}
+                    onClick={() => handleThemeSelection(theme.id)}
                   >
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="font-medium">{theme.name}</h3>
-                      {selectedPreset === theme.id && (
+                      {selectedThemeId === theme.id && (
                         <Check className="h-4 w-4 text-[#8e44ad]" />
                       )}
                     </div>
                     <div className="flex gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.colors.primary }}></div>
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.colors.secondary }}></div>
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.colors.accent }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.primary_color }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.secondary_color }}></div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.accent_color }}></div>
                     </div>
-                    <div className="h-16 rounded-md flex items-center justify-center text-white" style={{ backgroundColor: theme.colors.sidebar }}>
+                    <div className="h-16 rounded-md flex items-center justify-center text-white" style={{ backgroundColor: theme.sidebar_color }}>
                       Sidebar
                     </div>
                   </div>
@@ -349,7 +390,7 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       <div className="flex justify-end">
         <Button 
           onClick={applyTheme} 
-          disabled={saving}
+          disabled={saving || !selectedThemeId}
           className="bg-[#8e44ad] hover:bg-[#7d3c98] text-white"
         >
           {saving ? 'Applying...' : 'Apply Theme Changes'}
