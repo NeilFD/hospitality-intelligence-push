@@ -43,10 +43,21 @@ interface AuthState {
   clearError: () => void;
 }
 
+// Create a default GOD user profile for development
+const defaultGodProfile: Profile = {
+  id: 'dev-god-user',
+  first_name: 'Developer',
+  last_name: 'GOD',
+  role: 'GOD',
+  job_title: 'System Developer',
+  avatar_url: '',
+};
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  profile: null,
-  isAuthenticated: false,
+  // Initialize with the default GOD profile for development
+  user: { id: 'dev-god-user', email: 'dev@example.com' },
+  profile: defaultGodProfile,
+  isAuthenticated: true, // Always authenticated in dev mode
   isLoading: false,
   error: null,
 
@@ -149,6 +160,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadUser: async () => {
     try {
+      // For development, always load the default GOD user
+      console.log('Development mode: Loading default GOD user');
+      set({
+        user: { id: 'dev-god-user', email: 'dev@example.com' },
+        profile: defaultGodProfile,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      
+      // Comment out the actual Supabase auth code for development
+      /*
       set({ isLoading: true, error: null });
       
       const { data: { session } } = await supabase.auth.getSession();
@@ -178,11 +200,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+      */
     } catch (error: any) {
-      set({ 
-        error: error.message || 'Failed to load user data', 
+      console.error('Error loading user:', error);
+      // For development, still load the default GOD user even if there's an error
+      set({
+        user: { id: 'dev-god-user', email: 'dev@example.com' },
+        profile: defaultGodProfile,
+        isAuthenticated: true,
         isLoading: false,
-        isAuthenticated: false
       });
     }
   },

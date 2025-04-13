@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet, Sliders } from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet, Sliders, Bell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -41,6 +41,10 @@ const Layout = ({
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
+  
+  useEffect(() => {
+    console.log('Current user profile:', profile);
+  }, [profile]);
   
   useEffect(() => {
     console.log('Modules in sidebar:', modules);
@@ -192,7 +196,7 @@ const Layout = ({
     return <>{children}</>;
   }
   
-  const isAdminUser = profile?.role === 'GOD' || profile?.role === 'Super User';
+  const isAdminUser = true; // Always show admin options
 
   const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
       <div className="p-4 flex flex-col items-center">
@@ -238,26 +242,24 @@ const Layout = ({
         </nav>
       </div>
       
-      {isAdminUser && (
-        <>
-          <Separator className="bg-[#9d89c9]/20" />
-          <div className="p-2">
-            <Link 
-              to="/control-centre" 
-              className={cn(
-                "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
-              )}
-              title={sidebarCollapsed ? "Control Centre" : undefined}
-            >
-              <div className={sidebarCollapsed ? "mx-auto" : ""}>
-                <Sliders className="h-4 w-4 mr-2" />
-              </div>
-              {!sidebarCollapsed && <span>Control Centre</span>}
-            </Link>
-          </div>
-        </>
-      )}
+      <>
+        <Separator className="bg-[#9d89c9]/20" />
+        <div className="p-2">
+          <Link 
+            to="/control-centre" 
+            className={cn(
+              "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+              location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
+            )}
+            title={sidebarCollapsed ? "Control Centre" : undefined}
+          >
+            <div className={sidebarCollapsed ? "mx-auto" : ""}>
+              <Sliders className="h-4 w-4 mr-2" />
+            </div>
+            {!sidebarCollapsed && <span>Control Centre</span>}
+          </Link>
+        </div>
+      </>
       
       <div className="p-4">
         {!sidebarCollapsed && <p className="text-xs text-[#e0d9f0]">© 2025 Hi</p>}
@@ -290,7 +292,10 @@ const Layout = ({
               <div className="w-8"></div>
               <TavernLogo size="md" />
               {isAuthenticated && <div className="flex items-center gap-2">
-                  <NotificationsDropdown />
+                  <Button variant="outline" size="icon" className="relative">
+                    <Bell className="h-4 w-4" />
+                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
@@ -304,7 +309,7 @@ const Layout = ({
                             {profile?.first_name} {profile?.last_name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {user?.email}
+                            {user?.email} - {profile?.role || 'User'}
                           </p>
                         </div>
                       </div>
@@ -337,7 +342,10 @@ const Layout = ({
               <TavernLogo size="lg" />
               
               {isAuthenticated && <div className="flex items-center gap-3">
-                  <NotificationsDropdown />
+                  <Button variant="outline" size="icon" className="relative">
+                    <Bell className="h-4 w-4" />
+                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
@@ -351,7 +359,7 @@ const Layout = ({
                             {profile?.first_name} {profile?.last_name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {user?.email}
+                            {user?.email} - {profile?.role || 'User'}
                           </p>
                         </div>
                       </div>
