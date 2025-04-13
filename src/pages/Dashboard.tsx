@@ -76,7 +76,7 @@ export default function Dashboard() {
 
   return (
     <div className="container py-4 space-y-4">
-      <h1 className="text-3xl font-bold text-[#806cac] mb-4 text-center">Hi Kitchen Tracker</h1>
+      <h1 className="text-3xl font-bold text-[#806cac] mb-4 text-center">Food Hub</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="shadow-md border-[#9d89c9]/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-[#9d89c9]/5 backdrop-blur-sm">
