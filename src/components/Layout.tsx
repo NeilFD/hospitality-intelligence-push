@@ -42,17 +42,15 @@ const Layout = ({
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
   
+  const handleControlCentreClick = () => {
+    navigate('/control-centre');
+  };
+  
   const ControlCentreLink = () => {
-    const handleControlCentreClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      navigate('/control-centre', { replace: true });
-    };
-    
     return (
-      <Link 
-        to="/control-centre" 
+      <div 
         className={cn(
-          "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+          "flex items-center px-3 py-2 rounded-md text-sm transition-colors cursor-pointer",
           location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
         )}
         title={sidebarCollapsed ? "Control Centre" : undefined}
@@ -62,7 +60,7 @@ const Layout = ({
           <Sliders className="h-4 w-4 mr-2" />
         </div>
         {!sidebarCollapsed && <span>Control Centre</span>}
-      </Link>
+      </div>
     );
   };
   
