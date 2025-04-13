@@ -1,16 +1,25 @@
-
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet, Sliders, Bell } from "lucide-react";
+import { 
+  Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, 
+  PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, 
+  Users, Book, Wallet, Sliders, Bell 
+} from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { SidebarLogo } from "./SidebarLogo";
 import { TavernLogo } from "./TavernLogo";
 import { useAuthStore } from "@/services/auth-service";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ModuleType } from "@/types/kitchen-ledger";
@@ -67,7 +76,6 @@ const Layout = ({
     
     checkThemeClasses();
     
-    // Listen for theme changes
     const handleThemeChange = () => {
       checkThemeClasses();
     };
@@ -352,7 +360,13 @@ const Layout = ({
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
       name: module.type === 'master' ? 'Daily Info' : 
-             module.type === 'team' ? 'Team' : module.name,
+           module.type === 'team' ? 'Team' : 
+           module.type === 'pl' ? 'P&L Tracker' : 
+           module.type === 'wages' ? 'Wages Tracker' : 
+           module.type === 'food' ? 'Food Hub' : 
+           module.type === 'beverage' ? 'Beverage Hub' : 
+           module.type === 'performance' ? 'Performance and Analysis' :
+           module.name,
       path: `/${module.type}/dashboard`,
       icon: <ModuleIcon type={module.type} className="mr-2 h-4 w-4" />,
       type: module.type
@@ -395,12 +409,25 @@ const Layout = ({
         </div>
         
         <nav className="space-y-1">
-          {moduleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor())} title={sidebarCollapsed ? item.name : undefined} onClick={() => handleModuleSelect(item.type as ModuleType)}>
-              <div className={sidebarCollapsed ? "mx-auto" : ""}>
+          {moduleNavItems.map(item => (
+            <Link 
+              key={item.path} 
+              to={item.path} 
+              className={cn(
+                "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                currentModule === item.type 
+                  ? getModuleActiveBgColor() + " font-medium" 
+                  : "text-white hover:" + getSidebarHoverColor()
+              )} 
+              title={sidebarCollapsed ? item.name : undefined} 
+              onClick={() => handleModuleSelect(item.type as ModuleType)}
+            >
+              <div className={sidebarCollapsed ? "mx-auto flex items-center" : "flex items-center"}>
                 {item.icon}
+                {!sidebarCollapsed && <span className="ml-2">{item.name}</span>}
               </div>
-              {!sidebarCollapsed && <span>{item.name}</span>}
-            </Link>)}
+            </Link>
+          ))}
         </nav>
       </div>
       
