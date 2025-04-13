@@ -11,8 +11,14 @@ const Index = () => {
     console.log('Current module in Index:', currentModule);
   }, [currentModule]);
   
+  // Special case handling for direct routes
+  // We check if we're trying to go to Control Centre
+  const path = window.location.pathname;
+  if (path === '/control-centre') {
+    return null; // Let the App router handle this directly
+  }
+  
   // Create a direct path to the dashboard based on the current module
-  // For routes like /control-centre, they will now be handled directly by App.tsx
   const dashboardPath = currentModule ? `/${currentModule}/dashboard` : '/food/dashboard';
   console.log('Redirecting to dashboard path:', dashboardPath);
   
