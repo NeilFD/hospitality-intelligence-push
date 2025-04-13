@@ -570,6 +570,8 @@ export function ThemeSettingsPanel({
     }
   };
 
+  const currentLogoUrl = activeTheme.logoUrl || localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png";
+
   return <Card>
       <CardHeader>
         <CardTitle>Brand & Theme Settings</CardTitle>
@@ -716,23 +718,17 @@ export function ThemeSettingsPanel({
                 
                 <div className="grid gap-4">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/50 transition-colors">
-                    {activeTheme.logoUrl ? <div className="relative w-full flex flex-col items-center">
-                        <img src={activeTheme.logoUrl} alt="Logo" className="max-h-40 object-contain mb-4" />
-                        <Label htmlFor="logoUrl" className="cursor-pointer px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center">
-                          <Upload className="mr-2 h-4 w-4" />
-                          Change Logo
-                        </Label>
-                      </div> : <div className="flex flex-col items-center text-center">
-                        <Upload className="h-12 w-12 text-muted-foreground mb-2" />
-                        <h3 className="text-lg font-medium">Upload logo</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Drag and drop or click to browse
-                        </p>
-                        <Label htmlFor="logoUrl" className="cursor-pointer px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center">
-                          <Upload className="mr-2 h-4 w-4" />
-                          Select File
-                        </Label>
-                      </div>}
+                    <div className="relative w-full flex flex-col items-center">
+                      <img 
+                        src={currentLogoUrl} 
+                        alt="Current Logo" 
+                        className="max-h-40 object-contain mb-4" 
+                      />
+                      <Label htmlFor="logoUrl" className="cursor-pointer px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center">
+                        <Upload className="mr-2 h-4 w-4" />
+                        {activeTheme.logoUrl ? "Change Logo" : "Upload New Logo"}
+                      </Label>
+                    </div>
                     <Input type="file" id="logoUrl" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                     {uploading && <p className="mt-2 text-sm">Uploading logo...</p>}
                   </div>
