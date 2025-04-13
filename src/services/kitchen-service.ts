@@ -1,3 +1,4 @@
+
 // Only update the getTrackerSummaryByMonth function
 import { ModuleType, TrackerSummary } from '@/types/kitchen-ledger';
 import { supabase } from '@/lib/supabase';
@@ -564,6 +565,29 @@ export const syncTrackerCreditNotesToCreditNotes = async (year: number, month: n
 
 export const getTrackerSummaryByMonth = async (year: number, month: number, moduleType: ModuleType = 'food'): Promise<TrackerSummary> => {
   try {
+    // First, fetch business targets to use as defaults
+    let gpTarget = moduleType === 'food' ? 68 : 72; // Default values
+    
+    try {
+      const { data: businessTargets, error } = await supabase
+        .from('business_targets')
+        .select('*')
+        .eq('id', 1)
+        .single();
+        
+      if (businessTargets && !error) {
+        // Set GP target based on module type
+        if (moduleType === 'food' && businessTargets.food_gp_target) {
+          gpTarget = businessTargets.food_gp_target;
+        } else if (moduleType === 'beverage' && businessTargets.beverage_gp_target) {
+          gpTarget = businessTargets.beverage_gp_target;
+        }
+      }
+    } catch (targetError) {
+      console.error('Error fetching business targets:', targetError);
+    }
+    
+    // Now fetch the tracker data
     const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
     
     let totalRevenue = 0;
@@ -586,14 +610,16 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
     
     const totalCost = totalPurchases - totalCreditNotes + totalStaffAllowance;
     const gpAmount = totalRevenue - totalCost;
-    const gpPercentage = totalRevenue > 0 ? (gpAmount / totalRevenue) * 100 : 0;
+    
+    // Use the actual data if available, otherwise fall back to the business target
+    let gpPercentage = totalRevenue > 0 ? (gpAmount / totalRevenue) * 100 : gpTarget;
     
     return {
       year,
       month,
       moduleType,
       revenue: totalRevenue,
-      cost: totalCost, // Ensure cost is present
+      cost: totalCost,
       purchases: totalPurchases,
       creditNotes: totalCreditNotes,
       staffAllowance: totalStaffAllowance,
