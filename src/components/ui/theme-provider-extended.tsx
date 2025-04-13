@@ -33,9 +33,19 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           // Add the new theme class based on the theme name
           if (data.name === 'Forest Green') {
             html.classList.add('theme-forest-green');
+            console.log('Applied Forest Green theme');
           } else if (data.name === 'Ocean Blue') {
-            // Add other theme classes as needed
-            // For now, we're just implementing Forest Green
+            html.classList.add('theme-ocean-blue');
+            console.log('Applied Ocean Blue theme');
+          } else if (data.name === 'Sunset Orange') {
+            html.classList.add('theme-sunset-orange');
+            console.log('Applied Sunset Orange theme');
+          } else if (data.name === 'Berry Purple') {
+            html.classList.add('theme-berry-purple');
+            console.log('Applied Berry Purple theme');
+          } else if (data.name === 'Dark Mode') {
+            html.classList.add('theme-dark-mode');
+            console.log('Applied Dark Mode theme');
           }
           
           console.log('Applied theme:', data.name);
