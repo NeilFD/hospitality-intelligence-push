@@ -36,12 +36,16 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
           return;
         }
         
+        // Log the raw response data to help with debugging
+        console.log('Raw permission matrix response:', data);
+        
         if (data && Array.isArray(data)) {
-          console.log('Fetched permission matrix:', data);
+          console.log('Fetched permission matrix (array):', data);
           setMatrix(data);
         } else if (data) {
-          // If data is not an array but exists (e.g., a single object), convert to array
-          console.log('Fetched permission matrix (converted):', data);
+          // Handle case where data is not an array (e.g., JSON object)
+          console.log('Fetched permission matrix (non-array):', data);
+          // Try to use the data as is, it might be already in the correct format
           setMatrix(Array.isArray(data) ? data : [data]);
         } else {
           // If no data returned but also no error, use the initial data
@@ -177,6 +181,34 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
     );
   }
 
+  // Check if matrix is empty or not properly formatted
+  if (!matrix || matrix.length === 0 || !Array.isArray(matrix)) {
+    console.error('Matrix data is invalid:', matrix);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Permission Matrix</CardTitle>
+          <CardDescription>
+            Control which user roles can access modules and their specific pages
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-6 bg-yellow-50 text-yellow-800 rounded-md">
+            <p className="font-medium">No permission data available</p>
+            <p className="mt-1">The permission matrix data is not in the expected format.</p>
+            <Button 
+              variant="outline" 
+              className="mt-3"
+              onClick={() => window.location.reload()}
+            >
+              Refresh page
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -187,70 +219,64 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {matrix.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              <p>No permission data available. Please check database configuration.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Accordion type="multiple" className="w-full">
-                {matrix.map(role => (
-                  <AccordionItem key={role.roleId} value={role.roleId}>
-                    <AccordionTrigger>
-                      <span className="font-semibold">{role.roleId}</span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[300px]">Module / Page</TableHead>
-                            <TableHead className="text-center">Access</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {role.modulePermissions && role.modulePermissions.length > 0 ? (
-                            role.modulePermissions.map(module => (
-                              <React.Fragment key={module.moduleId}>
-                                <TableRow className="bg-muted/50">
-                                  <TableCell className="font-medium">{module.moduleName}</TableCell>
+          <div className="overflow-x-auto">
+            <Accordion type="multiple" className="w-full">
+              {matrix.map(role => (
+                <AccordionItem key={role.roleId} value={role.roleId}>
+                  <AccordionTrigger>
+                    <span className="font-semibold">{role.roleId}</span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[300px]">Module / Page</TableHead>
+                          <TableHead className="text-center">Access</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {role.modulePermissions && role.modulePermissions.length > 0 ? (
+                          role.modulePermissions.map(module => (
+                            <React.Fragment key={module.moduleId}>
+                              <TableRow className="bg-muted/50">
+                                <TableCell className="font-medium">{module.moduleName}</TableCell>
+                                <TableCell className="text-center">
+                                  <Checkbox 
+                                    checked={module.hasAccess} 
+                                    onCheckedChange={() => toggleModuleAccess(role.roleId, module.moduleId)}
+                                    // Disable toggling for GOD role to prevent locking them out
+                                    disabled={role.roleId === 'GOD'}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                              {module.pagePermissions && module.pagePermissions.map(page => (
+                                <TableRow key={page.pageId}>
+                                  <TableCell className="pl-6">{page.pageName}</TableCell>
                                   <TableCell className="text-center">
                                     <Checkbox 
-                                      checked={module.hasAccess} 
-                                      onCheckedChange={() => toggleModuleAccess(role.roleId, module.moduleId)}
-                                      // Disable toggling for GOD role to prevent locking them out
-                                      disabled={role.roleId === 'GOD'}
+                                      checked={page.hasAccess && module.hasAccess} 
+                                      onCheckedChange={() => togglePageAccess(role.roleId, module.moduleId, page.pageId)}
+                                      disabled={!module.hasAccess || role.roleId === 'GOD'}
                                     />
                                   </TableCell>
                                 </TableRow>
-                                {module.pagePermissions && module.pagePermissions.map(page => (
-                                  <TableRow key={page.pageId}>
-                                    <TableCell className="pl-6">{page.pageName}</TableCell>
-                                    <TableCell className="text-center">
-                                      <Checkbox 
-                                        checked={page.hasAccess && module.hasAccess} 
-                                        onCheckedChange={() => togglePageAccess(role.roleId, module.moduleId, page.pageId)}
-                                        disabled={!module.hasAccess || role.roleId === 'GOD'}
-                                      />
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </React.Fragment>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={2} className="text-center py-4 text-gray-500">
-                                No modules defined for this role.
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          )}
+                              ))}
+                            </React.Fragment>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={2} className="text-center py-4 text-gray-500">
+                              No modules defined for this role.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
           
           <div className="flex justify-end">
             <Button onClick={saveChanges} disabled={saving}>
