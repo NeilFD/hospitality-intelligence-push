@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -132,34 +131,49 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
     try {
       setSaving(true);
       
-      // Directly call the update query instead of using RPC
-      const { error } = await supabase
-        .from('themes')
-        .update({ is_active: false })
-        .neq('id', 'placeholder');  // Update all rows
+      console.log('Applying theme with ID:', selectedThemeId);
       
-      if (error) {
-        console.error('Error resetting themes:', error);
-        throw error;
+      // First get all theme IDs to update them to inactive
+      const { data: allThemes, error: fetchError } = await supabase
+        .from('themes')
+        .select('id');
+      
+      if (fetchError) {
+        console.error('Error fetching themes for reset:', fetchError);
+        throw fetchError;
       }
       
-      // Then set the selected theme to active
-      const { error: updateError } = await supabase
-        .from('themes')
-        .update({ is_active: true })
-        .eq('id', selectedThemeId);
-      
-      if (updateError) {
-        console.error('Error activating theme:', updateError);
-        throw updateError;
+      if (allThemes && allThemes.length > 0) {
+        // Update all themes to inactive
+        const { error: resetError } = await supabase
+          .from('themes')
+          .update({ is_active: false });
+        
+        if (resetError) {
+          console.error('Error resetting themes:', resetError);
+          throw resetError;
+        }
+        
+        // Then set the selected theme to active
+        const { error: updateError } = await supabase
+          .from('themes')
+          .update({ is_active: true })
+          .eq('id', selectedThemeId);
+        
+        if (updateError) {
+          console.error('Error activating theme:', updateError);
+          throw updateError;
+        }
+        
+        toast.success('Theme applied successfully');
+        
+        // Reload the page to apply the new theme
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        toast.error('No themes found to update');
       }
-      
-      toast.success('Theme applied successfully');
-      
-      // Reload the page to apply the new theme
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error) {
       console.error('Error applying theme:', error);
       toast.error('Failed to apply theme');
