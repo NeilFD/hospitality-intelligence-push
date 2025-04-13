@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { fetchMasterWeeklyRecords, upsertMasterDailyRecord } from '@/services/master-record-service';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import DailyRecordForm from '@/components/master/DailyRecordForm';
-import { generateWeekDates } from '@/lib/date-utils';
+import { generateWeekDates, formatDate } from '@/lib/date-utils';
 import { toast } from 'sonner';
 
 const WeeklyInput = () => {
@@ -45,9 +45,11 @@ const WeeklyInput = () => {
   }, [activeDay, selectedDateStorageKey]);
   
   const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
-  const currentWeek = useMemo(() => weekDates[weekNumber - 1] || {
-    startDate: '',
-    endDate: ''
+  const currentWeek = useMemo(() => {
+    if (weekNumber > 0 && weekNumber <= weekDates.length) {
+      return weekDates[weekNumber - 1];
+    }
+    return { startDate: '', endDate: '' };
   }, [weekDates, weekNumber]);
 
   const loadRecords = useCallback(async () => {
@@ -56,24 +58,31 @@ const WeeklyInput = () => {
       console.log(`Loading master records for: Year=${year}, Month=${month}, Week=${weekNumber}`);
       
       const fetchedRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
-      if (weekNumber <= weekDates.length) {
-        const {
-          startDate,
-          endDate
-        } = weekDates[weekNumber - 1];
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+      
+      if (weekNumber > 0 && weekNumber <= weekDates.length) {
+        const { startDate, endDate } = weekDates[weekNumber - 1];
+        
+        // Create UTC dates to avoid timezone issues
+        const start = new Date(`${startDate}T12:00:00Z`);
+        const end = new Date(`${endDate}T12:00:00Z`);
+        
+        console.log(`Week ${weekNumber} date range: ${formatDate(start)} to ${formatDate(end)}`);
+        
         const days = [];
-        for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-          const dateStr = format(day, 'yyyy-MM-dd');
+        
+        // Loop through each day of the week
+        const currentDay = new Date(start);
+        while (currentDay <= end) {
+          const dateStr = formatDate(currentDay);
           const existingRecord = fetchedRecords.find(r => r.date === dateStr);
+          
           if (existingRecord) {
             days.push(existingRecord);
           } else {
             days.push({
               id: '',
               date: dateStr,
-              dayOfWeek: format(day, 'EEEE'),
+              dayOfWeek: format(currentDay, 'EEEE'),
               year,
               month,
               weekNumber,
@@ -85,8 +94,13 @@ const WeeklyInput = () => {
               totalCovers: 0
             });
           }
+          
+          // Move to next day
+          currentDay.setUTCDate(currentDay.getUTCDate() + 1);
         }
+        
         setRecords(days);
+        
         if (days.length > 0) {
           const savedDate = localStorage.getItem(selectedDateStorageKey);
           // Check if saved date exists in the current week

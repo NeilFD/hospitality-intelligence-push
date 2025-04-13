@@ -41,11 +41,7 @@ export function getDayName(dateStr: string): string {
 
 // Generate week dates for a given month
 export function generateWeekDates(year: number, month: number): WeekDates[] {
-  // For week 1 of a month, we need to find the Monday that either:
-  // 1. Is the first day of the month, OR
-  // 2. Is the Monday before the first day of the month
-  
-  // Get the first day of the month with UTC to avoid timezone issues
+  // Get the first and last day of the month
   const firstDay = new Date(Date.UTC(year, month - 1, 1));
   const lastDay = new Date(Date.UTC(year, month, 0));
   
@@ -65,7 +61,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   
   // Generate weeks until we pass the end of the month
   while (true) {
-    // Create a deep copy of the current week start date
+    // Create a fresh copy of the current week start date to avoid reference issues
     const weekStartCopy = new Date(currentWeekStart);
     const currentWeekEnd = new Date(currentWeekStart);
     currentWeekEnd.setUTCDate(currentWeekEnd.getUTCDate() + 6); // Sunday (6 days after Monday)

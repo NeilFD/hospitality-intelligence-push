@@ -34,9 +34,8 @@ const MasterDashboard = () => {
     setSelectedDate(new Date());
   };
   
-  // Navigate to week page - Fixed to use the correct route
+  // Navigate to week page
   const goToWeek = (year: number, month: number, weekNumber: number) => {
-    // Fixed: Use the correct route path that matches App.tsx
     navigate(`/master/weekly-input`);
   };
   
@@ -117,9 +116,10 @@ const MasterDashboard = () => {
         const weekNumber = index + 1;
         const isCurrentWeek = currentWeekIndex === index && isCurrentMonth;
 
-        // Parse dates for display
-        const startDate = new Date(week.startDate);
-        const endDate = new Date(week.endDate);
+        // Parse dates for display - use new Date directly and format it
+        const startDate = new Date(`${week.startDate}T12:00:00Z`);
+        const endDate = new Date(`${week.endDate}T12:00:00Z`);
+        
         return <Card key={`week-${weekNumber}`} className={`
                 transition-all duration-200 hover:shadow-md
                 ${isCurrentWeek ? 'border-[#806cac] bg-[#806cac]/5' : 'border-gray-200'}
