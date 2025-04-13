@@ -180,7 +180,6 @@ const Layout = ({
           "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
           location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
         )}
-        title={sidebarCollapsed ? "Control Centre" : undefined}
       >
         <div className={sidebarCollapsed ? "mx-auto" : ""}>
           <Sliders className="h-4 w-4 mr-2" />
