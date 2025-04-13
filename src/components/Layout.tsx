@@ -26,6 +26,7 @@ import { ModuleType } from "@/types/kitchen-ledger";
 import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
 import { ModuleIcon } from "./ModuleIcons";
 import NotificationsDropdown from "./notifications/NotificationsDropdown";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LayoutProps {
   children: ReactNode;
@@ -410,23 +411,48 @@ const Layout = ({
         
         <nav className="space-y-1">
           {moduleNavItems.map(item => (
-            <Link 
-              key={item.path} 
-              to={item.path} 
-              className={cn(
-                "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
-                currentModule === item.type 
-                  ? getModuleActiveBgColor() + " font-medium" 
-                  : "text-white hover:" + getSidebarHoverColor()
-              )} 
-              title={sidebarCollapsed ? item.name : undefined} 
-              onClick={() => handleModuleSelect(item.type as ModuleType)}
-            >
-              <div className={sidebarCollapsed ? "mx-auto flex items-center" : "flex items-center"}>
-                {item.icon}
-                {!sidebarCollapsed && <span className="ml-2">{item.name}</span>}
-              </div>
-            </Link>
+            sidebarCollapsed ? (
+              <TooltipProvider key={item.path}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link 
+                      to={item.path} 
+                      className={cn(
+                        "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                        currentModule === item.type 
+                          ? getModuleActiveBgColor() + " font-medium" 
+                          : "text-white hover:" + getSidebarHoverColor()
+                      )} 
+                      onClick={() => handleModuleSelect(item.type as ModuleType)}
+                    >
+                      <div className="mx-auto flex items-center">
+                        {item.icon}
+                      </div>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{item.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                  currentModule === item.type 
+                    ? getModuleActiveBgColor() + " font-medium" 
+                    : "text-white hover:" + getSidebarHoverColor()
+                )} 
+                onClick={() => handleModuleSelect(item.type as ModuleType)}
+              >
+                <div className="flex items-center">
+                  {item.icon}
+                  <span className="ml-2">{item.name}</span>
+                </div>
+              </Link>
+            )
           ))}
         </nav>
       </div>
@@ -441,19 +467,75 @@ const Layout = ({
         </div>
         
         <nav className="space-y-1">
-          {getModuleNavItems.map(item => <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())} title={sidebarCollapsed ? item.name : undefined}>
-              <div className={sidebarCollapsed ? "mx-auto" : ""}>
-                {item.icon}
-              </div>
-              {!sidebarCollapsed && <span>{item.name}</span>}
-            </Link>)}
+          {getModuleNavItems.map(item => 
+            sidebarCollapsed ? (
+              <TooltipProvider key={item.path}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link 
+                      to={item.path} 
+                      className={cn(
+                        "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+                        location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
+                      )}
+                    >
+                      <div className="mx-auto">
+                        {item.icon}
+                      </div>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{item.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+                  location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
+                )}
+              >
+                <div className="flex items-center">
+                  {item.icon}
+                  <span className="ml-2">{item.name}</span>
+                </div>
+              </Link>
+            )
+          )}
         </nav>
       </div>
       
       <>
         <Separator className={getSeparatorBgColor()} />
         <div className="p-2">
-          <ControlCentreLink />
+          {sidebarCollapsed ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link 
+                    to="/control-centre" 
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+                      location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
+                    )}
+                    onClick={handleControlCentreClick}
+                  >
+                    <div className="mx-auto">
+                      <Sliders className="h-4 w-4" />
+                    </div>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Control Centre</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <ControlCentreLink />
+          )}
         </div>
       </>
       
