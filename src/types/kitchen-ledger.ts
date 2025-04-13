@@ -70,7 +70,7 @@ export interface TrackerSummary {
   month: number;
   moduleType: ModuleType;
   revenue: number;
-  cost: number; // Required property
+  cost: number; // Ensure this required property exists
   purchases: number;
   creditNotes: number;
   staffAllowance: number;

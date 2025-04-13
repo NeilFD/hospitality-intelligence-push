@@ -566,12 +566,27 @@ export default function ChatInterface({
       bevDailyPurchases[date].push(purchase);
     });
 
+    let totalRevenue = 0;
+    let totalStaffAllowance = 0;
+    let trackerData = [];
+
     for (const day of trackerData || []) {
       if (day.date) {
         totalRevenue += Number(day.revenue || 0);
         totalStaffAllowance += Number(day.staff_food_allowance || 0);
       }
     }
+
+    let monthData = {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
+    };
+    let annualData = {
+      revenue: 0,
+      cost: 0,
+      gpPercentage: 0
+    };
 
     if (foodTrackerData && foodTrackerData.length > 0) {
       const trackerRevenue = foodTrackerData.reduce((sum, day) => {
@@ -780,73 +795,4 @@ export default function ChatInterface({
           {messages.map((message, index) => <div key={index} className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'} animate-scale-in`} style={{
           animationDelay: `${index * 0.05}s`
         }}>
-              {!message.isUser && <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pastel-blue/80 to-pastel-purple/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
-                  <Sparkles className="h-4 w-4 text-tavern-blue-dark" />
-                </div>}
-              
-              <div className="relative max-w-[80%]">
-                <div className={`rounded-2xl p-4 shadow-glass ${message.isUser ? 'message-bubble-user rounded-tr-sm' : 'message-bubble-ai rounded-tl-sm'}`}>
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.text}</p>
-                  <p className="text-xs mt-2 opacity-70 font-medium">
-                    {message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : new Date(message.timestamp).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-                  </p>
-                </div>
-
-                {!message.isUser && <div className="absolute -top-2 -right-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full glass-button">
-                          <Share2 className="h-3.5 w-3.5 text-tavern-blue" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="frost-panel">
-                        <DropdownMenuLabel>Share via</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => shareViaWhatsApp(message.text)} className="hover:bg-pastel-blue/30">
-                          WhatsApp
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => shareViaEmail(message.text)} className="hover:bg-pastel-blue/30">
-                          Email
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>}
-              </div>
-              
-              {message.isUser && <div className="h-8 w-8 rounded-full bg-gradient-to-br from-tavern-blue-light to-tavern-blue flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
-                  <User className="h-4 w-4 text-white" />
-                </div>}
-            </div>)}
-          
-          {isLoading && <div className="flex justify-start gap-2 animate-pulse">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-tavern-blue-light/80 to-tavern-blue/80 flex items-center justify-center mt-1 shadow-sm flex-shrink-0 border border-white/50">
-                <Sparkles className="h-4 w-4 text-tavern-blue-dark" />
-              </div>
-              <div className="frost-panel rounded-2xl rounded-tl-sm p-4 flex gap-2 min-w-[100px]">
-                <span className="w-2 h-2 bg-tavern-blue-light rounded-full animate-bounce" style={{
-              animationDelay: '0ms'
-            }}></span>
-                <span className="w-2 h-2 bg-tavern-blue rounded-full animate-bounce" style={{
-              animationDelay: '150ms'
-            }}></span>
-                <span className="w-2 h-2 bg-tavern-blue-light rounded-full animate-bounce" style={{
-              animationDelay: '300ms'
-            }}></span>
-              </div>
-            </div>}
-        </div>
-      </ScrollArea>
-      
-      <form onSubmit={handleSubmit} className="p-4 border-t border-white/20 frost-panel flex gap-2 backdrop-blur-md">
-        <Input placeholder="Ask about your business performance..." value={input} onChange={e => setInput(e.target.value)} disabled={isLoading || isSyncing} className="flex-1 glass-input text-tavern-blue-dark shadow-inner focus:shadow-none" />
-        <Button type="submit" disabled={isLoading || isSyncing || !input.trim()} className="send-button shadow-glass bg-gradient-to-r from-tavern-blue-light/80 to-tavern-blue/90 text-white bg-purple-700 hover:bg-purple-600">
-          <SendHorizonal className="h-5 w-5 text-tavern-blue-dark" />
-        </Button>
-      </form>
-    </div>;
-}
+              {!message.isUser && <div className="

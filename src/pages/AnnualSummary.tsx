@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
@@ -20,7 +21,23 @@ interface CalculationResult {
   averageGP: number;
 }
 
-export default function AnnualSummary() {
+// Add props interface with modulePrefix and moduleType
+interface AnnualSummaryProps {
+  modulePrefix?: string;
+  moduleType?: ModuleType;
+  chartMargins?: {
+    top: number;
+    right: number;
+    left: number;
+    bottom: number;
+  };
+}
+
+export default function AnnualSummary({
+  modulePrefix = '',
+  moduleType = 'food',
+  chartMargins = { top: 20, right: 20, left: 0, bottom: 20 }
+}: AnnualSummaryProps) {
   const { currentYear } = useStore();
   const [isLoading, setIsLoading] = useState(true);
   const [calculation, setCalculation] = useState<CalculationResult>({
@@ -37,7 +54,7 @@ export default function AnnualSummary() {
     queryFn: () => {
       const promises = Array.from({ length: 12 }, (_, i) => {
         const month = i + 1;
-        return fetchTrackerDataByMonth(currentYear, month, 'food');
+        return fetchTrackerDataByMonth(currentYear, month, moduleType);
       });
       return Promise.all(promises);
     },
@@ -91,9 +108,12 @@ export default function AnnualSummary() {
     { name: 'GP', value: calculation.totalGP },
   ];
 
+  // Add the modulePrefix to the title if provided
+  const titlePrefix = modulePrefix ? `${modulePrefix} ` : '';
+
   return (
     <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
-      <h1 className="text-3xl font-bold text-tavern-blue">Annual Summary - {currentYear}</h1>
+      <h1 className="text-3xl font-bold text-tavern-blue">{titlePrefix}Annual Summary - {currentYear}</h1>
 
       {isLoading ? (
         <div className="flex items-center justify-center">
