@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isDevLogin, setIsDevLogin] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     login,
     isLoading,
@@ -20,26 +21,30 @@ export default function LoginForm() {
   } = useAuthStore();
   const navigate = useNavigate();
   
+  // Reset loading state when component loads
+  useEffect(() => {
+    setIsSubmitting(false);
+  }, []);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    
-    // If dev login is checked, set the email to dev email
-    if (isDevLogin) {
-      try {
-        await login('dev@example.com', password);
-        navigate('/');
-      } catch (err) {
-        // Error is handled by the login function
-      }
-      return;
-    }
+    setIsSubmitting(true);
     
     try {
-      await login(email, password);
-      navigate('/');
+      // If dev login is checked, set the email to dev email
+      if (isDevLogin) {
+        await login('dev@example.com', password);
+        navigate('/');
+      } else {
+        await login(email, password);
+        navigate('/');
+      }
     } catch (err) {
       // Error is handled by the login function
+      console.error('Login error:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -125,8 +130,12 @@ export default function LoginForm() {
       }} whileTap={{
         scale: 0.97
       }} className="pt-2 relative overflow-hidden group">
-        <Button type="submit" disabled={isLoading} className="w-full transition-all duration-300 relative overflow-hidden text-hi-purple font-bold bg-green-300 hover:bg-green-200">
-          {isLoading ? 'Logging in...' : 'Login'}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting} 
+          className="w-full transition-all duration-300 relative overflow-hidden text-hi-purple font-bold bg-green-300 hover:bg-green-200"
+        >
+          {isSubmitting ? 'Logging in...' : 'Login'}
         </Button>
       </motion.div>
       
