@@ -2,24 +2,14 @@ import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { 
-  Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, 
-  PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, 
-  Users, Book, Wallet, Sliders, Bell 
-} from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet, Sliders, Bell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import SidebarLogo from "./SidebarLogo"; // Change the import to use default import
+import { SidebarLogo } from "./SidebarLogo";
 import { TavernLogo } from "./TavernLogo";
 import { useAuthStore } from "@/services/auth-service";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ModuleType } from "@/types/kitchen-ledger";
@@ -27,11 +17,9 @@ import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
 import { ModuleIcon } from "./ModuleIcons";
 import NotificationsDropdown from "./notifications/NotificationsDropdown";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
 interface LayoutProps {
   children: ReactNode;
 }
-
 const Layout = ({
   children
 }: LayoutProps) => {
@@ -52,7 +40,6 @@ const Layout = ({
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
-  
   const [themeState, setThemeState] = useState({
     hasForestGreenTheme: false,
     hasOceanBlueTheme: false,
@@ -61,7 +48,6 @@ const Layout = ({
     hasDarkModeTheme: false,
     hasHiPurpleTheme: false
   });
-  
   useEffect(() => {
     const checkThemeClasses = () => {
       const htmlElement = document.documentElement;
@@ -74,23 +60,24 @@ const Layout = ({
         hasHiPurpleTheme: htmlElement.classList.contains('theme-hi-purple')
       });
     };
-    
     checkThemeClasses();
-    
     const handleThemeChange = () => {
       checkThemeClasses();
     };
-    
     document.addEventListener('themeClassChanged', handleThemeChange);
-    
     return () => {
       document.removeEventListener('themeClassChanged', handleThemeChange);
     };
   }, []);
-  
   const getSidebarBgColor = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
+    const {
+      hasForestGreenTheme,
+      hasOceanBlueTheme,
+      hasSunsetOrangeTheme,
+      hasBerryPurpleTheme,
+      hasDarkModeTheme,
+      hasHiPurpleTheme
+    } = themeState;
     if (hasForestGreenTheme) return "bg-[#1b5e20]";
     if (hasOceanBlueTheme) return "bg-[#1565c0]";
     if (hasSunsetOrangeTheme) return "bg-[#e65100]";
@@ -99,10 +86,15 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#806cac]";
     return "bg-[#806cac]";
   };
-  
   const getSidebarHoverColor = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
+    const {
+      hasForestGreenTheme,
+      hasOceanBlueTheme,
+      hasSunsetOrangeTheme,
+      hasBerryPurpleTheme,
+      hasDarkModeTheme,
+      hasHiPurpleTheme
+    } = themeState;
     if (hasForestGreenTheme) return "bg-[#2e7d32]/20";
     if (hasOceanBlueTheme) return "bg-[#1976d2]/20";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]/20";
@@ -111,10 +103,15 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-white/10";
     return "bg-white/10";
   };
-  
   const getActiveItemBgColor = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
+    const {
+      hasForestGreenTheme,
+      hasOceanBlueTheme,
+      hasSunsetOrangeTheme,
+      hasBerryPurpleTheme,
+      hasDarkModeTheme,
+      hasHiPurpleTheme
+    } = themeState;
     if (hasForestGreenTheme) return "bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
@@ -123,10 +120,15 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#9d89c9]";
     return "bg-[#705b9b]";
   };
-  
   const getModuleActiveBgColor = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
+    const {
+      hasForestGreenTheme,
+      hasOceanBlueTheme,
+      hasSunsetOrangeTheme,
+      hasBerryPurpleTheme,
+      hasDarkModeTheme,
+      hasHiPurpleTheme
+    } = themeState;
     if (hasForestGreenTheme) return "bg-white text-[#1b5e20]";
     if (hasOceanBlueTheme) return "bg-white text-[#1565c0]";
     if (hasSunsetOrangeTheme) return "bg-white text-[#e65100]";
@@ -135,10 +137,15 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-white text-[#806cac]";
     return "bg-white text-[#806cac]";
   };
-  
   const getControlCenterBgColor = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
+    const {
+      hasForestGreenTheme,
+      hasOceanBlueTheme,
+      hasSunsetOrangeTheme,
+      hasBerryPurpleTheme,
+      hasDarkModeTheme,
+      hasHiPurpleTheme
+    } = themeState;
     if (hasForestGreenTheme) return "bg-[#2e7d32]";
     if (hasOceanBlueTheme) return "bg-[#1976d2]";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00]";
@@ -147,10 +154,15 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#9d89c9]";
     return "bg-[#705b9b]";
   };
-  
   const getTextColor = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
+    const {
+      hasForestGreenTheme,
+      hasOceanBlueTheme,
+      hasSunsetOrangeTheme,
+      hasBerryPurpleTheme,
+      hasDarkModeTheme,
+      hasHiPurpleTheme
+    } = themeState;
     if (hasForestGreenTheme) return "text-[#e8f5e9]";
     if (hasOceanBlueTheme) return "text-[#e3f2fd]";
     if (hasSunsetOrangeTheme) return "text-[#fff3e0]";
@@ -159,10 +171,15 @@ const Layout = ({
     if (hasHiPurpleTheme) return "text-[#e0d9f0]";
     return "text-[#e0d9f0]";
   };
-  
   const getSeparatorBgColor = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
+    const {
+      hasForestGreenTheme,
+      hasOceanBlueTheme,
+      hasSunsetOrangeTheme,
+      hasBerryPurpleTheme,
+      hasDarkModeTheme,
+      hasHiPurpleTheme
+    } = themeState;
     if (hasForestGreenTheme) return "bg-[#4c8c4a]/20";
     if (hasOceanBlueTheme) return "bg-[#42a5f5]/20";
     if (hasSunsetOrangeTheme) return "bg-[#ff9800]/20";
@@ -171,41 +188,27 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#9d89c9]/20";
     return "bg-[#9d89c9]/20";
   };
-  
   const ControlCentreLink = () => {
-    return (
-      <Link 
-        to="/control-centre"
-        className={cn(
-          "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-          location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
-        )}
-      >
+    return <Link to="/control-centre" className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
         <div className={sidebarCollapsed ? "mx-auto" : ""}>
           <Sliders className="h-4 w-4 mr-2" />
         </div>
         {!sidebarCollapsed && <span>Control Centre</span>}
-      </Link>
-    );
+      </Link>;
   };
-  
   useEffect(() => {
     console.log('Current user profile:', profile);
     console.log('Is authenticated:', isAuthenticated);
     console.log('Current user:', user);
   }, [profile, isAuthenticated, user]);
-  
   useEffect(() => {
     console.log('Modules in sidebar:', modules);
     console.log('Current module:', currentModule);
-    
     const clearLocalStorageCache = () => {
       const storeData = localStorage.getItem('tavern-kitchen-ledger');
-      
       if (storeData) {
         try {
           const parsedData = JSON.parse(storeData);
-          
           if (parsedData.state && parsedData.state.modules) {
             parsedData.state.modules.forEach((module: any) => {
               if (module.type === 'food') {
@@ -214,7 +217,6 @@ const Layout = ({
                 module.name = 'Beverage Hub';
               }
             });
-            
             localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
             console.log('Updated modules in localStorage:', parsedData.state.modules);
           }
@@ -223,18 +225,14 @@ const Layout = ({
         }
       }
     };
-    
     clearLocalStorageCache();
   }, []);
-  
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
-  
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-  
   const handleLogout = async () => {
     try {
       if (isAuthenticated) {
@@ -247,46 +245,38 @@ const Layout = ({
       toast.error('Failed to log out. Please try again.');
     }
   };
-  
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-  
   const getModuleNavItems = useMemo(() => {
     switch (currentModule) {
       case 'food':
       case 'beverage':
         const prefix = currentModule === 'food' ? 'Food' : 'Beverage';
-        return [
-          {
-            name: `${prefix} Dashboard`,
-            path: `/${currentModule}/dashboard`,
-            icon: <Home className="mr-2 h-4 w-4" />
-          },
-          {
-            name: `${prefix} Input Settings`,
-            path: `/${currentModule}/input-settings`,
-            icon: <Settings className="mr-2 h-4 w-4" />
-          },
-          {
-            name: `${prefix} Month Summary`,
-            path: `/${currentModule}/month/${currentYear}/${currentMonth}`,
-            icon: <Calendar className="mr-2 h-4 w-4" />
-          },
-          {
-            name: `${prefix} Annual Summary`,
-            path: `/${currentModule}/annual-summary`,
-            icon: <ChartBar className="mr-2 h-4 w-4" />
-          },
-          {
-            name: `${prefix} Bible`,
-            path: `/${currentModule}/bible`,
-            icon: <Book className="mr-2 h-4 w-4" />
-          }
-        ];
+        return [{
+          name: `${prefix} Dashboard`,
+          path: `/${currentModule}/dashboard`,
+          icon: <Home className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Input Settings`,
+          path: `/${currentModule}/input-settings`,
+          icon: <Settings className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Month Summary`,
+          path: `/${currentModule}/month/${currentYear}/${currentMonth}`,
+          icon: <Calendar className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Annual Summary`,
+          path: `/${currentModule}/annual-summary`,
+          icon: <ChartBar className="mr-2 h-4 w-4" />
+        }, {
+          name: `${prefix} Bible`,
+          path: `/${currentModule}/bible`,
+          icon: <Book className="mr-2 h-4 w-4" />
+        }];
       case 'pl':
         return [{
           name: "P&L Dashboard",
@@ -306,78 +296,57 @@ const Layout = ({
           icon: <Home className="mr-2 h-4 w-4" />
         }];
       case 'master':
-        return [
-          {
-            name: "Daily Dashboard",
-            path: "/master/dashboard",
-            icon: <Home className="mr-2 h-4 w-4" />
-          },
-          {
-            name: "Weekly Input",
-            path: "/master/weekly-input",
-            icon: <Calendar className="mr-2 h-4 w-4" />
-          },
-          {
-            name: "Month Summary",
-            path: "/master/month-summary",
-            icon: <ChartBar className="mr-2 h-4 w-4" />
-          }
-        ];
+        return [{
+          name: "Daily Dashboard",
+          path: "/master/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }, {
+          name: "Weekly Input",
+          path: "/master/weekly-input",
+          icon: <Calendar className="mr-2 h-4 w-4" />
+        }, {
+          name: "Month Summary",
+          path: "/master/month-summary",
+          icon: <ChartBar className="mr-2 h-4 w-4" />
+        }];
       case 'team':
-        return [
-          {
-            name: "Team Dashboard",
-            path: "/team/dashboard",
-            icon: <Home className="mr-2 h-4 w-4" />
-          },
-          {
-            name: "Noticeboard",
-            path: "/team/noticeboard",
-            icon: <Clipboard className="mr-2 h-4 w-4" />
-          },
-          {
-            name: "Team Chat",
-            path: "/team/chat",
-            icon: <MessageSquare className="mr-2 h-4 w-4" />
-          },
-          {
-            name: "Knowledge Base",
-            path: "/team/knowledge",
-            icon: <Book className="mr-2 h-4 w-4" />
-          }
-        ];
+        return [{
+          name: "Team Dashboard",
+          path: "/team/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }, {
+          name: "Noticeboard",
+          path: "/team/noticeboard",
+          icon: <Clipboard className="mr-2 h-4 w-4" />
+        }, {
+          name: "Team Chat",
+          path: "/team/chat",
+          icon: <MessageSquare className="mr-2 h-4 w-4" />
+        }, {
+          name: "Knowledge Base",
+          path: "/team/knowledge",
+          icon: <Book className="mr-2 h-4 w-4" />
+        }];
       default:
         return [];
     }
   }, [currentModule, currentYear, currentMonth]);
-  
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
-      name: module.type === 'master' ? 'Daily Info' : 
-           module.type === 'team' ? 'Team' : 
-           module.type === 'pl' ? 'P&L Tracker' : 
-           module.type === 'wages' ? 'Wages Tracker' : 
-           module.type === 'food' ? 'Food Hub' : 
-           module.type === 'beverage' ? 'Beverage Hub' : 
-           module.type === 'performance' ? 'Performance and Analysis' :
-           module.name,
+      name: module.type === 'master' ? 'Daily Info' : module.type === 'team' ? 'Team' : module.type === 'pl' ? 'P&L Tracker' : module.type === 'wages' ? 'Wages Tracker' : module.type === 'food' ? 'Food Hub' : module.type === 'beverage' ? 'Beverage Hub' : module.type === 'performance' ? 'Performance and Analysis' : module.name,
       path: `/${module.type}/dashboard`,
       icon: <ModuleIcon type={module.type} className="mr-2 h-4 w-4" />,
       type: module.type
     }));
   }, [sortedModules]);
-  
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
-  
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   if (isAuthPage) {
     return <>{children}</>;
   }
-  
   const isAdminUser = true;
-  
   const ProfileAvatar = () => <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-primary text-white">
         {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
@@ -386,11 +355,10 @@ const Layout = ({
           {profile.first_name || 'User'}
         </span>}
     </div>;
-
   const Sidebar = <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
-        <p className={cn("text-sm mt-1", getTextColor())}>Hospitality Intelligence</p>
+        
       </div>
       
       <Separator className={getSeparatorBgColor()} />
@@ -403,21 +371,10 @@ const Layout = ({
         </div>
         
         <nav className="space-y-1">
-          {moduleNavItems.map(item => (
-            sidebarCollapsed ? (
-              <TooltipProvider key={item.path}>
+          {moduleNavItems.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link 
-                      to={item.path} 
-                      className={cn(
-                        "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
-                        currentModule === item.type 
-                          ? getModuleActiveBgColor() + " font-medium" 
-                          : "text-white hover:" + getSidebarHoverColor()
-                      )} 
-                      onClick={() => handleModuleSelect(item.type as ModuleType)}
-                    >
+                    <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={() => handleModuleSelect(item.type as ModuleType)}>
                       <div className="mx-auto flex items-center">
                         {item.icon}
                       </div>
@@ -427,26 +384,12 @@ const Layout = ({
                     <p>{item.name}</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
-                  currentModule === item.type 
-                    ? getModuleActiveBgColor() + " font-medium" 
-                    : "text-white hover:" + getSidebarHoverColor()
-                )} 
-                onClick={() => handleModuleSelect(item.type as ModuleType)}
-              >
+              </TooltipProvider> : <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={() => handleModuleSelect(item.type as ModuleType)}>
                 <div className="flex items-center">
                   {item.icon}
                   <span className="ml-2">{item.name}</span>
                 </div>
-              </Link>
-            )
-          ))}
+              </Link>)}
         </nav>
       </div>
       
@@ -460,18 +403,10 @@ const Layout = ({
         </div>
         
         <nav className="space-y-1">
-          {getModuleNavItems.map(item => 
-            sidebarCollapsed ? (
-              <TooltipProvider key={item.path}>
+          {getModuleNavItems.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link 
-                      to={item.path} 
-                      className={cn(
-                        "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                        location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
-                      )}
-                    >
+                    <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
                       <div className="mx-auto">
                         {item.icon}
                       </div>
@@ -481,40 +416,22 @@ const Layout = ({
                     <p>{item.name}</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <Link 
-                key={item.path} 
-                to={item.path} 
-                className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                  location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
-                )}
-              >
+              </TooltipProvider> : <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
                 <div className="flex items-center">
                   {item.icon}
                   <span className="ml-2">{item.name}</span>
                 </div>
-              </Link>
-            )
-          )}
+              </Link>)}
         </nav>
       </div>
       
       <>
         <Separator className={getSeparatorBgColor()} />
         <div className="p-2">
-          {sidebarCollapsed ? (
-            <TooltipProvider>
+          {sidebarCollapsed ? <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link 
-                    to="/control-centre"
-                    className={cn(
-                      "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-                      location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
-                    )}
-                  >
+                  <Link to="/control-centre" className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
                     <div className="mx-auto">
                       <Sliders className="h-4 w-4" />
                     </div>
@@ -524,10 +441,7 @@ const Layout = ({
                   <p>Control Centre</p>
                 </TooltipContent>
               </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <ControlCentreLink />
-          )}
+            </TooltipProvider> : <ControlCentreLink />}
         </div>
       </>
       
@@ -535,7 +449,6 @@ const Layout = ({
         {!sidebarCollapsed && <p className={cn("text-xs", getTextColor())}>© 2025 Hi</p>}
       </div>
     </div>;
-
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -561,8 +474,7 @@ const Layout = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
-                    {isAuthenticated && profile ? (
-                      <>
+                    {isAuthenticated && profile ? <>
                         <div className="flex items-center justify-start gap-2 p-2">
                           <div className="flex flex-col space-y-0.5 leading-none">
                             <p className="text-sm font-medium">
@@ -580,14 +492,11 @@ const Layout = ({
                             <span>Profile</span>
                           </Link>
                         </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <div className="flex items-center justify-start gap-2 p-2">
+                      </> : <div className="flex items-center justify-start gap-2 p-2">
                         <div className="flex flex-col space-y-0.5 leading-none">
                           <p className="text-sm font-medium">Not logged in</p>
                         </div>
-                      </div>
-                    )}
+                      </div>}
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
@@ -618,8 +527,7 @@ const Layout = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
-                    {isAuthenticated && profile ? (
-                      <>
+                    {isAuthenticated && profile ? <>
                         <div className="flex items-center justify-start gap-2 p-2">
                           <div className="flex flex-col space-y-0.5 leading-none">
                             <p className="text-sm font-medium">
@@ -637,14 +545,11 @@ const Layout = ({
                             <span>Profile</span>
                           </Link>
                         </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <div className="flex items-center justify-start gap-2 p-2">
+                      </> : <div className="flex items-center justify-start gap-2 p-2">
                         <div className="flex flex-col space-y-0.5 leading-none">
                           <p className="text-sm font-medium">Not logged in</p>
                         </div>
-                      </div>
-                    )}
+                      </div>}
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
@@ -658,5 +563,4 @@ const Layout = ({
         </>}
     </div>;
 };
-
 export default Layout;
