@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-types';
 import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
-import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image } from 'lucide-react';
+import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image, Building } from 'lucide-react';
 
 const presetThemes: PresetTheme[] = [{
   id: 'forest-green',
@@ -123,7 +123,8 @@ export function ThemeSettingsPanel({
     logoUrl: '',
     customFont: 'Arial, sans-serif',
     isDefault: true,
-    isActive: true
+    isActive: true,
+    companyName: 'My Company'
   });
 
   const [primaryRgb, setPrimaryRgb] = useState(hexToRgb(activeTheme.primaryColor));
@@ -198,11 +199,12 @@ export function ThemeSettingsPanel({
       setButtonRgb(hexToRgb(value));
     } else if (name === 'textColor') {
       setTextRgb(hexToRgb(value));
+    } else if (name === 'companyName') {
+      setActiveTheme(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
-    setActiveTheme(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   const handlePrimaryRgbChange = (values: number[]) => {
@@ -373,7 +375,8 @@ export function ThemeSettingsPanel({
         text_color: activeTheme.textColor,
         logo_url: activeTheme.logoUrl,
         custom_font: activeTheme.customFont,
-        is_active: activeTheme.isActive
+        is_active: activeTheme.isActive,
+        company_name: activeTheme.companyName
       }).eq('id', activeTheme.id);
       
       if (error) {
@@ -784,6 +787,36 @@ export function ThemeSettingsPanel({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              
+              <div className="grid gap-4">
+                <Label htmlFor="companyName" className="flex items-center gap-2">
+                  <Building className="h-5 w-5 text-muted-foreground" />
+                  Company Name
+                </Label>
+                <Input 
+                  type="text" 
+                  id="companyName" 
+                  name="companyName"
+                  value={activeTheme.companyName} 
+                  onChange={handleInputChange}
+                  className={`
+                    w-full 
+                    py-3 
+                    px-4 
+                    rounded-lg 
+                    text-lg 
+                    font-normal 
+                    shadow-sm 
+                    transition-all 
+                    duration-300 
+                    border-2 
+                    focus:outline-none 
+                    focus:ring-2 
+                    ${getThemeNameInputClasses()}
+                  `}
+                  placeholder="Enter your company name"
+                />
               </div>
               
               <div className="flex items-center justify-between">

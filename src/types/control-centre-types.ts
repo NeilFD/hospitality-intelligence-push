@@ -1,4 +1,3 @@
-
 export interface PermissionMatrix {
   roleId: 'GOD' | 'Super User' | 'Manager' | 'Team Member';
   modulePermissions: ModulePermission[];
@@ -31,7 +30,8 @@ export interface ThemeSettings {
   logoUrl: string | null;
   customFont: string | null;
   isDefault: boolean;
-  isActive: boolean; // Added this missing property
+  isActive: boolean;
+  companyName: string;
 }
 
 export interface TargetSettings {
