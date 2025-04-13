@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -254,7 +255,6 @@ const Layout = ({
               location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
             )}
             title={sidebarCollapsed ? "Control Centre" : undefined}
-            onClick={() => navigate('/control-centre')}
           >
             <div className={sidebarCollapsed ? "mx-auto" : ""}>
               <Sliders className="h-4 w-4 mr-2" />

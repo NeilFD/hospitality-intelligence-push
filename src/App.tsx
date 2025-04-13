@@ -70,6 +70,8 @@ function App() {
               
               {/* App Routes - All wrapped with Layout */}
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+              
+              {/* Control Centre Route - Ensuring it's directly under Layout */}
               <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
               
               {/* Food Module Routes */}
