@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -566,13 +567,14 @@ export default function ChatInterface({
       bevDailyPurchases[date].push(purchase);
     });
 
-    let totalRevenue = 0;
-    let totalStaffAllowance = 0;
+    let localTotalRevenue = 0;
+    let localTotalStaffAllowance = 0;
     let localTrackerData = foodTrackerData || [];
+
     for (const day of localTrackerData) {
       if (day.date) {
-        totalRevenue += Number(day.revenue || 0);
-        totalStaffAllowance += Number(day.staff_food_allowance || 0);
+        localTotalRevenue += Number(day.revenue || 0);
+        localTotalStaffAllowance += Number(day.staff_food_allowance || 0);
       }
     }
 
@@ -611,7 +613,6 @@ export default function ChatInterface({
       localMonthData.revenue = trackerRevenue;
       localMonthData.cost = totalCost;
       localMonthData.gpPercentage = calculateGP(trackerRevenue, totalCost);
-      return localMonthData;
     }
 
     if (window.bevStore) {
@@ -660,6 +661,7 @@ export default function ChatInterface({
     } else {
       console.warn("Beverage store not found in window object");
     }
+    
     return {
       query: input,
       timestamp: new Date().toISOString(),
@@ -780,7 +782,8 @@ export default function ChatInterface({
     toast.success("WhatsApp sharing initiated");
   };
 
-  return <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
+  return (
+    <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
       <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
         <div className="p-2 bg-tavern-blue/20 rounded-full backdrop-blur-sm animate-float">
           <Sparkles className="text-tavern-blue-dark h-5 w-5" />
