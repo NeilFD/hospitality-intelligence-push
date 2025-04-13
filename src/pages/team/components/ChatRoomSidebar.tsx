@@ -211,7 +211,10 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                   )} />
                 )}
                 {(!isMobile || !minimized) && (
-                  <span className="truncate text-sm">{room.name}</span>
+                  <span className={cn(
+                    "truncate text-sm", 
+                    selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark"
+                  )}>{room.name}</span>
                 )}
               </Button>
             );
