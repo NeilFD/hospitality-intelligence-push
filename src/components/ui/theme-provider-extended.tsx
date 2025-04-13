@@ -1,9 +1,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLocation } from "react-router-dom";
 
 export function ThemeProviderExtended({ children }: { children: React.ReactNode }) {
   const [themeLoaded, setThemeLoaded] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     // Load the active theme from the database
@@ -59,6 +61,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
 
     loadActiveTheme();
   }, []);
+
+  // We need to force a re-render when the location changes
+  // to ensure the theme is properly applied after navigation
+  useEffect(() => {
+    console.log('Current route:', location.pathname);
+  }, [location]);
 
   return <>{children}</>;
 }

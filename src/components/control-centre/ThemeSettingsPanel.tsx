@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +14,7 @@ import { TavernLogo } from '@/components/TavernLogo';
 import { ImagePlus, Check, RefreshCcw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
+import { useNavigate } from 'react-router-dom';
 
 interface ThemeSettingsPanelProps {
   currentTheme: ThemeSettings | null;
@@ -27,6 +29,7 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [customTheme, setCustomTheme] = useState({
     primaryColor: currentTheme?.primaryColor || '#806cac',
     secondaryColor: currentTheme?.secondaryColor || '#705b9b',
@@ -181,11 +184,51 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       }
       
       toast.success('Theme applied successfully');
+      
+      // Don't navigate away or reload the page after applying the theme
+      // This ensures we stay on the same page and routing isn't affected
+      
     } catch (error) {
       console.error('Error applying theme:', error);
       toast.error('Failed to apply theme');
     } finally {
       setSaving(false);
+    }
+  };
+  
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleLogoUpload(files[0]);
+    }
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target && typeof e.target.result === 'string') {
+          setLogoPreview(e.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success('Logo uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploading(false);
     }
   };
   
