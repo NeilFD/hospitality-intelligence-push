@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -26,12 +25,12 @@ export default function LoginForm() {
     setIsSubmitting(false);
   }, []);
   
-  // Reset isSubmitting when login process completes or errors
+  // Reset isSubmitting when error changes or login completes
   useEffect(() => {
-    if (!isLoading) {
+    if (error || !isLoading) {
       setIsSubmitting(false);
     }
-  }, [isLoading]);
+  }, [error, isLoading]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,15 +45,13 @@ export default function LoginForm() {
         await login(email, password);
       }
       
-      // Only navigate if there's no error
+      // If there's no error and we're authenticated, navigate to home
+      // The isSubmitting state will be reset by the useEffect above
       if (!error) {
         navigate('/');
-      } else {
-        // Explicitly set isSubmitting to false on error
-        setIsSubmitting(false);
       }
     } catch (err) {
-      // Error is handled by the login function
+      // Error is handled by the login function in the store
       console.error('Login error:', err);
       setIsSubmitting(false);
     }
@@ -144,10 +141,10 @@ export default function LoginForm() {
       }} className="pt-2 relative overflow-hidden group">
         <Button 
           type="submit" 
-          disabled={isSubmitting || isLoading} 
+          disabled={isSubmitting} 
           className="w-full transition-all duration-300 relative overflow-hidden text-hi-purple font-bold bg-green-300 hover:bg-green-200"
         >
-          {isSubmitting || isLoading ? 'Logging in...' : 'Login'}
+          {isSubmitting ? 'Logging in...' : 'Login'}
         </Button>
       </motion.div>
       
