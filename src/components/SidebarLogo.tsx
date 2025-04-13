@@ -22,8 +22,7 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
     <img 
       alt="Hi" 
       className={cn(sizeClasses[size], className)}
-      src="/lovable-uploads/e30880c4-f151-42e1-ac0e-925bfb44cfdb.png" 
+      src="/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png" 
     />
   );
 };
-
