@@ -21,6 +21,23 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+// Define ControlCentreLink BEFORE it's used
+const ControlCentreLink = () => (
+  <Link 
+    to="/control-centre" 
+    className={cn(
+      "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+      location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
+    )}
+    title={sidebarCollapsed ? "Control Centre" : undefined}
+  >
+    <div className={sidebarCollapsed ? "mx-auto" : ""}>
+      <Sliders className="h-4 w-4 mr-2" />
+    </div>
+    {!sidebarCollapsed && <span>Control Centre</span>}
+  </Link>
+);
+
 const Layout = ({
   children
 }: LayoutProps) => {
@@ -41,6 +58,23 @@ const Layout = ({
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   const modules = useModules();
+  
+  // Move the ControlCentreLink component definition inside Layout to access the location and sidebarCollapsed
+  const ControlCentreLink = () => (
+    <Link 
+      to="/control-centre" 
+      className={cn(
+        "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+        location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
+      )}
+      title={sidebarCollapsed ? "Control Centre" : undefined}
+    >
+      <div className={sidebarCollapsed ? "mx-auto" : ""}>
+        <Sliders className="h-4 w-4 mr-2" />
+      </div>
+      {!sidebarCollapsed && <span>Control Centre</span>}
+    </Link>
+  );
   
   useEffect(() => {
     console.log('Current user profile:', profile);
@@ -222,6 +256,15 @@ const Layout = ({
   }
   
   const isAdminUser = true;
+  
+  const ProfileAvatar = () => <div className="flex flex-col items-center">
+      <Avatar className="h-9 w-9 bg-tavern-blue text-white">
+        {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
+      </Avatar>
+      {profile && <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
+          {profile.first_name || 'User'}
+        </span>}
+    </div>;
 
   const Sidebar = <div className="h-full flex flex-col bg-[#806cac]">
       <div className="p-4 flex flex-col items-center">
@@ -278,31 +321,6 @@ const Layout = ({
         {!sidebarCollapsed && <p className="text-xs text-[#e0d9f0]">© 2025 Hi</p>}
       </div>
     </div>;
-    
-  const ProfileAvatar = () => <div className="flex flex-col items-center">
-      <Avatar className="h-9 w-9 bg-tavern-blue text-white">
-        {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
-      </Avatar>
-      {profile && <span className="text-tavern-blue hover:text-tavern-green transition-colors duration-300 text-xs mt-1 font-medium">
-          {profile.first_name || 'User'}
-        </span>}
-    </div>;
-
-  const ControlCentreLink = () => (
-    <Link 
-      to="/control-centre" 
-      className={cn(
-        "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-        location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
-      )}
-      title={sidebarCollapsed ? "Control Centre" : undefined}
-    >
-      <div className={sidebarCollapsed ? "mx-auto" : ""}>
-        <Sliders className="h-4 w-4 mr-2" />
-      </div>
-      {!sidebarCollapsed && <span>Control Centre</span>}
-    </Link>
-  );
 
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
