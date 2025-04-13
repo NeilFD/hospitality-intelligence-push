@@ -5,10 +5,11 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { UserProvider } from './contexts/UserContext';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
-import LoginForm from './components/auth/LoginForm';
+import Login from './pages/Login';
 import RegisterForm from './components/auth/RegisterForm';
 import ProfilePage from './pages/ProfilePage';
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 import ControlCentre from "./pages/ControlCentre";
 import RequireAuth from "./components/auth/RequireAuth";
 import Index from './pages/Index';
@@ -52,7 +53,7 @@ function App() {
   const { loadUser } = useAuthStore();
 
   useEffect(() => {
-    console.log("App initializing: Loading default GOD user");
+    console.log("App initializing: Loading user");
     loadUser();
   }, [loadUser]);
 
@@ -62,7 +63,14 @@ function App() {
         <UserProvider>
           <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
             <Routes>
-              <Route path="/" element={<Layout><Outlet /></Layout>}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<RegisterForm />} />
+              
+              <Route path="/" element={
+                <RequireAuth>
+                  <Layout><Outlet /></Layout>
+                </RequireAuth>
+              }>
                 <Route index element={<Index />} />
                 <Route path="profile" element={<ProfilePage />} />
                 
@@ -100,15 +108,12 @@ function App() {
                 <Route path="team/chat" element={<TeamChat />} />
                 <Route path="team/knowledge" element={<TeamKnowledge />} />
                 
-                {/* Control Centre route - no longer requires special auth since we're in dev mode */}
+                {/* Control Centre route */}
                 <Route path="control-centre" element={<ControlCentre />} />
-                
               </Route>
-              
-              <Route path="/login" element={<LoginForm />} />
-              <Route path="/register" element={<RegisterForm />} />
             </Routes>
             <Toaster />
+            <SonnerToaster position="top-right" />
           </ThemeProvider>
         </UserProvider>
       </AuthProvider>

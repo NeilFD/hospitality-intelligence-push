@@ -9,7 +9,7 @@ interface RequireAuthProps {
 }
 
 const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
-  const { isAuthenticated, isLoading, loadUser, profile } = useAuthStore();
+  const { isAuthenticated, isLoading, loadUser, profile, developerMode } = useAuthStore();
   const location = useLocation();
   
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -5,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/services/auth-service';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isDevLogin, setIsDevLogin] = useState(false);
   const {
     login,
     isLoading,
@@ -20,11 +23,32 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    
+    // If dev login is checked, set the email to dev email
+    if (isDevLogin) {
+      try {
+        await login('dev@example.com', password);
+        navigate('/');
+      } catch (err) {
+        // Error is handled by the login function
+      }
+      return;
+    }
+    
     try {
       await login(email, password);
       navigate('/');
     } catch (err) {
       // Error is handled by the login function
+    }
+  };
+  
+  const toggleDevLogin = () => {
+    setIsDevLogin(!isDevLogin);
+    if (!isDevLogin) {
+      setEmail('dev@example.com');
+    } else {
+      setEmail('');
     }
   };
 
@@ -51,7 +75,16 @@ export default function LoginForm() {
         <Label htmlFor="email" className="text-gray-700">Email</Label>
         <motion.div whileHover="focus" whileFocus="focus">
           <motion.div variants={inputVariants}>
-            <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} required className="bg-white/10 border-white/20 text-gray-800 placeholder:text-gray-500 focus:bg-white/15 transition-all duration-300" />
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="Enter your email" 
+              value={isDevLogin ? 'dev@example.com' : email} 
+              onChange={e => !isDevLogin && setEmail(e.target.value)} 
+              disabled={isDevLogin}
+              required 
+              className="bg-white/10 border-white/20 text-gray-800 placeholder:text-gray-500 focus:bg-white/15 transition-all duration-300" 
+            />
           </motion.div>
         </motion.div>
       </div>
@@ -60,9 +93,31 @@ export default function LoginForm() {
         <Label htmlFor="password" className="text-gray-700">Password</Label>
         <motion.div whileHover="focus" whileFocus="focus">
           <motion.div variants={inputVariants}>
-            <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-white/10 border-white/20 text-gray-800 placeholder:text-gray-500 focus:bg-white/15 transition-all duration-300" />
+            <Input 
+              id="password" 
+              type="password" 
+              placeholder="Enter your password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              required 
+              className="bg-white/10 border-white/20 text-gray-800 placeholder:text-gray-500 focus:bg-white/15 transition-all duration-300" 
+            />
           </motion.div>
         </motion.div>
+        <div className="text-sm text-gray-500">
+          {isDevLogin ? "Default dev password is 'password123' (unless changed)" : ""}
+        </div>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="devMode" 
+          checked={isDevLogin} 
+          onCheckedChange={toggleDevLogin} 
+        />
+        <Label htmlFor="devMode" className="text-gray-700 text-sm cursor-pointer">
+          Login as Developer GOD
+        </Label>
       </div>
       
       <motion.div whileHover={{

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 
@@ -36,12 +35,15 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  developerMode: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   updateProfile: (profileData: UpdateProfileData) => Promise<void>;
   clearError: () => void;
+  enableDevMode: () => void;
+  disableDevMode: () => void;
 }
 
 // Create a default GOD user profile for development
@@ -58,18 +60,54 @@ const defaultGodProfile: Profile = {
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  // Initialize with the default GOD profile for development
-  user: { id: 'dev-god-user', email: 'dev@example.com' },
-  profile: defaultGodProfile,
-  isAuthenticated: true, // Always authenticated in dev mode
-  isLoading: false,
+  // Initialize with null values instead of GOD profile
+  user: null,
+  profile: null,
+  isAuthenticated: false,
+  isLoading: true,
   error: null,
+  developerMode: false,
 
   clearError: () => set({ error: null }),
+  
+  enableDevMode: () => {
+    set({
+      user: { id: 'dev-god-user', email: 'dev@example.com' },
+      profile: defaultGodProfile,
+      isAuthenticated: true,
+      isLoading: false,
+      developerMode: true
+    });
+    localStorage.setItem('tavern-dev-mode', 'enabled');
+  },
+  
+  disableDevMode: () => {
+    set({
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+      isLoading: false,
+      developerMode: false
+    });
+    localStorage.setItem('tavern-dev-mode', 'disabled');
+  },
 
   login: async (email, password) => {
     try {
       set({ isLoading: true, error: null });
+      
+      // Dev mode login check
+      if (email === 'dev@example.com' && password === (localStorage.getItem('dev-god-password') || 'password123')) {
+        set({
+          user: { id: 'dev-god-user', email: 'dev@example.com' },
+          profile: defaultGodProfile,
+          isAuthenticated: true,
+          isLoading: false,
+          developerMode: true
+        });
+        localStorage.setItem('tavern-dev-mode', 'enabled');
+        return;
+      }
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -94,6 +132,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           profile: profileData,
           isAuthenticated: true,
           isLoading: false,
+          developerMode: false
         });
       }
     } catch (error: any) {
@@ -128,6 +167,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: data?.user || null,
         isAuthenticated: !!data?.user,
         isLoading: false,
+        developerMode: false
       });
     } catch (error: any) {
       set({ 
@@ -141,6 +181,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
+      // Check if in developer mode
+      if (get().developerMode) {
+        set({
+          user: null,
+          profile: null,
+          isAuthenticated: false,
+          isLoading: false,
+          developerMode: false
+        });
+        localStorage.setItem('tavern-dev-mode', 'disabled');
+        return;
+      }
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -148,13 +201,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
-      // In development mode, return to the default GOD user instead of actual logout
-      console.log('Development mode: Returning to default GOD user instead of actual logout');
       set({
-        user: { id: 'dev-god-user', email: 'dev@example.com' },
-        profile: defaultGodProfile,
-        isAuthenticated: true,
+        user: null,
+        profile: null,
+        isAuthenticated: false,
         isLoading: false,
+        developerMode: false
       });
     } catch (error: any) {
       set({ 
@@ -166,30 +218,48 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadUser: async () => {
     try {
-      console.log('Development mode: Loading default GOD user');
-      // For development, always load the default GOD user
-      set({
-        user: { id: 'dev-god-user', email: 'dev@example.com' },
-        profile: defaultGodProfile,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-      
-      // Comment out the actual Supabase auth code for development
-      /*
       set({ isLoading: true, error: null });
       
+      // Check if dev mode was previously enabled
+      const devMode = localStorage.getItem('tavern-dev-mode') === 'enabled';
+      
+      // If dev mode is enabled, load the GOD user
+      if (devMode) {
+        console.log('Development mode enabled: Loading default GOD user');
+        set({
+          user: { id: 'dev-god-user', email: 'dev@example.com' },
+          profile: defaultGodProfile,
+          isAuthenticated: true,
+          isLoading: false,
+          developerMode: true
+        });
+        return;
+      }
+      
+      // Otherwise, check for a real Supabase session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        set({ isLoading: false, isAuthenticated: false });
+        set({ 
+          user: null,
+          profile: null,
+          isAuthenticated: false, 
+          isLoading: false,
+          developerMode: false 
+        });
         return;
       }
 
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        set({ isLoading: false, isAuthenticated: false });
+        set({ 
+          user: null,
+          profile: null,
+          isAuthenticated: false, 
+          isLoading: false,
+          developerMode: false 
+        });
         return;
       }
 
@@ -205,16 +275,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         profile: profileData,
         isAuthenticated: true,
         isLoading: false,
+        developerMode: false
       });
-      */
     } catch (error: any) {
       console.error('Error loading user:', error);
-      // For development, still load the default GOD user even if there's an error
-      set({
-        user: { id: 'dev-god-user', email: 'dev@example.com' },
-        profile: defaultGodProfile,
-        isAuthenticated: true,
+      set({ 
+        user: null,
+        profile: null,
+        isAuthenticated: false, 
         isLoading: false,
+        developerMode: false 
       });
     }
   },
@@ -224,7 +294,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true, error: null });
       
       // In development mode, just update the local state without making Supabase calls
-      if (get().user?.id === 'dev-god-user') {
+      if (get().developerMode) {
         console.log('Development mode: Updating local GOD profile', profileData);
         const updatedProfile = {
           ...get().profile,
