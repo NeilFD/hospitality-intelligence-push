@@ -115,47 +115,52 @@ export const updatePermissionMatrix = async (permissionMatrix: PermissionMatrix[
 };
 
 // Add a function to update target settings
-export const updateTargetSettings = async (targetSettings: TargetSettings): Promise<void> => {
+export const updateTargetSettings = async (targetSettings: TargetSettings) => {
   try {
-    // Check if business_targets table exists
-    const { data: tableExists, error: tableCheckError } = await supabase
+    // First check if business_targets table exists
+    const { count, error: checkError } = await supabase
       .from('business_targets')
-      .select('id')
-      .limit(1);
+      .select('*', { count: 'exact', head: true });
       
-    if (tableCheckError && tableCheckError.code !== 'PGRST116') {
-      // If error is not "no rows returned"
-      console.error('Error checking business_targets table:', tableCheckError);
-      
-      // Create the table if it doesn't exist
-      const { error: createTableError } = await supabase.rpc('create_business_targets_table');
-      if (createTableError) {
-        console.error('Error creating business_targets table:', createTableError);
-        throw createTableError;
-      }
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking business_targets table:', checkError);
+      return { error: checkError };
     }
     
-    // Upsert the target settings
-    const { error: upsertError } = await supabase
-      .from('business_targets')
-      .upsert(
-        {
-          id: 1, // Single row for all business targets
-          food_gp_target: targetSettings.foodGpTarget,
-          beverage_gp_target: targetSettings.beverageGpTarget,
-          wage_cost_target: targetSettings.wageCostTarget,
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'id' }
-      );
-      
-    if (upsertError) {
-      console.error('Error updating target settings:', upsertError);
-      throw upsertError;
+    const data = {
+      food_gp_target: targetSettings.foodGpTarget,
+      beverage_gp_target: targetSettings.beverageGpTarget,
+      wage_cost_target: targetSettings.wageCostTarget,
+      updated_at: new Date().toISOString()
+    };
+    
+    let result;
+    
+    // If no records exist, insert a new one
+    if (!count || count === 0) {
+      result = await supabase
+        .from('business_targets')
+        .insert({
+          id: 1, // Use a fixed ID for the single record
+          ...data
+        });
+    } else {
+      // Otherwise update the existing record
+      result = await supabase
+        .from('business_targets')
+        .update(data)
+        .eq('id', 1);
     }
+    
+    if (result.error) {
+      console.error('Error updating target settings:', result.error);
+      return { error: result.error };
+    }
+    
+    return { success: true };
   } catch (error) {
     console.error('Error in updateTargetSettings:', error);
-    throw error;
+    return { error };
   }
 };
 

@@ -1,14 +1,13 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { TargetSettings } from '@/types/control-centre-types';
-import { toast } from 'sonner';
-import { FileUp, Percent } from 'lucide-react';
 import { updateTargetSettings } from '@/services/control-centre-service';
+import { Percent, FileUp } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TargetSettingsPanelProps {
   targetSettings: TargetSettings;
@@ -27,21 +26,10 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
   const handleSettingChange = (key: keyof TargetSettings, value: string) => {
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      setSettings({ ...settings, [key]: numValue });
-    }
-  };
-
-  const saveSettings = async () => {
-    try {
-      setSaving(true);
-      // Save settings to the database
-      await updateTargetSettings(settings);
-      toast.success('Business targets saved successfully');
-    } catch (error) {
-      console.error('Error saving business targets:', error);
-      toast.error('Failed to save business targets');
-    } finally {
-      setSaving(false);
+      setSettings(prev => ({
+        ...prev,
+        [key]: numValue
+      }));
     }
   };
 
@@ -66,6 +54,26 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
     }
   };
 
+  const saveSettings = async () => {
+    try {
+      setSaving(true);
+      
+      // Call the function to update target settings in Supabase
+      const result = await updateTargetSettings(settings);
+      
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+      
+      toast.success('Business targets saved successfully');
+    } catch (error) {
+      console.error('Error saving business targets:', error);
+      toast.error('Failed to save business targets');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -85,9 +93,9 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
                   type="number"
                   value={settings.foodGpTarget}
                   onChange={(e) => handleSettingChange('foodGpTarget', e.target.value)}
-                  min={0}
-                  max={100}
-                  step={0.1}
+                  min="0"
+                  max="100"
+                  step="0.1"
                 />
                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                   <Percent className="h-4 w-4 text-muted-foreground" />
@@ -103,12 +111,11 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
                   type="number"
                   value={settings.beverageGpTarget}
                   onChange={(e) => handleSettingChange('beverageGpTarget', e.target.value)}
-                  min={0}
-                  max={100}
-                  step={0.1}
+                  min="0" 
+                  max="100" 
                 />
                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                  <Percent className="h-4 w-4 text-muted-foreground" />
+                  <Percent className="h-4 w-4 text-muted-text" />
                 </div>
               </div>
             </div>
@@ -121,12 +128,11 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
                   type="number"
                   value={settings.wageCostTarget}
                   onChange={(e) => handleSettingChange('wageCostTarget', e.target.value)}
-                  min={0}
-                  max={100}
-                  step={0.1}
+                  min="0" 
+                  max="100"
                 />
                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                  <Percent className="h-4 w-4 text-muted-foreground" />
+                  <Percent className="h-4 w-4 text-muted-text" />
                 </div>
               </div>
             </div>
@@ -144,20 +150,22 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Upload a properly formatted Excel file containing your budget data. The system will process this file and load the data into the P&L Tracker.
+              Upload your budget spreadsheet to set targets for your P&L Tracker. The file should contain columns for Category, Budget Item, and monthly budget amounts.
             </p>
             
-            <div className="flex items-center gap-3">
-              <Button variant="outline" disabled={uploading}>
-                <FileUp className="mr-2 h-4 w-4" />
-                {uploading ? 'Uploading...' : 'Select Budget File'}
-                <input 
-                  type="file" 
-                  id="budgetFile" 
-                  className="hidden" 
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFileChange}
-                />
+            <div className="flex items-center gap-4">
+              <Button variant="outline" asChild className="cursor-pointer">
+                <label>
+                  <FileUp className="h-4 w-4 mr-2" />
+                  {uploading ? 'Uploading...' : 'Upload Budget File'}
+                  <input 
+                    type="file" 
+                    accept=".csv,.xlsx,.xls"
+                    className="hidden" 
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                  />
+                </label>
               </Button>
               {fileName && <span className="text-sm text-muted-foreground">{fileName}</span>}
             </div>
