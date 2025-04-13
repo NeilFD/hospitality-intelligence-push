@@ -37,11 +37,16 @@ const TeamDashboard: React.FC = () => {
         const members = await getTeamMembers();
         
         if (members && Array.isArray(members)) {
-          // Filter members based on user's role - can only see their level and below
-          const filteredMembers = members.filter(member => 
-            canSeeRole(profile?.role, member.role || 'Team Member')
-          );
+          // If user is GOD, they can see all members
+          // For other roles, filter members based on user's role - can only see their level and below
+          const filteredMembers = profile?.role === 'GOD' 
+            ? members 
+            : members.filter(member => 
+                canSeeRole(profile?.role, member.role || 'Team Member')
+              );
+          
           setTeamMembers(filteredMembers);
+          console.log("Fetched team members:", filteredMembers);
         } else {
           setError('Invalid data format received');
         }
@@ -63,14 +68,21 @@ const TeamDashboard: React.FC = () => {
     
     if (!profile || !profile.role) return ['Team Member'];
     
+    // GOD users can see all roles
+    if (profile.role === 'GOD') return allRoles;
+    
     // Return only the roles the user can see based on their own role
     return allRoles.filter(role => canSeeRole(profile.role, role));
   };
 
-  // Filter members based on selected role filter
-  const filteredMembers = roleFilter === 'all' 
-    ? teamMembers 
-    : teamMembers.filter(member => member.role === roleFilter);
+  // Filter members based on selected role filter - but GOD users can always see all roles
+  const filteredMembers = profile?.role === 'GOD' && roleFilter === 'all'
+    ? teamMembers
+    : roleFilter === 'all'
+      ? teamMembers
+      : teamMembers.filter(member => member.role === roleFilter || 
+          // GOD users should still see users without roles when filtering by Team Member
+          (roleFilter === 'Team Member' && !member.role));
 
   return <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
