@@ -2,7 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
-// Available fonts with added typewriter font
+// Available fonts with added typewriter font - ensure Courier Prime is properly defined
 export const availableFonts: { name: string; value: string }[] = [
   { name: 'Default System Font', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif' },
   { name: 'Inter', value: 'Inter, system-ui, sans-serif' },

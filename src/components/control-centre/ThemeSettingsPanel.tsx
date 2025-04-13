@@ -146,11 +146,19 @@ export function ThemeSettingsPanel({
     
     if (!document.head.querySelector('link[href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap"]')) {
       document.head.appendChild(link);
+      console.log("Courier Prime font link added to document head");
+    } else {
+      console.log("Courier Prime font link already exists in document head");
     }
     
-    setTimeout(() => {
-      console.log("Font options available:", availableFonts);
-    }, 500);
+    console.log("Font options available:", availableFonts);
+    
+    const courierPrimeFont = availableFonts.find(font => font.value.includes("Courier Prime"));
+    if (courierPrimeFont) {
+      console.log("Courier Prime font is available in options:", courierPrimeFont);
+    } else {
+      console.log("Courier Prime font not found in available options");
+    }
     
     return () => {
       const existingLink = document.head.querySelector('link[href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap"]');
@@ -767,7 +775,8 @@ export function ThemeSettingsPanel({
                           fontFamily: font.value,
                           fontSize: "16px",
                           padding: "10px 8px 10px 28px",
-                          marginBottom: "4px"
+                          marginBottom: "4px",
+                          fontWeight: font.value.includes("Courier Prime") ? "normal" : "inherit"
                         }}
                       >
                         {font.name}
