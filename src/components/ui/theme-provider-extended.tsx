@@ -13,6 +13,10 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     // Load the active theme from the database
     const loadActiveTheme = async () => {
       try {
+        // First, check localStorage for a persisted theme
+        const savedThemeName = localStorage.getItem('app-active-theme');
+        console.log('Saved theme from localStorage:', savedThemeName);
+        
         const { data, error } = await supabase
           .from('themes')
           .select('name, primary_color, secondary_color, accent_color, custom_font')
@@ -21,6 +25,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         if (error) {
           console.error('Error loading active theme:', error);
+          
+          // If there was an error loading from DB but we have a saved theme, apply it
+          if (savedThemeName) {
+            console.log('Applying saved theme from localStorage:', savedThemeName);
+            applyThemeClass(savedThemeName);
+          }
           return;
         }
         
@@ -33,10 +43,24 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             applyCustomFont(data.custom_font);
           }
           
-          console.log('Applied theme:', data.name, 'with font:', data.custom_font);
+          // Save the current theme to localStorage
+          localStorage.setItem('app-active-theme', data.name);
+          
+          console.log('Applied theme from database:', data.name, 'with font:', data.custom_font);
+        } else if (savedThemeName) {
+          // If no active theme in DB but we have a saved theme, apply it
+          console.log('No active theme in DB, applying from localStorage:', savedThemeName);
+          applyThemeClass(savedThemeName);
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
+        
+        // Try to recover using localStorage if DB fetch fails
+        const savedThemeName = localStorage.getItem('app-active-theme');
+        if (savedThemeName) {
+          console.log('Recovering with saved theme from localStorage:', savedThemeName);
+          applyThemeClass(savedThemeName);
+        }
       } finally {
         setThemeLoaded(true);
       }
@@ -54,6 +78,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         const customFont = event.detail.theme.customFont;
         
         console.log("Applying theme from event:", themeName, "with font:", customFont);
+        
+        // Save theme to localStorage for persistence
+        localStorage.setItem('app-active-theme', themeName);
         
         // Apply theme class
         applyThemeClass(themeName);

@@ -91,4 +91,14 @@
   h1, h2, h3, h4, h5, h6, button, input, select, textarea {
     font-family: inherit;
   }
+  
+  /* Ensure theme persistence across page reloads */
+  body.theme-initializing {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+  }
+  
+  body.theme-loaded {
+    opacity: 1;
+  }
 }

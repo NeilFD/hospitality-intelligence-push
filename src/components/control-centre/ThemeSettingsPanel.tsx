@@ -398,6 +398,9 @@ export function ThemeSettingsPanel({
         }
       }
       
+      localStorage.setItem('app-active-theme', activeTheme.name);
+      console.log('Saved theme to localStorage:', activeTheme.name);
+      
       const themeEvent = new CustomEvent('app-theme-updated', {
         detail: { theme: activeTheme }
       });

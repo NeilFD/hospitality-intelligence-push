@@ -49,6 +49,27 @@ export function ThemeProvider({
     root.classList.add(theme)
   }, [theme])
 
+  // Listen for theme updates from ThemeProviderExtended
+  useEffect(() => {
+    const handleThemeUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.theme) {
+        // Save to localStorage to persist through refreshes
+        const themeName = customEvent.detail.theme.name;
+        if (themeName) {
+          localStorage.setItem('app-active-theme', themeName);
+          console.log('Theme name saved to localStorage:', themeName);
+        }
+      }
+    };
+    
+    window.addEventListener('app-theme-updated', handleThemeUpdate);
+    
+    return () => {
+      window.removeEventListener('app-theme-updated', handleThemeUpdate);
+    };
+  }, []);
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {
