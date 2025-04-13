@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -45,7 +46,8 @@ const Layout = ({
   const ControlCentreLink = () => {
     const handleControlCentreClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
       e.preventDefault();
-      navigate('/control-centre');
+      // Use window.location for a hard navigation to ensure we load the control centre
+      window.location.href = '/control-centre';
     };
     
     return (
