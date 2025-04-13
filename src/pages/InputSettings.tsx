@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -102,7 +101,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
   });
 
   const updateSupplierMutation = useMutation({
-    mutationFn: updateSupplier,
+    mutationFn: ({ id, updates }: { id: string, updates: any }) => updateSupplier(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', moduleType] });
       toast.success('Supplier updated successfully');
