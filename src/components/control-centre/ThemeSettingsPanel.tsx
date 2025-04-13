@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,18 +140,19 @@ export function ThemeSettingsPanel({
   const [presetSelectAnimation, setPresetSelectAnimation] = useState(false);
 
   useEffect(() => {
-    // Load Courier Prime font
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap';
     
-    // Check if the link is already in the document
     if (!document.head.querySelector('link[href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap"]')) {
       document.head.appendChild(link);
     }
     
+    setTimeout(() => {
+      console.log("Font options available:", availableFonts);
+    }, 500);
+    
     return () => {
-      // Only remove if we added it
       const existingLink = document.head.querySelector('link[href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap"]');
       if (existingLink && existingLink === link) {
         document.head.removeChild(link);
@@ -758,7 +758,7 @@ export function ThemeSettingsPanel({
                   >
                      <SelectValue placeholder="Select a font" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-80">
+                  <SelectContent className="max-h-80 overflow-y-auto">
                     {availableFonts.map(font => (
                       <SelectItem 
                         key={font.value} 
