@@ -1,123 +1,153 @@
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { useAuthStore } from '@/services/auth-service';
+import { Layout } from '@/components/layout/Layout';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from '@/lib/supabase';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from "@/components/ui/theme-provider"
+import { ThemeProviderExtended } from "@/components/ui/theme-provider-extended";
 
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Outlet, Navigate } from 'react-router-dom';
-import { ThemeProvider } from "@/components/ui/theme-provider";
-import { UserProvider } from './contexts/UserContext';
-import { AuthProvider } from './contexts/AuthContext';
-import Layout from './components/Layout';
-import Login from './pages/Login';
-import RegisterForm from './components/auth/RegisterForm';
-import ProfilePage from './pages/ProfilePage';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as SonnerToaster } from "sonner";
-import ControlCentre from "./pages/ControlCentre";
-import RequireAuth from "./components/auth/RequireAuth";
-import Index from './pages/Index';
-import { useAuthStore } from './services/auth-service';
+// Public Pages
+import HomePage from '@/pages/HomePage';
+import AboutPage from '@/pages/AboutPage';
+import ContactPage from '@/pages/ContactPage';
+import PricingPage from '@/pages/PricingPage';
+import TermsPage from '@/pages/TermsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
-// Import Master pages
-import MasterDashboard from './pages/master/Dashboard';
-import MasterMonthSummary from './pages/master/MonthSummary';
-import MasterWeeklyInput from './pages/master/WeeklyInput';
+// Auth Pages
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import VerifyEmailPage from '@/pages/VerifyEmailPage';
 
-// Import Food Hub pages
-import FoodDashboard from './pages/food/Dashboard';
-import FoodInputSettings from './pages/food/InputSettings';
-import FoodMonthSummary from './pages/food/MonthSummary';
-import FoodAnnualSummary from './pages/food/AnnualSummary';
-import FoodBible from './pages/food/FoodBible';
+// App Pages
+import DashboardPage from '@/pages/DashboardPage';
+import ProfilePage from '@/pages/ProfilePage';
+import SettingsPage from '@/pages/SettingsPage';
+import ControlCentre from '@/pages/ControlCentre';
 
-// Import Beverage Hub pages
-import BeverageDashboard from './pages/beverage/Dashboard';
-import BeverageInputSettings from './pages/beverage/InputSettings';
-import BeverageMonthSummary from './pages/beverage/MonthSummary';
-import BeverageAnnualSummary from './pages/beverage/AnnualSummary';
-import BeverageBible from './pages/beverage/BeverageBible';
+// Kitchen Pages
+import FoodDashboard from '@/pages/food/FoodDashboard';
+import FoodInputSettings from '@/pages/food/FoodInputSettings';
+import FoodMonthSummary from '@/pages/food/FoodMonthSummary';
+import FoodAnnualSummary from '@/pages/food/FoodAnnualSummary';
+import FoodBible from '@/pages/food/FoodBible';
 
-// Import P&L Tracker pages
-import PLDashboard from './pages/pl/Dashboard';
+// Beverage Pages
+import BeverageDashboard from '@/pages/beverage/BeverageDashboard';
+import BeverageInputSettings from '@/pages/beverage/BeverageInputSettings';
+import BeverageMonthSummary from '@/pages/beverage/BeverageMonthSummary';
+import BeverageAnnualSummary from '@/pages/beverage/BeverageAnnualSummary';
+import BeverageBible from '@/pages/beverage/BeverageBible';
 
-// Import Wages Tracker pages
-import WagesDashboard from './pages/wages/Dashboard';
+// P&L Pages
+import PLDashboard from '@/pages/pl/PLDashboard';
 
-// Import Performance Tracker pages
-import PerformanceDashboard from './pages/performance/Dashboard';
+// Wages Pages
+import WagesDashboard from '@/pages/wages/WagesDashboard';
 
-// Import Team pages
-import TeamDashboard from './pages/team/Dashboard';
-import TeamNoticeboard from './pages/team/Noticeboard';
-import TeamChat from './pages/team/Chat';
-import TeamKnowledge from './pages/team/Knowledge';
+// Performance Pages
+import PerformanceDashboard from '@/pages/performance/PerformanceDashboard';
+
+// Team Pages
+import TeamDashboard from '@/pages/team/TeamDashboard';
+import TeamNoticeboard from '@/pages/team/TeamNoticeboard';
+import TeamChat from '@/pages/team/TeamChat';
+import TeamKnowledge from '@/pages/team/TeamKnowledge';
+
+const queryClient = new QueryClient();
 
 function App() {
-  const { loadUser } = useAuthStore();
+  const { isLoggedIn, isLoading } = useAuthStore();
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
-    console.log("App initializing: Loading user");
-    loadUser();
-  }, [loadUser]);
+    // Delay the rendering of the Auth component to avoid hydration issues
+    const timer = setTimeout(() => {
+      setShowAuth(true);
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">
+      <span className="loading loading-ring loading-lg"></span>
+    </div>;
+  }
 
   return (
-    <Router>
-      <AuthProvider>
-        <UserProvider>
-          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<RegisterForm />} />
-              
-              <Route path="/" element={
-                <RequireAuth>
-                  <Layout><Outlet /></Layout>
-                </RequireAuth>
-              }>
-                <Route index element={<Index />} />
-                <Route path="profile" element={<ProfilePage />} />
-                
-                {/* Master Records Routes */}
-                <Route path="master/dashboard" element={<MasterDashboard />} />
-                <Route path="master/month/:year/:month" element={<MasterMonthSummary />} />
-                <Route path="master/week/:year/:month/:week" element={<MasterWeeklyInput />} />
-                
-                {/* Food Hub Routes */}
-                <Route path="food/dashboard" element={<FoodDashboard />} />
-                <Route path="food/input-settings" element={<FoodInputSettings />} />
-                <Route path="food/month/:year/:month" element={<FoodMonthSummary />} />
-                <Route path="food/annual-summary" element={<FoodAnnualSummary />} />
-                <Route path="food/bible" element={<FoodBible />} />
-                
-                {/* Beverage Hub Routes */}
-                <Route path="beverage/dashboard" element={<BeverageDashboard />} />
-                <Route path="beverage/input-settings" element={<BeverageInputSettings />} />
-                <Route path="beverage/month/:year/:month" element={<BeverageMonthSummary />} />
-                <Route path="beverage/annual-summary" element={<BeverageAnnualSummary />} />
-                <Route path="beverage/bible" element={<BeverageBible />} />
-                
-                {/* P&L Tracker Routes */}
-                <Route path="pl/dashboard" element={<PLDashboard />} />
-                
-                {/* Wages Tracker Routes */}
-                <Route path="wages/dashboard" element={<WagesDashboard />} />
-                
-                {/* Performance Tracker Routes */}
-                <Route path="performance/dashboard" element={<PerformanceDashboard />} />
-                
-                {/* Team Routes */}
-                <Route path="team/dashboard" element={<TeamDashboard />} />
-                <Route path="team/noticeboard" element={<TeamNoticeboard />} />
-                <Route path="team/chat" element={<TeamChat />} />
-                <Route path="team/knowledge" element={<TeamKnowledge />} />
-                
-                {/* Control Centre route */}
-                <Route path="control-centre" element={<ControlCentre />} />
-              </Route>
-            </Routes>
-            <Toaster />
-            <SonnerToaster position="top-right" />
-          </ThemeProvider>
-        </UserProvider>
-      </AuthProvider>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <ThemeProviderExtended>
+          <Router>
+            <Layout>
+              <Toaster richColors />
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+
+                {/* Auth Routes */}
+                <Route path="/login" element={!isLoggedIn ? <LoginPage /> : <Navigate to="/dashboard" />} />
+                <Route path="/register" element={!isLoggedIn ? <RegisterPage /> : <Navigate to="/dashboard" />} />
+                <Route path="/forgot-password" element={!isLoggedIn ? <ForgotPasswordPage /> : <Navigate to="/dashboard" />} />
+                <Route path="/reset-password" element={!isLoggedIn ? <ResetPasswordPage /> : <Navigate to="/dashboard" />} />
+                <Route path="/verify-email" element={!isLoggedIn ? <VerifyEmailPage /> : <Navigate to="/dashboard" />} />
+
+                {/* App Routes - Protected */}
+                <Route path="/dashboard" element={isLoggedIn ? <DashboardPage /> : <Navigate to="/login" />} />
+                <Route path="/profile" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/login" />} />
+                <Route path="/settings" element={isLoggedIn ? <SettingsPage /> : <Navigate to="/login" />} />
+                <Route path="/control-centre" element={isLoggedIn ? <ControlCentre /> : <Navigate to="/login" />} />
+
+                {/* Kitchen Routes - Protected */}
+                <Route path="/food/dashboard" element={isLoggedIn ? <FoodDashboard /> : <Navigate to="/login" />} />
+                <Route path="/food/input-settings" element={isLoggedIn ? <FoodInputSettings /> : <Navigate to="/login" />} />
+                <Route path="/food/month/:year/:month" element={isLoggedIn ? <FoodMonthSummary /> : <Navigate to="/login" />} />
+                <Route path="/food/annual-summary" element={isLoggedIn ? <FoodAnnualSummary /> : <Navigate to="/login" />} />
+                <Route path="/food/bible" element={isLoggedIn ? <FoodBible /> : <Navigate to="/login" />} />
+
+                {/* Beverage Routes - Protected */}
+                <Route path="/beverage/dashboard" element={isLoggedIn ? <BeverageDashboard /> : <Navigate to="/login" />} />
+                <Route path="/beverage/input-settings" element={isLoggedIn ? <BeverageInputSettings /> : <Navigate to="/login" />} />
+                <Route path="/beverage/month/:year/:month" element={isLoggedIn ? <BeverageMonthSummary /> : <Navigate to="/login" />} />
+                <Route path="/beverage/annual-summary" element={isLoggedIn ? <BeverageAnnualSummary /> : <Navigate to="/login" />} />
+                <Route path="/beverage/bible" element={isLoggedIn ? <BeverageBible /> : <Navigate to="/login" />} />
+
+                {/* P&L Routes - Protected */}
+                <Route path="/pl/dashboard" element={isLoggedIn ? <PLDashboard /> : <Navigate to="/login" />} />
+
+                {/* Wages Routes - Protected */}
+                <Route path="/wages/dashboard" element={isLoggedIn ? <WagesDashboard /> : <Navigate to="/login" />} />
+
+                {/* Performance Routes - Protected */}
+                <Route path="/performance/dashboard" element={isLoggedIn ? <PerformanceDashboard /> : <Navigate to="/login" />} />
+
+                {/* Team Routes - Protected */}
+                <Route path="/team/dashboard" element={isLoggedIn ? <TeamDashboard /> : <Navigate to="/login" />} />
+                <Route path="/team/noticeboard" element={isLoggedIn ? <TeamNoticeboard /> : <Navigate to="/login" />} />
+                <Route path="/team/chat" element={isLoggedIn ? <TeamChat /> : <Navigate to="/login" />} />
+                <Route path="/team/knowledge" element={isLoggedIn ? <TeamKnowledge /> : <Navigate to="/login" />} />
+
+                {/* Not Found Route */}
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Layout>
+          </Router>
+        </ThemeProviderExtended>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
