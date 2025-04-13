@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 interface PerformanceLogoProps {
   className?: string;
@@ -16,7 +16,30 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
   );
   
   useEffect(() => {
-    // Function to handle logo updates
+    const storedLogoUrl = localStorage.getItem('app-logo-url');
+    
+    const loadActiveTheme = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('themes')
+          .select('logo_url')
+          .eq('is_active', true)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching active theme:', error);
+          return;
+        }
+        
+        if (data && data.logo_url) {
+          localStorage.setItem('app-logo-url', data.logo_url);
+          setLogoUrl(data.logo_url);
+        }
+      } catch (err) {
+        console.error('Error in loadActiveTheme:', err);
+      }
+    };
+    
     const handleLogoUpdate = (event: CustomEvent) => {
       const newLogoUrl = event.detail?.logoUrl;
       if (newLogoUrl) {
@@ -24,16 +47,14 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
       }
     };
     
-    // Add event listener
     window.addEventListener('app-logo-updated', handleLogoUpdate as EventListener);
     
-    // Check localStorage on mount
-    const storedLogoUrl = localStorage.getItem('app-logo-url');
     if (storedLogoUrl) {
       setLogoUrl(storedLogoUrl);
+    } else {
+      loadActiveTheme();
     }
     
-    // Clean up event listener
     return () => {
       window.removeEventListener('app-logo-updated', handleLogoUpdate as EventListener);
     };
@@ -59,6 +80,10 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
         src={logoUrl || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png"} 
         alt="Logo" 
         className="w-3/4 h-3/4 object-contain absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+        onError={(e) => {
+          console.error('Failed to load logo:', e);
+          setLogoUrl("/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png");
+        }}
       />
     </div>
   );

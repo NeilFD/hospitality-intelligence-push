@@ -1,7 +1,7 @@
-
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 interface SidebarLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
@@ -24,15 +24,49 @@ export default function SidebarLogo({ size = 'md', className }: SidebarLogoProps
   };
   
   useEffect(() => {
+    const storedLogoUrl = localStorage.getItem('app-logo-url');
+    
+    const loadActiveTheme = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('themes')
+          .select('logo_url')
+          .eq('is_active', true)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching active theme:', error);
+          return;
+        }
+        
+        if (data && data.logo_url) {
+          localStorage.setItem('app-logo-url', data.logo_url);
+          setLogoUrl(data.logo_url);
+          
+          const logoEvent = new CustomEvent('app-logo-updated', {
+            detail: { logoUrl: data.logo_url }
+          });
+          window.dispatchEvent(logoEvent);
+        }
+      } catch (err) {
+        console.error('Error in loadActiveTheme:', err);
+      }
+    };
+    
     const handleLogoUpdate = (event: any) => {
       if (event.detail && event.detail.logoUrl) {
         console.log('Logo update received:', event.detail.logoUrl);
         setLogoUrl(event.detail.logoUrl);
-        localStorage.setItem('app-logo-url', event.detail.logoUrl);
       }
     };
     
     window.addEventListener('app-logo-updated', handleLogoUpdate);
+    
+    if (storedLogoUrl) {
+      setLogoUrl(storedLogoUrl);
+    } else {
+      loadActiveTheme();
+    }
     
     return () => {
       window.removeEventListener('app-logo-updated', handleLogoUpdate);
@@ -55,4 +89,3 @@ export default function SidebarLogo({ size = 'md', className }: SidebarLogoProps
     </div>
   );
 }
-
