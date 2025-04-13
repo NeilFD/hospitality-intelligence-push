@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Outlet, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -12,6 +13,40 @@ import ControlCentre from "./pages/ControlCentre";
 import RequireAuth from "./components/auth/RequireAuth";
 import Index from './pages/Index';
 import { useAuthStore } from './services/auth-service';
+
+// Import Master pages
+import MasterDashboard from './pages/master/Dashboard';
+import MasterMonthSummary from './pages/master/MonthSummary';
+import MasterWeeklyInput from './pages/master/WeeklyInput';
+
+// Import Food Hub pages
+import FoodDashboard from './pages/food/Dashboard';
+import FoodInputSettings from './pages/food/InputSettings';
+import FoodMonthSummary from './pages/food/MonthSummary';
+import FoodAnnualSummary from './pages/food/AnnualSummary';
+import FoodBible from './pages/food/FoodBible';
+
+// Import Beverage Hub pages
+import BeverageDashboard from './pages/beverage/Dashboard';
+import BeverageInputSettings from './pages/beverage/InputSettings';
+import BeverageMonthSummary from './pages/beverage/MonthSummary';
+import BeverageAnnualSummary from './pages/beverage/AnnualSummary';
+import BeverageBible from './pages/beverage/BeverageBible';
+
+// Import P&L Tracker pages
+import PLDashboard from './pages/pl/Dashboard';
+
+// Import Wages Tracker pages
+import WagesDashboard from './pages/wages/Dashboard';
+
+// Import Performance Tracker pages
+import PerformanceDashboard from './pages/performance/Dashboard';
+
+// Import Team pages
+import TeamDashboard from './pages/team/Dashboard';
+import TeamNoticeboard from './pages/team/Noticeboard';
+import TeamChat from './pages/team/Chat';
+import TeamKnowledge from './pages/team/Knowledge';
 
 function App() {
   const { loadUser } = useAuthStore();
@@ -34,7 +69,7 @@ function App() {
                 {/* Master Records Routes */}
                 <Route path="master/dashboard" element={<MasterDashboard />} />
                 <Route path="master/month/:year/:month" element={<MasterMonthSummary />} />
-                <Route path="master/weekly-input" element={<MasterWeeklyInput />} />
+                <Route path="master/week/:year/:month/:week" element={<MasterWeeklyInput />} />
                 
                 {/* Food Hub Routes */}
                 <Route path="food/dashboard" element={<FoodDashboard />} />
