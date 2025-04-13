@@ -20,9 +20,9 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
   };
   return (
     <img 
+      src="/lovable-uploads/4236b6e6-6214-4c69-b02c-62083db662f9.png" 
       alt="Hi" 
-      className={cn(sizeClasses[size], className)}
-      src="/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png" 
+      className={cn(sizeClasses[size], 'object-contain', className)}
     />
   );
 };
