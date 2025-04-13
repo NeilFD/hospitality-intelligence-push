@@ -131,6 +131,11 @@ const Layout = ({
             name: `${prefix} Bible`,
             path: `/${currentModule}/bible`,
             icon: <Book className="mr-2 h-4 w-4" />
+          },
+          {
+            name: `${prefix} Weekly Tracker`,
+            path: `/${currentModule}/weekly-tracker`,
+            icon: <Calendar className="mr-2 h-4 w-4" />
           }
         ];
       case 'pl':
@@ -151,6 +156,24 @@ const Layout = ({
           path: "/performance/dashboard",
           icon: <Home className="mr-2 h-4 w-4" />
         }];
+      case 'master':
+        return [
+          {
+            name: "Daily Dashboard",
+            path: "/master/dashboard",
+            icon: <Home className="mr-2 h-4 w-4" />
+          },
+          {
+            name: "Weekly Input",
+            path: "/master/weekly-input",
+            icon: <Calendar className="mr-2 h-4 w-4" />
+          },
+          {
+            name: "Month Summary",
+            path: "/master/month-summary",
+            icon: <ChartBar className="mr-2 h-4 w-4" />
+          }
+        ];
       case 'team':
         return [
           {
@@ -247,19 +270,7 @@ const Layout = ({
       <>
         <Separator className="bg-[#9d89c9]/20" />
         <div className="p-2">
-          <Link 
-            to="/control-centre" 
-            className={cn(
-              "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
-              location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
-            )}
-            title={sidebarCollapsed ? "Control Centre" : undefined}
-          >
-            <div className={sidebarCollapsed ? "mx-auto" : ""}>
-              <Sliders className="h-4 w-4 mr-2" />
-            </div>
-            {!sidebarCollapsed && <span>Control Centre</span>}
-          </Link>
+          <ControlCentreLink />
         </div>
       </>
       
@@ -276,6 +287,22 @@ const Layout = ({
           {profile.first_name || 'User'}
         </span>}
     </div>;
+
+  const ControlCentreLink = () => (
+    <Link 
+      to="/control-centre" 
+      className={cn(
+        "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+        location.pathname === '/control-centre' ? "bg-[#705b9b] text-white font-medium" : "text-white hover:bg-white/10"
+      )}
+      title={sidebarCollapsed ? "Control Centre" : undefined}
+    >
+      <div className={sidebarCollapsed ? "mx-auto" : ""}>
+        <Sliders className="h-4 w-4 mr-2" />
+      </div>
+      {!sidebarCollapsed && <span>Control Centre</span>}
+    </Link>
+  );
 
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>

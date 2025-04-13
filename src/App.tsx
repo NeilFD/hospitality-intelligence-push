@@ -31,6 +31,21 @@ import TeamChat from '@/pages/team/Chat';
 import TeamKnowledge from '@/pages/team/Knowledge';
 import Hospitality from '@/pages/team/Hospitality';
 
+// Import Food and Beverage specific routes
+import FoodInputSettings from '@/pages/food/InputSettings';
+import BeverageInputSettings from '@/pages/beverage/InputSettings';
+import FoodMonthSummary from '@/pages/food/MonthSummary';
+import BeverageMonthSummary from '@/pages/beverage/MonthSummary';
+import FoodBible from '@/pages/food/FoodBible';
+import BeverageBible from '@/pages/beverage/BeverageBible';
+import FoodWeeklyTracker from '@/pages/food/WeeklyTracker';
+import BeverageWeeklyTracker from '@/pages/beverage/WeeklyTracker';
+
+// Import Master components
+import MasterDashboard from '@/pages/master/Dashboard';
+import MasterMonthSummary from '@/pages/master/MonthSummary';
+import MasterWeeklyInput from '@/pages/master/WeeklyInput';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -71,36 +86,40 @@ function App() {
               {/* App Routes - All wrapped with Layout */}
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
               
-              {/* Control Centre Route - Making sure it's rendered correctly */}
+              {/* Control Centre Route */}
               <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
               
-              {/* Food Module Routes */}
+              {/* Food Module Routes - Fix all food routes to point to correct components */}
               <Route path="/food/dashboard" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/food/input-settings" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/food/month/:year/:month" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/food/input-settings" element={<Layout><FoodInputSettings /></Layout>} />
+              <Route path="/food/month/:year/:month" element={<Layout><FoodMonthSummary /></Layout>} />
               <Route path="/food/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
-              <Route path="/food/bible" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/food/bible" element={<Layout><FoodBible /></Layout>} />
+              <Route path="/food/weekly-tracker" element={<Layout><FoodWeeklyTracker /></Layout>} />
               
-              {/* Beverage Module Routes */}
+              {/* Beverage Module Routes - Fix all beverage routes to point to correct components */}
               <Route path="/beverage/dashboard" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/beverage/input-settings" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/beverage/month/:year/:month" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/beverage/input-settings" element={<Layout><BeverageInputSettings /></Layout>} />
+              <Route path="/beverage/month/:year/:month" element={<Layout><BeverageMonthSummary /></Layout>} />
               <Route path="/beverage/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
-              <Route path="/beverage/bible" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/beverage/bible" element={<Layout><BeverageBible /></Layout>} />
+              <Route path="/beverage/weekly-tracker" element={<Layout><BeverageWeeklyTracker /></Layout>} />
               
-              {/* Master Module Routes */}
-              <Route path="/master/dashboard" element={<Layout><Dashboard /></Layout>} />
+              {/* Master Module Routes - Fix daily info routes */}
+              <Route path="/master/dashboard" element={<Layout><MasterDashboard /></Layout>} />
+              <Route path="/master/month-summary" element={<Layout><MasterMonthSummary /></Layout>} />
+              <Route path="/master/weekly-input" element={<Layout><MasterWeeklyInput /></Layout>} />
               
-              {/* P&L Module Routes - Ensure we're using the correct component */}
+              {/* P&L Module Routes */}
               <Route path="/pl/dashboard" element={<Layout><PLDashboard /></Layout>} />
               
               {/* Wages Module Routes */}
               <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
               
-              {/* Performance Module Routes - Fix to use proper component */}
+              {/* Performance Module Routes */}
               <Route path="/performance/dashboard" element={<Layout><PerformanceDashboard /></Layout>} />
               
-              {/* Team Module Routes - Fix to use proper components */}
+              {/* Team Module Routes */}
               <Route path="/team/dashboard" element={<Layout><TeamDashboard /></Layout>} />
               <Route path="/team/noticeboard" element={<Layout><TeamNoticeboard /></Layout>} />
               <Route path="/team/chat" element={<Layout><TeamChat /></Layout>} />
