@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { AlertTriangle, Copy, Check } from 'lucide-react';
 
@@ -14,14 +15,20 @@ export function DatabasePanel() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [success, setSuccess] = useState(false);
   const [connectionString, setConnectionString] = useState('');
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   
   const initiateDbDuplication = () => {
-    setShowConfirmation(true);
+    setAlertDialogOpen(true);
   };
   
   const copyConnectionString = () => {
     navigator.clipboard.writeText(connectionString);
     toast.success('Connection string copied to clipboard');
+  };
+  
+  const proceedToConfirmationStep = () => {
+    setAlertDialogOpen(false);
+    setShowConfirmation(true);
   };
   
   const confirmDuplication = async () => {
@@ -155,6 +162,42 @@ export function DatabasePanel() {
           )}
         </div>
       </CardContent>
+
+      <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+        <AlertDialogContent className="max-w-[450px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive font-bold">
+              Duplicate Database Structure?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-lg">
+              Are you absolutely sure you want to proceed with duplicating the database structure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                <p className="font-semibold">This action:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Will create a new database with the current structure</li>
+                  <li>Does not copy any existing data</li>
+                  <li>Cannot be automatically reversed</li>
+                  <li>Requires GOD level access</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-medium">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={proceedToConfirmationStep}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-medium"
+            >
+              Yes, I'm sure
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
