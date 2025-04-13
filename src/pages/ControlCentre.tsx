@@ -50,10 +50,30 @@ export default function ControlCentre() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
-          <TabsTrigger value="permissions" className="bg-purple-700 hover:bg-purple-600 text-slate-50">Permissions</TabsTrigger>
-          <TabsTrigger value="theme" className="text-slate-50 bg-purple-700 hover:bg-purple-600">Brand & Theme</TabsTrigger>
-          <TabsTrigger value="targets" className="text-slate-50 bg-purple-700 hover:bg-purple-600">Business Targets</TabsTrigger>
-          {isGodUser && <TabsTrigger value="database" className="text-slate-50 bg-pink-600 hover:bg-pink-500">Database</TabsTrigger>}
+          <TabsTrigger 
+            value="permissions" 
+            className="bg-purple-700 hover:bg-purple-800 text-slate-50 transition-colors duration-300"
+          >
+            Permissions
+          </TabsTrigger>
+          <TabsTrigger 
+            value="theme" 
+            className="text-slate-50 bg-purple-700 hover:bg-purple-800 transition-colors duration-300"
+          >
+            Brand & Theme
+          </TabsTrigger>
+          <TabsTrigger 
+            value="targets" 
+            className="text-slate-50 bg-purple-700 hover:bg-purple-800 transition-colors duration-300"
+          >
+            Business Targets
+          </TabsTrigger>
+          {isGodUser && <TabsTrigger 
+            value="database" 
+            className="text-slate-50 bg-pink-600 hover:bg-pink-700 transition-colors duration-300"
+          >
+            Database
+          </TabsTrigger>}
         </TabsList>
 
         <TabsContent value="permissions" className="space-y-6">
