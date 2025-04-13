@@ -44,7 +44,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "�����", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -217,8 +217,8 @@ const Message: React.FC<MessageProps> = ({
   }, []);
   
   const messageBubbleClass = isOwnMessage 
-    ? `${themeColors.ownMessageBg} text-white rounded-tl-lg rounded-tr-lg rounded-bl-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10` 
-    : `${themeColors.otherMessageBg} ${themeColors.otherMessageBorder} text-gray-800 rounded-tl-lg rounded-tr-lg rounded-br-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10`;
+    ? `${themeColors.ownMessageBg} text-white rounded-3xl rounded-tr-sm p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10` 
+    : `${themeColors.otherMessageBg} ${themeColors.otherMessageBorder} text-gray-800 rounded-3xl rounded-tl-sm p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10`;
   
   const getInitials = () => {
     if (!author) return '?';
