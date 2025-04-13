@@ -123,8 +123,18 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6 w-full grid grid-cols-2">
-              <TabsTrigger value="presets">Theme Presets</TabsTrigger>
-              <TabsTrigger value="custom">Custom Theme</TabsTrigger>
+              <TabsTrigger 
+                value="presets" 
+                className="bg-[#f0f2f5] text-[#4a5568] hover:bg-[#e2e8f0] transition-colors duration-200 font-medium data-[state=active]:bg-[#8e44ad] data-[state=active]:text-white data-[state=active]:shadow-sm"
+              >
+                Theme Presets
+              </TabsTrigger>
+              <TabsTrigger 
+                value="custom" 
+                className="bg-[#f0f2f5] text-[#4a5568] hover:bg-[#e2e8f0] transition-colors duration-200 font-medium data-[state=active]:bg-[#8e44ad] data-[state=active]:text-white data-[state=active]:shadow-sm"
+              >
+                Custom Theme
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="presets" className="space-y-6">
@@ -134,15 +144,15 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
                     key={theme.id}
                     className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
                       selectedPreset === theme.id 
-                        ? 'ring-2 ring-offset-2 ring-primary' 
-                        : 'hover:border-primary/50'
+                        ? 'ring-2 ring-offset-2 ring-[#8e44ad] bg-purple-50' 
+                        : 'hover:border-[#8e44ad]/50 hover:bg-purple-50/30'
                     }`}
                     onClick={() => handlePresetChange(theme.id)}
                   >
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="font-medium">{theme.name}</h3>
                       {selectedPreset === theme.id && (
-                        <Check className="h-4 w-4 text-primary" />
+                        <Check className="h-4 w-4 text-[#8e44ad]" />
                       )}
                     </div>
                     <div className="flex gap-2 mb-3">
@@ -337,7 +347,11 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
       </Card>
       
       <div className="flex justify-end">
-        <Button onClick={applyTheme} disabled={saving}>
+        <Button 
+          onClick={applyTheme} 
+          disabled={saving}
+          className="bg-[#8e44ad] hover:bg-[#7d3c98] text-white"
+        >
           {saving ? 'Applying...' : 'Apply Theme Changes'}
         </Button>
       </div>

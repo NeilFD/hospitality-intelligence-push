@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,25 +53,25 @@ export default function ControlCentre() {
         <TabsList className="mb-6">
           <TabsTrigger 
             value="permissions" 
-            className="bg-purple-700 hover:bg-purple-800 text-slate-50 transition-colors duration-300"
+            className="bg-[#8e44ad] hover:bg-[#7d3c98] text-white font-medium transition-colors duration-200 data-[state=active]:bg-[#6c3483] data-[state=active]:shadow-md"
           >
             Permissions
           </TabsTrigger>
           <TabsTrigger 
             value="theme" 
-            className="text-slate-50 bg-purple-700 hover:bg-purple-800 transition-colors duration-300"
+            className="bg-[#8e44ad] hover:bg-[#7d3c98] text-white font-medium transition-colors duration-200 data-[state=active]:bg-[#6c3483] data-[state=active]:shadow-md"
           >
             Brand & Theme
           </TabsTrigger>
           <TabsTrigger 
             value="targets" 
-            className="text-slate-50 bg-purple-700 hover:bg-purple-800 transition-colors duration-300"
+            className="bg-[#8e44ad] hover:bg-[#7d3c98] text-white font-medium transition-colors duration-200 data-[state=active]:bg-[#6c3483] data-[state=active]:shadow-md"
           >
             Business Targets
           </TabsTrigger>
           {isGodUser && <TabsTrigger 
             value="database" 
-            className="text-slate-50 bg-pink-600 hover:bg-pink-700 transition-colors duration-300"
+            className="bg-[#e84393] hover:bg-[#d63384] text-white font-medium transition-colors duration-200 data-[state=active]:bg-[#c2185b] data-[state=active]:shadow-md"
           >
             Database
           </TabsTrigger>}
