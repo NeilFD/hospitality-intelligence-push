@@ -710,15 +710,39 @@ export function ThemeSettingsPanel({
               </div>
               
               <div className="grid gap-4">
-                <Label htmlFor="customFont">Custom Font</Label>
-                <Select onValueChange={handleSelectChange} defaultValue={activeTheme.customFont || undefined}>
-                  <SelectTrigger className="w-full">
+                <Label htmlFor="customFont" className="flex items-center gap-2">
+                  <Sliders className="h-5 w-5 text-muted-foreground" />
+                  Custom Font
+                </Label>
+                <Select 
+                  onValueChange={handleSelectChange} 
+                  defaultValue={activeTheme.customFont || undefined}
+                >
+                  <SelectTrigger 
+                    className={`
+                      w-full 
+                      py-3 
+                      px-4 
+                      rounded-lg 
+                      text-lg 
+                      font-semibold 
+                      shadow-sm 
+                      transition-all 
+                      duration-300 
+                      border-2 
+                      focus:outline-none 
+                      focus:ring-2 
+                      ${getThemeNameInputClasses()}
+                    `}
+                  >
                     <SelectValue placeholder="Select a font" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableFonts.map(font => <SelectItem key={font.value} value={font.value}>
+                    {availableFonts.map(font => (
+                      <SelectItem key={font.value} value={font.value}>
                         {font.name}
-                      </SelectItem>)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
