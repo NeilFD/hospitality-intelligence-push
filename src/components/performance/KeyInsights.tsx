@@ -250,13 +250,14 @@ export default function KeyInsights() {
     combinedGP: { color: "#9333EA", label: "Combined GP %" }
   };
   
-  if (isLoading) {
-    return (
-      <div className="space-y-5">
-        <h2 className="text-2xl font-semibold text-tavern-blue flex items-center gap-2">
-          <TrendingUp className="h-6 w-6" />
-          Key Insights
-        </h2>
+  return (
+    <div className="space-y-5">
+      <h2 className="text-2xl font-semibold text-tavern-blue flex items-center gap-2">
+        <TrendingUp className="h-6 w-6" />
+        Key Insights
+      </h2>
+      
+      {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3].map(i => (
             <Card key={i} className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
@@ -269,100 +270,91 @@ export default function KeyInsights() {
             </Card>
           ))}
         </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="space-y-5">
-      <h2 className="text-2xl font-semibold text-tavern-blue flex items-center gap-2">
-        <TrendingUp className="h-6 w-6" />
-        Key Insights
-      </h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
-          <CardHeader className="pb-2 border-b border-gray-100">
-            <CardTitle className="text-lg font-medium flex items-center justify-between">
-              <span>Monthly Revenue</span>
-              {combinedRevenue > 0 && <TrendingUp className="h-5 w-5 text-green-500" />}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold text-tavern-blue">{formatCurrency(combinedRevenue)}</div>
-            <div className="mt-2 space-y-1">
-              <div className="text-muted-foreground flex items-center gap-1">
-                <span className="text-gray-500">Total Cost:</span>
-                <span className="font-medium">{formatCurrency(combinedCost)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <div className="flex flex-col">
-                  <span className="text-gray-500">Food:</span> 
-                  <span className="font-medium">{formatCurrency(foodSummary?.revenue || 0)}</span>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="pb-2 border-b border-gray-100">
+              <CardTitle className="text-lg font-medium flex items-center justify-between">
+                <span>Monthly Revenue</span>
+                {combinedRevenue > 0 && <TrendingUp className="h-5 w-5 text-green-500" />}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="text-3xl font-bold text-tavern-blue">{formatCurrency(combinedRevenue)}</div>
+              <div className="mt-2 space-y-1">
+                <div className="text-muted-foreground flex items-center gap-1">
+                  <span className="text-gray-500">Total Cost:</span>
+                  <span className="font-medium">{formatCurrency(combinedCost)}</span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-gray-500">Beverage:</span> 
-                  <span className="font-medium">{formatCurrency(bevSummary?.revenue || 0)}</span>
+                <div className="flex justify-between text-sm">
+                  <div className="flex flex-col">
+                    <span className="text-gray-500">Food:</span> 
+                    <span className="font-medium">{formatCurrency(foodSummary?.revenue || 0)}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-500">Beverage:</span> 
+                    <span className="font-medium">{formatCurrency(bevSummary?.revenue || 0)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
-          <CardHeader className="pb-2 border-b border-gray-100">
-            <CardTitle className="text-lg font-medium flex items-center justify-between">
-              <span>Gross Profit</span>
-              {gpTrend >= 0 ? 
-                <TrendingUp className="h-5 w-5 text-green-500" /> : 
-                <TrendingDown className="h-5 w-5 text-red-500" />
-              }
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-tavern-blue mb-2">{formatPercentage(combinedGP)}</div>
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <div className="flex flex-col">
-                <span className="text-gray-500 text-sm">Food GP:</span>
-                <span className="font-medium">{formatPercentage(foodSummary?.gpPercentage || 0)}</span>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="pb-2 border-b border-gray-100">
+              <CardTitle className="text-lg font-medium flex items-center justify-between">
+                <span>Gross Profit</span>
+                {gpTrend >= 0 ? 
+                  <TrendingUp className="h-5 w-5 text-green-500" /> : 
+                  <TrendingDown className="h-5 w-5 text-red-500" />
+                }
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-tavern-blue mb-2">{formatPercentage(combinedGP)}</div>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="flex flex-col">
+                  <span className="text-gray-500 text-sm">Food GP:</span>
+                  <span className="font-medium">{formatPercentage(foodSummary?.gpPercentage || 0)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-500 text-sm">Beverage GP:</span>
+                  <span className="font-medium">{formatPercentage(bevSummary?.gpPercentage || 0)}</span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-gray-500 text-sm">Beverage GP:</span>
-                <span className="font-medium">{formatPercentage(bevSummary?.gpPercentage || 0)}</span>
+              <div className={`flex items-center mt-2 text-xs ${gpTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {gpTrend >= 0 ? 
+                  <ArrowUp className="h-3 w-3 mr-1" /> : 
+                  <ArrowDown className="h-3 w-3 mr-1" />
+                }
+                {isNaN(gpTrendPercentage) || !isFinite(gpTrendPercentage) ? (
+                  <span className="font-medium">No previous data</span>
+                ) : (
+                  <span className="font-medium">{Math.abs(gpTrendPercentage).toFixed(1)}% vs. last month</span>
+                )}
               </div>
-            </div>
-            <div className={`flex items-center mt-2 text-xs ${gpTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {gpTrend >= 0 ? 
-                <ArrowUp className="h-3 w-3 mr-1" /> : 
-                <ArrowDown className="h-3 w-3 mr-1" />
-              }
-              {isNaN(gpTrendPercentage) || !isFinite(gpTrendPercentage) ? (
-                <span className="font-medium">No previous data</span>
-              ) : (
-                <span className="font-medium">{Math.abs(gpTrendPercentage).toFixed(1)}% vs. last month</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50 md:col-span-1 row-span-1">
-          <CardHeader className="pb-2 border-b border-gray-100">
-            <CardTitle className="text-lg font-medium">Current Performance</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 flex flex-col justify-center h-[calc(100%_-_3.5rem)]">
-            <div className={`text-lg font-bold ${combinedGP >= 0.7 ? 'text-green-500' : combinedGP >= 0.65 ? 'text-amber-500' : 'text-red-500'}`}>
-              {combinedGP >= 0.7 ? 'Excellent' : combinedGP >= 0.65 ? 'Good' : 'Needs Improvement'}
-            </div>
-            <p className="text-gray-500 text-sm mt-1">
-              {combinedGP >= 0.7 ? 
-                'Your business is performing above target.' : 
-                combinedGP >= 0.65 ? 
-                'Your business is meeting expected levels.' : 
-                'Your business is below target levels.'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50 md:col-span-1 row-span-1">
+            <CardHeader className="pb-2 border-b border-gray-100">
+              <CardTitle className="text-lg font-medium">Current Performance</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 flex flex-col justify-center h-[calc(100%_-_3.5rem)]">
+              <div className={`text-lg font-bold ${combinedGP >= 0.7 ? 'text-green-500' : combinedGP >= 0.65 ? 'text-amber-500' : 'text-red-500'}`}>
+                {combinedGP >= 0.7 ? 'Excellent' : combinedGP >= 0.65 ? 'Good' : 'Needs Improvement'}
+              </div>
+              <p className="text-gray-500 text-sm mt-1">
+                {combinedGP >= 0.7 ? 
+                  'Your business is performing above target.' : 
+                  combinedGP >= 0.65 ? 
+                  'Your business is meeting expected levels.' : 
+                  'Your business is below target levels.'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="shadow-lg rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50">

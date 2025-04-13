@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth, syncTrackerPurchasesToPurchases, syncTrackerCreditNotesToCreditNotes, fetchTrackerPurchases, fetchPurchases, fetchDailyRecords } from '@/services/kitchen-service';
+
 interface ExtendedDailyRecord {
   date: string; // YYYY-MM-DD
   dayOfWeek: string;
@@ -22,6 +23,7 @@ interface ExtendedDailyRecord {
   creditNotes?: number[];
   staffFoodAllowance?: number;
 }
+
 interface BevStore {
   getState: () => {
     annualRecord: {
@@ -35,20 +37,24 @@ interface BevStore {
     };
   };
 }
+
 declare global {
   interface Window {
     bevStore?: BevStore;
   }
 }
+
 interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
   conversationId?: string;
 }
+
 interface ChatInterfaceProps {
   className?: string;
 }
+
 const serializeMessages = (messages: Message[]): string => {
   return JSON.stringify(messages, (key, value) => {
     if (key === 'timestamp' && value instanceof Date) {
@@ -60,6 +66,7 @@ const serializeMessages = (messages: Message[]): string => {
     return value;
   });
 };
+
 const deserializeMessages = (serialized: string): Message[] => {
   return JSON.parse(serialized, (key, value) => {
     if (value && typeof value === 'object' && value.__type === 'Date') {
@@ -68,6 +75,7 @@ const deserializeMessages = (serialized: string): Message[] => {
     return value;
   });
 };
+
 const ensureDate = (dateInput: any): Date => {
   if (dateInput instanceof Date) {
     return dateInput;
@@ -78,6 +86,7 @@ const ensureDate = (dateInput: any): Date => {
     return new Date();
   }
 };
+
 const extractAIResponse = (response: any): string => {
   console.log('Raw webhook response:', response);
   if (Array.isArray(response?.data) && response.data.length > 0 && response.data[0]?.response) {
@@ -110,6 +119,7 @@ const extractAIResponse = (response: any): string => {
   }
   return responseText;
 };
+
 export default function ChatInterface({
   className
 }: ChatInterfaceProps) {
@@ -150,6 +160,7 @@ export default function ChatInterface({
     queryFn: () => fetchTrackerDataByMonth(currentYear, currentMonth, 'beverage'),
     staleTime: 10 * 60 * 1000 // 10 minutes
   });
+
   useEffect(() => {
     const storedMessages = localStorage.getItem('chatMessages');
     if (storedMessages) {
@@ -161,14 +172,17 @@ export default function ChatInterface({
       }
     }
   }, []);
+
   useEffect(() => {
     if (messages.length > 1 || messages.length === 1 && messages[0].isUser) {
       localStorage.setItem('chatMessages', serializeMessages(messages));
     }
   }, [messages]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
@@ -177,6 +191,7 @@ export default function ChatInterface({
       }
     }
   };
+
   const getCompleteAnnualData = () => {
     let annualData = {
       revenue: 0,
@@ -203,6 +218,7 @@ export default function ChatInterface({
     }
     return annualData;
   };
+
   const getCompleteMonthData = (year: number, month: number) => {
     let monthData = {
       revenue: 0,
@@ -256,6 +272,7 @@ export default function ChatInterface({
     }
     return monthData;
   };
+
   const getCompleteBevData = (year: number, month: number) => {
     let annualData = {
       revenue: 0,
@@ -359,6 +376,7 @@ export default function ChatInterface({
       monthToDate: monthData
     };
   };
+
   const preparePayload = async () => {
     let monthlyWages = [];
     let weekdayTotals = {};
@@ -368,6 +386,7 @@ export default function ChatInterface({
     } catch (error) {
       console.error("Error fetching wages data:", error);
     }
+    
     setIsSyncing(true);
     try {
       await syncTrackerPurchasesToPurchases(currentYear, currentMonth, 'food');
@@ -380,9 +399,11 @@ export default function ChatInterface({
     } finally {
       setIsSyncing(false);
     }
+    
     const foodAnnualData = getCompleteAnnualData();
     const foodMonthData = getCompleteMonthData(currentYear, currentMonth);
     const bevData = getCompleteBevData(currentYear, currentMonth);
+    
     const deepCopyFoodData = annualRecord ? JSON.parse(JSON.stringify(annualRecord)) : null;
     if (foodTrackerData && foodTrackerData.length > 0 && deepCopyFoodData && deepCopyFoodData.months) {
       console.log("Updating deepCopyFoodData with tracker data");
@@ -407,6 +428,7 @@ export default function ChatInterface({
         }
       }
     }
+    
     let deepCopyBevData = null;
     try {
       if (window.bevStore) {
@@ -441,6 +463,7 @@ export default function ChatInterface({
         error: "Failed to copy beverage data"
       };
     }
+
     let foodPurchases = [];
     let bevPurchases = [];
     try {
@@ -455,6 +478,7 @@ export default function ChatInterface({
           }
         }
       }
+      
       const bevTrackerIds = bevTrackerData?.map(day => day.id) || [];
       if (bevTrackerIds.length > 0) {
         for (const id of bevTrackerIds) {
@@ -466,11 +490,13 @@ export default function ChatInterface({
           }
         }
       }
+      
       if (foodPurchases.length === 0 && foodTrackerData && foodTrackerData.length > 0) {
         console.log("No purchases found through tracker, trying direct purchase table query...");
         const {
           data: foodDailyRecords
         } = await supabase.from('daily_records').select('id, date').eq('module_type', 'food').gte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`).lte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-31`);
+        
         if (foodDailyRecords && foodDailyRecords.length > 0) {
           console.log(`Found ${foodDailyRecords.length} daily records for food`);
           for (const dailyRecord of foodDailyRecords) {
@@ -490,11 +516,13 @@ export default function ChatInterface({
           }
         }
       }
+      
       if (bevPurchases.length === 0 && bevTrackerData && bevTrackerData.length > 0) {
         console.log("No purchases found through tracker for beverage, trying direct purchase table query...");
         const {
           data: bevDailyRecords
         } = await supabase.from('daily_records').select('id, date').eq('module_type', 'beverage').gte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`).lte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-31`);
+        
         if (bevDailyRecords && bevDailyRecords.length > 0) {
           console.log(`Found ${bevDailyRecords.length} daily records for beverage`);
           for (const dailyRecord of bevDailyRecords) {
@@ -514,10 +542,12 @@ export default function ChatInterface({
           }
         }
       }
+      
       console.log(`Final count - Food purchases: ${foodPurchases.length}, Bev purchases: ${bevPurchases.length}`);
     } catch (error) {
       console.error("Error fetching detailed purchase data:", error);
     }
+    
     const foodDailyPurchases = {};
     foodPurchases.forEach(purchase => {
       const date = purchase.date || "unknown";
@@ -526,6 +556,7 @@ export default function ChatInterface({
       }
       foodDailyPurchases[date].push(purchase);
     });
+    
     const bevDailyPurchases = {};
     bevPurchases.forEach(purchase => {
       const date = purchase.date || "unknown";
@@ -534,33 +565,87 @@ export default function ChatInterface({
       }
       bevDailyPurchases[date].push(purchase);
     });
-    console.log("*** WEBHOOK PAYLOAD DEBUG ***");
-    console.log("Food Annual Data:", foodAnnualData);
-    console.log("Food Month Data:", foodMonthData);
-    console.log("Beverage Data:", bevData);
-    console.log("Tracker Data Summary:", {
-      food: {
-        records: foodTrackerData || [],
-        purchases: foodPurchases,
-        dailyPurchases: foodDailyPurchases
-      },
-      beverage: {
-        records: bevTrackerData || [],
-        purchases: bevPurchases,
-        dailyPurchases: bevDailyPurchases
+
+    for (const day of trackerData || []) {
+      if (day.date) {
+        totalRevenue += Number(day.revenue || 0);
+        totalStaffAllowance += Number(day.staff_food_allowance || 0);
       }
-    });
-    console.log("Raw Food Data:", deepCopyFoodData);
-    console.log("Raw Beverage Data:", deepCopyBevData);
-    console.log("Wages Data:", {
-      monthlyWages,
-      weekdayTotals
-    });
-    console.log("Food Purchases:", foodPurchases);
-    console.log("Food Daily Purchases:", foodDailyPurchases);
-    console.log("Beverage Purchases:", bevPurchases);
-    console.log("Beverage Daily Purchases:", bevDailyPurchases);
-    console.log("*** END WEBHOOK PAYLOAD DEBUG ***");
+    }
+
+    if (foodTrackerData && foodTrackerData.length > 0) {
+      const trackerRevenue = foodTrackerData.reduce((sum, day) => {
+        return sum + Number(day.revenue || 0);
+      }, 0);
+      let totalCost = 0;
+      if (annualRecord && annualRecord.months) {
+        const thisMonth = annualRecord.months.find(m => m.year === currentYear && m.month === currentMonth);
+        if (thisMonth && thisMonth.weeks) {
+          thisMonth.weeks.forEach(week => {
+            if (week.days) {
+              week.days.forEach(day => {
+                const dayPurchases = day.purchases ? Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                const creditNotes = day.creditNotes ? day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
+                totalCost += dayPurchases - creditNotes + (day.staffFoodAllowance || 0);
+              });
+            }
+          });
+        }
+      }
+      console.log("Food tracker month total revenue:", trackerRevenue);
+      console.log("Food cost (from store):", totalCost);
+      monthData.revenue = trackerRevenue;
+      monthData.cost = totalCost;
+      monthData.gpPercentage = calculateGP(trackerRevenue, totalCost);
+      return monthData;
+    }
+
+    if (window.bevStore) {
+      try {
+        const bevData = window.bevStore.getState().annualRecord;
+        if (bevData && bevData.months) {
+          bevData.months.forEach(m => {
+            if (m.weeks) {
+              m.weeks.forEach(week => {
+                if (week.days) {
+                  week.days.forEach(day => {
+                    if (day.revenue !== undefined) {
+                      annualData.revenue += Number(day.revenue);
+                    }
+                    if (day.purchases) {
+                      const dayPurchases = Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0);
+                      annualData.cost += dayPurchases;
+                    }
+                  });
+                }
+              });
+            }
+          });
+          annualData.gpPercentage = calculateGP(annualData.revenue, annualData.cost);
+          const bevMonth = bevData.months.find(m => m.year === currentYear && m.month === currentMonth);
+          if (bevMonth && bevMonth.weeks) {
+            bevMonth.weeks.forEach(week => {
+              if (week.days) {
+                week.days.forEach(day => {
+                  if (day.revenue !== undefined) {
+                    monthData.revenue += Number(day.revenue);
+                  }
+                  const dayPurchases = day.purchases ? Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
+                  const creditNotes = day.creditNotes ? day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
+                  const staffFoodAmount = day.staffFoodAllowance || 0;
+                  monthData.cost += dayPurchases - creditNotes + staffFoodAmount;
+                });
+              }
+            });
+            monthData.gpPercentage = calculateGP(monthData.revenue, monthData.cost);
+          }
+        }
+      } catch (error) {
+        console.error("Error extracting data from bevStore:", error);
+      }
+    } else {
+      console.warn("Beverage store not found in window object");
+    }
     return {
       query: input,
       timestamp: new Date().toISOString(),
@@ -625,6 +710,7 @@ export default function ChatInterface({
       }))
     };
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -666,17 +752,20 @@ export default function ChatInterface({
       setIsLoading(false);
     }
   };
+
   const shareViaEmail = (message: string) => {
     const subject = encodeURIComponent("Insights from Cleo - Tavern Kitchen Assistant");
     const body = encodeURIComponent(message);
     window.open(`mailto:?subject=${subject}&body=${body}`);
     toast.success("Email client opened");
   };
+
   const shareViaWhatsApp = (message: string) => {
     const text = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${text}`);
     toast.success("WhatsApp sharing initiated");
   };
+
   return <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
       <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
         <div className="p-2 bg-tavern-blue/20 rounded-full backdrop-blur-sm animate-float">

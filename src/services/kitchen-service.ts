@@ -312,7 +312,7 @@ export const upsertTrackerCreditNote = async (creditNoteData: any) => {
   }
 };
 
-export const getTrackerSummaryByMonth = async (year: number, month: number, moduleType: ModuleType = 'food') => {
+export const getTrackerSummaryByMonth = async (year: number, month: number, moduleType: ModuleType = 'food'): Promise<TrackerSummary> => {
   try {
     const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
     
@@ -343,10 +343,11 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
       month,
       moduleType,
       revenue: totalRevenue,
+      cost: totalCost,
       purchases: totalPurchases,
       creditNotes: totalCreditNotes,
       staffAllowance: totalStaffAllowance,
-      totalCost,
+      totalCost: totalCost,
       gpAmount,
       gpPercentage
     };
