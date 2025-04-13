@@ -20,14 +20,18 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
   };
 
   return (
-    <img 
-      src="/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png" 
-      alt="Hi" 
+    <div 
       className={cn(
         sizeClasses[size], 
-        'object-contain', 
+        'flex items-center justify-center relative animate-float', 
         className
       )}
-    />
+    >
+      <img 
+        src="/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png" 
+        alt="Hi" 
+        className="w-3/4 h-3/4 object-contain absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+      />
+    </div>
   );
 };
