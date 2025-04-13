@@ -104,15 +104,15 @@ export default function Profile() {
       const formattedBirthDate = birthDate ? format(birthDate, 'MM-dd') : null;
       
       await updateProfile({
-        firstName,
-        lastName,
+        first_name: firstName,
+        last_name: lastName,
         role,
-        avatarUrl,
-        jobTitle,
-        birthDate: formattedBirthDate,
-        favouriteDish,
-        favouriteDrink,
-        aboutMe
+        avatar_url: avatarUrl,
+        job_title: jobTitle,
+        birth_date: formattedBirthDate,
+        favourite_dish: favouriteDish,
+        favourite_drink: favouriteDrink,
+        about_me: aboutMe
       });
       
       toast.success("Profile updated successfully.");

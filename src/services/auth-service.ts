@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 
@@ -15,6 +14,7 @@ export interface Profile {
   favourite_drink?: string;
   about_me?: string;
   role?: AuthServiceRole;
+  birth_date?: string;
 }
 
 export interface UpdateProfileData {
@@ -26,6 +26,7 @@ export interface UpdateProfileData {
   favourite_drink?: string;
   about_me?: string;
   role?: AuthServiceRole;
+  birth_date?: string;
 }
 
 interface AuthState {

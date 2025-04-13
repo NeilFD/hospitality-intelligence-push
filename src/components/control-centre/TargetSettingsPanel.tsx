@@ -148,7 +148,7 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
             </p>
             
             <div className="flex items-center gap-3">
-              <Button component="label" htmlFor="budgetFile" variant="outline" disabled={uploading}>
+              <Button variant="outline" disabled={uploading}>
                 <FileUp className="mr-2 h-4 w-4" />
                 {uploading ? 'Uploading...' : 'Select Budget File'}
                 <input 
