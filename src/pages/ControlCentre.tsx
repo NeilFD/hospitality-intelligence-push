@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +18,6 @@ export default function ControlCentre() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   
-  // Get the HTML element with class names to detect current theme
   const htmlElement = document.documentElement;
   const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
   const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
@@ -27,26 +25,24 @@ export default function ControlCentre() {
   const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
   const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
   
-  // Determine button background color based on theme
-  const getButtonBgColor = () => {
-    if (hasForestGreenTheme) return "bg-[#1b5e20] hover:bg-[#2e7d32]";
-    if (hasOceanBlueTheme) return "bg-[#1565c0] hover:bg-[#1976d2]";
-    if (hasSunsetOrangeTheme) return "bg-[#e65100] hover:bg-[#ef6c00]";
-    if (hasBerryPurpleTheme) return "bg-[#6a1b9a] hover:bg-[#8e24aa]";
-    if (hasDarkModeTheme) return "bg-[#333333] hover:bg-[#444444]";
-    return "bg-[#8e44ad] hover:bg-[#7d3c98]"; // Default purple
+  const getButtonColor = () => {
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20]";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0]";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100]";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a]";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333]";
+    return "bg-[#6c3483] text-white hover:bg-[#5b2c70]";
   };
 
-  // Determine active tab highlight color based on theme
   const getActiveTabColor = () => {
-    if (hasForestGreenTheme) return "data-[state=active]:bg-[#2e7d32]";
-    if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1976d2]";
-    if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#ef6c00]";
-    if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#8e24aa]";
-    if (hasDarkModeTheme) return "data-[state=active]:bg-[#444444]";
-    return "data-[state=active]:bg-[#6c3483]"; // Default purple
+    if (hasForestGreenTheme) return "data-[state=active]:bg-[#1b5e20]";
+    if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1565c0]";
+    if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#e65100]";
+    if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#6a1b9a]";
+    if (hasDarkModeTheme) return "data-[state=active]:bg-[#333333]";
+    return "data-[state=active]:bg-[#5b2c70]";
   };
-  
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,12 +60,10 @@ export default function ControlCentre() {
     fetchData();
   }, []);
 
-  // Only allow GOD and Super User access
   if (profile?.role !== 'GOD' && profile?.role !== 'Super User') {
     return <Navigate to="/" replace />;
   }
 
-  // Only GOD users can access the database panel
   const isGodUser = profile?.role === 'GOD';
   
   return <div className="container py-6 max-w-7xl">
@@ -84,25 +78,25 @@ export default function ControlCentre() {
         <TabsList className="mb-6">
           <TabsTrigger 
             value="permissions" 
-            className={`${getButtonBgColor()} text-white font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
+            className={`${getButtonColor()} font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
           >
             Permissions
           </TabsTrigger>
           <TabsTrigger 
             value="theme" 
-            className={`${getButtonBgColor()} text-white font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
+            className={`${getButtonColor()} font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
           >
             Brand & Theme
           </TabsTrigger>
           <TabsTrigger 
             value="targets" 
-            className={`${getButtonBgColor()} text-white font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
+            className={`${getButtonColor()} font-medium transition-colors duration-200 ${getActiveTabColor()} data-[state=active]:shadow-md`}
           >
             Business Targets
           </TabsTrigger>
           {isGodUser && <TabsTrigger 
             value="database" 
-            className="bg-[#e84393] hover:bg-[#d63384] text-white font-medium transition-colors duration-200 data-[state=active]:bg-[#c2185b] data-[state=active]:shadow-md"
+            className="bg-[#d63384] text-white hover:bg-[#c2185b] font-medium transition-colors duration-200 data-[state=active]:bg-[#a61d6c] data-[state=active]:shadow-md"
           >
             Database
           </TabsTrigger>}
