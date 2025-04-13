@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +26,6 @@ export default function ControlCentre() {
     hasHiPurpleTheme: false
   });
   
-  // Check for theme changes when the component mounts and when theme changes
   useEffect(() => {
     const checkThemeClasses = () => {
       const htmlElement = document.documentElement;
@@ -43,7 +41,6 @@ export default function ControlCentre() {
     
     checkThemeClasses();
     
-    // Listen for theme changes
     const handleThemeChange = () => {
       checkThemeClasses();
     };
@@ -92,15 +89,7 @@ export default function ControlCentre() {
   };
   
   const getDatabaseTabStyle = () => {
-    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
-    
-    if (hasForestGreenTheme) return "bg-[#4c8c4a] text-white hover:bg-[#388e3c] data-[state=active]:bg-[#388e3c] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasOceanBlueTheme) return "bg-[#42a5f5] text-white hover:bg-[#1e88e5] data-[state=active]:bg-[#1e88e5] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasSunsetOrangeTheme) return "bg-[#ff9800] text-white hover:bg-[#f57c00] data-[state=active]:bg-[#f57c00] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasBerryPurpleTheme) return "bg-[#ab47bc] text-white hover:bg-[#9c27b0] data-[state=active]:bg-[#9c27b0] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasDarkModeTheme) return "bg-[#757575] text-white hover:bg-[#616161] data-[state=active]:bg-[#616161] data-[state=active]:text-white data-[state=active]:shadow-md";
-    if (hasHiPurpleTheme) return "bg-[#b39ddb] text-white hover:bg-[#9575cd] data-[state=active]:bg-[#9575cd] data-[state=active]:text-white data-[state=active]:shadow-md";
-    return "bg-[#d63384] text-white hover:bg-[#c2185b] font-medium transition-colors duration-200 data-[state=active]:bg-[#a61d6c] data-[state=active]:text-white data-[state=active]:shadow-md";
+    return "bg-rose-500 text-white hover:bg-rose-600 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md ml-auto";
   };
 
   useEffect(() => {
@@ -156,7 +145,7 @@ export default function ControlCentre() {
           </TabsTrigger>
           {isGodUser && <TabsTrigger 
             value="database" 
-            className={getDatabaseTabStyle()}
+            className={`font-medium transition-colors duration-200 ${getDatabaseTabStyle()}`}
           >
             Database
           </TabsTrigger>}
