@@ -277,6 +277,8 @@ const Layout = ({
         </span>}
     </div>;
     
+  const renderProfileAndNotifications = isAuthenticated && profile;
+
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -293,7 +295,7 @@ const Layout = ({
             <div className="absolute top-2 left-0 right-0 flex justify-between px-4">
               <div className="w-8"></div>
               <TavernLogo size="md" />
-              {isAuthenticated && <div className="flex items-center gap-2">
+              {renderProfileAndNotifications && <div className="flex items-center gap-2">
                   <NotificationsDropdown />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -340,7 +342,7 @@ const Layout = ({
               </Button>
               <TavernLogo size="lg" />
               
-              {isAuthenticated && <div className="flex items-center gap-3">
+              {renderProfileAndNotifications && <div className="flex items-center gap-3">
                   <NotificationsDropdown />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
