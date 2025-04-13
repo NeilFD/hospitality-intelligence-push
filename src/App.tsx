@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -85,7 +84,7 @@ function App() {
               <Route path="/beverage/dashboard" element={<Layout><Dashboard /></Layout>} />
               <Route path="/beverage/input-settings" element={<Layout><Dashboard /></Layout>} />
               <Route path="/beverage/month/:year/:month" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/beverage/annual-summary" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/beverage/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
               <Route path="/beverage/bible" element={<Layout><Dashboard /></Layout>} />
               
               {/* Master Module Routes */}
