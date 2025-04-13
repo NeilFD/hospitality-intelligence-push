@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PermissionMatrix } from '@/types/control-centre-types';
 import { toast } from 'sonner';
+import { updatePermissionMatrix } from '@/services/control-centre-service';
 
 interface PermissionMatrixPanelProps {
   permissionMatrix: PermissionMatrix[];
@@ -72,13 +73,14 @@ export function PermissionMatrixPanel({ permissionMatrix }: PermissionMatrixPane
     );
   };
 
-  // Save changes
+  // Save changes to the database
   const saveChanges = async () => {
     try {
       setSaving(true);
-      // Here we would send the updated matrix to the server
-      // For now, we'll just simulate a delay and show a success message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update permission matrix in the database
+      await updatePermissionMatrix(matrix);
+      
       toast.success('Permission matrix saved successfully');
     } catch (error) {
       toast.error('Failed to save permission matrix');

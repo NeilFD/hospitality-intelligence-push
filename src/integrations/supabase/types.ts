@@ -458,6 +458,182 @@ export type Database = {
         }
         Relationships: []
       }
+      permission_access: {
+        Row: {
+          created_at: string
+          has_access: boolean
+          id: string
+          module_id: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          has_access?: boolean
+          id?: string
+          module_id: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          has_access?: boolean
+          id?: string
+          module_id?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_access_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "permission_modules"
+            referencedColumns: ["module_id"]
+          },
+          {
+            foreignKeyName: "permission_access_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "permission_roles"
+            referencedColumns: ["role_id"]
+          },
+        ]
+      }
+      permission_modules: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          module_id: string
+          module_name: string
+          module_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          module_id: string
+          module_name: string
+          module_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          module_id?: string
+          module_name?: string
+          module_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      permission_page_access: {
+        Row: {
+          created_at: string
+          has_access: boolean
+          id: string
+          page_id: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          has_access?: boolean
+          id?: string
+          page_id: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          has_access?: boolean
+          id?: string
+          page_id?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_page_access_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "permission_pages"
+            referencedColumns: ["page_id"]
+          },
+          {
+            foreignKeyName: "permission_page_access_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "permission_roles"
+            referencedColumns: ["role_id"]
+          },
+        ]
+      }
+      permission_pages: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          module_id: string
+          page_id: string
+          page_name: string
+          page_url: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          module_id: string
+          page_id: string
+          page_name: string
+          page_url: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          module_id?: string
+          page_id?: string
+          page_name?: string
+          page_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_pages_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "permission_modules"
+            referencedColumns: ["module_id"]
+          },
+        ]
+      }
+      permission_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about_me: string | null
@@ -1228,6 +1404,10 @@ export type Database = {
           total_triggers: number
         }[]
       }
+      get_permission_matrix: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
@@ -1321,6 +1501,10 @@ export type Database = {
       }
       sync_master_records_to_vectors: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_permission_matrix: {
+        Args: { matrix: Json }
         Returns: undefined
       }
       vector_avg: {
