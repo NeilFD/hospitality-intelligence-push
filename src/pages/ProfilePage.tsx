@@ -97,10 +97,22 @@ export default function ProfilePage() {
     setIsChangingPassword(true);
     
     try {
-      // For development mode with the GOD user, just simulate password change
+      // For development mode with the GOD user, simulate password change
       if (user?.id === 'dev-god-user') {
+        // Verify the current password (for development, use a simple check)
+        const devGodPassword = localStorage.getItem('dev-god-password') || 'password123';
+        
+        if (currentPassword !== devGodPassword) {
+          toast.error('Current password is incorrect');
+          setIsChangingPassword(false);
+          return;
+        }
+        
+        // Store the new password in localStorage for the development GOD user
+        localStorage.setItem('dev-god-password', newPassword);
+        
         // Simulate a delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 800));
         toast.success('Password updated successfully (Development mode)');
         
         // Clear password fields
