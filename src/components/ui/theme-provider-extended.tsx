@@ -7,6 +7,8 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
   const [themeLoaded, setThemeLoaded] = useState(false);
   const location = useLocation();
 
+  console.log("ThemeProviderExtended rendered", location.pathname);
+
   useEffect(() => {
     // Load the active theme from the database
     const loadActiveTheme = async () => {
@@ -62,10 +64,6 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     loadActiveTheme();
   }, []);
 
-  // Log the current route for debugging purposes
-  useEffect(() => {
-    console.log('Current route in ThemeProviderExtended:', location.pathname);
-  }, [location]);
-
+  // Make sure the Layout component has access to the router context
   return <>{children}</>;
 }
