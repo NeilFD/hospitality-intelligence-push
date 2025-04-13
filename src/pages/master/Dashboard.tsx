@@ -36,7 +36,7 @@ const MasterDashboard = () => {
   
   // Navigate to week page
   const goToWeek = (year: number, month: number, weekNumber: number) => {
-    navigate(`/master/weekly-input`);
+    navigate(`/master/weekly-input/${year}/${month}/${weekNumber}`);
   };
   
   const goToMonth = (year: number, month: number) => {

@@ -46,10 +46,10 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   const lastDay = new Date(Date.UTC(year, month, 0));
   
   // Calculate the Monday that starts the week containing the first day of the month
-  let firstMonday = new Date(firstDay);
   const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
   
   // If the month doesn't start on Monday (day 1), go back to the previous Monday
+  let firstMonday = new Date(firstDay);
   if (firstDayOfWeek !== 1) {
     // If it's Sunday (0), go back 6 days, otherwise go back (dayOfWeek - 1) days
     const daysToSubtract = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
@@ -57,9 +57,10 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   }
   
   const weeks: WeekDates[] = [];
-  let currentWeekStart = new Date(firstMonday);
   
   // Generate weeks until we pass the end of the month
+  let currentWeekStart = new Date(firstMonday);
+  
   while (true) {
     // Create a fresh copy of the current week start date to avoid reference issues
     const weekStartCopy = new Date(currentWeekStart);
@@ -73,8 +74,7 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
     });
     
     // Move to next Monday
-    currentWeekStart = new Date(currentWeekEnd);
-    currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() + 1);
+    currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() + 7);
     
     // If the next week's start date is past the end of the month, stop
     if (currentWeekStart > lastDay) {
