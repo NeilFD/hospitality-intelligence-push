@@ -64,18 +64,31 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
   let currentWeekStart = new Date(firstMonday);
   
   // Generate weeks until we pass the end of the month
-  while (currentWeekStart <= lastDay) {
+  while (true) {
+    // Create a deep copy of the current week start date
+    const weekStartCopy = new Date(currentWeekStart);
     const currentWeekEnd = new Date(currentWeekStart);
     currentWeekEnd.setUTCDate(currentWeekEnd.getUTCDate() + 6); // Sunday (6 days after Monday)
     
+    // Add this week to our collection
     weeks.push({
-      startDate: formatDate(currentWeekStart),
+      startDate: formatDate(weekStartCopy),
       endDate: formatDate(currentWeekEnd),
     });
     
     // Move to next Monday
     currentWeekStart = new Date(currentWeekEnd);
     currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() + 1);
+    
+    // If the next week's start date is past the end of the month, stop
+    if (currentWeekStart > lastDay) {
+      break;
+    }
+    
+    // Safety check: prevent infinite loops by limiting to 6 weeks
+    if (weeks.length >= 6) {
+      break;
+    }
   }
   
   return weeks;
