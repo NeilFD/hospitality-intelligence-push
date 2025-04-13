@@ -1,11 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
 import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-types';
@@ -452,29 +446,47 @@ export function ThemeSettingsPanel({
       </CardHeader>
       <CardContent className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full mb-6">
+          <TabsList className="w-full mb-6 p-1 bg-purple-100 rounded-lg">
             <TabsTrigger 
               value="presets" 
               className={`
                 flex-1 
+                transition-all 
+                duration-300 
+                ease-in-out
                 ${activeTab === 'presets' 
-                  ? 'bg-purple-900 text-white shadow-md' 
-                  : 'bg-purple-700 hover:bg-purple-600 text-white/80'}
+                  ? 'bg-purple-600 text-white shadow-md' 
+                  : 'bg-transparent text-purple-700 hover:bg-purple-200 hover:text-purple-900'}
+                rounded-md
+                py-2
+                flex 
+                items-center 
+                justify-center
+                gap-2
               `}
             >
-              <Palette className="mr-2 h-4 w-4" />
+              <Palette className="h-4 w-4" />
               Preset Themes & Logo
             </TabsTrigger>
             <TabsTrigger 
               value="custom" 
               className={`
                 flex-1 
+                transition-all 
+                duration-300 
+                ease-in-out
                 ${activeTab === 'custom' 
-                  ? 'bg-purple-900 text-white shadow-md' 
-                  : 'bg-purple-700 hover:bg-purple-600 text-white/80'}
+                  ? 'bg-purple-600 text-white shadow-md' 
+                  : 'bg-transparent text-purple-700 hover:bg-purple-200 hover:text-purple-900'}
+                rounded-md
+                py-2
+                flex 
+                items-center 
+                justify-center
+                gap-2
               `}
             >
-              <Sliders className="mr-2 h-4 w-4" />
+              <Sliders className="h-4 w-4" />
               Custom Colors
             </TabsTrigger>
           </TabsList>
