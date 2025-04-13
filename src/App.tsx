@@ -14,6 +14,7 @@ import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import AnnualSummary from '@/pages/food/AnnualSummary';
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,13 @@ function App() {
                 {/* App Routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/control-centre" element={<Dashboard />} />
+                
+                {/* Food Module Routes */}
+                <Route path="/food/dashboard" element={<Dashboard />} />
+                <Route path="/food/input-settings" element={<Dashboard />} />
+                <Route path="/food/month/:year/:month" element={<Dashboard />} />
+                <Route path="/food/annual-summary" element={<AnnualSummary />} />
+                <Route path="/food/bible" element={<Dashboard />} />
                 
                 {/* Not Found Route */}
                 <Route path="*" element={<NotFound />} />
