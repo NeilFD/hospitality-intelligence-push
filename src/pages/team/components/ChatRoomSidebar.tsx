@@ -55,23 +55,65 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
   const isMobile = useIsMobile();
   const [minimized, setMinimized] = React.useState(isMobile ? true : false);
 
-  // Define a React state to track the theme-specific colors
+  // Update theme colors logic to be more precise
   const [themeColors, setThemeColors] = React.useState(() => {
     const htmlElement = document.documentElement;
-    if (htmlElement.classList.contains('theme-hi-purple')) {
+    if (htmlElement.classList.contains('theme-forest-green')) {
       return {
-        selectedBg: 'bg-[#7E69AB]',
-        selectedHover: 'hover:bg-[#7E69AB]/90',
-        hoverBg: 'hover:bg-[#86e0b3]',
-        hoverText: 'hover:text-[#48495E]'
+        selectedBg: 'bg-forest-green/90',
+        selectedHover: 'hover:bg-forest-green/80',
+        selectedText: 'text-white',
+        hoverBg: 'hover:bg-forest-green/10',
+        hoverText: 'hover:text-forest-green-dark'
+      };
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return {
+        selectedBg: 'bg-[#1565c0]/90',
+        selectedHover: 'hover:bg-[#1565c0]/80',
+        selectedText: 'text-white',
+        hoverBg: 'hover:bg-[#1565c0]/10',
+        hoverText: 'hover:text-[#1565c0]'
+      };
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return {
+        selectedBg: 'bg-[#e65100]/90',
+        selectedHover: 'hover:bg-[#e65100]/80',
+        selectedText: 'text-white',
+        hoverBg: 'hover:bg-[#e65100]/10',
+        hoverText: 'hover:text-[#e65100]'
+      };
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return {
+        selectedBg: 'bg-[#6a1b9a]/90',
+        selectedHover: 'hover:bg-[#6a1b9a]/80',
+        selectedText: 'text-white',
+        hoverBg: 'hover:bg-[#6a1b9a]/10',
+        hoverText: 'hover:text-[#6a1b9a]'
+      };
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return {
+        selectedBg: 'bg-[#333333]/90',
+        selectedHover: 'hover:bg-[#333333]/80',
+        selectedText: 'text-white',
+        hoverBg: 'hover:bg-[#333333]/10',
+        hoverText: 'hover:text-[#333333]'
+      };
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return {
+        selectedBg: 'bg-[#7E69AB]/90',
+        selectedHover: 'hover:bg-[#7E69AB]/80',
+        selectedText: 'text-white',
+        hoverBg: 'hover:bg-[#7E69AB]/10',
+        hoverText: 'hover:text-[#7E69AB]'
       };
     }
-    // Default state
+    // Default theme
     return {
-      selectedBg: 'bg-[#7E69AB]',
-      selectedHover: 'hover:bg-[#7E69AB]/90',
-      hoverBg: 'hover:bg-[#86e0b3]',
-      hoverText: 'hover:text-[#48495E]'
+      selectedBg: 'bg-[#7E69AB]/90',
+      selectedHover: 'hover:bg-[#7E69AB]/80',
+      selectedText: 'text-white',
+      hoverBg: 'hover:bg-[#7E69AB]/10',
+      hoverText: 'hover:text-[#7E69AB]'
     };
   });
 
@@ -189,7 +231,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                 className={cn(
                   "w-full justify-start mb-3 font-medium text-left px-3 py-2", 
                   selectedRoomId === room.id 
-                    ? `${themeColors.selectedBg} text-white ${themeColors.selectedHover} rounded-md` 
+                    ? `${themeColors.selectedBg} ${themeColors.selectedText} ${themeColors.selectedHover} rounded-md` 
                     : `bg-white/20 text-tavern-blue-dark ${themeColors.hoverBg} ${themeColors.hoverText}`,
                   isMobile && minimized ? "p-2" : "",
                   isMobile ? "h-12" : "h-10"
@@ -200,20 +242,20 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                 {room.is_announcement_only ? (
                   <AlertCircle className={cn(
                     "h-4 w-4 mr-2", 
-                    selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark",
+                    selectedRoomId === room.id ? themeColors.selectedText : "text-tavern-blue-dark",
                     minimized ? "mx-auto" : ""
                   )} />
                 ) : (
                   <RoomIcon className={cn(
                     "h-4 w-4 mr-2",
-                    selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark", 
+                    selectedRoomId === room.id ? themeColors.selectedText : "text-tavern-blue-dark", 
                     minimized ? "mx-auto" : ""
                   )} />
                 )}
                 {(!isMobile || !minimized) && (
                   <span className={cn(
                     "truncate text-sm", 
-                    selectedRoomId === room.id ? "text-white" : "text-tavern-blue-dark"
+                    selectedRoomId === room.id ? themeColors.selectedText : "text-tavern-blue-dark"
                   )}>{room.name}</span>
                 )}
               </Button>
