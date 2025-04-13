@@ -36,12 +36,12 @@ export default function ControlCentre() {
   };
 
   const getActiveTabColor = () => {
-    if (hasForestGreenTheme) return "data-[state=active]:bg-[#1b5e20]";
-    if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1565c0]";
-    if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#e65100]";
-    if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#6a1b9a]";
-    if (hasDarkModeTheme) return "data-[state=active]:bg-[#333333]";
-    return "data-[state=active]:bg-[#5b2c70]";
+    if (hasForestGreenTheme) return "data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white";
+    if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1565c0] data-[state=active]:text-white";
+    if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#e65100] data-[state=active]:text-white";
+    if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white";
+    if (hasDarkModeTheme) return "data-[state=active]:bg-[#333333] data-[state=active]:text-white";
+    return "data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white";
   };
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function ControlCentre() {
           </TabsTrigger>
           {isGodUser && <TabsTrigger 
             value="database" 
-            className="bg-[#d63384] text-white hover:bg-[#c2185b] font-medium transition-colors duration-200 data-[state=active]:bg-[#a61d6c] data-[state=active]:shadow-md"
+            className="bg-[#d63384] text-white hover:bg-[#c2185b] font-medium transition-colors duration-200 data-[state=active]:bg-[#a61d6c] data-[state=active]:text-white data-[state=active]:shadow-md"
           >
             Database
           </TabsTrigger>}
