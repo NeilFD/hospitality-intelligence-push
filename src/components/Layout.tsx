@@ -172,17 +172,15 @@ const Layout = ({
     return "bg-[#9d89c9]/20";
   };
   
+  const handleControlCentreClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = '/control-centre';
+  };
+  
   const ControlCentreLink = () => {
-    const navigate = useNavigate();
-    
-    const handleControlCentreClick = (e: React.MouseEvent) => {
-      e.preventDefault();
-      navigate('/control-centre'); 
-    };
-    
     return (
       <a 
-        href="#" 
+        href="/control-centre" 
         onClick={handleControlCentreClick}
         className={cn(
           "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
@@ -517,11 +515,8 @@ const Layout = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate('/control-centre');
-                    }}
+                    href="/control-centre" 
+                    onClick={handleControlCentreClick}
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
                       location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
