@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +90,7 @@ export default function ControlCentre() {
   };
   
   const getDatabaseTabStyle = () => {
-    return "bg-rose-500 text-white hover:bg-rose-600 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md ml-auto";
+    return "bg-rose-500 text-white hover:bg-rose-600 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md ml-auto mr-0";
   };
 
   useEffect(() => {
@@ -124,7 +125,7 @@ export default function ControlCentre() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex w-full">
           <TabsTrigger 
             value="permissions" 
             className={`font-medium transition-colors duration-200 ${getPermissionsTabStyle()}`}
