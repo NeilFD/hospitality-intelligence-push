@@ -127,7 +127,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
       console.log('Saving permission matrix:', matrix);
       
       // Call the RPC function directly using Supabase client
-      const { error: updateError } = await supabase.rpc('update_permission_matrix', {
+      const { data, error: updateError } = await supabase.rpc('update_permission_matrix', {
         matrix: matrix
       });
       
@@ -137,6 +137,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
         return;
       }
       
+      console.log('Save response:', data);
       toast.success('Permission matrix saved successfully');
     } catch (error) {
       console.error('Exception saving permission matrix:', error);
