@@ -24,7 +24,6 @@ export default function SidebarLogo({ size = 'md', className }: SidebarLogoProps
   };
   
   useEffect(() => {
-    // Listen for logo updates
     const handleLogoUpdate = (event: any) => {
       if (event.detail && event.detail.logoUrl) {
         console.log('Logo update received:', event.detail.logoUrl);
@@ -41,7 +40,7 @@ export default function SidebarLogo({ size = 'md', className }: SidebarLogoProps
   }, []);
   
   return (
-    <div className={cn("mb-6 px-4", className)}>
+    <div className={cn("mb-6 px-4 flex justify-center", className)}>
       <Link to="/dashboard" className="flex items-center justify-center">
         <img
           src={logoUrl}
@@ -49,7 +48,6 @@ export default function SidebarLogo({ size = 'md', className }: SidebarLogoProps
           className={cn(sizeClasses[size], "object-contain")}
           onError={(e) => {
             console.error('Failed to load logo:', e);
-            // Fallback to default logo
             setLogoUrl("/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png");
           }}
         />
@@ -57,3 +55,4 @@ export default function SidebarLogo({ size = 'md', className }: SidebarLogoProps
     </div>
   );
 }
+
