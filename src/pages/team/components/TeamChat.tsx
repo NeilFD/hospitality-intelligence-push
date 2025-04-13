@@ -44,7 +44,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "���", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -115,9 +115,97 @@ const Message: React.FC<MessageProps> = ({
   currentUserId
 }) => {
   const messageContainerClass = isOwnMessage ? "flex justify-end mb-4" : "flex justify-start mb-4";
+  const [themeColors, setThemeColors] = useState(() => {
+    const htmlElement = document.documentElement;
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return {
+        ownMessageBg: 'bg-forest-green',
+        otherMessageBg: 'bg-gray-200'
+      };
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return {
+        ownMessageBg: 'bg-[#1565c0]',
+        otherMessageBg: 'bg-gray-200'
+      };
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return {
+        ownMessageBg: 'bg-[#e65100]',
+        otherMessageBg: 'bg-gray-200'
+      };
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return {
+        ownMessageBg: 'bg-[#6a1b9a]',
+        otherMessageBg: 'bg-gray-200'
+      };
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return {
+        ownMessageBg: 'bg-[#333333]',
+        otherMessageBg: 'bg-gray-700'
+      };
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return {
+        ownMessageBg: 'bg-[#7E69AB]',
+        otherMessageBg: 'bg-gray-200'
+      };
+    } else {
+      return {
+        ownMessageBg: 'bg-[#7E69AB]',
+        otherMessageBg: 'bg-gray-200'
+      };
+    }
+  });
+  
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const htmlElement = document.documentElement;
+      if (htmlElement.classList.contains('theme-forest-green')) {
+        setThemeColors({
+          ownMessageBg: 'bg-forest-green',
+          otherMessageBg: 'bg-gray-200'
+        });
+      } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#1565c0]',
+          otherMessageBg: 'bg-gray-200'
+        });
+      } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#e65100]',
+          otherMessageBg: 'bg-gray-200'
+        });
+      } else if (htmlElement.classList.contains('theme-berry-purple')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#6a1b9a]',
+          otherMessageBg: 'bg-gray-200'
+        });
+      } else if (htmlElement.classList.contains('theme-dark-mode')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#333333]',
+          otherMessageBg: 'bg-gray-700'
+        });
+      } else if (htmlElement.classList.contains('theme-hi-purple')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#7E69AB]',
+          otherMessageBg: 'bg-gray-200'
+        });
+      } else {
+        setThemeColors({
+          ownMessageBg: 'bg-[#7E69AB]',
+          otherMessageBg: 'bg-gray-200'
+        });
+      }
+    };
+    
+    document.addEventListener('themeClassChanged', handleThemeChange);
+    return () => {
+      document.removeEventListener('themeClassChanged', handleThemeChange);
+    };
+  }, []);
+  
   const messageBubbleClass = isOwnMessage 
-    ? "bg-[#7E69AB] text-white rounded-tl-lg rounded-tr-lg rounded-bl-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10" 
-    : "bg-gray-200 text-gray-800 rounded-tl-lg rounded-tr-lg rounded-br-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10";
+    ? `${themeColors.ownMessageBg} text-white rounded-tl-lg rounded-tr-lg rounded-bl-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10` 
+    : `${themeColors.otherMessageBg} text-gray-800 rounded-tl-lg rounded-tr-lg rounded-br-lg p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10`;
+  
   const getInitials = () => {
     if (!author) return '?';
     return `${(author.first_name?.[0] || '').toUpperCase()}${(author.last_name?.[0] || '').toUpperCase()}`;
@@ -148,6 +236,7 @@ const Message: React.FC<MessageProps> = ({
     icon: <Bookmark className="h-4 w-4" />,
     emoji: "🔖"
   }];
+  
   return <div className={messageContainerClass}>
       {!isOwnMessage && <div className="flex-shrink-0 mr-2">
           <Avatar className="h-8 w-8">

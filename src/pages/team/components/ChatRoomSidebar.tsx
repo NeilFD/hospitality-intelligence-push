@@ -55,6 +55,89 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
   const isMobile = useIsMobile();
   const [minimized, setMinimized] = React.useState(isMobile ? true : false);
 
+  // Define a React state to track the theme-specific colors
+  const [themeColors, setThemeColors] = React.useState(() => {
+    const htmlElement = document.documentElement;
+    if (htmlElement.classList.contains('theme-hi-purple')) {
+      return {
+        selectedBg: 'bg-[#7E69AB]',
+        selectedHover: 'hover:bg-[#7E69AB]/90',
+        hoverBg: 'hover:bg-[#86e0b3]',
+        hoverText: 'hover:text-[#48495E]'
+      };
+    }
+    // Default state
+    return {
+      selectedBg: 'bg-[#7E69AB]',
+      selectedHover: 'hover:bg-[#7E69AB]/90',
+      hoverBg: 'hover:bg-[#86e0b3]',
+      hoverText: 'hover:text-[#48495E]'
+    };
+  });
+
+  // Update colors when theme changes
+  React.useEffect(() => {
+    const handleThemeChange = () => {
+      const htmlElement = document.documentElement;
+      if (htmlElement.classList.contains('theme-forest-green')) {
+        setThemeColors({
+          selectedBg: 'bg-forest-green',
+          selectedHover: 'hover:bg-forest-green-dark',
+          hoverBg: 'hover:bg-forest-green-light/30',
+          hoverText: 'hover:text-white'
+        });
+      } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+        setThemeColors({
+          selectedBg: 'bg-[#1565c0]',
+          selectedHover: 'hover:bg-[#1565c0]/90',
+          hoverBg: 'hover:bg-[#64b5f6]/30',
+          hoverText: 'hover:text-white'
+        });
+      } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+        setThemeColors({
+          selectedBg: 'bg-[#e65100]',
+          selectedHover: 'hover:bg-[#e65100]/90',
+          hoverBg: 'hover:bg-[#ffb74d]/30',
+          hoverText: 'hover:text-white'
+        });
+      } else if (htmlElement.classList.contains('theme-berry-purple')) {
+        setThemeColors({
+          selectedBg: 'bg-[#6a1b9a]',
+          selectedHover: 'hover:bg-[#6a1b9a]/90',
+          hoverBg: 'hover:bg-[#ce93d8]/30',
+          hoverText: 'hover:text-white'
+        });
+      } else if (htmlElement.classList.contains('theme-dark-mode')) {
+        setThemeColors({
+          selectedBg: 'bg-[#333333]',
+          selectedHover: 'hover:bg-[#333333]/90',
+          hoverBg: 'hover:bg-[#555555]/30',
+          hoverText: 'hover:text-white'
+        });
+      } else if (htmlElement.classList.contains('theme-hi-purple')) {
+        setThemeColors({
+          selectedBg: 'bg-[#7E69AB]',
+          selectedHover: 'hover:bg-[#7E69AB]/90',
+          hoverBg: 'hover:bg-[#86e0b3]',
+          hoverText: 'hover:text-[#48495E]'
+        });
+      } else {
+        // Default theme
+        setThemeColors({
+          selectedBg: 'bg-[#7E69AB]',
+          selectedHover: 'hover:bg-[#7E69AB]/90',
+          hoverBg: 'hover:bg-[#86e0b3]',
+          hoverText: 'hover:text-[#48495E]'
+        });
+      }
+    };
+    
+    document.addEventListener('themeClassChanged', handleThemeChange);
+    return () => {
+      document.removeEventListener('themeClassChanged', handleThemeChange);
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="p-4 text-center text-tavern-blue-dark">
@@ -104,10 +187,10 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                 key={room.id}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start mb-3 font-medium text-left px-3 py-2 hover:bg-[#86e0b3] hover:text-[#48495E]", // Updated hover state color
+                  "w-full justify-start mb-3 font-medium text-left px-3 py-2", 
                   selectedRoomId === room.id 
-                    ? "bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 rounded-md" 
-                    : "bg-white/20 text-tavern-blue-dark hover:bg-[#86e0b3] hover:text-[#48495E]", // Consistent hover state
+                    ? `${themeColors.selectedBg} text-white ${themeColors.selectedHover} rounded-md` 
+                    : `bg-white/20 text-tavern-blue-dark ${themeColors.hoverBg} ${themeColors.hoverText}`,
                   isMobile && minimized ? "p-2" : "",
                   isMobile ? "h-12" : "h-10"
                 )}
