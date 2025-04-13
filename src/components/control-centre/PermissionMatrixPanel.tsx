@@ -36,9 +36,13 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
           return;
         }
         
-        if (data) {
+        if (data && Array.isArray(data)) {
           console.log('Fetched permission matrix:', data);
           setMatrix(data);
+        } else if (data) {
+          // If data is not an array but exists (e.g., a single object), convert to array
+          console.log('Fetched permission matrix (converted):', data);
+          setMatrix(Array.isArray(data) ? data : [data]);
         } else {
           // If no data returned but also no error, use the initial data
           console.log('Using initial permission matrix data');
