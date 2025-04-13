@@ -480,6 +480,46 @@ export function ThemeSettingsPanel({
       </div>
     </div>;
 
+  const getActiveThemeClasses = () => {
+    const htmlElement = document.documentElement;
+    
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return 'bg-[#1b5e20] text-white';
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return 'bg-[#1565c0] text-white';
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return 'bg-[#e65100] text-white';
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return 'bg-[#6a1b9a] text-white';
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return 'bg-[#333333] text-white';
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return 'bg-[#806cac] text-white';
+    } else {
+      return 'bg-purple-700 text-white';
+    }
+  };
+
+  const getActiveThemeBorder = () => {
+    const htmlElement = document.documentElement;
+    
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return 'border-[#1b5e20]';
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return 'border-[#1565c0]';
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return 'border-[#e65100]';
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return 'border-[#6a1b9a]';
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return 'border-[#333333]';
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return 'border-[#806cac]';
+    } else {
+      return 'border-purple-800';
+    }
+  };
+
   return <Card>
       <CardHeader>
         <CardTitle>Brand & Theme Settings</CardTitle>
@@ -498,7 +538,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'presets' 
-                  ? 'bg-purple-700 text-white shadow-md' 
+                  ? `${getActiveThemeClasses()} shadow-md` 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
@@ -509,7 +549,7 @@ export function ThemeSettingsPanel({
                 font-medium
                 border
                 ${activeTab === 'presets' 
-                  ? 'border-purple-800' 
+                  ? `${getActiveThemeBorder()}` 
                   : 'border-purple-200 hover:border-purple-300'}
               `}
             >
@@ -524,7 +564,7 @@ export function ThemeSettingsPanel({
                 duration-300 
                 ease-in-out
                 ${activeTab === 'custom' 
-                  ? 'bg-purple-700 text-white shadow-md' 
+                  ? `${getActiveThemeClasses()} shadow-md` 
                   : 'bg-transparent text-purple-900 hover:bg-purple-200'}
                 rounded-md
                 py-2
@@ -535,7 +575,7 @@ export function ThemeSettingsPanel({
                 font-medium
                 border
                 ${activeTab === 'custom' 
-                  ? 'border-purple-800' 
+                  ? `${getActiveThemeBorder()}` 
                   : 'border-purple-200 hover:border-purple-300'}
               `}
             >

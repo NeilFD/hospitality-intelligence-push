@@ -9,16 +9,64 @@ const Tabs = TabsPrimitive.Root
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const [themeStyles, setThemeStyles] = React.useState(() => {
+    const htmlElement = document.documentElement;
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return "bg-[#e8f5e9]/50";
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return "bg-[#e3f2fd]/50";
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return "bg-[#fff3e0]/50";
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return "bg-[#f3e5f5]/50";
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return "bg-[#424242]/50";
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return "bg-[#e0d9f0]/50";
+    } else {
+      return "bg-muted";
+    }
+  });
+  
+  React.useEffect(() => {
+    const handleThemeChange = () => {
+      const htmlElement = document.documentElement;
+      if (htmlElement.classList.contains('theme-forest-green')) {
+        setThemeStyles("bg-[#e8f5e9]/50");
+      } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+        setThemeStyles("bg-[#e3f2fd]/50");
+      } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+        setThemeStyles("bg-[#fff3e0]/50");
+      } else if (htmlElement.classList.contains('theme-berry-purple')) {
+        setThemeStyles("bg-[#f3e5f5]/50");
+      } else if (htmlElement.classList.contains('theme-dark-mode')) {
+        setThemeStyles("bg-[#424242]/50");
+      } else if (htmlElement.classList.contains('theme-hi-purple')) {
+        setThemeStyles("bg-[#e0d9f0]/50");
+      } else {
+        setThemeStyles("bg-muted");
+      }
+    };
+    
+    document.addEventListener('themeClassChanged', handleThemeChange);
+    return () => {
+      document.removeEventListener('themeClassChanged', handleThemeChange);
+    };
+  }, []);
+  
+  return (
+    <TabsPrimitive.List
+      ref={ref}
+      className={cn(
+        `inline-flex h-10 items-center justify-center rounded-md ${themeStyles} p-1 text-muted-foreground`,
+        className
+      )}
+      {...props}
+    />
+  );
+});
+
 TabsList.displayName = TabsPrimitive.List.displayName
 
 const TabsTrigger = React.forwardRef<

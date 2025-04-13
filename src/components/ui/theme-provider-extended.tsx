@@ -85,6 +85,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       } else if (themeName === 'Hi Purple') {
         html.classList.add('theme-hi-purple');
       }
+      
+      // Dispatch an event to notify components of theme change
+      document.dispatchEvent(new Event('themeClassChanged'));
     };
     
     // Listen for custom theme update event

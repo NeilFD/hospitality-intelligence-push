@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,42 +18,88 @@ export default function ControlCentre() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
+  const [themeState, setThemeState] = useState({
+    hasForestGreenTheme: false,
+    hasOceanBlueTheme: false,
+    hasSunsetOrangeTheme: false,
+    hasBerryPurpleTheme: false,
+    hasDarkModeTheme: false,
+    hasHiPurpleTheme: false
+  });
   
-  const htmlElement = document.documentElement;
-  const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
-  const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
-  const hasSunsetOrangeTheme = htmlElement.classList.contains('theme-sunset-orange');
-  const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
-  const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
+  // Check for theme changes when the component mounts and when theme changes
+  useEffect(() => {
+    const checkThemeClasses = () => {
+      const htmlElement = document.documentElement;
+      setThemeState({
+        hasForestGreenTheme: htmlElement.classList.contains('theme-forest-green'),
+        hasOceanBlueTheme: htmlElement.classList.contains('theme-ocean-blue'),
+        hasSunsetOrangeTheme: htmlElement.classList.contains('theme-sunset-orange'),
+        hasBerryPurpleTheme: htmlElement.classList.contains('theme-berry-purple'),
+        hasDarkModeTheme: htmlElement.classList.contains('theme-dark-mode'),
+        hasHiPurpleTheme: htmlElement.classList.contains('theme-hi-purple')
+      });
+    };
+    
+    checkThemeClasses();
+    
+    // Listen for theme changes
+    const handleThemeChange = () => {
+      checkThemeClasses();
+    };
+    
+    document.addEventListener('themeClassChanged', handleThemeChange);
+    
+    return () => {
+      document.removeEventListener('themeClassChanged', handleThemeChange);
+    };
+  }, []);
   
   const getPermissionsTabStyle = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
-    return "bg-[#6c3483] text-white hover:bg-[#5b2c70] data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
+    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
   };
 
   const getThemeTabStyle = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
-    return "bg-[#6c3483] text-white hover:bg-[#5b2c70] data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
+    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
   };
   
   const getTargetsTabStyle = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
     if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md";
     if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md";
-    return "bg-[#6c3483] text-white hover:bg-[#5b2c70] data-[state=active]:bg-[#5b2c70] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
+    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md";
   };
   
   const getDatabaseTabStyle = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
+    if (hasForestGreenTheme) return "bg-[#4c8c4a] text-white hover:bg-[#388e3c] data-[state=active]:bg-[#388e3c] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasOceanBlueTheme) return "bg-[#42a5f5] text-white hover:bg-[#1e88e5] data-[state=active]:bg-[#1e88e5] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasSunsetOrangeTheme) return "bg-[#ff9800] text-white hover:bg-[#f57c00] data-[state=active]:bg-[#f57c00] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasBerryPurpleTheme) return "bg-[#ab47bc] text-white hover:bg-[#9c27b0] data-[state=active]:bg-[#9c27b0] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasDarkModeTheme) return "bg-[#757575] text-white hover:bg-[#616161] data-[state=active]:bg-[#616161] data-[state=active]:text-white data-[state=active]:shadow-md";
+    if (hasHiPurpleTheme) return "bg-[#b39ddb] text-white hover:bg-[#9575cd] data-[state=active]:bg-[#9575cd] data-[state=active]:text-white data-[state=active]:shadow-md";
     return "bg-[#d63384] text-white hover:bg-[#c2185b] font-medium transition-colors duration-200 data-[state=active]:bg-[#a61d6c] data-[state=active]:text-white data-[state=active]:shadow-md";
   };
 
