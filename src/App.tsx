@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Outlet, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { UserProvider } from './contexts/UserContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
@@ -10,149 +11,109 @@ import ProfilePage from './pages/ProfilePage';
 import { Toaster } from "@/components/ui/toaster";
 import ControlCentre from "./pages/ControlCentre";
 import RequireAuth from "./components/auth/RequireAuth";
+import Index from './pages/Index';
 
-// Stub components for the routes that we don't have yet
-// These will be replaced when the actual components are developed
-const KitchenLedger = ({ moduleType = 'food' }: { moduleType?: string }) => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Kitchen Ledger - {moduleType}</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import actual components
+import Dashboard from './pages/Dashboard';
+import TeamDashboard from './pages/team/Dashboard';
+import AnnualSummaryPage from './pages/AnnualSummary';
+import MonthSummary from './pages/MonthSummary';
+import InputSettings from './pages/InputSettings';
 
-const SuppliersPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Suppliers - {moduleType}</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import food-specific pages
+import FoodDashboard from './pages/food/Dashboard';
+import FoodInputSettings from './pages/food/InputSettings';
+import FoodMonthSummary from './pages/food/MonthSummary'; 
+import FoodAnnualSummary from './pages/food/AnnualSummary';
+import FoodBible from './pages/food/FoodBible';
 
-const MonthlySettingsPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Monthly Settings - {moduleType}</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import beverage-specific pages
+import BeverageDashboard from './pages/beverage/Dashboard';
+import BeverageInputSettings from './pages/beverage/InputSettings';
+import BeverageMonthSummary from './pages/beverage/MonthSummary';
+import BeverageAnnualSummary from './pages/beverage/AnnualSummary';
+import BeverageBible from './pages/beverage/BeverageBible';
 
-const AnnualSummaryPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Annual Summary - {moduleType}</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import performance pages
+import PerformanceDashboard from './pages/performance/Dashboard';
 
-const InputSettingsPage = ({ moduleType = 'food' }: { moduleType?: string }) => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Input Settings - {moduleType}</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import P&L pages
+import PLDashboard from './pages/pl/Dashboard';
 
-const PlDashboard = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">P&L Dashboard</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import wages pages
+import WagesDashboard from './pages/wages/WagesDashboard';
 
-const WagesDashboard = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Wages Dashboard</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import Master pages
+import MasterDashboard from './pages/master/Dashboard';
+import MasterMonthSummary from './pages/master/MonthSummary';
+import MasterWeeklyInput from './pages/master/WeeklyInput';
 
-const PerformanceDashboard = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Performance Dashboard</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
-
-const TeamDashboard = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Team Dashboard</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
-
-const Noticeboard = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Noticeboard</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
-
-const TeamChat = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Team Chat</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
-
-const KnowledgeBase = () => (
-  <div className="p-8">
-    <h1 className="text-2xl font-bold mb-4">Knowledge Base</h1>
-    <p>This module will be implemented soon.</p>
-  </div>
-);
+// Import team pages
+import TeamChat from './pages/team/Chat';
+import TeamNoticeboard from './pages/team/Noticeboard';
+import TeamKnowledge from './pages/team/Knowledge';
 
 function App() {
   return (
     <Router>
-      <UserProvider>
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <Routes>
-            <Route path="/" element={<Layout><Outlet /></Layout>}>
-              <Route index element={<KitchenLedger />} />
-              <Route path="profile" element={<ProfilePage />} />
+      <AuthProvider>
+        <UserProvider>
+          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+            <Routes>
+              <Route path="/" element={<Layout><Outlet /></Layout>}>
+                <Route index element={<Index />} />
+                <Route path="profile" element={<ProfilePage />} />
+                
+                {/* Master Records Routes */}
+                <Route path="master/dashboard" element={<MasterDashboard />} />
+                <Route path="master/month/:year/:month" element={<MasterMonthSummary />} />
+                <Route path="master/weekly-input" element={<MasterWeeklyInput />} />
+                
+                {/* Food Hub Routes */}
+                <Route path="food/dashboard" element={<FoodDashboard />} />
+                <Route path="food/input-settings" element={<FoodInputSettings />} />
+                <Route path="food/month/:year/:month" element={<FoodMonthSummary />} />
+                <Route path="food/annual-summary" element={<FoodAnnualSummary />} />
+                <Route path="food/bible" element={<FoodBible />} />
+                
+                {/* Beverage Hub Routes */}
+                <Route path="beverage/dashboard" element={<BeverageDashboard />} />
+                <Route path="beverage/input-settings" element={<BeverageInputSettings />} />
+                <Route path="beverage/month/:year/:month" element={<BeverageMonthSummary />} />
+                <Route path="beverage/annual-summary" element={<BeverageAnnualSummary />} />
+                <Route path="beverage/bible" element={<BeverageBible />} />
+                
+                {/* P&L Tracker Routes */}
+                <Route path="pl/dashboard" element={<PLDashboard />} />
+                
+                {/* Wages Tracker Routes */}
+                <Route path="wages/dashboard" element={<WagesDashboard />} />
+                
+                {/* Performance Tracker Routes */}
+                <Route path="performance/dashboard" element={<PerformanceDashboard />} />
+                
+                {/* Team Routes */}
+                <Route path="team/dashboard" element={<TeamDashboard />} />
+                <Route path="team/noticeboard" element={<TeamNoticeboard />} />
+                <Route path="team/chat" element={<TeamChat />} />
+                <Route path="team/knowledge" element={<TeamKnowledge />} />
+                
+                {/* Control Centre route */}
+                <Route path="control-centre" element={
+                  <RequireAuth requiredRole="Super User">
+                    <ControlCentre />
+                  </RequireAuth>
+                } />
+                
+              </Route>
               
-              {/* Food Hub Routes */}
-              <Route path="food/dashboard" element={<KitchenLedger moduleType="food" />} />
-              <Route path="food/input-settings" element={<InputSettingsPage moduleType="food" />} />
-              <Route path="food/suppliers" element={<SuppliersPage moduleType="food" />} />
-              <Route path="food/month/:year/:month" element={<MonthlySettingsPage moduleType="food" />} />
-              <Route path="food/annual-summary" element={<AnnualSummaryPage moduleType="food" />} />
-              <Route path="food/bible" element={<></>} />
-              
-              {/* Beverage Hub Routes */}
-              <Route path="beverage/dashboard" element={<KitchenLedger moduleType="beverage" />} />
-              <Route path="beverage/input-settings" element={<InputSettingsPage moduleType="beverage" />} />
-              <Route path="beverage/suppliers" element={<SuppliersPage moduleType="beverage" />} />
-              <Route path="beverage/month/:year/:month" element={<MonthlySettingsPage moduleType="beverage" />} />
-              <Route path="beverage/annual-summary" element={<AnnualSummaryPage moduleType="beverage" />} />
-              <Route path="beverage/bible" element={<></>} />
-              
-              {/* P&L Tracker Routes */}
-              <Route path="pl/dashboard" element={<PlDashboard />} />
-              
-              {/* Wages Tracker Routes */}
-              <Route path="wages/dashboard" element={<WagesDashboard />} />
-              
-              {/* Performance Tracker Routes */}
-              <Route path="performance/dashboard" element={<PerformanceDashboard />} />
-              
-              {/* Team Routes */}
-              <Route path="team/dashboard" element={<TeamDashboard />} />
-              <Route path="team/noticeboard" element={<Noticeboard />} />
-              <Route path="team/chat" element={<TeamChat />} />
-              <Route path="team/knowledge" element={<KnowledgeBase />} />
-              
-              {/* Control Centre route */}
-              <Route path="control-centre" element={
-                <RequireAuth requiredRole="Super User">
-                  <ControlCentre />
-                </RequireAuth>
-              } />
-              
-            </Route>
-            
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/register" element={<RegisterForm />} />
-          </Routes>
-          <Toaster />
-        </ThemeProvider>
-      </UserProvider>
+              <Route path="/login" element={<LoginForm />} />
+              <Route path="/register" element={<RegisterForm />} />
+            </Routes>
+            <Toaster />
+          </ThemeProvider>
+        </UserProvider>
+      </AuthProvider>
     </Router>
   );
 }
