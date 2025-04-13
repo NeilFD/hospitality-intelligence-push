@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -54,7 +53,8 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
         console.error("Error fetching control centre data:", error);
         return null;
       }
-    }
+    },
+    staleTime: 0 // Force a fresh fetch each time
   });
 
   // Fetch suppliers from Supabase
@@ -81,24 +81,13 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
     }
   });
 
-  // Load business targets from Control Centre
+  // Immediately store business targets when Control Centre data is loaded
   useEffect(() => {
     if (controlCentreData && !isLoadingTargets) {
       console.log("Control Centre Data:", controlCentreData.targetSettings);
       setBusinessTargets(controlCentreData.targetSettings);
-      
-      // When Control Centre data is loaded, directly update target values
-      if (moduleType === 'food' && controlCentreData.targetSettings?.foodGpTarget) {
-        const foodGpTarget = Math.round(controlCentreData.targetSettings.foodGpTarget);
-        setGpTarget(foodGpTarget);
-        setCostTarget(100 - foodGpTarget);
-      } else if (moduleType === 'beverage' && controlCentreData.targetSettings?.beverageGpTarget) {
-        const bevGpTarget = Math.round(controlCentreData.targetSettings.beverageGpTarget);
-        setGpTarget(bevGpTarget);
-        setCostTarget(100 - bevGpTarget);
-      }
     }
-  }, [controlCentreData, isLoadingTargets, moduleType]);
+  }, [controlCentreData, isLoadingTargets]);
 
   // Mutations for suppliers
   const createSupplierMutation = useMutation({
@@ -185,18 +174,22 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       setCostTarget(Math.round(monthlySettings.cost_target * 100));
       setStaffAllowance(monthlySettings.staff_food_allowance);
     } 
-    // If no monthly settings, use the most recent business targets
-    else if (businessTargets) {
-      console.log("Using business targets:", businessTargets);
-      if (moduleType === 'food' && businessTargets.foodGpTarget) {
-        const foodGpTarget = Math.round(businessTargets.foodGpTarget);
-        setGpTarget(foodGpTarget);
-        setCostTarget(100 - foodGpTarget);
-      } else if (moduleType === 'beverage' && businessTargets.beverageGpTarget) {
-        const bevGpTarget = Math.round(businessTargets.beverageGpTarget);
-        setGpTarget(bevGpTarget);
-        setCostTarget(100 - bevGpTarget);
+    // If no monthly settings, use the business targets from control center
+    else if (controlCentreData && controlCentreData.targetSettings) {
+      console.log("Using direct control centre data:", controlCentreData.targetSettings);
+      
+      if (moduleType === 'food' && controlCentreData.targetSettings.foodGpTarget) {
+        const foodGpValue = Math.round(controlCentreData.targetSettings.foodGpTarget);
+        console.log(`Setting food GP target to ${foodGpValue}%`);
+        setGpTarget(foodGpValue);
+        setCostTarget(100 - foodGpValue);
+      } else if (moduleType === 'beverage' && controlCentreData.targetSettings.beverageGpTarget) {
+        const bevGpValue = Math.round(controlCentreData.targetSettings.beverageGpTarget);
+        console.log(`Setting beverage GP target to ${bevGpValue}%`);
+        setGpTarget(bevGpValue);
+        setCostTarget(100 - bevGpValue);
       }
+      
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
     // Fallback to local state
@@ -206,7 +199,7 @@ export default function InputSettings({ modulePrefix = "", moduleType = "food" }
       setCostTarget(Math.round(monthRecord.costTarget * 100));
       setStaffAllowance(monthRecord.staffFoodAllowance);
     }
-  }, [monthlySettings, isFetchingSettings, businessTargets, moduleType, monthRecord]);
+  }, [monthlySettings, isFetchingSettings, controlCentreData, moduleType, monthRecord]);
 
   const handleMonthChange = (year: number, month: number) => {
     // Force refetch of all data when month changes
