@@ -472,8 +472,8 @@ export function ThemeSettingsPanel({
                 font-medium
                 border
                 ${activeTab === 'presets' 
-                  ? 'border-purple-800' 
-                  : 'border-purple-200 hover:border-purple-300'}
+                  ? 'border-purple-800 text-white' 
+                  : 'border-purple-200 text-purple-900 hover:border-purple-300 hover:text-purple-950'}
               `}
             >
               <Palette className="h-4 w-4" />
@@ -498,8 +498,8 @@ export function ThemeSettingsPanel({
                 font-medium
                 border
                 ${activeTab === 'custom' 
-                  ? 'border-purple-800' 
-                  : 'border-purple-200 hover:border-purple-300'}
+                  ? 'border-purple-800 text-white' 
+                  : 'border-purple-200 text-purple-900 hover:border-purple-300 hover:text-purple-950'}
               `}
             >
               <Sliders className="h-4 w-4" />
