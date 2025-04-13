@@ -11,14 +11,9 @@ const Index = () => {
     console.log('Current module in Index:', currentModule);
   }, [currentModule]);
   
-  // Ensure we have a valid module before redirecting
-  if (!currentModule) {
-    console.log('No current module found, defaulting to food');
-    return <Navigate to="/food/dashboard" replace />;
-  }
-  
   // Create a direct path to the dashboard based on the current module
-  const dashboardPath = `/${currentModule}/dashboard`;
+  // For routes like /control-centre, they will now be handled directly by App.tsx
+  const dashboardPath = currentModule ? `/${currentModule}/dashboard` : '/food/dashboard';
   console.log('Redirecting to dashboard path:', dashboardPath);
   
   return <Navigate to={dashboardPath} replace />;

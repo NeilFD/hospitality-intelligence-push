@@ -86,7 +86,7 @@ function App() {
               {/* App Routes - All wrapped with Layout */}
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
               
-              {/* Control Centre Route */}
+              {/* Control Centre Route - Make sure this doesn't redirect */}
               <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
               
               {/* Food Module Routes - Fix all food routes to point to correct components */}
