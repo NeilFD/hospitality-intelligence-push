@@ -28,10 +28,11 @@ export const PerformanceLogo: React.FC<PerformanceLogoProps> = ({
       )}
     >
       <img 
-        src="/lovable-uploads/961a56b6-b951-4f59-b386-636a8d01fb1c.png" 
+        src="/lovable-uploads/e30880c4-f151-42e1-ac0e-925bfb44cfdb.png" 
         alt="Hi" 
         className="w-3/4 h-3/4 object-contain absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
       />
     </div>
   );
 };
+

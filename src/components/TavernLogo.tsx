@@ -30,10 +30,11 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
       )}
     >
       <img 
-        src="/lovable-uploads/961a56b6-b951-4f59-b386-636a8d01fb1c.png" 
+        src="/lovable-uploads/e30880c4-f151-42e1-ac0e-925bfb44cfdb.png" 
         alt="Hi" 
         className="w-3/4 h-3/4 object-contain"
       />
     </div>
   );
 };
+
