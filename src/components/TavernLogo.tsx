@@ -19,7 +19,9 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
     // Function to handle logo updates
     const handleLogoUpdate = (event: CustomEvent) => {
       const newLogoUrl = event.detail?.logoUrl;
-      setLogoUrl(newLogoUrl);
+      if (newLogoUrl) {
+        setLogoUrl(newLogoUrl);
+      }
     };
     
     // Add event listener

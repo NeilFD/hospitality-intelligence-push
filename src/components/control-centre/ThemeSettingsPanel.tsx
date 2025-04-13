@@ -1,19 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from 'sonner';
 import { ThemeSettings } from '@/types/control-centre-types';
 import { availableFonts } from '@/services/control-centre-service';
-import { toast } from 'sonner';
-import { TavernLogo } from '@/components/TavernLogo';
-import { ImagePlus, Check, RefreshCcw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/services/auth-service';
-import { useNavigate } from 'react-router-dom';
+import { Check, ChevronsUpDown, Copy, Loader2 } from 'lucide-react';
 
 interface ThemeSettingsPanelProps {
   currentTheme: ThemeSettings | null;
@@ -21,571 +17,314 @@ interface ThemeSettingsPanelProps {
 }
 
 export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSettingsPanelProps) {
-  const { profile } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('presets');
-  const [themes, setThemes] = useState<ThemeSettings[]>([]);
-  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const [customTheme, setCustomTheme] = useState({
-    primaryColor: currentTheme?.primaryColor || '#806cac',
-    secondaryColor: currentTheme?.secondaryColor || '#705b9b',
-    accentColor: currentTheme?.accentColor || '#9d89c9',
-    sidebarColor: currentTheme?.sidebarColor || '#806cac',
-    buttonColor: currentTheme?.buttonColor || '#806cac',
-    textColor: currentTheme?.textColor || '#333333',
-    customFont: currentTheme?.customFont || availableFonts[0].value,
+  const [activeTheme, setActiveTheme] = useState<ThemeSettings>(currentTheme || {
+    id: '',
+    name: 'Default',
+    primaryColor: '#ffffff',
+    secondaryColor: '#f0f0f0',
+    accentColor: '#007bff',
+    sidebarColor: '#333333',
+    buttonColor: '#007bff',
+    textColor: '#000000',
+    logoUrl: '',
+    customFont: 'Arial, sans-serif',
+    isDefault: true,
+    isActive: true
   });
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const htmlElement = document.documentElement;
-  const hasForestGreenTheme = htmlElement.classList.contains('theme-forest-green');
-  const hasOceanBlueTheme = htmlElement.classList.contains('theme-ocean-blue');
-  const hasSunsetOrangeTheme = htmlElement.classList.contains('theme-sunset-orange');
-  const hasBerryPurpleTheme = htmlElement.classList.contains('theme-berry-purple');
-  const hasDarkModeTheme = htmlElement.classList.contains('theme-dark-mode');
-  
-  const getButtonBgColor = () => {
-    if (hasForestGreenTheme) return "bg-[#1b5e20] hover:bg-[#2e7d32]";
-    if (hasOceanBlueTheme) return "bg-[#1565c0] hover:bg-[#1976d2]";
-    if (hasSunsetOrangeTheme) return "bg-[#e65100] hover:bg-[#ef6c00]";
-    if (hasBerryPurpleTheme) return "bg-[#6a1b9a] hover:bg-[#8e24aa]";
-    if (hasDarkModeTheme) return "bg-[#333333] hover:bg-[#444444]";
-    return "bg-[#8e44ad] hover:bg-[#7d3c98]";
-  };
-
-  const getActiveTabColor = () => {
-    if (hasForestGreenTheme) return "data-[state=active]:bg-[#2e7d32]";
-    if (hasOceanBlueTheme) return "data-[state=active]:bg-[#1976d2]";
-    if (hasSunsetOrangeTheme) return "data-[state=active]:bg-[#ef6c00]";
-    if (hasBerryPurpleTheme) return "data-[state=active]:bg-[#8e24aa]";
-    if (hasDarkModeTheme) return "data-[state=active]:bg-[#444444]";
-    return "data-[state=active]:bg-[#8e44ad]";
-  };
-
-  const getTextColor = () => {
-    if (hasForestGreenTheme) return "text-[#1b5e20]";
-    if (hasOceanBlueTheme) return "text-[#1565c0]";
-    if (hasSunsetOrangeTheme) return "text-[#e65100]";
-    if (hasBerryPurpleTheme) return "text-[#6a1b9a]";
-    if (hasDarkModeTheme) return "text-white";
-    return "text-[#8e44ad]";
-  };
-
   useEffect(() => {
-    const fetchThemes = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('themes')
-          .select('*')
-          .order('created_at');
-        
-        if (error) throw error;
-        
-        const transformedThemes = data.map(theme => ({
-          id: theme.id,
-          name: theme.name === 'Tavern Purple' ? 'Hi Purple' : theme.name,
-          primaryColor: theme.primary_color,
-          secondaryColor: theme.secondary_color,
-          accentColor: theme.accent_color,
-          sidebarColor: theme.sidebar_color,
-          buttonColor: theme.button_color,
-          textColor: theme.text_color,
-          logoUrl: theme.logo_url,
-          customFont: theme.custom_font,
-          isDefault: false,
-          isActive: theme.is_active
-        }));
-        
-        setThemes(transformedThemes);
-        
-        const activeTheme = transformedThemes.find(theme => theme.isActive);
-        if (activeTheme) setSelectedThemeId(activeTheme.id);
-      } catch (error) {
-        console.error('Error fetching themes:', error);
-        toast.error('Failed to load themes');
-      }
-    };
-
-    fetchThemes();
-  }, []);
-
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    setActiveTheme(currentTheme || {
+      id: '',
+      name: 'Default',
+      primaryColor: '#ffffff',
+      secondaryColor: '#f0f0f0',
+      accentColor: '#007bff',
+      sidebarColor: '#333333',
+      buttonColor: '#007bff',
+      textColor: '#000000',
+      logoUrl: '',
+      customFont: 'Arial, sans-serif',
+      isDefault: true,
+      isActive: true
+    });
+  }, [currentTheme]);
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setActiveTheme(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleSelectChange = (value: string) => {
+    setActiveTheme(prev => ({
+      ...prev,
+      customFont: value
+    }));
+  };
+  
+  const handleSwitchChange = (checked: boolean) => {
+    setActiveTheme(prev => ({
+      ...prev,
+      isActive: checked
+    }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleLogoUpload(files[0]);
-    }
-  };
-
-  const handleLogoUpload = async (file: File) => {
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+      
       setUploading(true);
+      const file = event.target.files[0];
       
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target && typeof e.target.result === 'string') {
-          setLogoPreview(e.target.result);
-        }
-      };
-      reader.readAsDataURL(file);
-      
+      // Generate a unique file name for the logo
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `${fileName}`;
       
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const logoBucketExists = buckets?.some(bucket => bucket.name === 'logos');
+      // Upload the file to the 'logos' bucket in Supabase Storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
       
-      if (!logoBucketExists) {
-        toast.error('Logo upload failed: Storage bucket not configured');
-        console.error('Logos bucket not found. Please run the SQL migration first.');
+      if (uploadError) {
+        console.error('Error uploading logo:', uploadError);
+        toast.error('Error uploading logo');
         setUploading(false);
         return;
       }
       
-      const { error: uploadError, data } = await supabase.storage
-        .from('logos')
-        .upload(filePath, file);
-        
-      if (uploadError) {
-        throw uploadError;
-      }
-      
-      const { data: { publicUrl } } = supabase.storage
+      // Get the public URL of the uploaded file
+      const { data: publicUrlData } = supabase
+        .storage
         .from('logos')
         .getPublicUrl(filePath);
       
-      if (selectedThemeId) {
-        const { error: updateError } = await supabase
-          .from('themes')
-          .update({ logo_url: publicUrl })
-          .eq('id', selectedThemeId);
-          
-        if (updateError) {
-          throw updateError;
-        }
-        
-        setThemes(prevThemes => 
-          prevThemes.map(theme => 
-            theme.id === selectedThemeId 
-              ? {...theme, logoUrl: publicUrl} 
-              : theme
-          )
-        );
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        toast.error('Error getting logo URL');
+        setUploading(false);
+        return;
       }
       
-      toast.success('Logo uploaded successfully');
+      const logoUrl = publicUrlData.publicUrl;
       
-      localStorage.setItem('app-logo-url', publicUrl);
-      
-      window.dispatchEvent(new CustomEvent('app-logo-updated', { 
-        detail: { logoUrl: publicUrl } 
+      // Update the activeTheme state with the new logo URL
+      setActiveTheme(prev => ({
+        ...prev,
+        logoUrl
       }));
+      
+      // Save the logo URL in localStorage for immediate use
+      localStorage.setItem('app-logo-url', logoUrl);
+      
+      // Dispatch a custom event to notify other components about the logo change
+      const event = new CustomEvent('app-logo-updated', { 
+        detail: { logoUrl } 
+      });
+      window.dispatchEvent(event);
+      
+      toast.success('Logo uploaded successfully');
     } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast.error('Failed to upload logo');
+      console.error('Error in logo upload process:', error);
+      toast.error('An unexpected error occurred during logo upload');
     } finally {
       setUploading(false);
     }
   };
   
-  const handleThemeSelection = (themeId: string) => {
-    setSelectedThemeId(themeId);
-    
-    const selectedTheme = themes.find(theme => theme.id === themeId);
-    if (selectedTheme && selectedTheme.logoUrl) {
-      setLogoPreview(selectedTheme.logoUrl);
-    } else {
-      setLogoPreview(null);
-    }
-  };
-  
-  const applyTheme = async () => {
-    if (!selectedThemeId) {
-      toast.error('Please select a theme first');
-      return;
-    }
-
-    if (profile?.role !== 'GOD' && profile?.role !== 'Super User') {
-      toast.error('You do not have permission to change themes');
-      return;
-    }
-
+  const saveTheme = async () => {
     try {
       setSaving(true);
       
-      const { error: resetError } = await supabase
+      // Update the theme in the database
+      const { data, error } = await supabase
         .from('themes')
-        .update({ is_active: false })
-        .neq('id', selectedThemeId);
+        .update({
+          name: activeTheme.name,
+          primary_color: activeTheme.primaryColor,
+          secondary_color: activeTheme.secondaryColor,
+          accent_color: activeTheme.accentColor,
+          sidebar_color: activeTheme.sidebarColor,
+          button_color: activeTheme.buttonColor,
+          text_color: activeTheme.textColor,
+          logo_url: activeTheme.logoUrl,
+          custom_font: activeTheme.customFont,
+          is_active: activeTheme.isActive
+        })
+        .eq('id', activeTheme.id);
       
-      if (resetError) {
-        console.error('Error resetting themes:', resetError);
-        throw resetError;
+      if (error) {
+        console.error('Error updating theme:', error);
+        toast.error('Failed to save theme settings');
+        return;
       }
       
-      const { error: updateError } = await supabase
-        .from('themes')
-        .update({ is_active: true })
-        .eq('id', selectedThemeId);
-      
-      if (updateError) {
-        console.error('Error activating theme:', updateError);
-        throw updateError;
-      }
-      
-      const selectedTheme = themes.find(theme => theme.id === selectedThemeId);
-      if (selectedTheme) {
-        const html = document.documentElement;
-        
-        const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode'];
-        themeClasses.forEach(cls => {
-          html.classList.remove(cls);
-        });
-        
-        if (selectedTheme.name === 'Forest Green') {
-          html.classList.add('theme-forest-green');
-        } else if (selectedTheme.name === 'Ocean Blue') {
-          html.classList.add('theme-ocean-blue');
-        } else if (selectedTheme.name === 'Sunset Orange') {
-          html.classList.add('theme-sunset-orange');
-        } else if (selectedTheme.name === 'Berry Purple') {
-          html.classList.add('theme-berry-purple');
-        } else if (selectedTheme.name === 'Dark Mode') {
-          html.classList.add('theme-dark-mode');
-        }
-        
-        if (selectedTheme.logoUrl) {
-          localStorage.setItem('app-logo-url', selectedTheme.logoUrl);
-          
-          window.dispatchEvent(new CustomEvent('app-logo-updated', { 
-            detail: { logoUrl: selectedTheme.logoUrl } 
-          }));
-        }
-      }
-      
-      toast.success('Theme applied successfully');
-      
+      toast.success('Theme settings saved successfully');
     } catch (error) {
-      console.error('Error applying theme:', error);
-      toast.error('Failed to apply theme');
+      console.error('Error saving theme settings:', error);
+      toast.error('An unexpected error occurred');
     } finally {
       setSaving(false);
     }
   };
   
-  const resetLogo = async () => {
-    try {
-      setLogoPreview(null);
-      
-      if (selectedThemeId) {
-        const { error: updateError } = await supabase
-          .from('themes')
-          .update({ logo_url: null })
-          .eq('id', selectedThemeId);
-          
-        if (updateError) {
-          throw updateError;
-        }
-        
-        setThemes(prevThemes => 
-          prevThemes.map(theme => 
-            theme.id === selectedThemeId 
-              ? {...theme, logoUrl: null} 
-              : theme
-          )
-        );
-      }
-      
-      localStorage.removeItem('app-logo-url');
-      
-      window.dispatchEvent(new CustomEvent('app-logo-updated', { 
-        detail: { logoUrl: null } 
-      }));
-      
-      toast.success('Logo reset to default');
-    } catch (error) {
-      console.error('Error resetting logo:', error);
-      toast.error('Failed to reset logo');
-    }
+  const handleCopyClick = () => {
+    navigator.clipboard.writeText(JSON.stringify(activeTheme, null, 2));
+    setIsCopied(true);
+    toast.success('Theme settings copied to clipboard');
+    
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 3000);
   };
 
-  if (profile?.role !== 'GOD' && profile?.role !== 'Super User') {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Brand & Theme Settings</CardTitle>
-          <CardDescription>
-            Access restricted to GOD and Super User roles
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="p-6 bg-red-50 text-red-800 rounded-md">
-            <p className="font-medium">Access Denied</p>
-            <p className="mt-1">You do not have permission to modify theme settings.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Brand & Theme Settings</CardTitle>
-          <CardDescription>
-            Customize the application's appearance to match your brand
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6 w-full grid grid-cols-2">
-              <TabsTrigger 
-                value="presets" 
-                className={`${getButtonBgColor()} text-white transition-colors duration-200 font-medium ${getActiveTabColor()} data-[state=active]:shadow-sm`}
-              >
-                Theme Presets
-              </TabsTrigger>
-              <TabsTrigger 
-                value="custom" 
-                className={`${getButtonBgColor()} text-white transition-colors duration-200 font-medium ${getActiveTabColor()} data-[state=active]:shadow-sm`}
-              >
-                Custom Theme
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="presets" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {themes.map(theme => (
-                  <div 
-                    key={theme.id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                      selectedThemeId === theme.id 
-                        ? `ring-2 ring-offset-2 ring-[${hasForestGreenTheme ? '#1b5e20' : 
-                                                        hasOceanBlueTheme ? '#1565c0' : 
-                                                        hasSunsetOrangeTheme ? '#e65100' : 
-                                                        hasBerryPurpleTheme ? '#6a1b9a' : 
-                                                        hasDarkModeTheme ? '#333333' : '#8e44ad'}] bg-purple-50` 
-                        : 'hover:border-[#8e44ad]/50 hover:bg-purple-50/30'
-                    }`}
-                    onClick={() => handleThemeSelection(theme.id)}
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium">{theme.name}</h3>
-                      {selectedThemeId === theme.id && (
-                        <Check className={`h-4 w-4 ${getTextColor()}`} />
-                      )}
-                    </div>
-                    <div className="flex gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.primaryColor }}></div>
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.secondaryColor }}></div>
-                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: theme.accentColor }}></div>
-                    </div>
-                    <div className="h-16 rounded-md flex items-center justify-center text-white" style={{ backgroundColor: theme.sidebarColor }}>
-                      Sidebar
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="custom" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="primaryColor">Primary Color</Label>
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-md border"
-                        style={{ backgroundColor: customTheme.primaryColor }}
-                      ></div>
-                      <Input 
-                        id="primaryColor"
-                        type="text"
-                        value={customTheme.primaryColor}
-                        onChange={(e) => setCustomTheme({...customTheme, primaryColor: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="secondaryColor">Secondary Color</Label>
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-md border"
-                        style={{ backgroundColor: customTheme.secondaryColor }}
-                      ></div>
-                      <Input 
-                        id="secondaryColor"
-                        type="text"
-                        value={customTheme.secondaryColor}
-                        onChange={(e) => setCustomTheme({...customTheme, secondaryColor: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="accentColor">Accent Color</Label>
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-md border"
-                        style={{ backgroundColor: customTheme.accentColor }}
-                      ></div>
-                      <Input 
-                        id="accentColor"
-                        type="text"
-                        value={customTheme.accentColor}
-                        onChange={(e) => setCustomTheme({...customTheme, accentColor: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="sidebarColor">Sidebar Color</Label>
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-md border"
-                        style={{ backgroundColor: customTheme.sidebarColor }}
-                      ></div>
-                      <Input 
-                        id="sidebarColor"
-                        type="text"
-                        value={customTheme.sidebarColor}
-                        onChange={(e) => setCustomTheme({...customTheme, sidebarColor: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="buttonColor">Button Color</Label>
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-md border"
-                        style={{ backgroundColor: customTheme.buttonColor }}
-                      ></div>
-                      <Input 
-                        id="buttonColor"
-                        type="text"
-                        value={customTheme.buttonColor}
-                        onChange={(e) => setCustomTheme({...customTheme, buttonColor: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="textColor">Text Color</Label>
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-md border"
-                        style={{ backgroundColor: customTheme.textColor }}
-                      ></div>
-                      <Input 
-                        id="textColor"
-                        type="text"
-                        value={customTheme.textColor}
-                        onChange={(e) => setCustomTheme({...customTheme, textColor: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="customFont">Font Family</Label>
-                <Select 
-                  value={customTheme.customFont} 
-                  onValueChange={(value) => setCustomTheme({...customTheme, customFont: value})}
-                >
-                  <SelectTrigger id="customFont">
-                    <SelectValue placeholder="Select font" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableFonts.map(font => (
-                      <SelectItem key={font.value} value={font.value}>
-                        {font.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          <div className="mt-8 border-t pt-6">
-            <h3 className="text-lg font-medium mb-4">Company Logo</h3>
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="border rounded-lg p-6 bg-gray-50 min-w-[200px] min-h-[100px] flex items-center justify-center">
-                {logoPreview ? (
-                  <img 
-                    src={logoPreview} 
-                    alt="Company logo preview" 
-                    className="max-w-full max-h-[100px]"
-                  />
-                ) : (
-                  <TavernLogo size="lg" />
-                )}
-              </div>
-              
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Upload a custom logo to replace the default Hi logo throughout the application.
-                </p>
-                <div className="flex gap-2 flex-wrap">
-                  <Button 
-                    type="button" 
-                    onClick={triggerFileInput}
-                    disabled={uploading}
-                  >
-                    <ImagePlus className="mr-2 h-4 w-4" />
-                    {uploading ? 'Uploading...' : 'Upload Logo'}
-                  </Button>
-                  
-                  {logoPreview && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={resetLogo}
-                    >
-                      <RefreshCcw className="mr-2 h-4 w-4" />
-                      Reset to Default
-                    </Button>
-                  )}
-                  
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/png, image/jpeg, image/svg+xml"
-                    onChange={handleFileChange}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="flex justify-end">
-        <Button 
-          onClick={applyTheme} 
-          disabled={saving || !selectedThemeId}
-          className={`${getButtonBgColor()} text-white`}
-        >
-          {saving ? 'Applying...' : 'Apply Theme Changes'}
-        </Button>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Brand & Theme Settings</CardTitle>
+        <CardDescription>
+          Customize the look and feel of your application
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-4">
+          <Label htmlFor="name">Theme Name</Label>
+          <Input 
+            type="text" 
+            id="name" 
+            name="name"
+            value={activeTheme.name} 
+            onChange={handleInputChange} 
+          />
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="primaryColor">Primary Color</Label>
+          <Input 
+            type="color" 
+            id="primaryColor" 
+            name="primaryColor"
+            value={activeTheme.primaryColor} 
+            onChange={handleInputChange} 
+          />
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="secondaryColor">Secondary Color</Label>
+          <Input 
+            type="color" 
+            id="secondaryColor" 
+            name="secondaryColor"
+            value={activeTheme.secondaryColor} 
+            onChange={handleInputChange} 
+          />
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="accentColor">Accent Color</Label>
+          <Input 
+            type="color" 
+            id="accentColor" 
+            name="accentColor"
+            value={activeTheme.accentColor} 
+            onChange={handleInputChange} 
+          />
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="sidebarColor">Sidebar Color</Label>
+          <Input 
+            type="color" 
+            id="sidebarColor" 
+            name="sidebarColor"
+            value={activeTheme.sidebarColor} 
+            onChange={handleInputChange} 
+          />
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="buttonColor">Button Color</Label>
+          <Input 
+            type="color" 
+            id="buttonColor" 
+            name="buttonColor"
+            value={activeTheme.buttonColor} 
+            onChange={handleInputChange} 
+          />
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="textColor">Text Color</Label>
+          <Input 
+            type="color" 
+            id="textColor" 
+            name="textColor"
+            value={activeTheme.textColor} 
+            onChange={handleInputChange} 
+          />
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="logoUrl">Logo</Label>
+          <Input 
+            type="file" 
+            id="logoUrl" 
+            accept="image/*"
+            onChange={handleLogoUpload} 
+          />
+          {uploading && <p>Uploading logo...</p>}
+          {activeTheme.logoUrl && <img src={activeTheme.logoUrl} alt="Logo" className="max-h-32" />}
+        </div>
+        
+        <div className="grid gap-4">
+          <Label htmlFor="customFont">Custom Font</Label>
+          <Select onValueChange={handleSelectChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a font" defaultValue={activeTheme.customFont} />
+            </SelectTrigger>
+            <SelectContent>
+              {availableFonts.map((font) => (
+                <SelectItem key={font.value} value={font.value}>
+                  {font.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <Label htmlFor="isActive">Active Theme</Label>
+          <Switch 
+            id="isActive" 
+            checked={activeTheme.isActive} 
+            onCheckedChange={handleSwitchChange} 
+          />
+        </div>
+        
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={handleCopyClick}>
+            {isCopied ? (
+              <Check className="mr-2 h-4 w-4" />
+            ) : (
+              <Copy className="mr-2 h-4 w-4" />
+            )}
+            {isCopied ? "Copied!" : "Copy Settings"}
+          </Button>
+          <Button onClick={saveTheme} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Theme
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
