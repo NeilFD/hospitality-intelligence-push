@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
 import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-types';
 import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
-import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders } from 'lucide-react';
+import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image } from 'lucide-react';
 
 interface ThemeSettingsPanelProps {
   currentTheme: ThemeSettings | null;
@@ -126,6 +127,7 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState("presets");
   
   useEffect(() => {
     if (currentTheme) {
@@ -434,231 +436,311 @@ export function ThemeSettingsPanel({ currentTheme, availableThemes }: ThemeSetti
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Preset Themes Section */}
-        <div className="mb-6">
-          <h3 className="text-lg font-medium mb-3 flex items-center">
-            <Palette className="mr-2 h-5 w-5" />
-            Preset Themes
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {presetThemes.map(theme => (
-              <div 
-                key={theme.id} 
-                className="border rounded-md overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => applyPresetTheme(theme)}
-              >
-                <div className="h-16" style={{ backgroundColor: theme.colors.primary }}></div>
-                <div className="p-2 text-center text-sm font-medium">{theme.name}</div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full mb-6">
+            <TabsTrigger value="presets" className="flex-1">
+              <Palette className="mr-2 h-4 w-4" />
+              Preset Themes & Logo
+            </TabsTrigger>
+            <TabsTrigger value="custom" className="flex-1">
+              <Sliders className="mr-2 h-4 w-4" />
+              Custom Colors
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Preset Themes Tab */}
+          <TabsContent value="presets" className="space-y-6">
+            <div className="grid gap-6">
+              {/* Theme Name Field */}
+              <div className="grid gap-4">
+                <Label htmlFor="name">Theme Name</Label>
+                <Input 
+                  type="text" 
+                  id="name" 
+                  name="name"
+                  value={activeTheme.name} 
+                  onChange={handleInputChange} 
+                />
               </div>
-            ))}
-          </div>
-        </div>
+              
+              {/* Preset Themes Gallery */}
+              <div>
+                <h3 className="text-lg font-medium mb-3 flex items-center">
+                  <Palette className="mr-2 h-5 w-5" />
+                  Select a Preset Theme
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {presetThemes.map(theme => (
+                    <div 
+                      key={theme.id} 
+                      className="border rounded-md overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => applyPresetTheme(theme)}
+                    >
+                      <div className="h-24" style={{ backgroundColor: theme.colors.primary }}>
+                        <div className="h-8 w-full" style={{ backgroundColor: theme.colors.sidebar }}></div>
+                        <div className="flex justify-center mt-2">
+                          <div className="h-8 w-16 rounded" style={{ backgroundColor: theme.colors.button }}></div>
+                        </div>
+                      </div>
+                      <div className="p-2 text-center text-sm font-medium">{theme.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Logo Upload Section */}
+              <div className="space-y-4 p-6 border rounded-lg">
+                <h3 className="text-lg font-medium mb-3 flex items-center">
+                  <Image className="mr-2 h-5 w-5" />
+                  Brand Logo
+                </h3>
+                
+                <div className="grid gap-4">
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/50 transition-colors">
+                    {activeTheme.logoUrl ? (
+                      <div className="relative w-full flex flex-col items-center">
+                        <img 
+                          src={activeTheme.logoUrl} 
+                          alt="Logo" 
+                          className="max-h-40 object-contain mb-4" 
+                        />
+                        <Label 
+                          htmlFor="logoUrl" 
+                          className="cursor-pointer px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center"
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Change Logo
+                        </Label>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-center">
+                        <Upload className="h-12 w-12 text-muted-foreground mb-2" />
+                        <h3 className="text-lg font-medium">Upload logo</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Drag and drop or click to browse
+                        </p>
+                        <Label 
+                          htmlFor="logoUrl" 
+                          className="cursor-pointer px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center"
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Select File
+                        </Label>
+                      </div>
+                    )}
+                    <Input 
+                      type="file" 
+                      id="logoUrl" 
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    {uploading && <p className="mt-2 text-sm">Uploading logo...</p>}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Font Selection */}
+              <div className="grid gap-4">
+                <Label htmlFor="customFont">Custom Font</Label>
+                <Select onValueChange={handleSelectChange} defaultValue={activeTheme.customFont || undefined}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableFonts.map((font) => (
+                      <SelectItem key={font.value} value={font.value}>
+                        {font.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Active Switch */}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isActive">Active Theme</Label>
+                <Switch 
+                  id="isActive" 
+                  checked={activeTheme.isActive} 
+                  onCheckedChange={handleSwitchChange} 
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          {/* Custom Colors Tab */}
+          <TabsContent value="custom" className="space-y-6">
+            {/* Primary Color */}
+            <div className="grid gap-2">
+              <Label htmlFor="primaryColor" className="flex items-center">
+                <div className="w-4 h-4 mr-2 rounded-full" style={{ backgroundColor: activeTheme.primaryColor }}></div>
+                Primary Color
+              </Label>
+              <div className="flex space-x-2 items-center">
+                <div className="w-12 h-12 rounded-md" style={{ backgroundColor: activeTheme.primaryColor }}></div>
+                <Input 
+                  type="text" 
+                  id="primaryColor" 
+                  name="primaryColor"
+                  value={activeTheme.primaryColor} 
+                  onChange={handleInputChange} 
+                  className="flex-grow"
+                />
+              </div>
+              <div className="mt-2">
+                <ColorSliderGroup 
+                  name="primary" 
+                  rgbValues={primaryRgb} 
+                  onChange={handlePrimaryRgbChange} 
+                />
+              </div>
+            </div>
+            
+            {/* Secondary Color */}
+            <div className="grid gap-2">
+              <Label htmlFor="secondaryColor" className="flex items-center">
+                <div className="w-4 h-4 mr-2 rounded-full" style={{ backgroundColor: activeTheme.secondaryColor }}></div>
+                Secondary Color
+              </Label>
+              <div className="flex space-x-2 items-center">
+                <div className="w-12 h-12 rounded-md" style={{ backgroundColor: activeTheme.secondaryColor }}></div>
+                <Input 
+                  type="text" 
+                  id="secondaryColor" 
+                  name="secondaryColor"
+                  value={activeTheme.secondaryColor} 
+                  onChange={handleInputChange} 
+                  className="flex-grow"
+                />
+              </div>
+              <div className="mt-2">
+                <ColorSliderGroup 
+                  name="secondary" 
+                  rgbValues={secondaryRgb} 
+                  onChange={handleSecondaryRgbChange} 
+                />
+              </div>
+            </div>
+            
+            {/* Accent Color */}
+            <div className="grid gap-2">
+              <Label htmlFor="accentColor" className="flex items-center">
+                <div className="w-4 h-4 mr-2 rounded-full" style={{ backgroundColor: activeTheme.accentColor }}></div>
+                Accent Color
+              </Label>
+              <div className="flex space-x-2 items-center">
+                <div className="w-12 h-12 rounded-md" style={{ backgroundColor: activeTheme.accentColor }}></div>
+                <Input 
+                  type="text" 
+                  id="accentColor" 
+                  name="accentColor"
+                  value={activeTheme.accentColor} 
+                  onChange={handleInputChange} 
+                  className="flex-grow"
+                />
+              </div>
+              <div className="mt-2">
+                <ColorSliderGroup 
+                  name="accent" 
+                  rgbValues={accentRgb} 
+                  onChange={handleAccentRgbChange} 
+                />
+              </div>
+            </div>
+            
+            {/* Sidebar Color */}
+            <div className="grid gap-2">
+              <Label htmlFor="sidebarColor" className="flex items-center">
+                <div className="w-4 h-4 mr-2 rounded-full" style={{ backgroundColor: activeTheme.sidebarColor }}></div>
+                Sidebar Color
+              </Label>
+              <div className="flex space-x-2 items-center">
+                <div className="w-12 h-12 rounded-md" style={{ backgroundColor: activeTheme.sidebarColor }}></div>
+                <Input 
+                  type="text" 
+                  id="sidebarColor" 
+                  name="sidebarColor"
+                  value={activeTheme.sidebarColor} 
+                  onChange={handleInputChange} 
+                  className="flex-grow"
+                />
+              </div>
+              <div className="mt-2">
+                <ColorSliderGroup 
+                  name="sidebar" 
+                  rgbValues={sidebarRgb} 
+                  onChange={handleSidebarRgbChange} 
+                />
+              </div>
+            </div>
+            
+            {/* Button Color */}
+            <div className="grid gap-2">
+              <Label htmlFor="buttonColor" className="flex items-center">
+                <div className="w-4 h-4 mr-2 rounded-full" style={{ backgroundColor: activeTheme.buttonColor }}></div>
+                Button Color
+              </Label>
+              <div className="flex space-x-2 items-center">
+                <div className="w-12 h-12 rounded-md" style={{ backgroundColor: activeTheme.buttonColor }}></div>
+                <Input 
+                  type="text" 
+                  id="buttonColor" 
+                  name="buttonColor"
+                  value={activeTheme.buttonColor} 
+                  onChange={handleInputChange} 
+                  className="flex-grow"
+                />
+              </div>
+              <div className="mt-2">
+                <ColorSliderGroup 
+                  name="button" 
+                  rgbValues={buttonRgb} 
+                  onChange={handleButtonRgbChange} 
+                />
+              </div>
+            </div>
+            
+            {/* Text Color */}
+            <div className="grid gap-2">
+              <Label htmlFor="textColor" className="flex items-center">
+                <div className="w-4 h-4 mr-2 rounded-full" style={{ backgroundColor: activeTheme.textColor }}></div>
+                Text Color
+              </Label>
+              <div className="flex space-x-2 items-center">
+                <div className="w-12 h-12 rounded-md" style={{ backgroundColor: activeTheme.textColor }}></div>
+                <Input 
+                  type="text" 
+                  id="textColor" 
+                  name="textColor"
+                  value={activeTheme.textColor} 
+                  onChange={handleInputChange} 
+                  className="flex-grow"
+                />
+              </div>
+              <div className="mt-2">
+                <ColorSliderGroup 
+                  name="text" 
+                  rgbValues={textRgb} 
+                  onChange={handleTextRgbChange} 
+                />
+              </div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setActiveTab("presets")} 
+                className="mr-2"
+              >
+                Back to Presets
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
         
-        <div className="grid gap-4">
-          <Label htmlFor="name">Theme Name</Label>
-          <Input 
-            type="text" 
-            id="name" 
-            name="name"
-            value={activeTheme.name} 
-            onChange={handleInputChange} 
-          />
-        </div>
-        
-        {/* Primary Color */}
-        <div className="grid gap-2">
-          <Label htmlFor="primaryColor" className="flex items-center">
-            <Sliders className="h-4 w-4 mr-2" />
-            Primary Color
-          </Label>
-          <div className="flex space-x-2 items-center">
-            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.primaryColor }}></div>
-            <Input 
-              type="text" 
-              id="primaryColor" 
-              name="primaryColor"
-              value={activeTheme.primaryColor} 
-              onChange={handleInputChange} 
-              className="flex-grow"
-            />
-          </div>
-          <div className="mt-2">
-            <ColorSliderGroup 
-              name="primary" 
-              rgbValues={primaryRgb} 
-              onChange={handlePrimaryRgbChange} 
-            />
-          </div>
-        </div>
-        
-        {/* Secondary Color */}
-        <div className="grid gap-2">
-          <Label htmlFor="secondaryColor" className="flex items-center">
-            <Sliders className="h-4 w-4 mr-2" />
-            Secondary Color
-          </Label>
-          <div className="flex space-x-2 items-center">
-            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.secondaryColor }}></div>
-            <Input 
-              type="text" 
-              id="secondaryColor" 
-              name="secondaryColor"
-              value={activeTheme.secondaryColor} 
-              onChange={handleInputChange} 
-              className="flex-grow"
-            />
-          </div>
-          <div className="mt-2">
-            <ColorSliderGroup 
-              name="secondary" 
-              rgbValues={secondaryRgb} 
-              onChange={handleSecondaryRgbChange} 
-            />
-          </div>
-        </div>
-        
-        {/* Accent Color */}
-        <div className="grid gap-2">
-          <Label htmlFor="accentColor" className="flex items-center">
-            <Sliders className="h-4 w-4 mr-2" />
-            Accent Color
-          </Label>
-          <div className="flex space-x-2 items-center">
-            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.accentColor }}></div>
-            <Input 
-              type="text" 
-              id="accentColor" 
-              name="accentColor"
-              value={activeTheme.accentColor} 
-              onChange={handleInputChange} 
-              className="flex-grow"
-            />
-          </div>
-          <div className="mt-2">
-            <ColorSliderGroup 
-              name="accent" 
-              rgbValues={accentRgb} 
-              onChange={handleAccentRgbChange} 
-            />
-          </div>
-        </div>
-        
-        {/* Sidebar Color */}
-        <div className="grid gap-2">
-          <Label htmlFor="sidebarColor" className="flex items-center">
-            <Sliders className="h-4 w-4 mr-2" />
-            Sidebar Color
-          </Label>
-          <div className="flex space-x-2 items-center">
-            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.sidebarColor }}></div>
-            <Input 
-              type="text" 
-              id="sidebarColor" 
-              name="sidebarColor"
-              value={activeTheme.sidebarColor} 
-              onChange={handleInputChange} 
-              className="flex-grow"
-            />
-          </div>
-          <div className="mt-2">
-            <ColorSliderGroup 
-              name="sidebar" 
-              rgbValues={sidebarRgb} 
-              onChange={handleSidebarRgbChange} 
-            />
-          </div>
-        </div>
-        
-        {/* Button Color */}
-        <div className="grid gap-2">
-          <Label htmlFor="buttonColor" className="flex items-center">
-            <Sliders className="h-4 w-4 mr-2" />
-            Button Color
-          </Label>
-          <div className="flex space-x-2 items-center">
-            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.buttonColor }}></div>
-            <Input 
-              type="text" 
-              id="buttonColor" 
-              name="buttonColor"
-              value={activeTheme.buttonColor} 
-              onChange={handleInputChange} 
-              className="flex-grow"
-            />
-          </div>
-          <div className="mt-2">
-            <ColorSliderGroup 
-              name="button" 
-              rgbValues={buttonRgb} 
-              onChange={handleButtonRgbChange} 
-            />
-          </div>
-        </div>
-        
-        {/* Text Color */}
-        <div className="grid gap-2">
-          <Label htmlFor="textColor" className="flex items-center">
-            <Sliders className="h-4 w-4 mr-2" />
-            Text Color
-          </Label>
-          <div className="flex space-x-2 items-center">
-            <div className="w-10 h-10 rounded-md" style={{ backgroundColor: activeTheme.textColor }}></div>
-            <Input 
-              type="text" 
-              id="textColor" 
-              name="textColor"
-              value={activeTheme.textColor} 
-              onChange={handleInputChange} 
-              className="flex-grow"
-            />
-          </div>
-          <div className="mt-2">
-            <ColorSliderGroup 
-              name="text" 
-              rgbValues={textRgb} 
-              onChange={handleTextRgbChange} 
-            />
-          </div>
-        </div>
-        
-        <div className="grid gap-4">
-          <Label htmlFor="logoUrl">Logo</Label>
-          <Input 
-            type="file" 
-            id="logoUrl" 
-            accept="image/*"
-            onChange={handleLogoUpload} 
-          />
-          {uploading && <p>Uploading logo...</p>}
-          {activeTheme.logoUrl && <img src={activeTheme.logoUrl} alt="Logo" className="max-h-32" />}
-        </div>
-        
-        <div className="grid gap-4">
-          <Label htmlFor="customFont">Custom Font</Label>
-          <Select onValueChange={handleSelectChange} defaultValue={activeTheme.customFont || undefined}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a font" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableFonts.map((font) => (
-                <SelectItem key={font.value} value={font.value}>
-                  {font.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <Label htmlFor="isActive">Active Theme</Label>
-          <Switch 
-            id="isActive" 
-            checked={activeTheme.isActive} 
-            onCheckedChange={handleSwitchChange} 
-          />
-        </div>
-        
-        <div className="flex justify-between">
+        {/* Action Buttons - Shown on both tabs */}
+        <div className="flex justify-between pt-4 border-t">
           <Button variant="outline" onClick={handleCopyClick}>
             {isCopied ? (
               <Check className="mr-2 h-4 w-4" />
