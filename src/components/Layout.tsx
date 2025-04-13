@@ -10,7 +10,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { SidebarLogo } from "./SidebarLogo";
+import SidebarLogo from "./SidebarLogo"; // Change the import to use default import
 import { TavernLogo } from "./TavernLogo";
 import { useAuthStore } from "@/services/auth-service";
 import { 
