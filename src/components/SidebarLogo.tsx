@@ -21,8 +21,8 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({
   return (
     <img 
       src="/lovable-uploads/4236b6e6-6214-4c69-b02c-62083db662f9.png" 
-      alt="Hi" 
-      className={cn(sizeClasses[size], className)}
+      alt="Hospitality Intelligence Logo" 
+      className={cn(sizeClasses[size], className, 'object-contain')}
     />
   );
 };
