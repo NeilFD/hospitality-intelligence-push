@@ -18,6 +18,7 @@ import AnnualSummary from '@/pages/food/AnnualSummary';
 import ControlCentre from '@/pages/ControlCentre';
 import WagesDashboard from '@/pages/wages/WagesDashboard';
 import Index from '@/pages/Index';
+import ProfilePage from '@/pages/ProfilePage';
 
 // Import PL dashboard component
 import PLDashboard from '@/pages/pl/Dashboard';
@@ -63,6 +64,9 @@ function App() {
               {/* Auth Routes */}
               <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
               <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+              
+              {/* Profile Route */}
+              <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
               
               {/* App Routes - All wrapped with Layout */}
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
