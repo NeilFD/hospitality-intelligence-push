@@ -12,10 +12,6 @@ import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-t
 import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
 import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image } from 'lucide-react';
-interface ThemeSettingsPanelProps {
-  currentTheme: ThemeSettings | null;
-  availableThemes: ThemeSettings[];
-}
 
 // Preset themes
 const presetThemes: PresetTheme[] = [{
@@ -97,6 +93,12 @@ const hexToRgb = (hex: string): {
 const rgbToHex = (r: number, g: number, b: number): string => {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 };
+
+interface ThemeSettingsPanelProps {
+  currentTheme: ThemeSettings | null;
+  availableThemes: ThemeSettings[];
+}
+
 export function ThemeSettingsPanel({
   currentTheme,
   availableThemes
@@ -127,6 +129,7 @@ export function ThemeSettingsPanel({
   const [saving, setSaving] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("presets");
+
   useEffect(() => {
     if (currentTheme) {
       setActiveTheme(currentTheme);
@@ -139,6 +142,7 @@ export function ThemeSettingsPanel({
       setTextRgb(hexToRgb(currentTheme.textColor));
     }
   }, [currentTheme]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {
       name,
@@ -438,6 +442,7 @@ export function ThemeSettingsPanel({
         <span className="ml-2 w-8 text-center text-xs">{rgbValues.b}</span>
       </div>
     </div>;
+
   return <Card>
       <CardHeader>
         <CardTitle>Brand & Theme Settings</CardTitle>
@@ -448,11 +453,27 @@ export function ThemeSettingsPanel({
       <CardContent className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="presets" className="flex-1 bg-purple-700 hover:bg-purple-600 text-slate-50">
+            <TabsTrigger 
+              value="presets" 
+              className={`
+                flex-1 
+                ${activeTab === 'presets' 
+                  ? 'bg-purple-900 text-white shadow-md' 
+                  : 'bg-purple-700 hover:bg-purple-600 text-white/80'}
+              `}
+            >
               <Palette className="mr-2 h-4 w-4" />
               Preset Themes & Logo
             </TabsTrigger>
-            <TabsTrigger value="custom" className="flex-1 bg-purple-700 hover:bg-purple-600 text-slate-50">
+            <TabsTrigger 
+              value="custom" 
+              className={`
+                flex-1 
+                ${activeTab === 'custom' 
+                  ? 'bg-purple-900 text-white shadow-md' 
+                  : 'bg-purple-700 hover:bg-purple-600 text-white/80'}
+              `}
+            >
               <Sliders className="mr-2 h-4 w-4" />
               Custom Colors
             </TabsTrigger>
