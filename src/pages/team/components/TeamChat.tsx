@@ -63,11 +63,32 @@ const highlightMentions = (content: string, teamMembers: UserProfile[]): React.R
   const parts = content.split('@');
   const result: React.ReactNode[] = [parts[0]];
   
+  const getThemeHighlightColor = () => {
+    const htmlElement = document.documentElement;
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return 'bg-forest-green/10 text-forest-green font-medium';
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return 'bg-[#1565c0]/10 text-[#1565c0] font-medium';
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return 'bg-[#e65100]/10 text-[#e65100] font-medium';
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return 'bg-[#6a1b9a]/10 text-[#6a1b9a] font-medium';
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return 'bg-[#333333]/10 text-[#333333] font-medium';
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return 'bg-[#7E69AB]/10 text-[#7E69AB] font-medium';
+    } else {
+      return 'bg-[#7E69AB]/10 text-[#7E69AB] font-medium';
+    }
+  };
+  
+  const mentionClass = getThemeHighlightColor();
+  
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i];
     
     if (part.startsWith('all ') || part.startsWith('all\n')) {
-      result.push(<span key={`mention-all-${i}`} className="bg-blue-100 text-blue-800 rounded px-1">@all</span>);
+      result.push(<span key={`mention-all-${i}`} className={`${mentionClass} rounded px-1`}>@all</span>);
       result.push(part.substring(3));
       continue;
     }
@@ -76,7 +97,7 @@ const highlightMentions = (content: string, teamMembers: UserProfile[]): React.R
     
     for (const [userId, name] of userMap.entries()) {
       if (part.startsWith(`${userId} `) || part.startsWith(`${userId}\n`)) {
-        result.push(<span key={`mention-${userId}-${i}`} className="bg-blue-100 text-blue-800 rounded px-1">@{name}</span>);
+        result.push(<span key={`mention-${userId}-${i}`} className={`${mentionClass} rounded px-1`}>@{name}</span>);
         result.push(part.substring(userId.length));
         found = true;
         break;
