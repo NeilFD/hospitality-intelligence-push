@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle, Filter } from 'lucide-react';
+import { Users, MessageSquare, ArrowRight, Clipboard, Book, Loader2, AlertCircle, Filter, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getTeamMembers } from '@/services/team-service';
@@ -84,11 +84,41 @@ const TeamDashboard: React.FC = () => {
           // GOD users should still see users without roles when filtering by Team Member
           (roleFilter === 'Team Member' && !member.role));
 
+  // Helper function to get user initials for avatar
+  const getUserInitials = () => {
+    if (!profile) return '?';
+    const firstName = profile.first_name || '';
+    const lastName = profile.last_name || '';
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
   return <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold mb-2 text-slate-900 flex items-center gap-2">
-          <Users className="h-8 w-8 text-indigo-600" /> Team
-        </h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold mb-2 text-slate-900 flex items-center gap-2">
+            <Users className="h-8 w-8 text-indigo-600" /> Team
+          </h1>
+          
+          {profile && (
+            <Link to="/profile" className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
+              <Avatar className="h-10 w-10 border-2 border-indigo-100">
+                {profile.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
+                ) : (
+                  <AvatarFallback className="bg-indigo-100 text-indigo-700">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-gray-800">
+                  {profile.first_name} {profile.last_name}
+                </span>
+                <span className="text-xs text-gray-500">{profile.role || 'Team Member'}</span>
+              </div>
+            </Link>
+          )}
+        </div>
         <p className="text-gray-600">
           Connect with your team, share updates, and stay informed.
         </p>
