@@ -735,11 +735,20 @@ export function ThemeSettingsPanel({
                       ${getThemeNameInputClasses()}
                     `}
                   >
-                    <SelectValue placeholder="Select a font" />
+                     <SelectValue placeholder="Select a font" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-80">
                     {availableFonts.map(font => (
-                      <SelectItem key={font.value} value={font.value}>
+                      <SelectItem 
+                        key={font.value} 
+                        value={font.value} 
+                        style={{ 
+                          fontFamily: font.value,
+                          fontSize: "16px",
+                          padding: "10px 8px 10px 28px",
+                          marginBottom: "4px"
+                        }}
+                      >
                         {font.name}
                       </SelectItem>
                     ))}
