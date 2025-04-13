@@ -25,7 +25,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         const { data, error } = await supabase
           .from('themes')
-          .select('name, primary_color, secondary_color, accent_color, custom_font')
+          .select('name, primary_color, secondary_color, accent_color, custom_font, company_name, logo_url')
           .eq('is_active', true)
           .maybeSingle();
         
@@ -44,10 +44,22 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             applyCustomFont(data.custom_font);
           }
           
+          // Save the company name to localStorage
+          if (data.company_name) {
+            localStorage.setItem('company-name', data.company_name);
+            console.log('Saved company name to localStorage:', data.company_name);
+          }
+          
+          // Save the logo URL to localStorage
+          if (data.logo_url) {
+            localStorage.setItem('app-logo-url', data.logo_url);
+            console.log('Saved logo URL to localStorage:', data.logo_url);
+          }
+          
           // Save the current theme to localStorage
           localStorage.setItem('app-active-theme', data.name);
           
-          console.log('Applied theme from database:', data.name, 'with font:', data.custom_font);
+          console.log('Applied theme from database:', data.name, 'with font:', data.custom_font, 'and company name:', data.company_name);
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
@@ -73,11 +85,25 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       if (event.detail && event.detail.theme && event.detail.theme.name) {
         const themeName = event.detail.theme.name;
         const customFont = event.detail.theme.customFont;
+        const companyName = event.detail.theme.companyName;
+        const logoUrl = event.detail.theme.logoUrl;
         
-        console.log("Applying theme from event:", themeName, "with font:", customFont);
+        console.log("Applying theme from event:", themeName, "with font:", customFont, "and company name:", companyName);
         
-        // Save theme to localStorage for persistence
+        // Save theme name to localStorage for persistence
         localStorage.setItem('app-active-theme', themeName);
+        
+        // Save company name to localStorage if available
+        if (companyName) {
+          localStorage.setItem('company-name', companyName);
+          console.log('Saving company name to localStorage:', companyName);
+        }
+        
+        // Save logo URL to localStorage if available
+        if (logoUrl) {
+          localStorage.setItem('app-logo-url', logoUrl);
+          console.log('Saving logo URL to localStorage:', logoUrl);
+        }
         
         // Apply theme class
         applyThemeClass(themeName);

@@ -358,6 +358,112 @@ export function ThemeSettingsPanel({
     }
   };
 
+  const saveThemeSettings = async (theme: any) => {
+    try {
+      console.log("Saving theme settings with company name:", theme.companyName);
+      
+      // Update existing theme
+      if (theme.id) {
+        const { error } = await supabase.from('themes').update({
+          name: theme.name,
+          primary_color: theme.primaryColor,
+          secondary_color: theme.secondaryColor,
+          accent_color: theme.accentColor,
+          sidebar_color: theme.sidebarColor,
+          button_color: theme.buttonColor,
+          text_color: theme.textColor,
+          logo_url: theme.logoUrl,
+          custom_font: theme.customFont,
+          company_name: theme.companyName
+        }).eq('id', theme.id);
+        
+        if (error) {
+          console.error("Error updating theme:", error);
+          throw error;
+        }
+        
+        // If this is the active theme, dispatch the update events
+        if (theme.isActive) {
+          // Dispatch theme update event
+          const themeEvent = new CustomEvent('app-theme-updated', {
+            detail: {
+              theme
+            }
+          });
+          window.dispatchEvent(themeEvent);
+          
+          // Dispatch company name update event
+          const companyNameEvent = new CustomEvent('company-name-updated', {
+            detail: {
+              companyName: theme.companyName
+            }
+          });
+          window.dispatchEvent(companyNameEvent);
+          
+          // Also update localStorage directly as a backup
+          localStorage.setItem('company-name', theme.companyName);
+          console.log("Updated company name in localStorage:", theme.companyName);
+        }
+        
+        return {
+          success: true
+        };
+      }
+      
+      // Create new theme
+      const { data, error } = await supabase.from('themes').insert({
+        name: theme.name,
+        primary_color: theme.primaryColor,
+        secondary_color: theme.secondaryColor,
+        accent_color: theme.accentColor,
+        sidebar_color: theme.sidebarColor,
+        button_color: theme.buttonColor,
+        text_color: theme.textColor,
+        logo_url: theme.logoUrl,
+        custom_font: theme.customFont,
+        is_active: theme.isActive,
+        company_name: theme.companyName
+      }).select().single();
+      
+      if (error) {
+        console.error("Error creating theme:", error);
+        throw error;
+      }
+      
+      // If active, dispatch theme update event
+      if (theme.isActive) {
+        // Dispatch theme update event
+        const themeEvent = new CustomEvent('app-theme-updated', {
+          detail: {
+            theme: data
+          }
+        });
+        window.dispatchEvent(themeEvent);
+        
+        // Dispatch company name update event
+        const companyNameEvent = new CustomEvent('company-name-updated', {
+          detail: {
+            companyName: theme.companyName
+          }
+        });
+        window.dispatchEvent(companyNameEvent);
+        
+        // Also update localStorage directly as a backup
+        localStorage.setItem('company-name', theme.companyName);
+        console.log("Set company name in localStorage:", theme.companyName);
+      }
+      
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error('Error saving theme settings:', error);
+      return {
+        error
+      };
+    }
+  };
+
   const saveTheme = async () => {
     try {
       setSaving(true);
@@ -365,19 +471,19 @@ export function ThemeSettingsPanel({
       const {
         data,
         error
-      } = await supabase.from('themes').update({
+      } = await saveThemeSettings({
         name: activeTheme.name,
-        primary_color: activeTheme.primaryColor,
-        secondary_color: activeTheme.secondaryColor,
-        accent_color: activeTheme.accentColor,
-        sidebar_color: activeTheme.sidebarColor,
-        button_color: activeTheme.buttonColor,
-        text_color: activeTheme.textColor,
-        logo_url: activeTheme.logoUrl,
-        custom_font: activeTheme.customFont,
+        primaryColor: activeTheme.primaryColor,
+        secondaryColor: activeTheme.secondaryColor,
+        accentColor: activeTheme.accentColor,
+        sidebarColor: activeTheme.sidebarColor,
+        buttonColor: activeTheme.buttonColor,
+        textColor: activeTheme.textColor,
+        logoUrl: activeTheme.logoUrl,
+        customFont: activeTheme.customFont,
         is_active: activeTheme.isActive,
         company_name: activeTheme.companyName
-      }).eq('id', activeTheme.id);
+      });
       
       if (error) {
         console.error('Error updating theme:', error);
