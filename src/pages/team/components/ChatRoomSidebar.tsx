@@ -125,6 +125,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         setThemeColors({
           selectedBg: 'bg-forest-green',
           selectedHover: 'hover:bg-forest-green-dark',
+          selectedText: 'text-white',
           hoverBg: 'hover:bg-forest-green-light/30',
           hoverText: 'hover:text-white'
         });
@@ -132,6 +133,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         setThemeColors({
           selectedBg: 'bg-[#1565c0]',
           selectedHover: 'hover:bg-[#1565c0]/90',
+          selectedText: 'text-white',
           hoverBg: 'hover:bg-[#64b5f6]/30',
           hoverText: 'hover:text-white'
         });
@@ -139,6 +141,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         setThemeColors({
           selectedBg: 'bg-[#e65100]',
           selectedHover: 'hover:bg-[#e65100]/90',
+          selectedText: 'text-white',
           hoverBg: 'hover:bg-[#ffb74d]/30',
           hoverText: 'hover:text-white'
         });
@@ -146,6 +149,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         setThemeColors({
           selectedBg: 'bg-[#6a1b9a]',
           selectedHover: 'hover:bg-[#6a1b9a]/90',
+          selectedText: 'text-white',
           hoverBg: 'hover:bg-[#ce93d8]/30',
           hoverText: 'hover:text-white'
         });
@@ -153,6 +157,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         setThemeColors({
           selectedBg: 'bg-[#333333]',
           selectedHover: 'hover:bg-[#333333]/90',
+          selectedText: 'text-white',
           hoverBg: 'hover:bg-[#555555]/30',
           hoverText: 'hover:text-white'
         });
@@ -160,6 +165,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         setThemeColors({
           selectedBg: 'bg-[#7E69AB]',
           selectedHover: 'hover:bg-[#7E69AB]/90',
+          selectedText: 'text-white',
           hoverBg: 'hover:bg-[#86e0b3]',
           hoverText: 'hover:text-[#48495E]'
         });
@@ -168,6 +174,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         setThemeColors({
           selectedBg: 'bg-[#7E69AB]',
           selectedHover: 'hover:bg-[#7E69AB]/90',
+          selectedText: 'text-white',
           hoverBg: 'hover:bg-[#86e0b3]',
           hoverText: 'hover:text-[#48495E]'
         });
