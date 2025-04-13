@@ -448,7 +448,7 @@ export function ThemeSettingsPanel({
       <CardContent className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="presets" className="flex-1 bg-purple-700 hover:bg-purple-600">
+            <TabsTrigger value="presets" className="flex-1 bg-purple-700 hover:bg-purple-600 text-slate-50">
               <Palette className="mr-2 h-4 w-4" />
               Preset Themes & Logo
             </TabsTrigger>
