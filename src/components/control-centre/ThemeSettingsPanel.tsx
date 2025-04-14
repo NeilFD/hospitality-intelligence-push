@@ -14,6 +14,17 @@ import { supabase } from '@/lib/supabase';
 import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image, Building } from 'lucide-react';
 
 const presetThemes: PresetTheme[] = [{
+  id: 'hi-purple',
+  name: 'Hi Purple',
+  colors: {
+    primary: '#6a1b9a',
+    secondary: '#f3e5f5',
+    accent: '#ab47bc',
+    sidebar: '#8e24aa',
+    button: '#9c27b0',
+    text: '#212121'
+  }
+}, {
   id: 'forest-green',
   name: 'Forest Green',
   colors: {
@@ -48,7 +59,7 @@ const presetThemes: PresetTheme[] = [{
   }
 }, {
   id: 'berry-purple',
-  name: 'Hi',
+  name: 'Berry Purple',
   colors: {
     primary: '#6a1b9a',
     secondary: '#f3e5f5',
@@ -817,6 +828,7 @@ export function ThemeSettingsPanel({
                         transition-all duration-300 
                         ${selectedPreset === theme.id ? 'ring-4 ring-purple-500 shadow-lg transform scale-105' : 'hover:shadow-md'}
                         ${presetSelectAnimation && selectedPreset === theme.id ? 'animate-pulse' : ''}
+                        relative
                       `}
                       onClick={() => applyPresetTheme(theme)}
                     >
@@ -831,6 +843,11 @@ export function ThemeSettingsPanel({
                             backgroundColor: theme.colors.button
                           }}></div>
                         </div>
+                        {theme.id === 'hi-purple' && (
+                          <div className="absolute top-1 left-1 bg-white/50 text-xs px-1 rounded">
+                            Default
+                          </div>
+                        )}
                         {selectedPreset === theme.id && (
                           <div className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md">
                             <Check className="h-4 w-4 text-green-600" />
