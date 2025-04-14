@@ -11,17 +11,17 @@ import { toast } from 'sonner';
 import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-types';
 import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
-import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image, Building } from 'lucide-react';
+import { Check, ChevronsUpDown, Copy, Loader2, Palette, Sliders, Upload, Image, Building } from 'lucide-react';
 
 const presetThemes: PresetTheme[] = [{
   id: 'berry-purple',
   name: 'Hi',
   colors: {
-    primary: '#6a1b9a',
+    primary: '#806cac',
     secondary: '#f3e5f5',
-    accent: '#ab47bc',
-    sidebar: '#8e24aa',
-    button: '#9c27b0',
+    accent: '#9d89c9',
+    sidebar: '#705b9b',
+    button: '#806cac',
     text: '#212121'
   },
   isDefault: true
