@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import DatabasePanel from '@/components/control-centre/DatabasePanel';
-import PermissionMatrixPanel from '@/components/control-centre/PermissionMatrixPanel';
-import ThemeSettingsPanel from '@/components/control-centre/ThemeSettingsPanel';
-import TargetSettingsPanel from '@/components/control-centre/TargetSettingsPanel';
+import { DatabasePanel } from '@/components/control-centre/DatabasePanel';
+import { PermissionMatrixPanel } from '@/components/control-centre/PermissionMatrixPanel';
+import { ThemeSettingsPanel } from '@/components/control-centre/ThemeSettingsPanel';
+import { TargetSettingsPanel } from '@/components/control-centre/TargetSettingsPanel';
 import TeamManagementPanel from '@/components/control-centre/TeamManagementPanel';
-import { RequireAuth } from '@/components/auth/RequireAuth';
+import RequireAuth from '@/components/auth/RequireAuth';
 import { useAuth } from '@/contexts/AuthContext';
 
 const ControlCentre: React.FC = () => {

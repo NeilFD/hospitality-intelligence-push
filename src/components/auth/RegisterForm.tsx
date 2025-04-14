@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signUp } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrationComplete }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,12 +53,22 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
     setError(null);
 
     try {
-      const { error } = await signUp(data.email, data.password, {
+      // Include additional user metadata
+      const userData = {
         first_name: data.firstName,
         last_name: data.lastName,
-        job_title: invitationData?.jobTitle,
-        role: invitationData?.role
-      });
+      };
+      
+      // Add role and job_title if available from invitation
+      if (invitationData?.role) {
+        Object.assign(userData, { role: invitationData.role });
+      }
+      
+      if (invitationData?.jobTitle) {
+        Object.assign(userData, { job_title: invitationData.jobTitle });
+      }
+
+      const { error } = await signUp(data.email, data.password, userData);
 
       if (error) {
         throw error;
@@ -70,20 +79,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
         await onRegistrationComplete();
       }
 
-      toast({
-        title: "Registration successful",
-        description: "Please check your email to confirm your account.",
-      });
+      toast.success("Registration successful. Please check your email to confirm your account.");
 
       navigate('/login');
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.message || 'Failed to register. Please try again.');
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: err.message || 'Something went wrong. Please try again.',
-      });
+      toast.error(err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

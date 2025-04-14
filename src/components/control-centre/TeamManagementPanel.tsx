@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -17,12 +16,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserCheck, UserCog, UserPlus, Mail, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
 import { useAuthStore } from '@/services/auth-service';
 
 const TeamManagementPanel: React.FC = () => {
-  const { toast } = useToast();
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
@@ -30,7 +28,6 @@ const TeamManagementPanel: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   
-  // Form state for new user
   const [newUser, setNewUser] = useState({
     email: '',
     firstName: '',
@@ -39,7 +36,6 @@ const TeamManagementPanel: React.FC = () => {
     jobTitle: ''
   });
   
-  // Form state for editing user
   const [editForm, setEditForm] = useState({
     role: '',
     jobTitle: ''
@@ -66,11 +62,7 @@ const TeamManagementPanel: React.FC = () => {
       setTeamMembers(data || []);
     } catch (error) {
       console.error('Error fetching team members:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load team members',
-        variant: 'destructive'
-      });
+      toast.error('Failed to load team members');
     } finally {
       setLoading(false);
     }
@@ -79,19 +71,13 @@ const TeamManagementPanel: React.FC = () => {
   const handleAddUser = async () => {
     try {
       if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.role) {
-        toast({
-          title: 'Missing information',
-          description: 'Please fill in all required fields',
-          variant: 'destructive'
-        });
+        toast.error('Please fill in all required fields');
         return;
       }
       
-      // Generate a random token for the invitation
       const invitationToken = Math.random().toString(36).substring(2, 15) + 
                              Math.random().toString(36).substring(2, 15);
       
-      // Create an invitation record in the database
       const { error: inviteError } = await supabase
         .from('user_invitations')
         .insert({
@@ -106,7 +92,6 @@ const TeamManagementPanel: React.FC = () => {
         
       if (inviteError) throw inviteError;
       
-      // Call the edge function to send the invitation email
       const response = await fetch('/api/send-user-invitation', {
         method: 'POST',
         headers: {
@@ -124,7 +109,6 @@ const TeamManagementPanel: React.FC = () => {
         throw new Error(errorData.error || 'Failed to send invitation');
       }
       
-      // Reset form
       setNewUser({
         email: '',
         firstName: '',
@@ -133,24 +117,15 @@ const TeamManagementPanel: React.FC = () => {
         jobTitle: ''
       });
       
-      // Close dialog
       setIsAddUserDialogOpen(false);
       
-      // Refresh team members
       fetchTeamMembers();
       
-      toast({
-        title: 'Invitation sent',
-        description: `An invitation has been sent to ${newUser.email}`,
-      });
+      toast.success(`An invitation has been sent to ${newUser.email}`);
       
     } catch (error) {
       console.error('Error inviting user:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to invite user',
-        variant: 'destructive'
-      });
+      toast.error(error instanceof Error ? error.message : 'Failed to invite user');
     }
   };
   
@@ -168,28 +143,19 @@ const TeamManagementPanel: React.FC = () => {
         
       if (error) throw error;
       
-      // Update local state
       setTeamMembers(teamMembers.map(member => 
         member.id === selectedUser.id 
           ? { ...member, role: editForm.role as any, job_title: editForm.jobTitle } 
           : member
       ));
       
-      // Close dialog and reset
       setIsEditUserDialogOpen(false);
       setSelectedUser(null);
       
-      toast({
-        title: 'Profile updated',
-        description: `${selectedUser.first_name}'s profile has been updated`
-      });
+      toast.success(`${selectedUser.first_name}'s profile has been updated`);
     } catch (error) {
       console.error('Error updating user:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update user profile',
-        variant: 'destructive'
-      });
+      toast.error('Failed to update user profile');
     }
   };
   
@@ -258,7 +224,7 @@ const TeamManagementPanel: React.FC = () => {
                           variant="ghost" 
                           size="icon"
                           onClick={() => openEditDialog(member)}
-                          disabled={member.role === 'GOD' && !isGod} // Only GOD can edit GOD
+                          disabled={member.role === 'GOD' && !isGod}
                         >
                           <UserCog className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
@@ -273,7 +239,6 @@ const TeamManagementPanel: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Add User Dialog */}
       <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -364,7 +329,6 @@ const TeamManagementPanel: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit User Dialog */}
       <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
         <DialogContent>
           <DialogHeader>
