@@ -304,6 +304,7 @@ export type Database = {
           image_url: string | null
           name: string
           posted_to_noticeboard: boolean
+          required_resources: string | null
           steps: Json | null
           time_to_complete_minutes: number | null
           updated_at: string
@@ -318,6 +319,7 @@ export type Database = {
           image_url?: string | null
           name: string
           posted_to_noticeboard?: boolean
+          required_resources?: string | null
           steps?: Json | null
           time_to_complete_minutes?: number | null
           updated_at?: string
@@ -332,6 +334,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           posted_to_noticeboard?: boolean
+          required_resources?: string | null
           steps?: Json | null
           time_to_complete_minutes?: number | null
           updated_at?: string

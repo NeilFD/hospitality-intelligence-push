@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -131,7 +132,7 @@ const HospitalityBible: React.FC = () => {
         category: recipe.category || 'Uncategorized',
         time_to_complete_minutes: recipe.timeToTableMinutes || 0,
         detailed_procedure: recipe.method || '',
-        required_resources: recipe.miseEnPlace || '',
+        required_resources: recipe.miseEnPlace || '', // Updated to match column name in DB
         image_url: recipe.imageUrl || '',
         steps: recipe.ingredients || [],
         archived: recipe.archived || false,
@@ -189,8 +190,8 @@ const HospitalityBible: React.FC = () => {
       
       let errorMessage = 'Failed to save hospitality guide';
       if (error && typeof error === 'object') {
-        if (error.message) errorMessage += `: ${error.message}`;
-        if (error.details) errorMessage += ` (${error.details})`;
+        if ('message' in error) errorMessage += `: ${error.message}`;
+        if ('details' in error) errorMessage += ` (${error.details})`;
       }
       
       if (showToast) {
