@@ -179,6 +179,33 @@ export function ThemeSettingsPanel({
       setButtonRgb(hexToRgb(currentTheme.buttonColor));
       setTextRgb(hexToRgb(currentTheme.textColor));
     }
+    
+    const fetchCompanyName = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('company_settings')
+          .select('company_name')
+          .eq('id', 1)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching company name:', error);
+          return;
+        }
+        
+        if (data && data.company_name) {
+          console.log('Fetched company name from database:', data.company_name);
+          setActiveTheme(prev => ({
+            ...prev,
+            companyName: data.company_name
+          }));
+        }
+      } catch (err) {
+        console.error('Error in fetchCompanyName:', err);
+      }
+    };
+    
+    fetchCompanyName();
   }, [currentTheme]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -468,7 +495,7 @@ export function ThemeSettingsPanel({
     try {
       setSaving(true);
 
-      // Update company name in the new company_settings table
+      // Update company name in the company_settings table
       const { error: companyNameError } = await supabase
         .from('company_settings')
         .update({ company_name: activeTheme.companyName })
@@ -489,6 +516,7 @@ export function ThemeSettingsPanel({
       window.dispatchEvent(companyNameEvent);
       
       const saveResult = await saveThemeSettings({
+        id: activeTheme.id,
         name: activeTheme.name,
         primaryColor: activeTheme.primaryColor,
         secondaryColor: activeTheme.secondaryColor,
@@ -498,8 +526,8 @@ export function ThemeSettingsPanel({
         textColor: activeTheme.textColor,
         logoUrl: activeTheme.logoUrl,
         customFont: activeTheme.customFont,
-        is_active: activeTheme.isActive,
-        company_name: activeTheme.companyName
+        isActive: activeTheme.isActive,
+        companyName: activeTheme.companyName
       });
       
       if ('error' in saveResult) {

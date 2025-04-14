@@ -13,7 +13,7 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
   const [logoUrl, setLogoUrl] = useState<string>(
     localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png"
   );
-  const [companyName, setCompanyName] = useState<string>('Hospitality Intelligence');
+  const [companyName, setCompanyName] = useState<string>('');
   
   const sizeClasses = {
     sm: 'h-8 w-8',
@@ -28,18 +28,30 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
   useEffect(() => {
     const fetchCompanyName = async () => {
       try {
+        // First try to get from localStorage (for immediate display while DB loads)
+        const cachedName = localStorage.getItem('company-name');
+        if (cachedName) {
+          console.log('Using company name from localStorage:', cachedName);
+          setCompanyName(cachedName);
+        }
+        
+        // Then fetch from database for most up-to-date value
         const { data, error } = await supabase
           .from('company_settings')
           .select('company_name')
-          .maybeSingle();
+          .eq('id', 1)
+          .single();
         
         if (error) {
           console.error('Error fetching company name:', error);
           return;
         }
         
-        if (data) {
+        if (data && data.company_name) {
+          console.log('Fetched company name from database:', data.company_name);
           setCompanyName(data.company_name);
+          // Update localStorage cache
+          localStorage.setItem('company-name', data.company_name);
         }
       } catch (err) {
         console.error('Error in fetchCompanyName:', err);
@@ -48,7 +60,9 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
     
     const handleCompanyNameUpdate = (event: any) => {
       if (event.detail && event.detail.companyName) {
+        console.log('Company name updated via event:', event.detail.companyName);
         setCompanyName(event.detail.companyName);
+        localStorage.setItem('company-name', event.detail.companyName);
       }
     };
     
@@ -58,6 +72,20 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
     
     return () => {
       window.removeEventListener('company-name-updated', handleCompanyNameUpdate);
+    };
+  }, []);
+  
+  useEffect(() => {
+    const handleLogoUpdate = (event: any) => {
+      if (event.detail && event.detail.logoUrl) {
+        setLogoUrl(event.detail.logoUrl);
+      }
+    };
+    
+    window.addEventListener('app-logo-updated', handleLogoUpdate);
+    
+    return () => {
+      window.removeEventListener('app-logo-updated', handleLogoUpdate);
     };
   }, []);
   

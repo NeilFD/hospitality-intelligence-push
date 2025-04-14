@@ -14,7 +14,7 @@ export const availableFonts: { name: string; value: string }[] = [
   { name: 'Courier Prime', value: '"Courier Prime", "Courier New", monospace' },
 ];
 
-// Modify getControlCentreData to fetch themes from database
+// Modify getControlCentreData to fetch the company name
 export const getControlCentreData = async () => {
   // Initialize database if needed
   
@@ -31,6 +31,23 @@ export const getControlCentreData = async () => {
     console.error('Error fetching themes:', themeError);
   }
   
+  // Get company name from company_settings table
+  const { data: companySettingsData, error: companySettingsError } = await supabase
+    .from('company_settings')
+    .select('company_name')
+    .eq('id', 1)
+    .single();
+    
+  if (companySettingsError && companySettingsError.code !== 'PGRST116') {
+    console.error('Error fetching company settings:', companySettingsError);
+  }
+  
+  const companyName = companySettingsData?.company_name || 'Hospitality Intelligence';
+  
+  // Store company name in localStorage for persistence
+  localStorage.setItem('company-name', companyName);
+  console.log('Stored company name in localStorage:', companyName);
+  
   // Transform database column names to match ThemeSettings interface
   const themes = themesData?.map(themeData => ({
     id: themeData.id,
@@ -44,10 +61,16 @@ export const getControlCentreData = async () => {
     logoUrl: themeData.logo_url,
     customFont: themeData.custom_font,
     isDefault: false, // Not in DB schema but in interface
-    isActive: themeData.is_active
+    isActive: themeData.is_active,
+    companyName: companyName // Use fetched company name for all themes
   })) || [];
   
   const currentTheme = themes.find(theme => theme.isActive) || null;
+  
+  // If we have an active theme, ensure it has the company name
+  if (currentTheme) {
+    currentTheme.companyName = companyName;
+  }
   
   // Fetch target settings from business_targets table
   const { data: targetData, error: targetError } = await supabase
