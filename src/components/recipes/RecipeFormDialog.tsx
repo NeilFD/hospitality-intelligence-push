@@ -159,12 +159,12 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     }));
   };
 
-  const uploadImageToStorage = async (file: File, recipeId: string): Promise<string> => {
+  const uploadImageToStorage = async (file: File, recipeId: string, moduleType: string): Promise<string> => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${recipeId}.${fileExt}`;
       
-      // Upload to the public bucket since we're having issues with the specialized buckets
+      // Upload to the public bucket
       const bucketName = 'public';
       
       console.log(`Uploading to ${bucketName} bucket: ${fileName}`);
@@ -202,7 +202,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
       // Upload image if a new one was selected
       if (imageFile) {
         const recipeId = formData.id || uuidv4();
-        imageUrl = await uploadImageToStorage(imageFile, recipeId);
+        imageUrl = await uploadImageToStorage(imageFile, recipeId, moduleType);
       }
       
       const recipeToSave: Recipe = {
