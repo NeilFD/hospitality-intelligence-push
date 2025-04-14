@@ -13,9 +13,7 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
   const [logoUrl, setLogoUrl] = useState<string>(
     localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png"
   );
-  const [companyName, setCompanyName] = useState<string>(
-    localStorage.getItem('company-name') || 'Hospitality Intelligence'
-  );
+  const [companyName, setCompanyName] = useState<string>('Hospitality Intelligence');
   
   const sizeClasses = {
     sm: 'h-8 w-8',
@@ -28,73 +26,37 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
   };
   
   useEffect(() => {
-    const storedLogoUrl = localStorage.getItem('app-logo-url');
-    const storedCompanyName = localStorage.getItem('company-name');
-    
-    const loadActiveTheme = async () => {
+    const fetchCompanyName = async () => {
       try {
         const { data, error } = await supabase
-          .from('themes')
-          .select('logo_url, company_name')
-          .eq('is_active', true)
-          .single();
+          .from('company_settings')
+          .select('company_name')
+          .maybeSingle();
         
         if (error) {
-          console.error('Error fetching active theme:', error);
+          console.error('Error fetching company name:', error);
           return;
         }
         
         if (data) {
-          if (data.logo_url) {
-            localStorage.setItem('app-logo-url', data.logo_url);
-            setLogoUrl(data.logo_url);
-            
-            const logoEvent = new CustomEvent('app-logo-updated', {
-              detail: { logoUrl: data.logo_url }
-            });
-            window.dispatchEvent(logoEvent);
-          }
-          
-          if (data.company_name) {
-            localStorage.setItem('company-name', data.company_name);
-            setCompanyName(data.company_name);
-          }
+          setCompanyName(data.company_name);
         }
       } catch (err) {
-        console.error('Error in loadActiveTheme:', err);
-      }
-    };
-    
-    const handleLogoUpdate = (event: any) => {
-      if (event.detail && event.detail.logoUrl) {
-        console.log('Logo update received:', event.detail.logoUrl);
-        setLogoUrl(event.detail.logoUrl);
+        console.error('Error in fetchCompanyName:', err);
       }
     };
     
     const handleCompanyNameUpdate = (event: any) => {
       if (event.detail && event.detail.companyName) {
-        console.log('Company name update received:', event.detail.companyName);
         setCompanyName(event.detail.companyName);
-        localStorage.setItem('company-name', event.detail.companyName);
       }
     };
     
-    window.addEventListener('app-logo-updated', handleLogoUpdate);
     window.addEventListener('company-name-updated', handleCompanyNameUpdate);
     
-    if (storedLogoUrl) {
-      setLogoUrl(storedLogoUrl);
-    }
-    
-    if (storedCompanyName) {
-      setCompanyName(storedCompanyName);
-    } else {
-      loadActiveTheme();
-    }
+    fetchCompanyName();
     
     return () => {
-      window.removeEventListener('app-logo-updated', handleLogoUpdate);
       window.removeEventListener('company-name-updated', handleCompanyNameUpdate);
     };
   }, []);

@@ -187,6 +187,24 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          company_name: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       credit_notes: {
         Row: {
           amount: number | null

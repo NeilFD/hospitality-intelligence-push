@@ -468,6 +468,26 @@ export function ThemeSettingsPanel({
     try {
       setSaving(true);
 
+      // Update company name in the new company_settings table
+      const { error: companyNameError } = await supabase
+        .from('company_settings')
+        .update({ company_name: activeTheme.companyName })
+        .eq('id', 1);
+      
+      if (companyNameError) {
+        console.error('Error updating company name:', companyNameError);
+        toast.error('Failed to save company name');
+        return;
+      }
+
+      // Dispatch company name update event
+      const companyNameEvent = new CustomEvent('company-name-updated', {
+        detail: {
+          companyName: activeTheme.companyName
+        }
+      });
+      window.dispatchEvent(companyNameEvent);
+      
       const {
         data,
         error
@@ -518,7 +538,7 @@ export function ThemeSettingsPanel({
       
       applyThemeDirectly(activeTheme.name);
       
-      toast.success('Theme settings saved successfully');
+      toast.success('Theme and company name saved successfully');
     } catch (error) {
       console.error('Error saving theme settings:', error);
       toast.error('An unexpected error occurred');
