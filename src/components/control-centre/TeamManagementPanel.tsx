@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserCheck, UserCog, UserPlus, Mail, AlertCircle, Trash2, MoreVertical, CalendarIcon } from 'lucide-react';
+import { UserCheck, UserCog, UserPlus, Mail, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
@@ -55,6 +55,7 @@ const TeamManagementPanel: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
   const [newUser, setNewUser] = useState({
     email: '',
@@ -160,6 +161,60 @@ const TeamManagementPanel: React.FC = () => {
     } catch (error) {
       console.error('Error inviting user:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to invite user');
+    }
+  };
+  
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedUser) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Check file size (limit to 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image size should be less than 2MB');
+      return;
+    }
+    
+    try {
+      setUploadingAvatar(true);
+      
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${selectedUser.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+        
+      // Update user profile with avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', selectedUser.id);
+        
+      if (updateError) throw updateError;
+      
+      // Update local state
+      setTeamMembers(teamMembers.map(member => 
+        member.id === selectedUser.id 
+          ? { ...member, avatar_url: publicUrl } 
+          : member
+      ));
+      
+      toast.success('Profile picture updated');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload profile picture');
+    } finally {
+      setUploadingAvatar(false);
     }
   };
   
@@ -472,6 +527,30 @@ const TeamManagementPanel: React.FC = () => {
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
+            <div className="flex flex-col items-center mb-4">
+              <Avatar className="h-24 w-24 mb-4">
+                <AvatarImage src={selectedUser?.avatar_url || undefined} alt={`${selectedUser?.first_name} ${selectedUser?.last_name}`} />
+                <AvatarFallback className="text-xl">{`${selectedUser?.first_name?.charAt(0) || ''} ${selectedUser?.last_name?.charAt(0) || ''}`}</AvatarFallback>
+              </Avatar>
+              
+              <div className="flex items-center">
+                <label htmlFor="avatar-upload" className="cursor-pointer">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+                    <Upload className="h-4 w-4" />
+                    <span>{uploadingAvatar ? 'Uploading...' : 'Upload Photo'}</span>
+                  </div>
+                  <input 
+                    id="avatar-upload" 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={uploadingAvatar}
+                  />
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="editFirstName">First Name</Label>
@@ -498,7 +577,7 @@ const TeamManagementPanel: React.FC = () => {
               <Select 
                 value={editForm.role} 
                 onValueChange={(value) => setEditForm({...editForm, role: value})}
-                disabled={selectedUser?.role === 'GOD' && !isGod}
+                disabled={(selectedUser?.role === 'GOD' && !isGod)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
