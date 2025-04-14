@@ -112,7 +112,20 @@ const TeamManagementPanel: React.FC = () => {
       const invitationToken = Math.random().toString(36).substring(2, 15) + 
                              Math.random().toString(36).substring(2, 15);
       
-      const response = await fetch('/api/send-user-invitation', {
+      console.log("Sending invitation request with data:", {
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role,
+        jobTitle: newUser.jobTitle,
+        created_by: currentUserProfile?.id,
+        invitationToken
+      });
+      
+      const functionUrl = '/api/send-user-invitation';
+      console.log("Calling edge function at:", functionUrl);
+      
+      const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,7 +141,20 @@ const TeamManagementPanel: React.FC = () => {
         })
       });
       
-      const responseData = await response.json();
+      console.log("Received response with status:", response.status);
+      
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log("Parsed response data:", responseData);
+      } catch (parseError) {
+        console.error("Error parsing response JSON:", parseError);
+        toast.error('Invalid response from server');
+        return;
+      }
       
       if (!response.ok) {
         if (response.status === 409 && responseData.existingInvitation) {

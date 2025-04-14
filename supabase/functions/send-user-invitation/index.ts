@@ -12,21 +12,42 @@ interface InvitationRequest {
   firstName: string;
   lastName: string;
   invitationToken: string;
+  role?: string;
+  jobTitle?: string;
+  created_by?: string;
 }
 
 serve(async (req) => {
+  console.log("Received request:", req.method, req.url);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
     // Parse the request body
-    const requestData = await req.json();
-    const { email, firstName, lastName, invitationToken } = requestData as InvitationRequest;
+    const requestText = await req.text();
+    console.log("Request body text:", requestText);
+    
+    let requestData;
+    try {
+      requestData = JSON.parse(requestText);
+      console.log("Parsed request data:", requestData);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    
+    const { email, firstName, lastName, invitationToken, role, jobTitle, created_by } = requestData as InvitationRequest;
     
     // Basic validation
     if (!email || !invitationToken) {
+      console.error("Missing required fields:", { email, invitationToken });
       return new Response(
         JSON.stringify({ error: 'Email and invitation token are required' }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
@@ -38,12 +59,15 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase URL or service key");
       throw new Error('Supabase URL or service role key is missing');
     }
     
+    console.log("Creating Supabase client with URL:", supabaseUrl);
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Check if an invitation already exists for this email
+    console.log("Checking for existing invitation for email:", email);
     const { data: existingInvitation, error: checkError } = await supabase
       .from('user_invitations')
       .select('*')
@@ -57,6 +81,7 @@ serve(async (req) => {
     
     // If invitation already exists, return a specific error message
     if (existingInvitation && existingInvitation.length > 0) {
+      console.log("Found existing invitation for email:", email);
       return new Response(
         JSON.stringify({ 
           error: 'An invitation has already been sent to this email address',
@@ -69,11 +94,13 @@ serve(async (req) => {
     // Get the site URL for the registration link
     const siteUrl = Deno.env.get('SITE_URL') || '';
     if (!siteUrl) {
+      console.error("Site URL is not defined");
       throw new Error('Site URL is not defined');
     }
     
     // Construct the invitation URL
     const invitationUrl = `${siteUrl}/register?token=${invitationToken}`;
+    console.log("Generated invitation URL:", invitationUrl);
     
     // Here you would typically use an email service like SendGrid, Resend, etc.
     // For now, we'll just simulate sending an email
@@ -91,20 +118,23 @@ serve(async (req) => {
     `);
     
     // Use a direct SQL query with the service role to bypass RLS policies
+    console.log("Creating invitation using RPC function");
     const { error: insertError } = await supabase.rpc('create_user_invitation', {
       p_email: email,
       p_first_name: firstName,
       p_last_name: lastName,
-      p_role: requestData.role || 'Team Member',
-      p_job_title: requestData.jobTitle || null,
-      p_created_by: requestData.created_by || null,
+      p_role: role || 'Team Member',
+      p_job_title: jobTitle || null,
+      p_created_by: created_by || null,
       p_invitation_token: invitationToken
     });
         
     if (insertError) {
       console.error('Error creating invitation using RPC:', insertError);
-      throw new Error('Failed to create invitation record');
+      throw new Error('Failed to create invitation record: ' + insertError.message);
     }
+    
+    console.log("Invitation created successfully");
     
     // For demonstration purposes, we'll just return a success message
     // In a real application, you would send an actual email here
