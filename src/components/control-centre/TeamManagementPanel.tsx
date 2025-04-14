@@ -124,7 +124,14 @@ const TeamManagementPanel: React.FC = () => {
           invitation_token: invitationToken
         });
         
-      if (inviteError) throw inviteError;
+      if (inviteError) {
+        // Check if this is a duplicate email error
+        if (inviteError.code === '23505' && inviteError.message.includes('user_invitations_email_key')) {
+          toast.error('An invitation has already been sent to this email address');
+          return;
+        }
+        throw inviteError;
+      }
       
       const response = await fetch('/api/send-user-invitation', {
         method: 'POST',
@@ -135,12 +142,22 @@ const TeamManagementPanel: React.FC = () => {
           email: newUser.email,
           firstName: newUser.firstName,
           lastName: newUser.lastName,
-          invitationToken
+          invitationToken,
+          role: newUser.role,
+          jobTitle: newUser.jobTitle,
+          created_by: currentUserProfile?.id
         })
       });
       
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Check if this is a duplicate email error from the function
+        if (response.status === 409 && errorData.existingInvitation) {
+          toast.error('An invitation has already been sent to this email address');
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to send invitation');
       }
       

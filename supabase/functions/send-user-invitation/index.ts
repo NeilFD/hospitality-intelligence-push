@@ -43,6 +43,29 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
+    // Check if an invitation already exists for this email
+    const { data: existingInvitation, error: checkError } = await supabase
+      .from('user_invitations')
+      .select('*')
+      .eq('email', email)
+      .limit(1);
+      
+    if (checkError) {
+      console.error('Error checking existing invitation:', checkError);
+      throw new Error('Failed to check existing invitations');
+    }
+    
+    // If invitation already exists, return a specific error message
+    if (existingInvitation && existingInvitation.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'An invitation has already been sent to this email address',
+          existingInvitation: true 
+        }),
+        { status: 409, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    
     // Get the site URL for the registration link
     const siteUrl = Deno.env.get('SITE_URL') || '';
     if (!siteUrl) {
@@ -66,6 +89,24 @@ serve(async (req) => {
       
       This invitation will expire in 7 days.
     `);
+    
+    // Now insert the invitation record
+    const { error: inviteError } = await supabase
+      .from('user_invitations')
+      .insert({
+        email: email,
+        first_name: firstName,
+        last_name: lastName,
+        role: requestData.role || 'Team Member',
+        job_title: requestData.jobTitle,
+        created_by: requestData.created_by,
+        invitation_token: invitationToken
+      });
+        
+    if (inviteError) {
+      console.error('Error creating invitation:', inviteError);
+      throw new Error('Failed to create invitation record');
+    }
     
     // For demonstration purposes, we'll just return a success message
     // In a real application, you would send an actual email here
