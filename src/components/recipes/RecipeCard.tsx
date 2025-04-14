@@ -19,10 +19,8 @@ interface RecipeCardProps {
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNoticeboard }) => {
-  // Add state to track the current posted status
   const [isPinned, setIsPinned] = useState<boolean>(recipe.postedToNoticeboard || false);
   
-  // Ensure we have the latest state from the database
   useEffect(() => {
     const fetchRecipeStatus = async () => {
       const { data, error } = await supabase
@@ -39,16 +37,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
     fetchRecipeStatus();
   }, [recipe.id]);
 
-  // Use the state variable instead of directly using recipe.postedToNoticeboard
   useEffect(() => {
     setIsPinned(recipe.postedToNoticeboard || false);
   }, [recipe.postedToNoticeboard]);
 
-  // Check if this is a hospitality guide
   const isHospitalityGuide = recipe.moduleType === 'hospitality';
   
-  // Fixed image URL handling - using only imageUrl from the Recipe type
-  const imageUrl = recipe.imageUrl;
+  const imageUrl = isHospitalityGuide ? recipe.image_url : recipe.imageUrl;
+  console.log("Card using image URL:", imageUrl);
   
   const handleEmailShare = () => {
     const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
@@ -83,7 +79,6 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
   const handleToggleNoticeboard = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Update local state optimistically
     setIsPinned(!isPinned);
     
     if (onToggleNoticeboard) {
@@ -127,7 +122,6 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
           {recipe.isGlutenFree && <Badge variant="outline" className="bg-yellow-50 text-yellow-900">Gluten Free</Badge>}
         </div>
         
-        {/* Add allergen information */}
         {recipe.allergens && recipe.allergens.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {recipe.allergens.map((allergen, index) => (
@@ -138,13 +132,11 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
           </div>
         )}
         
-        {/* Display time required for all modules */}
         <div className="flex items-center text-sm text-gray-800 mb-2">
           <Clock className="h-4 w-4 mr-1 inline-flex" />
           <span>Time: ~{recipe.timeToTableMinutes} minutes</span>
         </div>
         
-        {/* Only show financial info if it's NOT a hospitality guide */}
         {!isHospitalityGuide && (
           <div className="text-sm text-gray-800 mb-2">
             <p>Cost: {formatCurrency(recipe.costing.totalRecipeCost)}</p>

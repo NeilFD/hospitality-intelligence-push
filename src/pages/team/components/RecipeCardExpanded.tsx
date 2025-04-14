@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +23,10 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
   
   const isHospitality = recipe.module_type === 'hospitality' || recipe.moduleType === 'hospitality';
   
-  // Use type-safe property access, prioritize imageUrl
+  // For hospitality guides, use image_url, otherwise use imageUrl
   console.log("Recipe full object:", recipe);
   
-  // Just use the imageUrl property as defined in the Recipe type
-  const imageUrl = recipe.imageUrl;
+  const imageUrl = isHospitality ? recipe.image_url : recipe.imageUrl;
   console.log("Using image URL:", imageUrl);
   
   return (
