@@ -216,20 +216,33 @@ const TeamManagementPanel: React.FC = () => {
     if (!selectedUser) return;
     
     try {
-      const formattedBirthDate = editForm.birthDate ? format(editForm.birthDate, 'MM-dd') : null;
+      const updateData: any = {
+        first_name: editForm.firstName,
+        last_name: editForm.lastName,
+        role: editForm.role,
+        job_title: editForm.jobTitle,
+        favourite_dish: editForm.favouriteDish,
+        favourite_drink: editForm.favouriteDrink,
+        about_me: editForm.aboutMe
+      };
+      
+      if (editForm.birthDate) {
+        const formattedBirthDate = format(editForm.birthDate, 'MM-dd');
+        const { data: columnInfo, error: columnError } = await supabase
+          .from('profiles')
+          .select('birth_date')
+          .limit(1);
+        
+        if (!columnError) {
+          updateData.birth_date = formattedBirthDate;
+        } else {
+          console.log('birth_date column not found, skipping this field');
+        }
+      }
       
       const { error } = await supabase
         .from('profiles')
-        .update({
-          first_name: editForm.firstName,
-          last_name: editForm.lastName,
-          role: editForm.role,
-          job_title: editForm.jobTitle,
-          birth_date: formattedBirthDate,
-          favourite_dish: editForm.favouriteDish,
-          favourite_drink: editForm.favouriteDrink,
-          about_me: editForm.aboutMe
-        })
+        .update(updateData)
         .eq('id', selectedUser.id);
         
       if (error) throw error;
@@ -242,7 +255,7 @@ const TeamManagementPanel: React.FC = () => {
               last_name: editForm.lastName,
               role: editForm.role as any, 
               job_title: editForm.jobTitle,
-              birth_date: formattedBirthDate,
+              birth_date: updateData.birth_date,
               favourite_dish: editForm.favouriteDish,
               favourite_drink: editForm.favouriteDrink,
               about_me: editForm.aboutMe
