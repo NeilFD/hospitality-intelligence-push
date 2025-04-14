@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -220,7 +219,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           </div>
         </DialogHeader>
         
-        {/* Image at the top */}
         <div className="mb-4">
           {imagePreview ? (
             <div className="w-full h-48 relative">
@@ -265,7 +263,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Left Column: Basic Info without image */}
           <RecipeBasicInfo 
             name={formData.name}
             category={formData.category}
@@ -274,7 +271,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             isGlutenFree={formData.isGlutenFree}
             allergens={formData.allergens}
             method={formData.method || ""}
-            imagePreview={undefined} // Don't show image here anymore
+            imagePreview={undefined}
             categories={categories}
             allergenTypes={allergens}
             moduleType={moduleType}
@@ -289,7 +286,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             }}
           />
           
-          {/* Right Column: Ingredients first, then Additional Info */}
           <div className="space-y-4">
             <IngredientForm 
               ingredients={formData.ingredients}
@@ -299,7 +295,6 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           </div>
         </div>
 
-        {/* Method and additional info below */}
         <div className="mt-4">
           <RecipeAdditionalInfo 
             recommendedUpsell={formData.recommendedUpsell || ""}
@@ -328,7 +323,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             className="text-white"
             disabled={isSaving}
           >
-            {isSaving ? 'Saving...' : 'Save Recipe'}
+            {isSaving ? 'Saving...' : (moduleType === 'hospitality' ? 'Save Guide' : 'Save Recipe')}
           </Button>
         </DialogFooter>
       </DialogContent>
