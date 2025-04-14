@@ -718,7 +718,7 @@ export function ThemeSettingsPanel({
 
   const currentLogoUrl = activeTheme.logoUrl || localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png";
 
-  const filteredPresetThemes = presetThemes.filter(theme => theme.id !== 'berry-purple');
+  const filteredPresetThemes = presetThemes;
 
   return <Card>
       <CardHeader>
