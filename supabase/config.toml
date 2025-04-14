@@ -1,1 +1,3 @@
-project_id = "kfiergoryrnjkewmeriy"
+
+[functions.send-user-invitation]
+SITE_URL = "https://kfiergoryrnjkewmeriy.lovable.dev"

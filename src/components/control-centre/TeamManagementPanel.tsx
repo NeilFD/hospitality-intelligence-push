@@ -112,27 +112,6 @@ const TeamManagementPanel: React.FC = () => {
       const invitationToken = Math.random().toString(36).substring(2, 15) + 
                              Math.random().toString(36).substring(2, 15);
       
-      const { error: inviteError } = await supabase
-        .from('user_invitations')
-        .insert({
-          email: newUser.email,
-          first_name: newUser.firstName,
-          last_name: newUser.lastName,
-          role: newUser.role,
-          job_title: newUser.jobTitle,
-          created_by: currentUserProfile?.id,
-          invitation_token: invitationToken
-        });
-        
-      if (inviteError) {
-        // Check if this is a duplicate email error
-        if (inviteError.code === '23505' && inviteError.message.includes('user_invitations_email_key')) {
-          toast.error('An invitation has already been sent to this email address');
-          return;
-        }
-        throw inviteError;
-      }
-      
       const response = await fetch('/api/send-user-invitation', {
         method: 'POST',
         headers: {
@@ -149,19 +128,16 @@ const TeamManagementPanel: React.FC = () => {
         })
       });
       
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        
-        // Check if this is a duplicate email error from the function
-        if (response.status === 409 && errorData.existingInvitation) {
+        if (response.status === 409 && responseData.existingInvitation) {
           toast.error('An invitation has already been sent to this email address');
           return;
         }
         
-        throw new Error(errorData.error || 'Failed to send invitation');
+        throw new Error(responseData.error || 'Failed to send invitation');
       }
-      
-      const responseData = await response.json();
       
       setNewUser({
         email: '',

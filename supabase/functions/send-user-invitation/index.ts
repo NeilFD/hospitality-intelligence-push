@@ -90,21 +90,19 @@ serve(async (req) => {
       This invitation will expire in 7 days.
     `);
     
-    // Now insert the invitation record
-    const { error: inviteError } = await supabase
-      .from('user_invitations')
-      .insert({
-        email: email,
-        first_name: firstName,
-        last_name: lastName,
-        role: requestData.role || 'Team Member',
-        job_title: requestData.jobTitle,
-        created_by: requestData.created_by,
-        invitation_token: invitationToken
-      });
+    // Use a direct SQL query with the service role to bypass RLS policies
+    const { error: insertError } = await supabase.rpc('create_user_invitation', {
+      p_email: email,
+      p_first_name: firstName,
+      p_last_name: lastName,
+      p_role: requestData.role || 'Team Member',
+      p_job_title: requestData.jobTitle || null,
+      p_created_by: requestData.created_by || null,
+      p_invitation_token: invitationToken
+    });
         
-    if (inviteError) {
-      console.error('Error creating invitation:', inviteError);
+    if (insertError) {
+      console.error('Error creating invitation using RPC:', insertError);
       throw new Error('Failed to create invitation record');
     }
     
