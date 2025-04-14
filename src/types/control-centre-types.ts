@@ -1,4 +1,3 @@
-
 export interface PermissionMatrix {
   roleId: 'GOD' | 'Super User' | 'Manager' | 'Team Member';
   modulePermissions: ModulePermission[];
@@ -56,6 +55,5 @@ export type PresetTheme = {
     sidebar: string;
     button: string;
     text: string;
-  };
-  isDefault?: boolean;
+  }
 };
