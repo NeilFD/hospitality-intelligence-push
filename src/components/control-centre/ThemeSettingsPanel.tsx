@@ -14,6 +14,18 @@ import { supabase } from '@/lib/supabase';
 import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image, Building } from 'lucide-react';
 
 const presetThemes: PresetTheme[] = [{
+  id: 'berry-purple',
+  name: 'Hi',
+  colors: {
+    primary: '#6a1b9a',
+    secondary: '#f3e5f5',
+    accent: '#ab47bc',
+    sidebar: '#8e24aa',
+    button: '#9c27b0',
+    text: '#212121'
+  },
+  isDefault: true
+}, {
   id: 'forest-green',
   name: 'Forest Green',
   colors: {
@@ -44,17 +56,6 @@ const presetThemes: PresetTheme[] = [{
     accent: '#ff9800',
     sidebar: '#ef6c00',
     button: '#f57c00',
-    text: '#212121'
-  }
-}, {
-  id: 'berry-purple',
-  name: 'Hi',
-  colors: {
-    primary: '#6a1b9a',
-    secondary: '#f3e5f5',
-    accent: '#ab47bc',
-    sidebar: '#8e24aa',
-    button: '#9c27b0',
     text: '#212121'
   }
 }];
@@ -706,6 +707,10 @@ export function ThemeSettingsPanel({
   };
 
   const currentLogoUrl = activeTheme.logoUrl || localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png";
+  
+  const getCurrentThemeName = () => {
+    return localStorage.getItem('app-active-theme') || 'Hi';
+  };
 
   return <Card>
       <CardHeader>
@@ -809,17 +814,25 @@ export function ThemeSettingsPanel({
                   Select a Preset Theme
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {presetThemes.map(theme => (
+                  {presetThemes.map(theme => {
+                    const isCurrentlyActive = getCurrentThemeName() === theme.name;
+                    return (
                     <div 
                       key={theme.id} 
                       className={`
                         border rounded-md overflow-hidden cursor-pointer 
                         transition-all duration-300 
-                        ${selectedPreset === theme.id ? 'ring-4 ring-purple-500 shadow-lg transform scale-105' : 'hover:shadow-md'}
+                        ${selectedPreset === theme.id || isCurrentlyActive ? 'ring-4 ring-purple-500 shadow-lg transform scale-105' : 'hover:shadow-md'}
                         ${presetSelectAnimation && selectedPreset === theme.id ? 'animate-pulse' : ''}
+                        relative
                       `}
                       onClick={() => applyPresetTheme(theme)}
                     >
+                      {theme.isDefault && (
+                        <div className="absolute top-0 right-0 bg-purple-200/70 text-purple-800 text-[10px] font-semibold px-1.5 py-0.5 rounded-bl-md">
+                          Default
+                        </div>
+                      )}
                       <div className="h-24 relative" style={{
                         backgroundColor: theme.colors.primary
                       }}>
@@ -831,17 +844,17 @@ export function ThemeSettingsPanel({
                             backgroundColor: theme.colors.button
                           }}></div>
                         </div>
-                        {selectedPreset === theme.id && (
+                        {(selectedPreset === theme.id || isCurrentlyActive) && (
                           <div className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md">
                             <Check className="h-4 w-4 text-green-600" />
                           </div>
                         )}
                       </div>
-                      <div className={`p-2 text-center text-sm font-medium ${selectedPreset === theme.id ? 'bg-purple-100' : ''}`}>
+                      <div className={`p-2 text-center text-sm font-medium ${selectedPreset === theme.id || isCurrentlyActive ? 'bg-purple-100' : ''}`}>
                         {theme.name}
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
               
