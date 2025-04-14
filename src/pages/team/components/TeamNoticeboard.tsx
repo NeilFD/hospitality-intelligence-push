@@ -433,6 +433,7 @@ const TeamNoticeboard: React.FC = () => {
           createdAt: new Date(guide.created_at),
           updatedAt: new Date(guide.updated_at),
           imageUrl: guide.image_url,
+          image_url: guide.image_url,
           ingredients: [],
           costing: {
             totalRecipeCost: 0,
@@ -441,6 +442,7 @@ const TeamNoticeboard: React.FC = () => {
             grossProfitPercentage: 0
           },
           moduleType: 'hospitality',
+          module_type: 'hospitality',
           archived: false,
           postedToNoticeboard: true
         }));
@@ -553,10 +555,9 @@ const TeamNoticeboard: React.FC = () => {
   const unpinnedNotes = [...(notes || [])].filter(note => !note.pinned)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  console.log('Recipes data:', recipes);
-  console.log('Recipe count:', recipes?.length || 0);
-
   const handleRecipeClick = (recipe: any) => {
+    console.log("Clicked recipe:", recipe);
+    console.log("Recipe has image_url:", recipe.image_url);
     setSelectedRecipe(recipe);
     setIsRecipeModalOpen(true);
   };
@@ -679,7 +680,11 @@ const TeamNoticeboard: React.FC = () => {
                             </div>
                           )}
                           <div className="mt-2">
-                            <span className="text-xs text-gray-600 bg-emerald-50 px-2 py-1 rounded-full">Recipe from Food Bible</span>
+                            <span className="text-xs text-gray-600 bg-emerald-50 px-2 py-1 rounded-full">
+                              {recipe.moduleType === 'hospitality' || recipe.module_type === 'hospitality' 
+                                ? 'Guide from Hospitality Bible' 
+                                : 'Recipe from Food Bible'}
+                            </span>
                           </div>
                           <div className="mt-2 text-xs text-blue-600">Click for full recipe details</div>
                         </div>

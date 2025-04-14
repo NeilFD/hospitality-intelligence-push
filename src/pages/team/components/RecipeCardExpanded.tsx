@@ -24,9 +24,8 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
   // Check if this is a hospitality guide based on either module_type or moduleType
   const isHospitality = recipe.module_type === 'hospitality' || recipe.moduleType === 'hospitality';
   
-  // Get the correct image URL depending on recipe type
-  // In both card view and hospitality guides component, the image is working properly
-  // So we'll make sure we're using the same approach
+  // For hospitality guides, we ONLY use image_url property as that's what's in the hospitality_guides table
+  // For recipes, we use the imageUrl property
   const imageUrl = isHospitality ? recipe.image_url : recipe.imageUrl;
   
   console.log("RecipeCardExpanded for:", recipe.name, "isHospitality:", isHospitality, "imageUrl:", imageUrl);
