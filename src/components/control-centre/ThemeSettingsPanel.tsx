@@ -48,7 +48,7 @@ const presetThemes: PresetTheme[] = [{
   }
 }, {
   id: 'berry-purple',
-  name: 'Berry Purple',
+  name: 'Hi',
   colors: {
     primary: '#6a1b9a',
     secondary: '#f3e5f5',
@@ -56,28 +56,6 @@ const presetThemes: PresetTheme[] = [{
     sidebar: '#8e24aa',
     button: '#9c27b0',
     text: '#212121'
-  }
-}, {
-  id: 'dark-mode',
-  name: 'Dark Mode',
-  colors: {
-    primary: '#212121',
-    secondary: '#424242',
-    accent: '#757575',
-    sidebar: '#333333',
-    button: '#616161',
-    text: '#f5f5f5'
-  }
-}, {
-  id: 'hi-purple',
-  name: 'Hi Purple',
-  colors: {
-    primary: '#806cac',
-    secondary: '#e0d9f0',
-    accent: '#9d89c9',
-    sidebar: '#705b9b',
-    button: '#9d89c9',
-    text: '#1A1F2C'
   }
 }];
 
@@ -113,12 +91,12 @@ export function ThemeSettingsPanel({
 }: ThemeSettingsPanelProps) {
   const [activeTheme, setActiveTheme] = useState<ThemeSettings>(currentTheme || {
     id: '',
-    name: 'Default',
-    primaryColor: '#ffffff',
-    secondaryColor: '#f0f0f0',
-    accentColor: '#007bff',
-    sidebarColor: '#333333',
-    buttonColor: '#007bff',
+    name: 'Hi',
+    primaryColor: '#6a1b9a',
+    secondaryColor: '#f3e5f5',
+    accentColor: '#ab47bc',
+    sidebarColor: '#8e24aa',
+    buttonColor: '#9c27b0',
     textColor: '#212121',
     logoUrl: '',
     customFont: 'Arial, sans-serif',

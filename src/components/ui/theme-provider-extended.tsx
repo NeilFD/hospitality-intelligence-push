@@ -18,9 +18,14 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         console.log('Saved theme from localStorage:', savedThemeName);
         
         // Apply saved theme immediately while waiting for DB response
+        // If no theme is saved, default to "Hi" (former Berry Purple)
         if (savedThemeName) {
           console.log('Applying saved theme from localStorage immediately:', savedThemeName);
           applyThemeClass(savedThemeName);
+        } else {
+          console.log('No saved theme, applying default theme: Hi');
+          applyThemeClass('Hi');
+          localStorage.setItem('app-active-theme', 'Hi');
         }
         
         const { data, error } = await supabase
@@ -60,6 +65,10 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           localStorage.setItem('app-active-theme', data.name);
           
           console.log('Applied theme from database:', data.name, 'with font:', data.custom_font, 'and company name:', data.company_name);
+        } else {
+          // If no active theme in DB, ensure we use the default Hi theme
+          console.log('No active theme in database, using default Hi theme');
+          applyThemeClass('Hi');
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
@@ -69,6 +78,11 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         if (savedThemeName) {
           console.log('Recovering with saved theme from localStorage:', savedThemeName);
           applyThemeClass(savedThemeName);
+        } else {
+          // Default to "Hi" theme if no saved theme
+          console.log('No saved theme, applying default theme: Hi');
+          applyThemeClass('Hi');
+          localStorage.setItem('app-active-theme', 'Hi');
         }
       } finally {
         setThemeLoaded(true);
@@ -140,7 +154,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.add('theme-ocean-blue');
       } else if (themeName === 'Sunset Orange') {
         html.classList.add('theme-sunset-orange');
-      } else if (themeName === 'Berry Purple') {
+      } else if (themeName === 'Hi' || themeName === 'Berry Purple') {
         html.classList.add('theme-berry-purple');
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
