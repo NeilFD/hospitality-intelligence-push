@@ -29,8 +29,16 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   const isHospitality = recipe.moduleType === 'hospitality';
   const isBeverage = recipe.moduleType === 'beverage';
   
-  // Get the appropriate image URL based on recipe type
-  const imageUrl = recipe.image_url || recipe.imageUrl;
+  // Get the appropriate image URL based on recipe type and available properties
+  // This is the key fix - making sure we properly check all possible image URL locations
+  let imageUrl = null;
+  if (isHospitality) {
+    // For hospitality guides the image URL is stored in image_url
+    imageUrl = recipe.image_url;
+  } else {
+    // For other recipe types, use imageUrl property
+    imageUrl = recipe.imageUrl;
+  }
   
   console.log("RecipeDetailDialog using image:", imageUrl);
   
