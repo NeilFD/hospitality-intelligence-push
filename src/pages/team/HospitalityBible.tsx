@@ -123,7 +123,7 @@ const HospitalityBible: React.FC = () => {
         id: recipe.id,
         name: recipe.name,
         category: recipe.category,
-        imageUrl: recipe.imageUrl ? "Present" : "Not present"
+        imageUrl: recipe.imageUrl || recipe.image_url ? "Present" : "Not present"
       };
       console.log("Guide data formatted for Supabase (simplified):", simplifiedGuide);
       
@@ -134,7 +134,7 @@ const HospitalityBible: React.FC = () => {
         time_to_complete_minutes: recipe.timeToTableMinutes || 0,
         detailed_procedure: recipe.method || '',
         required_resources: recipe.miseEnPlace || '', // Updated to match column name in DB
-        image_url: recipe.imageUrl || '',
+        image_url: recipe.imageUrl || recipe.image_url || '',
         steps: recipe.ingredients || [],
         archived: recipe.archived || false,
         posted_to_noticeboard: recipe.postedToNoticeboard || false
