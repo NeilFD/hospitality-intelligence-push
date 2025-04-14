@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -7,26 +8,44 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Dialog, DialogContent, DialogDescription, DialogHeader, 
-  DialogTitle, DialogTrigger, DialogFooter 
+  DialogTitle, DialogTrigger, DialogFooter, DialogClose
 } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserCheck, UserCog, UserPlus, Mail, AlertCircle } from 'lucide-react';
+import { UserCheck, UserCog, UserPlus, Mail, AlertCircle, Trash2, MoreVertical } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
 import { useAuthStore } from '@/services/auth-service';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const TeamManagementPanel: React.FC = () => {
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   const [newUser, setNewUser] = useState({
     email: '',
@@ -159,6 +178,46 @@ const TeamManagementPanel: React.FC = () => {
     }
   };
   
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setDeleteLoading(true);
+      
+      // Check if user is trying to delete themselves
+      if (selectedUser.id === currentUserProfile?.id) {
+        toast.error("You cannot delete your own account");
+        return;
+      }
+      
+      // Check if user is trying to delete a GOD user and they are not a GOD
+      if (selectedUser.role === 'GOD' && !isGod) {
+        toast.error("Only GOD users can delete other GOD users");
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', selectedUser.id);
+        
+      if (error) throw error;
+      
+      // Remove the user from the team members list
+      setTeamMembers(teamMembers.filter(member => member.id !== selectedUser.id));
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedUser(null);
+      
+      toast.success(`${selectedUser.first_name}'s profile has been deleted`);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user profile');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+  
   const openEditDialog = (user: UserProfile) => {
     setSelectedUser(user);
     setEditForm({
@@ -166,6 +225,11 @@ const TeamManagementPanel: React.FC = () => {
       jobTitle: user.job_title || ''
     });
     setIsEditUserDialogOpen(true);
+  };
+  
+  const openDeleteDialog = (user: UserProfile) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
   };
   
   return (
@@ -195,7 +259,6 @@ const TeamManagementPanel: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Team Member</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Job Title</TableHead>
                   {canManageUsers && <TableHead>Actions</TableHead>}
@@ -215,20 +278,35 @@ const TeamManagementPanel: React.FC = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{member.email}</TableCell>
                     <TableCell>{member.role || 'Team Member'}</TableCell>
                     <TableCell>{member.job_title || '-'}</TableCell>
                     {canManageUsers && (
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openEditDialog(member)}
-                          disabled={member.role === 'GOD' && !isGod}
-                        >
-                          <UserCog className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => openEditDialog(member)}
+                              disabled={member.role === 'GOD' && !isGod}
+                            >
+                              <UserCog className="mr-2 h-4 w-4" />
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => openDeleteDialog(member)}
+                              disabled={member.role === 'GOD' && !isGod}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     )}
                   </TableRow>
@@ -386,6 +464,28 @@ const TeamManagementPanel: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {selectedUser?.first_name} {selectedUser?.last_name}'s
+              account and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteLoading ? "Deleting..." : "Delete User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
