@@ -644,22 +644,22 @@ const TeamManagementPanel: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="editFavouriteDish">Favourite Tavern Dish</Label>
+              <Label htmlFor="editFavouriteDish">Favourite Dish</Label>
               <Input 
                 id="editFavouriteDish" 
                 value={editForm.favouriteDish}
                 onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
-                placeholder="What's their favourite dish from the menu?"
+                placeholder="What's their favourite dish?"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="editFavouriteDrink">Favourite Tavern Drink</Label>
+              <Label htmlFor="editFavouriteDrink">Favourite Drink</Label>
               <Input 
                 id="editFavouriteDrink" 
                 value={editForm.favouriteDrink}
                 onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
-                placeholder="What's their favourite drink from the bar?"
+                placeholder="What's their favourite drink?"
               />
             </div>
             
