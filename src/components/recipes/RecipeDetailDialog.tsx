@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,11 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   if (!recipe) return null;
   const isHospitality = recipe.moduleType === 'hospitality';
   const isBeverage = recipe.moduleType === 'beverage';
+  
+  // Get the appropriate image URL based on recipe type
+  const imageUrl = isHospitality && recipe.image_url ? recipe.image_url : recipe.imageUrl;
+  
+  console.log("RecipeDetailDialog using image:", imageUrl);
   
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -60,9 +66,25 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
         
         <ScrollArea className="flex-1 pr-4 overflow-y-auto">
           <div className="space-y-6">
-            {recipe.imageUrl && (
+            {imageUrl && (
               <div className="aspect-video w-full overflow-hidden rounded-md">
-                <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover" />
+                <img 
+                  src={imageUrl} 
+                  alt={recipe.name} 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => {
+                    console.error("Image failed to load in RecipeDetailDialog:", imageUrl);
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.classList.add('bg-gray-200');
+                      const errorMsg = document.createElement('div');
+                      errorMsg.textContent = 'Image unavailable';
+                      errorMsg.className = 'text-gray-500 text-center py-8';
+                      parent.appendChild(errorMsg);
+                    }
+                  }}
+                />
               </div>
             )}
             

@@ -45,7 +45,7 @@ export interface Recipe {
   createdAt: Date;
   updatedAt: Date;
   imageUrl?: string;
-  image_url?: string; // Added for hospitality guides
+  image_url?: string; // For hospitality guides from Supabase
   ingredients: Ingredient[];
   costing: {
     totalRecipeCost: number;
