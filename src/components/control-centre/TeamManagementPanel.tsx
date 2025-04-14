@@ -168,16 +168,14 @@ const TeamManagementPanel: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     
-    // Check file size (limit to 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size should be less than 2MB');
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('Image size should be less than 4MB');
       return;
     }
     
     try {
       setUploadingAvatar(true);
       
-      // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${selectedUser.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
@@ -188,12 +186,10 @@ const TeamManagementPanel: React.FC = () => {
         
       if (uploadError) throw uploadError;
       
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
         
-      // Update user profile with avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -201,7 +197,6 @@ const TeamManagementPanel: React.FC = () => {
         
       if (updateError) throw updateError;
       
-      // Update local state
       setTeamMembers(teamMembers.map(member => 
         member.id === selectedUser.id 
           ? { ...member, avatar_url: publicUrl } 
@@ -221,7 +216,6 @@ const TeamManagementPanel: React.FC = () => {
     if (!selectedUser) return;
     
     try {
-      // Format birth date if available
       const formattedBirthDate = editForm.birthDate ? format(editForm.birthDate, 'MM-dd') : null;
       
       const { error } = await supabase
@@ -240,7 +234,6 @@ const TeamManagementPanel: React.FC = () => {
         
       if (error) throw error;
       
-      // Update the team members list with the edited user
       setTeamMembers(teamMembers.map(member => 
         member.id === selectedUser.id 
           ? { 
@@ -273,13 +266,11 @@ const TeamManagementPanel: React.FC = () => {
     try {
       setDeleteLoading(true);
       
-      // Check if user is trying to delete themselves
       if (selectedUser.id === currentUserProfile?.id) {
         toast.error("You cannot delete your own account");
         return;
       }
       
-      // Check if user is trying to delete a GOD user and they are not a GOD
       if (selectedUser.role === 'GOD' && !isGod) {
         toast.error("Only GOD users can delete other GOD users");
         return;
@@ -292,7 +283,6 @@ const TeamManagementPanel: React.FC = () => {
         
       if (error) throw error;
       
-      // Remove the user from the team members list
       setTeamMembers(teamMembers.filter(member => member.id !== selectedUser.id));
       
       setIsDeleteDialogOpen(false);
