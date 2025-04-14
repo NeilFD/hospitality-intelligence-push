@@ -168,13 +168,23 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         isVegetarian: Boolean(formData.isVegetarian),
         isVegan: Boolean(formData.isVegan),
         isGlutenFree: Boolean(formData.isGlutenFree),
-        ingredients: moduleType === 'hospitality' ? [] : formData.ingredients.map(ingredient => ({
-          ...ingredient,
-          id: ingredient.id || uuidv4(),
-          amount: Number(ingredient.amount) || 0,
-          costPerUnit: Number(ingredient.costPerUnit) || 0,
-          totalCost: Number(ingredient.totalCost) || 0
-        })),
+        ingredients: moduleType === 'hospitality' 
+          ? formData.ingredients.map(ingredient => ({
+              ...ingredient,
+              id: ingredient.id || uuidv4(),
+              name: ingredient.name || '',
+              amount: 0,
+              costPerUnit: 0,
+              totalCost: 0,
+              unit: ''
+            }))
+          : formData.ingredients.map(ingredient => ({
+              ...ingredient,
+              id: ingredient.id || uuidv4(),
+              amount: Number(ingredient.amount) || 0,
+              costPerUnit: Number(ingredient.costPerUnit) || 0,
+              totalCost: Number(ingredient.totalCost) || 0
+            })),
         costing: computedCostingTotals,
         updatedAt: new Date(),
         archived: formData.archived || false

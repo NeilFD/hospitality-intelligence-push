@@ -62,72 +62,43 @@ const HospitalityBible: React.FC = () => {
       setLoading(true);
       console.log("Fetching hospitality guides from Supabase...");
       const {
-        data: recipesData,
-        error: recipesError
-      } = await supabase.from('recipes').select('*').eq('module_type', 'hospitality');
-      if (recipesError) {
-        throw recipesError;
+        data: guidesData,
+        error: guidesError
+      } = await supabase.from('hospitality_guides').select('*');
+      
+      if (guidesError) {
+        throw guidesError;
       }
       
-      console.log(`Fetched ${recipesData?.length || 0} hospitality guides`);
+      console.log(`Fetched ${guidesData?.length || 0} hospitality guides`);
       
-      const recipesWithIngredients = await Promise.all((recipesData || []).map(async recipe => {
-        const {
-          data: ingredientsData,
-          error: ingredientsError
-        } = await supabase.from('recipe_ingredients').select('*').eq('recipe_id', recipe.id);
-        if (ingredientsError) {
-          console.error('Error fetching steps:', ingredientsError);
-          return {
-            ...recipe,
-            ingredients: [],
-            allergens: recipe.allergens || [],
-            costing: {
-              totalRecipeCost: recipe.total_recipe_cost || 0,
-              suggestedSellingPrice: recipe.suggested_selling_price || 0,
-              actualMenuPrice: recipe.actual_menu_price || 0,
-              grossProfitPercentage: recipe.gross_profit_percentage || 0
-            },
-            moduleType: recipe.module_type,
-            archived: recipe.archived || false
-          };
-        }
-        const mappedIngredients: Ingredient[] = ingredientsData.map(ingredient => ({
-          id: ingredient.id,
-          name: ingredient.name,
-          amount: ingredient.amount,
-          unit: ingredient.unit,
-          costPerUnit: ingredient.cost_per_unit,
-          totalCost: ingredient.total_cost
-        }));
-        return {
-          id: recipe.id,
-          name: recipe.name,
-          category: recipe.category,
-          allergens: recipe.allergens || [],
-          isVegan: Boolean(recipe.is_vegan),
-          isVegetarian: Boolean(recipe.is_vegetarian),
-          isGlutenFree: Boolean(recipe.is_gluten_free),
-          recommendedUpsell: recipe.recommended_upsell || '',
-          timeToTableMinutes: recipe.time_to_table_minutes || 0,
-          miseEnPlace: recipe.mise_en_place || '',
-          method: recipe.method || '',
-          createdAt: new Date(recipe.created_at),
-          updatedAt: new Date(recipe.updated_at),
-          imageUrl: recipe.image_url,
-          ingredients: mappedIngredients,
-          costing: {
-            totalRecipeCost: recipe.total_recipe_cost || 0,
-            suggestedSellingPrice: recipe.suggested_selling_price || 0,
-            actualMenuPrice: recipe.actual_menu_price || 0,
-            grossProfitPercentage: recipe.gross_profit_percentage || 0
-          },
-          moduleType: 'hospitality',
-          archived: recipe.archived || false,
-          postedToNoticeboard: recipe.posted_to_noticeboard || false
-        };
+      const mappedGuides: Recipe[] = (guidesData || []).map(guide => ({
+        id: guide.id,
+        name: guide.name,
+        category: guide.category,
+        allergens: [],
+        isVegan: false,
+        isVegetarian: false,
+        isGlutenFree: false,
+        timeToTableMinutes: guide.time_to_complete_minutes || 0,
+        miseEnPlace: guide.required_resources || '',
+        method: guide.detailed_procedure || '',
+        createdAt: new Date(guide.created_at),
+        updatedAt: new Date(guide.updated_at),
+        imageUrl: guide.image_url,
+        ingredients: (guide.steps || []) as Ingredient[],
+        costing: {
+          totalRecipeCost: 0,
+          suggestedSellingPrice: 0,
+          actualMenuPrice: 0,
+          grossProfitPercentage: 0
+        },
+        moduleType: 'hospitality',
+        archived: guide.archived || false,
+        postedToNoticeboard: guide.posted_to_noticeboard || false
       }));
-      setRecipes(recipesWithIngredients);
+      
+      setRecipes(mappedGuides);
     } catch (error) {
       console.error('Error fetching hospitality guides:', error);
       toast.error('Failed to load hospitality guides');
@@ -146,33 +117,24 @@ const HospitalityBible: React.FC = () => {
         console.log("Generated new guide ID:", recipe.id);
       }
       
-      const recipeData = {
+      const guideData = {
         id: recipe.id,
         name: recipe.name || 'Unnamed Guide',
         category: recipe.category || 'Uncategorized',
-        allergens: recipe.allergens || [],
-        is_vegan: recipe.isVegan || false,
-        is_vegetarian: recipe.isVegetarian || false,
-        is_gluten_free: recipe.isGlutenFree || false,
-        recommended_upsell: recipe.recommendedUpsell || '',
-        time_to_table_minutes: recipe.timeToTableMinutes || 0,
-        mise_en_place: recipe.miseEnPlace || '',
-        method: recipe.method || '',
+        time_to_complete_minutes: recipe.timeToTableMinutes || 0,
+        detailed_procedure: recipe.method || '',
+        required_resources: recipe.miseEnPlace || '',
         image_url: recipe.imageUrl || '',
-        module_type: 'hospitality',
-        total_recipe_cost: recipe.costing.totalRecipeCost || 0,
-        suggested_selling_price: recipe.costing.suggestedSellingPrice || 0,
-        actual_menu_price: recipe.costing.actualMenuPrice || 0,
-        gross_profit_percentage: recipe.costing.grossProfitPercentage || 0,
+        steps: recipe.ingredients || [],
         archived: recipe.archived || false,
         posted_to_noticeboard: recipe.postedToNoticeboard || false
       };
       
-      console.log("Guide data formatted for Supabase:", recipeData);
+      console.log("Guide data formatted for Supabase:", guideData);
 
       const { error: upsertError } = await supabase
-        .from('recipes')
-        .upsert([recipeData]);
+        .from('hospitality_guides')
+        .upsert([guideData]);
       
       if (upsertError) {
         console.error("Error upserting guide:", upsertError);
@@ -180,58 +142,12 @@ const HospitalityBible: React.FC = () => {
       }
       
       console.log("Guide saved successfully with ID:", recipe.id);
-
-      try {
-        console.log(`Deleting existing steps for guide ${recipe.id}`);
-        const { error: deleteError } = await supabase
-          .from('recipe_ingredients')
-          .delete()
-          .eq('recipe_id', recipe.id);
-        
-        if (deleteError) {
-          console.error('Error deleting existing steps:', deleteError);
-        }
-      } catch (deleteError) {
-        console.error('Exception while deleting steps:', deleteError);
-      }
-      
-      if (recipe.ingredients && recipe.ingredients.length > 0) {
-        console.log(`Inserting ${recipe.ingredients.length} steps`);
-        const ingredientsToInsert = recipe.ingredients
-          .filter(ingredient => ingredient.name && ingredient.name.trim() !== '')
-          .map(ingredient => ({
-            id: ingredient.id || uuidv4(),
-            recipe_id: recipe.id,
-            name: ingredient.name || '',
-            amount: ingredient.amount || 0,
-            unit: ingredient.unit || '',
-            cost_per_unit: ingredient.costPerUnit || 0,
-            total_cost: ingredient.totalCost || 0
-          }));
-        
-        if (ingredientsToInsert.length > 0) {
-          console.log("Steps prepared for insertion:", ingredientsToInsert);
-          
-          const { error: ingredientsError } = await supabase
-            .from('recipe_ingredients')
-            .insert(ingredientsToInsert);
-          
-          if (ingredientsError) {
-            console.error('Error saving steps:', ingredientsError);
-            throw ingredientsError;
-          }
-          
-          console.log("Steps saved successfully");
-        } else {
-          console.log("No valid steps to save");
-        }
-      }
       
       if (showToast) {
         toast.success('Hospitality guide saved successfully');
       }
       
-      console.log("Guide and all steps saved successfully");
+      console.log("Guide saved successfully");
       return true;
     } catch (error) {
       console.error('Error saving guide:', error);
@@ -244,18 +160,8 @@ const HospitalityBible: React.FC = () => {
 
   const deleteGuideFromSupabase = async (recipeId: string) => {
     try {
-      const { error: ingredientsError } = await supabase
-        .from('recipe_ingredients')
-        .delete()
-        .eq('recipe_id', recipeId);
-        
-      if (ingredientsError) {
-        console.error('Error deleting steps:', ingredientsError);
-        throw ingredientsError;
-      }
-      
       const { error } = await supabase
-        .from('recipes')
+        .from('hospitality_guides')
         .delete()
         .eq('id', recipeId);
         
@@ -360,14 +266,6 @@ const HospitalityBible: React.FC = () => {
     setViewingRecipe(recipe);
   };
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const toggleMaximized = () => {
-    setSidebarMaximized(!sidebarMaximized);
-  };
-
   const handleToggleNoticeboard = async (recipe: Recipe) => {
     try {
       const updatedRecipe = {
@@ -376,7 +274,7 @@ const HospitalityBible: React.FC = () => {
       };
 
       const { error } = await supabase
-        .from('recipes')
+        .from('hospitality_guides')
         .update({ posted_to_noticeboard: updatedRecipe.postedToNoticeboard })
         .eq('id', recipe.id);
 

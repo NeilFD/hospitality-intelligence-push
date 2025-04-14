@@ -397,21 +397,60 @@ const TeamNoticeboard: React.FC = () => {
     queryKey: ['noticeboard-recipes'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
+        const { data: recipeData, error: recipeError } = await supabase
           .from('recipes')
           .select('*')
           .eq('posted_to_noticeboard', true)
           .eq('archived', false);
           
-        if (error) {
-          console.error('Error fetching recipes for noticeboard:', error);
-          throw error;
+        if (recipeError) {
+          console.error('Error fetching recipes for noticeboard:', recipeError);
+          throw recipeError;
         }
         
-        console.log('Fetched recipes for noticeboard:', data?.length || 0);
-        return data || [];
+        const { data: guideData, error: guideError } = await supabase
+          .from('hospitality_guides')
+          .select('*')
+          .eq('posted_to_noticeboard', true)
+          .eq('archived', false);
+          
+        if (guideError) {
+          console.error('Error fetching hospitality guides for noticeboard:', guideError);
+          throw guideError;
+        }
+        
+        const mappedGuides = (guideData || []).map(guide => ({
+          id: guide.id,
+          name: guide.name,
+          category: guide.category,
+          allergens: [],
+          isVegan: false,
+          isVegetarian: false,
+          isGlutenFree: false,
+          timeToTableMinutes: guide.time_to_complete_minutes || 0,
+          miseEnPlace: guide.required_resources || '',
+          method: guide.detailed_procedure || '',
+          createdAt: new Date(guide.created_at),
+          updatedAt: new Date(guide.updated_at),
+          imageUrl: guide.image_url,
+          ingredients: [],
+          costing: {
+            totalRecipeCost: 0,
+            suggestedSellingPrice: 0,
+            actualMenuPrice: 0,
+            grossProfitPercentage: 0
+          },
+          moduleType: 'hospitality',
+          archived: false,
+          postedToNoticeboard: true
+        }));
+        
+        const combinedData = [...recipeData || [], ...mappedGuides];
+        
+        console.log('Fetched items for noticeboard:', combinedData?.length || 0);
+        return combinedData || [];
       } catch (error) {
-        console.error('Exception in fetching recipes:', error);
+        console.error('Exception in fetching items for noticeboard:', error);
         return [];
       }
     }
@@ -490,11 +529,9 @@ const TeamNoticeboard: React.FC = () => {
     e.preventDefault();
     const noteId = e.dataTransfer.getData('text/plain');
     
-    // Find the note
     const note = notes.find(n => n.id === noteId);
     if (!note) return;
     
-    // If dropping in pinned area, pin the note
     if (targetArea === 'pinned' && !note.pinned) {
       updateNoteMutation.mutate({
         id: noteId,
@@ -502,7 +539,6 @@ const TeamNoticeboard: React.FC = () => {
       });
     }
     
-    // If dropping in regular area, unpin the note
     if (targetArea === 'regular' && note.pinned) {
       updateNoteMutation.mutate({
         id: noteId,
@@ -598,7 +634,6 @@ const TeamNoticeboard: React.FC = () => {
               </div>
             ) : (
               <>
-                {/* Pinned Section */}
                 {(pinnedNotes.length > 0 || recipes.length > 0) && (
                   <div 
                     className="mb-8 p-4 bg-gray-50/70 rounded-lg border border-dashed border-amber-300/50 backdrop-blur-sm"
@@ -653,7 +688,6 @@ const TeamNoticeboard: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Regular Notes */}
                 <div 
                   className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6`}
                   onDragOver={(e) => e.preventDefault()}
@@ -703,7 +737,6 @@ const TeamNoticeboard: React.FC = () => {
         </Tabs>
       </div>
       
-      {/* Recipe Modal */}
       <RecipeCardExpanded 
         recipe={selectedRecipe}
         isOpen={isRecipeModalOpen}
