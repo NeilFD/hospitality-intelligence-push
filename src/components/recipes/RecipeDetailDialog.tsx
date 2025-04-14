@@ -30,7 +30,7 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   const isBeverage = recipe.moduleType === 'beverage';
   
   // Get the appropriate image URL based on recipe type
-  const imageUrl = isHospitality && recipe.image_url ? recipe.image_url : recipe.imageUrl;
+  const imageUrl = recipe.image_url || recipe.imageUrl;
   
   console.log("RecipeDetailDialog using image:", imageUrl);
   
