@@ -32,6 +32,7 @@ import TeamNoticeboard from '@/pages/team/Noticeboard';
 import TeamChat from '@/pages/team/Chat';
 import TeamKnowledge from '@/pages/team/Knowledge';
 import Hospitality from '@/pages/team/Hospitality';
+import HospitalityBible from '@/pages/team/HospitalityBible';
 
 // Import Food and Beverage specific routes
 import FoodInputSettings from '@/pages/food/InputSettings';
@@ -128,6 +129,7 @@ function App() {
               <Route path="/team/chat" element={<Layout><TeamChat /></Layout>} />
               <Route path="/team/knowledge" element={<Layout><TeamKnowledge /></Layout>} />
               <Route path="/team/hospitality" element={<Layout><Hospitality /></Layout>} />
+              <Route path="/team/hospitality-bible" element={<Layout><HospitalityBible /></Layout>} />
               
               {/* Not Found Route - Must be last */}
               <Route path="*" element={<Layout><NotFound /></Layout>} />
