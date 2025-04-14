@@ -25,7 +25,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserCheck, UserCog, UserPlus, Mail, AlertCircle, Trash2, MoreVertical } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { UserCheck, UserCog, UserPlus, Mail, AlertCircle, Trash2, MoreVertical, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
@@ -36,6 +37,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, parse } from 'date-fns';
+import { cn } from "@/lib/utils";
 
 const TeamManagementPanel: React.FC = () => {
   const { profile: currentUserProfile } = useAuthStore();
@@ -56,8 +65,14 @@ const TeamManagementPanel: React.FC = () => {
   });
   
   const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
     role: '',
-    jobTitle: ''
+    jobTitle: '',
+    birthDate: undefined as Date | undefined,
+    favouriteDish: '',
+    favouriteDrink: '',
+    aboutMe: ''
   });
   
   const isGod = currentUserProfile?.role === 'GOD';
@@ -152,26 +167,46 @@ const TeamManagementPanel: React.FC = () => {
     if (!selectedUser) return;
     
     try {
+      // Format birth date if available
+      const formattedBirthDate = editForm.birthDate ? format(editForm.birthDate, 'MM-dd') : null;
+      
       const { error } = await supabase
         .from('profiles')
         .update({
+          first_name: editForm.firstName,
+          last_name: editForm.lastName,
           role: editForm.role,
-          job_title: editForm.jobTitle
+          job_title: editForm.jobTitle,
+          birth_date: formattedBirthDate,
+          favourite_dish: editForm.favouriteDish,
+          favourite_drink: editForm.favouriteDrink,
+          about_me: editForm.aboutMe
         })
         .eq('id', selectedUser.id);
         
       if (error) throw error;
       
+      // Update the team members list with the edited user
       setTeamMembers(teamMembers.map(member => 
         member.id === selectedUser.id 
-          ? { ...member, role: editForm.role as any, job_title: editForm.jobTitle } 
+          ? { 
+              ...member, 
+              first_name: editForm.firstName,
+              last_name: editForm.lastName,
+              role: editForm.role as any, 
+              job_title: editForm.jobTitle,
+              birth_date: formattedBirthDate,
+              favourite_dish: editForm.favouriteDish,
+              favourite_drink: editForm.favouriteDrink,
+              about_me: editForm.aboutMe
+            } 
           : member
       ));
       
       setIsEditUserDialogOpen(false);
       setSelectedUser(null);
       
-      toast.success(`${selectedUser.first_name}'s profile has been updated`);
+      toast.success(`${editForm.firstName}'s profile has been updated`);
     } catch (error) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user profile');
@@ -220,10 +255,30 @@ const TeamManagementPanel: React.FC = () => {
   
   const openEditDialog = (user: UserProfile) => {
     setSelectedUser(user);
+    let birthDate: Date | undefined = undefined;
+    
+    if (user.birth_date) {
+      try {
+        const parsedDate = parse(user.birth_date, 'MM-dd', new Date());
+        if (!isNaN(parsedDate.getTime())) {
+          birthDate = parsedDate;
+        }
+      } catch (error) {
+        console.error('Error parsing birth date:', error);
+      }
+    }
+    
     setEditForm({
+      firstName: user.first_name || '',
+      lastName: user.last_name || '',
       role: user.role || 'Team Member',
-      jobTitle: user.job_title || ''
+      jobTitle: user.job_title || '',
+      birthDate: birthDate,
+      favouriteDish: user.favourite_dish || '',
+      favouriteDrink: user.favourite_drink || '',
+      aboutMe: user.about_me || ''
     });
+    
     setIsEditUserDialogOpen(true);
   };
   
@@ -408,15 +463,36 @@ const TeamManagementPanel: React.FC = () => {
       </Dialog>
 
       <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Team Member</DialogTitle>
             <DialogDescription>
-              Update role and details for {selectedUser?.first_name} {selectedUser?.last_name}
+              Update profile details for {selectedUser?.first_name} {selectedUser?.last_name}
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editFirstName">First Name</Label>
+                <Input 
+                  id="editFirstName" 
+                  value={editForm.firstName}
+                  onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input 
+                  id="editLastName" 
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="editRole">Role</Label>
               <Select 
@@ -444,9 +520,76 @@ const TeamManagementPanel: React.FC = () => {
               <Label htmlFor="editJobTitle">Job Title</Label>
               <Input 
                 id="editJobTitle" 
-                value={editForm.jobTitle || ''}
+                value={editForm.jobTitle}
                 onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
                 placeholder="Job title"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Birthday</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !editForm.birthDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editForm.birthDate ? format(editForm.birthDate, "MMMM dd") : <span>No birthday set</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editForm.birthDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        const currentYear = new Date().getFullYear();
+                        date.setFullYear(currentYear);
+                        setEditForm({...editForm, birthDate: date});
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                    captionLayout="buttons"
+                    fromYear={new Date().getFullYear()}
+                    toYear={new Date().getFullYear()}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="editFavouriteDish">Favourite Tavern Dish</Label>
+              <Input 
+                id="editFavouriteDish" 
+                value={editForm.favouriteDish}
+                onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
+                placeholder="What's their favourite dish from the menu?"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="editFavouriteDrink">Favourite Tavern Drink</Label>
+              <Input 
+                id="editFavouriteDrink" 
+                value={editForm.favouriteDrink}
+                onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
+                placeholder="What's their favourite drink from the bar?"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="editAboutMe">About Me</Label>
+              <Textarea 
+                id="editAboutMe" 
+                value={editForm.aboutMe}
+                onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
+                placeholder="Tell us a bit about them..."
+                className="min-h-[100px]"
               />
             </div>
           </div>
