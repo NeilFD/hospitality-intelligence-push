@@ -31,17 +31,24 @@ const ControlCentre: React.FC = () => {
     }
   });
   
+  const fetchData = async () => {
+    try {
+      const data = await getControlCentreData();
+      setControlCentreData(data);
+    } catch (error) {
+      console.error('Error fetching control centre data:', error);
+    }
+  };
+  
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getControlCentreData();
-        setControlCentreData(data);
-      } catch (error) {
-        console.error('Error fetching control centre data:', error);
-      }
-    };
-    
     fetchData();
+    
+    // Add event listener for business targets updates
+    window.addEventListener('business-targets-updated', fetchData);
+    
+    return () => {
+      window.removeEventListener('business-targets-updated', fetchData);
+    };
   }, []);
 
   // Only GOD and Super Users can access Control Centre

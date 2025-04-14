@@ -141,27 +141,53 @@ export const updatePermissionMatrix = async (permissionMatrix: PermissionMatrix[
 // Add a function to update target settings
 export const updateTargetSettings = async (targetSettings: TargetSettings) => {
   try {
-    const data = {
-      food_gp_target: targetSettings.foodGpTarget,
-      beverage_gp_target: targetSettings.beverageGpTarget,
-      wage_cost_target: targetSettings.wageCostTarget,
-    };
-    
-    // Update the existing record (we only ever have one record with id=1)
-    const { error } = await supabase
+    // First check if record exists
+    const { data: existingRecord, error: checkError } = await supabase
       .from('business_targets')
-      .update(data)
-      .eq('id', 1);
+      .select('*')
+      .eq('id', 1)
+      .single();
     
-    if (error) {
-      console.error('Error updating target settings:', error);
-      return { error };
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking business targets:', checkError);
+      return { error: checkError };
     }
     
-    return { success: true };
+    let result;
+    
+    // Convert any potential string values to numbers
+    const formattedSettings = {
+      food_gp_target: Number(targetSettings.foodGpTarget),
+      beverage_gp_target: Number(targetSettings.beverageGpTarget),
+      wage_cost_target: Number(targetSettings.wageCostTarget)
+    };
+    
+    if (!existingRecord) {
+      // Insert new record with id=1 if it doesn't exist
+      result = await supabase
+        .from('business_targets')
+        .insert({
+          id: 1,
+          ...formattedSettings
+        });
+    } else {
+      // Update existing record
+      result = await supabase
+        .from('business_targets')
+        .update(formattedSettings)
+        .eq('id', 1);
+    }
+    
+    if (result.error) {
+      console.error('Error updating business targets:', result.error);
+      return { error: result.error };
+    }
+    
+    // Return updated data
+    return { data: targetSettings, success: true };
   } catch (error) {
-    console.error('Error in updateTargetSettings:', error);
-    return { error };
+    console.error('Exception in updateTargetSettings:', error);
+    return { error: error instanceof Error ? error : new Error('Unknown error') };
   }
 };
 

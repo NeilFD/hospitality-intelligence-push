@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,13 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    if (targetSettings) {
+      setSettings(targetSettings);
+    }
+  }, [targetSettings]);
 
   const handleSettingChange = (key: keyof TargetSettings, value: string) => {
     const numValue = parseFloat(value);
@@ -66,6 +73,9 @@ export function TargetSettingsPanel({ targetSettings }: TargetSettingsPanelProps
       }
       
       toast.success('Business targets saved successfully');
+      
+      // This forces the parent component to refresh the targets from the server
+      window.dispatchEvent(new CustomEvent('business-targets-updated'));
     } catch (error) {
       console.error('Error saving business targets:', error);
       toast.error('Failed to save business targets');
