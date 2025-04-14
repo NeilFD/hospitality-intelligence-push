@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -87,6 +86,7 @@ const HospitalityBible: React.FC = () => {
         createdAt: new Date(guide.created_at),
         updatedAt: new Date(guide.updated_at),
         imageUrl: guide.image_url,
+        image_url: guide.image_url,
         ingredients: (guide.steps || []) as Ingredient[],
         costing: {
           totalRecipeCost: 0,
@@ -95,6 +95,7 @@ const HospitalityBible: React.FC = () => {
           grossProfitPercentage: 0
         },
         moduleType: 'hospitality',
+        module_type: 'hospitality',
         archived: guide.archived || false,
         postedToNoticeboard: guide.posted_to_noticeboard || false
       }));
