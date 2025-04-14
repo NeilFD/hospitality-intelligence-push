@@ -134,6 +134,7 @@ const TeamManagementPanel: React.FC = () => {
         body: JSON.stringify({
           email: newUser.email,
           firstName: newUser.firstName,
+          lastName: newUser.lastName,
           invitationToken
         })
       });
@@ -142,6 +143,8 @@ const TeamManagementPanel: React.FC = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to send invitation');
       }
+      
+      const responseData = await response.json();
       
       setNewUser({
         email: '',

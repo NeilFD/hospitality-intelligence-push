@@ -10,6 +10,7 @@ const corsHeaders = {
 interface InvitationRequest {
   email: string;
   firstName: string;
+  lastName: string;
   invitationToken: string;
 }
 
@@ -20,7 +21,9 @@ serve(async (req) => {
   }
   
   try {
-    const { email, firstName, invitationToken } = await req.json() as InvitationRequest;
+    // Parse the request body
+    const requestData = await req.json();
+    const { email, firstName, lastName, invitationToken } = requestData as InvitationRequest;
     
     // Basic validation
     if (!email || !invitationToken) {
