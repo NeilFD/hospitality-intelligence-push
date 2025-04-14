@@ -11,6 +11,8 @@ import { ThemeProviderExtended } from "@/components/ui/theme-provider-extended";
 
 // Simplified routing for available pages
 import Dashboard from '@/pages/Dashboard';
+import FoodDashboard from '@/pages/food/Dashboard';
+import BeverageDashboard from '@/pages/beverage/Dashboard';
 import NotFound from '@/pages/NotFound';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -89,23 +91,23 @@ function App() {
               {/* Control Centre Route - Make sure this doesn't redirect */}
               <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
               
-              {/* Food Module Routes - Fix all food routes to point to correct components */}
-              <Route path="/food/dashboard" element={<Layout><Dashboard /></Layout>} />
+              {/* Food Module Routes - Each route points to its specific component */}
+              <Route path="/food/dashboard" element={<Layout><FoodDashboard /></Layout>} />
               <Route path="/food/input-settings" element={<Layout><FoodInputSettings /></Layout>} />
               <Route path="/food/month/:year/:month" element={<Layout><FoodMonthSummary /></Layout>} />
               <Route path="/food/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
               <Route path="/food/bible" element={<Layout><FoodBible /></Layout>} />
               <Route path="/food/weekly-tracker" element={<Layout><FoodWeeklyTracker /></Layout>} />
               
-              {/* Beverage Module Routes - Fix all beverage routes to point to correct components */}
-              <Route path="/beverage/dashboard" element={<Layout><Dashboard /></Layout>} />
+              {/* Beverage Module Routes - Each route points to its specific component */}
+              <Route path="/beverage/dashboard" element={<Layout><BeverageDashboard /></Layout>} />
               <Route path="/beverage/input-settings" element={<Layout><BeverageInputSettings /></Layout>} />
               <Route path="/beverage/month/:year/:month" element={<Layout><BeverageMonthSummary /></Layout>} />
               <Route path="/beverage/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
               <Route path="/beverage/bible" element={<Layout><BeverageBible /></Layout>} />
               <Route path="/beverage/weekly-tracker" element={<Layout><BeverageWeeklyTracker /></Layout>} />
               
-              {/* Master Module Routes - Fix daily info routes */}
+              {/* Master Module Routes */}
               <Route path="/master/dashboard" element={<Layout><MasterDashboard /></Layout>} />
               <Route path="/master/month-summary" element={<Layout><MasterMonthSummary /></Layout>} />
               <Route path="/master/weekly-input" element={<Layout><MasterWeeklyInput /></Layout>} />
