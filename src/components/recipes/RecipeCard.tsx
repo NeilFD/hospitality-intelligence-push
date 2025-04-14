@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +47,9 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
   // Check if this is a hospitality guide
   const isHospitalityGuide = recipe.moduleType === 'hospitality';
   
+  // Enhanced image URL handling
+  const imageUrl = recipe.imageUrl || recipe.image_url || recipe.image;
+  
   const handleEmailShare = () => {
     const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
     const body = encodeURIComponent(
@@ -91,17 +93,27 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
 
   return (
     <Card className="w-full h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer text-gray-900" onClick={onClick}>
-      <div className="w-full h-48 overflow-hidden bg-gray-100">
-        {recipe.imageUrl ? (
+      <div className="w-full h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
+        {imageUrl ? (
           <img 
-            src={recipe.imageUrl} 
+            src={imageUrl} 
             alt={recipe.name} 
             className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error("Card image failed to load:", imageUrl);
+              e.currentTarget.style.display = 'none';
+              const parent = e.currentTarget.parentElement;
+              if (parent) {
+                parent.classList.add('bg-gray-200');
+                const errorMsg = document.createElement('div');
+                errorMsg.textContent = 'Image unavailable';
+                errorMsg.className = 'text-gray-700 text-sm';
+                parent.appendChild(errorMsg);
+              }
+            }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-700">
-            No image available
-          </div>
+          <div className="text-gray-700 text-sm">No image available</div>
         )}
       </div>
       <CardHeader className="p-4 pb-2">

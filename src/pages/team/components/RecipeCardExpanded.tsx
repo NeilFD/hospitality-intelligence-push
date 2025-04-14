@@ -23,12 +23,16 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
   
   const isHospitality = recipe.module_type === 'hospitality' || recipe.moduleType === 'hospitality';
   
-  // Debug information to help troubleshoot image issues
-  console.log("Recipe in expanded card:", recipe);
+  // Enhanced debugging logs
+  console.log("Recipe full object:", recipe);
+  console.log("Looking for image in:", { 
+    image_url: recipe.image_url,
+    imageUrl: recipe.imageUrl,
+    image: recipe.image
+  });
   
-  // More robust image URL determination
+  // Try all possible image URL properties
   const imageUrl = recipe.image_url || recipe.imageUrl || recipe.image;
-  console.log("Final image URL used:", imageUrl);
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -41,30 +45,29 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
         <ScrollArea className="pr-4 max-h-[calc(80vh-12rem)] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div>
-              {imageUrl ? (
-                <div className="w-full h-48 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+              <div className="w-full h-48 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+                {imageUrl ? (
                   <img 
                     src={imageUrl} 
                     alt={recipe.name} 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error("Recipe image failed to load:", imageUrl);
+                      console.error("Image failed to load:", imageUrl);
                       e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement?.classList.add('bg-gray-200');
-                      if (e.currentTarget.parentElement) {
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.classList.add('bg-gray-200');
                         const errorMsg = document.createElement('div');
-                        errorMsg.textContent = 'Image failed to load';
-                        errorMsg.className = 'text-gray-700';
-                        e.currentTarget.parentElement.appendChild(errorMsg);
+                        errorMsg.textContent = 'Image unavailable';
+                        errorMsg.className = 'text-gray-700 text-sm';
+                        parent.appendChild(errorMsg);
                       }
                     }}
                   />
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded-md text-gray-700">
-                  No image available
-                </div>
-              )}
+                ) : (
+                  <div className="text-gray-700 text-sm">No image available</div>
+                )}
+              </div>
               
               <div className="mt-4">
                 <h3 className="font-medium text-gray-900 mb-2">Dietary Information</h3>
