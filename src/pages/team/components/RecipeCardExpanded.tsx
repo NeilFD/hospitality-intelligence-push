@@ -28,7 +28,21 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
   // For recipes, we use the imageUrl property
   const imageUrl = isHospitality ? recipe.image_url : recipe.imageUrl;
   
-  console.log("RecipeCardExpanded for:", recipe.name, "isHospitality:", isHospitality, "imageUrl:", imageUrl);
+  // If no image URL is specified, use one of our images based on module type
+  const getFallbackImage = () => {
+    if (isHospitality) {
+      return '/lovable-uploads/d0fa3279-2855-4f82-b009-47d725cad839.png';
+    } else if (recipe.module_type === 'food' || recipe.moduleType === 'food') {
+      return '/lovable-uploads/d7e475f7-c18d-4312-91d6-2bf24f07af7a.png';
+    } else if (recipe.module_type === 'beverage' || recipe.moduleType === 'beverage') {
+      return '/lovable-uploads/bfd620b2-f0d0-4190-9cf3-87808593f9d0.png';
+    }
+    return '';
+  };
+  
+  const displayImageUrl = imageUrl || getFallbackImage();
+  
+  console.log("RecipeCardExpanded for:", recipe.name, "isHospitality:", isHospitality, "imageUrl:", displayImageUrl);
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -42,13 +56,13 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div>
               <div className="w-full h-48 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
-                {imageUrl ? (
+                {displayImageUrl ? (
                   <img 
-                    src={imageUrl} 
+                    src={displayImageUrl} 
                     alt={recipe.name} 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error("Image failed to load:", imageUrl);
+                      console.error("Image failed to load:", displayImageUrl);
                       e.currentTarget.style.display = 'none';
                       const parent = e.currentTarget.parentElement;
                       if (parent) {
