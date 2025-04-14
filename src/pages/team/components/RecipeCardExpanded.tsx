@@ -21,7 +21,7 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
 }) => {
   if (!recipe) return null;
   
-  const isHospitality = recipe.module_type === 'hospitality';
+  const isHospitality = recipe.module_type === 'hospitality' || recipe.moduleType === 'hospitality';
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -34,13 +34,13 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
         <ScrollArea className="pr-4 max-h-[calc(80vh-12rem)] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div>
-              {recipe.image_url ? (
+              {(recipe.image_url || recipe.imageUrl) ? (
                 <img 
-                  src={recipe.image_url} 
+                  src={recipe.image_url || recipe.imageUrl} 
                   alt={recipe.name} 
                   className="w-full h-48 object-cover rounded-md"
                   onError={(e) => {
-                    console.error("Recipe image failed to load:", recipe.image_url);
+                    console.error("Recipe image failed to load:", recipe.image_url || recipe.imageUrl);
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
                   }}
                 />
@@ -82,22 +82,22 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
                 <dl className="space-y-1">
                   <div className="flex">
                     <dt className="w-1/2 text-gray-600">Time to Table:</dt>
-                    <dd className="text-gray-900">~{recipe.time_to_table_minutes} minutes</dd>
+                    <dd className="text-gray-900">~{recipe.time_to_table_minutes || recipe.timeToTableMinutes} minutes</dd>
                   </div>
                   {/* Only show financial info if it's NOT a hospitality guide */}
                   {!isHospitality && (
                     <>
                       <div className="flex">
                         <dt className="w-1/2 text-gray-600">Recipe Cost:</dt>
-                        <dd className="text-gray-900">{formatCurrency(recipe.total_recipe_cost || 0)}</dd>
+                        <dd className="text-gray-900">{formatCurrency(recipe.total_recipe_cost || (recipe.costing?.totalRecipeCost || 0))}</dd>
                       </div>
                       <div className="flex">
                         <dt className="w-1/2 text-gray-600">Menu Price:</dt>
-                        <dd className="text-gray-900">{formatCurrency(recipe.actual_menu_price || 0)}</dd>
+                        <dd className="text-gray-900">{formatCurrency(recipe.actual_menu_price || (recipe.costing?.actualMenuPrice || 0))}</dd>
                       </div>
                       <div className="flex">
                         <dt className="w-1/2 text-gray-600">GP:</dt>
-                        <dd className="text-gray-900">{((recipe.gross_profit_percentage || 0) * 100).toFixed(1)}%</dd>
+                        <dd className="text-gray-900">{(((recipe.gross_profit_percentage || recipe.costing?.grossProfitPercentage) || 0) * 100).toFixed(1)}%</dd>
                       </div>
                     </>
                   )}
@@ -124,17 +124,17 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
             </div>
           </div>
           
-          {recipe.method && (
+          {(recipe.method || recipe.detailed_procedure) && (
             <div className="mt-6">
               <h3 className="font-medium text-gray-900 mb-2">Method</h3>
-              <p className="text-gray-800 text-sm whitespace-pre-line bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.method}</p>
+              <p className="text-gray-800 text-sm whitespace-pre-line bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.method || recipe.detailed_procedure}</p>
             </div>
           )}
           
-          {recipe.mise_en_place && (
+          {(recipe.mise_en_place || recipe.required_resources) && (
             <div className="mt-4">
               <h3 className="font-medium text-gray-900 mb-2">Mise en Place</h3>
-              <p className="text-gray-800 text-sm whitespace-pre-line bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.mise_en_place}</p>
+              <p className="text-gray-800 text-sm whitespace-pre-line bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.mise_en_place || recipe.required_resources}</p>
             </div>
           )}
           
