@@ -47,8 +47,8 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
   // Check if this is a hospitality guide
   const isHospitalityGuide = recipe.moduleType === 'hospitality';
   
-  // Enhanced image URL handling
-  const imageUrl = recipe.imageUrl || recipe.image_url || recipe.image;
+  // Fixed image URL handling - using only imageUrl from the Recipe type
+  const imageUrl = recipe.imageUrl;
   
   const handleEmailShare = () => {
     const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
