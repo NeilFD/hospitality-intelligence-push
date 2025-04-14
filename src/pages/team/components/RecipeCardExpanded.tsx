@@ -84,6 +84,7 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
                     <dt className="w-1/2 text-gray-600">Time to Table:</dt>
                     <dd className="text-gray-900">~{recipe.time_to_table_minutes} minutes</dd>
                   </div>
+                  {/* Only show financial info if it's NOT a hospitality guide */}
                   {!isHospitality && (
                     <>
                       <div className="flex">

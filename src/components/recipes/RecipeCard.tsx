@@ -44,6 +44,9 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
   useEffect(() => {
     setIsPinned(recipe.postedToNoticeboard || false);
   }, [recipe.postedToNoticeboard]);
+
+  // Check if this is a hospitality guide
+  const isHospitalityGuide = recipe.moduleType === 'hospitality';
   
   const handleEmailShare = () => {
     const subject = encodeURIComponent(`Recipe: ${recipe.name}`);
@@ -123,11 +126,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
           </div>
         )}
         
-        <div className="text-sm text-gray-800 mb-2">
-          <p>Cost: {formatCurrency(recipe.costing.totalRecipeCost)}</p>
-          <p>Menu Price: {formatCurrency(recipe.costing.actualMenuPrice)}</p>
-          <p>GP: {(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</p>
-        </div>
+        {/* Only show financial info if it's NOT a hospitality guide */}
+        {!isHospitalityGuide && (
+          <div className="text-sm text-gray-800 mb-2">
+            <p>Cost: {formatCurrency(recipe.costing.totalRecipeCost)}</p>
+            <p>Menu Price: {formatCurrency(recipe.costing.actualMenuPrice)}</p>
+            <p>GP: {(recipe.costing.grossProfitPercentage * 100).toFixed(1)}%</p>
+          </div>
+        )}
       </CardContent>
       <Separator />
       <CardFooter className="p-3 flex justify-between">
