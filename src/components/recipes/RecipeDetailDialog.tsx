@@ -149,13 +149,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
                 </div>
               </div>
             )}
-            
-            {!isHospitality && recipe.recommendedUpsell && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">Recommended Upsell</h3>
-                <div className="text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.recommendedUpsell}</div>
-              </div>
-            )}
           </div>
         </ScrollArea>
         

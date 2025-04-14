@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,8 +32,6 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
       return {
         title: 'Additional Guide Information',
         description: 'Add more details to your hospitality guide',
-        upsellLabel: 'Related Services',
-        upsellPlaceholder: 'Suggest related services or experiences',
         timeLabel: 'Time Required (minutes)',
         miseLabel: 'Required Tools/Resources',
         misePlaceholder: 'List any tools or resources needed',
@@ -77,16 +74,18 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
         <p className="text-gray-700">{labels.description}</p>
       </div>
 
-      <div>
-        <Label htmlFor="recommendedUpsell" className="text-gray-900">{labels.upsellLabel}</Label>
-        <Input
-          id="recommendedUpsell"
-          value={recommendedUpsell}
-          onChange={(e) => onRecommendedUpsellChange(e.target.value)}
-          placeholder={labels.upsellPlaceholder}
-          className="mt-1"
-        />
-      </div>
+      {moduleType !== 'hospitality' && (
+        <div>
+          <Label htmlFor="recommendedUpsell" className="text-gray-900">{labels.upsellLabel}</Label>
+          <Input
+            id="recommendedUpsell"
+            value={recommendedUpsell}
+            onChange={(e) => onRecommendedUpsellChange(e.target.value)}
+            placeholder={labels.upsellPlaceholder}
+            className="mt-1"
+          />
+        </div>
+      )}
 
       <div>
         <Label htmlFor="timeToTable" className="text-gray-900">{labels.timeLabel}</Label>
@@ -128,4 +127,3 @@ const RecipeAdditionalInfo: React.FC<RecipeAdditionalInfoProps> = ({
 };
 
 export default RecipeAdditionalInfo;
-
