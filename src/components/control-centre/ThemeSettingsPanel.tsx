@@ -14,8 +14,8 @@ import { supabase } from '@/lib/supabase';
 import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image, Building } from 'lucide-react';
 
 const presetThemes: PresetTheme[] = [{
-  id: 'hi-purple',
-  name: 'Hi Purple',
+  id: 'berry-purple',
+  name: 'Berry Purple',
   colors: {
     primary: '#6a1b9a',
     secondary: '#f3e5f5',
@@ -55,17 +55,6 @@ const presetThemes: PresetTheme[] = [{
     accent: '#ff9800',
     sidebar: '#ef6c00',
     button: '#f57c00',
-    text: '#212121'
-  }
-}, {
-  id: 'berry-purple',
-  name: 'Berry Purple',
-  colors: {
-    primary: '#6a1b9a',
-    secondary: '#f3e5f5',
-    accent: '#ab47bc',
-    sidebar: '#8e24aa',
-    button: '#9c27b0',
     text: '#212121'
   }
 }];
@@ -845,7 +834,7 @@ export function ThemeSettingsPanel({
                             backgroundColor: theme.colors.button
                           }}></div>
                         </div>
-                        {theme.id === 'hi-purple' && (
+                        {theme.id === 'berry-purple' && (
                           <div className="absolute top-1 left-1 bg-white/50 text-xs px-1 rounded">
                             Default
                           </div>
