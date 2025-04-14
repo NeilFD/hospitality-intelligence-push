@@ -488,10 +488,7 @@ export function ThemeSettingsPanel({
       });
       window.dispatchEvent(companyNameEvent);
       
-      const {
-        data,
-        error
-      } = await saveThemeSettings({
+      const saveResult = await saveThemeSettings({
         name: activeTheme.name,
         primaryColor: activeTheme.primaryColor,
         secondaryColor: activeTheme.secondaryColor,
@@ -505,8 +502,8 @@ export function ThemeSettingsPanel({
         company_name: activeTheme.companyName
       });
       
-      if (error) {
-        console.error('Error updating theme:', error);
+      if ('error' in saveResult) {
+        console.error('Error updating theme:', saveResult.error);
         toast.error('Failed to save theme settings');
         return;
       }
