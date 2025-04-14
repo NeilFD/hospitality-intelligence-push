@@ -1,106 +1,186 @@
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signUp } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuthStore } from '@/services/auth-service';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
-export default function RegisterForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const { register, isLoading, error, clearError } = useAuthStore();
+interface InvitationData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  jobTitle: string;
+}
+
+interface RegisterFormProps {
+  invitationData?: InvitationData | null;
+  onRegistrationComplete?: () => void;
+}
+
+const formSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrationComplete }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    clearError();
-    
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: invitationData?.firstName || '',
+      lastName: invitationData?.lastName || '',
+      email: invitationData?.email || '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (data: FormValues) => {
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      await register(email, password, firstName, lastName);
-      console.log('Registration successful! Please check your email to verify your account.');
+      const { error } = await signUp(data.email, data.password, {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        job_title: invitationData?.jobTitle,
+        role: invitationData?.role
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // If this is from an invitation, mark it as claimed
+      if (onRegistrationComplete) {
+        await onRegistrationComplete();
+      }
+
+      toast({
+        title: "Registration successful",
+        description: "Please check your email to confirm your account.",
+      });
+
       navigate('/login');
-    } catch (err) {
-      // Error is handled by the register function
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'Failed to register. Please try again.');
+      toast({
+        variant: "destructive",
+        title: "Registration failed",
+        description: err.message || 'Something went wrong. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Card className="max-w-md mx-auto mt-8">
-      <CardHeader>
-        <CardTitle className="text-center">Register for The Tavern</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-100 text-red-800 p-3 rounded-md text-sm">
-              {error}
-            </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First name</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="First name" 
+                    {...field} 
+                    disabled={!!invitationData}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last name</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Last name" 
+                    {...field} 
+                    disabled={!!invitationData}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="name@example.com" 
+                  type="email" 
+                  {...field} 
+                  disabled={!!invitationData}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input 
-                id="firstName"
-                placeholder="First name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input 
-                id="lastName"
-                placeholder="Last name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
-            </div>
+        />
+        
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input placeholder="******" type="password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-md flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <p className="text-sm">{error}</p>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+        )}
+
+        {invitationData && (
+          <div className="bg-blue-50 text-blue-600 p-3 rounded-md text-sm">
+            You've been invited with the role: <strong>{invitationData.role}</strong>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password"
-              type="password"
-              placeholder="Create a password (min. 8 characters)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              required
-            />
-          </div>
-          
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Registering...' : 'Register'}
-          </Button>
-          
-          <p className="text-center text-sm text-gray-500">
-            Already have an account?{' '}
-            <Button variant="link" className="p-0" onClick={() => navigate('/login')}>
-              Login
-            </Button>
-          </p>
-        </form>
-      </CardContent>
-    </Card>
+        )}
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating account...' : 'Register'}
+        </Button>
+      </form>
+    </Form>
   );
-}
+};
+
+export default RegisterForm;

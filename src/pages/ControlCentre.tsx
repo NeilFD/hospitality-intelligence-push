@@ -7,7 +7,9 @@ import { PermissionMatrixPanel } from '@/components/control-centre/PermissionMat
 import { ThemeSettingsPanel } from '@/components/control-centre/ThemeSettingsPanel';
 import { TargetSettingsPanel } from '@/components/control-centre/TargetSettingsPanel';
 import { DatabasePanel } from '@/components/control-centre/DatabasePanel';
+import TeamManagementPanel from '@/components/control-centre/TeamManagementPanel';
 import { Navigate } from 'react-router-dom';
+import { Users } from 'lucide-react';
 
 export default function ControlCentre() {
   const {
@@ -88,6 +90,18 @@ export default function ControlCentre() {
     return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
   };
   
+  const getTeamTabStyle = () => {
+    const { hasForestGreenTheme, hasOceanBlueTheme, hasSunsetOrangeTheme, hasBerryPurpleTheme, hasDarkModeTheme, hasHiPurpleTheme } = themeState;
+    
+    if (hasForestGreenTheme) return "bg-[#2e7d32] text-white hover:bg-[#1b5e20] data-[state=active]:bg-[#1b5e20] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasOceanBlueTheme) return "bg-[#1976d2] text-white hover:bg-[#1565c0] data-[state=active]:bg-[#1565c0] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasSunsetOrangeTheme) return "bg-[#ef6c00] text-white hover:bg-[#e65100] data-[state=active]:bg-[#e65100] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasBerryPurpleTheme) return "bg-[#8e24aa] text-white hover:bg-[#6a1b9a] data-[state=active]:bg-[#6a1b9a] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasDarkModeTheme) return "bg-[#444444] text-white hover:bg-[#333333] data-[state=active]:bg-[#333333] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    if (hasHiPurpleTheme) return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+    return "bg-[#9d89c9] text-white hover:bg-[#806cac] data-[state=active]:bg-[#806cac] data-[state=active]:text-white data-[state=active]:shadow-md no-underline";
+  };
+  
   const getDatabaseTabStyle = () => {
     return "bg-rose-500 text-white hover:bg-rose-600 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md ml-auto mr-0 no-underline";
   };
@@ -143,6 +157,13 @@ export default function ControlCentre() {
           >
             Business Targets
           </TabsTrigger>
+          <TabsTrigger 
+            value="team" 
+            className={`font-medium transition-colors duration-200 ${getTeamTabStyle()}`}
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Team
+          </TabsTrigger>
           {isGodUser && <TabsTrigger 
             value="database" 
             className={`font-medium transition-colors duration-200 ${getDatabaseTabStyle()}`}
@@ -179,6 +200,10 @@ export default function ControlCentre() {
                 </div>
               </CardContent>
             </Card> : <TargetSettingsPanel targetSettings={data?.targetSettings} />}
+        </TabsContent>
+        
+        <TabsContent value="team" className="space-y-6">
+          <TeamManagementPanel />
         </TabsContent>
 
         {isGodUser && <TabsContent value="database" className="space-y-6">
