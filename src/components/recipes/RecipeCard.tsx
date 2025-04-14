@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Recipe } from "@/types/recipe-types";
 import { Button } from "@/components/ui/button";
-import { Mail, Share2, FileText, Globe } from "lucide-react";
+import { Mail, Share2, FileText, Globe, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { PDFDownloadLink } from "@react-pdf/renderer";
@@ -125,6 +125,12 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
             ))}
           </div>
         )}
+        
+        {/* Display time required for all modules */}
+        <div className="flex items-center text-sm text-gray-800 mb-2">
+          <Clock className="h-4 w-4 mr-1 inline-flex" />
+          <span>Time: ~{recipe.timeToTableMinutes} minutes</span>
+        </div>
         
         {/* Only show financial info if it's NOT a hospitality guide */}
         {!isHospitalityGuide && (
