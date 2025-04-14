@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -189,7 +188,7 @@ const TeamDashboard: React.FC = () => {
         {/* Team Noticeboard Card */}
         <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-blue-200 hover:border-hi-purple/30 rounded-xl group">
           <CardHeader className="pt-6 pb-0 px-6">
-            <div className="bg-gradient-to-br from-hi-purple to-hi-purple-dark text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-hi-purple-light to-hi-purple-dark text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
               <Clipboard className="h-8 w-8" />
             </div>
             <CardTitle className="text-2xl font-bold text-hi-purple-dark">Team Noticeboard</CardTitle>
@@ -215,7 +214,7 @@ const TeamDashboard: React.FC = () => {
             </div>
           </CardContent>
           <CardFooter className="pt-0 px-6 pb-6">
-            <Button asChild className="w-full justify-between bg-gradient-to-r from-hi-purple to-hi-purple-dark hover:from-hi-purple-dark hover:to-hi-purple-dark rounded-lg text-white shadow group-hover:shadow-md transition-all">
+            <Button asChild className="w-full justify-between bg-gradient-to-r from-hi-purple-light to-hi-purple hover:from-hi-purple hover:to-hi-purple-dark rounded-lg text-white shadow group-hover:shadow-md transition-all">
               <Link to="/team/noticeboard">
                 Open Noticeboard <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -224,35 +223,35 @@ const TeamDashboard: React.FC = () => {
         </Card>
         
         {/* Team Chat Card */}
-        <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-hi-purple-light/20 rounded-xl group">
+        <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-emerald-200 hover:border-emerald-300/30 rounded-xl group">
           <CardHeader className="pt-6 pb-0 px-6">
-            <div className="bg-gradient-to-br from-hi-purple-light to-hi-purple text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
               <MessageSquare className="h-8 w-8" />
             </div>
-            <CardTitle className="text-2xl font-bold text-hi-purple-dark">Team Chat</CardTitle>
+            <CardTitle className="text-2xl font-bold text-emerald-800">Team Chat</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 pt-4 px-6">
-            <div className="flex items-center gap-3 text-hi-purple">
-              <div className="bg-hi-purple-light/20 p-1 rounded-full">
+            <div className="flex items-center gap-3 text-emerald-700">
+              <div className="bg-emerald-100 p-1 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
               <span className="text-sm">Real-time Messaging</span>
             </div>
-            <div className="flex items-center gap-3 text-hi-purple">
-              <div className="bg-hi-purple-light/20 p-1 rounded-full">
+            <div className="flex items-center gap-3 text-emerald-700">
+              <div className="bg-emerald-100 p-1 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
               <span className="text-sm">Collaborate Together</span>
             </div>
-            <div className="flex items-center gap-3 text-hi-purple">
-              <div className="bg-hi-purple-light/20 p-1 rounded-full">
+            <div className="flex items-center gap-3 text-emerald-700">
+              <div className="bg-emerald-100 p-1 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
               <span className="text-sm">Share Files & Images</span>
             </div>
           </CardContent>
           <CardFooter className="pt-0 px-6 pb-6">
-            <Button asChild className="w-full justify-between bg-gradient-to-r from-hi-purple-light to-hi-purple hover:from-hi-purple hover:to-hi-purple-dark rounded-lg text-white shadow group-hover:shadow-md transition-all">
+            <Button asChild className="w-full justify-between bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg text-white shadow group-hover:shadow-md transition-all">
               <Link to="/team/chat">
                 Open Chat <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
