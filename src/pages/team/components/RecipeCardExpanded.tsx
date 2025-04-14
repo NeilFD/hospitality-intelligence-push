@@ -25,7 +25,10 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
   
   // Debug information to help troubleshoot image issues
   console.log("Recipe in expanded card:", recipe);
-  console.log("Image URL:", recipe.image_url || recipe.imageUrl);
+  
+  // More robust image URL determination
+  const imageUrl = recipe.image_url || recipe.imageUrl || recipe.image;
+  console.log("Final image URL used:", imageUrl);
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -38,15 +41,22 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
         <ScrollArea className="pr-4 max-h-[calc(80vh-12rem)] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div>
-              {(recipe.image_url || recipe.imageUrl) ? (
-                <div className="w-full h-48 relative rounded-md overflow-hidden">
+              {imageUrl ? (
+                <div className="w-full h-48 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
                   <img 
-                    src={recipe.image_url || recipe.imageUrl} 
+                    src={imageUrl} 
                     alt={recipe.name} 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.error("Recipe image failed to load:", recipe.image_url || recipe.imageUrl);
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      console.error("Recipe image failed to load:", imageUrl);
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement?.classList.add('bg-gray-200');
+                      if (e.currentTarget.parentElement) {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.textContent = 'Image failed to load';
+                        errorMsg.className = 'text-gray-700';
+                        e.currentTarget.parentElement.appendChild(errorMsg);
+                      }
                     }}
                   />
                 </div>
