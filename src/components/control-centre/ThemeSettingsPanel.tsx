@@ -829,7 +829,7 @@ export function ThemeSettingsPanel({
                       onClick={() => applyPresetTheme(theme)}
                     >
                       {theme.isDefault && (
-                        <div className="absolute top-0 right-0 bg-purple-200/70 text-purple-800 text-[10px] font-semibold px-1.5 py-0.5 rounded-bl-md">
+                        <div className="absolute top-0 left-0 bg-purple-200/60 text-purple-800 text-[10px] font-semibold px-1.5 py-0.5 rounded-br-md z-10">
                           Default
                         </div>
                       )}
