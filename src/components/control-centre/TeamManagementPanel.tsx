@@ -46,6 +46,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
 
+// Define the response data interface for the invitation API
+interface InvitationResponse {
+  success?: boolean;
+  error?: string;
+  message?: string;
+  invitationUrl?: string;
+  existingInvitation?: boolean;
+}
+
 const TeamManagementPanel: React.FC = () => {
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
@@ -127,12 +136,16 @@ const TeamManagementPanel: React.FC = () => {
       const functionUrl = 'https://kfiergoryrnjkewmeriy.supabase.co/functions/v1/send-user-invitation';
       console.log("Calling edge function at:", functionUrl);
       
+      // Get the current session token for authorization
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add the anon key for authorization
-          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`,
+          // Add the authorization header with the proper token
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           email: newUser.email,
@@ -151,10 +164,10 @@ const TeamManagementPanel: React.FC = () => {
       console.log("Response text:", responseText);
       
       // Make sure we have a response before trying to parse it
-      let responseData = {};
+      let responseData: InvitationResponse = {}; // Use the defined interface
       try {
         if (responseText) {
-          responseData = JSON.parse(responseText);
+          responseData = JSON.parse(responseText) as InvitationResponse;
           console.log("Parsed response data:", responseData);
         } else {
           throw new Error("Empty response from server");
