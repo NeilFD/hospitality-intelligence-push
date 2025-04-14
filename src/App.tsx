@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -8,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ThemeProviderExtended } from "@/components/ui/theme-provider-extended";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Simplified routing for available pages
 import Dashboard from '@/pages/Dashboard';
@@ -73,70 +73,72 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <Router>
-          <ThemeProviderExtended>
-            <Routes>
-              {/* Root route with redirect */}
-              <Route path="/" element={<Index />} />
-              
-              {/* Auth Routes */}
-              <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-              <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-              
-              {/* Profile Route */}
-              <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
-              
-              {/* App Routes - All wrapped with Layout */}
-              <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-              
-              {/* Control Centre Route - Make sure this doesn't redirect */}
-              <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
-              
-              {/* Food Module Routes - Each route points to its specific component */}
-              <Route path="/food/dashboard" element={<Layout><FoodDashboard /></Layout>} />
-              <Route path="/food/input-settings" element={<Layout><FoodInputSettings /></Layout>} />
-              <Route path="/food/month/:year/:month" element={<Layout><FoodMonthSummary /></Layout>} />
-              <Route path="/food/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
-              <Route path="/food/bible" element={<Layout><FoodBible /></Layout>} />
-              <Route path="/food/weekly-tracker" element={<Layout><FoodWeeklyTracker /></Layout>} />
-              
-              {/* Beverage Module Routes - Each route points to its specific component */}
-              <Route path="/beverage/dashboard" element={<Layout><BeverageDashboard /></Layout>} />
-              <Route path="/beverage/input-settings" element={<Layout><BeverageInputSettings /></Layout>} />
-              <Route path="/beverage/month/:year/:month" element={<Layout><BeverageMonthSummary /></Layout>} />
-              <Route path="/beverage/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
-              <Route path="/beverage/bible" element={<Layout><BeverageBible /></Layout>} />
-              <Route path="/beverage/weekly-tracker" element={<Layout><BeverageWeeklyTracker /></Layout>} />
-              
-              {/* Master Module Routes */}
-              <Route path="/master/dashboard" element={<Layout><MasterDashboard /></Layout>} />
-              <Route path="/master/month-summary" element={<Layout><MasterMonthSummary /></Layout>} />
-              <Route path="/master/weekly-input" element={<Layout><MasterWeeklyInput /></Layout>} />
-              <Route path="/master/weekly-input/:year/:month/:week" element={<Layout><MasterWeeklyInput /></Layout>} />
-              
-              {/* P&L Module Routes */}
-              <Route path="/pl/dashboard" element={<Layout><PLDashboard /></Layout>} />
-              
-              {/* Wages Module Routes */}
-              <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
-              
-              {/* Performance Module Routes */}
-              <Route path="/performance/dashboard" element={<Layout><PerformanceDashboard /></Layout>} />
-              
-              {/* Team Module Routes */}
-              <Route path="/team/dashboard" element={<Layout><TeamDashboard /></Layout>} />
-              <Route path="/team/noticeboard" element={<Layout><TeamNoticeboard /></Layout>} />
-              <Route path="/team/chat" element={<Layout><TeamChat /></Layout>} />
-              <Route path="/team/knowledge" element={<Layout><TeamKnowledge /></Layout>} />
-              <Route path="/team/hospitality" element={<Layout><Hospitality /></Layout>} />
-              <Route path="/team/hospitality-bible" element={<Layout><HospitalityBible /></Layout>} />
-              
-              {/* Not Found Route - Must be last */}
-              <Route path="*" element={<Layout><NotFound /></Layout>} />
-            </Routes>
-            <Toaster richColors />
-          </ThemeProviderExtended>
-        </Router>
+        <AuthProvider>
+          <Router>
+            <ThemeProviderExtended>
+              <Routes>
+                {/* Root route with redirect */}
+                <Route path="/" element={<Index />} />
+                
+                {/* Auth Routes */}
+                <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+                <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+                
+                {/* Profile Route */}
+                <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+                
+                {/* App Routes - All wrapped with Layout */}
+                <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+                
+                {/* Control Centre Route - Make sure this doesn't redirect */}
+                <Route path="/control-centre" element={<Layout><ControlCentre /></Layout>} />
+                
+                {/* Food Module Routes - Each route points to its specific component */}
+                <Route path="/food/dashboard" element={<Layout><FoodDashboard /></Layout>} />
+                <Route path="/food/input-settings" element={<Layout><FoodInputSettings /></Layout>} />
+                <Route path="/food/month/:year/:month" element={<Layout><FoodMonthSummary /></Layout>} />
+                <Route path="/food/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
+                <Route path="/food/bible" element={<Layout><FoodBible /></Layout>} />
+                <Route path="/food/weekly-tracker" element={<Layout><FoodWeeklyTracker /></Layout>} />
+                
+                {/* Beverage Module Routes - Each route points to its specific component */}
+                <Route path="/beverage/dashboard" element={<Layout><BeverageDashboard /></Layout>} />
+                <Route path="/beverage/input-settings" element={<Layout><BeverageInputSettings /></Layout>} />
+                <Route path="/beverage/month/:year/:month" element={<Layout><BeverageMonthSummary /></Layout>} />
+                <Route path="/beverage/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
+                <Route path="/beverage/bible" element={<Layout><BeverageBible /></Layout>} />
+                <Route path="/beverage/weekly-tracker" element={<Layout><BeverageWeeklyTracker /></Layout>} />
+                
+                {/* Master Module Routes */}
+                <Route path="/master/dashboard" element={<Layout><MasterDashboard /></Layout>} />
+                <Route path="/master/month-summary" element={<Layout><MasterMonthSummary /></Layout>} />
+                <Route path="/master/weekly-input" element={<Layout><MasterWeeklyInput /></Layout>} />
+                <Route path="/master/weekly-input/:year/:month/:week" element={<Layout><MasterWeeklyInput /></Layout>} />
+                
+                {/* P&L Module Routes */}
+                <Route path="/pl/dashboard" element={<Layout><PLDashboard /></Layout>} />
+                
+                {/* Wages Module Routes */}
+                <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
+                
+                {/* Performance Module Routes */}
+                <Route path="/performance/dashboard" element={<Layout><PerformanceDashboard /></Layout>} />
+                
+                {/* Team Module Routes */}
+                <Route path="/team/dashboard" element={<Layout><TeamDashboard /></Layout>} />
+                <Route path="/team/noticeboard" element={<Layout><TeamNoticeboard /></Layout>} />
+                <Route path="/team/chat" element={<Layout><TeamChat /></Layout>} />
+                <Route path="/team/knowledge" element={<Layout><TeamKnowledge /></Layout>} />
+                <Route path="/team/hospitality" element={<Layout><Hospitality /></Layout>} />
+                <Route path="/team/hospitality-bible" element={<Layout><HospitalityBible /></Layout>} />
+                
+                {/* Not Found Route - Must be last */}
+                <Route path="*" element={<Layout><NotFound /></Layout>} />
+              </Routes>
+              <Toaster richColors />
+            </ThemeProviderExtended>
+          </Router>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
