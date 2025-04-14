@@ -1367,6 +1367,48 @@ export type Database = {
           },
         ]
       }
+      user_invitations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          first_name: string | null
+          id: string
+          invitation_token: string
+          is_claimed: boolean
+          job_title: string | null
+          last_name: string | null
+          role: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at?: string
+          first_name?: string | null
+          id?: string
+          invitation_token: string
+          is_claimed?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          role?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          first_name?: string | null
+          id?: string
+          invitation_token?: string
+          is_claimed?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          role?: string | null
+        }
+        Relationships: []
+      }
       vector_documents: {
         Row: {
           content: string

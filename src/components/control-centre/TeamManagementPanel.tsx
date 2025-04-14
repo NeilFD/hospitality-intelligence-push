@@ -16,25 +16,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserCheck, UserCog, UserPlus, Mail, AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { UserProfile } from '@/types/supabase-types';
-import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 
-interface TeamManagementPanelProps {
-  profiles?: UserProfile[];
-  loading?: boolean;
-}
-
-const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = [], loading = false }) => {
+const TeamManagementPanel: React.FC = () => {
   const { toast } = useToast();
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [loadingMembers, setLoadingMembers] = useState(loading);
-  const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   // Form state for new user
   const [newUser, setNewUser] = useState({
@@ -60,7 +54,7 @@ const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = []
   }, []);
   
   const fetchTeamMembers = async () => {
-    setLoadingMembers(true);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -78,7 +72,7 @@ const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = []
         variant: 'destructive'
       });
     } finally {
-      setLoadingMembers(false);
+      setLoading(false);
     }
   };
   
@@ -113,11 +107,10 @@ const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = []
       if (inviteError) throw inviteError;
       
       // Call the edge function to send the invitation email
-      const response = await fetch('https://kfiergoryrnjkewmeriy.supabase.co/functions/v1/send-user-invitation', {
+      const response = await fetch('/api/send-user-invitation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
           email: newUser.email,
@@ -131,8 +124,6 @@ const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = []
         throw new Error(errorData.error || 'Failed to send invitation');
       }
       
-      setInviteSuccess(true);
-      
       // Reset form
       setNewUser({
         email: '',
@@ -142,7 +133,12 @@ const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = []
         jobTitle: ''
       });
       
-      // Show success message
+      // Close dialog
+      setIsAddUserDialogOpen(false);
+      
+      // Refresh team members
+      fetchTeamMembers();
+      
       toast({
         title: 'Invitation sent',
         description: `An invitation has been sent to ${newUser.email}`,
@@ -206,240 +202,173 @@ const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = []
     setIsEditUserDialogOpen(true);
   };
   
-  // Get initials for avatar fallback
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
-  };
-  
-  // Function to get role badge color
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'GOD':
-        return 'bg-red-100 text-red-800';
-      case 'Super User':
-        return 'bg-purple-100 text-purple-800';
-      case 'Manager':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <UserCheck className="h-6 w-6 text-hi-purple" /> Team Management
-            </CardTitle>
-            <CardDescription>
-              Manage team members and their permissions
-            </CardDescription>
-          </div>
+        <CardHeader>
+          <CardTitle className="text-2xl flex items-center gap-2">
+            <UserCheck className="h-6 w-6" /> Team Management
+          </CardTitle>
+          <CardDescription>
+            Manage team members and their permissions
+          </CardDescription>
           {canManageUsers && (
-            <Button onClick={() => setIsAddUserDialogOpen(true)} className="bg-hi-purple hover:bg-hi-purple-dark">
+            <Button onClick={() => setIsAddUserDialogOpen(true)}>
               <UserPlus className="mr-2 h-4 w-4" />
               Invite User
             </Button>
           )}
         </CardHeader>
         <CardContent>
-          {loadingMembers ? (
+          {loading ? (
             <div className="flex justify-center p-6">
               <p>Loading team members...</p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Team Member</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Job Title</TableHead>
-                    {canManageUsers && <TableHead className="w-[100px]">Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teamMembers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={canManageUsers ? 5 : 4} className="text-center py-6">
-                        No team members found
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Team Member</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Job Title</TableHead>
+                  {canManageUsers && <TableHead>Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {teamMembers.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarImage src={member.avatar_url || undefined} alt={`${member.first_name} ${member.last_name}`} />
+                          <AvatarFallback>{`${member.first_name?.charAt(0) || ''} ${member.last_name?.charAt(0) || ''}`}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{member.first_name} {member.last_name}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>{member.role || 'Team Member'}</TableCell>
+                    <TableCell>{member.job_title || '-'}</TableCell>
+                    {canManageUsers && (
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openEditDialog(member)}
+                          disabled={member.role === 'GOD' && !isGod} // Only GOD can edit GOD
+                        >
+                          <UserCog className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
                       </TableCell>
-                    </TableRow>
-                  ) : (
-                    teamMembers.map((member) => (
-                      <TableRow key={member.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarImage src={member.avatar_url || undefined} alt={`${member.first_name} ${member.last_name}`} />
-                              <AvatarFallback>{getInitials(member.first_name || '', member.last_name || '')}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{member.first_name} {member.last_name}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{member.email}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(member.role || '')}`}>
-                            {member.role || 'Team Member'}
-                          </span>
-                        </TableCell>
-                        <TableCell>{member.job_title || '-'}</TableCell>
-                        {canManageUsers && (
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => openEditDialog(member)}
-                              disabled={member.role === 'GOD' && !isGod} // Only GOD can edit GOD
-                            >
-                              <UserCog className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
 
       {/* Add User Dialog */}
       <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-hi-purple" /> Invite New Team Member
-            </DialogTitle>
+            <DialogTitle>Invite New Team Member</DialogTitle>
             <DialogDescription>
-              Fill out the form below to invite a new team member
+              Fill out the form to invite a new team member
             </DialogDescription>
           </DialogHeader>
           
-          {inviteSuccess ? (
-            <div className="py-6 flex flex-col items-center text-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                <Mail className="h-6 w-6" />
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input 
+                  id="firstName" 
+                  value={newUser.firstName}
+                  onChange={(e) => setNewUser({...newUser, firstName: e.target.value})}
+                  placeholder="First name"
+                />
               </div>
-              <h3 className="text-lg font-medium">Invitation Sent!</h3>
-              <p className="text-muted-foreground">
-                An email has been sent to {newUser.email} with instructions to join the team.
-              </p>
-              <Button 
-                onClick={() => {
-                  setInviteSuccess(false);
-                  setIsAddUserDialogOpen(false);
-                }}
-                className="mt-2"
-              >
-                Close
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input 
+                  id="lastName" 
+                  value={newUser.lastName}
+                  onChange={(e) => setNewUser({...newUser, lastName: e.target.value})}
+                  placeholder="Last name"
+                />
+              </div>
             </div>
-          ) : (
-            <>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name *</Label>
-                    <Input 
-                      id="firstName" 
-                      value={newUser.firstName}
-                      onChange={(e) => setNewUser({...newUser, firstName: e.target.value})}
-                      placeholder="First name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name *</Label>
-                    <Input 
-                      id="lastName" 
-                      value={newUser.lastName}
-                      onChange={(e) => setNewUser({...newUser, lastName: e.target.value})}
-                      placeholder="Last name"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input 
-                    id="email" 
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                    placeholder="Email address"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="jobTitle">Job Title</Label>
-                  <Input 
-                    id="jobTitle" 
-                    value={newUser.jobTitle}
-                    onChange={(e) => setNewUser({...newUser, jobTitle: e.target.value})}
-                    placeholder="Job title"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role *</Label>
-                  <Select 
-                    value={newUser.role} 
-                    onValueChange={(value) => setNewUser({...newUser, role: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isGod && (
-                        <SelectItem value="Super User">Super User</SelectItem>
-                      )}
-                      <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="Team Member">Team Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-md mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <p>An invitation email will be sent to the user with a link to set their password</p>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsAddUserDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAddUser}
-                  className="bg-hi-purple hover:bg-hi-purple-dark"
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Invitation
-                </Button>
-              </DialogFooter>
-            </>
-          )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                placeholder="Email address"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="jobTitle">Job Title (Optional)</Label>
+              <Input 
+                id="jobTitle" 
+                value={newUser.jobTitle}
+                onChange={(e) => setNewUser({...newUser, jobTitle: e.target.value})}
+                placeholder="Job title"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select 
+                value={newUser.role} 
+                onValueChange={(value) => setNewUser({...newUser, role: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isGod && (
+                    <>
+                      <SelectItem value="GOD">GOD</SelectItem>
+                      <SelectItem value="Super User">Super User</SelectItem>
+                    </>
+                  )}
+                  <SelectItem value="Manager">Manager</SelectItem>
+                  <SelectItem value="Team Member">Team Member</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddUserDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser}>
+              <Mail className="mr-2 h-4 w-4" />
+              Send Invitation
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit User Dialog */}
       <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserCog className="h-5 w-5 text-hi-purple" /> Edit Team Member
-            </DialogTitle>
+            <DialogTitle>Edit Team Member</DialogTitle>
             <DialogDescription>
               Update role and details for {selectedUser?.first_name} {selectedUser?.last_name}
             </DialogDescription>
@@ -487,10 +416,7 @@ const TeamManagementPanel: React.FC<TeamManagementPanelProps> = ({ profiles = []
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleEditUser}
-              className="bg-hi-purple hover:bg-hi-purple-dark"
-            >
+            <Button onClick={handleEditUser}>
               Save Changes
             </Button>
           </DialogFooter>
