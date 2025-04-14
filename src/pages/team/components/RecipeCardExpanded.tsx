@@ -23,6 +23,10 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
   
   const isHospitality = recipe.module_type === 'hospitality' || recipe.moduleType === 'hospitality';
   
+  // Debug information to help troubleshoot image issues
+  console.log("Recipe in expanded card:", recipe);
+  console.log("Image URL:", recipe.image_url || recipe.imageUrl);
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden">
@@ -35,15 +39,17 @@ const RecipeCardExpanded: React.FC<RecipeCardExpandedProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div>
               {(recipe.image_url || recipe.imageUrl) ? (
-                <img 
-                  src={recipe.image_url || recipe.imageUrl} 
-                  alt={recipe.name} 
-                  className="w-full h-48 object-cover rounded-md"
-                  onError={(e) => {
-                    console.error("Recipe image failed to load:", recipe.image_url || recipe.imageUrl);
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
+                <div className="w-full h-48 relative rounded-md overflow-hidden">
+                  <img 
+                    src={recipe.image_url || recipe.imageUrl} 
+                    alt={recipe.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error("Recipe image failed to load:", recipe.image_url || recipe.imageUrl);
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                </div>
               ) : (
                 <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded-md text-gray-700">
                   No image available
