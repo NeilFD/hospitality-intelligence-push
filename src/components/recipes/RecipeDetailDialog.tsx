@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Clock, Utensils, BarChart4, Trash2, FileEdit, AlertCircle, Check } from 'lucide-react';
 import RecipePDF from './RecipePDF';
+
 interface RecipeDetailDialogProps {
   recipe: Recipe;
   open: boolean;
@@ -15,6 +17,7 @@ interface RecipeDetailDialogProps {
   onEdit: () => void;
   onDelete: (recipe: Recipe) => void;
 }
+
 const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   recipe,
   open,
@@ -25,60 +28,75 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
   if (!recipe) return null;
   const isHospitality = recipe.moduleType === 'hospitality';
   const isBeverage = recipe.moduleType === 'beverage';
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP'
     }).format(amount);
   };
-  return <Dialog open={open} onOpenChange={onClose}>
+  
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">{recipe.name}</DialogTitle>
           <div className="flex flex-wrap gap-2 mt-2">
             <Badge variant="secondary" className="bg-green-500 text-white">{recipe.category || 'Uncategorized'}</Badge>
-            {recipe.timeToTableMinutes > 0 && <Badge variant="outline" className="flex items-center gap-1 bg-green-500 text-white">
+            {recipe.timeToTableMinutes > 0 && (
+              <Badge variant="outline" className="flex items-center gap-1 bg-green-500 text-white">
                 <Clock className="h-3 w-3" />
                 {recipe.timeToTableMinutes} min
-              </Badge>}
-            {!isHospitality && <>
+              </Badge>
+            )}
+            {!isHospitality && (
+              <>
                 {recipe.isVegan && <Badge className="text-white bg-green-500">Vegan</Badge>}
-                {recipe.isVegetarian && <Badge className="bg-green-500 text-white">Vegetarian</Badge>}
+                {recipe.isVegetarian && <Badge className="text-white bg-green-500">Vegetarian</Badge>}
                 {recipe.isGlutenFree && <Badge className="text-white bg-green-500">Gluten Free</Badge>}
-              </>}
+              </>
+            )}
           </div>
         </DialogHeader>
         
         <ScrollArea className="flex-1 pr-4 overflow-y-auto">
           <div className="space-y-6">
             {/* Image at the top */}
-            {recipe.imageUrl && <div className="aspect-video w-full overflow-hidden rounded-md">
+            {recipe.imageUrl && (
+              <div className="aspect-video w-full overflow-hidden rounded-md">
                 <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover" />
-              </div>}
+              </div>
+            )}
             
-            {/* Ingredients section */}
-            {recipe.ingredients && recipe.ingredients.length > 0 && <div>
+            {/* Only show Ingredients/Steps section for non-hospitality or if there are ingredients */}
+            {!isHospitality && recipe.ingredients && recipe.ingredients.length > 0 && (
+              <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
                 <div className="space-y-2">
-                  {recipe.ingredients.map((ingredient, index) => <div key={ingredient.id || index} className="flex justify-between py-2 border-b border-gray-100">
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <div key={ingredient.id || index} className="flex justify-between py-2 border-b border-gray-100">
                       <div>
                         <span className="font-medium text-gray-900">{ingredient.name}</span>
-                        {ingredient.amount && ingredient.unit && <span className="text-gray-600 ml-2">
+                        {ingredient.amount && ingredient.unit && (
+                          <span className="text-gray-600 ml-2">
                             {ingredient.amount} {ingredient.unit}
-                          </span>}
+                          </span>
+                        )}
                       </div>
-                      {!isHospitality && ingredient.totalCost > 0 && <div className="text-gray-600">
+                      {!isHospitality && ingredient.totalCost > 0 && (
+                        <div className="text-gray-600">
                           {formatCurrency(ingredient.totalCost)}
-                        </div>}
-                      {isHospitality && ingredient.costPerUnit > 0 && <div className="text-gray-600">
-                          Importance: {ingredient.costPerUnit}/10
-                        </div>}
-                    </div>)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </div>}
+              </div>
+            )}
             
             {/* Costing section */}
-            {!isHospitality && <div>
+            {!isHospitality && (
+              <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Costing</h3>
                 <Card className="p-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -100,41 +118,52 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
                     </div>
                   </div>
                 </Card>
-              </div>}
+              </div>
+            )}
             
             {/* Method section */}
-            {recipe.method && <div>
+            {recipe.method && (
+              <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
                 <div className="whitespace-pre-line text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">
                   {recipe.method}
                 </div>
-              </div>}
+              </div>
+            )}
             
             {/* Mise En Place section */}
-            {recipe.miseEnPlace && <div>
+            {recipe.miseEnPlace && (
+              <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">
                   {isHospitality ? 'Required Tools/Resources' : isBeverage ? 'Garnish' : 'Mise en Place'}
                 </h3>
                 <div className="whitespace-pre-line text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">
                   {recipe.miseEnPlace}
                 </div>
-              </div>}
+              </div>
+            )}
             
             {/* Allergens section */}
-            {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && <div>
+            {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
+              <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Allergens</h3>
                 <div className="flex flex-wrap gap-2">
-                  {recipe.allergens.map(allergen => <Badge key={allergen} variant="outline" className="bg-red-50 text-red-800 border-red-200">
+                  {recipe.allergens.map(allergen => (
+                    <Badge key={allergen} variant="outline" className="bg-red-50 text-red-800 border-red-200">
                       {allergen}
-                    </Badge>)}
+                    </Badge>
+                  ))}
                 </div>
-              </div>}
+              </div>
+            )}
             
             {/* Recommended Upsell section */}
-            {recipe.recommendedUpsell && <div>
+            {recipe.recommendedUpsell && (
+              <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
                 <div className="text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.recommendedUpsell}</div>
-              </div>}
+              </div>
+            )}
           </div>
         </ScrollArea>
         
@@ -170,6 +199,8 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
           </div>
         </DialogFooter>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 };
+
 export default RecipeDetailDialog;

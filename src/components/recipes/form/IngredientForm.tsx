@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +43,11 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
   onIngredientsChange,
   moduleType
 }) => {
+  // If this is a hospitality guide, don't render the ingredients form
+  if (moduleType === 'hospitality') {
+    return null;
+  }
+
   const [actualMenuPrice, setActualMenuPrice] = useState<number>(0);
   
   const addIngredient = () => {
@@ -94,19 +98,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
     ((actualMenuPrice / 1.2 - totalRecipeCost) / (actualMenuPrice / 1.2)) * 100 : 0;
 
   const getLabels = () => {
-    if (moduleType === 'hospitality') {
-      return {
-        title: 'Steps',
-        description: 'Add steps required for this hospitality guide',
-        name: 'Step Description',
-        amount: 'Order',
-        unit: 'Duration',
-        costPerUnit: 'Importance (1-10)',
-        totalCost: 'Score',
-        addButton: 'Add Step',
-        placeholder: 'Enter step details...'
-      };
-    } else if (moduleType === 'beverage') {
+    if (moduleType === 'beverage') {
       return {
         title: 'Ingredients',
         description: 'Add ingredients required for this beverage',
@@ -151,12 +143,8 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                   <TableHead className="w-[30%] text-gray-900">{labels.name}</TableHead>
                   <TableHead className="text-gray-900 w-[15%]">{labels.amount}</TableHead>
                   <TableHead className="text-gray-900 w-[15%]">{labels.unit}</TableHead>
-                  {moduleType !== 'hospitality' && (
-                    <>
-                      <TableHead className="text-gray-900 w-[15%]">{labels.costPerUnit}</TableHead>
-                      <TableHead className="text-gray-900 w-[15%]">{labels.totalCost}</TableHead>
-                    </>
-                  )}
+                  <TableHead className="text-gray-900 w-[15%]">{labels.costPerUnit}</TableHead>
+                  <TableHead className="text-gray-900 w-[15%]">{labels.totalCost}</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -182,66 +170,41 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                       />
                     </TableCell>
                     <TableCell className="py-2">
-                      {moduleType === 'hospitality' ? (
-                        <Input
-                          value={ingredient.unit}
-                          onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
-                          placeholder="mins/hours/etc."
-                          className="border border-gray-300 bg-white text-gray-900"
-                        />
-                      ) : (
-                        <Select 
-                          value={ingredient.unit} 
-                          onValueChange={(value) => updateIngredient(index, 'unit', value)}
-                        >
-                          <SelectTrigger className="border border-gray-300 bg-white text-gray-900">
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white text-gray-900">
-                            {commonUnits.map((unit) => (
-                              <SelectItem key={unit.value} value={unit.value}>
-                                {unit.label}
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="custom">Custom...</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
+                      <Select 
+                        value={ingredient.unit} 
+                        onValueChange={(value) => updateIngredient(index, 'unit', value)}
+                      >
+                        <SelectTrigger className="border border-gray-300 bg-white text-gray-900">
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white text-gray-900">
+                          {commonUnits.map((unit) => (
+                            <SelectItem key={unit.value} value={unit.value}>
+                              {unit.label}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="custom">Custom...</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
-                    {moduleType !== 'hospitality' && (
-                      <>
-                        <TableCell className="py-2">
-                          <Input
-                            type="number"
-                            value={ingredient.costPerUnit || ''}
-                            onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
-                            step="0.01"
-                            min="0"
-                            className="border border-gray-300 bg-white text-gray-900 w-full"
-                          />
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <Input
-                            type="number"
-                            value={ingredient.totalCost?.toFixed(2) || 0}
-                            readOnly
-                            className="bg-gray-50 border border-gray-300 text-gray-900 w-full"
-                          />
-                        </TableCell>
-                      </>
-                    )}
-                    {moduleType === 'hospitality' && (
-                      <TableCell className="py-2">
-                        <Input
-                          type="number"
-                          value={ingredient.costPerUnit || ''}
-                          onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
-                          min="1"
-                          max="10"
-                          className="border border-gray-300 bg-white text-gray-900 w-full"
-                        />
-                      </TableCell>
-                    )}
+                    <TableCell className="py-2">
+                      <Input
+                        type="number"
+                        value={ingredient.costPerUnit || ''}
+                        onChange={(e) => updateIngredient(index, 'costPerUnit', parseFloat(e.target.value) || 0)}
+                        step="0.01"
+                        min="0"
+                        className="border border-gray-300 bg-white text-gray-900 w-full"
+                      />
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <Input
+                        type="number"
+                        value={ingredient.totalCost?.toFixed(2) || 0}
+                        readOnly
+                        className="bg-gray-50 border border-gray-300 text-gray-900 w-full"
+                      />
+                    </TableCell>
                     <TableCell className="py-2">
                       <Button
                         variant="ghost"
@@ -256,7 +219,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                 ))}
                 
                 <TableRow>
-                  <TableCell colSpan={moduleType !== 'hospitality' ? 6 : 4} className="text-center py-2">
+                  <TableCell colSpan={6} className="text-center py-2">
                     <Button 
                       variant="outline" 
                       onClick={addIngredient}
@@ -271,50 +234,48 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
             </Table>
           </div>
           
-          {moduleType !== 'hospitality' && (
-            <div className="mt-6 border-t pt-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-gray-900 font-medium block mb-2 truncate">Recipe Cost</Label>
-                  <Input 
-                    value={`£${totalRecipeCost.toFixed(2)}`}
-                    readOnly
-                    className="bg-gray-50 border border-gray-300 text-gray-900 font-semibold"
-                  />
-                </div>
-                
-                <div>
-                  <Label className="text-gray-900 font-medium block mb-2 truncate">Selling Price (70% GP)</Label>
-                  <Input 
-                    value={`£${recommendedSellingPrice.toFixed(2)}`}
-                    readOnly
-                    className="bg-gray-50 border border-gray-300 text-gray-900 font-semibold"
-                  />
-                </div>
+          <div className="mt-6 border-t pt-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label className="text-gray-900 font-medium block mb-2 truncate">Recipe Cost</Label>
+                <Input 
+                  value={`£${totalRecipeCost.toFixed(2)}`}
+                  readOnly
+                  className="bg-gray-50 border border-gray-300 text-gray-900 font-semibold"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-gray-900 font-medium block mb-2 truncate">Selling Price (70% GP)</Label>
+                <Input 
+                  value={`£${recommendedSellingPrice.toFixed(2)}`}
+                  readOnly
+                  className="bg-gray-50 border border-gray-300 text-gray-900 font-semibold"
+                />
+              </div>
 
-                <div>
-                  <Label className="text-gray-900 font-medium block mb-2 truncate">Menu Price</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-900">£</span>
-                    <Input
-                      type="number"
-                      value={actualMenuPrice || ''}
-                      onChange={(e) => setActualMenuPrice(parseFloat(e.target.value) || 0)}
-                      step="0.01"
-                      min="0"
-                      className="border border-gray-300 bg-white text-gray-900 w-full"
-                    />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <Label className="text-gray-900 font-medium">GP%:</Label>
-                    <span className="text-gray-900 font-semibold ml-2">
-                      {actualGpPercentage.toFixed(2)}%
-                    </span>
-                  </div>
+              <div>
+                <Label className="text-gray-900 font-medium block mb-2 truncate">Menu Price</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-900">£</span>
+                  <Input
+                    type="number"
+                    value={actualMenuPrice || ''}
+                    onChange={(e) => setActualMenuPrice(parseFloat(e.target.value) || 0)}
+                    step="0.01"
+                    min="0"
+                    className="border border-gray-300 bg-white text-gray-900 w-full"
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <Label className="text-gray-900 font-medium">GP%:</Label>
+                  <span className="text-gray-900 font-semibold ml-2">
+                    {actualGpPercentage.toFixed(2)}%
+                  </span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>

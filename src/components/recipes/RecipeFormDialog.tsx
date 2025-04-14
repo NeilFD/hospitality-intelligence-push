@@ -139,7 +139,14 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     }));
   };
   
-  const computedCostingTotals = calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
+  const computedCostingTotals = moduleType === 'hospitality' 
+    ? { 
+        totalRecipeCost: 0, 
+        suggestedSellingPrice: 0, 
+        actualMenuPrice: 0, 
+        grossProfitPercentage: 0 
+      } 
+    : calculateTotals(formData.ingredients, formData.costing.actualMenuPrice);
   
   const validateForm = () => {
     return true;
@@ -161,7 +168,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
         isVegetarian: Boolean(formData.isVegetarian),
         isVegan: Boolean(formData.isVegan),
         isGlutenFree: Boolean(formData.isGlutenFree),
-        ingredients: formData.ingredients.map(ingredient => ({
+        ingredients: moduleType === 'hospitality' ? [] : formData.ingredients.map(ingredient => ({
           ...ingredient,
           id: ingredient.id || uuidv4(),
           amount: Number(ingredient.amount) || 0,
@@ -262,7 +269,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`grid grid-cols-1 ${moduleType !== 'hospitality' ? 'md:grid-cols-2' : ''} gap-4`}>
           <RecipeBasicInfo 
             name={formData.name}
             category={formData.category}
@@ -286,13 +293,15 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             }}
           />
           
-          <div className="space-y-4">
-            <IngredientForm 
-              ingredients={formData.ingredients}
-              onIngredientsChange={(ingredients) => setFormData(prev => ({ ...prev, ingredients }))}
-              moduleType={moduleType}
-            />
-          </div>
+          {moduleType !== 'hospitality' && (
+            <div className="space-y-4">
+              <IngredientForm 
+                ingredients={formData.ingredients}
+                onIngredientsChange={(ingredients) => setFormData(prev => ({ ...prev, ingredients }))}
+                moduleType={moduleType}
+              />
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
