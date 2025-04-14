@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -122,13 +123,16 @@ const TeamManagementPanel: React.FC = () => {
         invitationToken
       });
       
-      const functionUrl = '/api/send-user-invitation';
+      // Fix: Use the full URL with the Supabase project reference
+      const functionUrl = 'https://kfiergoryrnjkewmeriy.supabase.co/functions/v1/send-user-invitation';
       console.log("Calling edge function at:", functionUrl);
       
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Add the anon key for authorization
+          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`,
         },
         body: JSON.stringify({
           email: newUser.email,
@@ -146,10 +150,15 @@ const TeamManagementPanel: React.FC = () => {
       const responseText = await response.text();
       console.log("Response text:", responseText);
       
-      let responseData;
+      // Make sure we have a response before trying to parse it
+      let responseData = {};
       try {
-        responseData = JSON.parse(responseText);
-        console.log("Parsed response data:", responseData);
+        if (responseText) {
+          responseData = JSON.parse(responseText);
+          console.log("Parsed response data:", responseData);
+        } else {
+          throw new Error("Empty response from server");
+        }
       } catch (parseError) {
         console.error("Error parsing response JSON:", parseError);
         toast.error('Invalid response from server');
