@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,7 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     });
   };
   
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
@@ -159,9 +160,67 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     }));
   };
 
+  const uploadImageToStorage = async (file: File, recipeId: string): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${recipeId}.${fileExt}`;
+      let bucketName = '';
+      
+      // Choose the correct bucket based on module type
+      if (moduleType === 'food') {
+        bucketName = 'food_recipe_images';
+      } else if (moduleType === 'beverage') {
+        bucketName = 'beverage_recipe_images';
+      } else if (moduleType === 'hospitality') {
+        bucketName = 'hospitality_guide_images';
+      }
+      
+      console.log(`Uploading to ${bucketName} bucket: ${fileName}`);
+      
+      // Check if bucket exists, if not use a default bucket
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(b => b.name === bucketName);
+      
+      if (!bucketExists) {
+        console.log(`Bucket ${bucketName} not found, using public bucket`);
+        bucketName = 'public';
+      }
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, file, {
+          upsert: true,
+          contentType: file.type
+        });
+      
+      if (uploadError) {
+        console.error('Image upload error:', uploadError);
+        throw uploadError;
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(fileName);
+      
+      console.log('Image uploaded successfully. Public URL:', urlData.publicUrl);
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error in uploadImageToStorage:', error);
+      throw error;
+    }
+  };
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      
+      let imageUrl = formData.imageUrl;
+      
+      // Upload image if a new one was selected
+      if (imageFile) {
+        const recipeId = formData.id || uuidv4();
+        imageUrl = await uploadImageToStorage(imageFile, recipeId);
+      }
       
       const recipeToSave: Recipe = {
         ...formData,
@@ -187,16 +246,13 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
             })),
         costing: computedCostingTotals,
         updatedAt: new Date(),
-        archived: formData.archived || false
+        archived: formData.archived || false,
+        imageUrl
       };
       
       if (!recipeToSave.id) {
         recipeToSave.id = uuidv4();
         recipeToSave.createdAt = new Date();
-      }
-      
-      if (imagePreview) {
-        recipeToSave.imageUrl = imagePreview;
       }
       
       console.log("Saving recipe with dietary info:", 

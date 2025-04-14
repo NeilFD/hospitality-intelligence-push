@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -293,6 +294,15 @@ const HospitalityBible: React.FC = () => {
       console.error('Error toggling noticeboard status:', error);
       toast.error('Failed to update noticeboard status');
     }
+  };
+
+  // Add the missing toggle functions
+  const toggleMaximized = () => {
+    setSidebarMaximized(!sidebarMaximized);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   const DesktopSidebar = () => <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
