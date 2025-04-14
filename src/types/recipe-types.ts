@@ -45,6 +45,7 @@ export interface Recipe {
   createdAt: Date;
   updatedAt: Date;
   imageUrl?: string;
+  image_url?: string; // Added for hospitality guides
   ingredients: Ingredient[];
   costing: {
     totalRecipeCost: number;
@@ -55,4 +56,6 @@ export interface Recipe {
   moduleType: 'food' | 'beverage' | 'hospitality';
   archived?: boolean;
   postedToNoticeboard?: boolean;
+  // Accommodating DB naming differences
+  module_type?: 'food' | 'beverage' | 'hospitality';
 }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +44,11 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onToggleNotice
 
   const isHospitalityGuide = recipe.moduleType === 'hospitality';
   
-  const imageUrl = isHospitalityGuide ? recipe.image_url : recipe.imageUrl;
+  // For hospitality guides, check both possible image URL properties
+  const imageUrl = isHospitalityGuide && recipe.image_url 
+    ? recipe.image_url 
+    : recipe.imageUrl;
+    
   console.log("Card using image URL:", imageUrl);
   
   const handleEmailShare = () => {
