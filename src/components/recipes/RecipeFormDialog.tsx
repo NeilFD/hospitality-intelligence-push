@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -164,27 +163,11 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${recipeId}.${fileExt}`;
-      let bucketName = '';
       
-      // Choose the correct bucket based on module type
-      if (moduleType === 'food') {
-        bucketName = 'food_recipe_images';
-      } else if (moduleType === 'beverage') {
-        bucketName = 'beverage_recipe_images';
-      } else if (moduleType === 'hospitality') {
-        bucketName = 'hospitality_guide_images';
-      }
+      // Upload to the public bucket since we're having issues with the specialized buckets
+      const bucketName = 'public';
       
       console.log(`Uploading to ${bucketName} bucket: ${fileName}`);
-      
-      // Check if bucket exists, if not use a default bucket
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(b => b.name === bucketName);
-      
-      if (!bucketExists) {
-        console.log(`Bucket ${bucketName} not found, using public bucket`);
-        bucketName = 'public';
-      }
       
       const { error: uploadError, data } = await supabase.storage
         .from(bucketName)
