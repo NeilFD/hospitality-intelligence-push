@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { DatabasePanel } from '@/components/control-centre/DatabasePanel';
@@ -9,14 +9,48 @@ import { TargetSettingsPanel } from '@/components/control-centre/TargetSettingsP
 import TeamManagementPanel from '@/components/control-centre/TeamManagementPanel';
 import RequireAuth from '@/components/auth/RequireAuth';
 import { useAuth } from '@/contexts/AuthContext';
+import { getControlCentreData } from '@/services/control-centre-service';
+import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
 const ControlCentre: React.FC = () => {
   const [activeTab, setActiveTab] = useState('targets');
   const { isAuthenticated, userRole } = useAuth();
+  const [controlCentreData, setControlCentreData] = useState<{
+    permissionMatrix: PermissionMatrix[];
+    currentTheme: ThemeSettings | null;
+    availableThemes: ThemeSettings[];
+    targetSettings: TargetSettings;
+  }>({
+    permissionMatrix: [],
+    currentTheme: null,
+    availableThemes: [],
+    targetSettings: {
+      foodGpTarget: 68,
+      beverageGpTarget: 72,
+      wageCostTarget: 28,
+    }
+  });
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getControlCentreData();
+        setControlCentreData(data);
+      } catch (error) {
+        console.error('Error fetching control centre data:', error);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   // Only GOD and Super Users can access Control Centre
   if (!isAuthenticated || (userRole !== 'GOD' && userRole !== 'Super User')) {
-    return <RequireAuth />;
+    return (
+      <RequireAuth requiredRole="Super User">
+        <div>You need to be authenticated as a Super User or GOD to access this page.</div>
+      </RequireAuth>
+    );
   }
 
   return (
@@ -31,7 +65,7 @@ const ControlCentre: React.FC = () => {
         </TabsList>
 
         <TabsContent value="targets">
-          <TargetSettingsPanel />
+          <TargetSettingsPanel targetSettings={controlCentreData.targetSettings} />
         </TabsContent>
 
         <TabsContent value="team">
@@ -39,11 +73,14 @@ const ControlCentre: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="permissions">
-          <PermissionMatrixPanel />
+          <PermissionMatrixPanel permissionMatrix={controlCentreData.permissionMatrix} />
         </TabsContent>
 
         <TabsContent value="themes">
-          <ThemeSettingsPanel />
+          <ThemeSettingsPanel 
+            currentTheme={controlCentreData.currentTheme} 
+            availableThemes={controlCentreData.availableThemes} 
+          />
         </TabsContent>
 
         <TabsContent value="database">
