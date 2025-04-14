@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -61,14 +60,12 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
         
         <ScrollArea className="flex-1 pr-4 overflow-y-auto">
           <div className="space-y-6">
-            {/* Image at the top */}
             {recipe.imageUrl && (
               <div className="aspect-video w-full overflow-hidden rounded-md">
                 <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover" />
               </div>
             )}
             
-            {/* Only show Ingredients/Steps section for non-hospitality or if there are ingredients */}
             {!isHospitality && recipe.ingredients && recipe.ingredients.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Steps' : 'Ingredients'}</h3>
@@ -94,7 +91,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
-            {/* Costing section */}
             {!isHospitality && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Costing</h3>
@@ -121,7 +117,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
-            {/* Method section */}
             {recipe.method && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Detailed Procedure' : 'Method'}</h3>
@@ -131,7 +126,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
-            {/* Mise En Place section */}
             {recipe.miseEnPlace && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">
@@ -143,7 +137,6 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
-            {/* Allergens section */}
             {!isHospitality && recipe.allergens && recipe.allergens.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Allergens</h3>
@@ -157,10 +150,9 @@ const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               </div>
             )}
             
-            {/* Recommended Upsell section */}
-            {recipe.recommendedUpsell && (
+            {!isHospitality && recipe.recommendedUpsell && (
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">{isHospitality ? 'Related Services' : 'Recommended Upsell'}</h3>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">Recommended Upsell</h3>
                 <div className="text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200">{recipe.recommendedUpsell}</div>
               </div>
             )}
