@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -223,7 +222,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     fetchData();
   }, [currentYear, currentMonth, toast, moduleType]);
   
-  // Fix the GP status calculation to properly determine good/warning/bad status
   const gpDifference = gpPercentage - monthRecord.gpTarget;
   const gpStatus = 
     gpPercentage >= monthRecord.gpTarget ? 'good' : 
@@ -239,6 +237,22 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
 
   const pageTitle = modulePrefix ? `${modulePrefix} Monthly Summary` : "Monthly Summary";
   const costLabel = moduleType === 'food' ? 'Food Costs' : moduleType === 'beverage' ? 'Beverage Costs' : 'Costs';
+  
+  const getGpColorClass = (gp: number) => {
+    return gp >= monthRecord.gpTarget 
+      ? 'text-green-600' 
+      : gp >= monthRecord.gpTarget - 0.03 
+        ? 'text-amber-600' 
+        : 'text-red-600';
+  };
+  
+  const getTotalGpBackgroundClass = (gp: number) => {
+    return gp >= monthRecord.gpTarget 
+      ? 'bg-gradient-to-r from-green-500/20 to-green-400/30' 
+      : gp >= monthRecord.gpTarget - 0.03 
+        ? 'bg-gradient-to-r from-amber-500/20 to-amber-400/30' 
+        : 'bg-gradient-to-r from-red-500/20 to-red-400/30';
+  };
   
   return (
     <div className="container py-8 space-y-6">
@@ -292,40 +306,41 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         />
       </div>
 
-      <Card className="rounded-xl shadow-md border-tavern-blue-light/20 overflow-hidden bg-tavern-blue-light/5 backdrop-blur-sm">
-        <CardHeader className="bg-white/40 border-b border-tavern-blue-light/20">
-          <CardTitle>Weekly Breakdown</CardTitle>
+      <Card className="rounded-xl shadow-md border-tavern-blue-light/20 overflow-hidden bg-white backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-[#F3E5F5]/50 to-[#E6F2FF]/50 border-b border-tavern-blue-light/20">
+          <CardTitle className="text-tavern-blue-dark text-xl font-bold">Weekly Breakdown</CardTitle>
         </CardHeader>
-        <CardContent className="p-4">
+        <CardContent className="p-0">
           {weeklyData.length === 0 ? (
             <div className="py-10 text-center text-muted-foreground">No weekly data available</div>
           ) : (
-            <div className="overflow-x-auto rounded-lg">
-              <table className="w-full border-collapse rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
                 <thead>
-                  <tr>
-                    <th className="table-header rounded-tl-lg">Week</th>
-                    <th className="table-header">Revenue</th>
-                    <th className="table-header">{costLabel}</th>
-                    <th className="table-header">GP %</th>
-                    <th className="table-header rounded-tr-lg">Actions</th>
+                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <th className="py-3 px-4 text-left font-semibold text-tavern-blue-dark border-b border-gray-200">Week</th>
+                    <th className="py-3 px-4 text-right font-semibold text-tavern-blue-dark border-b border-gray-200">Revenue</th>
+                    <th className="py-3 px-4 text-right font-semibold text-tavern-blue-dark border-b border-gray-200">{costLabel}</th>
+                    <th className="py-3 px-4 text-right font-semibold text-tavern-blue-dark border-b border-gray-200">GP %</th>
+                    <th className="py-3 px-4 text-center font-semibold text-tavern-blue-dark border-b border-gray-200">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {weeklyData.map((week) => (
-                    <tr key={week.weekNumber}>
-                      <td className="table-cell">Week {week.weekNumber}</td>
-                      <td className="table-cell">{formatCurrency(week.revenue)}</td>
-                      <td className="table-cell">{formatCurrency(week.costs)}</td>
-                      <td className={`table-cell ${
-                        week.gp >= monthRecord.gpTarget ? 'text-green-600' : 
-                        week.gp >= monthRecord.gpTarget - 0.03 ? 'text-amber-600' : 
-                        'text-red-600'
-                      }`}>
+                    <tr key={week.weekNumber} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-3 px-4 border-b border-gray-100 font-medium">Week {week.weekNumber}</td>
+                      <td className="py-3 px-4 text-right border-b border-gray-100">{formatCurrency(week.revenue)}</td>
+                      <td className="py-3 px-4 text-right border-b border-gray-100">{formatCurrency(week.costs)}</td>
+                      <td className={`py-3 px-4 text-right border-b border-gray-100 font-semibold ${getGpColorClass(week.gp)}`}>
                         {formatPercentage(week.gp)}
                       </td>
-                      <td className="table-cell">
-                        <Button variant="outline" size="sm" asChild className="rounded-full shadow-sm hover:shadow transition-all">
+                      <td className="py-3 px-4 text-center border-b border-gray-100">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          asChild 
+                          className="rounded-full bg-white shadow-sm border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-all"
+                        >
                           <Link to={`/${moduleType}/week/${currentYear}/${currentMonth}/${week.weekNumber}`}>
                             Dive In
                           </Link>
@@ -336,17 +351,17 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td className="table-header rounded-bl-lg">Total</td>
-                    <td className="table-header">{formatCurrency(totalRevenue)}</td>
-                    <td className="table-header">{formatCurrency(totalCosts)}</td>
-                    <td className={`table-header ${
-                      gpPercentage >= monthRecord.gpTarget ? 'bg-tavern-green-light/50' : 
-                      gpPercentage >= monthRecord.gpTarget - 0.02 ? 'bg-tavern-amber/50' : 
-                      'bg-tavern-red/50'
-                    } backdrop-blur-sm`}>
+                    <td className="py-3 px-4 border-t border-gray-200 font-semibold bg-gray-50">Total</td>
+                    <td className="py-3 px-4 text-right border-t border-gray-200 font-semibold bg-gray-50">
+                      {formatCurrency(totalRevenue)}
+                    </td>
+                    <td className="py-3 px-4 text-right border-t border-gray-200 font-semibold bg-gray-50">
+                      {formatCurrency(totalCosts)}
+                    </td>
+                    <td className={`py-3 px-4 text-right border-t border-gray-200 font-bold ${getTotalGpBackgroundClass(gpPercentage)} ${getGpColorClass(gpPercentage)}`}>
                       {formatPercentage(gpPercentage)}
                     </td>
-                    <td className="table-header rounded-br-lg"></td>
+                    <td className="py-3 px-4 text-center border-t border-gray-200 bg-gray-50"></td>
                   </tr>
                 </tfoot>
               </table>
