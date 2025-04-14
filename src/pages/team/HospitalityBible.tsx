@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -118,6 +117,14 @@ const HospitalityBible: React.FC = () => {
         console.log("Generated new guide ID:", recipe.id);
       }
       
+      const simplifiedGuide = {
+        id: recipe.id,
+        name: recipe.name,
+        category: recipe.category,
+        imageUrl: recipe.imageUrl ? "Present" : "Not present"
+      };
+      console.log("Guide data formatted for Supabase (simplified):", simplifiedGuide);
+      
       const guideData = {
         id: recipe.id,
         name: recipe.name || 'Unnamed Guide',
@@ -131,15 +138,43 @@ const HospitalityBible: React.FC = () => {
         posted_to_noticeboard: recipe.postedToNoticeboard || false
       };
       
-      console.log("Guide data formatted for Supabase:", guideData);
+      console.log("Full guide data being saved to Supabase:", guideData);
 
-      const { error: upsertError } = await supabase
+      const { data: existingGuide, error: checkError } = await supabase
         .from('hospitality_guides')
-        .upsert([guideData]);
+        .select('id')
+        .eq('id', recipe.id)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error("Error checking if guide exists:", checkError);
+      }
       
-      if (upsertError) {
-        console.error("Error upserting guide:", upsertError);
-        throw upsertError;
+      console.log("Existing guide check result:", existingGuide ? "Guide exists" : "Guide doesn't exist");
+      
+      let saveError;
+      
+      if (existingGuide) {
+        console.log("Updating existing guide with ID:", recipe.id);
+        const { error } = await supabase
+          .from('hospitality_guides')
+          .update(guideData)
+          .eq('id', recipe.id);
+        
+        saveError = error;
+      } else {
+        console.log("Inserting new guide with ID:", recipe.id);
+        const { error } = await supabase
+          .from('hospitality_guides')
+          .insert([guideData]);
+        
+        saveError = error;
+      }
+      
+      if (saveError) {
+        console.error("Error saving guide:", saveError);
+        console.error("Error details:", saveError.details, saveError.hint, saveError.message);
+        throw saveError;
       }
       
       console.log("Guide saved successfully with ID:", recipe.id);
@@ -148,12 +183,18 @@ const HospitalityBible: React.FC = () => {
         toast.success('Hospitality guide saved successfully');
       }
       
-      console.log("Guide saved successfully");
       return true;
     } catch (error) {
       console.error('Error saving guide:', error);
+      
+      let errorMessage = 'Failed to save hospitality guide';
+      if (error && typeof error === 'object') {
+        if (error.message) errorMessage += `: ${error.message}`;
+        if (error.details) errorMessage += ` (${error.details})`;
+      }
+      
       if (showToast) {
-        toast.error('Failed to save hospitality guide');
+        toast.error(errorMessage);
       }
       throw error;
     }
@@ -296,7 +337,6 @@ const HospitalityBible: React.FC = () => {
     }
   };
 
-  // Add the missing toggle functions
   const toggleMaximized = () => {
     setSidebarMaximized(!sidebarMaximized);
   };
