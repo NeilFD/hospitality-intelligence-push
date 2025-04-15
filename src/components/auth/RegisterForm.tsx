@@ -103,6 +103,34 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       // Notify parent component that registration is complete
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);
+      } else {
+        // If there's no callback, we need to create the profile directly
+        try {
+          const { error: profileError } = await fetch('https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/profiles', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+              'Authorization': `Bearer ${data.session?.access_token}`
+            },
+            body: JSON.stringify({
+              id: data.user.id,
+              first_name: values.firstName,
+              last_name: values.lastName,
+              role: invitationData?.role || 'Team Member',
+              job_title: invitationData?.jobTitle || '',
+              email: values.email
+            })
+          }).then(res => res.json());
+          
+          if (profileError) {
+            console.error('Error creating profile directly:', profileError);
+          } else {
+            console.log('Profile created directly');
+          }
+        } catch (profileError) {
+          console.error('Exception creating profile directly:', profileError);
+        }
       }
       
       // Log the user in

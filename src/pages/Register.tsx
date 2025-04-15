@@ -174,6 +174,8 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
   const ensureProfileExists = async (userId: string, firstName: string, lastName: string, 
     role: string = 'Team Member', jobTitle: string = '', email: string = '') => {
     try {
+      console.log(`Ensuring profile exists for user ${userId} with name ${firstName} ${lastName}, role ${role}`);
+      
       // First check if profile already exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
@@ -186,11 +188,33 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         return true;
       }
       
-      if (checkError && !checkError.message.includes('does not exist')) {
+      if (checkError) {
         console.error('Error checking for existing profile:', checkError);
       }
       
-      // Try RPC function first
+      // Try multiple approaches to create the profile
+      
+      // Approach 1: Direct insert
+      console.log('Creating profile using direct insert for user ID:', userId);
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          first_name: firstName,
+          last_name: lastName,
+          role: role,
+          job_title: jobTitle || '',
+          email: email
+        });
+        
+      if (!insertError) {
+        console.log('Profile created successfully with direct insert');
+        return true;
+      }
+      
+      console.error('Direct profile insert failed:', insertError);
+      
+      // Approach 2: Try RPC function
       console.log('Creating profile using RPC for user ID:', userId);
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         'create_profile_for_user',
@@ -204,43 +228,75 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         }
       );
       
-      if (rpcError) {
-        console.error('Profile creation failed with RPC:', rpcError);
+      if (!rpcError) {
+        console.log('Profile created successfully with RPC');
+        return true;
+      }
+      
+      console.error('Profile creation failed with RPC:', rpcError);
+      
+      // Approach 3: Try direct SQL
+      console.log('Creating profile using SQL for user ID:', userId);
+      try {
+        // Use raw SQL as a last resort
+        const { data: sqlResult, error: sqlError } = await supabase.rpc(
+          'handle_new_user_manual',
+          {
+            user_id: userId,
+            first_name_val: firstName,
+            last_name_val: lastName,
+            role_val: role
+          }
+        );
         
-        // Fallback: Try direct insert if RPC fails
-        console.log('Falling back to direct insert for profile creation');
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
+        if (!sqlError) {
+          console.log('Profile created successfully with SQL');
+          return true;
+        }
+        
+        console.error('SQL profile creation failed:', sqlError);
+      } catch (sqlException) {
+        console.error('SQL profile creation exception:', sqlException);
+      }
+      
+      // Final attempt: REST API directly to the profiles table
+      try {
+        const authUser = await supabase.auth.getUser();
+        const token = authUser.data.user?.id ? 
+          (await supabase.auth.getSession()).data.session?.access_token : 
+          undefined;
+        
+        const response = await fetch('https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/profiles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({
             id: userId,
             first_name: firstName,
             last_name: lastName,
             role: role,
             job_title: jobTitle || '',
             email: email
-          });
-          
-        if (insertError) {
-          console.error('Direct profile insert also failed:', insertError);
-          toast.error('Profile creation failed. Please try again.');
-          return false;
-        }
-      }
-      
-      // Verify profile was created
-      const { data: verifyProfile, error: verifyError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+          })
+        });
         
-      if (verifyError || !verifyProfile) {
-        console.error('Could not verify profile creation:', verifyError);
-        return false;
+        if (response.ok) {
+          console.log('Profile created successfully with REST API');
+          return true;
+        } else {
+          const errorText = await response.text();
+          console.error('REST API profile creation failed:', errorText);
+        }
+      } catch (restException) {
+        console.error('REST API profile creation exception:', restException);
       }
       
-      console.log('Profile created and verified:', verifyProfile);
-      return true;
+      // If we got here, all attempts failed
+      toast.error('Failed to create user profile after multiple attempts');
+      return false;
     } catch (error) {
       console.error('Error in ensureProfileExists:', error);
       return false;
@@ -280,29 +336,41 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
               <RegisterForm 
                 invitationData={invitationData} 
                 onRegistrationComplete={(userId, userData) => {
+                  console.log("Registration complete callback received with userId:", userId);
+                  console.log("User data:", userData);
+                  
                   // When registration is complete, ensure profile exists and then mark invitation as claimed
-                  if (userId && invitationData) {
+                  if (userId) {
+                    const firstName = invitationData?.firstName || userData?.first_name || '';
+                    const lastName = invitationData?.lastName || userData?.last_name || '';
+                    const role = invitationData?.role || userData?.role || 'Team Member';
+                    const jobTitle = invitationData?.jobTitle || userData?.job_title || '';
+                    const email = invitationData?.email || userData?.email || '';
+                    
                     ensureProfileExists(
                       userId, 
-                      invitationData.firstName,
-                      invitationData.lastName,
-                      invitationData.role,
-                      invitationData.jobTitle,
-                      invitationData.email
+                      firstName,
+                      lastName,
+                      role,
+                      jobTitle,
+                      email
                     ).then(success => {
                       if (success) {
+                        console.log("Profile created successfully");
+                        toast.success("Profile created successfully");
+                        
+                        // If using invitation, mark it as claimed
                         if (invitationToken) {
                           handleInvitationClaimed();
                         }
+                      } else {
+                        console.error("Failed to create profile");
+                        toast.error("User created but profile verification failed");
                       }
                     });
-                  } else if (userId && userData) {
-                    // For direct registrations (not through invitation)
-                    const firstName = userData.first_name || '';
-                    const lastName = userData.last_name || '';
-                    const email = userData.email || '';
-                    
-                    ensureProfileExists(userId, firstName, lastName, 'Team Member', '', email);
+                  } else {
+                    console.error("Missing user ID in registration callback");
+                    toast.error("Registration incomplete: missing user ID");
                   }
                 }} 
               />
