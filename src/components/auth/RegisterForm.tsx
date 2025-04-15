@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,7 +69,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             first_name: userData.first_name,
             last_name: userData.last_name,
             role: userData.role || 'Team Member',
-            job_title: userData.job_title || ''
+            job_title: userData.job_title || '',
+            email: userData.email
           });
         
         if (!error) {
@@ -92,7 +92,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               user_id: userId,
               first_name_val: userData.first_name,
               last_name_val: userData.last_name,
-              role_val: userData.role || 'Team Member'
+              role_val: userData.role || 'Team Member',
+              email_val: userData.email
             }
           );
           

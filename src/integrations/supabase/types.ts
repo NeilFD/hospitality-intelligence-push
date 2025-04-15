@@ -691,6 +691,7 @@ export type Database = {
           birth_date: string | null
           birth_date_month: string | null
           created_at: string
+          email: string | null
           favourite_dish: string | null
           favourite_drink: string | null
           first_name: string | null
@@ -709,6 +710,7 @@ export type Database = {
           birth_date?: string | null
           birth_date_month?: string | null
           created_at?: string
+          email?: string | null
           favourite_dish?: string | null
           favourite_drink?: string | null
           first_name?: string | null
@@ -727,6 +729,7 @@ export type Database = {
           birth_date?: string | null
           birth_date_month?: string | null
           created_at?: string
+          email?: string | null
           favourite_dish?: string | null
           favourite_drink?: string | null
           first_name?: string | null
@@ -1598,12 +1601,20 @@ export type Database = {
         Returns: number
       }
       handle_new_user_manual: {
-        Args: {
-          user_id: string
-          first_name_val: string
-          last_name_val: string
-          role_val: string
-        }
+        Args:
+          | {
+              user_id: string
+              first_name_val: string
+              last_name_val: string
+              role_val: string
+            }
+          | {
+              user_id: string
+              first_name_val: string
+              last_name_val: string
+              role_val: string
+              email_val?: string
+            }
         Returns: boolean
       }
       hnsw_bit_support: {

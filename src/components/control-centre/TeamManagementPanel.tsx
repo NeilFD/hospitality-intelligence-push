@@ -208,7 +208,8 @@ const TeamManagementPanel: React.FC = () => {
             first_name: newUser.firstName,
             last_name: newUser.lastName,
             role: newUser.role,
-            job_title: newUser.jobTitle || ''
+            job_title: newUser.jobTitle || '',
+            email: newUser.email
           });
           
         if (!insertError) {
@@ -230,7 +231,8 @@ const TeamManagementPanel: React.FC = () => {
               user_id: userData.user.id,
               first_name_val: newUser.firstName,
               last_name_val: newUser.lastName,
-              role_val: newUser.role
+              role_val: newUser.role,
+              email_val: newUser.email
             }
           );
           

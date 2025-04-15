@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RegisterForm from '@/components/auth/RegisterForm';
@@ -217,13 +216,12 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       // Approach 2: Try RPC function
       console.log('Creating profile using RPC for user ID:', userId);
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        'create_profile_for_user',
+        'handle_new_user_manual',
         {
           user_id: userId,
           first_name_val: firstName,
           last_name_val: lastName,
           role_val: role,
-          job_title_val: jobTitle || '',
           email_val: email
         }
       );
@@ -234,65 +232,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       }
       
       console.error('Profile creation failed with RPC:', rpcError);
-      
-      // Approach 3: Try direct SQL
-      console.log('Creating profile using SQL for user ID:', userId);
-      try {
-        // Use raw SQL as a last resort
-        const { data: sqlResult, error: sqlError } = await supabase.rpc(
-          'handle_new_user_manual',
-          {
-            user_id: userId,
-            first_name_val: firstName,
-            last_name_val: lastName,
-            role_val: role
-          }
-        );
-        
-        if (!sqlError) {
-          console.log('Profile created successfully with SQL');
-          return true;
-        }
-        
-        console.error('SQL profile creation failed:', sqlError);
-      } catch (sqlException) {
-        console.error('SQL profile creation exception:', sqlException);
-      }
-      
-      // Final attempt: REST API directly to the profiles table
-      try {
-        const authUser = await supabase.auth.getUser();
-        const token = authUser.data.user?.id ? 
-          (await supabase.auth.getSession()).data.session?.access_token : 
-          undefined;
-        
-        const response = await fetch('https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/profiles', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
-            'Authorization': token ? `Bearer ${token}` : ''
-          },
-          body: JSON.stringify({
-            id: userId,
-            first_name: firstName,
-            last_name: lastName,
-            role: role,
-            job_title: jobTitle || '',
-            email: email
-          })
-        });
-        
-        if (response.ok) {
-          console.log('Profile created successfully with REST API');
-          return true;
-        } else {
-          const errorText = await response.text();
-          console.error('REST API profile creation failed:', errorText);
-        }
-      } catch (restException) {
-        console.error('REST API profile creation exception:', restException);
-      }
       
       // If we got here, all attempts failed
       toast.error('Failed to create user profile after multiple attempts');
