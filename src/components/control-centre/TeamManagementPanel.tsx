@@ -74,6 +74,9 @@ const getBaseUrl = () => {
   return baseUrl;
 };
 
+// Define a type for valid role values to enforce type safety
+type UserRoleType = 'GOD' | 'Super User' | 'Manager' | 'Team Member' | 'Owner';
+
 const TeamManagementPanel: React.FC = () => {
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
@@ -93,7 +96,7 @@ const TeamManagementPanel: React.FC = () => {
     email: '',
     firstName: '',
     lastName: '',
-    role: 'Team Member',
+    role: 'Team Member' as UserRoleType,
     jobTitle: '',
     emailSubject: '',
     emailBody: ''
@@ -102,7 +105,7 @@ const TeamManagementPanel: React.FC = () => {
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
-    role: '',
+    role: '' as UserRoleType,
     jobTitle: '',
     birthDate: undefined as Date | undefined,
     favouriteDish: '',
@@ -218,38 +221,21 @@ const TeamManagementPanel: React.FC = () => {
           if (!existingProfile) {
             console.log('Creating profile manually for user:', userData.user.id);
             
-            const { data: newProfile, error: createProfileError } = await supabase
+            // Use upsert to avoid conflicts
+            const { error: upsertError } = await supabase
               .from('profiles')
-              .insert({
+              .upsert({
                 id: userData.user.id,
                 first_name: newUser.firstName,
                 last_name: newUser.lastName,
                 role: newUser.role,
                 job_title: newUser.jobTitle || ''
-              })
-              .select();
+              });
               
-            if (createProfileError) {
-              console.error('Error creating profile manually:', createProfileError);
-              
-              // If insert fails, try upsert as fallback
-              const { error: upsertError } = await supabase
-                .from('profiles')
-                .upsert({
-                  id: userData.user.id,
-                  first_name: newUser.firstName,
-                  last_name: newUser.lastName,
-                  role: newUser.role,
-                  job_title: newUser.jobTitle || ''
-                });
-                
-              if (upsertError) {
-                console.error('Error upserting profile:', upsertError);
-              } else {
-                console.log('Profile created via upsert');
-              }
+            if (upsertError) {
+              console.error('Error upserting profile:', upsertError);
             } else {
-              console.log('Profile created successfully:', newProfile);
+              console.log('Profile created via upsert');
             }
           } else {
             console.log('Profile already exists for user:', userData.user.id);
@@ -542,7 +528,7 @@ The Hospitality Intelligence Team
     setEditForm({
       firstName: user.first_name || '',
       lastName: user.last_name || '',
-      role: user.role || 'Team Member',
+      role: (user.role || 'Team Member') as UserRoleType,
       jobTitle: user.job_title || '',
       birthDate: birthDate,
       favouriteDish: user.favourite_dish || '',
@@ -711,7 +697,7 @@ The Hospitality Intelligence Team
               <Label htmlFor="role">Role</Label>
               <Select 
                 value={newUser.role} 
-                onValueChange={(value) => setNewUser({...newUser, role: value})}
+                onValueChange={(value: UserRoleType) => setNewUser({...newUser, role: value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
@@ -887,7 +873,7 @@ The Hospitality Intelligence Team
               <Label htmlFor="editRole">Role</Label>
               <Select 
                 value={editForm.role} 
-                onValueChange={(value) => setEditForm({...editForm, role: value})}
+                onValueChange={(value: UserRoleType) => setEditForm({...editForm, role: value})}
                 disabled={(selectedUser?.role === 'GOD' && !isGod)}
               >
                 <SelectTrigger>
