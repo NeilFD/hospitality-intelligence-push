@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -86,8 +85,8 @@ const TeamManagementPanel: React.FC = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [createUserLoading, setCreateUserLoading] = useState(false);
-  const [invitationLink, setInvitationLink] = useState('');
-  const [activeShareTab, setActiveShareTab] = useState('copy');
+  const [loginUrl, setLoginUrl] = useState('');
+  const [activeShareTab, setActiveShareTab] = useState('email');
   
   const [newUser, setNewUser] = useState({
     email: '',
@@ -173,7 +172,8 @@ const TeamManagementPanel: React.FC = () => {
       console.log('User created successfully:', userData.user);
       
       const baseUrl = getBaseUrl();
-      const loginUrl = `${baseUrl}/login`;
+      const url = `${baseUrl}/login`;
+      setLoginUrl(url);
       
       const emailSubject = 'Welcome to Hospitality Intelligence';
       const emailBody = `
@@ -185,7 +185,7 @@ You can login with these credentials:
 - Email: ${newUser.email}
 - Password: ${defaultPassword}
 
-Please login at: ${loginUrl}
+Please login at: ${url}
 
 After logging in, we recommend:
 1. Completing your profile with additional information
@@ -198,7 +198,6 @@ Best regards,
 The Hospitality Intelligence Team
       `;
       
-      setInvitationLink(loginUrl);
       setNewUser({
         ...newUser,
         emailSubject,
@@ -219,9 +218,9 @@ The Hospitality Intelligence Team
   };
   
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(invitationLink)
+    navigator.clipboard.writeText(loginUrl)
       .then(() => {
-        toast.success('Invitation link copied to clipboard');
+        toast.success('Login link copied to clipboard');
       })
       .catch(err => {
         console.error('Error copying to clipboard:', err);
@@ -242,7 +241,7 @@ You can login with these credentials:
 - Email: ${newUser.email}
 - Password: hospitalityintelligence2025
 
-Please login at: ${invitationLink}
+Please login at: ${loginUrl}
 
 After logging in, we recommend:
 1. Completing your profile with additional information
@@ -270,22 +269,22 @@ The Hospitality Intelligence Team
     const emailContent = createManualEmailContent();
     const mailtoLink = `mailto:${emailContent.to}?subject=${encodeURIComponent(emailContent.subject)}&body=${encodeURIComponent(emailContent.body)}`;
     
-    const tempLink = document.createElement('a');
-    tempLink.href = mailtoLink;
-    document.body.appendChild(tempLink);
-    
-    navigator.clipboard.writeText(mailtoLink)
-      .then(() => {
-        toast.success('Email link copied to clipboard', {
-          description: "You can now paste this into your browser address bar to open your email client"
+    try {
+      window.location.href = mailtoLink;
+      toast.success('Opening email client with welcome message');
+    } catch (err) {
+      console.error('Error opening email client:', err);
+      navigator.clipboard.writeText(emailContent.body)
+        .then(() => {
+          toast.success('Email text copied to clipboard', {
+            description: "You can now paste this into your email client manually"
+          });
+        })
+        .catch(err => {
+          toast.error('Failed to copy email text');
+          console.error('Error copying email text:', err);
         });
-      })
-      .catch(err => {
-        toast.error('Failed to copy email link');
-        console.error('Error copying email link:', err);
-      });
-    
-    document.body.removeChild(tempLink);
+    }
   };
   
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -664,44 +663,21 @@ The Hospitality Intelligence Team
           <DialogHeader>
             <DialogTitle>User Account Created</DialogTitle>
             <DialogDescription>
-              The account for {newUser.firstName} has been created. Choose how you'd like to share their login information.
+              The account for {newUser.firstName} has been created. You can now send them login details.
             </DialogDescription>
           </DialogHeader>
           
           <Tabs value={activeShareTab} onValueChange={setActiveShareTab} className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="email">
+                <Mail className="h-4 w-4 mr-2" />
+                Send Email
+              </TabsTrigger>
               <TabsTrigger value="copy">
                 <Copy className="h-4 w-4 mr-2" />
                 Copy Info
               </TabsTrigger>
-              <TabsTrigger value="email">
-                <Mail className="h-4 w-4 mr-2" />
-                Email
-              </TabsTrigger>
-              <TabsTrigger value="message">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Message
-              </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="copy" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Login Link</Label>
-                <div className="flex items-center gap-2">
-                  <Input value={invitationLink} readOnly className="flex-1" />
-                  <Button variant="outline" size="icon" onClick={copyToClipboard}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Copy this link and share it with {newUser.firstName}
-                </p>
-              </div>
-              <Button className="w-full" onClick={copyToClipboard}>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Login Link
-              </Button>
-            </TabsContent>
             
             <TabsContent value="email" className="space-y-4">
               <div className="space-y-2">
@@ -712,40 +688,39 @@ The Hospitality Intelligence Team
                   value={createManualEmailContent().body}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Copy this text and send it via your email client
+                  You can send this welcome email to {newUser.firstName} with their login details
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={handleManualEmail}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Email Content
-                </Button>
-                <Button className="flex-1" onClick={handleNativeEmail}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Create Email Link
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="message" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Message Content</Label>
-                <Textarea 
-                  className="min-h-[120px]" 
-                  readOnly 
-                  value={`Hi ${newUser.firstName}, you've been added to the Hospitality Intelligence team! You can login at ${invitationLink} with your email (${newUser.email}) and the password: hospitalityintelligence2025. Please change your password after logging in.`}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Copy this text and share it via your preferred messaging app
-                </p>
-              </div>
-              <Button className="w-full" onClick={() => {
-                navigator.clipboard.writeText(`Hi ${newUser.firstName}, you've been added to the Hospitality Intelligence team! You can login at ${invitationLink} with your email (${newUser.email}) and the password: hospitalityintelligence2025. Please change your password after logging in.`);
-                toast.success('Message copied to clipboard');
+              <Button className="w-full" onClick={handleNativeEmail}>
+                <Mail className="mr-2 h-4 w-4" />
+                Open Email Client
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => {
+                navigator.clipboard.writeText(createManualEmailContent().body);
+                toast.success('Email content copied to clipboard');
               }}>
                 <Copy className="mr-2 h-4 w-4" />
-                Copy Message
+                Copy Email Content
               </Button>
+            </TabsContent>
+            
+            <TabsContent value="copy" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Login Link</Label>
+                <div className="flex items-center gap-2">
+                  <Input value={loginUrl} readOnly className="flex-1" />
+                  <Button variant="outline" size="icon" onClick={copyToClipboard}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  The user will need to login with:
+                </p>
+                <div className="bg-muted p-3 rounded-md">
+                  <p><strong>Email:</strong> {newUser.email}</p>
+                  <p><strong>Password:</strong> hospitalityintelligence2025</p>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
           
