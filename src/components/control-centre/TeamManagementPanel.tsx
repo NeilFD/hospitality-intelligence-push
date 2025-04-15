@@ -204,106 +204,107 @@ const TeamManagementPanel: React.FC = () => {
       console.log('User created successfully:', userData.user);
       console.log('User ID:', userData.user.id);
       
-      // Wait a moment for the trigger to run and then check/create the profile
+      // First, check if the trigger exists
+      const { data: triggerExists, error: triggerCheckError } = await supabase.rpc('check_trigger_exists', {
+        trigger_name: 'on_auth_user_created'
+      });
+      
+      console.log('Trigger exists check result:', triggerExists);
+      
+      if (triggerCheckError) {
+        console.error('Error checking trigger existence:', triggerCheckError);
+      }
+      
+      // Proactively try to manually create the profile instead of waiting
+      console.log('Attempting immediate manual profile creation for user:', userData.user.id);
+      
+      // 1. First try - direct RPC call to handle_new_user_manual
+      try {
+        const { data: manualResult, error: manualError } = await supabase
+          .rpc('handle_new_user_manual', { 
+            user_id: userData.user.id,
+            first_name_val: newUser.firstName,
+            last_name_val: newUser.lastName,
+            role_val: newUser.role
+          });
+          
+        if (manualError) {
+          console.error('Error in manual profile creation via RPC:', manualError);
+        } else {
+          console.log('Profile created via manual RPC function:', manualResult);
+        }
+      } catch (manualCallError) {
+        console.error('Exception calling manual function:', manualCallError);
+      }
+      
+      // 2. Second try - direct insert
+      try {
+        const { data: insertData, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userData.user.id,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || ''
+          })
+          .select()
+          .single();
+          
+        if (insertError) {
+          console.error('Error inserting profile directly:', insertError);
+        } else {
+          console.log('Profile created via direct insert:', insertData);
+        }
+      } catch (insertErr) {
+        console.error('Exception in direct profile insert:', insertErr);
+      }
+      
+      // 3. Third try - upsert
+      try {
+        const { data: upsertData, error: upsertError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userData.user.id,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || ''
+          })
+          .select()
+          .single();
+          
+        if (upsertError) {
+          console.error('Error upserting profile:', upsertError);
+        } else {
+          console.log('Profile created via upsert:', upsertData);
+        }
+      } catch (upsertErr) {
+        console.error('Exception in profile upsert:', upsertErr);
+      }
+      
+      // 4. Fourth try - test the trigger
+      try {
+        const { data: testResult, error: testError } = await supabase
+          .rpc('test_trigger_handle_new_user', { 
+            test_user_id: userData.user.id,
+            test_first_name: newUser.firstName,
+            test_last_name: newUser.lastName,
+            test_role: newUser.role
+          });
+          
+        if (testError) {
+          console.error('Error in test trigger function:', testError);
+        } else {
+          console.log('Test trigger function result:', testResult);
+        }
+      } catch (testErr) {
+        console.error('Exception in test trigger function:', testErr);
+      }
+      
+      // Wait a moment and then verify if the profile was created
       setTimeout(async () => {
         try {
-          // STEP 1: Check if the profile was already created by the trigger
-          console.log('Checking if profile exists for user ID:', userData.user.id);
-          
-          const { data: existingProfile, error: checkError } = await supabase
-            .from('profiles')
-            .select('id, first_name, last_name, role')
-            .eq('id', userData.user.id)
-            .maybeSingle();
-            
-          if (checkError) {
-            console.error('Error checking profile existence:', checkError);
-          }
-          
-          console.log('Profile check result:', existingProfile);
-          
-          let profileCreated = !!existingProfile;
-          
-          // STEP 2: Check if the trigger is active
-          if (!profileCreated) {
-            console.log('Profile not found, checking if trigger exists...');
-            const { data: triggerExists, error: triggerCheckError } = await supabase.rpc('check_trigger_exists', {
-              trigger_name: 'on_auth_user_created'
-            });
-            
-            if (triggerCheckError) {
-              console.error('Error checking trigger existence:', triggerCheckError);
-            } else {
-              console.log('Trigger exists check result:', triggerExists);
-            }
-          }
-          
-          // STEP 3: If no profile exists, attempt direct insert
-          if (!profileCreated) {
-            console.log('Profile not found, creating manually via direct insert for user:', userData.user.id);
-            
-            const { data: insertData, error: insertError } = await supabase
-              .from('profiles')
-              .insert({
-                id: userData.user.id,
-                first_name: newUser.firstName,
-                last_name: newUser.lastName,
-                role: newUser.role,
-                job_title: newUser.jobTitle || ''
-              })
-              .select()
-              .single();
-              
-            if (insertError) {
-              console.error('Error inserting profile:', insertError);
-              
-              // STEP 4: If insert fails, try upsert
-              console.log('Insert failed, trying upsert...');
-              const { data: upsertData, error: upsertError } = await supabase
-                .from('profiles')
-                .upsert({
-                  id: userData.user.id,
-                  first_name: newUser.firstName,
-                  last_name: newUser.lastName,
-                  role: newUser.role,
-                  job_title: newUser.jobTitle || ''
-                })
-                .select()
-                .single();
-                
-              if (upsertError) {
-                console.error('Error upserting profile:', upsertError);
-                
-                // STEP 5: If upsert fails, try manual function
-                console.log('Upsert failed, trying manual function...');
-                try {
-                  const { data: manualResult, error: manualError } = await supabase
-                    .rpc('handle_new_user_manual', { 
-                      user_id: userData.user.id,
-                      first_name_val: newUser.firstName,
-                      last_name_val: newUser.lastName,
-                      role_val: newUser.role
-                    });
-                    
-                  if (manualError) {
-                    console.error('Error in manual profile creation:', manualError);
-                  } else {
-                    console.log('Profile created via manual function:', manualResult);
-                    profileCreated = true;
-                  }
-                } catch (manualCallError) {
-                  console.error('Exception calling manual function:', manualCallError);
-                }
-              } else {
-                console.log('Profile created via upsert:', upsertData);
-                profileCreated = true;
-              }
-            } else {
-              console.log('Profile created via direct insert:', insertData);
-              profileCreated = true;
-            }
-          }
-          
           // STEP 6: Final verification and diagnostics
           const { data: verifyProfile } = await supabase
             .from('profiles')
@@ -324,9 +325,9 @@ const TeamManagementPanel: React.FC = () => {
           // Refresh the team members list regardless of the outcome
           fetchTeamMembers();
         } catch (profileError) {
-          console.error('Exception in profile creation:', profileError);
+          console.error('Exception in profile verification:', profileError);
         }
-      }, 2000); // Increased timeout to allow trigger to work
+      }, 2000);
       
       const baseUrl = getBaseUrl();
       const url = `${baseUrl}/register?token=${invitationToken}`;

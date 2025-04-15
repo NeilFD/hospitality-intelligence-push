@@ -1541,6 +1541,10 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
+      check_trigger_exists: {
+        Args: { trigger_name: string }
+        Returns: boolean
+      }
       create_profile_for_user: {
         Args: {
           user_id: string
@@ -1666,6 +1670,15 @@ export type Database = {
       sync_master_records_to_vectors: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      test_trigger_handle_new_user: {
+        Args: {
+          test_user_id: string
+          test_first_name: string
+          test_last_name: string
+          test_role: string
+        }
+        Returns: boolean
       }
       update_permission_matrix: {
         Args: { matrix: Json }
