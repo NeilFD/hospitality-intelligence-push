@@ -93,7 +93,9 @@ const TeamManagementPanel: React.FC = () => {
     firstName: '',
     lastName: '',
     role: 'Team Member',
-    jobTitle: ''
+    jobTitle: '',
+    emailSubject: '',
+    emailBody: ''
   });
   
   const [editForm, setEditForm] = useState({
