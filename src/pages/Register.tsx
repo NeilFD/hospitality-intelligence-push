@@ -36,7 +36,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       setInvitationToken(token);
       fetchInvitationData(token);
     }
-  }, [location]);
+  }, [location.search]);
 
   // Redirect if user is already authenticated
   useEffect(() => {

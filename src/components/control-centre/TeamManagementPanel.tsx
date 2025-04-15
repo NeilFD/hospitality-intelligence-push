@@ -144,7 +144,7 @@ const TeamManagementPanel: React.FC = () => {
         
       if (inviteError) throw inviteError;
       
-      // Generate invitation link
+      // Generate invitation link - direct to the register page with token parameter
       const baseUrl = window.location.origin;
       const invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
       setInvitationLink(invitationUrl);
