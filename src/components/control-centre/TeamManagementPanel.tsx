@@ -177,7 +177,7 @@ const TeamManagementPanel: React.FC = () => {
       const emailSubject = 'Welcome to Hospitality Intelligence';
       const emailBody = `
 Hello ${newUser.firstName},
-
+  
 You have been added to the Hospitality Intelligence team!
 
 You can login with these credentials:
@@ -234,7 +234,7 @@ The Hospitality Intelligence Team
       subject: newUser.emailSubject || 'Welcome to Hospitality Intelligence',
       body: newUser.emailBody || `
 Hello ${newUser.firstName},
-
+  
 You have been added to the Hospitality Intelligence team!
 
 You can login with these credentials:
@@ -466,6 +466,18 @@ The Hospitality Intelligence Team
   const openDeleteDialog = (user: UserProfile) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
+  };
+  
+  const resetNewUserForm = () => {
+    setNewUser({
+      email: '',
+      firstName: '',
+      lastName: '',
+      role: 'Team Member',
+      jobTitle: '',
+      emailSubject: '',
+      emailBody: ''
+    });
   };
   
   return (
@@ -741,13 +753,7 @@ The Hospitality Intelligence Team
               variant="outline" 
               onClick={() => {
                 setIsShareLinkDialogOpen(false);
-                setNewUser({
-                  email: '',
-                  firstName: '',
-                  lastName: '',
-                  role: 'Team Member',
-                  jobTitle: ''
-                });
+                resetNewUserForm();
               }}
             >
               Done
