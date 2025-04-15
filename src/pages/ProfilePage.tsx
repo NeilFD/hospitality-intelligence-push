@@ -115,10 +115,10 @@ const ProfilePage = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Profile Details</h3>
                     
-                    {profile.birth_date_month && (
+                    {profile.birth_date && (
                       <div className="flex items-center mb-3 text-gray-700">
                         <Cake className="h-5 w-5 mr-3 text-hi-purple-light" />
-                        <span>Birthday: {profile.birth_date_month}</span>
+                        <span>Birthday: {profile.birth_date}</span>
                       </div>
                     )}
                     
