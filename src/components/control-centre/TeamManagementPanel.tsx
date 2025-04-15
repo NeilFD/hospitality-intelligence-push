@@ -45,7 +45,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
 
-// Define the response data interface for the invitation API
 interface InvitationResponse {
   success?: boolean;
   error?: string;
@@ -134,19 +133,20 @@ const TeamManagementPanel: React.FC = () => {
         invitationToken
       });
       
-      // Fix: Use the full URL with the Supabase project reference
       const functionUrl = 'https://kfiergoryrnjkewmeriy.supabase.co/functions/v1/send-user-invitation';
       console.log("Calling edge function at:", functionUrl);
       
-      // Get the current session token for authorization
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
+      
+      if (!accessToken) {
+        throw new Error('You must be logged in to invite users');
+      }
       
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add the authorization header with the proper token
           'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
@@ -165,8 +165,7 @@ const TeamManagementPanel: React.FC = () => {
       const responseText = await response.text();
       console.log("Response text:", responseText);
       
-      // Make sure we have a response before trying to parse it
-      let responseData: InvitationResponse = {}; // Use the defined interface
+      let responseData: InvitationResponse = {};
       try {
         if (responseText) {
           responseData = JSON.parse(responseText) as InvitationResponse;

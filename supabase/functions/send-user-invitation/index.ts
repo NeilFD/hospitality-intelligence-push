@@ -17,6 +17,9 @@ interface InvitationRequest {
   created_by?: string;
 }
 
+// Define default site URL to be used as fallback
+const DEFAULT_SITE_URL = "https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com";
+
 serve(async (req) => {
   console.log("Received request:", req.method, req.url);
   
@@ -79,15 +82,17 @@ serve(async (req) => {
       throw new Error('Failed to check existing invitations');
     }
     
+    // Get the site URL for the registration link, with fallback to default
+    const siteUrl = Deno.env.get('SITE_URL') || DEFAULT_SITE_URL;
+    console.log("Using site URL:", siteUrl);
+    
     // If invitation already exists, return a specific error message
     if (existingInvitation && existingInvitation.length > 0) {
       console.log("Found existing invitation for email:", email);
       
       // Get the site URL for the registration link
-      const siteUrl = Deno.env.get('SITE_URL') || '';
       if (!siteUrl) {
-        console.error("Site URL is not defined");
-        throw new Error('Site URL is not defined');
+        console.error("Site URL is not defined, using default");
       }
       
       // Resend the invitation using the existing token
@@ -109,13 +114,6 @@ serve(async (req) => {
         }),
         { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
-    }
-    
-    // Get the site URL for the registration link
-    const siteUrl = Deno.env.get('SITE_URL') || '';
-    if (!siteUrl) {
-      console.error("Site URL is not defined");
-      throw new Error('Site URL is not defined');
     }
     
     // Construct the invitation URL
@@ -174,8 +172,7 @@ async function sendInvitationEmail(
   invitationUrl: string
 ): Promise<{ success?: boolean; error?: string }> {
   try {
-    // Fallback to a simple email service if Resend API key is not available
-    // For now, let's fetch a simple email template and deliver it via Supabase's email service
+    // Create Supabase client for email operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -187,6 +184,8 @@ async function sendInvitationEmail(
       .single();
       
     const companyName = settings?.company_name || 'Our Company';
+    
+    console.log(`Sending invitation email to ${toEmail} with invitation URL: ${invitationUrl}`);
     
     // Use Supabase's built-in email service
     const { error } = await supabase.auth.admin.createUser({
@@ -204,6 +203,8 @@ async function sendInvitationEmail(
     
     if (error) {
       // If this fails, it might be because the user already exists
+      console.log(`User creation failed, trying magic link: ${error.message}`);
+      
       // Let's try to send a magic link instead
       try {
         // Send a magic link with custom metadata about the invitation
@@ -219,10 +220,16 @@ async function sendInvitationEmail(
           }
         });
         
-        if (magicLinkError) throw magicLinkError;
+        if (magicLinkError) {
+          console.error('Error sending magic link:', magicLinkError);
+          throw magicLinkError;
+        }
+        
+        console.log(`Successfully sent magic link to ${toEmail}`);
         return { success: true };
       } catch (innerError) {
         console.error('Error sending magic link:', innerError);
+        
         // Fall back to simulated email for development
         console.log(`
           To: ${toEmail}
@@ -236,13 +243,16 @@ async function sendInvitationEmail(
           
           This invitation will expire in 7 days.
         `);
+        
         return { success: true };
       }
     }
     
+    console.log(`Successfully created user and sent invitation to ${toEmail}`);
     return { success: true };
   } catch (error) {
     console.error('Error sending invitation email:', error);
+    
     // Fall back to simulated email for development
     console.log(`
       To: ${toEmail}
@@ -256,6 +266,7 @@ async function sendInvitationEmail(
       
       This invitation will expire in 7 days.
     `);
+    
     return { success: true };
   }
 }
