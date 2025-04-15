@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RegisterForm from '@/components/auth/RegisterForm';
@@ -51,17 +52,36 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     try {
       console.log("Fetching invitation data for token:", token);
       
-      // First check if the token exists in user_invitations
-      const { data, error } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('invitation_token', token)
-        .eq('is_claimed', false)
-        .single();
+      // Try with retries to handle any network issues
+      let retries = 3;
+      let data = null;
+      let error = null;
+      
+      while (retries > 0 && !data) {
+        const result = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('invitation_token', token)
+          .eq('is_claimed', false)
+          .maybeSingle();
+          
+        if (result.data) {
+          data = result.data;
+          break;
+        }
         
-      if (error) {
+        error = result.error;
+        retries--;
+        
+        if (retries > 0) {
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      if (!data) {
         console.error("Error fetching invitation data:", error);
-        throw error;
+        throw new Error('Invalid or expired invitation token');
       }
       
       console.log("Invitation data retrieved:", data);

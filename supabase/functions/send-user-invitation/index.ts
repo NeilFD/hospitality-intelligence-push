@@ -17,7 +17,7 @@ interface InvitationRequest {
   created_by?: string;
 }
 
-// Fix: Use absolute URL instead of relative URL
+// Fix: Use absolute URL instead of relative URL - ensuring it's always the same format
 const SITE_URL = "https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com";
 
 serve(async (req) => {
@@ -82,9 +82,9 @@ serve(async (req) => {
       throw new Error('Failed to check existing invitations');
     }
     
-    // Fix: Use hardcoded SITE_URL for absolute certainty in links
-    const siteUrl = SITE_URL;
-    console.log("Using fixed site URL:", siteUrl);
+    // Generate the full invitation URL with the correct domain
+    const invitationUrl = `${SITE_URL}/register?token=${invitationToken}`;
+    console.log("Generated invitation URL:", invitationUrl);
     
     // If invitation already exists, return a specific error message
     if (existingInvitation && existingInvitation.length > 0) {
@@ -93,12 +93,12 @@ serve(async (req) => {
       // Resend the invitation using the existing token
       const existingToken = existingInvitation[0].invitation_token;
       
-      // Fix: Ensure we're using a complete absolute URL with domain 
-      const invitationUrl = `${siteUrl}/register?token=${existingToken}`;
-      console.log("Generated absolute invitation URL:", invitationUrl);
+      // Use consistent URL format for invitation
+      const existingInvitationUrl = `${SITE_URL}/register?token=${existingToken}`;
+      console.log("Generated URL for existing invitation:", existingInvitationUrl);
       
       // Actually send the email here
-      const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
+      const emailResult = await sendInvitationEmail(email, firstName, existingInvitationUrl);
       
       if (emailResult.error) {
         console.warn(`Failed to send invitation email: ${emailResult.error}`);
@@ -109,15 +109,11 @@ serve(async (req) => {
         JSON.stringify({ 
           message: 'An invitation has already been sent to this email address. Resending the invitation.',
           existingInvitation: true,
-          invitationUrl
+          invitationUrl: existingInvitationUrl
         }),
         { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
-    
-    // Fix: Ensure we're using a complete absolute URL with domain
-    const invitationUrl = `${siteUrl}/register?token=${invitationToken}`;
-    console.log("Generated absolute invitation URL:", invitationUrl);
     
     // Send the actual invitation email
     const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
@@ -193,31 +189,21 @@ async function sendInvitationEmail(
     try {
       console.log("Attempting to send direct email using Supabase's SMTP service");
       
-      // Send a one-time invitation email with the direct register URL
-      const { data: userData, error: userError } = await supabase.auth.admin.inviteUserByEmail(
-        toEmail,
-        {
-          // Fix: Ensure we have a proper absolute URL that won't be transformed
-          redirectTo: invitationUrl,
-          data: {
-            firstName,
-            invitationUrl
-          }
+      // Send email with fixed URL and custom email template
+      const { error: directEmailError } = await supabase.auth.admin.inviteUserByEmail(toEmail, {
+        redirectTo: invitationUrl,
+        data: {
+          firstName,
+          invitationUrl,
+          companyName
         }
-      );
-          
-      if (userError) {
-        console.error("Error inviting user by email:", userError);
-        throw userError;
+      });
+      
+      if (directEmailError) {
+        throw directEmailError;
       }
       
-      if (userData) {
-        console.log("Successfully sent invitation to user by email:", toEmail);
-        return { success: true };
-      }
-      
-      // If we got here, something went wrong but didn't throw an error
-      throw new Error("Email sending failed, but didn't throw an error");
+      return { success: true };
       
     } catch (directEmailError) {
       console.error("Direct email method failed:", directEmailError);
@@ -232,16 +218,11 @@ async function sendInvitationEmail(
         
         You've been invited to join ${companyName}. Please click the link below to complete your registration:
         
-        
-        
         ${invitationUrl}
-        
-        
         
         This invitation will expire in 7 days.
       `);
       
-      // Return success for UI purposes, but include the error message
       return { 
         success: true, 
         error: `Email sending failed but invitation was created. Error: ${directEmailError.message || "Unknown error"}`
@@ -259,17 +240,12 @@ async function sendInvitationEmail(
       Hi ${firstName},
       
       You've been invited to join the team. Please click the link below to complete your registration:
-        
-        
-        
+      
       ${invitationUrl}
-        
-        
-        
+      
       This invitation will expire in 7 days.
     `);
     
-    // Return success for UI purposes, but include the error message
     return { 
       success: true, 
       error: `Email sending failed but invitation was created. Error: ${error.message || "Unknown error"}`
