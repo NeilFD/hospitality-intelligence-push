@@ -54,26 +54,48 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     try {
       console.log("Fetching invitation data for token:", token);
       
-      // First, validate that the token format is correct
+      // Validate token format to fail fast if clearly invalid
       if (!token || token.length < 10) {
         throw new Error('Invalid token format');
       }
       
-      // Get the invitation directly from the database with a single query
-      const { data, error } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('invitation_token', token)
-        .single();
+      // Make direct database query with retry logic
+      let data = null;
+      let fetchError = null;
+      let retryCount = 0;
+      const maxRetries = 3;
       
-      if (error) {
-        console.error('Error fetching invitation data:', error);
-        throw new Error('Invalid or expired invitation token');
+      while (!data && retryCount < maxRetries) {
+        const { data: invitationData, error: queryError } = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('invitation_token', token)
+          .maybeSingle();
+        
+        if (invitationData) {
+          data = invitationData;
+          break;
+        }
+        
+        if (queryError) {
+          console.error(`Attempt ${retryCount + 1}: Error fetching invitation:`, queryError);
+          fetchError = queryError;
+        }
+        
+        // Wait before retry (exponential backoff)
+        if (retryCount < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        }
+        
+        retryCount++;
       }
       
       if (!data) {
-        throw new Error('Invalid or expired invitation token');
+        console.error('Final error after retries:', fetchError);
+        throw new Error('Could not validate invitation token after multiple attempts');
       }
+      
+      console.log("Invitation data retrieved:", data);
       
       // Check if invitation has expired
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
@@ -88,8 +110,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         setLoading(false);
         return;
       }
-      
-      console.log("Invitation data retrieved successfully:", data);
       
       // Set valid invitation data
       setInvitationData({
@@ -111,16 +131,37 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     if (!invitationToken) return;
     
     try {
-      // Mark invitation as claimed
-      const { error } = await supabase
-        .from('user_invitations')
-        .update({ is_claimed: true })
-        .eq('invitation_token', invitationToken);
+      console.log("Marking invitation as claimed:", invitationToken);
+      
+      // Mark invitation as claimed with retry logic
+      let updateSuccess = false;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (!updateSuccess && retryCount < maxRetries) {
+        const { error: updateError } = await supabase
+          .from('user_invitations')
+          .update({ is_claimed: true })
+          .eq('invitation_token', invitationToken);
+          
+        if (!updateError) {
+          updateSuccess = true;
+          console.log('Invitation successfully marked as claimed');
+          break;
+        }
         
-      if (error) {
-        console.error('Error marking invitation as claimed:', error);
-      } else {
-        console.log('Invitation successfully marked as claimed');
+        console.error(`Attempt ${retryCount + 1}: Error marking invitation as claimed:`, updateError);
+        
+        // Wait before retry
+        if (retryCount < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        }
+        
+        retryCount++;
+      }
+      
+      if (!updateSuccess) {
+        console.error('Failed to mark invitation as claimed after multiple attempts');
       }
     } catch (error) {
       console.error('Error marking invitation as claimed:', error);

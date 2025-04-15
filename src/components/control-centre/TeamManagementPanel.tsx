@@ -46,11 +46,30 @@ import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
 
 const generateInvitationToken = () => {
-  const randomBytes = new Uint8Array(32);
-  window.crypto.getRandomValues(randomBytes);
-  return Array.from(randomBytes)
+  const tokenLength = 32;
+  const array = new Uint8Array(tokenLength);
+  window.crypto.getRandomValues(array);
+  return Array.from(array)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+};
+
+const getBaseUrl = () => {
+  let baseUrl;
+  
+  try {
+    baseUrl = window.location.origin;
+    console.log("Using window.location.origin:", baseUrl);
+  } catch (e) {
+    baseUrl = 'https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com';
+    console.log("Using fallback URL:", baseUrl);
+  }
+  
+  if (baseUrl.endsWith('/')) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
+  
+  return baseUrl;
 };
 
 const TeamManagementPanel: React.FC = () => {
@@ -125,18 +144,7 @@ const TeamManagementPanel: React.FC = () => {
       const invitationToken = generateInvitationToken();
       console.log("Generated token:", invitationToken);
       
-      let baseUrl;
-      try {
-        baseUrl = window.location.origin;
-        console.log("Using window.location.origin:", baseUrl);
-      } catch (e) {
-        baseUrl = 'https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com';
-        console.log("Using fallback URL:", baseUrl);
-      }
-      
-      if (baseUrl.endsWith('/')) {
-        baseUrl = baseUrl.slice(0, -1);
-      }
+      const baseUrl = getBaseUrl();
       
       const invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
       console.log("Full invitation URL:", invitationUrl);
@@ -154,6 +162,9 @@ const TeamManagementPanel: React.FC = () => {
       
       let operationSuccessful = false;
       
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
       if (existingInvitation) {
         console.log("Updating existing invitation for:", newUser.email);
         
@@ -166,7 +177,7 @@ const TeamManagementPanel: React.FC = () => {
             last_name: newUser.lastName,
             role: newUser.role,
             job_title: newUser.jobTitle,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            expires_at: expiresAt.toISOString()
           })
           .eq('id', existingInvitation.id);
           
@@ -191,7 +202,7 @@ const TeamManagementPanel: React.FC = () => {
             created_by: currentUserProfile?.id,
             invitation_token: invitationToken,
             is_claimed: false,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            expires_at: expiresAt.toISOString()
           });
           
         if (insertError) {
