@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -955,4 +956,74 @@ The Hospitality Intelligence Team
               <Label htmlFor="editFavouriteDish">Favourite Dish</Label>
               <Input 
                 id="editFavouriteDish" 
-                value
+                value={editForm.favouriteDish}
+                onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
+                placeholder="Favourite dish"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="editFavouriteDrink">Favourite Drink</Label>
+              <Input 
+                id="editFavouriteDrink" 
+                value={editForm.favouriteDrink}
+                onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
+                placeholder="Favourite drink"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="editAboutMe">About Me</Label>
+              <Textarea 
+                id="editAboutMe" 
+                value={editForm.aboutMe}
+                onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
+                placeholder="Share something about yourself"
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditUserDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleEditUser}
+            >
+              <UserCog className="mr-2 h-4 w-4" />
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {selectedUser?.first_name} {selectedUser?.last_name}'s profile.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700" 
+              onClick={handleDeleteUser}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? 'Deleting...' : 'Delete User'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+export default TeamManagementPanel;
