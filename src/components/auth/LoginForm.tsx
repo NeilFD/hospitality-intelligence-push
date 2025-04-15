@@ -149,14 +149,7 @@ export default function LoginForm() {
         </Button>
       </motion.div>
       
-      <div className="flex items-center justify-center space-x-1 pt-2">
-        <p className="text-center text-sm text-gray-600">
-          Don't have an account?
-        </p>
-        <Button variant="link" className="p-0 text-green-600 hover:text-green-700" onClick={() => navigate('/register')}>
-          Register
-        </Button>
-      </div>
+      {/* Register link removed */}
     </form>
   </div>;
 }

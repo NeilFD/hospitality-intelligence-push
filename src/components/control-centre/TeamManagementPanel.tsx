@@ -143,86 +143,70 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      const invitationToken = generateInvitationToken();
-      console.log("Generated token:", invitationToken);
+      const defaultPassword = 'hospitalityintelligence2025';
+      
+      const { data: userData, error: signUpError } = await supabase.auth.signUp({
+        email: newUser.email,
+        password: defaultPassword,
+        options: {
+          data: {
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || ''
+          }
+        }
+      });
+      
+      if (signUpError) {
+        console.error('Error creating user:', signUpError);
+        throw new Error(signUpError.message);
+      }
+      
+      if (!userData.user) {
+        throw new Error('Failed to create user account');
+      }
+      
+      console.log('User created successfully:', userData.user);
       
       const baseUrl = getBaseUrl();
+      const loginUrl = `${baseUrl}/login`;
       
-      const invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
-      console.log("Full invitation URL:", invitationUrl);
+      const emailSubject = 'Welcome to Hospitality Intelligence';
+      const emailBody = `
+Hello ${newUser.firstName},
+
+You have been added to the Hospitality Intelligence team!
+
+You can login with these credentials:
+- Email: ${newUser.email}
+- Password: ${defaultPassword}
+
+Please login at: ${loginUrl}
+
+After logging in, we recommend:
+1. Completing your profile with additional information
+2. Uploading a profile picture
+3. Changing your password to something more secure
+
+Welcome to the team!
+
+Best regards,
+The Hospitality Intelligence Team
+      `;
       
-      const { data: existingInvitation, error: checkError } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('email', newUser.email)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error('Error checking for existing invitation:', checkError);
-        throw new Error('Error checking for existing user');
-      }
+      setInvitationLink(loginUrl);
+      setNewUser({
+        ...newUser,
+        emailSubject,
+        emailBody
+      });
       
-      let operationSuccessful = false;
+      setIsShareLinkDialogOpen(true);
+      setIsAddUserDialogOpen(false);
+      toast.success(`New user created: ${newUser.firstName} ${newUser.lastName}`);
       
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-      
-      if (existingInvitation) {
-        console.log("Updating existing invitation for:", newUser.email);
-        
-        const { error: updateError } = await supabase
-          .from('user_invitations')
-          .update({
-            invitation_token: invitationToken,
-            is_claimed: false,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle,
-            expires_at: expiresAt.toISOString()
-          })
-          .eq('id', existingInvitation.id);
-          
-        if (updateError) {
-          console.error('Error updating existing invitation:', updateError);
-          throw new Error('Failed to update invitation');
-        }
-        
-        operationSuccessful = true;
-        toast.info(`Updated invitation for ${newUser.email}`);
-      } else {
-        console.log("Creating new invitation for:", newUser.email);
-        
-        const { error: insertError } = await supabase
-          .from('user_invitations')
-          .insert({
-            email: newUser.email,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle,
-            created_by: currentUserProfile?.id,
-            invitation_token: invitationToken,
-            is_claimed: false,
-            expires_at: expiresAt.toISOString()
-          });
-          
-        if (insertError) {
-          console.error('Error creating invitation:', insertError);
-          throw new Error('Failed to create user invitation');
-        }
-        
-        operationSuccessful = true;
-        toast.success(`New user invitation created for: ${newUser.firstName} ${newUser.lastName}`);
-      }
-      
-      if (operationSuccessful) {
-        setInvitationLink(invitationUrl);
-        setIsShareLinkDialogOpen(true);
-        setIsAddUserDialogOpen(false);
-        fetchTeamMembers();
-      }
-      
+      fetchTeamMembers();
     } catch (error) {
       console.error('Error creating user:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create user');
@@ -245,8 +229,28 @@ const TeamManagementPanel: React.FC = () => {
   const createManualEmailContent = () => {
     return {
       to: newUser.email,
-      subject: 'You have been invited to join our team',
-      body: `Hi ${newUser.firstName},\n\nYou've been invited to join our team. Please click the link below to create your account:\n\n${invitationLink}\n\nThis invitation will expire in 7 days.\n\nRegards,\nThe Team`
+      subject: newUser.emailSubject || 'Welcome to Hospitality Intelligence',
+      body: newUser.emailBody || `
+Hello ${newUser.firstName},
+
+You have been added to the Hospitality Intelligence team!
+
+You can login with these credentials:
+- Email: ${newUser.email}
+- Password: hospitalityintelligence2025
+
+Please login at: ${invitationLink}
+
+After logging in, we recommend:
+1. Completing your profile with additional information
+2. Uploading a profile picture
+3. Changing your password to something more secure
+
+Welcome to the team!
+
+Best regards,
+The Hospitality Intelligence Team
+      `
     };
   };
   
@@ -643,9 +647,9 @@ const TeamManagementPanel: React.FC = () => {
       <Dialog open={isShareLinkDialogOpen} onOpenChange={setIsShareLinkDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invitation Created</DialogTitle>
+            <DialogTitle>User Account Created</DialogTitle>
             <DialogDescription>
-              Choose how you'd like to share this invitation with {newUser.firstName}
+              The account for {newUser.firstName} has been created. Choose how you'd like to share their login information.
             </DialogDescription>
           </DialogHeader>
           
@@ -653,7 +657,7 @@ const TeamManagementPanel: React.FC = () => {
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="copy">
                 <Copy className="h-4 w-4 mr-2" />
-                Copy Link
+                Copy Info
               </TabsTrigger>
               <TabsTrigger value="email">
                 <Mail className="h-4 w-4 mr-2" />
@@ -667,7 +671,7 @@ const TeamManagementPanel: React.FC = () => {
             
             <TabsContent value="copy" className="space-y-4">
               <div className="space-y-2">
-                <Label>Invitation Link</Label>
+                <Label>Login Link</Label>
                 <div className="flex items-center gap-2">
                   <Input value={invitationLink} readOnly className="flex-1" />
                   <Button variant="outline" size="icon" onClick={copyToClipboard}>
@@ -680,7 +684,7 @@ const TeamManagementPanel: React.FC = () => {
               </div>
               <Button className="w-full" onClick={copyToClipboard}>
                 <Copy className="mr-2 h-4 w-4" />
-                Copy to Clipboard
+                Copy Login Link
               </Button>
             </TabsContent>
             
@@ -688,7 +692,7 @@ const TeamManagementPanel: React.FC = () => {
               <div className="space-y-2">
                 <Label>Email Content</Label>
                 <Textarea 
-                  className="min-h-[120px]" 
+                  className="min-h-[200px]" 
                   readOnly 
                   value={createManualEmailContent().body}
                 />
@@ -714,14 +718,14 @@ const TeamManagementPanel: React.FC = () => {
                 <Textarea 
                   className="min-h-[120px]" 
                   readOnly 
-                  value={`Hi ${newUser.firstName}, I've invited you to join our team! Please use this link to create your account: ${invitationLink}`}
+                  value={`Hi ${newUser.firstName}, you've been added to the Hospitality Intelligence team! You can login at ${invitationLink} with your email (${newUser.email}) and the password: hospitalityintelligence2025. Please change your password after logging in.`}
                 />
                 <p className="text-sm text-muted-foreground">
                   Copy this text and share it via your preferred messaging app
                 </p>
               </div>
               <Button className="w-full" onClick={() => {
-                navigator.clipboard.writeText(`Hi ${newUser.firstName}, I've invited you to join our team! Please use this link to create your account: ${invitationLink}`);
+                navigator.clipboard.writeText(`Hi ${newUser.firstName}, you've been added to the Hospitality Intelligence team! You can login at ${invitationLink} with your email (${newUser.email}) and the password: hospitalityintelligence2025. Please change your password after logging in.`);
                 toast.success('Message copied to clipboard');
               }}>
                 <Copy className="mr-2 h-4 w-4" />
