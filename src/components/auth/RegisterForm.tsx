@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { signUp } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 // Define the schema for the registration form
 const formSchema = z.object({
@@ -55,6 +56,56 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       password: '',
     },
   });
+
+  const createProfile = async (userId: string, userData: any) => {
+    try {
+      console.log('Creating profile directly for user:', userId);
+      
+      // Simple direct insertion approach
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role || 'Team Member',
+          job_title: userData.job_title || '',
+          email: userData.email
+        });
+      
+      if (error) {
+        console.error('Direct profile insertion failed:', error);
+        
+        // Try the manual function as fallback
+        const { error: funcError } = await supabase.rpc(
+          'handle_new_user_manual',
+          {
+            user_id: userId,
+            first_name_val: userData.first_name,
+            last_name_val: userData.last_name,
+            role_val: userData.role || 'Team Member'
+          }
+        );
+        
+        if (funcError) {
+          console.error('Manual profile creation failed:', funcError);
+          return false;
+        }
+      }
+      
+      // Verify the profile was created
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      return !!profile;
+    } catch (err) {
+      console.error('Error in createProfile:', err);
+      return false;
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -100,41 +151,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       // Log the user ID for debugging
       console.log("User registered successfully, user ID:", data.user.id);
       
+      // Create the profile immediately - critical for success
+      const profileCreated = await createProfile(data.user.id, metadata);
+      
       // Notify parent component that registration is complete
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);
-      } else {
-        // If there's no callback, we need to create the profile directly
-        try {
-          const { error: profileError } = await fetch('https://kfiergoryrnjkewmeriy.supabase.co/rest/v1/profiles', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmaWVyZ29yeXJuamtld21lcml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDk0NDMsImV4cCI6MjA1OTQyNTQ0M30.FJ2lWSSJBfGy3rUUmIYZwPMd6fFlBTO1xHjZrMwT_wY',
-              'Authorization': `Bearer ${data.session?.access_token}`
-            },
-            body: JSON.stringify({
-              id: data.user.id,
-              first_name: values.firstName,
-              last_name: values.lastName,
-              role: invitationData?.role || 'Team Member',
-              job_title: invitationData?.jobTitle || '',
-              email: values.email
-            })
-          }).then(res => res.json());
-          
-          if (profileError) {
-            console.error('Error creating profile directly:', profileError);
-          } else {
-            console.log('Profile created directly');
-          }
-        } catch (profileError) {
-          console.error('Exception creating profile directly:', profileError);
-        }
       }
       
-      // Log the user in
-      toast.success('Account created successfully!');
+      if (profileCreated) {
+        console.log('Profile created successfully');
+        toast.success('Account created successfully!');
+      } else {
+        console.warn('Profile may not have been created properly');
+        toast.warning('Account created, but profile setup may be incomplete.');
+      }
       
       // Try to log in automatically
       try {

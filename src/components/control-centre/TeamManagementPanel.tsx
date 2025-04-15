@@ -165,6 +165,8 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
+      console.log('Creating new user with email:', newUser.email);
+      
       // Create the auth user
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
@@ -174,8 +176,7 @@ const TeamManagementPanel: React.FC = () => {
             first_name: newUser.firstName,
             last_name: newUser.lastName,
             role: newUser.role,
-            job_title: newUser.jobTitle || '',
-            email: newUser.email
+            job_title: newUser.jobTitle || ''
           }
         }
       });
@@ -193,69 +194,67 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
-      console.log('User created:', userData.user);
+      console.log('User created successfully:', userData.user.id);
       
-      // Create profile using RPC function
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        'create_profile_for_user',
-        {
-          user_id: userData.user.id,
-          first_name_val: newUser.firstName,
-          last_name_val: newUser.lastName,
-          role_val: newUser.role,
-          job_title_val: newUser.jobTitle || '',
-          email_val: newUser.email
-        }
-      );
-      
-      if (rpcError) {
-        console.error('Profile creation failed with RPC:', rpcError);
+      // Directly create the profile using a simplified approach
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userData.user.id,
+          first_name: newUser.firstName,
+          last_name: newUser.lastName,
+          role: newUser.role,
+          job_title: newUser.jobTitle || '',
+          email: newUser.email
+        });
         
-        // Fallback: Try direct insert if RPC fails
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userData.user.id,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || '',
-            email: newUser.email
-          });
-          
-        if (insertError) {
-          console.error('Direct profile insert also failed:', insertError);
-          toast.error('Profile creation failed. Please try again.');
+      if (insertError) {
+        console.error('Error creating profile directly:', insertError);
+        
+        // Fallback: Try using the manual function as a last resort
+        const { error: functionError } = await supabase.rpc(
+          'handle_new_user_manual',
+          {
+            user_id: userData.user.id,
+            first_name_val: newUser.firstName,
+            last_name_val: newUser.lastName,
+            role_val: newUser.role
+          }
+        );
+        
+        if (functionError) {
+          console.error('Error using handle_new_user_manual function:', functionError);
+          toast.error('Profile creation failed. Please contact support.');
           setCreateUserLoading(false);
           return;
         }
       }
       
       // Verify profile was created
-      const { data: verifyProfile, error: verifyError } = await supabase
+      const { data: verifyProfile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userData.user.id)
         .maybeSingle();
         
-      if (verifyError || !verifyProfile) {
-        console.error('Could not verify profile creation:', verifyError);
-        toast.error('User created but profile verification failed');
-      } else {
-        console.log('Profile created and verified:', verifyProfile);
+      if (verifyProfile) {
+        console.log('Profile verified:', verifyProfile);
         toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+        
+        // Refresh team members list
+        fetchTeamMembers();
+        
+        // Set login URL for share dialog
+        const baseUrl = getBaseUrl();
+        setLoginUrl(`${baseUrl}/login`);
+        
+        // Open share dialog
+        setIsShareLinkDialogOpen(true);
+        setIsAddUserDialogOpen(false);
+      } else {
+        console.error('Could not verify profile creation');
+        toast.warning('User created but profile verification failed. They may need to log in once to finalize setup.');
       }
-      
-      // Set login URL for share dialog
-      const baseUrl = getBaseUrl();
-      setLoginUrl(`${baseUrl}/login`);
-      
-      // Refresh team members list
-      fetchTeamMembers();
-      
-      // Open share dialog
-      setIsShareLinkDialogOpen(true);
-      setIsAddUserDialogOpen(false);
       
     } catch (error) {
       console.error('Unexpected error in user creation:', error);
