@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -145,11 +146,39 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      const defaultPassword = 'hospitalityintelligence2025';
+      // Create invitation token first
+      const invitationToken = generateInvitationToken();
       
+      try {
+        // Store the invitation in the user_invitations table
+        const { error: invitationError } = await supabase.rpc(
+          'create_user_invitation',
+          {
+            p_email: newUser.email,
+            p_first_name: newUser.firstName,
+            p_last_name: newUser.lastName,
+            p_role: newUser.role,
+            p_job_title: newUser.jobTitle || null,
+            p_created_by: currentUserProfile?.id || null,
+            p_invitation_token: invitationToken
+          }
+        );
+        
+        if (invitationError) {
+          console.error('Error creating user invitation:', invitationError);
+          // Continue with user creation even if invitation fails
+        } else {
+          console.log('User invitation created successfully');
+        }
+      } catch (inviteErr) {
+        console.error('Exception in invitation creation:', inviteErr);
+        // Continue with user creation even if invitation fails
+      }
+      
+      // Create the user account
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
-        password: defaultPassword,
+        password: 'hospitalityintelligence2025',
         options: {
           data: {
             first_name: newUser.firstName,
@@ -171,34 +200,25 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user);
       
+      // The trigger function should now handle profile creation automatically
+      // But as a fallback, we'll try to create the profile manually if needed
       if (userData.user.id) {
-        try {
-          const { data: existingProfile, error: profileCheckError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userData.user.id)
-            .single();
-            
-          if (profileCheckError && profileCheckError.code !== 'PGRST116') {
-            console.error('Error checking for existing profile:', profileCheckError);
-          }
-          
-          if (!existingProfile) {
-            const { data: insertData, error: insertError } = await supabase
+        setTimeout(async () => {
+          try {
+            const { data: profileCheck, error: checkError } = await supabase
               .from('profiles')
-              .insert({
-                id: userData.user.id,
-                first_name: newUser.firstName,
-                last_name: newUser.lastName,
-                role: newUser.role as any,
-                job_title: newUser.jobTitle || ''
-              })
-              .select();
+              .select('id')
+              .eq('id', userData.user.id)
+              .maybeSingle();
               
-            if (insertError) {
-              console.error('Error creating profile with insert:', insertError);
+            if (checkError) {
+              console.error('Error checking profile existence:', checkError);
+            }
+            
+            if (!profileCheck) {
+              console.log('Profile not found after user creation, creating manually...');
               
-              const { data: upsertData, error: upsertError } = await supabase
+              const { error: upsertError } = await supabase
                 .from('profiles')
                 .upsert({
                   id: userData.user.id,
@@ -206,28 +226,24 @@ const TeamManagementPanel: React.FC = () => {
                   last_name: newUser.lastName,
                   role: newUser.role as any,
                   job_title: newUser.jobTitle || ''
-                })
-                .select();
+                });
                 
               if (upsertError) {
-                console.error('Error creating profile with upsert:', upsertError);
-                throw new Error('Failed to create user profile');
+                console.error('Error creating profile manually:', upsertError);
               } else {
-                console.log('Profile created via upsert:', upsertData);
+                console.log('Profile created manually');
               }
             } else {
-              console.log('Profile created via insert:', insertData);
+              console.log('Profile exists:', profileCheck);
             }
-          } else {
-            console.log('Profile already exists for user:', existingProfile);
+          } catch (profileError) {
+            console.error('Error in manual profile creation:', profileError);
           }
-        } catch (profileError) {
-          console.error('Error in profile creation process:', profileError);
-        }
+        }, 2000); // Wait 2 seconds for the trigger to potentially complete
       }
       
       const baseUrl = getBaseUrl();
-      const url = `${baseUrl}/login`;
+      const url = `${baseUrl}/register?token=${invitationToken}`;
       setLoginUrl(url);
       
       const emailSubject = 'Welcome to Hospitality Intelligence';
@@ -241,18 +257,8 @@ You have been added to the Hospitality Intelligence team!
 1. First, check your inbox for a confirmation email from Supabase and click the confirmation link.
    You MUST verify your email address before you can log in.
 
-2. After confirming your email, you can login with these credentials:
-   - Email: ${newUser.email}
-   - Password: ${defaultPassword}
-
-3. Login here: ${url}
-
-After logging in, we recommend:
-1. Completing your profile with additional information
-2. Uploading a profile picture
-3. Changing your password to something more secure
-
-Welcome to the team!
+2. After confirming your email, you can complete your registration here:
+   ${url}
 
 Best regards,
 The Hospitality Intelligence Team
