@@ -171,6 +171,24 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user);
       
+      if (userData.user.id) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userData.user.id,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role as any,
+            job_title: newUser.jobTitle || ''
+          });
+          
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+        } else {
+          console.log('Profile created manually for user:', userData.user.id);
+        }
+      }
+      
       const baseUrl = getBaseUrl();
       const url = `${baseUrl}/login`;
       setLoginUrl(url);
@@ -181,11 +199,16 @@ Hello ${newUser.firstName},
   
 You have been added to the Hospitality Intelligence team!
 
-You can login with these credentials:
-- Email: ${newUser.email}
-- Password: ${defaultPassword}
+**IMPORTANT - PLEASE COMPLETE THESE STEPS IN ORDER:**
 
-Please login at: ${url}
+1. First, check your inbox for a confirmation email from Supabase and click the confirmation link.
+   You MUST verify your email address before you can log in.
+
+2. After confirming your email, you can login with these credentials:
+   - Email: ${newUser.email}
+   - Password: ${defaultPassword}
+
+3. Login here: ${url}
 
 After logging in, we recommend:
 1. Completing your profile with additional information
@@ -237,11 +260,16 @@ Hello ${newUser.firstName},
   
 You have been added to the Hospitality Intelligence team!
 
-You can login with these credentials:
-- Email: ${newUser.email}
-- Password: hospitalityintelligence2025
+**IMPORTANT - PLEASE COMPLETE THESE STEPS IN ORDER:**
 
-Please login at: ${loginUrl}
+1. First, check your inbox for a confirmation email from Supabase and click the confirmation link.
+   You MUST verify your email address before you can log in.
+
+2. After confirming your email, you can login with these credentials:
+   - Email: ${newUser.email}
+   - Password: hospitalityintelligence2025
+
+3. Login here: ${loginUrl}
 
 After logging in, we recommend:
 1. Completing your profile with additional information
