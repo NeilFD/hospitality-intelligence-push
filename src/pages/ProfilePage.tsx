@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
@@ -101,33 +102,57 @@ const ProfilePage = () => {
     loadProfile();
   }, [id, currentUserProfile]);
 
+  // Clean up the canvas when component unmounts
   useEffect(() => {
-    // Clean up the canvas when component unmounts or when repositioning mode ends
     return () => {
       if (canvasRef.current) {
-        canvasRef.current.dispose();
-        canvasRef.current = null;
+        try {
+          // Properly dispose the canvas
+          canvasRef.current.dispose();
+          canvasRef.current = null;
+        } catch (e) {
+          console.error('Error disposing canvas:', e);
+        }
       }
     };
   }, []);
 
-  // Initialize canvas for image repositioning
+  // Initialize canvas for image repositioning - use a separate effect
   useEffect(() => {
-    if (isRepositioningBanner && canvasElRef.current && containerRef.current && profile?.banner_url) {
+    // Only create canvas when in repositioning mode
+    if (!isRepositioningBanner || !canvasElRef.current || !containerRef.current || !profile?.banner_url) {
+      return;
+    }
+    
+    // Clean up previous canvas instance first to avoid DOM conflicts
+    if (canvasRef.current) {
+      try {
+        canvasRef.current.dispose();
+      } catch (e) {
+        console.error('Error disposing canvas:', e);
+      }
+      canvasRef.current = null;
+    }
+    
+    try {
       // Set canvas dimensions to match container
       const container = containerRef.current;
       const containerWidth = container.clientWidth;
       const containerHeight = container.clientHeight;
       
-      // Create new canvas and set dimensions
-      canvasRef.current = new fabric.Canvas(canvasElRef.current, {
+      // Create new canvas
+      const canvas = new fabric.Canvas(canvasElRef.current, {
         width: containerWidth,
         height: containerHeight,
         selection: false,
       });
       
+      canvasRef.current = canvas;
+      
       // Load the banner image
       fabric.Image.fromURL(profile.banner_url, (img) => {
+        if (!canvas || !canvasRef.current) return; // Exit if canvas was disposed
+        
         // Scale image to fit width
         const scale = containerWidth / img.width!;
         img.scaleX = scale;
@@ -144,15 +169,29 @@ const ProfilePage = () => {
         img.top = yPosition || 0;
         
         // Add image to canvas
-        canvasRef.current?.add(img);
-        canvasRef.current?.setActiveObject(img);
+        canvas.add(img);
+        canvas.setActiveObject(img);
         
         // Update position state when image is moved
         img.on('moved', function() {
           setYPosition(img.top || 0);
         });
       });
+    } catch (e) {
+      console.error('Error initializing canvas:', e);
     }
+    
+    // Clean up function for this effect
+    return () => {
+      if (canvasRef.current) {
+        try {
+          canvasRef.current.dispose();
+          canvasRef.current = null;
+        } catch (e) {
+          console.error('Error disposing canvas on effect cleanup:', e);
+        }
+      }
+    };
   }, [isRepositioningBanner, profile?.banner_url, yPosition]);
 
   const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -279,6 +318,7 @@ const ProfilePage = () => {
   };
 
   const handleCancelRepositioning = () => {
+    // Safely exit repositioning mode
     setIsRepositioningBanner(false);
   };
 
