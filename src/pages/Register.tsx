@@ -25,13 +25,15 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  console.log("Register page loaded with query: ", location.search);
+  console.log("Register page loaded with URL:", window.location.href);
+  console.log("Register page query:", location.search);
   
   // Extract invitation token from URL if present
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const token = query.get('token');
-    console.log("Token from URL: ", token);
+    console.log("Token from URL:", token);
+    
     if (token) {
       setInvitationToken(token);
       fetchInvitationData(token);
@@ -52,35 +54,26 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     try {
       console.log("Fetching invitation data for token:", token);
       
-      // Try with retries to handle any network issues
-      let retries = 3;
-      let data = null;
-      let error = null;
+      // First, validate that the token format is correct
+      if (!token || token.length < 10) {
+        throw new Error('Invalid token format');
+      }
       
-      while (retries > 0 && !data) {
-        const result = await supabase
-          .from('user_invitations')
-          .select('*')
-          .eq('invitation_token', token)
-          .eq('is_claimed', false)
-          .maybeSingle();
-          
-        if (result.data) {
-          data = result.data;
-          break;
-        }
-        
-        error = result.error;
-        retries--;
-        
-        if (retries > 0) {
-          // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+      // Directly query the database with proper error handling
+      const { data, error: queryError } = await supabase
+        .from('user_invitations')
+        .select('*')
+        .eq('invitation_token', token)
+        .eq('is_claimed', false)
+        .maybeSingle();
+      
+      if (queryError) {
+        console.error("Database error:", queryError);
+        throw new Error('Error retrieving invitation data');
       }
       
       if (!data) {
-        console.error("Error fetching invitation data:", error);
+        console.log("No valid invitation found for token:", token);
         throw new Error('Invalid or expired invitation token');
       }
       
@@ -93,6 +86,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         return;
       }
       
+      // Set valid invitation data
       setInvitationData({
         email: data.email,
         firstName: data.first_name || '',
@@ -118,7 +112,11 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         .update({ is_claimed: true })
         .eq('invitation_token', invitationToken);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error marking invitation as claimed:', error);
+      } else {
+        console.log('Invitation successfully marked as claimed');
+      }
     } catch (error) {
       console.error('Error marking invitation as claimed:', error);
       // Continue anyway - this is not critical

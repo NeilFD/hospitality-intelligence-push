@@ -114,67 +114,66 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
+      const invitationToken = Array.from(
+        { length: 24 },
+        () => Math.floor(Math.random() * 36).toString(36)
+      ).join('');
+      
+      const baseUrl = window.location.origin;
+      console.log("Base URL for invitation:", baseUrl);
+      
       const { data: existingInvitation, error: checkError } = await supabase
         .from('user_invitations')
         .select('*')
         .eq('email', newUser.email)
         .maybeSingle();
         
-      if (checkError && checkError.code !== 'PGRST116') {
+      if (checkError) {
         console.error('Error checking for existing invitation:', checkError);
         throw new Error('Error checking for existing user');
       }
       
-      let invitationToken;
+      let usedToken;
       let invitationUrl;
       
       if (existingInvitation) {
-        invitationToken = existingInvitation.invitation_token;
-        invitationUrl = `${window.location.origin}/register?token=${invitationToken}`;
+        usedToken = existingInvitation.invitation_token;
+        invitationUrl = `${baseUrl}/register?token=${usedToken}`;
+        
+        console.log("Using existing invitation with token:", usedToken);
+        console.log("Full invitation URL:", invitationUrl);
         
         toast.info(`An invitation for ${newUser.email} already exists. Reusing existing invitation.`);
       } else {
-        invitationToken = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
-                         
-        console.log("Creating new user with data:", {
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          role: newUser.role,
-          jobTitle: newUser.jobTitle,
-          created_by: currentUserProfile?.id,
-          invitationToken
-        });
-
-        const { data, error: sendInviteError } = await supabase.functions.invoke('send-user-invitation', {
-          body: {
+        usedToken = invitationToken;
+        
+        const { error: insertError } = await supabase
+          .from('user_invitations')
+          .insert({
             email: newUser.email,
-            firstName: newUser.firstName,
-            lastName: newUser.lastName,
-            invitationToken: invitationToken,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
             role: newUser.role,
-            jobTitle: newUser.jobTitle,
-            created_by: currentUserProfile?.id
-          }
-        });
+            job_title: newUser.jobTitle,
+            created_by: currentUserProfile?.id,
+            invitation_token: invitationToken,
+            is_claimed: false,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          });
           
-        if (sendInviteError) {
-          console.error('Error sending invitation:', sendInviteError);
-          throw new Error('Failed to send invitation email');
+        if (insertError) {
+          console.error('Error creating invitation:', insertError);
+          throw new Error('Failed to create user invitation');
         }
         
-        console.log("Invitation send result:", data);
-        
-        invitationUrl = data.invitationUrl || `${window.location.origin}/register?token=${invitationToken}`;
+        invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
+        console.log("Created new invitation URL:", invitationUrl);
         
         toast.success(`New user invitation created for: ${newUser.firstName} ${newUser.lastName}`);
       }
       
       setInvitationLink(invitationUrl);
-      
       setIsShareLinkDialogOpen(true);
-      
       setIsAddUserDialogOpen(false);
       
       fetchTeamMembers();
