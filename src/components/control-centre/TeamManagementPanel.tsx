@@ -196,36 +196,52 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user.id);
       
-      // Directly create the profile using a simplified approach
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userData.user.id,
-          first_name: newUser.firstName,
-          last_name: newUser.lastName,
-          role: newUser.role,
-          job_title: newUser.jobTitle || ''
-        });
-        
-      if (insertError) {
-        console.error('Error creating profile directly:', insertError);
-        
-        // Fallback: Try using the manual function as a last resort
-        const { error: functionError } = await supabase.rpc(
-          'handle_new_user_manual',
-          {
-            user_id: userData.user.id,
-            first_name_val: newUser.firstName,
-            last_name_val: newUser.lastName,
-            role_val: newUser.role
+      // Create profile - try multiple approaches
+      let profileCreated = false;
+      
+      // Approach 1: Direct insert with minimal fields
+      try {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userData.user.id,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || ''
+          });
+          
+        if (!insertError) {
+          console.log('Profile created successfully with direct insert');
+          profileCreated = true;
+        } else {
+          console.error('Direct profile insert failed:', insertError);
+        }
+      } catch (error) {
+        console.error('Error in direct profile creation:', error);
+      }
+      
+      // Approach 2: Use handle_new_user_manual function if direct insert failed
+      if (!profileCreated) {
+        try {
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'handle_new_user_manual',
+            {
+              user_id: userData.user.id,
+              first_name_val: newUser.firstName,
+              last_name_val: newUser.lastName,
+              role_val: newUser.role
+            }
+          );
+          
+          if (!rpcError && rpcResult === true) {
+            console.log('Profile created successfully with RPC function');
+            profileCreated = true;
+          } else {
+            console.error('Profile creation failed with RPC function:', rpcError);
           }
-        );
-        
-        if (functionError) {
-          console.error('Error using handle_new_user_manual function:', functionError);
-          toast.error('Profile creation failed. Please contact support.');
-          setCreateUserLoading(false);
-          return;
+        } catch (error) {
+          console.error('Error in RPC profile creation:', error);
         }
       }
       

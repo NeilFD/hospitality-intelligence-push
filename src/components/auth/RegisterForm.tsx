@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,35 +59,55 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     try {
       console.log('Creating profile directly for user:', userId);
       
-      const { error } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          role: userData.role || 'Team Member',
-          job_title: userData.job_title || ''
-        });
+      // Approach 1: Direct insert with minimal fields
+      let profileCreated = false;
       
-      if (error) {
-        console.error('Direct profile insertion failed:', error);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            role: userData.role || 'Team Member',
+            job_title: userData.job_title || ''
+          });
         
-        const { error: funcError } = await supabase.rpc(
-          'handle_new_user_manual',
-          {
-            user_id: userId,
-            first_name_val: userData.first_name,
-            last_name_val: userData.last_name,
-            role_val: userData.role || 'Team Member'
+        if (!error) {
+          console.log('Profile created successfully with direct insert');
+          profileCreated = true;
+        } else {
+          console.error('Direct profile insertion failed:', error);
+        }
+      } catch (insertErr) {
+        console.error('Exception during direct profile insertion:', insertErr);
+      }
+      
+      // Approach 2: Try RPC function if direct insert failed
+      if (!profileCreated) {
+        try {
+          const { data: rpcResult, error: funcError } = await supabase.rpc(
+            'handle_new_user_manual',
+            {
+              user_id: userId,
+              first_name_val: userData.first_name,
+              last_name_val: userData.last_name,
+              role_val: userData.role || 'Team Member'
+            }
+          );
+          
+          if (!funcError && rpcResult === true) {
+            console.log('Profile created successfully with RPC function');
+            profileCreated = true;
+          } else {
+            console.error('Manual profile creation failed:', funcError);
           }
-        );
-        
-        if (funcError) {
-          console.error('Manual profile creation failed:', funcError);
-          return false;
+        } catch (rpcErr) {
+          console.error('Exception during RPC profile creation:', rpcErr);
         }
       }
       
+      // Verify profile creation
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')

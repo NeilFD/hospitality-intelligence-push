@@ -1,4 +1,5 @@
 
+
 -- Function to manually create a profile for a user when other methods fail
 CREATE OR REPLACE FUNCTION public.handle_new_user_manual(
   user_id UUID,
@@ -42,3 +43,4 @@ EXCEPTION
     RETURN FALSE;
 END;
 $$;
+
