@@ -227,7 +227,7 @@ const TeamManagementPanel: React.FC = () => {
                 id: userData.user.id,
                 first_name: newUser.firstName,
                 last_name: newUser.lastName,
-                role: newUser.role,
+                role: newUser.role as UserRoleType,
                 job_title: newUser.jobTitle || ''
               });
               
@@ -249,15 +249,18 @@ const TeamManagementPanel: React.FC = () => {
             
           if (!verifyProfile) {
             console.error('Profile verification failed - still not created for user:', userData.user.id);
-            // Make one last attempt using a different approach
+            // Make one last attempt using a different approach with raw SQL query
             try {
-              const { error: finalAttemptError } = await supabase.rpc('create_profile_for_user', { 
-                user_id: userData.user.id,
-                first_name_val: newUser.firstName,
-                last_name_val: newUser.lastName,
-                role_val: newUser.role,
-                job_title_val: newUser.jobTitle || ''
-              });
+              const { error: finalAttemptError } = await supabase.rpc(
+                'create_profile_for_user' as any, 
+                { 
+                  user_id: userData.user.id,
+                  first_name_val: newUser.firstName,
+                  last_name_val: newUser.lastName,
+                  role_val: newUser.role,
+                  job_title_val: newUser.jobTitle || ''
+                }
+              );
               
               if (finalAttemptError) {
                 console.error('Final profile creation attempt failed:', finalAttemptError);
