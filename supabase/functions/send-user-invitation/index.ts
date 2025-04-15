@@ -17,8 +17,8 @@ interface InvitationRequest {
   created_by?: string;
 }
 
-// Define default site URL to be used as fallback
-const DEFAULT_SITE_URL = "https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com";
+// Fix: Use absolute URL instead of relative URL
+const SITE_URL = "https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com";
 
 serve(async (req) => {
   console.log("Received request:", req.method, req.url);
@@ -82,28 +82,23 @@ serve(async (req) => {
       throw new Error('Failed to check existing invitations');
     }
     
-    // Get the site URL for the registration link, with fallback to default
-    const siteUrl = Deno.env.get('SITE_URL') || DEFAULT_SITE_URL;
-    console.log("Using site URL:", siteUrl);
+    // Fix: Use hardcoded SITE_URL for absolute certainty in links
+    const siteUrl = SITE_URL;
+    console.log("Using fixed site URL:", siteUrl);
     
     // If invitation already exists, return a specific error message
     if (existingInvitation && existingInvitation.length > 0) {
       console.log("Found existing invitation for email:", email);
       
-      // Get the site URL for the registration link
-      if (!siteUrl) {
-        console.error("Site URL is not defined, using default");
-      }
-      
       // Resend the invitation using the existing token
       const existingToken = existingInvitation[0].invitation_token;
-      const invitationUrl = `${siteUrl}/register?token=${existingToken}`;
       
-      // Build the direct registration link - avoid any redirects
-      const exactRegistrationUrl = invitationUrl;
+      // Fix: Ensure we're using a complete absolute URL with domain 
+      const invitationUrl = `${siteUrl}/register?token=${existingToken}`;
+      console.log("Generated absolute invitation URL:", invitationUrl);
       
       // Actually send the email here
-      const emailResult = await sendInvitationEmail(email, firstName, exactRegistrationUrl);
+      const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
       
       if (emailResult.error) {
         console.warn(`Failed to send invitation email: ${emailResult.error}`);
@@ -120,15 +115,12 @@ serve(async (req) => {
       );
     }
     
-    // Construct the invitation URL
+    // Fix: Ensure we're using a complete absolute URL with domain
     const invitationUrl = `${siteUrl}/register?token=${invitationToken}`;
-    console.log("Generated invitation URL:", invitationUrl);
-    
-    // Build the direct registration link - avoid any redirects
-    const exactRegistrationUrl = invitationUrl;
+    console.log("Generated absolute invitation URL:", invitationUrl);
     
     // Send the actual invitation email
-    const emailResult = await sendInvitationEmail(email, firstName, exactRegistrationUrl);
+    const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
     
     if (emailResult.error) {
       console.warn(`Warning: Issue with email sending: ${emailResult.error}`);
@@ -205,7 +197,7 @@ async function sendInvitationEmail(
       const { data: userData, error: userError } = await supabase.auth.admin.inviteUserByEmail(
         toEmail,
         {
-          // Set the EXACT URL for registration - this avoids any redirect issues
+          // Fix: Ensure we have a proper absolute URL that won't be transformed
           redirectTo: invitationUrl,
           data: {
             firstName,

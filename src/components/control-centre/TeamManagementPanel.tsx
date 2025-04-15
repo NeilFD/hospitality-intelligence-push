@@ -166,7 +166,7 @@ const TeamManagementPanel: React.FC = () => {
         
         console.log("Invitation send result:", data);
         
-        invitationUrl = `${window.location.origin}/register?token=${invitationToken}`;
+        invitationUrl = data.invitationUrl || `${window.location.origin}/register?token=${invitationToken}`;
         
         toast.success(`New user invitation created for: ${newUser.firstName} ${newUser.lastName}`);
       }
