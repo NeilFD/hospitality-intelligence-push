@@ -5,12 +5,22 @@ import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera } from 'lucide-react';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X } from 'lucide-react';
 import { useAuthStore } from '@/services/auth-service';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -18,6 +28,16 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    jobTitle: '',
+    favouriteDish: '',
+    favouriteDrink: '',
+    aboutMe: '',
+    birthDate: ''
+  });
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -41,6 +61,19 @@ const ProfilePage = () => {
         }
         
         setProfile(profileToLoad);
+        
+        // Initialize edit form with current values
+        if (profileToLoad) {
+          setEditForm({
+            firstName: profileToLoad.first_name || '',
+            lastName: profileToLoad.last_name || '',
+            jobTitle: profileToLoad.job_title || '',
+            favouriteDish: profileToLoad.favourite_dish || '',
+            favouriteDrink: profileToLoad.favourite_drink || '',
+            aboutMe: profileToLoad.about_me || '',
+            birthDate: profileToLoad.birth_date || ''
+          });
+        }
       } catch (error) {
         console.error('Error loading profile:', error);
         toast.error('Failed to load profile');
@@ -94,6 +127,81 @@ const ProfilePage = () => {
       toast.error('Failed to upload banner image');
     } finally {
       setUploadingBanner(false);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    // Reset form to current profile values
+    if (profile) {
+      setEditForm({
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        jobTitle: profile.job_title || '',
+        favouriteDish: profile.favourite_dish || '',
+        favouriteDrink: profile.favourite_drink || '',
+        aboutMe: profile.about_me || '',
+        birthDate: profile.birth_date || ''
+      });
+    }
+    setIsEditing(false);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editForm.firstName,
+          last_name: editForm.lastName,
+          job_title: editForm.jobTitle,
+          favourite_dish: editForm.favouriteDish,
+          favourite_drink: editForm.favouriteDrink,
+          about_me: editForm.aboutMe,
+          birth_date: editForm.birthDate
+        })
+        .eq('id', profile.id);
+        
+      if (error) throw error;
+      
+      // Update local profile state
+      setProfile({
+        ...profile,
+        first_name: editForm.firstName,
+        last_name: editForm.lastName,
+        job_title: editForm.jobTitle,
+        favourite_dish: editForm.favouriteDish,
+        favourite_drink: editForm.favouriteDrink,
+        about_me: editForm.aboutMe,
+        birth_date: editForm.birthDate
+      });
+      
+      setIsEditing(false);
+      toast.success('Profile updated successfully');
+      
+      // Update the auth store if this is the current user's profile
+      if (!id && currentUserProfile) {
+        useAuthStore.setState({
+          profile: {
+            ...currentUserProfile,
+            first_name: editForm.firstName,
+            last_name: editForm.lastName,
+            job_title: editForm.jobTitle,
+            favourite_dish: editForm.favouriteDish,
+            favourite_drink: editForm.favouriteDrink,
+            about_me: editForm.aboutMe,
+            birth_date: editForm.birthDate
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
     }
   };
 
@@ -179,7 +287,7 @@ const ProfilePage = () => {
             <Tabs defaultValue="about" className="mt-2">
               <TabsList className="mb-6">
                 <TabsTrigger value="about">About</TabsTrigger>
-                {isCurrentUser && <TabsTrigger value="settings">Settings</TabsTrigger>}
+                {isCurrentUser && <TabsTrigger value="settings">Edit Profile</TabsTrigger>}
               </TabsList>
               
               <TabsContent value="about">
@@ -229,13 +337,91 @@ const ProfilePage = () => {
               
               {isCurrentUser && (
                 <TabsContent value="settings">
-                  <div className="text-center py-8">
-                    <MessageSquare className="h-12 w-12 text-hi-purple-light/50 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Profile Settings</h3>
-                    <p className="text-gray-500 max-w-md mx-auto">
-                      Profile settings are available in the Control Centre. Please contact your system administrator
-                      for assistance in updating your profile information.
-                    </p>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input 
+                          id="firstName" 
+                          value={editForm.firstName}
+                          onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                          placeholder="First name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input 
+                          id="lastName" 
+                          value={editForm.lastName}
+                          onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                          placeholder="Last name"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="jobTitle">Job Title</Label>
+                      <Input 
+                        id="jobTitle" 
+                        value={editForm.jobTitle}
+                        onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
+                        placeholder="e.g. Head Chef, Server, Manager"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="birthDate">Birthday (MM-DD)</Label>
+                      <Input 
+                        id="birthDate" 
+                        value={editForm.birthDate}
+                        onChange={(e) => setEditForm({...editForm, birthDate: e.target.value})}
+                        placeholder="MM-DD (e.g. 05-15)"
+                      />
+                      <p className="text-sm text-muted-foreground">Format: MM-DD (e.g. 05-15)</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="favouriteDish">Favourite Dish</Label>
+                      <Input 
+                        id="favouriteDish" 
+                        value={editForm.favouriteDish}
+                        onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
+                        placeholder="What's your favourite dish?"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="favouriteDrink">Favourite Drink</Label>
+                      <Input 
+                        id="favouriteDrink" 
+                        value={editForm.favouriteDrink}
+                        onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
+                        placeholder="What's your favourite drink?"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="aboutMe">About Me</Label>
+                      <Textarea 
+                        id="aboutMe" 
+                        value={editForm.aboutMe}
+                        onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
+                        placeholder="Tell us a bit about yourself..."
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleCancelEdit}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveProfile}>
+                        Save Changes
+                      </Button>
+                    </div>
                   </div>
                 </TabsContent>
               )}
