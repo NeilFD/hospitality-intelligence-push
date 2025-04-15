@@ -87,10 +87,14 @@ const ProfilePage = () => {
 
   const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !profile) return;
+    if (!file || !profile) {
+      console.log("No file selected or profile not loaded");
+      return;
+    }
 
     try {
       setUploadingBanner(true);
+      console.log("Uploading banner image:", file.name);
       
       // Upload the file to Supabase storage
       const fileExt = file.name.split('.').pop();
@@ -104,12 +108,19 @@ const ProfilePage = () => {
           upsert: true
         });
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+      
+      console.log("File uploaded successfully:", uploadData);
       
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
         .getPublicUrl(`${profile.id}/${fileName}`);
+      
+      console.log("Public URL:", publicUrl);
         
       // Update the profile with the banner URL
       const { error: updateError } = await supabase
@@ -117,7 +128,12 @@ const ProfilePage = () => {
         .update({ banner_url: publicUrl })
         .eq('id', profile.id);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Profile update error:", updateError);
+        throw updateError;
+      }
+      
+      console.log("Profile updated with new banner URL");
       
       // Update the local profile state
       setProfile({
@@ -131,6 +147,10 @@ const ProfilePage = () => {
       toast.error('Failed to upload banner image');
     } finally {
       setUploadingBanner(false);
+      // Clear the input value to allow uploading the same file again
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
