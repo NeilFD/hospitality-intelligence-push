@@ -250,10 +250,11 @@ const ProfilePage = () => {
       }
       
       // Update local profile state with new position
-      setProfile({
-        ...profile,
+      setProfile(prevProfile => prevProfile ? {
+        ...prevProfile,
         banner_position_y: yPos
-      });
+      } : null);
+      
       setYPosition(yPos);
       setIsRepositioningBanner(false);
       toast.success('Banner position updated');

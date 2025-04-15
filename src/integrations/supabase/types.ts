@@ -686,6 +686,7 @@ export type Database = {
         Row: {
           about_me: string | null
           avatar_url: string | null
+          banner_position_y: number | null
           banner_url: string | null
           birth_date: string | null
           birth_date_month: string | null
@@ -703,6 +704,7 @@ export type Database = {
         Insert: {
           about_me?: string | null
           avatar_url?: string | null
+          banner_position_y?: number | null
           banner_url?: string | null
           birth_date?: string | null
           birth_date_month?: string | null
@@ -720,6 +722,7 @@ export type Database = {
         Update: {
           about_me?: string | null
           avatar_url?: string | null
+          banner_position_y?: number | null
           banner_url?: string | null
           birth_date?: string | null
           birth_date_month?: string | null
