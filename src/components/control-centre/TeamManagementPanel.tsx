@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -65,6 +64,7 @@ const TeamManagementPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [invitationLoading, setInvitationLoading] = useState(false);
   
   const [newUser, setNewUser] = useState({
     email: '',
@@ -118,6 +118,8 @@ const TeamManagementPanel: React.FC = () => {
         toast.error('Please fill in all required fields');
         return;
       }
+      
+      setInvitationLoading(true);
       
       const invitationToken = Math.random().toString(36).substring(2, 15) + 
                              Math.random().toString(36).substring(2, 15);
@@ -178,12 +180,7 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
-      if (!response.ok) {
-        if (response.status === 409 && responseData.existingInvitation) {
-          toast.error('An invitation has already been sent to this email address');
-          return;
-        }
-        
+      if (!response.ok && !responseData.existingInvitation) {
         throw new Error(responseData.error || 'Failed to send invitation');
       }
       
@@ -199,11 +196,17 @@ const TeamManagementPanel: React.FC = () => {
       
       fetchTeamMembers();
       
-      toast.success(`An invitation has been sent to ${newUser.email}`);
+      if (responseData.existingInvitation) {
+        toast.success(`Invitation has been resent to ${newUser.email}`);
+      } else {
+        toast.success(`An invitation has been sent to ${newUser.email}`);
+      }
       
     } catch (error) {
       console.error('Error inviting user:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to invite user');
+    } finally {
+      setInvitationLoading(false);
     }
   };
   
@@ -555,9 +558,12 @@ const TeamManagementPanel: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button onClick={handleAddUser}>
+            <Button 
+              onClick={handleAddUser}
+              disabled={invitationLoading}
+            >
               <Mail className="mr-2 h-4 w-4" />
-              Send Invitation
+              {invitationLoading ? 'Sending...' : 'Send Invitation'}
             </Button>
           </DialogFooter>
         </DialogContent>
