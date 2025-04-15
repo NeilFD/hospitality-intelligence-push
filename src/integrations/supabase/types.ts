@@ -1546,13 +1546,22 @@ export type Database = {
         Returns: boolean
       }
       create_profile_for_user: {
-        Args: {
-          user_id: string
-          first_name_val: string
-          last_name_val: string
-          role_val: string
-          job_title_val: string
-        }
+        Args:
+          | {
+              user_id: string
+              first_name_val: string
+              last_name_val: string
+              role_val: string
+              job_title_val: string
+            }
+          | {
+              user_id: string
+              first_name_val: string
+              last_name_val: string
+              role_val: string
+              job_title_val: string
+              email_val: string
+            }
         Returns: boolean
       }
       duplicate_database_structure: {

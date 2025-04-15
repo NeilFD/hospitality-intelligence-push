@@ -147,7 +147,7 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      // Check if user with this email already exists in profiles
+      // Check if user with this email already exists
       const { data: existingProfiles, error: profileCheckError } = await supabase
         .from('profiles')
         .select('email')
@@ -162,15 +162,7 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
-      console.log('Creating auth user with metadata:', {
-        first_name: newUser.firstName,
-        last_name: newUser.lastName,
-        role: newUser.role,
-        job_title: newUser.jobTitle || '',
-        email: newUser.email
-      });
-      
-      // Create the user in Auth
+      // Create the auth user
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
         password: 'hospitalityintelligence2025',
@@ -186,21 +178,7 @@ const TeamManagementPanel: React.FC = () => {
       });
       
       if (signUpError) {
-        console.error('Signup Error Details:', signUpError);
-        
-        if (signUpError.message.includes('User already registered')) {
-          // If user is already registered, just show the invitation dialog
-          toast.info('User already has an account. Invitation link updated.');
-          
-          // Set login URL for the share dialog
-          const baseUrl = getBaseUrl();
-          setLoginUrl(`${baseUrl}/login`);
-          
-          setIsShareLinkDialogOpen(true);
-          setCreateUserLoading(false);
-          return;
-        }
-        
+        console.error('Signup Error:', signUpError);
         toast.error(`User creation failed: ${signUpError.message}`);
         setCreateUserLoading(false);
         return;
@@ -212,115 +190,40 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
-      console.log('User created successfully:', userData.user);
-      console.log('User ID:', userData.user.id);
-      
-      // Set login URL for the share dialog
-      const baseUrl = getBaseUrl();
-      setLoginUrl(`${baseUrl}/login`);
-      
-      // Create the profile immediately using multiple approaches for reliability
-      try {
-        // Direct insert first
-        console.log("Attempting direct profile insertion for user:", userData.user.id);
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userData.user.id,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || '',
-            email: newUser.email
-          });
-          
-        if (insertError) {
-          console.error('Direct profile insertion failed:', insertError);
-          
-          // Fall back to RPC
-          console.log("Falling back to RPC function for profile creation");
-          const { data: rpcResult, error: rpcError } = await supabase.rpc(
-            'create_profile_for_user',
-            {
-              user_id: userData.user.id,
-              first_name_val: newUser.firstName,
-              last_name_val: newUser.lastName,
-              role_val: newUser.role,
-              job_title_val: newUser.jobTitle || '',
-              email_val: newUser.email
-            }
-          );
-          
-          if (rpcError) {
-            console.error('RPC profile creation failed:', rpcError);
-            console.log("Both profile creation methods failed. Creating a delay and trying again...");
-            
-            // Final attempt with delay
-            setTimeout(async () => {
-              const { error: finalAttemptError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: userData.user.id,
-                  first_name: newUser.firstName,
-                  last_name: newUser.lastName,
-                  role: newUser.role,
-                  job_title: newUser.jobTitle || '',
-                  email: newUser.email
-                });
-                
-              if (finalAttemptError) {
-                console.error('Final profile creation attempt failed:', finalAttemptError);
-                toast.error('Profile creation failed. Please try again.');
-              } else {
-                console.log('Final profile creation attempt succeeded');
-                toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
-              }
-            }, 2000);
-          } else {
-            console.log('RPC profile creation succeeded:', rpcResult);
-            toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
-          }
-        } else {
-          console.log('Direct profile insertion succeeded');
-          toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+      // Create profile using RPC function
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'create_profile_for_user',
+        {
+          user_id: userData.user.id,
+          first_name_val: newUser.firstName,
+          last_name_val: newUser.lastName,
+          role_val: newUser.role,
+          job_title_val: newUser.jobTitle || '',
+          email_val: newUser.email
         }
+      );
+      
+      if (rpcError) {
+        console.error('Profile creation failed:', rpcError);
+        toast.error('Profile creation failed. Please try again.');
+      } else {
+        toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
         
-        // Verify the profile was created
-        const { data: verifyProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userData.user.id)
-          .maybeSingle();
-          
-        if (verifyProfile) {
-          console.log('Profile verified:', verifyProfile);
-        } else {
-          console.warn('Profile verification failed after creation attempts');
-          toast.warning('User created but profile may be incomplete. You may need to add profile details manually.');
-        }
+        // Set login URL for share dialog
+        const baseUrl = window.location.origin;
+        setLoginUrl(`${baseUrl}/login`);
         
-        // Open share dialog to send invitation
+        // Open share dialog
         setIsShareLinkDialogOpen(true);
         
-        // Refresh team members and reset form
-        fetchTeamMembers();
-        setIsAddUserDialogOpen(false);
-        
-      } catch (profileError) {
-        console.error('Error in profile creation process:', profileError);
-        toast.error('Error in profile creation, but user account was created');
-        
-        // Still open share dialog
-        setIsShareLinkDialogOpen(true);
-        
-        // Still refresh the list and reset form
+        // Refresh team members list
         fetchTeamMembers();
         setIsAddUserDialogOpen(false);
       }
       
     } catch (error) {
       console.error('Unexpected error in user creation:', error);
-      toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
+      toast.error('An unexpected error occurred');
     } finally {
       setCreateUserLoading(false);
     }
