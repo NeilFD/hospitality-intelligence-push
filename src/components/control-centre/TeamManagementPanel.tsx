@@ -198,44 +198,68 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user);
       
-      // Create profile directly to ensure it exists
-      if (userData.user.id) {
+      // CRITICAL FIX: Create profile directly with inserted values instead of relying on trigger
+      // Use a small delay to allow auth to complete first
+      setTimeout(async () => {
         try {
-          const { data: profileCheck, error: checkError } = await supabase
+          // First check if the profile already exists (don't duplicate)
+          const { data: existingProfile, error: checkError } = await supabase
             .from('profiles')
             .select('id')
             .eq('id', userData.user.id)
             .maybeSingle();
             
-          if (checkError) {
+          if (checkError && checkError.code !== 'PGRST116') {
             console.error('Error checking profile existence:', checkError);
           }
           
-          if (!profileCheck) {
-            console.log('Profile not found after user creation, creating manually...');
+          // Only create profile if it doesn't exist
+          if (!existingProfile) {
+            console.log('Creating profile manually for user:', userData.user.id);
             
-            const { error: upsertError } = await supabase
+            const { data: newProfile, error: createProfileError } = await supabase
               .from('profiles')
-              .upsert({
+              .insert({
                 id: userData.user.id,
                 first_name: newUser.firstName,
                 last_name: newUser.lastName,
-                role: newUser.role as any,
+                role: newUser.role,
                 job_title: newUser.jobTitle || ''
-              });
+              })
+              .select();
               
-            if (upsertError) {
-              console.error('Error creating profile manually:', upsertError);
+            if (createProfileError) {
+              console.error('Error creating profile manually:', createProfileError);
+              
+              // If insert fails, try upsert as fallback
+              const { error: upsertError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: userData.user.id,
+                  first_name: newUser.firstName,
+                  last_name: newUser.lastName,
+                  role: newUser.role,
+                  job_title: newUser.jobTitle || ''
+                });
+                
+              if (upsertError) {
+                console.error('Error upserting profile:', upsertError);
+              } else {
+                console.log('Profile created via upsert');
+              }
             } else {
-              console.log('Profile created manually');
+              console.log('Profile created successfully:', newProfile);
             }
           } else {
-            console.log('Profile exists:', profileCheck);
+            console.log('Profile already exists for user:', userData.user.id);
           }
+          
+          // Refresh the team members list after creating the profile
+          fetchTeamMembers();
         } catch (profileError) {
-          console.error('Error in manual profile creation:', profileError);
+          console.error('Exception in profile creation:', profileError);
         }
-      }
+      }, 500);
       
       const baseUrl = getBaseUrl();
       const url = `${baseUrl}/register?token=${invitationToken}`;
@@ -269,7 +293,6 @@ The Hospitality Intelligence Team
       setIsAddUserDialogOpen(false);
       toast.success(`New user created: ${newUser.firstName} ${newUser.lastName}`);
       
-      fetchTeamMembers();
     } catch (error) {
       console.error('Error creating user:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create user');
@@ -932,71 +955,4 @@ The Hospitality Intelligence Team
               <Label htmlFor="editFavouriteDish">Favourite Dish</Label>
               <Input 
                 id="editFavouriteDish" 
-                value={editForm.favouriteDish}
-                onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
-                placeholder="What's their favourite dish?"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editFavouriteDrink">Favourite Drink</Label>
-              <Input 
-                id="editFavouriteDrink" 
-                value={editForm.favouriteDrink}
-                onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
-                placeholder="What's their favourite drink?"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editAboutMe">About Me</Label>
-              <Textarea 
-                id="editAboutMe" 
-                value={editForm.aboutMe}
-                onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
-                placeholder="Tell us a bit about them..."
-                className="min-h-[100px]"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditUserDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEditUser}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete {selectedUser?.first_name} {selectedUser?.last_name}'s
-              account and remove their data from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteUser}
-              disabled={deleteLoading}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteLoading ? "Deleting..." : "Delete User"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-};
-
-export default TeamManagementPanel;
+                value
