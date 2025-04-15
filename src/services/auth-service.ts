@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,7 +63,7 @@ export const useAuthStore = create<AuthState>()(
               .select('*')
               .eq('id', user.id)
               .single();
-            
+              
             if (profileError && profileError.code !== 'PGRST116') {
               console.error('Error fetching profile:', profileError);
               
