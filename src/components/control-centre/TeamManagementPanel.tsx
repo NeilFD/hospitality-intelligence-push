@@ -172,46 +172,57 @@ const TeamManagementPanel: React.FC = () => {
       console.log('User created successfully:', userData.user);
       
       if (userData.user.id) {
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userData.user.id)
-          .maybeSingle();
-          
-        if (!existingProfile) {
-          const { error: insertError } = await supabase
+        try {
+          const { data: existingProfile, error: profileCheckError } = await supabase
             .from('profiles')
-            .insert({
-              id: userData.user.id,
-              first_name: newUser.firstName,
-              last_name: newUser.lastName,
-              role: newUser.role as any,
-              job_title: newUser.jobTitle || ''
-            });
+            .select('*')
+            .eq('id', userData.user.id)
+            .single();
             
-          if (insertError) {
-            console.error('Error creating profile with insert:', insertError);
-            
-            const { error: upsertError } = await supabase
+          if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+            console.error('Error checking for existing profile:', profileCheckError);
+          }
+          
+          if (!existingProfile) {
+            const { data: insertData, error: insertError } = await supabase
               .from('profiles')
-              .upsert({
+              .insert({
                 id: userData.user.id,
                 first_name: newUser.firstName,
                 last_name: newUser.lastName,
                 role: newUser.role as any,
                 job_title: newUser.jobTitle || ''
-              });
+              })
+              .select();
               
-            if (upsertError) {
-              console.error('Error creating profile with upsert:', upsertError);
+            if (insertError) {
+              console.error('Error creating profile with insert:', insertError);
+              
+              const { data: upsertData, error: upsertError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: userData.user.id,
+                  first_name: newUser.firstName,
+                  last_name: newUser.lastName,
+                  role: newUser.role as any,
+                  job_title: newUser.jobTitle || ''
+                })
+                .select();
+                
+              if (upsertError) {
+                console.error('Error creating profile with upsert:', upsertError);
+                throw new Error('Failed to create user profile');
+              } else {
+                console.log('Profile created via upsert:', upsertData);
+              }
             } else {
-              console.log('Profile created via upsert for user:', userData.user.id);
+              console.log('Profile created via insert:', insertData);
             }
           } else {
-            console.log('Profile created via insert for user:', userData.user.id);
+            console.log('Profile already exists for user:', existingProfile);
           }
-        } else {
-          console.log('Profile already exists for user:', userData.user.id);
+        } catch (profileError) {
+          console.error('Error in profile creation process:', profileError);
         }
       }
       
