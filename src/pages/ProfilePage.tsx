@@ -1,379 +1,178 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useAuthStore, AuthServiceRole } from '@/services/auth-service';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare } from 'lucide-react';
+import { useAuthStore } from '@/services/auth-service';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export default function ProfilePage() {
-  const { profile, user, updateProfile } = useAuthStore();
-  const [firstName, setFirstName] = useState(profile?.first_name || '');
-  const [lastName, setLastName] = useState(profile?.last_name || '');
-  const [jobTitle, setJobTitle] = useState(profile?.job_title || '');
-  const [about, setAbout] = useState(profile?.about_me || '');
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
-  const [favoriteDish, setFavoriteDish] = useState(profile?.favourite_dish || '');
-  const [favoriteDrink, setFavoriteDrink] = useState(profile?.favourite_drink || '');
-  const [role, setRole] = useState<AuthServiceRole>(profile?.role as AuthServiceRole || 'Team Member');
-  const [isSaving, setIsSaving] = useState(false);
-  
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
+const ProfilePage = () => {
+  const { id } = useParams();
+  const { profile: currentUserProfile } = useAuthStore();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (profile) {
-      setFirstName(profile.first_name || '');
-      setLastName(profile.last_name || '');
-      setJobTitle(profile.job_title || '');
-      setAbout(profile.about_me || '');
-      setAvatarUrl(profile.avatar_url || '');
-      setFavoriteDish(profile.favourite_dish || '');
-      setFavoriteDrink(profile.favourite_drink || '');
-      setRole(profile.role as AuthServiceRole || 'Team Member');
-    }
-  }, [profile]);
-  
-  const getUserInitials = () => {
-    if (!firstName && !lastName) return 'U';
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-  
-  const handleSaveProfile = async () => {
-    if (!profile) return;
+    const loadProfile = async () => {
+      setLoading(true);
+      try {
+        let profileToLoad;
+        
+        if (id) {
+          // Load another user's profile
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', id)
+            .single();
+            
+          if (error) throw error;
+          profileToLoad = data;
+        } else {
+          // Load current user's profile
+          profileToLoad = currentUserProfile;
+        }
+        
+        setProfile(profileToLoad);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        toast.error('Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    setIsSaving(true);
-    try {
-      await updateProfile({
-        first_name: firstName,
-        last_name: lastName,
-        job_title: jobTitle,
-        about_me: about,
-        avatar_url: avatarUrl,
-        favourite_dish: favoriteDish,
-        favourite_drink: favoriteDrink,
-        role
-      });
-      toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    loadProfile();
+  }, [id, currentUserProfile]);
 
-  const handleChangePassword = async () => {
-    if (!currentPassword) {
-      toast.error('Current password is required');
-      return;
-    }
-    
-    if (!newPassword) {
-      toast.error('New password is required');
-      return;
-    }
-    
-    if (newPassword !== confirmPassword) {
-      toast.error('New passwords do not match');
-      return;
-    }
-    
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-    
-    setIsChangingPassword(true);
-    
-    try {
-      if (user?.id === 'dev-god-user') {
-        const devGodPassword = localStorage.getItem('dev-god-password') || 'password123';
-        
-        if (currentPassword !== devGodPassword) {
-          toast.error('Current password is incorrect');
-          setIsChangingPassword(false);
-          return;
-        }
-        
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
-            password_hash: await supabase.rpc('crypt', [newPassword, supabase.rpc('gen_salt', ['bf'])])
-          })
-          .eq('id', user.id);
-        
-        if (updateError) {
-          console.error('Error updating password hash:', updateError);
-          toast.error('Failed to update password');
-          setIsChangingPassword(false);
-          return;
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 800));
-        toast.success('Password updated successfully (Development mode)');
-        
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        
-        setIsChangingPassword(false);
-        return;
-      }
-      
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      const { error: hashUpdateError } = await supabase
-        .from('profiles')
-        .update({ 
-          password_hash: await supabase.rpc('crypt', [newPassword, supabase.rpc('gen_salt', ['bf'])])
-        })
-        .eq('id', user?.id);
-      
-      if (hashUpdateError) {
-        console.error('Error storing password hash:', hashUpdateError);
-        toast.error('Error storing password details');
-      }
-      
-      toast.success('Password updated successfully');
-      
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (error: any) {
-      console.error('Error changing password:', error);
-      toast.error(error.message || 'Failed to change password');
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[70vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-hi-purple"></div>
+      </div>
+    );
+  }
   
-  const isGodUser = profile?.role === 'GOD';
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
+        <h2 className="text-2xl font-bold text-red-500 mb-2">Profile Not Found</h2>
+        <p className="text-gray-600 mb-4">The profile you're looking for doesn't exist or has been removed.</p>
+      </div>
+    );
+  }
   
+  const isCurrentUser = !id || id === currentUserProfile?.id;
+
   return (
-    <div className="container py-6 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Picture</CardTitle>
-              <CardDescription>
-                Upload a profile picture or update your information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <Avatar className="w-32 h-32 mb-4">
-                {avatarUrl ? (
-                  <AvatarImage src={avatarUrl} alt="Profile" />
+    <div className="container mx-auto p-4">
+      <div className="max-w-4xl mx-auto">
+        <Card className="mb-8 overflow-hidden border-0 shadow-lg">
+          <div className="h-32 bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
+          <div className="relative px-6">
+            <div className="-mt-16 mb-6 flex items-end">
+              <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+                {profile.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
                 ) : (
-                  <AvatarFallback className="text-2xl">{getUserInitials()}</AvatarFallback>
+                  <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple text-4xl">
+                    {profile.first_name?.[0] || ''}{profile.last_name?.[0] || ''}
+                  </AvatarFallback>
                 )}
               </Avatar>
-              
-              <div className="space-y-2 w-full">
-                <Label htmlFor="avatarUrl">Profile Image URL</Label>
-                <Input
-                  id="avatarUrl"
-                  placeholder="https://example.com/avatar.jpg"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Paste a URL to your profile image
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="md:col-span-2">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Update your personal details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="First Name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Last Name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
+              <div className="ml-6 mb-4">
+                <h1 className="text-3xl font-bold">
+                  {profile.first_name} {profile.last_name}
+                </h1>
+                <div className="flex items-center mt-1">
+                  <Badge variant="outline" className="mr-2 border-hi-purple-light/50 text-hi-purple">
+                    {profile.role || 'Team Member'}
+                  </Badge>
+                  {profile.job_title && (
+                    <div className="flex items-center text-gray-500">
+                      <Briefcase className="h-4 w-4 mr-1" /> {profile.job_title}
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  placeholder="Email"
-                  value={user?.email || ''}
-                  disabled
-                />
-                <p className="text-sm text-muted-foreground">
-                  Your email address cannot be changed
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="jobTitle">Job Title</Label>
-                <Input
-                  id="jobTitle"
-                  placeholder="e.g. Head Chef, Manager, Server"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                />
-              </div>
-              
-              {isGodUser && (
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select
-                    value={role}
-                    onValueChange={(value) => setRole(value as AuthServiceRole)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GOD">GOD (System Admin)</SelectItem>
-                      <SelectItem value="Super User">Super User</SelectItem>
-                      <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="Team Member">Team Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground">
-                    Only GOD users can change roles
-                  </p>
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="about">About</Label>
-                <Textarea
-                  id="about"
-                  placeholder="Tell us about yourself"
-                  rows={4}
-                  value={about}
-                  onChange={(e) => setAbout(e.target.value)}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="favoriteDish">Favorite Dish</Label>
-                  <Input
-                    id="favoriteDish"
-                    placeholder="e.g. Spaghetti Carbonara"
-                    value={favoriteDish}
-                    onChange={(e) => setFavoriteDish(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="favoriteDrink">Favorite Drink</Label>
-                  <Input
-                    id="favoriteDrink"
-                    placeholder="e.g. Old Fashioned"
-                    value={favoriteDrink}
-                    onChange={(e) => setFavoriteDrink(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button onClick={handleSaveProfile} disabled={isSaving}>
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>
-                Update your account password
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                />
-              </div>
+          <CardContent className="px-6 pb-6">
+            <Tabs defaultValue="about" className="mt-6">
+              <TabsList className="mb-6">
+                <TabsTrigger value="about">About</TabsTrigger>
+                {isCurrentUser && <TabsTrigger value="settings">Settings</TabsTrigger>}
+              </TabsList>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
+              <TabsContent value="about">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Profile Details</h3>
+                    
+                    {profile.birth_date_month && (
+                      <div className="flex items-center mb-3 text-gray-700">
+                        <Cake className="h-5 w-5 mr-3 text-hi-purple-light" />
+                        <span>Birthday: {profile.birth_date_month}</span>
+                      </div>
+                    )}
+                    
+                    {profile.favourite_dish && (
+                      <div className="flex items-center mb-3 text-gray-700">
+                        <Utensils className="h-5 w-5 mr-3 text-hi-purple-light" />
+                        <span>Favourite Dish: {profile.favourite_dish}</span>
+                      </div>
+                    )}
+                    
+                    {profile.favourite_drink && (
+                      <div className="flex items-center mb-3 text-gray-700">
+                        <Wine className="h-5 w-5 mr-3 text-hi-purple-light" />
+                        <span>Favourite Drink: {profile.favourite_drink}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center mb-3 text-gray-700">
+                      <CalendarDays className="h-5 w-5 mr-3 text-hi-purple-light" />
+                      <span>Member since {new Date(profile.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">About Me</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      {profile.about_me ? (
+                        <p className="whitespace-pre-line">{profile.about_me}</p>
+                      ) : (
+                        <p className="text-gray-500 italic">No bio provided</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-              </div>
+              </TabsContent>
               
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleChangePassword} 
-                  disabled={isChangingPassword}
-                  variant="outline"
-                >
-                  {isChangingPassword ? 'Updating...' : 'Update Password'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              {isCurrentUser && (
+                <TabsContent value="settings">
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-hi-purple-light/50 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Profile Settings</h3>
+                    <p className="text-gray-500 max-w-md mx-auto">
+                      Profile settings are available in the Control Centre. Please contact your system administrator
+                      for assistance in updating your profile information.
+                    </p>
+                  </div>
+                </TabsContent>
+              )}
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-}
+};
+
+export default ProfilePage;

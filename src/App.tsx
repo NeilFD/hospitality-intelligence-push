@@ -85,8 +85,9 @@ function App() {
                 <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
                 <Route path="/register" element={<Register />} />
                 
-                {/* Profile Route */}
+                {/* Profile Routes */}
                 <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+                <Route path="/profile/:id" element={<Layout><ProfilePage /></Layout>} />
                 
                 {/* App Routes - All wrapped with Layout */}
                 <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />

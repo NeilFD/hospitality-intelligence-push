@@ -17,13 +17,11 @@ const TeamDashboard: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { profile } = useAuthStore();
 
-  // Helper function to check if current user can see a specific role
   const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
     const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
     const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
     const seeRoleValue = roleHierarchy[roleToSee] || 0;
     
-    // Users can see their own role level and below
     return currentRoleValue >= seeRoleValue;
   };
 
@@ -36,8 +34,6 @@ const TeamDashboard: React.FC = () => {
         const members = await getTeamMembers();
         
         if (members && Array.isArray(members)) {
-          // If user is GOD, they can see all members
-          // For other roles, filter members based on user's role - can only see their level and below
           const filteredMembers = profile?.role === 'GOD' 
             ? members 
             : members.filter(member => 
@@ -61,29 +57,23 @@ const TeamDashboard: React.FC = () => {
     fetchTeamMembers();
   }, [profile]);
 
-  // Get available roles for filtering based on user's role
   const getAvailableRoleFilters = () => {
     const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member'];
     
     if (!profile || !profile.role) return ['Team Member'];
     
-    // GOD users can see all roles
     if (profile.role === 'GOD') return allRoles;
     
-    // Return only the roles the user can see based on their own role
     return allRoles.filter(role => canSeeRole(profile.role, role));
   };
 
-  // Filter members based on selected role filter - but GOD users can always see all roles
   const filteredMembers = profile?.role === 'GOD' && roleFilter === 'all'
     ? teamMembers
     : roleFilter === 'all'
       ? teamMembers
       : teamMembers.filter(member => member.role === roleFilter || 
-          // GOD users should still see users without roles when filtering by Team Member
           (roleFilter === 'Team Member' && !member.role));
 
-  // Helper function to get user initials for avatar
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
@@ -185,7 +175,6 @@ const TeamDashboard: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Team Noticeboard Card */}
         <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-blue-200 hover:border-hi-purple/30 rounded-xl group">
           <CardHeader className="pt-6 pb-0 px-6">
             <div className="bg-gradient-to-br from-hi-purple-light to-hi-purple-dark text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
@@ -222,7 +211,6 @@ const TeamDashboard: React.FC = () => {
           </CardFooter>
         </Card>
         
-        {/* Team Chat Card */}
         <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-emerald-200 hover:border-emerald-300/30 rounded-xl group">
           <CardHeader className="pt-6 pb-0 px-6">
             <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
@@ -259,7 +247,6 @@ const TeamDashboard: React.FC = () => {
           </CardFooter>
         </Card>
         
-        {/* Knowledge Base Card */}
         <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-amber-200 hover:border-hi-purple/30 rounded-xl group">
           <CardHeader className="pt-6 pb-0 px-6">
             <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
