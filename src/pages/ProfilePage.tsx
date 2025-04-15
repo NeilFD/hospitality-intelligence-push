@@ -23,6 +23,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -234,12 +235,11 @@ const ProfilePage = () => {
       const imageObj = objects[0] as fabric.Image;
       const yPos = imageObj.top || 0;
       
-      // Save the position in Supabase - we'll update a metadata field to store position info
+      // Save the position in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          banner_url: profile.banner_url,  // Keep the same URL
-          // We could add a banner_position field in the future if we want to store more complex positioning
+          banner_position_y: yPos // Store the Y position
         })
         .eq('id', profile.id);
         
@@ -365,17 +365,31 @@ const ProfilePage = () => {
             {isRepositioningBanner ? (
               <div className="h-full w-full">
                 <canvas ref={canvasElRef} className="w-full h-full"></canvas>
-                <div className="absolute bottom-2 right-2 flex space-x-2">
-                  <Button size="sm" variant="outline" onClick={handleCancelRepositioning}>
-                    <X className="h-4 w-4 mr-1" /> Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleSaveRepositioning}>
-                    <Check className="h-4 w-4 mr-1" /> Save
-                  </Button>
-                </div>
                 
-                <div className="absolute left-2 bottom-2 bg-white bg-opacity-80 rounded-md p-2">
-                  <p className="text-xs text-gray-600">Drag the image up or down to reposition</p>
+                {/* Improved repositioning controls - floating toolbar */}
+                <div className="absolute top-0 left-0 w-full bg-gradient-to-b from-black/50 to-transparent px-4 py-2 flex items-center justify-between">
+                  <div className="text-white text-sm font-medium">
+                    Drag image up or down to reposition
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="bg-white text-hi-purple hover:bg-gray-100"
+                      onClick={handleCancelRepositioning}
+                    >
+                      <X className="h-4 w-4 mr-1" /> Cancel
+                    </Button>
+                    
+                    <Button 
+                      size="sm" 
+                      className="bg-hi-purple text-white hover:bg-hi-purple-dark"
+                      onClick={handleSaveRepositioning}
+                    >
+                      <Save className="h-4 w-4 mr-1" /> Save
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -385,7 +399,7 @@ const ProfilePage = () => {
                     src={profile.banner_url} 
                     alt="Profile banner" 
                     className="h-full w-full object-cover"
-                    style={{ objectPosition: `center ${yPosition}px` }}
+                    style={{ objectPosition: `center ${profile.banner_position_y || yPosition}px` }}
                   />
                 ) : (
                   <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
@@ -393,26 +407,45 @@ const ProfilePage = () => {
                 {isCurrentUser && (
                   <div className="absolute bottom-2 right-2 flex space-x-2 z-10">
                     {profile?.banner_url && (
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="bg-white bg-opacity-80 hover:bg-opacity-100"
-                        onClick={handleStartRepositioning}
-                      >
-                        <Move className="h-4 w-4 mr-1 text-hi-purple" /> Reposition
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="bg-white bg-opacity-80 hover:bg-opacity-100 text-hi-purple"
+                              onClick={handleStartRepositioning}
+                            >
+                              <Move className="h-4 w-4 mr-1" /> Reposition
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Adjust the banner image position</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
-                    <label htmlFor="banner-upload" className="bg-white bg-opacity-80 rounded-md p-2 cursor-pointer hover:bg-opacity-100 transition-colors">
-                      <Camera className="h-5 w-5 text-hi-purple" />
-                      <input 
-                        type="file" 
-                        id="banner-upload" 
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={handleBannerUpload}
-                        disabled={uploadingBanner}
-                      />
-                    </label>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <label htmlFor="banner-upload" className="bg-white bg-opacity-80 rounded-md p-2 cursor-pointer hover:bg-opacity-100 transition-colors">
+                            <Camera className="h-5 w-5 text-hi-purple" />
+                            <input 
+                              type="file" 
+                              id="banner-upload" 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={handleBannerUpload}
+                              disabled={uploadingBanner}
+                            />
+                          </label>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Upload a new banner image</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 )}
               </>
