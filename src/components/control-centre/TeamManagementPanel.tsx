@@ -114,14 +114,13 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      // Check if a user with this email already exists
       const { data: existingInvitation, error: checkError } = await supabase
         .from('user_invitations')
         .select('*')
         .eq('email', newUser.email)
         .maybeSingle();
         
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned by query" which is fine
+      if (checkError && checkError.code !== 'PGRST116') {
         console.error('Error checking for existing invitation:', checkError);
         throw new Error('Error checking for existing user');
       }
@@ -129,14 +128,12 @@ const TeamManagementPanel: React.FC = () => {
       let invitationToken;
       let invitationUrl;
       
-      // If invitation already exists, use that token
       if (existingInvitation) {
         invitationToken = existingInvitation.invitation_token;
         invitationUrl = `${window.location.origin}/register?token=${invitationToken}`;
         
         toast.info(`An invitation for ${newUser.email} already exists. Reusing existing invitation.`);
       } else {
-        // Create new invitation token
         invitationToken = Math.random().toString(36).substring(2, 15) + 
                          Math.random().toString(36).substring(2, 15);
                          
@@ -150,7 +147,6 @@ const TeamManagementPanel: React.FC = () => {
           invitationToken
         });
         
-        // Store the invitation in the database
         const { error: inviteError } = await supabase
           .from('user_invitations')
           .insert({
@@ -161,11 +157,11 @@ const TeamManagementPanel: React.FC = () => {
             role: newUser.role,
             job_title: newUser.jobTitle,
             created_by: currentUserProfile?.id,
-            expires_at: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString() // 7 days
+            expires_at: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString()
           });
           
         if (inviteError) {
-          if (inviteError.code === '23505') { // Unique violation error code
+          if (inviteError.code === '23505') {
             toast.error(`A user with email ${newUser.email} already exists`);
             setCreateUserLoading(false);
             return;
@@ -173,7 +169,6 @@ const TeamManagementPanel: React.FC = () => {
           throw inviteError;
         }
         
-        // Generate invitation link - direct to the register page with token parameter
         invitationUrl = `${window.location.origin}/register?token=${invitationToken}`;
         
         toast.success(`New user invitation created for: ${newUser.firstName} ${newUser.lastName}`);
@@ -181,10 +176,8 @@ const TeamManagementPanel: React.FC = () => {
       
       setInvitationLink(invitationUrl);
       
-      // Show the share link dialog
       setIsShareLinkDialogOpen(true);
       
-      // Reset form
       setNewUser({
         email: '',
         firstName: '',
@@ -217,9 +210,11 @@ const TeamManagementPanel: React.FC = () => {
   };
   
   const shareViaEmail = () => {
+    const recipientEmail = newUser.email;
     const subject = encodeURIComponent('Hi - Welcome!');
     const body = encodeURIComponent(`You've been invited to join our team. Click the link below to create your account:\n\n${invitationLink}`);
-    const mailtoLink = `mailto:${newUser.email}?subject=${subject}&body=${body}`;
+    
+    const mailtoLink = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
     window.open(mailtoLink, '_blank');
   };
   
