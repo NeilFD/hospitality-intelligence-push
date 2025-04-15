@@ -5,7 +5,8 @@ CREATE OR REPLACE FUNCTION public.create_profile_for_user(
   first_name_val TEXT,
   last_name_val TEXT,
   role_val TEXT,
-  job_title_val TEXT
+  job_title_val TEXT,
+  email_val TEXT
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -24,14 +25,16 @@ BEGIN
     first_name, 
     last_name,
     role,
-    job_title
+    job_title,
+    email
   )
   VALUES (
     user_id, 
     first_name_val, 
     last_name_val,
     role_val::user_role,
-    job_title_val
+    job_title_val,
+    email_val
   )
   ON CONFLICT (id) DO UPDATE 
   SET 
@@ -39,6 +42,7 @@ BEGIN
     last_name = last_name_val,
     role = role_val::user_role,
     job_title = job_title_val,
+    email = email_val,
     updated_at = now();
     
   success := TRUE;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -163,79 +162,15 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
-      // Check if invitation already exists
-      const { data: existingInvitation, error: invitationCheckError } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('email', newUser.email)
-        .maybeSingle();
-        
-      if (invitationCheckError) {
-        console.error('Error checking existing invitation:', invitationCheckError);
-      }
-      
-      const invitationToken = generateInvitationToken();
-      const baseUrl = getBaseUrl();
-      const generatedLoginUrl = `${baseUrl}/register?token=${invitationToken}`;
-      setLoginUrl(generatedLoginUrl);
-      
-      if (existingInvitation) {
-        // If invitation exists, just use that token
-        console.log('Invitation already exists for this email');
-        setLoginUrl(`${baseUrl}/register?token=${existingInvitation.invitation_token}`);
-        toast.info('An invitation already exists for this email');
-      } else {
-        // Create a new invitation
-        try {
-          const { error: invitationError } = await supabase
-            .from('user_invitations')
-            .insert({
-              email: newUser.email,
-              first_name: newUser.firstName,
-              last_name: newUser.lastName,
-              role: newUser.role,
-              job_title: newUser.jobTitle || null,
-              created_by: currentUserProfile?.id || null,
-              invitation_token: invitationToken
-            });
-          
-          if (invitationError) {
-            console.error('Error creating user invitation:', invitationError);
-            
-            if (invitationError.code === '23505') {
-              // This is a unique constraint violation - invitation already exists
-              toast.info('An invitation already exists for this email');
-              
-              // Fetch the existing invitation to get its token
-              const { data: fetchedInvitation } = await supabase
-                .from('user_invitations')
-                .select('invitation_token')
-                .eq('email', newUser.email)
-                .single();
-                
-              if (fetchedInvitation) {
-                setLoginUrl(`${baseUrl}/register?token=${fetchedInvitation.invitation_token}`);
-              }
-            } else {
-              toast.error(`Invitation creation failed: ${invitationError.message}`);
-            }
-          } else {
-            console.log('User invitation created successfully');
-          }
-        } catch (inviteErr) {
-          console.error('Exception in invitation creation:', inviteErr);
-          toast.error(`Invitation creation exception: ${inviteErr instanceof Error ? inviteErr.message : 'Unknown error'}`);
-        }
-      }
-      
-      // Enhanced logging for user creation
       console.log('Creating auth user with metadata:', {
         first_name: newUser.firstName,
         last_name: newUser.lastName,
         role: newUser.role,
-        job_title: newUser.jobTitle || ''
+        job_title: newUser.jobTitle || '',
+        email: newUser.email
       });
       
+      // Create the user in Auth
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
         password: 'hospitalityintelligence2025',
@@ -244,12 +179,12 @@ const TeamManagementPanel: React.FC = () => {
             first_name: newUser.firstName,
             last_name: newUser.lastName,
             role: newUser.role,
-            job_title: newUser.jobTitle || ''
+            job_title: newUser.jobTitle || '',
+            email: newUser.email
           }
         }
       });
       
-      // Enhanced error handling for signup
       if (signUpError) {
         console.error('Signup Error Details:', signUpError);
         
@@ -275,86 +210,68 @@ const TeamManagementPanel: React.FC = () => {
       console.log('User created successfully:', userData.user);
       console.log('User ID:', userData.user.id);
       
-      // Manual profile creation as a fallback
+      // Create the profile immediately ourselves
       try {
-        // Wait a bit to allow the trigger to work first
-        setTimeout(async () => {
-          // Check if profile was created automatically
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userData.user?.id)
-            .maybeSingle();
-            
-          if (!existingProfile) {
-            console.log('Profile not found, attempting manual profile creation via RPC');
-            
-            // Try the direct RPC function
-            const { data: rpcResult, error: rpcError } = await supabase.rpc(
-              'create_profile_for_user',
-              {
-                user_id: userData.user?.id,
-                first_name_val: newUser.firstName,
-                last_name_val: newUser.lastName,
-                role_val: newUser.role,
-                job_title_val: newUser.jobTitle || '',
-                email_val: newUser.email
-              }
-            );
-            
-            if (rpcError) {
-              console.error('RPC profile creation failed:', rpcError);
-              
-              // Last resort: direct insert
-              const { error: directInsertError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: userData.user?.id,
-                  first_name: newUser.firstName,
-                  last_name: newUser.lastName,
-                  role: newUser.role,
-                  job_title: newUser.jobTitle || '',
-                  email: newUser.email
-                });
-                
-              if (directInsertError) {
-                console.error('Direct profile insertion failed:', directInsertError);
-                toast.error('Profile creation failed, but user account was created');
-              } else {
-                console.log('Direct profile insertion succeeded');
-              }
-            } else {
-              console.log('RPC profile creation succeeded:', rpcResult);
+        // Direct insert first
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userData.user?.id,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || '',
+            email: newUser.email
+          });
+          
+        if (insertError) {
+          console.error('Direct profile insertion failed:', insertError);
+          
+          // Fall back to RPC
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'create_profile_for_user',
+            {
+              user_id: userData.user?.id,
+              first_name_val: newUser.firstName,
+              last_name_val: newUser.lastName,
+              role_val: newUser.role,
+              job_title_val: newUser.jobTitle || '',
+              email_val: newUser.email
             }
-          } else {
-            console.log('Profile already exists:', existingProfile);
+          );
+          
+          if (rpcError) {
+            console.error('RPC profile creation failed:', rpcError);
+            toast.error('Profile creation failed. Please try again.');
+            setCreateUserLoading(false);
+            return;
           }
+        }
+        
+        // Verify the profile was created
+        const { data: verifyProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userData.user?.id)
+          .maybeSingle();
           
-          // Final verification
-          const { data: verifyProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userData.user?.id)
-            .maybeSingle();
-            
-          if (verifyProfile) {
-            console.log('Profile verified:', verifyProfile);
-            toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully`);
-          } else {
-            console.warn('Profile verification still failed after multiple attempts');
-            toast.warning('User created but profile may be incomplete, refresh to see updates');
-          }
-          
-          // Open share dialog to send invitation
-          setIsShareLinkDialogOpen(true);
-          
-          // Refresh team members and reset form regardless of outcome
-          fetchTeamMembers();
-          setIsAddUserDialogOpen(false);
-          
-        }, 1000); // Give the trigger a chance to run first
+        if (verifyProfile) {
+          console.log('Profile verified:', verifyProfile);
+          toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+        } else {
+          console.warn('Profile verification failed after creation attempts');
+          toast.warning('User created but profile may be incomplete. You may need to add profile details manually.');
+        }
+        
+        // Open share dialog to send invitation
+        setIsShareLinkDialogOpen(true);
+        
+        // Refresh team members and reset form
+        fetchTeamMembers();
+        setIsAddUserDialogOpen(false);
+        
       } catch (profileError) {
-        console.error('Error in profile creation fallback:', profileError);
+        console.error('Error in profile creation process:', profileError);
         toast.error('Error in profile creation, but user account was created');
         
         // Still open share dialog
@@ -364,6 +281,7 @@ const TeamManagementPanel: React.FC = () => {
         fetchTeamMembers();
         setIsAddUserDialogOpen(false);
       }
+      
     } catch (error) {
       console.error('Unexpected error in user creation:', error);
       toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
