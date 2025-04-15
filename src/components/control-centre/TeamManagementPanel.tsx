@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -27,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload, Mail, MessageSquare, Link2 } from 'lucide-react';
-import { supabase, checkProfilesCount } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
 import { useAuthStore } from '@/services/auth-service';
@@ -204,30 +203,69 @@ const TeamManagementPanel: React.FC = () => {
             .eq('id', userData.user.id)
             .maybeSingle();
             
-          if (checkError && checkError.code !== 'PGRST116') {
+          if (checkError) {
             console.error('Error checking profile existence:', checkError);
           }
           
-          if (!existingProfile) {
-            console.log('Creating profile manually for user:', userData.user.id);
+          let profileCreated = !!existingProfile;
+          
+          if (!profileCreated) {
+            console.log('Profile not found, creating manually for user:', userData.user.id);
             
-            const { error: upsertError } = await supabase
+            const { error: insertError } = await supabase
               .from('profiles')
-              .upsert({
+              .insert({
                 id: userData.user.id,
                 first_name: newUser.firstName,
                 last_name: newUser.lastName,
-                role: newUser.role as UserRoleType,
+                role: newUser.role,
                 job_title: newUser.jobTitle || ''
               });
               
-            if (upsertError) {
-              console.error('Error upserting profile:', upsertError);
+            if (insertError) {
+              console.error('Error inserting profile:', insertError);
+              
+              const { error: upsertError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: userData.user.id,
+                  first_name: newUser.firstName,
+                  last_name: newUser.lastName,
+                  role: newUser.role,
+                  job_title: newUser.jobTitle || ''
+                });
+                
+              if (upsertError) {
+                console.error('Error upserting profile:', upsertError);
+                
+                try {
+                  const { data: rpcResult, error: rpcError } = await supabase
+                    .rpc('create_profile_for_user', { 
+                      user_id: userData.user.id,
+                      first_name_val: newUser.firstName,
+                      last_name_val: newUser.lastName,
+                      role_val: newUser.role,
+                      job_title_val: newUser.jobTitle || ''
+                    });
+                    
+                  if (rpcError) {
+                    console.error('Error in RPC profile creation:', rpcError);
+                    throw rpcError;
+                  } else {
+                    console.log('Profile created via RPC function:', rpcResult);
+                    profileCreated = true;
+                  }
+                } catch (rpcCallError) {
+                  console.error('Exception calling RPC function:', rpcCallError);
+                }
+              } else {
+                console.log('Profile created via upsert');
+                profileCreated = true;
+              }
             } else {
-              console.log('Profile created via upsert');
+              console.log('Profile created via direct insert');
+              profileCreated = true;
             }
-          } else {
-            console.log('Profile already exists for user:', userData.user.id);
           }
           
           const { data: verifyProfile } = await supabase
@@ -236,40 +274,17 @@ const TeamManagementPanel: React.FC = () => {
             .eq('id', userData.user.id)
             .maybeSingle();
             
-          if (!verifyProfile) {
-            console.error('Profile verification failed - still not created for user:', userData.user.id);
-            try {
-              const { error: finalAttemptError } = await supabase.rpc(
-                'create_profile_for_user' as any, 
-                { 
-                  user_id: userData.user.id,
-                  first_name_val: newUser.firstName,
-                  last_name_val: newUser.lastName,
-                  role_val: newUser.role,
-                  job_title_val: newUser.jobTitle || ''
-                }
-              );
-              
-              if (finalAttemptError) {
-                console.error('Final profile creation attempt failed:', finalAttemptError);
-              } else {
-                console.log('Profile created via RPC function');
-              }
-            } catch (rpcError) {
-              console.error('RPC profile creation error:', rpcError);
-            }
+          if (verifyProfile) {
+            console.log('Profile verification confirmed:', verifyProfile);
           } else {
-            console.log('Profile verified successfully:', verifyProfile);
+            console.error('Profile verification failed - still not created for user:', userData.user.id);
           }
-          
-          const profilesInfo = await checkProfilesCount();
-          console.log('Final profiles count check:', profilesInfo);
           
           fetchTeamMembers();
         } catch (profileError) {
           console.error('Exception in profile creation:', profileError);
         }
-      }, 500);
+      }, 1000);
       
       const baseUrl = getBaseUrl();
       const url = `${baseUrl}/register?token=${invitationToken}`;
