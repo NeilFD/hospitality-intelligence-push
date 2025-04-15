@@ -147,30 +147,84 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      const invitationToken = generateInvitationToken();
-      
-      try {
-        const { error: invitationError } = await supabase
-          .from('user_invitations')
-          .insert({
-            email: newUser.email,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || null,
-            created_by: currentUserProfile?.id || null,
-            invitation_token: invitationToken
-          });
+      // Check if user with this email already exists in profiles
+      const { data: existingProfiles, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', newUser.email)
+        .maybeSingle();
         
-        if (invitationError) {
-          console.error('Error creating user invitation:', invitationError);
-          toast.error(`Invitation creation failed: ${invitationError.message}`);
-        } else {
-          console.log('User invitation created successfully');
+      if (profileCheckError) {
+        console.error('Error checking existing profiles:', profileCheckError);
+      } else if (existingProfiles) {
+        toast.error('A user with this email already exists');
+        setCreateUserLoading(false);
+        return;
+      }
+      
+      // Check if invitation already exists
+      const { data: existingInvitation, error: invitationCheckError } = await supabase
+        .from('user_invitations')
+        .select('*')
+        .eq('email', newUser.email)
+        .maybeSingle();
+        
+      if (invitationCheckError) {
+        console.error('Error checking existing invitation:', invitationCheckError);
+      }
+      
+      const invitationToken = generateInvitationToken();
+      const baseUrl = getBaseUrl();
+      const generatedLoginUrl = `${baseUrl}/register?token=${invitationToken}`;
+      setLoginUrl(generatedLoginUrl);
+      
+      if (existingInvitation) {
+        // If invitation exists, just use that token
+        console.log('Invitation already exists for this email');
+        setLoginUrl(`${baseUrl}/register?token=${existingInvitation.invitation_token}`);
+        toast.info('An invitation already exists for this email');
+      } else {
+        // Create a new invitation
+        try {
+          const { error: invitationError } = await supabase
+            .from('user_invitations')
+            .insert({
+              email: newUser.email,
+              first_name: newUser.firstName,
+              last_name: newUser.lastName,
+              role: newUser.role,
+              job_title: newUser.jobTitle || null,
+              created_by: currentUserProfile?.id || null,
+              invitation_token: invitationToken
+            });
+          
+          if (invitationError) {
+            console.error('Error creating user invitation:', invitationError);
+            
+            if (invitationError.code === '23505') {
+              // This is a unique constraint violation - invitation already exists
+              toast.info('An invitation already exists for this email');
+              
+              // Fetch the existing invitation to get its token
+              const { data: fetchedInvitation } = await supabase
+                .from('user_invitations')
+                .select('invitation_token')
+                .eq('email', newUser.email)
+                .single();
+                
+              if (fetchedInvitation) {
+                setLoginUrl(`${baseUrl}/register?token=${fetchedInvitation.invitation_token}`);
+              }
+            } else {
+              toast.error(`Invitation creation failed: ${invitationError.message}`);
+            }
+          } else {
+            console.log('User invitation created successfully');
+          }
+        } catch (inviteErr) {
+          console.error('Exception in invitation creation:', inviteErr);
+          toast.error(`Invitation creation exception: ${inviteErr instanceof Error ? inviteErr.message : 'Unknown error'}`);
         }
-      } catch (inviteErr) {
-        console.error('Exception in invitation creation:', inviteErr);
-        toast.error(`Invitation creation exception: ${inviteErr instanceof Error ? inviteErr.message : 'Unknown error'}`);
       }
       
       // Enhanced logging for user creation
@@ -197,12 +251,23 @@ const TeamManagementPanel: React.FC = () => {
       // Enhanced error handling for signup
       if (signUpError) {
         console.error('Signup Error Details:', signUpError);
+        
+        if (signUpError.message.includes('User already registered')) {
+          // If user is already registered, just show the invitation dialog
+          toast.info('User already has an account. Invitation link updated.');
+          setIsShareLinkDialogOpen(true);
+          setCreateUserLoading(false);
+          return;
+        }
+        
         toast.error(`User creation failed: ${signUpError.message}`);
+        setCreateUserLoading(false);
         return;
       }
       
       if (!userData.user) {
         toast.error('Failed to create user account');
+        setCreateUserLoading(false);
         return;
       }
       
@@ -246,7 +311,8 @@ const TeamManagementPanel: React.FC = () => {
                   first_name: newUser.firstName,
                   last_name: newUser.lastName,
                   role: newUser.role,
-                  job_title: newUser.jobTitle || ''
+                  job_title: newUser.jobTitle || '',
+                  email: newUser.email
                 });
                 
               if (directInsertError) {
@@ -277,23 +343,29 @@ const TeamManagementPanel: React.FC = () => {
             toast.warning('User created but profile may be incomplete, refresh to see updates');
           }
           
+          // Open share dialog to send invitation
+          setIsShareLinkDialogOpen(true);
+          
           // Refresh team members and reset form regardless of outcome
           fetchTeamMembers();
           setIsAddUserDialogOpen(false);
-          resetNewUserForm();
+          
         }, 1000); // Give the trigger a chance to run first
       } catch (profileError) {
         console.error('Error in profile creation fallback:', profileError);
         toast.error('Error in profile creation, but user account was created');
         
+        // Still open share dialog
+        setIsShareLinkDialogOpen(true);
+        
         // Still refresh the list and reset form
         fetchTeamMembers();
         setIsAddUserDialogOpen(false);
-        resetNewUserForm();
       }
     } catch (error) {
       console.error('Unexpected error in user creation:', error);
       toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
       setCreateUserLoading(false);
     }
   };
@@ -744,7 +816,10 @@ The Hospitality Intelligence Team
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isShareLinkDialogOpen} onOpenChange={setIsShareLinkDialogOpen}>
+      <Dialog open={isShareLinkDialogOpen} onOpenChange={(open) => {
+        setIsShareLinkDialogOpen(open);
+        if (!open) resetNewUserForm();
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>User Account Created</DialogTitle>
@@ -868,158 +943,4 @@ The Hospitality Intelligence Team
                   placeholder="First name"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="editLastName">Last Name</Label>
-                <Input 
-                  id="editLastName" 
-                  value={editForm.lastName}
-                  onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
-                  placeholder="Last name"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editRole">Role</Label>
-              <Select 
-                value={editForm.role} 
-                onValueChange={(value: UserRoleType) => setEditForm({...editForm, role: value})}
-                disabled={(selectedUser?.role === 'GOD' && !isGod)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {isGod && (
-                    <>
-                      <SelectItem value="GOD">GOD</SelectItem>
-                      <SelectItem value="Super User">Super User</SelectItem>
-                    </>
-                  )}
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Team Member">Team Member</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editJobTitle">Job Title</Label>
-              <Input 
-                id="editJobTitle" 
-                value={editForm.jobTitle}
-                onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
-                placeholder="Job title"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Birthday</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !editForm.birthDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {editForm.birthDate ? format(editForm.birthDate, "MMMM dd") : <span>No birthday set</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={editForm.birthDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        const currentYear = new Date().getFullYear();
-                        date.setFullYear(currentYear);
-                        setEditForm({...editForm, birthDate: date});
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                    captionLayout="buttons"
-                    fromYear={new Date().getFullYear()}
-                    toYear={new Date().getFullYear()}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editFavouriteDish">Favourite Dish</Label>
-              <Input 
-                id="editFavouriteDish" 
-                value={editForm.favouriteDish}
-                onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
-                placeholder="Favourite dish"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editFavouriteDrink">Favourite Drink</Label>
-              <Input 
-                id="editFavouriteDrink" 
-                value={editForm.favouriteDrink}
-                onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
-                placeholder="Favourite drink"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editAboutMe">About Me</Label>
-              <Textarea 
-                id="editAboutMe" 
-                value={editForm.aboutMe}
-                onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
-                placeholder="Share something about yourself"
-                className="min-h-[100px]"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditUserDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleEditUser}
-            >
-              <UserCog className="mr-2 h-4 w-4" />
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete {selectedUser?.first_name} {selectedUser?.last_name}'s profile.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={handleDeleteUser}
-              disabled={deleteLoading}
-            >
-              {deleteLoading ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-};
-
-export default TeamManagementPanel;
+              <
