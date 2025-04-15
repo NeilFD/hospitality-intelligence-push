@@ -53,6 +53,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
     setError(null);
 
     try {
+      console.log("Submitting registration form with data:", data);
+      
       // Include additional user metadata
       const userData = {
         first_name: data.firstName,
@@ -71,6 +73,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
       const { error } = await signUp(data.email, data.password, userData);
 
       if (error) {
+        console.error("Signup error:", error);
         throw error;
       }
 

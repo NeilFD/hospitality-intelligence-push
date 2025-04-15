@@ -52,6 +52,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     try {
       console.log("Fetching invitation data for token:", token);
       
+      // First check if the token exists in user_invitations
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')

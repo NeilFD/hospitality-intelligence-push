@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -147,28 +146,25 @@ const TeamManagementPanel: React.FC = () => {
           created_by: currentUserProfile?.id,
           invitationToken
         });
-        
-        const { error: inviteError } = await supabase
-          .from('user_invitations')
-          .insert({
+
+        const { data, error: sendInviteError } = await supabase.functions.invoke('send-user-invitation', {
+          body: {
             email: newUser.email,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            invitation_token: invitationToken,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            invitationToken: invitationToken,
             role: newUser.role,
-            job_title: newUser.jobTitle,
-            created_by: currentUserProfile?.id,
-            expires_at: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString()
-          });
-          
-        if (inviteError) {
-          if (inviteError.code === '23505') {
-            toast.error(`A user with email ${newUser.email} already exists`);
-            setCreateUserLoading(false);
-            return;
+            jobTitle: newUser.jobTitle,
+            created_by: currentUserProfile?.id
           }
-          throw inviteError;
+        });
+          
+        if (sendInviteError) {
+          console.error('Error sending invitation:', sendInviteError);
+          throw new Error('Failed to send invitation email');
         }
+        
+        console.log("Invitation send result:", data);
         
         invitationUrl = `${window.location.origin}/register?token=${invitationToken}`;
         
@@ -178,8 +174,6 @@ const TeamManagementPanel: React.FC = () => {
       setInvitationLink(invitationUrl);
       
       setIsShareLinkDialogOpen(true);
-      
-      // We don't reset the newUser state here so we can use the email for sharing
       
       setIsAddUserDialogOpen(false);
       
@@ -205,7 +199,6 @@ const TeamManagementPanel: React.FC = () => {
   };
   
   const shareViaEmail = () => {
-    // Use the email from the newUser state
     const recipientEmail = newUser.email;
     const subject = encodeURIComponent('Hi - Welcome!');
     const body = encodeURIComponent(`You've been invited to join our team. Click the link below to create your account:\n\n\n\n${invitationLink}\n\n\n\nThis invitation will expire in 7 days.`);
@@ -602,7 +595,6 @@ const TeamManagementPanel: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setIsShareLinkDialogOpen(false);
-              // Only reset the newUser state after closing the share dialog
               setNewUser({
                 email: '',
                 firstName: '',
