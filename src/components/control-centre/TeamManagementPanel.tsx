@@ -150,12 +150,15 @@ const TeamManagementPanel: React.FC = () => {
       // Check if user with this email already exists
       const { data: existingProfiles, error: profileCheckError } = await supabase
         .from('profiles')
-        .select('email')
+        .select('id')
         .eq('email', newUser.email)
         .maybeSingle();
         
-      if (profileCheckError) {
+      if (profileCheckError && !profileCheckError.message.includes('does not exist')) {
         console.error('Error checking existing profiles:', profileCheckError);
+        toast.error(`Error checking for existing user: ${profileCheckError.message}`);
+        setCreateUserLoading(false);
+        return;
       } else if (existingProfiles) {
         toast.error('A user with this email already exists');
         setCreateUserLoading(false);
@@ -190,6 +193,8 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
+      console.log('User created:', userData.user);
+      
       // Create profile using RPC function
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         'create_profile_for_user',
@@ -204,22 +209,53 @@ const TeamManagementPanel: React.FC = () => {
       );
       
       if (rpcError) {
-        console.error('Profile creation failed:', rpcError);
-        toast.error('Profile creation failed. Please try again.');
-      } else {
-        toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+        console.error('Profile creation failed with RPC:', rpcError);
         
-        // Set login URL for share dialog
-        const baseUrl = window.location.origin;
-        setLoginUrl(`${baseUrl}/login`);
-        
-        // Open share dialog
-        setIsShareLinkDialogOpen(true);
-        
-        // Refresh team members list
-        fetchTeamMembers();
-        setIsAddUserDialogOpen(false);
+        // Fallback: Try direct insert if RPC fails
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userData.user.id,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || '',
+            email: newUser.email
+          });
+          
+        if (insertError) {
+          console.error('Direct profile insert also failed:', insertError);
+          toast.error('Profile creation failed. Please try again.');
+          setCreateUserLoading(false);
+          return;
+        }
       }
+      
+      // Verify profile was created
+      const { data: verifyProfile, error: verifyError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userData.user.id)
+        .maybeSingle();
+        
+      if (verifyError || !verifyProfile) {
+        console.error('Could not verify profile creation:', verifyError);
+        toast.error('User created but profile verification failed');
+      } else {
+        console.log('Profile created and verified:', verifyProfile);
+        toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+      }
+      
+      // Set login URL for share dialog
+      const baseUrl = getBaseUrl();
+      setLoginUrl(`${baseUrl}/login`);
+      
+      // Refresh team members list
+      fetchTeamMembers();
+      
+      // Open share dialog
+      setIsShareLinkDialogOpen(true);
+      setIsAddUserDialogOpen(false);
       
     } catch (error) {
       console.error('Unexpected error in user creation:', error);
