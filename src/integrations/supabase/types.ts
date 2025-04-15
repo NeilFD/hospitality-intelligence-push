@@ -686,6 +686,7 @@ export type Database = {
         Row: {
           about_me: string | null
           avatar_url: string | null
+          birth_date: string | null
           birth_date_month: string | null
           created_at: string
           favourite_dish: string | null
@@ -701,6 +702,7 @@ export type Database = {
         Insert: {
           about_me?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
           birth_date_month?: string | null
           created_at?: string
           favourite_dish?: string | null
@@ -716,6 +718,7 @@ export type Database = {
         Update: {
           about_me?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
           birth_date_month?: string | null
           created_at?: string
           favourite_dish?: string | null
