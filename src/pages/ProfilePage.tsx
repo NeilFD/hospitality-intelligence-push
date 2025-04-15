@@ -263,7 +263,7 @@ const ProfilePage = () => {
               <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
             )}
             {isCurrentUser && (
-              <label htmlFor="banner-upload" className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-full p-2 cursor-pointer hover:bg-opacity-100 transition-colors">
+              <label htmlFor="banner-upload" className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-full p-2 cursor-pointer hover:bg-opacity-100 transition-colors z-10">
                 <Camera className="h-5 w-5 text-hi-purple" />
                 <input 
                   type="file" 
