@@ -204,8 +204,7 @@ const TeamManagementPanel: React.FC = () => {
           first_name: newUser.firstName,
           last_name: newUser.lastName,
           role: newUser.role,
-          job_title: newUser.jobTitle || '',
-          email: newUser.email
+          job_title: newUser.jobTitle || ''
         });
         
       if (insertError) {

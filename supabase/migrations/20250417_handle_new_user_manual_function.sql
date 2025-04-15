@@ -23,16 +23,14 @@ BEGIN
     first_name, 
     last_name,
     role,
-    job_title,
-    email
+    job_title
   )
   VALUES (
     user_id, 
     first_name_val, 
     last_name_val,
     role_val::user_role,
-    '',
-    (SELECT email FROM auth.users WHERE id = user_id)
+    ''
   );
   
   RAISE LOG 'Profile manually created successfully for user ID: %', user_id;

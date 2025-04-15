@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,7 +18,6 @@ import { useAuthStore } from '@/services/auth-service';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
-// Define the schema for the registration form
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters.'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters.'),
@@ -46,7 +44,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuthStore();
 
-  // Initialize the form with default values from invitation data if available
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -61,7 +58,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     try {
       console.log('Creating profile directly for user:', userId);
       
-      // Simple direct insertion approach
       const { error } = await supabase
         .from('profiles')
         .insert({
@@ -69,14 +65,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           first_name: userData.first_name,
           last_name: userData.last_name,
           role: userData.role || 'Team Member',
-          job_title: userData.job_title || '',
-          email: userData.email
+          job_title: userData.job_title || ''
         });
       
       if (error) {
         console.error('Direct profile insertion failed:', error);
         
-        // Try the manual function as fallback
         const { error: funcError } = await supabase.rpc(
           'handle_new_user_manual',
           {
@@ -93,7 +87,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         }
       }
       
-      // Verify the profile was created
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -115,7 +108,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         password: '[REDACTED]'
       });
       
-      // Check if we're using invitation data
       const metadata = {
         first_name: values.firstName,
         last_name: values.lastName,
@@ -126,13 +118,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("Registration metadata:", metadata);
       
-      // Sign up the user with Supabase
       const { data, error } = await signUp(values.email, values.password, metadata);
       
       if (error) {
         console.error('Error during registration:', error);
         
-        // Special handling for "User already registered" error
         if (error.message.includes('already registered')) {
           toast.error('This email is already registered. Please log in instead.');
           navigate('/login');
@@ -148,13 +138,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         return;
       }
       
-      // Log the user ID for debugging
       console.log("User registered successfully, user ID:", data.user.id);
       
-      // Create the profile immediately - critical for success
       const profileCreated = await createProfile(data.user.id, metadata);
       
-      // Notify parent component that registration is complete
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);
       }
@@ -167,7 +154,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         toast.warning('Account created, but profile setup may be incomplete.');
       }
       
-      // Try to log in automatically
       try {
         await login(values.email, values.password);
         navigate('/');
