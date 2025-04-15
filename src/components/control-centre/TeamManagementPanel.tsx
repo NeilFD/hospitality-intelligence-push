@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -115,38 +114,71 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      const invitationToken = Math.random().toString(36).substring(2, 15) + 
-                             Math.random().toString(36).substring(2, 15);
-                             
-      console.log("Creating new user with data:", {
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        role: newUser.role,
-        jobTitle: newUser.jobTitle,
-        created_by: currentUserProfile?.id,
-        invitationToken
-      });
-      
-      // Store the invitation in the database with the correct column name
-      const { error: inviteError } = await supabase
+      // Check if a user with this email already exists
+      const { data: existingInvitation, error: checkError } = await supabase
         .from('user_invitations')
-        .insert({
+        .select('*')
+        .eq('email', newUser.email)
+        .maybeSingle();
+        
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned by query" which is fine
+        console.error('Error checking for existing invitation:', checkError);
+        throw new Error('Error checking for existing user');
+      }
+      
+      let invitationToken;
+      let invitationUrl;
+      
+      // If invitation already exists, use that token
+      if (existingInvitation) {
+        invitationToken = existingInvitation.invitation_token;
+        invitationUrl = `${window.location.origin}/register?token=${invitationToken}`;
+        
+        toast.info(`An invitation for ${newUser.email} already exists. Reusing existing invitation.`);
+      } else {
+        // Create new invitation token
+        invitationToken = Math.random().toString(36).substring(2, 15) + 
+                         Math.random().toString(36).substring(2, 15);
+                         
+        console.log("Creating new user with data:", {
           email: newUser.email,
-          first_name: newUser.firstName,
-          last_name: newUser.lastName,
-          invitation_token: invitationToken,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
           role: newUser.role,
-          job_title: newUser.jobTitle,
+          jobTitle: newUser.jobTitle,
           created_by: currentUserProfile?.id,
-          expires_at: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString() // 7 days
+          invitationToken
         });
         
-      if (inviteError) throw inviteError;
+        // Store the invitation in the database
+        const { error: inviteError } = await supabase
+          .from('user_invitations')
+          .insert({
+            email: newUser.email,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            invitation_token: invitationToken,
+            role: newUser.role,
+            job_title: newUser.jobTitle,
+            created_by: currentUserProfile?.id,
+            expires_at: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString() // 7 days
+          });
+          
+        if (inviteError) {
+          if (inviteError.code === '23505') { // Unique violation error code
+            toast.error(`A user with email ${newUser.email} already exists`);
+            setCreateUserLoading(false);
+            return;
+          }
+          throw inviteError;
+        }
+        
+        // Generate invitation link - direct to the register page with token parameter
+        invitationUrl = `${window.location.origin}/register?token=${invitationToken}`;
+        
+        toast.success(`New user invitation created for: ${newUser.firstName} ${newUser.lastName}`);
+      }
       
-      // Generate invitation link - direct to the register page with token parameter
-      const baseUrl = window.location.origin;
-      const invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
       setInvitationLink(invitationUrl);
       
       // Show the share link dialog
@@ -164,8 +196,6 @@ const TeamManagementPanel: React.FC = () => {
       setIsAddUserDialogOpen(false);
       
       fetchTeamMembers();
-      
-      toast.success(`New user created: ${newUser.firstName} ${newUser.lastName}`);
       
     } catch (error) {
       console.error('Error creating user:', error);
