@@ -119,7 +119,10 @@ const TeamManagementPanel: React.FC = () => {
         () => Math.floor(Math.random() * 36).toString(36)
       ).join('');
       
-      const baseUrl = window.location.origin;
+      const baseUrl = typeof window !== 'undefined' 
+        ? window.location.origin 
+        : 'https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com';
+      
       console.log("Base URL for invitation:", baseUrl);
       
       const { data: existingInvitation, error: checkError } = await supabase
@@ -142,6 +145,18 @@ const TeamManagementPanel: React.FC = () => {
         
         console.log("Using existing invitation with token:", usedToken);
         console.log("Full invitation URL:", invitationUrl);
+        
+        const { error: updateError } = await supabase
+          .from('user_invitations')
+          .update({
+            is_claimed: false,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .eq('id', existingInvitation.id);
+          
+        if (updateError) {
+          console.error('Error updating existing invitation:', updateError);
+        }
         
         toast.info(`An invitation for ${newUser.email} already exists. Reusing existing invitation.`);
       } else {

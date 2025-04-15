@@ -59,16 +59,39 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         throw new Error('Invalid token format');
       }
       
-      // Directly query the database with proper error handling
-      const { data, error: queryError } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('invitation_token', token)
-        .eq('is_claimed', false)
-        .maybeSingle();
+      // Make multiple attempts to fetch the invitation data with delays
+      // to address potential race conditions or timing issues
+      let data = null;
+      let queryError = null;
+      
+      for (let attempt = 0; attempt < 3; attempt++) {
+        console.log(`Attempt ${attempt + 1} to fetch invitation data`);
+        
+        const result = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('invitation_token', token)
+          .maybeSingle();
+        
+        if (result.error) {
+          console.error(`Attempt ${attempt + 1} failed:`, result.error);
+          queryError = result.error;
+        } else if (result.data) {
+          console.log(`Attempt ${attempt + 1} succeeded:`, result.data);
+          data = result.data;
+          break;
+        } else {
+          console.log(`Attempt ${attempt + 1}: No data found for token`);
+        }
+        
+        // Wait a bit before trying again
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
       
       if (queryError) {
-        console.error("Database error:", queryError);
+        console.error("All database query attempts failed:", queryError);
         throw new Error('Error retrieving invitation data');
       }
       
@@ -82,6 +105,13 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       // Check if invitation has expired
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         setError('This invitation has expired. Please contact your administrator for a new invitation.');
+        setLoading(false);
+        return;
+      }
+      
+      // Check if invitation has already been claimed
+      if (data.is_claimed) {
+        setError('This invitation has already been used. Please contact your administrator if you need to register.');
         setLoading(false);
         return;
       }
