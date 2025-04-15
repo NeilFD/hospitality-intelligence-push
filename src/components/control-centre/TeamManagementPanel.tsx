@@ -45,6 +45,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
 
+const generateInvitationToken = () => {
+  const randomBytes = new Uint8Array(32);
+  window.crypto.getRandomValues(randomBytes);
+  return Array.from(randomBytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+};
+
 const TeamManagementPanel: React.FC = () => {
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
@@ -114,19 +122,24 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      const invitationToken = Array.from(
-        { length: 24 },
-        () => Math.floor(Math.random() * 36).toString(36)
-      ).join('');
+      const invitationToken = generateInvitationToken();
+      console.log("Generated token:", invitationToken);
       
       let baseUrl;
       try {
         baseUrl = window.location.origin;
+        console.log("Using window.location.origin:", baseUrl);
       } catch (e) {
         baseUrl = 'https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com';
+        console.log("Using fallback URL:", baseUrl);
       }
       
-      console.log("Base URL for invitation:", baseUrl);
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.slice(0, -1);
+      }
+      
+      const invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
+      console.log("Full invitation URL:", invitationUrl);
       
       const { data: existingInvitation, error: checkError } = await supabase
         .from('user_invitations')
@@ -139,20 +152,15 @@ const TeamManagementPanel: React.FC = () => {
         throw new Error('Error checking for existing user');
       }
       
-      let usedToken;
-      let invitationUrl;
+      let operationSuccessful = false;
       
       if (existingInvitation) {
-        usedToken = invitationToken;
-        invitationUrl = `${baseUrl}/register?token=${usedToken}`;
-        
-        console.log("Updating existing invitation with new token:", usedToken);
-        console.log("Full invitation URL:", invitationUrl);
+        console.log("Updating existing invitation for:", newUser.email);
         
         const { error: updateError } = await supabase
           .from('user_invitations')
           .update({
-            invitation_token: usedToken,
+            invitation_token: invitationToken,
             is_claimed: false,
             first_name: newUser.firstName,
             last_name: newUser.lastName,
@@ -167,13 +175,10 @@ const TeamManagementPanel: React.FC = () => {
           throw new Error('Failed to update invitation');
         }
         
+        operationSuccessful = true;
         toast.info(`Updated invitation for ${newUser.email}`);
       } else {
-        usedToken = invitationToken;
-        invitationUrl = `${baseUrl}/register?token=${usedToken}`;
-        
-        console.log("Creating new invitation with token:", usedToken);
-        console.log("Full invitation URL:", invitationUrl);
+        console.log("Creating new invitation for:", newUser.email);
         
         const { error: insertError } = await supabase
           .from('user_invitations')
@@ -184,7 +189,7 @@ const TeamManagementPanel: React.FC = () => {
             role: newUser.role,
             job_title: newUser.jobTitle,
             created_by: currentUserProfile?.id,
-            invitation_token: usedToken,
+            invitation_token: invitationToken,
             is_claimed: false,
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           });
@@ -194,14 +199,16 @@ const TeamManagementPanel: React.FC = () => {
           throw new Error('Failed to create user invitation');
         }
         
+        operationSuccessful = true;
         toast.success(`New user invitation created for: ${newUser.firstName} ${newUser.lastName}`);
       }
       
-      setInvitationLink(invitationUrl);
-      setIsShareLinkDialogOpen(true);
-      setIsAddUserDialogOpen(false);
-      
-      fetchTeamMembers();
+      if (operationSuccessful) {
+        setInvitationLink(invitationUrl);
+        setIsShareLinkDialogOpen(true);
+        setIsAddUserDialogOpen(false);
+        fetchTeamMembers();
+      }
       
     } catch (error) {
       console.error('Error creating user:', error);
