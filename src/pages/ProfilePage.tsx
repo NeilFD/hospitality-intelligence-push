@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
@@ -68,6 +67,13 @@ const ProfilePage = () => {
         } else {
           // Load current user's profile
           profileToLoad = currentUserProfile;
+        }
+        
+        console.log("Loaded profile:", profileToLoad);
+        
+        // Initialize banner position from profile data
+        if (profileToLoad?.banner_position_y !== undefined && profileToLoad?.banner_position_y !== null) {
+          setYPosition(profileToLoad.banner_position_y);
         }
         
         setProfile(profileToLoad);
@@ -202,9 +208,12 @@ const ProfilePage = () => {
       console.log("Profile updated with new banner URL");
       
       // Update the local profile state
-      setProfile({
-        ...profile,
-        banner_url: publicUrl
+      setProfile(prevProfile => {
+        if (!prevProfile) return null;
+        return {
+          ...prevProfile,
+          banner_url: publicUrl
+        };
       });
       
       toast.success('Banner image updated successfully');
@@ -235,6 +244,8 @@ const ProfilePage = () => {
       const imageObj = objects[0] as fabric.Image;
       const yPos = imageObj.top || 0;
       
+      console.log("Saving banner position:", yPos, "for profile ID:", profile.id);
+      
       // Save the position in Supabase
       const { error } = await supabase
         .from('profiles')
@@ -250,10 +261,13 @@ const ProfilePage = () => {
       }
       
       // Update local profile state with new position
-      setProfile(prevProfile => prevProfile ? {
-        ...prevProfile,
-        banner_position_y: yPos
-      } : null);
+      setProfile(prevProfile => {
+        if (!prevProfile) return null;
+        return {
+          ...prevProfile,
+          banner_position_y: yPos
+        };
+      });
       
       setYPosition(yPos);
       setIsRepositioningBanner(false);
@@ -361,6 +375,7 @@ const ProfilePage = () => {
   }
   
   const isCurrentUser = !id || id === currentUserProfile?.id;
+  console.log("Banner URL from profile:", profile.banner_url, "Y Position:", profile.banner_position_y || yPosition);
 
   return (
     <div className="container mx-auto p-4">
@@ -398,8 +413,8 @@ const ProfilePage = () => {
                 </div>
               </div>
             ) : (
-              <>
-                {profile?.banner_url ? (
+              <div className="h-full w-full group relative">
+                {profile.banner_url ? (
                   <img 
                     src={profile.banner_url} 
                     alt="Profile banner" 
@@ -411,7 +426,7 @@ const ProfilePage = () => {
                 )}
                 {isCurrentUser && (
                   <div className="absolute bottom-2 right-2 flex space-x-2 z-10">
-                    {profile?.banner_url && (
+                    {profile.banner_url && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -453,7 +468,7 @@ const ProfilePage = () => {
                     </TooltipProvider>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
           
