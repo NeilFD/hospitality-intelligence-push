@@ -59,13 +59,14 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         throw new Error('Invalid token format');
       }
       
-      // Make multiple attempts to fetch the invitation data with delays
-      // to address potential race conditions or timing issues
+      // Make up to 3 attempts to fetch the invitation data
       let data = null;
-      let queryError = null;
+      let attempts = 0;
+      const maxAttempts = 3;
       
-      for (let attempt = 0; attempt < 3; attempt++) {
-        console.log(`Attempt ${attempt + 1} to fetch invitation data`);
+      while (!data && attempts < maxAttempts) {
+        attempts++;
+        console.log(`Attempt ${attempts} to fetch invitation data`);
         
         const result = await supabase
           .from('user_invitations')
@@ -74,33 +75,30 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
           .maybeSingle();
         
         if (result.error) {
-          console.error(`Attempt ${attempt + 1} failed:`, result.error);
-          queryError = result.error;
+          console.error(`Attempt ${attempts} failed:`, result.error);
+          if (attempts === maxAttempts) {
+            throw result.error;
+          }
         } else if (result.data) {
-          console.log(`Attempt ${attempt + 1} succeeded:`, result.data);
+          console.log(`Attempt ${attempts} succeeded:`, result.data);
           data = result.data;
           break;
         } else {
-          console.log(`Attempt ${attempt + 1}: No data found for token`);
+          console.log(`No data found for token in attempt ${attempts}`);
+          if (attempts === maxAttempts) {
+            throw new Error('Invalid or expired invitation token');
+          }
         }
         
-        // Wait a bit before trying again
-        if (attempt < 2) {
+        // Wait 1 second before trying again
+        if (attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
       
-      if (queryError) {
-        console.error("All database query attempts failed:", queryError);
-        throw new Error('Error retrieving invitation data');
-      }
-      
       if (!data) {
-        console.log("No valid invitation found for token:", token);
         throw new Error('Invalid or expired invitation token');
       }
-      
-      console.log("Invitation data retrieved:", data);
       
       // Check if invitation has expired
       if (data.expires_at && new Date(data.expires_at) < new Date()) {

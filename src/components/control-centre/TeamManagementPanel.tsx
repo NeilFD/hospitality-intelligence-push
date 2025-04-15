@@ -119,9 +119,12 @@ const TeamManagementPanel: React.FC = () => {
         () => Math.floor(Math.random() * 36).toString(36)
       ).join('');
       
-      const baseUrl = typeof window !== 'undefined' 
-        ? window.location.origin 
-        : 'https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com';
+      let baseUrl;
+      try {
+        baseUrl = window.location.origin;
+      } catch (e) {
+        baseUrl = 'https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com';
+      }
       
       console.log("Base URL for invitation:", baseUrl);
       
@@ -140,27 +143,37 @@ const TeamManagementPanel: React.FC = () => {
       let invitationUrl;
       
       if (existingInvitation) {
-        usedToken = existingInvitation.invitation_token;
+        usedToken = invitationToken;
         invitationUrl = `${baseUrl}/register?token=${usedToken}`;
         
-        console.log("Using existing invitation with token:", usedToken);
+        console.log("Updating existing invitation with new token:", usedToken);
         console.log("Full invitation URL:", invitationUrl);
         
         const { error: updateError } = await supabase
           .from('user_invitations')
           .update({
+            invitation_token: usedToken,
             is_claimed: false,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle,
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           })
           .eq('id', existingInvitation.id);
           
         if (updateError) {
           console.error('Error updating existing invitation:', updateError);
+          throw new Error('Failed to update invitation');
         }
         
-        toast.info(`An invitation for ${newUser.email} already exists. Reusing existing invitation.`);
+        toast.info(`Updated invitation for ${newUser.email}`);
       } else {
         usedToken = invitationToken;
+        invitationUrl = `${baseUrl}/register?token=${usedToken}`;
+        
+        console.log("Creating new invitation with token:", usedToken);
+        console.log("Full invitation URL:", invitationUrl);
         
         const { error: insertError } = await supabase
           .from('user_invitations')
@@ -171,7 +184,7 @@ const TeamManagementPanel: React.FC = () => {
             role: newUser.role,
             job_title: newUser.jobTitle,
             created_by: currentUserProfile?.id,
-            invitation_token: invitationToken,
+            invitation_token: usedToken,
             is_claimed: false,
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           });
@@ -180,9 +193,6 @@ const TeamManagementPanel: React.FC = () => {
           console.error('Error creating invitation:', insertError);
           throw new Error('Failed to create user invitation');
         }
-        
-        invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
-        console.log("Created new invitation URL:", invitationUrl);
         
         toast.success(`New user invitation created for: ${newUser.firstName} ${newUser.lastName}`);
       }
