@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -178,13 +179,7 @@ const TeamManagementPanel: React.FC = () => {
       
       setIsShareLinkDialogOpen(true);
       
-      setNewUser({
-        email: '',
-        firstName: '',
-        lastName: '',
-        role: 'Team Member',
-        jobTitle: ''
-      });
+      // We don't reset the newUser state here so we can use the email for sharing
       
       setIsAddUserDialogOpen(false);
       
@@ -210,9 +205,10 @@ const TeamManagementPanel: React.FC = () => {
   };
   
   const shareViaEmail = () => {
+    // Use the email from the newUser state
     const recipientEmail = newUser.email;
     const subject = encodeURIComponent('Hi - Welcome!');
-    const body = encodeURIComponent(`You've been invited to join our team. Click the link below to create your account:\n\n${invitationLink}`);
+    const body = encodeURIComponent(`You've been invited to join our team. Click the link below to create your account:\n\n\n\n${invitationLink}\n\n\n\nThis invitation will expire in 7 days.`);
     
     const mailtoLink = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
     window.open(mailtoLink, '_blank');
@@ -604,7 +600,17 @@ const TeamManagementPanel: React.FC = () => {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsShareLinkDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsShareLinkDialogOpen(false);
+              // Only reset the newUser state after closing the share dialog
+              setNewUser({
+                email: '',
+                firstName: '',
+                lastName: '',
+                role: 'Team Member',
+                jobTitle: ''
+              });
+            }}>
               Close
             </Button>
             <Button onClick={shareViaEmail}>
