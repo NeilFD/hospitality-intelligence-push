@@ -191,6 +191,11 @@ const TeamManagementPanel: React.FC = () => {
         if (signUpError.message.includes('User already registered')) {
           // If user is already registered, just show the invitation dialog
           toast.info('User already has an account. Invitation link updated.');
+          
+          // Set login URL for the share dialog
+          const baseUrl = getBaseUrl();
+          setLoginUrl(`${baseUrl}/login`);
+          
           setIsShareLinkDialogOpen(true);
           setCreateUserLoading(false);
           return;
@@ -210,13 +215,18 @@ const TeamManagementPanel: React.FC = () => {
       console.log('User created successfully:', userData.user);
       console.log('User ID:', userData.user.id);
       
-      // Create the profile immediately ourselves
+      // Set login URL for the share dialog
+      const baseUrl = getBaseUrl();
+      setLoginUrl(`${baseUrl}/login`);
+      
+      // Create the profile immediately using multiple approaches for reliability
       try {
         // Direct insert first
+        console.log("Attempting direct profile insertion for user:", userData.user.id);
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({
-            id: userData.user?.id,
+            id: userData.user.id,
             first_name: newUser.firstName,
             last_name: newUser.lastName,
             role: newUser.role,
@@ -228,10 +238,11 @@ const TeamManagementPanel: React.FC = () => {
           console.error('Direct profile insertion failed:', insertError);
           
           // Fall back to RPC
+          console.log("Falling back to RPC function for profile creation");
           const { data: rpcResult, error: rpcError } = await supabase.rpc(
             'create_profile_for_user',
             {
-              user_id: userData.user?.id,
+              user_id: userData.user.id,
               first_name_val: newUser.firstName,
               last_name_val: newUser.lastName,
               role_val: newUser.role,
@@ -242,22 +253,47 @@ const TeamManagementPanel: React.FC = () => {
           
           if (rpcError) {
             console.error('RPC profile creation failed:', rpcError);
-            toast.error('Profile creation failed. Please try again.');
-            setCreateUserLoading(false);
-            return;
+            console.log("Both profile creation methods failed. Creating a delay and trying again...");
+            
+            // Final attempt with delay
+            setTimeout(async () => {
+              const { error: finalAttemptError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: userData.user.id,
+                  first_name: newUser.firstName,
+                  last_name: newUser.lastName,
+                  role: newUser.role,
+                  job_title: newUser.jobTitle || '',
+                  email: newUser.email
+                });
+                
+              if (finalAttemptError) {
+                console.error('Final profile creation attempt failed:', finalAttemptError);
+                toast.error('Profile creation failed. Please try again.');
+              } else {
+                console.log('Final profile creation attempt succeeded');
+                toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+              }
+            }, 2000);
+          } else {
+            console.log('RPC profile creation succeeded:', rpcResult);
+            toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
           }
+        } else {
+          console.log('Direct profile insertion succeeded');
+          toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
         }
         
         // Verify the profile was created
         const { data: verifyProfile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userData.user?.id)
+          .eq('id', userData.user.id)
           .maybeSingle();
           
         if (verifyProfile) {
           console.log('Profile verified:', verifyProfile);
-          toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
         } else {
           console.warn('Profile verification failed after creation attempts');
           toast.warning('User created but profile may be incomplete. You may need to add profile details manually.');
