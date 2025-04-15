@@ -165,180 +165,247 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
-      console.log('Creating new user with email:', newUser.email);
+      // Check if there's an existing invitation for this email
+      const { data: existingInvitation, error: invitationCheckError } = await supabase
+        .from('user_invitations')
+        .select('invitation_token, is_claimed')
+        .eq('email', newUser.email)
+        .maybeSingle();
+        
+      if (invitationCheckError && !invitationCheckError.message.includes('does not exist')) {
+        console.error('Error checking existing invitations:', invitationCheckError);
+        toast.error(`Error checking for existing invitations: ${invitationCheckError.message}`);
+        setCreateUserLoading(false);
+        return;
+      }
       
-      // Create an invitation token for the user
-      const invitationToken = generateInvitationToken();
+      let invitationToken = '';
       
-      try {
-        // Store the invitation in the database first
-        const { error: invitationError } = await supabase
+      // If an unclaimed invitation exists, reuse it
+      if (existingInvitation && !existingInvitation.is_claimed) {
+        invitationToken = existingInvitation.invitation_token;
+        console.log('Reusing existing invitation token:', invitationToken);
+        
+        // Update the existing invitation with new details
+        const { error: updateError } = await supabase
           .from('user_invitations')
-          .insert({
-            email: newUser.email,
+          .update({
             first_name: newUser.firstName,
             last_name: newUser.lastName,
             role: newUser.role,
             job_title: newUser.jobTitle || '',
-            invitation_token: invitationToken,
-            created_by: currentUserProfile?.id
-          });
+            created_by: currentUserProfile?.id,
+            // Don't update the token or email as we're reusing them
+            is_claimed: false,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Reset expiration to 7 days
+          })
+          .eq('email', newUser.email);
           
-        if (invitationError) {
-          console.error('Error creating invitation:', invitationError);
-          toast.error(`Failed to create invitation: ${invitationError.message}`);
+        if (updateError) {
+          console.error('Error updating existing invitation:', updateError);
+          toast.error(`Failed to update invitation: ${updateError.message}`);
           setCreateUserLoading(false);
           return;
         }
-      } catch (inviteError) {
-        console.error('Exception during invitation creation:', inviteError);
-      }
-      
-      // Create the auth user
-      const { data: userData, error: signUpError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: 'hospitalityintelligence2025',
-        options: {
-          data: {
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || '',
-            email: newUser.email
-          }
-        }
-      });
-      
-      if (signUpError) {
-        console.error('Signup Error:', signUpError);
-        toast.error(`User creation failed: ${signUpError.message}`);
-        setCreateUserLoading(false);
-        return;
-      }
-      
-      if (!userData.user) {
-        toast.error('Failed to create user account');
-        setCreateUserLoading(false);
-        return;
-      }
-      
-      console.log('User created successfully:', userData.user.id);
-      
-      // Wait 1 second for Auth trigger to fire (if it's going to)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Create profile directly - no waiting for trigger
-      let profileCreated = false;
-      
-      // Approach 1: Direct insert with minimal fields
-      try {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userData.user.id,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || '',
-            email: newUser.email
-          });
-          
-        if (!insertError) {
-          console.log('Profile created successfully with direct insert');
-          profileCreated = true;
-        } else {
-          console.error('Direct profile insert failed:', insertError);
-        }
-      } catch (error) {
-        console.error('Error in direct profile creation:', error);
-      }
-      
-      // Approach 2: Use create_profile_for_user function if direct insert failed
-      if (!profileCreated) {
-        try {
-          const { data: rpcResult, error: rpcError } = await supabase.rpc(
-            'create_profile_for_user',
-            {
-              user_id: userData.user.id,
-              first_name_val: newUser.firstName,
-              last_name_val: newUser.lastName,
-              role_val: newUser.role,
-              job_title_val: newUser.jobTitle || '',
-              email_val: newUser.email
-            }
-          );
-          
-          if (!rpcError && rpcResult === true) {
-            console.log('Profile created successfully with create_profile_for_user RPC');
-            profileCreated = true;
-          } else {
-            console.error('Profile creation failed with create_profile_for_user:', rpcError);
-          }
-        } catch (error) {
-          console.error('Error in RPC profile creation with create_profile_for_user:', error);
-        }
-      }
-      
-      // Approach 3: As a last resort, try handle_new_user_manual function
-      if (!profileCreated) {
-        try {
-          const { data: manualResult, error: manualError } = await supabase.rpc(
-            'handle_new_user_manual',
-            {
-              user_id: userData.user.id,
-              first_name_val: newUser.firstName,
-              last_name_val: newUser.lastName,
-              role_val: newUser.role,
-              email_val: newUser.email
-            }
-          );
-          
-          if (!manualError && manualResult === true) {
-            console.log('Profile created successfully with handle_new_user_manual RPC');
-            profileCreated = true;
-          } else {
-            console.error('Profile creation failed with handle_new_user_manual:', manualError);
-          }
-        } catch (error) {
-          console.error('Error in RPC profile creation with handle_new_user_manual:', error);
-        }
-      }
-      
-      // Verify profile was created
-      const { data: verifyProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userData.user.id)
-        .maybeSingle();
         
-      if (verifyProfile) {
-        console.log('Profile verified:', verifyProfile);
-        toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
-        
-        // Refresh team members list
-        fetchTeamMembers();
-        
-        // Set login URL for share dialog
-        const baseUrl = getBaseUrl();
-        const registerUrl = `${baseUrl}/register?token=${invitationToken}`;
-        setLoginUrl(registerUrl);
-        
-        // Open share dialog
-        setIsShareLinkDialogOpen(true);
-        setIsAddUserDialogOpen(false);
+        toast.success('Updated existing invitation for this email');
       } else {
-        console.error('Could not verify profile creation');
-        toast.warning('User created but profile verification failed. They may need to log in once to finalize setup.');
+        console.log('Creating new user with email:', newUser.email);
         
-        // Still show the invitation link, even if profile verification failed
-        const baseUrl = getBaseUrl();
-        const registerUrl = `${baseUrl}/register?token=${invitationToken}`;
-        setLoginUrl(registerUrl);
+        // Create a new invitation token
+        invitationToken = generateInvitationToken();
         
-        // Open share dialog
-        setIsShareLinkDialogOpen(true);
-        setIsAddUserDialogOpen(false);
+        try {
+          // Store the invitation in the database
+          const { error: invitationError } = await supabase
+            .from('user_invitations')
+            .insert({
+              email: newUser.email,
+              first_name: newUser.firstName,
+              last_name: newUser.lastName,
+              role: newUser.role,
+              job_title: newUser.jobTitle || '',
+              invitation_token: invitationToken,
+              created_by: currentUserProfile?.id
+            });
+            
+          if (invitationError) {
+            // Handle the duplicate key error more gracefully
+            if (invitationError.message.includes('duplicate key') && invitationError.message.includes('user_invitations_email_key')) {
+              console.warn('Invitation with this email already exists.');
+              
+              // Fetch the existing invitation token
+              const { data: existingInv, error: fetchError } = await supabase
+                .from('user_invitations')
+                .select('invitation_token')
+                .eq('email', newUser.email)
+                .maybeSingle();
+                
+              if (fetchError || !existingInv) {
+                console.error('Error fetching existing invitation:', fetchError);
+                toast.error('An invitation for this email exists but could not be retrieved.');
+                setCreateUserLoading(false);
+                return;
+              }
+              
+              invitationToken = existingInv.invitation_token;
+              toast.info('Using existing invitation for this email address');
+            } else {
+              console.error('Error creating invitation:', invitationError);
+              toast.error(`Failed to create invitation: ${invitationError.message}`);
+              setCreateUserLoading(false);
+              return;
+            }
+          }
+        } catch (inviteError) {
+          console.error('Exception during invitation creation:', inviteError);
+        }
       }
+      
+      // Set login URL for share dialog regardless of whether we used an existing token or created a new one
+      const baseUrl = getBaseUrl();
+      const registerUrl = `${baseUrl}/register?token=${invitationToken}`;
+      setLoginUrl(registerUrl);
+      
+      // Open share dialog
+      setIsShareLinkDialogOpen(true);
+      setIsAddUserDialogOpen(false);
+      
+      // Only create the auth user if we're not reusing an existing invitation
+      if (!existingInvitation) {
+        // Create the auth user
+        const { data: userData, error: signUpError } = await supabase.auth.signUp({
+          email: newUser.email,
+          password: 'hospitalityintelligence2025',
+          options: {
+            data: {
+              first_name: newUser.firstName,
+              last_name: newUser.lastName,
+              role: newUser.role,
+              job_title: newUser.jobTitle || '',
+              email: newUser.email
+            }
+          }
+        });
+        
+        if (signUpError) {
+          console.error('Signup Error:', signUpError);
+          toast.error(`User creation failed: ${signUpError.message}`);
+          setCreateUserLoading(false);
+          return;
+        }
+        
+        if (!userData.user) {
+          toast.error('Failed to create user account');
+          setCreateUserLoading(false);
+          return;
+        }
+        
+        console.log('User created successfully:', userData.user.id);
+        
+        // Wait 1 second for Auth trigger to fire (if it's going to)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Create profile directly - no waiting for trigger
+        let profileCreated = false;
+        
+        // Approach 1: Direct insert with minimal fields
+        try {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userData.user.id,
+              first_name: newUser.firstName,
+              last_name: newUser.lastName,
+              role: newUser.role,
+              job_title: newUser.jobTitle || '',
+              email: newUser.email
+            });
+            
+          if (!insertError) {
+            console.log('Profile created successfully with direct insert');
+            profileCreated = true;
+          } else {
+            console.error('Direct profile insert failed:', insertError);
+          }
+        } catch (error) {
+          console.error('Error in direct profile creation:', error);
+        }
+        
+        // Approach 2: Use create_profile_for_user function if direct insert failed
+        if (!profileCreated) {
+          try {
+            const { data: rpcResult, error: rpcError } = await supabase.rpc(
+              'create_profile_for_user',
+              {
+                user_id: userData.user.id,
+                first_name_val: newUser.firstName,
+                last_name_val: newUser.lastName,
+                role_val: newUser.role,
+                job_title_val: newUser.jobTitle || '',
+                email_val: newUser.email
+              }
+            );
+            
+            if (!rpcError && rpcResult === true) {
+              console.log('Profile created successfully with create_profile_for_user RPC');
+              profileCreated = true;
+            } else {
+              console.error('Profile creation failed with create_profile_for_user:', rpcError);
+            }
+          } catch (error) {
+            console.error('Error in RPC profile creation with create_profile_for_user:', error);
+          }
+        }
+        
+        // Approach 3: As a last resort, try handle_new_user_manual function
+        if (!profileCreated) {
+          try {
+            const { data: manualResult, error: manualError } = await supabase.rpc(
+              'handle_new_user_manual',
+              {
+                user_id: userData.user.id,
+                first_name_val: newUser.firstName,
+                last_name_val: newUser.lastName,
+                role_val: newUser.role,
+                email_val: newUser.email
+              }
+            );
+            
+            if (!manualError && manualResult === true) {
+              console.log('Profile created successfully with handle_new_user_manual RPC');
+              profileCreated = true;
+            } else {
+              console.error('Profile creation failed with handle_new_user_manual:', manualError);
+            }
+          } catch (error) {
+            console.error('Error in RPC profile creation with handle_new_user_manual:', error);
+          }
+        }
+        
+        // Verify profile was created
+        const { data: verifyProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userData.user.id)
+          .maybeSingle();
+          
+        if (verifyProfile) {
+          console.log('Profile verified:', verifyProfile);
+          toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+          
+          // Refresh team members list
+          fetchTeamMembers();
+        } else {
+          console.error('Could not verify profile creation');
+          toast.warning('User created but profile verification failed. They may need to log in once to finalize setup.');
+        }
+      }
+      
+      toast.success(`Invitation for ${newUser.firstName} ${newUser.lastName} created successfully!`);
+      
+      // Refresh team members list
+      fetchTeamMembers();
       
     } catch (error) {
       console.error('Unexpected error in user creation:', error);
