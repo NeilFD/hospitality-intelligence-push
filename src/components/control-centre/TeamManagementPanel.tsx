@@ -135,7 +135,7 @@ const TeamManagementPanel: React.FC = () => {
           email: newUser.email,
           first_name: newUser.firstName,
           last_name: newUser.lastName,
-          invitation_token: invitationToken, // Changed from 'token' to 'invitation_token'
+          invitation_token: invitationToken,
           role: newUser.role,
           job_title: newUser.jobTitle,
           created_by: currentUserProfile?.id,

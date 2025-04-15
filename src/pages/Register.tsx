@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RegisterForm from '@/components/auth/RegisterForm';
@@ -54,7 +55,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
-        .eq('invitation_token', token) // Changed from 'token' to 'invitation_token'
+        .eq('invitation_token', token)
         .eq('is_claimed', false)
         .single();
         
@@ -79,7 +80,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         role: data.role || 'Team Member',
         jobTitle: data.job_title || ''
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching invitation data:', err);
       setError('Invalid or expired invitation. Please contact your administrator.');
     } finally {
@@ -95,7 +96,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       const { error } = await supabase
         .from('user_invitations')
         .update({ is_claimed: true })
-        .eq('invitation_token', invitationToken); // Changed from 'token' to 'invitation_token'
+        .eq('invitation_token', invitationToken);
         
       if (error) throw error;
     } catch (error) {
