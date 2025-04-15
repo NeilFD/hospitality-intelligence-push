@@ -96,16 +96,20 @@ const ProfilePage = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `banner-${profile.id}-${Date.now()}.${fileExt}`;
       
-      const { error: uploadError, data } = await supabase.storage
+      // Ensure the file is uploaded to the correct path in the 'profiles' bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profiles')
-        .upload(fileName, file);
+        .upload(`${profile.id}/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
         
       if (uploadError) throw uploadError;
       
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
-        .getPublicUrl(fileName);
+        .getPublicUrl(`${profile.id}/${fileName}`);
         
       // Update the profile with the banner URL
       const { error: updateError } = await supabase
