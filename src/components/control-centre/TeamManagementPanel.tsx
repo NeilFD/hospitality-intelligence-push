@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -210,30 +209,91 @@ const TeamManagementPanel: React.FC = () => {
       console.log('User created successfully:', userData.user);
       console.log('User ID:', userData.user.id);
       
-      // Final verification and logging
-      const { data: verifyProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userData.user.id)
-        .maybeSingle();
+      // Manual profile creation as a fallback
+      try {
+        // Wait a bit to allow the trigger to work first
+        setTimeout(async () => {
+          // Check if profile was created automatically
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userData.user?.id)
+            .maybeSingle();
+            
+          if (!existingProfile) {
+            console.log('Profile not found, attempting manual profile creation via RPC');
+            
+            // Try the direct RPC function
+            const { data: rpcResult, error: rpcError } = await supabase.rpc(
+              'create_profile_for_user',
+              {
+                user_id: userData.user?.id,
+                first_name_val: newUser.firstName,
+                last_name_val: newUser.lastName,
+                role_val: newUser.role,
+                job_title_val: newUser.jobTitle || ''
+              }
+            );
+            
+            if (rpcError) {
+              console.error('RPC profile creation failed:', rpcError);
+              
+              // Last resort: direct insert
+              const { error: directInsertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: userData.user?.id,
+                  first_name: newUser.firstName,
+                  last_name: newUser.lastName,
+                  role: newUser.role,
+                  job_title: newUser.jobTitle || ''
+                });
+                
+              if (directInsertError) {
+                console.error('Direct profile insertion failed:', directInsertError);
+                toast.error('Profile creation failed, but user account was created');
+              } else {
+                console.log('Direct profile insertion succeeded');
+              }
+            } else {
+              console.log('RPC profile creation succeeded:', rpcResult);
+            }
+          } else {
+            console.log('Profile already exists:', existingProfile);
+          }
+          
+          // Final verification
+          const { data: verifyProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userData.user?.id)
+            .maybeSingle();
+            
+          if (verifyProfile) {
+            console.log('Profile verified:', verifyProfile);
+            toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully`);
+          } else {
+            console.warn('Profile verification still failed after multiple attempts');
+            toast.warning('User created but profile may be incomplete, refresh to see updates');
+          }
+          
+          // Refresh team members and reset form regardless of outcome
+          fetchTeamMembers();
+          setIsAddUserDialogOpen(false);
+          resetNewUserForm();
+        }, 1000); // Give the trigger a chance to run first
+      } catch (profileError) {
+        console.error('Error in profile creation fallback:', profileError);
+        toast.error('Error in profile creation, but user account was created');
         
-      if (verifyProfile) {
-        console.log('Profile verified:', verifyProfile);
-        toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully`);
-      } else {
-        console.error('Profile verification failed');
-        toast.error('Profile creation verification failed');
+        // Still refresh the list and reset form
+        fetchTeamMembers();
+        setIsAddUserDialogOpen(false);
+        resetNewUserForm();
       }
-      
-      // Refresh team members and reset form
-      fetchTeamMembers();
-      setIsAddUserDialogOpen(false);
-      resetNewUserForm();
-      
     } catch (error) {
       console.error('Unexpected error in user creation:', error);
       toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
       setCreateUserLoading(false);
     }
   };
