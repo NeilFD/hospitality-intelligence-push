@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -127,7 +128,7 @@ const TeamManagementPanel: React.FC = () => {
         
       if (error) throw error;
       
-      setTeamMembers(data || []);
+      setTeamMembers(data as UserProfile[] || []);
     } catch (error) {
       console.error('Error fetching team members:', error);
       toast.error('Failed to load team members');
@@ -149,19 +150,18 @@ const TeamManagementPanel: React.FC = () => {
       const invitationToken = generateInvitationToken();
       
       try {
-        // Store the invitation in the user_invitations table
-        const { error: invitationError } = await supabase.rpc(
-          'create_user_invitation',
-          {
-            p_email: newUser.email,
-            p_first_name: newUser.firstName,
-            p_last_name: newUser.lastName,
-            p_role: newUser.role,
-            p_job_title: newUser.jobTitle || null,
-            p_created_by: currentUserProfile?.id || null,
-            p_invitation_token: invitationToken
-          }
-        );
+        // Store the invitation in the user_invitations table using the SQL API instead of RPC
+        const { error: invitationError } = await supabase
+          .from('user_invitations')
+          .insert({
+            email: newUser.email,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || null,
+            created_by: currentUserProfile?.id || null,
+            invitation_token: invitationToken
+          });
         
         if (invitationError) {
           console.error('Error creating user invitation:', invitationError);

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/supabase-types';
 
 // Auth Service Role Type
-export type AuthServiceRole = 'GOD' | 'Super User' | 'Manager' | 'Team Member';
+export type AuthServiceRole = 'GOD' | 'Super User' | 'Manager' | 'Team Member' | 'Owner';
 
 // Auth Store State Interface
 interface AuthState {
@@ -18,7 +18,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<UserProfile | null>;
   clearError: () => void;
 }
 
@@ -185,8 +185,8 @@ export const useAuthStore = create<AuthState>()(
           
           if (error) throw error;
           
-          set({ profile: data });
-          return data;
+          set({ profile: data as UserProfile });
+          return data as UserProfile;
         } catch (error: any) {
           console.error('Error updating profile:', error);
           throw error;

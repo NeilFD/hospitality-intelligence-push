@@ -404,7 +404,7 @@ export interface UserProfile {
   id: string;
   first_name: string | null;
   last_name: string | null;
-  role: 'GOD' | 'Super User' | 'Manager' | 'Team Member' | null;
+  role: 'GOD' | 'Super User' | 'Manager' | 'Team Member' | 'Owner' | null;
   avatar_url: string | null;
   banner_url?: string | null;
   banner_position_y?: number | null;
