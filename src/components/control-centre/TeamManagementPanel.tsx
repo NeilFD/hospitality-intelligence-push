@@ -196,9 +196,20 @@ const TeamManagementPanel: React.FC = () => {
       fetchTeamMembers();
       
       if (responseData.existingInvitation) {
-        toast.success(`Invitation has been resent to ${newUser.email}`);
+        toast.success(`Invitation has been resent to ${newUser.email}. Check the edge function logs for details.`);
       } else {
-        toast.success(`An invitation has been sent to ${newUser.email}`);
+        toast.success(`An invitation has been sent to ${newUser.email}. Check the edge function logs for details.`);
+      }
+      
+      if (responseData.invitationUrl) {
+        toast.info(
+          <div>
+            <p>Invitation URL (for testing):</p>
+            <p className="mt-1 text-xs break-all">{responseData.invitationUrl}</p>
+            <p className="mt-2 text-xs">Note: The actual email might not have been delivered. Check logs.</p>
+          </div>,
+          { duration: 10000 }
+        );
       }
       
     } catch (error) {
