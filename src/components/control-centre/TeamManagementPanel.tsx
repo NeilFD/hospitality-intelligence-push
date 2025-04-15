@@ -25,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload } from 'lucide-react';
+import { UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload, Mail, MessageSquare, Link2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
@@ -44,6 +44,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const generateInvitationToken = () => {
   const tokenLength = 32;
@@ -85,6 +86,7 @@ const TeamManagementPanel: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [createUserLoading, setCreateUserLoading] = useState(false);
   const [invitationLink, setInvitationLink] = useState('');
+  const [activeShareTab, setActiveShareTab] = useState('copy');
   
   const [newUser, setNewUser] = useState({
     email: '',
@@ -240,13 +242,43 @@ const TeamManagementPanel: React.FC = () => {
       });
   };
   
-  const shareViaEmail = () => {
-    const recipientEmail = newUser.email;
-    const subject = encodeURIComponent('Hi - Welcome!');
-    const body = encodeURIComponent(`You've been invited to join our team. Click the link below to create your account:\n\n\n\n${invitationLink}\n\n\n\nThis invitation will expire in 7 days.`);
+  const createManualEmailContent = () => {
+    return {
+      to: newUser.email,
+      subject: 'You have been invited to join our team',
+      body: `Hi ${newUser.firstName},\n\nYou've been invited to join our team. Please click the link below to create your account:\n\n${invitationLink}\n\nThis invitation will expire in 7 days.\n\nRegards,\nThe Team`
+    };
+  };
+  
+  const handleManualEmail = () => {
+    const emailContent = createManualEmailContent();
     
-    const mailtoLink = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
-    window.open(mailtoLink, '_blank');
+    toast.success("Email instructions ready", {
+      description: "Please use the text provided to send an email manually",
+      duration: 5000
+    });
+  };
+  
+  const handleNativeEmail = () => {
+    const emailContent = createManualEmailContent();
+    const mailtoLink = `mailto:${emailContent.to}?subject=${encodeURIComponent(emailContent.subject)}&body=${encodeURIComponent(emailContent.body)}`;
+    
+    const tempLink = document.createElement('a');
+    tempLink.href = mailtoLink;
+    document.body.appendChild(tempLink);
+    
+    navigator.clipboard.writeText(mailtoLink)
+      .then(() => {
+        toast.success('Email link copied to clipboard', {
+          description: "You can now paste this into your browser address bar to open your email client"
+        });
+      })
+      .catch(err => {
+        toast.error('Failed to copy email link');
+        console.error('Error copying email link:', err);
+      });
+    
+    document.body.removeChild(tempLink);
   };
   
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -611,45 +643,108 @@ const TeamManagementPanel: React.FC = () => {
       <Dialog open={isShareLinkDialogOpen} onOpenChange={setIsShareLinkDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Share Invitation Link</DialogTitle>
+            <DialogTitle>Invitation Created</DialogTitle>
             <DialogDescription>
-              The user has been created. Share this invitation link with them.
+              Choose how you'd like to share this invitation with {newUser.firstName}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="invitationLink">Invitation Link</Label>
-              <div className="flex gap-2">
-                <Input 
-                  id="invitationLink" 
-                  value={invitationLink}
-                  readOnly
-                  className="flex-1"
+          <Tabs value={activeShareTab} onValueChange={setActiveShareTab} className="w-full">
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="copy">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Link
+              </TabsTrigger>
+              <TabsTrigger value="email">
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </TabsTrigger>
+              <TabsTrigger value="message">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Message
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="copy" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Invitation Link</Label>
+                <div className="flex items-center gap-2">
+                  <Input value={invitationLink} readOnly className="flex-1" />
+                  <Button variant="outline" size="icon" onClick={copyToClipboard}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Copy this link and share it with {newUser.firstName}
+                </p>
+              </div>
+              <Button className="w-full" onClick={copyToClipboard}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy to Clipboard
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="email" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Email Content</Label>
+                <Textarea 
+                  className="min-h-[120px]" 
+                  readOnly 
+                  value={createManualEmailContent().body}
                 />
-                <Button variant="outline" onClick={copyToClipboard}>
-                  <Copy className="h-4 w-4" />
+                <p className="text-sm text-muted-foreground">
+                  Copy this text and send it via your email client
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={handleManualEmail}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Email Content
+                </Button>
+                <Button className="flex-1" onClick={handleNativeEmail}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Create Email Link
                 </Button>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+            
+            <TabsContent value="message" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Message Content</Label>
+                <Textarea 
+                  className="min-h-[120px]" 
+                  readOnly 
+                  value={`Hi ${newUser.firstName}, I've invited you to join our team! Please use this link to create your account: ${invitationLink}`}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Copy this text and share it via your preferred messaging app
+                </p>
+              </div>
+              <Button className="w-full" onClick={() => {
+                navigator.clipboard.writeText(`Hi ${newUser.firstName}, I've invited you to join our team! Please use this link to create your account: ${invitationLink}`);
+                toast.success('Message copied to clipboard');
+              }}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Message
+              </Button>
+            </TabsContent>
+          </Tabs>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsShareLinkDialogOpen(false);
-              setNewUser({
-                email: '',
-                firstName: '',
-                lastName: '',
-                role: 'Team Member',
-                jobTitle: ''
-              });
-            }}>
-              Close
-            </Button>
-            <Button onClick={shareViaEmail}>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share via Email
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsShareLinkDialogOpen(false);
+                setNewUser({
+                  email: '',
+                  firstName: '',
+                  lastName: '',
+                  role: 'Team Member',
+                  jobTitle: ''
+                });
+              }}
+            >
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>
