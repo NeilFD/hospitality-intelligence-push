@@ -113,98 +113,134 @@ const ProfilePage = () => {
     };
   }, [id, currentUserProfile]);
 
-  // Effect to dispose the canvas when component unmounts
+  // Separate cleanup effect for component unmount - always run this
   useEffect(() => {
     return () => {
-      disposeCanvas();
+      if (canvasRef.current) {
+        try {
+          // Remove all event listeners and objects before disposing
+          const canvas = canvasRef.current;
+          canvas.clear();
+          canvas.dispose();
+        } catch (e) {
+          console.error('Error disposing canvas on unmount:', e);
+        }
+        canvasRef.current = null;
+      }
     };
   }, []);
 
-  // Separate effect to clean up canvas when repositioning mode changes
-  useEffect(() => {
-    if (!isRepositioningBanner) {
-      disposeCanvas();
-      setCanvasInitialized(false);
-    }
-  }, [isRepositioningBanner]);
+  // Use a separate state for tracking active objects
+  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
 
   // Initialize canvas for image repositioning
   useEffect(() => {
     if (isRepositioningBanner && canvasElRef.current && containerRef.current && profile?.banner_url && !canvasInitialized) {
-      initializeCanvas();
-    }
-  }, [isRepositioningBanner, profile?.banner_url, canvasInitialized]);
-
-  // Helper function to safely dispose canvas
-  const disposeCanvas = () => {
-    if (canvasRef.current) {
-      try {
-        canvasRef.current.dispose();
-      } catch (e) {
-        console.error('Error disposing canvas:', e);
-      }
-      canvasRef.current = null;
-    }
-  };
-
-  // Initialize the canvas with the banner image
-  const initializeCanvas = () => {
-    if (!canvasElRef.current || !containerRef.current || !profile?.banner_url) return;
-    
-    // Clean up previous canvas instance first
-    disposeCanvas();
-    
-    try {
-      // Set canvas dimensions to match container
-      const container = containerRef.current;
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-      
-      // Create new canvas
-      const canvas = new fabric.Canvas(canvasElRef.current, {
-        width: containerWidth,
-        height: containerHeight,
-        selection: false,
-      });
-      
-      canvasRef.current = canvas;
-      setCanvasInitialized(true);
-      
-      // Load the banner image
-      fabric.Image.fromURL(profile.banner_url, (img) => {
-        if (!isMountedRef.current || !canvas || !canvasRef.current) return;
-        
-        // Scale image to fit width
-        const scale = containerWidth / img.width!;
-        img.scaleX = scale;
-        img.scaleY = scale;
-        
-        // Allow only vertical movement
-        img.lockMovementX = true;
-        img.lockRotation = true;
-        img.lockScalingX = true;
-        img.lockScalingY = true;
-        
-        // Set initial position
-        img.left = 0;
-        img.top = yPosition || 0;
-        
-        // Add image to canvas
-        canvas.add(img);
-        canvas.setActiveObject(img);
-        
-        // Update position state when image is moved
-        img.on('moved', function() {
-          if (isMountedRef.current) {
-            setYPosition(img.top || 0);
+      const initCanvas = async () => {
+        try {
+          // Clean up previous canvas if it exists
+          if (canvasRef.current) {
+            // Clear all objects and event handlers before disposing
+            canvasRef.current.clear();
+            canvasRef.current.dispose();
+            canvasRef.current = null;
           }
-        });
-      });
-    } catch (e) {
-      console.error('Error initializing canvas:', e);
-      setCanvasInitialized(false);
+          
+          // Set canvas dimensions to match container
+          const container = containerRef.current;
+          if (!container) return;
+          
+          const containerWidth = container.clientWidth;
+          const containerHeight = container.clientHeight;
+          
+          // Wait for React to finish its render cycle
+          await new Promise(resolve => setTimeout(resolve, 0));
+          
+          if (!canvasElRef.current || !isMountedRef.current) return;
+          
+          // Create new canvas
+          const canvas = new fabric.Canvas(canvasElRef.current, {
+            width: containerWidth,
+            height: containerHeight,
+            backgroundColor: "#ffffff",
+            selection: false,
+          });
+          
+          canvasRef.current = canvas;
+          setCanvasInitialized(true);
+          
+          // Load the banner image
+          fabric.Image.fromURL(profile.banner_url, (img) => {
+            if (!isMountedRef.current || !canvas) return;
+            
+            // Scale image to fit width
+            const scale = containerWidth / img.width!;
+            img.scaleX = scale;
+            img.scaleY = scale;
+            
+            // Allow only vertical movement
+            img.lockMovementX = true;
+            img.lockRotation = true;
+            img.lockScalingX = true;
+            img.lockScalingY = true;
+            
+            // Set initial position
+            img.left = 0;
+            img.top = yPosition || 0;
+            
+            // Add image to canvas
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            setActiveObject(img);
+            
+            // Update position state when image is moved
+            img.on('moved', function() {
+              if (isMountedRef.current) {
+                setYPosition(img.top || 0);
+              }
+            });
+            
+            // Render canvas
+            canvas.renderAll();
+          });
+        } catch (e) {
+          console.error('Error initializing canvas:', e);
+          setCanvasInitialized(false);
+        }
+      };
+      
+      initCanvas();
     }
-  };
+  }, [isRepositioningBanner, profile?.banner_url, canvasInitialized, yPosition]);
+
+  // Handle exiting reposition mode
+  useEffect(() => {
+    if (!isRepositioningBanner && canvasInitialized) {
+      // When we exit repositioning mode, clean up canvas properly
+      const cleanupCanvas = () => {
+        try {
+          if (canvasRef.current) {
+            // First remove all objects to clean up event listeners
+            if (activeObject) {
+              canvasRef.current.remove(activeObject);
+              setActiveObject(null);
+            }
+            
+            canvasRef.current.clear();
+            canvasRef.current.dispose();
+            canvasRef.current = null;
+          }
+        } catch (e) {
+          console.error('Error cleaning up canvas:', e);
+        } finally {
+          setCanvasInitialized(false);
+        }
+      };
+      
+      // Give React a chance to update the DOM first
+      setTimeout(cleanupCanvas, 0);
+    }
+  }, [isRepositioningBanner, canvasInitialized, activeObject]);
 
   const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -285,23 +321,16 @@ const ProfilePage = () => {
   };
 
   const handleSaveRepositioning = async () => {
-    if (!profile || !canvasRef.current) return;
+    if (!profile) return;
     
     try {
-      // Get the image object
-      const objects = canvasRef.current.getObjects();
-      if (objects.length === 0) return;
-      
-      const imageObj = objects[0] as fabric.Image;
-      const yPos = imageObj.top || 0;
-      
-      console.log("Saving banner position:", yPos, "for profile ID:", profile.id);
+      console.log("Saving banner position:", yPosition, "for profile ID:", profile.id);
       
       // Save the position in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          banner_position_y: yPos // Store the Y position
+          banner_position_y: yPosition // Store the Y position
         })
         .eq('id', profile.id);
         
@@ -316,11 +345,10 @@ const ProfilePage = () => {
         if (!prevProfile) return null;
         return {
           ...prevProfile,
-          banner_position_y: yPos
+          banner_position_y: yPosition
         };
       });
       
-      setYPosition(yPos);
       setIsRepositioningBanner(false);
       toast.success('Banner position updated');
     } catch (error) {
@@ -330,7 +358,10 @@ const ProfilePage = () => {
   };
 
   const handleCancelRepositioning = () => {
-    // Safely exit repositioning mode
+    // Reset to original position before exiting
+    if (profile?.banner_position_y !== undefined && profile.banner_position_y !== null) {
+      setYPosition(profile.banner_position_y);
+    }
     setIsRepositioningBanner(false);
   };
 
