@@ -128,14 +128,14 @@ const TeamManagementPanel: React.FC = () => {
         invitationToken
       });
       
-      // Store the invitation in the database without sending email
+      // Store the invitation in the database with the correct column name
       const { error: inviteError } = await supabase
         .from('user_invitations')
         .insert({
           email: newUser.email,
           first_name: newUser.firstName,
           last_name: newUser.lastName,
-          token: invitationToken,
+          invitation_token: invitationToken, // Changed from 'token' to 'invitation_token'
           role: newUser.role,
           job_title: newUser.jobTitle,
           created_by: currentUserProfile?.id,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import RegisterForm from '@/components/auth/RegisterForm';
@@ -55,7 +54,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
-        .eq('invitation_token', token)
+        .eq('invitation_token', token) // Changed from 'token' to 'invitation_token'
         .eq('is_claimed', false)
         .single();
         
@@ -96,7 +95,7 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       const { error } = await supabase
         .from('user_invitations')
         .update({ is_claimed: true })
-        .eq('invitation_token', invitationToken);
+        .eq('invitation_token', invitationToken); // Changed from 'token' to 'invitation_token'
         
       if (error) throw error;
     } catch (error) {
