@@ -17,7 +17,7 @@ interface InvitationRequest {
   created_by?: string;
 }
 
-// Define default site URL to be used as fallback
+// Define default site URL to be used as fallback - update this to match your current URL
 const DEFAULT_SITE_URL = "https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com";
 
 serve(async (req) => {
@@ -103,7 +103,8 @@ serve(async (req) => {
       const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
       
       if (emailResult.error) {
-        throw new Error(`Failed to send invitation email: ${emailResult.error}`);
+        console.warn(`Failed to send invitation email: ${emailResult.error}`);
+        // We'll continue despite the error to provide the URL
       }
       
       return new Response(
@@ -124,7 +125,8 @@ serve(async (req) => {
     const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
     
     if (emailResult.error) {
-      throw new Error(`Failed to send invitation email: ${emailResult.error}`);
+      console.warn(`Warning: Issue with email sending: ${emailResult.error}`);
+      // We'll continue despite the error to store the invitation
     }
     
     // Use a direct SQL query with the service role to bypass RLS policies
@@ -149,8 +151,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Invitation email sent successfully',
-        invitationUrl 
+        message: emailResult.error 
+          ? 'Invitation created but email could not be sent. Please share the link manually.' 
+          : 'Invitation email sent successfully',
+        invitationUrl,
+        emailSent: !emailResult.error
       }),
       { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
@@ -313,7 +318,7 @@ async function sendInvitationEmail(
           // This allows the invitation to be created in the database
           return { 
             success: true,
-            error: "All email sending methods failed. Email was simulated but not actually sent."
+            error: "All email sending methods failed. Email was simulated but not actually sent. Please share the link manually."
           };
         }
       }

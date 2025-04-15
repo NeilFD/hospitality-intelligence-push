@@ -6,6 +6,7 @@ import { LayoutProps } from '@/types/layout-types';
 import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
 interface InvitationData {
   email: string;
@@ -24,10 +25,13 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log("Register page loaded with query: ", location.search);
+  
   // Extract invitation token from URL if present
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const token = query.get('token');
+    console.log("Token from URL: ", token);
     if (token) {
       setInvitationToken(token);
       fetchInvitationData(token);
@@ -46,6 +50,8 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     setError(null);
     
     try {
+      console.log("Fetching invitation data for token:", token);
+      
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
@@ -53,7 +59,12 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         .eq('is_claimed', false)
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching invitation data:", error);
+        throw error;
+      }
+      
+      console.log("Invitation data retrieved:", data);
       
       // Check if invitation has expired
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
@@ -69,8 +80,8 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         role: data.role || 'Team Member',
         jobTitle: data.job_title || ''
       });
-    } catch (error) {
-      console.error('Error fetching invitation data:', error);
+    } catch (err) {
+      console.error('Error fetching invitation data:', err);
       setError('Invalid or expired invitation. Please contact your administrator.');
     } finally {
       setLoading(false);
@@ -95,16 +106,19 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
   };
 
   return (
-    <div className="container relative h-screen flex-col items-center justify-center grid lg:grid-cols-1 lg:px-0">
+    <div className="container relative min-h-screen flex-col items-center justify-center grid lg:grid-cols-1 lg:px-0">
       <div className="lg:pt-20 md:p-8 sm:p-8 p-4 lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[450px] rounded-xl p-6 bg-white">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[450px] rounded-xl p-6 bg-white shadow-md">
           {loading ? (
             <div className="flex flex-col items-center justify-center space-y-4">
               <p>Loading invitation...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center space-y-4">
-              <p className="text-red-500">{error}</p>
+              <div className="bg-red-50 text-red-600 p-4 rounded-md flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <p>{error}</p>
+              </div>
               <Button asChild variant="outline">
                 <Link to="/login">Go to Login</Link>
               </Button>

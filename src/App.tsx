@@ -82,7 +82,7 @@ function App() {
                 
                 {/* Auth Routes */}
                 <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-                <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+                <Route path="/register" element={<Register />} />
                 
                 {/* Profile Route */}
                 <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
