@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -296,7 +297,8 @@ const TeamManagementPanel: React.FC = () => {
                 first_name_val: newUser.firstName,
                 last_name_val: newUser.lastName,
                 role_val: newUser.role,
-                job_title_val: newUser.jobTitle || ''
+                job_title_val: newUser.jobTitle || '',
+                email_val: newUser.email
               }
             );
             
@@ -943,4 +945,154 @@ The Hospitality Intelligence Team
                   placeholder="First name"
                 />
               </div>
-              <
+              <div className="space-y-2">
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input 
+                  id="editLastName" 
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editRole">Role</Label>
+                <Select 
+                  value={editForm.role} 
+                  onValueChange={(value: UserRoleType) => setEditForm({...editForm, role: value})}
+                  disabled={selectedUser?.role === 'GOD' && !isGod}
+                >
+                  <SelectTrigger id="editRole">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isGod && (
+                      <>
+                        <SelectItem value="GOD">GOD</SelectItem>
+                        <SelectItem value="Super User">Super User</SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Team Member">Team Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editJobTitle">Job Title</Label>
+                <Input 
+                  id="editJobTitle" 
+                  value={editForm.jobTitle}
+                  onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
+                  placeholder="Job title"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="birthDate">Birthday (Month-Day)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                    id="birthDate"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editForm.birthDate ? (
+                      format(editForm.birthDate, "MMMM d")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={editForm.birthDate}
+                    onSelect={(date) => setEditForm({...editForm, birthDate: date})}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Only month and day will be stored (not the year)
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="favouriteDish">Favourite Dish</Label>
+              <Input 
+                id="favouriteDish" 
+                value={editForm.favouriteDish}
+                onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
+                placeholder="Favourite dish"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="favouriteDrink">Favourite Drink</Label>
+              <Input 
+                id="favouriteDrink" 
+                value={editForm.favouriteDrink}
+                onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
+                placeholder="Favourite drink"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="aboutMe">About Me</Label>
+              <Textarea 
+                id="aboutMe" 
+                value={editForm.aboutMe}
+                onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
+                placeholder="Share something about yourself"
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditUserDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleEditUser}
+            >
+              <UserCog className="mr-2 h-4 w-4" />
+              Update Profile
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {selectedUser?.first_name} {selectedUser?.last_name}'s profile
+              and remove their access to the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteUser}
+              disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteLoading ? 'Deleting...' : 'Delete User'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+export default TeamManagementPanel;
