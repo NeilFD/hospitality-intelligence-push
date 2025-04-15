@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X } from 'lucide-react';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check } from 'lucide-react';
 import { useAuthStore } from '@/services/auth-service';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -12,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { fabric } from 'fabric';
+import { Slider } from '@/components/ui/slider';
 import { 
   Select,
   SelectContent,
@@ -28,6 +31,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRepositioningBanner, setIsRepositioningBanner] = useState(false);
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
@@ -37,6 +41,12 @@ const ProfilePage = () => {
     aboutMe: '',
     birthDate: ''
   });
+  
+  // References for canvas and image
+  const canvasRef = useRef<fabric.Canvas | null>(null);
+  const canvasElRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [yPosition, setYPosition] = useState(0);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -83,6 +93,60 @@ const ProfilePage = () => {
     
     loadProfile();
   }, [id, currentUserProfile]);
+
+  useEffect(() => {
+    // Clean up the canvas when component unmounts or when repositioning mode ends
+    return () => {
+      if (canvasRef.current) {
+        canvasRef.current.dispose();
+        canvasRef.current = null;
+      }
+    };
+  }, []);
+
+  // Initialize canvas for image repositioning
+  useEffect(() => {
+    if (isRepositioningBanner && canvasElRef.current && containerRef.current && profile?.banner_url) {
+      // Set canvas dimensions to match container
+      const container = containerRef.current;
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      // Create new canvas and set dimensions
+      canvasRef.current = new fabric.Canvas(canvasElRef.current, {
+        width: containerWidth,
+        height: containerHeight,
+        selection: false,
+      });
+      
+      // Load the banner image
+      fabric.Image.fromURL(profile.banner_url, (img) => {
+        // Scale image to fit width
+        const scale = containerWidth / img.width!;
+        img.scaleX = scale;
+        img.scaleY = scale;
+        
+        // Allow only vertical movement
+        img.lockMovementX = true;
+        img.lockRotation = true;
+        img.lockScalingX = true;
+        img.lockScalingY = true;
+        
+        // Set initial position
+        img.left = 0;
+        img.top = yPosition || 0;
+        
+        // Add image to canvas
+        canvasRef.current?.add(img);
+        canvasRef.current?.setActiveObject(img);
+        
+        // Update position state when image is moved
+        img.on('moved', function() {
+          setYPosition(img.top || 0);
+        });
+      });
+    }
+  }, [isRepositioningBanner, profile?.banner_url]);
 
   const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -153,6 +217,50 @@ const ProfilePage = () => {
         event.target.value = '';
       }
     }
+  };
+
+  const handleStartRepositioning = () => {
+    setIsRepositioningBanner(true);
+  };
+
+  const handleSaveRepositioning = async () => {
+    if (!profile || !canvasRef.current) return;
+    
+    try {
+      // Get the image object
+      const objects = canvasRef.current.getObjects();
+      if (objects.length === 0) return;
+      
+      const imageObj = objects[0] as fabric.Image;
+      const yPos = imageObj.top || 0;
+      
+      // Save the position in Supabase - we'll update a metadata field to store position info
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          banner_url: profile.banner_url,  // Keep the same URL
+          // We could add a banner_position field in the future if we want to store more complex positioning
+        })
+        .eq('id', profile.id);
+        
+      if (error) {
+        console.error("Error saving banner position:", error);
+        toast.error('Failed to save banner position');
+        return;
+      }
+      
+      // Update local state with new position
+      setYPosition(yPos);
+      setIsRepositioningBanner(false);
+      toast.success('Banner position updated');
+    } catch (error) {
+      console.error('Error saving banner position:', error);
+      toast.error('Failed to save banner position');
+    }
+  };
+
+  const handleCancelRepositioning = () => {
+    setIsRepositioningBanner(false);
   };
 
   const handleEditProfile = () => {
@@ -253,28 +361,61 @@ const ProfilePage = () => {
     <div className="container mx-auto p-4">
       <div className="max-w-4xl mx-auto">
         <Card className="mb-8 overflow-hidden border-0 shadow-lg">
-          <div className="relative h-32">
-            {profile?.banner_url ? (
-              <img 
-                src={profile.banner_url} 
-                alt="Profile banner" 
-                className="h-full w-full object-cover"
-              />
+          <div ref={containerRef} className="relative h-32">
+            {isRepositioningBanner ? (
+              <div className="h-full w-full">
+                <canvas ref={canvasElRef} className="w-full h-full"></canvas>
+                <div className="absolute bottom-2 right-2 flex space-x-2">
+                  <Button size="sm" variant="outline" onClick={handleCancelRepositioning}>
+                    <X className="h-4 w-4 mr-1" /> Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSaveRepositioning}>
+                    <Check className="h-4 w-4 mr-1" /> Save
+                  </Button>
+                </div>
+                
+                <div className="absolute left-2 bottom-2 bg-white bg-opacity-80 rounded-md p-2">
+                  <p className="text-xs text-gray-600">Drag the image up or down to reposition</p>
+                </div>
+              </div>
             ) : (
-              <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
-            )}
-            {isCurrentUser && (
-              <label htmlFor="banner-upload" className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-full p-2 cursor-pointer hover:bg-opacity-100 transition-colors z-10">
-                <Camera className="h-5 w-5 text-hi-purple" />
-                <input 
-                  type="file" 
-                  id="banner-upload" 
-                  className="hidden" 
-                  accept="image/*"
-                  onChange={handleBannerUpload}
-                  disabled={uploadingBanner}
-                />
-              </label>
+              <>
+                {profile?.banner_url ? (
+                  <img 
+                    src={profile.banner_url} 
+                    alt="Profile banner" 
+                    className="h-full w-full object-cover"
+                    style={{ objectPosition: `center ${yPosition}px` }}
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
+                )}
+                {isCurrentUser && (
+                  <div className="absolute bottom-2 right-2 flex space-x-2 z-10">
+                    {profile?.banner_url && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="bg-white bg-opacity-80 hover:bg-opacity-100"
+                        onClick={handleStartRepositioning}
+                      >
+                        <Move className="h-4 w-4 mr-1 text-hi-purple" /> Reposition
+                      </Button>
+                    )}
+                    <label htmlFor="banner-upload" className="bg-white bg-opacity-80 rounded-md p-2 cursor-pointer hover:bg-opacity-100 transition-colors">
+                      <Camera className="h-5 w-5 text-hi-purple" />
+                      <input 
+                        type="file" 
+                        id="banner-upload" 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleBannerUpload}
+                        disabled={uploadingBanner}
+                      />
+                    </label>
+                  </div>
+                )}
+              </>
             )}
           </div>
           
