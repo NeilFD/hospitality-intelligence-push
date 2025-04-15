@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -150,7 +149,7 @@ const TeamManagementPanel: React.FC = () => {
       const invitationToken = generateInvitationToken();
       
       try {
-        // Store the invitation in the user_invitations table using the SQL API instead of RPC
+        // Store the invitation in the user_invitations table
         const { error: invitationError } = await supabase
           .from('user_invitations')
           .insert({
@@ -199,46 +198,43 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user);
       
-      // The trigger function should now handle profile creation automatically
-      // But as a fallback, we'll try to create the profile manually if needed
+      // Create profile directly to ensure it exists
       if (userData.user.id) {
-        setTimeout(async () => {
-          try {
-            const { data: profileCheck, error: checkError } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('id', userData.user.id)
-              .maybeSingle();
-              
-            if (checkError) {
-              console.error('Error checking profile existence:', checkError);
-            }
+        try {
+          const { data: profileCheck, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', userData.user.id)
+            .maybeSingle();
             
-            if (!profileCheck) {
-              console.log('Profile not found after user creation, creating manually...');
-              
-              const { error: upsertError } = await supabase
-                .from('profiles')
-                .upsert({
-                  id: userData.user.id,
-                  first_name: newUser.firstName,
-                  last_name: newUser.lastName,
-                  role: newUser.role as any,
-                  job_title: newUser.jobTitle || ''
-                });
-                
-              if (upsertError) {
-                console.error('Error creating profile manually:', upsertError);
-              } else {
-                console.log('Profile created manually');
-              }
-            } else {
-              console.log('Profile exists:', profileCheck);
-            }
-          } catch (profileError) {
-            console.error('Error in manual profile creation:', profileError);
+          if (checkError) {
+            console.error('Error checking profile existence:', checkError);
           }
-        }, 2000); // Wait 2 seconds for the trigger to potentially complete
+          
+          if (!profileCheck) {
+            console.log('Profile not found after user creation, creating manually...');
+            
+            const { error: upsertError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: userData.user.id,
+                first_name: newUser.firstName,
+                last_name: newUser.lastName,
+                role: newUser.role as any,
+                job_title: newUser.jobTitle || ''
+              });
+              
+            if (upsertError) {
+              console.error('Error creating profile manually:', upsertError);
+            } else {
+              console.log('Profile created manually');
+            }
+          } else {
+            console.log('Profile exists:', profileCheck);
+          }
+        } catch (profileError) {
+          console.error('Error in manual profile creation:', profileError);
+        }
       }
       
       const baseUrl = getBaseUrl();
