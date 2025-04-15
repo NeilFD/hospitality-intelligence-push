@@ -172,20 +172,46 @@ const TeamManagementPanel: React.FC = () => {
       console.log('User created successfully:', userData.user);
       
       if (userData.user.id) {
-        const { error: profileError } = await supabase
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .upsert({
-            id: userData.user.id,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role as any,
-            job_title: newUser.jobTitle || ''
-          });
+          .select('*')
+          .eq('id', userData.user.id)
+          .maybeSingle();
           
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
+        if (!existingProfile) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userData.user.id,
+              first_name: newUser.firstName,
+              last_name: newUser.lastName,
+              role: newUser.role as any,
+              job_title: newUser.jobTitle || ''
+            });
+            
+          if (insertError) {
+            console.error('Error creating profile with insert:', insertError);
+            
+            const { error: upsertError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: userData.user.id,
+                first_name: newUser.firstName,
+                last_name: newUser.lastName,
+                role: newUser.role as any,
+                job_title: newUser.jobTitle || ''
+              });
+              
+            if (upsertError) {
+              console.error('Error creating profile with upsert:', upsertError);
+            } else {
+              console.log('Profile created via upsert for user:', userData.user.id);
+            }
+          } else {
+            console.log('Profile created via insert for user:', userData.user.id);
+          }
         } else {
-          console.log('Profile created manually for user:', userData.user.id);
+          console.log('Profile already exists for user:', userData.user.id);
         }
       }
       
