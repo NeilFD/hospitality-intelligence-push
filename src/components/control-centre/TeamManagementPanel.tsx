@@ -73,7 +73,6 @@ const getBaseUrl = () => {
   return baseUrl;
 };
 
-// Define a type for valid role values to enforce type safety
 type UserRoleType = 'GOD' | 'Super User' | 'Manager' | 'Team Member' | 'Owner';
 
 const TeamManagementPanel: React.FC = () => {
@@ -148,11 +147,9 @@ const TeamManagementPanel: React.FC = () => {
       
       setCreateUserLoading(true);
       
-      // Create invitation token first
       const invitationToken = generateInvitationToken();
       
       try {
-        // Store the invitation in the user_invitations table
         const { error: invitationError } = await supabase
           .from('user_invitations')
           .insert({
@@ -167,16 +164,13 @@ const TeamManagementPanel: React.FC = () => {
         
         if (invitationError) {
           console.error('Error creating user invitation:', invitationError);
-          // Continue with user creation even if invitation fails
         } else {
           console.log('User invitation created successfully');
         }
       } catch (inviteErr) {
         console.error('Exception in invitation creation:', inviteErr);
-        // Continue with user creation even if invitation fails
       }
       
-      // Create the user account with explicit auth method
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
         password: 'hospitalityintelligence2025',
@@ -201,11 +195,8 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user);
       
-      // CRITICAL FIX: Create profile directly with inserted values instead of relying on trigger
-      // Use a small delay to allow auth to complete first
       setTimeout(async () => {
         try {
-          // First check if the profile already exists (don't duplicate)
           const { data: existingProfile, error: checkError } = await supabase
             .from('profiles')
             .select('id')
@@ -216,11 +207,9 @@ const TeamManagementPanel: React.FC = () => {
             console.error('Error checking profile existence:', checkError);
           }
           
-          // Only create profile if it doesn't exist
           if (!existingProfile) {
             console.log('Creating profile manually for user:', userData.user.id);
             
-            // Use upsert to avoid conflicts
             const { error: upsertError } = await supabase
               .from('profiles')
               .upsert({
@@ -240,7 +229,6 @@ const TeamManagementPanel: React.FC = () => {
             console.log('Profile already exists for user:', userData.user.id);
           }
           
-          // Check again to verify profile was created
           const { data: verifyProfile } = await supabase
             .from('profiles')
             .select('*')
@@ -249,7 +237,6 @@ const TeamManagementPanel: React.FC = () => {
             
           if (!verifyProfile) {
             console.error('Profile verification failed - still not created for user:', userData.user.id);
-            // Make one last attempt using a different approach with raw SQL query
             try {
               const { error: finalAttemptError } = await supabase.rpc(
                 'create_profile_for_user' as any, 
@@ -264,6 +251,8 @@ const TeamManagementPanel: React.FC = () => {
               
               if (finalAttemptError) {
                 console.error('Final profile creation attempt failed:', finalAttemptError);
+              } else {
+                console.log('Profile created via RPC function');
               }
             } catch (rpcError) {
               console.error('RPC profile creation error:', rpcError);
@@ -272,7 +261,9 @@ const TeamManagementPanel: React.FC = () => {
             console.log('Profile verified successfully:', verifyProfile);
           }
           
-          // Refresh the team members list after creating the profile
+          const profilesInfo = await checkProfilesCount();
+          console.log('Final profiles count check:', profilesInfo);
+          
           fetchTeamMembers();
         } catch (profileError) {
           console.error('Exception in profile creation:', profileError);
