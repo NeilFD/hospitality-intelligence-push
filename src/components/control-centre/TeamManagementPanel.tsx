@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -225,7 +224,21 @@ const TeamManagementPanel: React.FC = () => {
           
           let profileCreated = !!existingProfile;
           
-          // STEP 2: If no profile exists, attempt direct insert
+          // STEP 2: Check if the trigger is active
+          if (!profileCreated) {
+            console.log('Profile not found, checking if trigger exists...');
+            const { data: triggerExists, error: triggerCheckError } = await supabase.rpc('check_trigger_exists', {
+              trigger_name: 'on_auth_user_created'
+            });
+            
+            if (triggerCheckError) {
+              console.error('Error checking trigger existence:', triggerCheckError);
+            } else {
+              console.log('Trigger exists check result:', triggerExists);
+            }
+          }
+          
+          // STEP 3: If no profile exists, attempt direct insert
           if (!profileCreated) {
             console.log('Profile not found, creating manually via direct insert for user:', userData.user.id);
             
@@ -244,7 +257,7 @@ const TeamManagementPanel: React.FC = () => {
             if (insertError) {
               console.error('Error inserting profile:', insertError);
               
-              // STEP 3: If insert fails, try upsert
+              // STEP 4: If insert fails, try upsert
               console.log('Insert failed, trying upsert...');
               const { data: upsertData, error: upsertError } = await supabase
                 .from('profiles')
@@ -261,27 +274,25 @@ const TeamManagementPanel: React.FC = () => {
               if (upsertError) {
                 console.error('Error upserting profile:', upsertError);
                 
-                // STEP 4: If upsert fails, try the RPC function
-                console.log('Upsert failed, trying RPC function...');
+                // STEP 5: If upsert fails, try manual function
+                console.log('Upsert failed, trying manual function...');
                 try {
-                  const { data: rpcResult, error: rpcError } = await supabase
-                    .rpc('create_profile_for_user', { 
+                  const { data: manualResult, error: manualError } = await supabase
+                    .rpc('handle_new_user_manual', { 
                       user_id: userData.user.id,
                       first_name_val: newUser.firstName,
                       last_name_val: newUser.lastName,
-                      role_val: newUser.role,
-                      job_title_val: newUser.jobTitle || ''
+                      role_val: newUser.role
                     });
                     
-                  if (rpcError) {
-                    console.error('Error in RPC profile creation:', rpcError);
-                    throw rpcError;
+                  if (manualError) {
+                    console.error('Error in manual profile creation:', manualError);
                   } else {
-                    console.log('Profile created via RPC function:', rpcResult);
+                    console.log('Profile created via manual function:', manualResult);
                     profileCreated = true;
                   }
-                } catch (rpcCallError) {
-                  console.error('Exception calling RPC function:', rpcCallError);
+                } catch (manualCallError) {
+                  console.error('Exception calling manual function:', manualCallError);
                 }
               } else {
                 console.log('Profile created via upsert:', upsertData);
@@ -293,7 +304,7 @@ const TeamManagementPanel: React.FC = () => {
             }
           }
           
-          // STEP 5: Final verification
+          // STEP 6: Final verification and diagnostics
           const { data: verifyProfile } = await supabase
             .from('profiles')
             .select('*')
@@ -315,7 +326,7 @@ const TeamManagementPanel: React.FC = () => {
         } catch (profileError) {
           console.error('Exception in profile creation:', profileError);
         }
-      }, 1500); // Increased timeout to allow trigger to work
+      }, 2000); // Increased timeout to allow trigger to work
       
       const baseUrl = getBaseUrl();
       const url = `${baseUrl}/register?token=${invitationToken}`;
