@@ -153,7 +153,7 @@ const ProfilePage = () => {
         });
       });
     }
-  }, [isRepositioningBanner, profile?.banner_url]);
+  }, [isRepositioningBanner, profile?.banner_url, yPosition]);
 
   const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -433,7 +433,7 @@ const ProfilePage = () => {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="bg-white bg-opacity-0 group hover:bg-opacity-80 text-gray-600 hover:text-hi-purple transition-all duration-300 opacity-0 group-hover:opacity-100"
+                              className="bg-white bg-opacity-0 group-hover:bg-opacity-80 text-gray-600 hover:text-hi-purple transition-all duration-300 opacity-0 group-hover:opacity-100"
                               onClick={handleStartRepositioning}
                             >
                               <Move className="h-4 w-4 mr-1" /> Reposition
