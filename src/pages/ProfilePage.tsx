@@ -48,6 +48,10 @@ const ProfilePage = () => {
   const canvasElRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [yPosition, setYPosition] = useState(0);
+  const [canvasInitialized, setCanvasInitialized] = useState(false);
+
+  // Track if component is mounted
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -95,36 +99,44 @@ const ProfilePage = () => {
         console.error('Error loading profile:', error);
         toast.error('Failed to load profile');
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     };
     
     loadProfile();
+
+    // Cleanup function for component unmount
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [id, currentUserProfile]);
 
-  // Clean up the canvas when component unmounts
+  // Effect to dispose the canvas when component unmounts
   useEffect(() => {
     return () => {
-      if (canvasRef.current) {
-        try {
-          // Properly dispose the canvas
-          canvasRef.current.dispose();
-          canvasRef.current = null;
-        } catch (e) {
-          console.error('Error disposing canvas:', e);
-        }
-      }
+      disposeCanvas();
     };
   }, []);
 
-  // Initialize canvas for image repositioning - use a separate effect
+  // Separate effect to clean up canvas when repositioning mode changes
   useEffect(() => {
-    // Only create canvas when in repositioning mode
-    if (!isRepositioningBanner || !canvasElRef.current || !containerRef.current || !profile?.banner_url) {
-      return;
+    if (!isRepositioningBanner) {
+      disposeCanvas();
+      setCanvasInitialized(false);
     }
-    
-    // Clean up previous canvas instance first to avoid DOM conflicts
+  }, [isRepositioningBanner]);
+
+  // Initialize canvas for image repositioning
+  useEffect(() => {
+    if (isRepositioningBanner && canvasElRef.current && containerRef.current && profile?.banner_url && !canvasInitialized) {
+      initializeCanvas();
+    }
+  }, [isRepositioningBanner, profile?.banner_url, canvasInitialized]);
+
+  // Helper function to safely dispose canvas
+  const disposeCanvas = () => {
     if (canvasRef.current) {
       try {
         canvasRef.current.dispose();
@@ -133,6 +145,14 @@ const ProfilePage = () => {
       }
       canvasRef.current = null;
     }
+  };
+
+  // Initialize the canvas with the banner image
+  const initializeCanvas = () => {
+    if (!canvasElRef.current || !containerRef.current || !profile?.banner_url) return;
+    
+    // Clean up previous canvas instance first
+    disposeCanvas();
     
     try {
       // Set canvas dimensions to match container
@@ -148,10 +168,11 @@ const ProfilePage = () => {
       });
       
       canvasRef.current = canvas;
+      setCanvasInitialized(true);
       
       // Load the banner image
       fabric.Image.fromURL(profile.banner_url, (img) => {
-        if (!canvas || !canvasRef.current) return; // Exit if canvas was disposed
+        if (!isMountedRef.current || !canvas || !canvasRef.current) return;
         
         // Scale image to fit width
         const scale = containerWidth / img.width!;
@@ -174,25 +195,16 @@ const ProfilePage = () => {
         
         // Update position state when image is moved
         img.on('moved', function() {
-          setYPosition(img.top || 0);
+          if (isMountedRef.current) {
+            setYPosition(img.top || 0);
+          }
         });
       });
     } catch (e) {
       console.error('Error initializing canvas:', e);
+      setCanvasInitialized(false);
     }
-    
-    // Clean up function for this effect
-    return () => {
-      if (canvasRef.current) {
-        try {
-          canvasRef.current.dispose();
-          canvasRef.current = null;
-        } catch (e) {
-          console.error('Error disposing canvas on effect cleanup:', e);
-        }
-      }
-    };
-  }, [isRepositioningBanner, profile?.banner_url, yPosition]);
+  };
 
   const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -459,7 +471,7 @@ const ProfilePage = () => {
                     src={profile.banner_url} 
                     alt="Profile banner" 
                     className="h-full w-full object-cover"
-                    style={{ objectPosition: `center ${profile.banner_position_y || yPosition}px` }}
+                    style={{ objectPosition: `center ${profile.banner_position_y !== undefined && profile.banner_position_y !== null ? profile.banner_position_y : yPosition}px` }}
                   />
                 ) : (
                   <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
