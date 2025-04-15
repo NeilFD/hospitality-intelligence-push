@@ -1,3 +1,4 @@
+
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -406,6 +407,7 @@ export interface UserProfile {
   role: 'GOD' | 'Super User' | 'Manager' | 'Team Member' | null;
   avatar_url: string | null;
   banner_url?: string | null;
+  banner_position_y?: number | null;
   created_at: string;
   updated_at: string;
   email?: string;
