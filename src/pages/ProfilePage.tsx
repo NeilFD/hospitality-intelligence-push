@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
@@ -110,7 +109,8 @@ const ProfilePage = () => {
         
       if (uploadError) {
         console.error("Upload error:", uploadError);
-        throw uploadError;
+        toast.error('Failed to upload banner image');
+        return;
       }
       
       console.log("File uploaded successfully:", uploadData);
@@ -130,7 +130,8 @@ const ProfilePage = () => {
         
       if (updateError) {
         console.error("Profile update error:", updateError);
-        throw updateError;
+        toast.error('Failed to update profile with banner');
+        return;
       }
       
       console.log("Profile updated with new banner URL");
