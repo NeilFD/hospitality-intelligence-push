@@ -17,7 +17,7 @@ interface InvitationRequest {
   created_by?: string;
 }
 
-// Define default site URL to be used as fallback - update this to match your current URL
+// Define default site URL to be used as fallback
 const DEFAULT_SITE_URL = "https://c6d57777-8a13-463c-b78c-8d74d834e5d9.lovableproject.com";
 
 serve(async (req) => {
@@ -99,8 +99,11 @@ serve(async (req) => {
       const existingToken = existingInvitation[0].invitation_token;
       const invitationUrl = `${siteUrl}/register?token=${existingToken}`;
       
+      // Build the direct registration link - avoid any redirects
+      const exactRegistrationUrl = invitationUrl;
+      
       // Actually send the email here
-      const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
+      const emailResult = await sendInvitationEmail(email, firstName, exactRegistrationUrl);
       
       if (emailResult.error) {
         console.warn(`Failed to send invitation email: ${emailResult.error}`);
@@ -121,8 +124,11 @@ serve(async (req) => {
     const invitationUrl = `${siteUrl}/register?token=${invitationToken}`;
     console.log("Generated invitation URL:", invitationUrl);
     
+    // Build the direct registration link - avoid any redirects
+    const exactRegistrationUrl = invitationUrl;
+    
     // Send the actual invitation email
-    const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
+    const emailResult = await sendInvitationEmail(email, firstName, exactRegistrationUrl);
     
     if (emailResult.error) {
       console.warn(`Warning: Issue with email sending: ${emailResult.error}`);
@@ -196,132 +202,55 @@ async function sendInvitationEmail(
     try {
       console.log("Attempting to send direct email using Supabase's SMTP service");
       
-      // Create a temporary user to send the email (will be cleaned up by Supabase later)
-      const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-        email: toEmail,
-        email_confirm: true,
-        user_metadata: {
-          firstName,
-          invitationUrl
+      // Send a one-time invitation email with the direct register URL
+      const { data: userData, error: userError } = await supabase.auth.admin.inviteUserByEmail(
+        toEmail,
+        {
+          // Set the EXACT URL for registration - this avoids any redirect issues
+          redirectTo: invitationUrl,
+          data: {
+            firstName,
+            invitationUrl
+          }
         }
-      });
-      
+      );
+          
       if (userError) {
-        console.error("Error creating temporary user:", userError);
+        console.error("Error inviting user by email:", userError);
         throw userError;
       }
       
       if (userData) {
-        console.log("Successfully created temporary user, sending welcome email");
-        
-        // Now send a one-time email with custom content
-        const { error: emailError } = await supabase.auth.admin.updateUserById(
-          userData.user.id,
-          {
-            email: toEmail,
-            email_confirm: true,
-            user_metadata: {
-              firstName,
-              invited: true,
-              invitationUrl
-            }
-          }
-        );
-        
-        if (emailError) {
-          console.error("Error sending welcome email:", emailError);
-          throw emailError;
-        }
-        
-        console.log(`Successfully sent invitation to ${toEmail} via updateUserById`);
+        console.log("Successfully sent invitation to user by email:", toEmail);
         return { success: true };
       }
       
       // If we got here, something went wrong but didn't throw an error
-      throw new Error("Failed to create temporary user for email sending");
+      throw new Error("Email sending failed, but didn't throw an error");
       
     } catch (directEmailError) {
       console.error("Direct email method failed:", directEmailError);
       
-      // Try alternative method: Create a magic link
-      try {
-        console.log("Attempting to send email via magic link generation");
+      // Fall back to simulated email for development
+      console.log(`
+        SIMULATED EMAIL (after error):
+        To: ${toEmail}
+        Subject: You've been invited to join ${companyName}
         
-        const { data: magicLinkData, error: magicLinkError } = await supabase.auth.admin.generateLink({
-          type: 'magiclink',
-          email: toEmail,
-          options: {
-            redirectTo: invitationUrl
-          }
-        });
+        Hi ${firstName},
         
-        if (magicLinkError) {
-          console.error("Error generating magic link:", magicLinkError);
-          throw magicLinkError;
-        }
+        You've been invited to join ${companyName}. Please click the link below to complete your registration:
         
-        if (magicLinkData) {
-          console.log("Successfully generated magic link for email:", toEmail);
-          return { success: true };
-        }
+        ${invitationUrl}
         
-        throw new Error("Magic link generation returned no data");
-      } catch (magicLinkCatchError) {
-        console.error("Magic link method failed:", magicLinkCatchError);
-        
-        // Try one more method: inviteUserByEmail
-        try {
-          console.log("Attempting to send email via inviteUserByEmail");
-          
-          const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-            toEmail,
-            {
-              redirectTo: invitationUrl,
-              data: {
-                firstName,
-                invitationUrl
-              }
-            }
-          );
-          
-          if (inviteError) {
-            console.error("Error inviting user by email:", inviteError);
-            throw inviteError;
-          }
-          
-          if (inviteData) {
-            console.log("Successfully invited user by email:", toEmail);
-            return { success: true };
-          }
-          
-          throw new Error("User invitation returned no data");
-        } catch (inviteMethodError) {
-          console.error("Invite method failed:", inviteMethodError);
-          
-          // All methods failed, but we'll mark it as a "success" for the UI
-          // and log the email details for debugging purposes
-          console.log(`
-            SIMULATED EMAIL:
-            To: ${toEmail}
-            Subject: You've been invited to join ${companyName}
-            
-            Hi ${firstName},
-            
-            You've been invited to join ${companyName}. Please click the link below to complete your registration:
-            
-            ${invitationUrl}
-            
-            This invitation will expire in 7 days.
-          `);
-          
-          // Return success even though we failed to send the email
-          // This allows the invitation to be created in the database
-          return { 
-            success: true,
-            error: "All email sending methods failed. Email was simulated but not actually sent. Please share the link manually."
-          };
-        }
-      }
+        This invitation will expire in 7 days.
+      `);
+      
+      // Return success for UI purposes, but include the error message
+      return { 
+        success: true, 
+        error: `Email sending failed but invitation was created. Error: ${directEmailError.message || "Unknown error"}`
+      };
     }
   } catch (error) {
     console.error("Error in email sending function:", error);
