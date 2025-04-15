@@ -20,7 +20,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 console.log('Supabase client initialized with URL:', supabaseUrl);
 
 // Authentication helpers
-export const signUp = async (email: string, password: string, metadata?: { first_name?: string; last_name?: string }) => {
+export const signUp = async (email: string, password: string, metadata?: { first_name?: string; last_name?: string; role?: string, job_title?: string }) => {
+  console.log("Signing up with email and metadata:", email, metadata);
+  
   return await supabase.auth.signUp({
     email,
     password,
