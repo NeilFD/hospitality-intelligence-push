@@ -12,6 +12,7 @@ export interface Database {
           last_name?: string | null;
           role?: 'Owner' | 'Manager' | 'Team Member' | null;
           avatar_url?: string | null;
+          banner_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -21,6 +22,7 @@ export interface Database {
           last_name?: string | null;
           role?: 'Owner' | 'Manager' | 'Team Member' | null;
           avatar_url?: string | null;
+          banner_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -403,6 +405,7 @@ export interface UserProfile {
   last_name: string | null;
   role: 'GOD' | 'Super User' | 'Manager' | 'Team Member' | null;
   avatar_url: string | null;
+  banner_url?: string | null;
   created_at: string;
   updated_at: string;
   email?: string;

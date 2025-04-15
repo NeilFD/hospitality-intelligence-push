@@ -5,17 +5,19 @@ import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare } from 'lucide-react';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera } from 'lucide-react';
 import { useAuthStore } from '@/services/auth-service';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 const ProfilePage = () => {
   const { id } = useParams();
   const { profile: currentUserProfile } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -50,6 +52,51 @@ const ProfilePage = () => {
     loadProfile();
   }, [id, currentUserProfile]);
 
+  const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile) return;
+
+    try {
+      setUploadingBanner(true);
+      
+      // Upload the file to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `banner-${profile.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('profiles')
+        .upload(fileName, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(fileName);
+        
+      // Update the profile with the banner URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ banner_url: publicUrl })
+        .eq('id', profile.id);
+        
+      if (updateError) throw updateError;
+      
+      // Update the local profile state
+      setProfile({
+        ...profile,
+        banner_url: publicUrl
+      });
+      
+      toast.success('Banner image updated successfully');
+    } catch (error) {
+      console.error('Error uploading banner:', error);
+      toast.error('Failed to upload banner image');
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[70vh]">
@@ -73,9 +120,33 @@ const ProfilePage = () => {
     <div className="container mx-auto p-4">
       <div className="max-w-4xl mx-auto">
         <Card className="mb-8 overflow-hidden border-0 shadow-lg">
-          <div className="h-32 bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
+          <div className="relative h-32">
+            {profile.banner_url ? (
+              <img 
+                src={profile.banner_url} 
+                alt="Profile banner" 
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
+            )}
+            {isCurrentUser && (
+              <label htmlFor="banner-upload" className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-full p-2 cursor-pointer hover:bg-opacity-100 transition-colors">
+                <Camera className="h-5 w-5 text-hi-purple" />
+                <input 
+                  type="file" 
+                  id="banner-upload" 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleBannerUpload}
+                  disabled={uploadingBanner}
+                />
+              </label>
+            )}
+          </div>
+          
           <div className="relative px-6">
-            <div className="-mt-16 mb-6 flex items-end">
+            <div className="-mt-16">
               <Avatar className="h-32 w-32 border-4 border-white shadow-md">
                 {profile.avatar_url ? (
                   <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
@@ -85,26 +156,27 @@ const ProfilePage = () => {
                   </AvatarFallback>
                 )}
               </Avatar>
-              <div className="ml-6 mb-4">
-                <h1 className="text-3xl font-bold">
-                  {profile.first_name} {profile.last_name}
-                </h1>
-                <div className="flex items-center mt-1">
-                  <Badge variant="outline" className="mr-2 border-hi-purple-light/50 text-hi-purple">
-                    {profile.role || 'Team Member'}
-                  </Badge>
-                  {profile.job_title && (
-                    <div className="flex items-center text-gray-500">
-                      <Briefcase className="h-4 w-4 mr-1" /> {profile.job_title}
-                    </div>
-                  )}
-                </div>
+            </div>
+            
+            <div className="mt-4">
+              <h1 className="text-3xl font-bold">
+                {profile.first_name} {profile.last_name}
+              </h1>
+              <div className="flex items-center mt-1 mb-4">
+                <Badge variant="outline" className="mr-2 border-hi-purple-light/50 text-hi-purple">
+                  {profile.role || 'Team Member'}
+                </Badge>
+                {profile.job_title && (
+                  <div className="flex items-center text-gray-500">
+                    <Briefcase className="h-4 w-4 mr-1" /> {profile.job_title}
+                  </div>
+                )}
               </div>
             </div>
           </div>
           
           <CardContent className="px-6 pb-6">
-            <Tabs defaultValue="about" className="mt-6">
+            <Tabs defaultValue="about" className="mt-2">
               <TabsList className="mb-6">
                 <TabsTrigger value="about">About</TabsTrigger>
                 {isCurrentUser && <TabsTrigger value="settings">Settings</TabsTrigger>}
