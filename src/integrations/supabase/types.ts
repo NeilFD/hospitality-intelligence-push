@@ -1588,6 +1588,15 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      handle_new_user_manual: {
+        Args: {
+          user_id: string
+          first_name_val: string
+          last_name_val: string
+          role_val: string
+        }
+        Returns: boolean
+      }
       hnsw_bit_support: {
         Args: { "": unknown }
         Returns: unknown

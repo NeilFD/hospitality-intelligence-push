@@ -164,14 +164,16 @@ const TeamManagementPanel: React.FC = () => {
         
         if (invitationError) {
           console.error('Error creating user invitation:', invitationError);
+          toast.error(`Invitation creation failed: ${invitationError.message}`);
         } else {
           console.log('User invitation created successfully');
         }
       } catch (inviteErr) {
         console.error('Exception in invitation creation:', inviteErr);
+        toast.error(`Invitation creation exception: ${inviteErr instanceof Error ? inviteErr.message : 'Unknown error'}`);
       }
       
-      // Sign up the user with Supabase Auth
+      // Enhanced logging for user creation
       console.log('Creating auth user with metadata:', {
         first_name: newUser.firstName,
         last_name: newUser.lastName,
@@ -192,178 +194,44 @@ const TeamManagementPanel: React.FC = () => {
         }
       });
       
+      // Enhanced error handling for signup
       if (signUpError) {
-        console.error('Error creating user:', signUpError);
-        throw new Error(signUpError.message);
+        console.error('Signup Error Details:', signUpError);
+        toast.error(`User creation failed: ${signUpError.message}`);
+        return;
       }
       
       if (!userData.user) {
-        throw new Error('Failed to create user account');
+        toast.error('Failed to create user account');
+        return;
       }
       
       console.log('User created successfully:', userData.user);
       console.log('User ID:', userData.user.id);
       
-      // First, check if the trigger exists
-      const { data: triggerExists, error: triggerCheckError } = await supabase.rpc('check_trigger_exists', {
-        trigger_name: 'on_auth_user_created'
-      });
-      
-      console.log('Trigger exists check result:', triggerExists);
-      
-      if (triggerCheckError) {
-        console.error('Error checking trigger existence:', triggerCheckError);
+      // Final verification and logging
+      const { data: verifyProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userData.user.id)
+        .maybeSingle();
+        
+      if (verifyProfile) {
+        console.log('Profile verified:', verifyProfile);
+        toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully`);
+      } else {
+        console.error('Profile verification failed');
+        toast.error('Profile creation verification failed');
       }
       
-      // Proactively try to manually create the profile instead of waiting
-      console.log('Attempting immediate manual profile creation for user:', userData.user.id);
-      
-      // 1. First try - direct RPC call to handle_new_user_manual
-      try {
-        const { data: manualResult, error: manualError } = await supabase
-          .rpc('handle_new_user_manual', { 
-            user_id: userData.user.id,
-            first_name_val: newUser.firstName,
-            last_name_val: newUser.lastName,
-            role_val: newUser.role
-          });
-          
-        if (manualError) {
-          console.error('Error in manual profile creation via RPC:', manualError);
-        } else {
-          console.log('Profile created via manual RPC function:', manualResult);
-        }
-      } catch (manualCallError) {
-        console.error('Exception calling manual function:', manualCallError);
-      }
-      
-      // 2. Second try - direct insert
-      try {
-        const { data: insertData, error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userData.user.id,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || ''
-          })
-          .select()
-          .single();
-          
-        if (insertError) {
-          console.error('Error inserting profile directly:', insertError);
-        } else {
-          console.log('Profile created via direct insert:', insertData);
-        }
-      } catch (insertErr) {
-        console.error('Exception in direct profile insert:', insertErr);
-      }
-      
-      // 3. Third try - upsert
-      try {
-        const { data: upsertData, error: upsertError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userData.user.id,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || ''
-          })
-          .select()
-          .single();
-          
-        if (upsertError) {
-          console.error('Error upserting profile:', upsertError);
-        } else {
-          console.log('Profile created via upsert:', upsertData);
-        }
-      } catch (upsertErr) {
-        console.error('Exception in profile upsert:', upsertErr);
-      }
-      
-      // 4. Fourth try - test the trigger
-      try {
-        const { data: testResult, error: testError } = await supabase
-          .rpc('test_trigger_handle_new_user', { 
-            test_user_id: userData.user.id,
-            test_first_name: newUser.firstName,
-            test_last_name: newUser.lastName,
-            test_role: newUser.role
-          });
-          
-        if (testError) {
-          console.error('Error in test trigger function:', testError);
-        } else {
-          console.log('Test trigger function result:', testResult);
-        }
-      } catch (testErr) {
-        console.error('Exception in test trigger function:', testErr);
-      }
-      
-      // Wait a moment and then verify if the profile was created
-      setTimeout(async () => {
-        try {
-          // STEP 6: Final verification and diagnostics
-          const { data: verifyProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userData.user.id)
-            .maybeSingle();
-            
-          if (verifyProfile) {
-            console.log('FINAL VERIFICATION - Profile exists:', verifyProfile);
-          } else {
-            console.error('FINAL VERIFICATION FAILED - Profile still not created for user:', userData.user.id);
-            
-            // Get debug info about all profiles
-            const debugInfo = await checkProfilesCount();
-            console.log('Debug profiles info:', debugInfo);
-          }
-          
-          // Refresh the team members list regardless of the outcome
-          fetchTeamMembers();
-        } catch (profileError) {
-          console.error('Exception in profile verification:', profileError);
-        }
-      }, 2000);
-      
-      const baseUrl = getBaseUrl();
-      const url = `${baseUrl}/register?token=${invitationToken}`;
-      setLoginUrl(url);
-      
-      const emailSubject = 'Welcome to Hospitality Intelligence';
-      const emailBody = `
-Hello ${newUser.firstName},
-  
-You have been added to the Hospitality Intelligence team!
-
-**IMPORTANT - PLEASE COMPLETE THESE STEPS IN ORDER:**
-
-1. First, check your inbox for a confirmation email from Supabase and click the confirmation link.
-   You MUST verify your email address before you can log in.
-
-2. After confirming your email, you can complete your registration here:
-   ${url}
-
-Best regards,
-The Hospitality Intelligence Team
-      `;
-      
-      setNewUser({
-        ...newUser,
-        emailSubject,
-        emailBody
-      });
-      
-      setIsShareLinkDialogOpen(true);
+      // Refresh team members and reset form
+      fetchTeamMembers();
       setIsAddUserDialogOpen(false);
-      toast.success(`New user created: ${newUser.firstName} ${newUser.lastName}`);
+      resetNewUserForm();
       
     } catch (error) {
-      console.error('Error creating user:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create user');
+      console.error('Unexpected error in user creation:', error);
+      toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setCreateUserLoading(false);
     }
@@ -1080,17 +948,4 @@ The Hospitality Intelligence Team
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              className="bg-red-600 hover:bg-red-700" 
-              onClick={handleDeleteUser}
-              disabled={deleteLoading}
-            >
-              {deleteLoading ? 'Deleting...' : 'Delete User'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-};
-
-export default TeamManagementPanel;
+              className
