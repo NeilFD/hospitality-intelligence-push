@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -198,7 +197,6 @@ async function sendInvitationEmail(
     
     console.log(`Sending invitation email to ${toEmail} with invitation URL: ${invitationUrl}`);
     
-    // Use direct SMTP email sending via the auth API - this is a more reliable method
     try {
       console.log("Attempting to send direct email using Supabase's SMTP service");
       
@@ -241,7 +239,9 @@ async function sendInvitationEmail(
         
         You've been invited to join ${companyName}. Please click the link below to complete your registration:
         
+        
         ${invitationUrl}
+        
         
         This invitation will expire in 7 days.
       `);
@@ -264,9 +264,11 @@ async function sendInvitationEmail(
       Hi ${firstName},
       
       You've been invited to join the team. Please click the link below to complete your registration:
-      
+        
+        
       ${invitationUrl}
-      
+        
+        
       This invitation will expire in 7 days.
     `);
     
