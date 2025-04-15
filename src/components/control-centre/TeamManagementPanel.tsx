@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -239,6 +238,35 @@ const TeamManagementPanel: React.FC = () => {
             }
           } else {
             console.log('Profile already exists for user:', userData.user.id);
+          }
+          
+          // Check again to verify profile was created
+          const { data: verifyProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userData.user.id)
+            .maybeSingle();
+            
+          if (!verifyProfile) {
+            console.error('Profile verification failed - still not created for user:', userData.user.id);
+            // Make one last attempt using a different approach
+            try {
+              const { error: finalAttemptError } = await supabase.rpc('create_profile_for_user', { 
+                user_id: userData.user.id,
+                first_name_val: newUser.firstName,
+                last_name_val: newUser.lastName,
+                role_val: newUser.role,
+                job_title_val: newUser.jobTitle || ''
+              });
+              
+              if (finalAttemptError) {
+                console.error('Final profile creation attempt failed:', finalAttemptError);
+              }
+            } catch (rpcError) {
+              console.error('RPC profile creation error:', rpcError);
+            }
+          } else {
+            console.log('Profile verified successfully:', verifyProfile);
           }
           
           // Refresh the team members list after creating the profile
