@@ -9,16 +9,13 @@ export const fetchMasterDailyRecord = async (date: string): Promise<MasterDailyR
     .from('master_daily_records')
     .select('*')
     .eq('date', date)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    if (error.code === 'PGRST116') {
-      return null;
-    }
     throw error;
   }
   
-  return mapDbRecordToMasterDailyRecord(data);
+  return data ? mapDbRecordToMasterDailyRecord(data) : null;
 };
 
 // Fetch master daily records for a week
@@ -44,6 +41,7 @@ export const fetchMasterWeeklyRecords = async (
   
   if (error) throw error;
   
+  console.log(`Fetched ${data.length} records for week ${weekNumber} from ${startDate} to ${endDate}`);
   return data.map(mapDbRecordToMasterDailyRecord);
 };
 
@@ -133,6 +131,7 @@ export const fetchMasterMonthlyRecords = async (
   
   if (error) throw error;
   
+  console.log(`Fetched ${data.length} records for month ${month}/${year}`);
   return data.map(mapDbRecordToMasterDailyRecord);
 };
 
@@ -192,7 +191,7 @@ export const upsertMasterDailyRecord = async (
     precipitation: record.precipitation,
     wind_speed: record.windSpeed,
     
-    // Add the new team fields
+    // Add the team fields
     day_foh_team: record.dayFohTeam,
     day_foh_manager: record.dayFohManager,
     day_kitchen_team: record.dayKitchenTeam,
@@ -205,6 +204,8 @@ export const upsertMasterDailyRecord = async (
     local_events: record.localEvents,
     operations_notes: record.operationsNotes
   };
+  
+  console.log(`Upserting record for ${record.date} with week ${weekNumber}`);
   
   const { data, error } = await supabase
     .from('master_daily_records')
@@ -244,7 +245,7 @@ const mapDbRecordToMasterDailyRecord = (data: any): MasterDailyRecord => {
     precipitation: data.precipitation,
     windSpeed: data.wind_speed,
     
-    // Map the new team fields
+    // Map the team fields
     dayFohTeam: data.day_foh_team,
     dayFohManager: data.day_foh_manager,
     dayKitchenTeam: data.day_kitchen_team,

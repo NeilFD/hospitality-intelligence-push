@@ -87,6 +87,12 @@ export function generateWeekDates(year: number, month: number): WeekDates[] {
     }
   }
   
+  // Add logging to debug week identification
+  console.log(`Generated ${weeks.length} weeks for ${year}-${month}`);
+  weeks.forEach((week, index) => {
+    console.log(`Week ${index + 1}: ${week.startDate} to ${week.endDate}`);
+  });
+  
   return weeks;
 }
 

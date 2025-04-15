@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,11 @@ const MasterDashboard = () => {
   // Generate current month's weeks
   const weeks = generateWeekDates(currentYear, currentMonth);
 
-  // Find current week
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const currentWeekIndex = weeks.findIndex(week => today >= week.startDate && today <= week.endDate);
+  // Find current week - use current date instead of format to avoid timezone issues
+  const today = new Date().toISOString().split('T')[0];
+  const currentWeekIndex = weeks.findIndex(week => 
+    today >= week.startDate && today <= week.endDate
+  );
 
   // Navigation functions
   const goToPreviousMonth = () => {
@@ -116,7 +118,7 @@ const MasterDashboard = () => {
         const weekNumber = index + 1;
         const isCurrentWeek = currentWeekIndex === index && isCurrentMonth;
 
-        // Parse dates for display - use new Date directly and format it
+        // Parse dates for display - avoid timezone issues by ensuring correct date handling
         const startDate = new Date(`${week.startDate}T12:00:00Z`);
         const endDate = new Date(`${week.endDate}T12:00:00Z`);
         

@@ -24,7 +24,22 @@ const WeeklyInput = () => {
   
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
-  const weekNumber = useMemo(() => params.week ? parseInt(params.week, 10) : 1, [params.week]);
+  
+  // Calculate current week if not provided in params
+  const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
+  const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+  
+  const currentWeekIndex = useMemo(() => {
+    return weekDates.findIndex(week => today >= week.startDate && today <= week.endDate);
+  }, [weekDates, today]);
+  
+  const weekNumber = useMemo(() => {
+    if (params.week) {
+      return parseInt(params.week, 10);
+    }
+    // If no week is specified, use the current week
+    return currentWeekIndex >= 0 ? currentWeekIndex + 1 : 1;
+  }, [params.week, currentWeekIndex]);
   
   // Create a storage key specific to this week/month/year
   const selectedDateStorageKey = useMemo(() => 
@@ -44,7 +59,6 @@ const WeeklyInput = () => {
     }
   }, [activeDay, selectedDateStorageKey]);
   
-  const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
   const currentWeek = useMemo(() => {
     if (weekNumber > 0 && weekNumber <= weekDates.length) {
       return weekDates[weekNumber - 1];
@@ -91,7 +105,8 @@ const WeeklyInput = () => {
               totalRevenue: 0,
               lunchCovers: 0,
               dinnerCovers: 0,
-              totalCovers: 0
+              totalCovers: 0,
+              averageCoverSpend: 0
             });
           }
           
