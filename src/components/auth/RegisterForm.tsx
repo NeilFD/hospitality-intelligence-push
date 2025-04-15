@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,9 +59,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     try {
       console.log('Creating profile directly for user:', userId);
       
-      // Approach 1: Direct insert with minimal fields
+      // Try all three profile creation methods in sequence
       let profileCreated = false;
       
+      // Method 1: Direct insert
       try {
         const { error } = await supabase
           .from('profiles')
@@ -83,7 +85,33 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         console.error('Exception during direct profile insertion:', insertErr);
       }
       
-      // Approach 2: Try RPC function if direct insert failed
+      // Method 2: Try create_profile_for_user function
+      if (!profileCreated) {
+        try {
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'create_profile_for_user',
+            {
+              user_id: userId,
+              first_name_val: userData.first_name,
+              last_name_val: userData.last_name,
+              role_val: userData.role || 'Team Member',
+              job_title_val: userData.job_title || '',
+              email_val: userData.email
+            }
+          );
+          
+          if (!rpcError && rpcResult === true) {
+            console.log('Profile created successfully with create_profile_for_user RPC');
+            profileCreated = true;
+          } else {
+            console.error('Profile creation failed with create_profile_for_user:', rpcError);
+          }
+        } catch (rpcErr) {
+          console.error('Exception during create_profile_for_user profile creation:', rpcErr);
+        }
+      }
+      
+      // Method 3: Try handle_new_user_manual function
       if (!profileCreated) {
         try {
           const { data: rpcResult, error: funcError } = await supabase.rpc(
@@ -98,13 +126,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           );
           
           if (!funcError && rpcResult === true) {
-            console.log('Profile created successfully with RPC function');
+            console.log('Profile created successfully with handle_new_user_manual RPC');
             profileCreated = true;
           } else {
             console.error('Manual profile creation failed:', funcError);
           }
         } catch (rpcErr) {
-          console.error('Exception during RPC profile creation:', rpcErr);
+          console.error('Exception during handle_new_user_manual profile creation:', rpcErr);
         }
       }
       
@@ -162,6 +190,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("User registered successfully, user ID:", data.user.id);
       
+      // Wait a moment for Auth trigger to fire
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const profileCreated = await createProfile(data.user.id, metadata);
       
       if (onRegistrationComplete) {
@@ -193,6 +224,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
+  // Same UI, no layout changes
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

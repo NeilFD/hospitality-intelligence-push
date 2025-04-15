@@ -28,7 +28,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
   console.log("Register page loaded with URL:", window.location.href);
   console.log("Register page query:", location.search);
   
-  // Extract invitation token from URL if present
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const token = query.get('token');
@@ -40,7 +39,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     }
   }, [location.search]);
 
-  // Redirect if user is already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/');
@@ -54,12 +52,10 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     try {
       console.log("Fetching invitation data for token:", token);
       
-      // Validate token format to fail fast if clearly invalid
       if (!token || token.length < 10) {
         throw new Error('Invalid token format');
       }
       
-      // Make direct database query with retry logic
       let data = null;
       let fetchError = null;
       let retryCount = 0;
@@ -82,7 +78,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
           fetchError = queryError;
         }
         
-        // Wait before retry (exponential backoff)
         if (retryCount < maxRetries - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
         }
@@ -97,21 +92,18 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       
       console.log("Invitation data retrieved:", data);
       
-      // Check if invitation has expired
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         setError('This invitation has expired. Please contact your administrator for a new invitation.');
         setLoading(false);
         return;
       }
       
-      // Check if invitation has already been claimed
       if (data.is_claimed) {
         setError('This invitation has already been used. Please contact your administrator if you need to register.');
         setLoading(false);
         return;
       }
       
-      // Set valid invitation data
       setInvitationData({
         email: data.email,
         firstName: data.first_name || '',
@@ -133,7 +125,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     try {
       console.log("Marking invitation as claimed:", invitationToken);
       
-      // Mark invitation as claimed with retry logic
       let updateSuccess = false;
       let retryCount = 0;
       const maxRetries = 3;
@@ -152,7 +143,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         
         console.error(`Attempt ${retryCount + 1}: Error marking invitation as claimed:`, updateError);
         
-        // Wait before retry
         if (retryCount < maxRetries - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
         }
@@ -165,17 +155,14 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
       }
     } catch (error) {
       console.error('Error marking invitation as claimed:', error);
-      // Continue anyway - this is not critical
     }
   };
 
-  // Function to manually create a profile if it's missing after registration
   const ensureProfileExists = async (userId: string, firstName: string, lastName: string, 
     role: string = 'Team Member', jobTitle: string = '', email: string = '') => {
     try {
-      console.log(`Ensuring profile exists for user ${userId} with name ${firstName} ${lastName}, role ${role}`);
+      console.log(`Ensuring profile exists for user ${userId} with name ${firstName} ${lastName}, role ${role}, email ${email}`);
       
-      // First check if profile already exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('*')
@@ -191,9 +178,8 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         console.error('Error checking for existing profile:', checkError);
       }
       
-      // Try multiple approaches to create the profile
+      let profileCreated = false;
       
-      // Approach 1: Direct insert
       console.log('Creating profile using direct insert for user ID:', userId);
       const { error: insertError } = await supabase
         .from('profiles')
@@ -208,32 +194,72 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
         
       if (!insertError) {
         console.log('Profile created successfully with direct insert');
-        return true;
+        profileCreated = true;
+      } else {
+        console.error('Direct profile insert failed:', insertError);
       }
       
-      console.error('Direct profile insert failed:', insertError);
-      
-      // Approach 2: Try RPC function
-      console.log('Creating profile using RPC for user ID:', userId);
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        'handle_new_user_manual',
-        {
-          user_id: userId,
-          first_name_val: firstName,
-          last_name_val: lastName,
-          role_val: role,
-          email_val: email
+      if (!profileCreated) {
+        console.log('Creating profile using create_profile_for_user for user ID:', userId);
+        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+          'create_profile_for_user',
+          {
+            user_id: userId,
+            first_name_val: firstName,
+            last_name_val: lastName,
+            role_val: role,
+            job_title_val: jobTitle || '',
+            email_val: email
+          }
+        );
+        
+        if (!rpcError && rpcResult === true) {
+          console.log('Profile created successfully with create_profile_for_user RPC');
+          profileCreated = true;
+        } else {
+          console.error('Profile creation failed with create_profile_for_user:', rpcError);
         }
-      );
-      
-      if (!rpcError) {
-        console.log('Profile created successfully with RPC');
-        return true;
       }
       
-      console.error('Profile creation failed with RPC:', rpcError);
+      if (!profileCreated) {
+        console.log('Creating profile using handle_new_user_manual for user ID:', userId);
+        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+          'handle_new_user_manual',
+          {
+            user_id: userId,
+            first_name_val: firstName,
+            last_name_val: lastName,
+            role_val: role,
+            email_val: email
+          }
+        );
+        
+        if (!rpcError) {
+          console.log('Profile created successfully with handle_new_user_manual RPC');
+          profileCreated = true;
+        }
+        
+        if (rpcError) {
+          console.error('Profile creation failed with handle_new_user_manual:', rpcError);
+        }
+      }
       
-      // If we got here, all attempts failed
+      if (profileCreated) {
+        const { data: verifyProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (verifyProfile) {
+          console.log('Profile verified after creation:', verifyProfile);
+          return true;
+        } else {
+          console.error('Profile created but verification failed');
+          return false;
+        }
+      }
+      
       toast.error('Failed to create user profile after multiple attempts');
       return false;
     } catch (error) {
@@ -278,7 +304,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
                   console.log("Registration complete callback received with userId:", userId);
                   console.log("User data:", userData);
                   
-                  // When registration is complete, ensure profile exists and then mark invitation as claimed
                   if (userId) {
                     const firstName = invitationData?.firstName || userData?.first_name || '';
                     const lastName = invitationData?.lastName || userData?.last_name || '';
@@ -298,7 +323,6 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
                         console.log("Profile created successfully");
                         toast.success("Profile created successfully");
                         
-                        // If using invitation, mark it as claimed
                         if (invitationToken) {
                           handleInvitationClaimed();
                         }

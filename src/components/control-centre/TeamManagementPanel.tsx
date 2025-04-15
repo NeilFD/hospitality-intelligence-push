@@ -167,6 +167,33 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('Creating new user with email:', newUser.email);
       
+      // Create an invitation token for the user
+      const invitationToken = generateInvitationToken();
+      
+      try {
+        // Store the invitation in the database first
+        const { error: invitationError } = await supabase
+          .from('user_invitations')
+          .insert({
+            email: newUser.email,
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role,
+            job_title: newUser.jobTitle || '',
+            invitation_token: invitationToken,
+            created_by: currentUserProfile?.id
+          });
+          
+        if (invitationError) {
+          console.error('Error creating invitation:', invitationError);
+          toast.error(`Failed to create invitation: ${invitationError.message}`);
+          setCreateUserLoading(false);
+          return;
+        }
+      } catch (inviteError) {
+        console.error('Exception during invitation creation:', inviteError);
+      }
+      
       // Create the auth user
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
@@ -176,7 +203,8 @@ const TeamManagementPanel: React.FC = () => {
             first_name: newUser.firstName,
             last_name: newUser.lastName,
             role: newUser.role,
-            job_title: newUser.jobTitle || ''
+            job_title: newUser.jobTitle || '',
+            email: newUser.email
           }
         }
       });
@@ -196,7 +224,10 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user.id);
       
-      // Create profile - try multiple approaches
+      // Wait 1 second for Auth trigger to fire (if it's going to)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create profile directly - no waiting for trigger
       let profileCreated = false;
       
       // Approach 1: Direct insert with minimal fields
@@ -222,10 +253,36 @@ const TeamManagementPanel: React.FC = () => {
         console.error('Error in direct profile creation:', error);
       }
       
-      // Approach 2: Use handle_new_user_manual function if direct insert failed
+      // Approach 2: Use create_profile_for_user function if direct insert failed
       if (!profileCreated) {
         try {
           const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'create_profile_for_user',
+            {
+              user_id: userData.user.id,
+              first_name_val: newUser.firstName,
+              last_name_val: newUser.lastName,
+              role_val: newUser.role,
+              job_title_val: newUser.jobTitle || '',
+              email_val: newUser.email
+            }
+          );
+          
+          if (!rpcError && rpcResult === true) {
+            console.log('Profile created successfully with create_profile_for_user RPC');
+            profileCreated = true;
+          } else {
+            console.error('Profile creation failed with create_profile_for_user:', rpcError);
+          }
+        } catch (error) {
+          console.error('Error in RPC profile creation with create_profile_for_user:', error);
+        }
+      }
+      
+      // Approach 3: As a last resort, try handle_new_user_manual function
+      if (!profileCreated) {
+        try {
+          const { data: manualResult, error: manualError } = await supabase.rpc(
             'handle_new_user_manual',
             {
               user_id: userData.user.id,
@@ -236,14 +293,14 @@ const TeamManagementPanel: React.FC = () => {
             }
           );
           
-          if (!rpcError && rpcResult === true) {
-            console.log('Profile created successfully with RPC function');
+          if (!manualError && manualResult === true) {
+            console.log('Profile created successfully with handle_new_user_manual RPC');
             profileCreated = true;
           } else {
-            console.error('Profile creation failed with RPC function:', rpcError);
+            console.error('Profile creation failed with handle_new_user_manual:', manualError);
           }
         } catch (error) {
-          console.error('Error in RPC profile creation:', error);
+          console.error('Error in RPC profile creation with handle_new_user_manual:', error);
         }
       }
       
@@ -263,7 +320,8 @@ const TeamManagementPanel: React.FC = () => {
         
         // Set login URL for share dialog
         const baseUrl = getBaseUrl();
-        setLoginUrl(`${baseUrl}/login`);
+        const registerUrl = `${baseUrl}/register?token=${invitationToken}`;
+        setLoginUrl(registerUrl);
         
         // Open share dialog
         setIsShareLinkDialogOpen(true);
@@ -271,6 +329,15 @@ const TeamManagementPanel: React.FC = () => {
       } else {
         console.error('Could not verify profile creation');
         toast.warning('User created but profile verification failed. They may need to log in once to finalize setup.');
+        
+        // Still show the invitation link, even if profile verification failed
+        const baseUrl = getBaseUrl();
+        const registerUrl = `${baseUrl}/register?token=${invitationToken}`;
+        setLoginUrl(registerUrl);
+        
+        // Open share dialog
+        setIsShareLinkDialogOpen(true);
+        setIsAddUserDialogOpen(false);
       }
       
     } catch (error) {
