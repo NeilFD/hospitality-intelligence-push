@@ -47,10 +47,10 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// New function to check profile count - will help debug the issue
+// Improved checkProfilesCount function with more detailed diagnostics
 export const checkProfilesCount = async () => {
   try {
-    console.log('Checking profiles count...');
+    console.log('Checking profiles count and diagnosing issues...');
     
     // First try a count query
     const { count, error: countError } = await supabase
@@ -64,6 +64,10 @@ export const checkProfilesCount = async () => {
     
     console.log('Profile count from count query:', count);
     
+    // Check auth session
+    const { data: authData } = await supabase.auth.getSession();
+    console.log('Current auth session:', authData?.session ? 'Authenticated' : 'Not authenticated');
+    
     // Now try fetching all profiles to compare
     const { data, error } = await supabase
       .from('profiles')
@@ -75,17 +79,32 @@ export const checkProfilesCount = async () => {
     }
     
     console.log('Profile count from fetch all:', data?.length || 0);
-    console.log('All profiles data:', data);
     
-    // Check if there are any Row Level Security policies in effect
-    const { data: authData } = await supabase.auth.getSession();
-    console.log('Current auth session:', authData?.session ? 'Authenticated' : 'Not authenticated');
+    // Check if the database trigger is active
+    let triggerStatus = 'Unknown';
+    try {
+      const { data: triggerData, error: triggerError } = await supabase.rpc('check_trigger_exists', {
+        trigger_name: 'on_auth_user_created'
+      });
+      
+      if (triggerError) {
+        console.error('Error checking trigger:', triggerError);
+        triggerStatus = 'Error checking';
+      } else {
+        triggerStatus = triggerData ? 'Active' : 'Not found';
+      }
+    } catch (e) {
+      console.error('Exception checking trigger:', e);
+      triggerStatus = 'RPC not available';
+    }
     
     return {
       countQuery: count,
       fetchedCount: data?.length || 0,
       profiles: data || [],
-      isAuthenticated: !!authData?.session
+      isAuthenticated: !!authData?.session,
+      authUserId: authData?.session?.user?.id || null,
+      triggerStatus
     };
   } catch (e) {
     console.error('Exception in checkProfilesCount:', e);
@@ -94,7 +113,8 @@ export const checkProfilesCount = async () => {
       countQuery: 0,
       fetchedCount: 0,
       profiles: [],
-      isAuthenticated: false
+      isAuthenticated: false,
+      triggerStatus: 'Error'
     };
   }
 };
