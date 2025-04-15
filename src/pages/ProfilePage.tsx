@@ -253,7 +253,7 @@ const ProfilePage = () => {
       <div className="max-w-4xl mx-auto">
         <Card className="mb-8 overflow-hidden border-0 shadow-lg">
           <div className="relative h-32">
-            {profile.banner_url ? (
+            {profile?.banner_url ? (
               <img 
                 src={profile.banner_url} 
                 alt="Profile banner" 

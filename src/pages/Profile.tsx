@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { format, parse } from 'date-fns';
@@ -10,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Edit, Check, User } from 'lucide-react';
+import { Edit, Check, User, Camera } from 'lucide-react';
 import { toast } from "sonner";
 import { useAuthStore, AuthServiceRole } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
@@ -32,6 +31,7 @@ interface ProfileData {
   last_name: string;
   role: Role | AuthServiceRole;
   avatar_url: string;
+  banner_url?: string;
   job_title?: string;
   birth_date: string | null;
   favourite_dish?: string;
@@ -48,6 +48,7 @@ export default function Profile() {
   const [role, setRole] = useState<Role>('Team Member');
   const [availableRoles, setAvailableRoles] = useState<Role[]>(['Team Member']);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [bannerUrl, setBannerUrl] = useState<string | undefined>(undefined);
   const [jobTitle, setJobTitle] = useState('');
   const [favouriteDish, setFavouriteDish] = useState('');
   const [favouriteDrink, setFavouriteDrink] = useState('');
@@ -55,6 +56,8 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewedProfile, setViewedProfile] = useState<ProfileData | null>(null);
   const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   // Helper function to check if a role is available for assignment based on current user's role
   const canAssignRole = (currentUserRole: AuthServiceRole | null | undefined, roleToAssign: Role): boolean => {
@@ -108,6 +111,7 @@ export default function Profile() {
         last_name: lastName,
         role,
         avatar_url: avatarUrl,
+        banner_url: bannerUrl,
         job_title: jobTitle,
         birth_date: formattedBirthDate,
         favourite_dish: favouriteDish,
@@ -124,14 +128,107 @@ export default function Profile() {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file || !user) {
+      console.log("No file selected or user not loaded");
+      return;
+    }
+    
+    try {
+      setUploadingAvatar(true);
+      console.log("Uploading avatar image:", file.name);
+      
+      // Upload the file to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
+      
+      // Upload to the profiles bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(`${user.id}/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+      
+      console.log("File uploaded successfully:", uploadData);
+      
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(`${user.id}/${fileName}`);
+      
+      console.log("Public URL:", publicUrl);
+      
+      // Set the avatar URL in the state
+      setAvatarUrl(publicUrl);
+      
+      toast.success('Avatar image updated successfully');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload avatar image');
+    } finally {
+      setUploadingAvatar(false);
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) {
+      console.log("No file selected or user not loaded");
+      return;
+    }
+    
+    try {
+      setUploadingBanner(true);
+      console.log("Uploading banner image:", file.name);
+      
+      // Upload the file to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `banner-${user.id}-${Date.now()}.${fileExt}`;
+      
+      // Upload to the profiles bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(`${user.id}/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+      
+      console.log("File uploaded successfully:", uploadData);
+      
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(`${user.id}/${fileName}`);
+      
+      console.log("Public URL:", publicUrl);
+      
+      // Set the banner URL in the state
+      setBannerUrl(publicUrl);
+      
+      toast.success('Banner image updated successfully');
+    } catch (error) {
+      console.error('Error uploading banner:', error);
+      toast.error('Failed to upload banner image');
+    } finally {
+      setUploadingBanner(false);
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
@@ -162,6 +259,7 @@ export default function Profile() {
           
           setRole((data.role as Role) || 'Team Member');
           setAvatarUrl(data.avatar_url);
+          setBannerUrl(data.banner_url);
           setJobTitle(data.job_title || '');
           setFavouriteDish(data.favourite_dish || '');
           setFavouriteDrink(data.favourite_drink || '');
@@ -200,6 +298,7 @@ export default function Profile() {
         
         setRole((profile.role as Role) || 'Team Member');
         setAvatarUrl(profile.avatar_url);
+        setBannerUrl(profile.banner_url);
         setJobTitle(profile.job_title || '');
         setFavouriteDish(profile.favourite_dish || '');
         setFavouriteDrink(profile.favourite_drink || '');
@@ -228,6 +327,32 @@ export default function Profile() {
           <CardTitle>{userId && userId !== user?.id ? 'View Profile' : 'Edit Profile'}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
+          {/* Banner image */}
+          <div className="relative w-full h-32 mb-10 rounded-md overflow-hidden">
+            {bannerUrl ? (
+              <img 
+                src={bannerUrl} 
+                alt="Profile banner" 
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
+            )}
+            {isEditing && (
+              <label htmlFor="banner-upload" className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-full p-2 cursor-pointer hover:bg-opacity-100 transition-colors">
+                <Camera className="h-5 w-5 text-hi-purple" />
+                <input 
+                  type="file" 
+                  id="banner-upload" 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleBannerUpload}
+                  disabled={uploadingBanner}
+                />
+              </label>
+            )}
+          </div>
+
           <div className="flex items-center space-x-4">
             <Avatar className="h-12 w-12">
               {avatarUrl ? (
@@ -243,6 +368,7 @@ export default function Profile() {
               </div>
             )}
           </div>
+          
           <div className="grid gap-2">
             <Label htmlFor="firstName">First Name</Label>
             <Input
