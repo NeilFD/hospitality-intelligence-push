@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -25,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserCheck, UserCog, UserPlus, Mail, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload } from 'lucide-react';
+import { UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
@@ -45,25 +46,19 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
 
-interface InvitationResponse {
-  success?: boolean;
-  error?: string;
-  message?: string;
-  invitationUrl?: string;
-  existingInvitation?: boolean;
-}
-
 const TeamManagementPanel: React.FC = () => {
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isShareLinkDialogOpen, setIsShareLinkDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [invitationLoading, setInvitationLoading] = useState(false);
+  const [createUserLoading, setCreateUserLoading] = useState(false);
+  const [invitationLink, setInvitationLink] = useState('');
   
   const [newUser, setNewUser] = useState({
     email: '',
@@ -111,19 +106,19 @@ const TeamManagementPanel: React.FC = () => {
     }
   };
   
-  const handleAddUser = async () => {
+  const handleCreateUser = async () => {
     try {
       if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.role) {
         toast.error('Please fill in all required fields');
         return;
       }
       
-      setInvitationLoading(true);
+      setCreateUserLoading(true);
       
       const invitationToken = Math.random().toString(36).substring(2, 15) + 
                              Math.random().toString(36).substring(2, 15);
-      
-      console.log("Sending invitation request with data:", {
+                             
+      console.log("Creating new user with data:", {
         email: newUser.email,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
@@ -133,56 +128,31 @@ const TeamManagementPanel: React.FC = () => {
         invitationToken
       });
       
-      const functionUrl = 'https://kfiergoryrnjkewmeriy.supabase.co/functions/v1/send-user-invitation';
-      console.log("Calling edge function at:", functionUrl);
-      
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      
-      if (!accessToken) {
-        throw new Error('You must be logged in to invite users');
-      }
-      
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
+      // Store the invitation in the database without sending email
+      const { error: inviteError } = await supabase
+        .from('user_invitations')
+        .insert({
           email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          invitationToken,
+          first_name: newUser.firstName,
+          last_name: newUser.lastName,
+          token: invitationToken,
           role: newUser.role,
-          jobTitle: newUser.jobTitle,
-          created_by: currentUserProfile?.id
-        })
-      });
+          job_title: newUser.jobTitle,
+          created_by: currentUserProfile?.id,
+          expires_at: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString() // 7 days
+        });
+        
+      if (inviteError) throw inviteError;
       
-      console.log("Received response with status:", response.status);
+      // Generate invitation link
+      const baseUrl = window.location.origin;
+      const invitationUrl = `${baseUrl}/register?token=${invitationToken}`;
+      setInvitationLink(invitationUrl);
       
-      const responseText = await response.text();
-      console.log("Response text:", responseText);
+      // Show the share link dialog
+      setIsShareLinkDialogOpen(true);
       
-      let responseData: InvitationResponse = {};
-      try {
-        if (responseText) {
-          responseData = JSON.parse(responseText) as InvitationResponse;
-          console.log("Parsed response data:", responseData);
-        } else {
-          throw new Error("Empty response from server");
-        }
-      } catch (parseError) {
-        console.error("Error parsing response JSON:", parseError);
-        toast.error('Invalid response from server');
-        return;
-      }
-      
-      if (!response.ok && !responseData.existingInvitation) {
-        throw new Error(responseData.error || 'Failed to send invitation');
-      }
-      
+      // Reset form
       setNewUser({
         email: '',
         firstName: '',
@@ -195,40 +165,32 @@ const TeamManagementPanel: React.FC = () => {
       
       fetchTeamMembers();
       
-      if (responseData.existingInvitation) {
-        toast.success(`Invitation has been resent to ${newUser.email}`);
-      } else {
-        toast.success(`An invitation has been sent to ${newUser.email}`);
-      }
-      
-      if (responseData.invitationUrl) {
-        toast.info(
-          <div>
-            <p>Invitation URL (Copy and share with user):</p>
-            <p className="mt-1 text-xs break-all">{responseData.invitationUrl}</p>
-            <p className="mt-2 text-xs">Note: Email delivery might be unreliable. Please share this URL directly with the user.</p>
-          </div>,
-          { duration: 30000 }
-        );
-      }
-      
-      if (responseData.error) {
-        toast.warning(
-          <div>
-            <p>The invitation was created but there may be an issue with email delivery:</p>
-            <p className="mt-1 text-xs">{responseData.error}</p>
-            <p className="mt-2 text-xs">Please use the invitation URL above.</p>
-          </div>,
-          { duration: 10000 }
-        );
-      }
+      toast.success(`New user created: ${newUser.firstName} ${newUser.lastName}`);
       
     } catch (error) {
-      console.error('Error inviting user:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to invite user');
+      console.error('Error creating user:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create user');
     } finally {
-      setInvitationLoading(false);
+      setCreateUserLoading(false);
     }
+  };
+  
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(invitationLink)
+      .then(() => {
+        toast.success('Invitation link copied to clipboard');
+      })
+      .catch(err => {
+        console.error('Error copying to clipboard:', err);
+        toast.error('Failed to copy link');
+      });
+  };
+  
+  const shareViaEmail = () => {
+    const subject = encodeURIComponent('Hi - Welcome!');
+    const body = encodeURIComponent(`You've been invited to join our team. Click the link below to create your account:\n\n${invitationLink}`);
+    const mailtoLink = `mailto:${newUser.email}?subject=${subject}&body=${body}`;
+    window.open(mailtoLink, '_blank');
   };
   
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -425,7 +387,7 @@ const TeamManagementPanel: React.FC = () => {
           {canManageUsers && (
             <Button onClick={() => setIsAddUserDialogOpen(true)}>
               <UserPlus className="mr-2 h-4 w-4" />
-              Invite User
+              Create New User
             </Button>
           )}
         </CardHeader>
@@ -500,9 +462,9 @@ const TeamManagementPanel: React.FC = () => {
       <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite New Team Member</DialogTitle>
+            <DialogTitle>Create New User</DialogTitle>
             <DialogDescription>
-              Fill out the form to invite a new team member
+              Fill out the form to create a new user account
             </DialogDescription>
           </DialogHeader>
           
@@ -580,11 +542,49 @@ const TeamManagementPanel: React.FC = () => {
               Cancel
             </Button>
             <Button 
-              onClick={handleAddUser}
-              disabled={invitationLoading}
+              onClick={handleCreateUser}
+              disabled={createUserLoading}
             >
-              <Mail className="mr-2 h-4 w-4" />
-              {invitationLoading ? 'Sending...' : 'Send Invitation'}
+              <UserPlus className="mr-2 h-4 w-4" />
+              {createUserLoading ? 'Creating...' : 'Create User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isShareLinkDialogOpen} onOpenChange={setIsShareLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Invitation Link</DialogTitle>
+            <DialogDescription>
+              The user has been created. Share this invitation link with them.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="invitationLink">Invitation Link</Label>
+              <div className="flex gap-2">
+                <Input 
+                  id="invitationLink" 
+                  value={invitationLink}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button variant="outline" onClick={copyToClipboard}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsShareLinkDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={shareViaEmail}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Share via Email
             </Button>
           </DialogFooter>
         </DialogContent>
