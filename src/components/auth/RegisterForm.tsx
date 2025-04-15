@@ -1,44 +1,52 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signUp } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
+import { signUp } from '@/lib/supabase';
+import { useAuthStore } from '@/services/auth-service';
+import { toast } from 'sonner';
 
-interface InvitationData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  jobTitle: string;
-}
-
-interface RegisterFormProps {
-  invitationData?: InvitationData | null;
-  onRegistrationComplete?: () => void;
-}
-
+// Define the schema for the registration form
 const formSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters.'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters.'),
+  email: z.string().email('Please enter a valid email address.'),
+  password: z.string().min(8, 'Password must be at least 8 characters.'),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+interface RegisterFormProps {
+  invitationData?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    role?: string;
+    jobTitle?: string;
+  } | null;
+  onRegistrationComplete?: (userId: string, userData: any) => void;
+}
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrationComplete }) => {
+const RegisterForm: React.FC<RegisterFormProps> = ({
+  invitationData,
+  onRegistrationComplete,
+}) => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuthStore();
 
-  const form = useForm<FormValues>({
+  // Initialize the form with default values from invitation data if available
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: invitationData?.firstName || '',
@@ -48,49 +56,73 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
-    setIsSubmitting(true);
-    setError(null);
-
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
     try {
-      console.log("Submitting registration form with data:", data);
+      console.log("Registration form submitted with values:", {
+        ...values,
+        password: '[REDACTED]'
+      });
       
-      // Include additional user metadata
-      const userData = {
-        first_name: data.firstName,
-        last_name: data.lastName,
+      // Check if we're using invitation data
+      const metadata = {
+        first_name: values.firstName,
+        last_name: values.lastName,
+        role: invitationData?.role || 'Team Member',
+        job_title: invitationData?.jobTitle || '',
+        email: values.email
       };
       
-      // Add role and job_title if available from invitation
-      if (invitationData?.role) {
-        Object.assign(userData, { role: invitationData.role });
+      console.log("Registration metadata:", metadata);
+      
+      // Sign up the user with Supabase
+      const { data, error } = await signUp(values.email, values.password, metadata);
+      
+      if (error) {
+        console.error('Error during registration:', error);
+        
+        // Special handling for "User already registered" error
+        if (error.message.includes('already registered')) {
+          toast.error('This email is already registered. Please log in instead.');
+          navigate('/login');
+          return;
+        }
+        
+        toast.error(`Registration failed: ${error.message}`);
+        return;
       }
       
-      if (invitationData?.jobTitle) {
-        Object.assign(userData, { job_title: invitationData.jobTitle });
+      if (!data.user) {
+        toast.error('Failed to create user account');
+        return;
       }
-
-      const { error } = await signUp(data.email, data.password, userData);
-
-      if (error) {
-        console.error("Signup error:", error);
-        throw error;
-      }
-
-      // If this is from an invitation, mark it as claimed
+      
+      // Log the user ID for debugging
+      console.log("User registered successfully, user ID:", data.user.id);
+      
+      // Notify parent component that registration is complete
       if (onRegistrationComplete) {
-        await onRegistrationComplete();
+        onRegistrationComplete(data.user.id, metadata);
       }
-
-      toast.success("Registration successful. Please check your email to confirm your account.");
-
-      navigate('/login');
+      
+      // Log the user in
+      toast.success('Account created successfully!');
+      
+      // Try to log in automatically
+      try {
+        await login(values.email, values.password);
+        navigate('/');
+      } catch (loginError) {
+        console.error('Auto-login failed:', loginError);
+        toast.info('Please log in with your new account');
+        navigate('/login');
+      }
+      
     } catch (err: any) {
-      console.error('Registration error:', err);
-      setError(err.message || 'Failed to register. Please try again.');
-      toast.error(err.message || 'Something went wrong. Please try again.');
+      console.error('Unexpected registration error:', err);
+      toast.error(err.message || 'An error occurred during registration');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -103,12 +135,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First name</FormLabel>
+                <FormLabel>First Name</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="First name" 
+                    placeholder="First Name" 
                     {...field} 
-                    disabled={!!invitationData}
+                    disabled={!!invitationData?.firstName}
                   />
                 </FormControl>
                 <FormMessage />
@@ -120,12 +152,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last name</FormLabel>
+                <FormLabel>Last Name</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="Last name" 
+                    placeholder="Last Name" 
                     {...field} 
-                    disabled={!!invitationData}
+                    disabled={!!invitationData?.lastName}
                   />
                 </FormControl>
                 <FormMessage />
@@ -142,10 +174,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="name@example.com" 
                   type="email" 
+                  placeholder="Email" 
                   {...field} 
-                  disabled={!!invitationData}
+                  disabled={!!invitationData?.email}
                 />
               </FormControl>
               <FormMessage />
@@ -160,28 +192,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ invitationData, onRegistrat
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input placeholder="******" type="password" {...field} />
+                <Input type="password" placeholder="Password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md flex items-start gap-2">
-            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
-
-        {invitationData && (
-          <div className="bg-blue-50 text-blue-600 p-3 rounded-md text-sm">
-            You've been invited with the role: <strong>{invitationData.role}</strong>
-          </div>
-        )}
-
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating account...' : 'Register'}
+        
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? 'Creating Account...' : 'Create Account'}
         </Button>
       </form>
     </Form>

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface InvitationData {
   email: string;
@@ -169,6 +170,83 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
     }
   };
 
+  // Function to manually create a profile if it's missing after registration
+  const ensureProfileExists = async (userId: string, firstName: string, lastName: string, 
+    role: string = 'Team Member', jobTitle: string = '', email: string = '') => {
+    try {
+      // First check if profile already exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (existingProfile) {
+        console.log('Profile already exists:', existingProfile);
+        return true;
+      }
+      
+      if (checkError && !checkError.message.includes('does not exist')) {
+        console.error('Error checking for existing profile:', checkError);
+      }
+      
+      // Try RPC function first
+      console.log('Creating profile using RPC for user ID:', userId);
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'create_profile_for_user',
+        {
+          user_id: userId,
+          first_name_val: firstName,
+          last_name_val: lastName,
+          role_val: role,
+          job_title_val: jobTitle || '',
+          email_val: email
+        }
+      );
+      
+      if (rpcError) {
+        console.error('Profile creation failed with RPC:', rpcError);
+        
+        // Fallback: Try direct insert if RPC fails
+        console.log('Falling back to direct insert for profile creation');
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            first_name: firstName,
+            last_name: lastName,
+            role: role,
+            job_title: jobTitle || '',
+            email: email
+          });
+          
+        if (insertError) {
+          console.error('Direct profile insert also failed:', insertError);
+          toast.error('Profile creation failed. Please try again.');
+          return false;
+        }
+      }
+      
+      // Verify profile was created
+      const { data: verifyProfile, error: verifyError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (verifyError || !verifyProfile) {
+        console.error('Could not verify profile creation:', verifyError);
+        return false;
+      }
+      
+      console.log('Profile created and verified:', verifyProfile);
+      return true;
+    } catch (error) {
+      console.error('Error in ensureProfileExists:', error);
+      return false;
+    }
+  };
+
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:grid-cols-1 lg:px-0">
       <div className="lg:pt-20 md:p-8 sm:p-8 p-4 lg:p-8">
@@ -201,7 +279,32 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
               </div>
               <RegisterForm 
                 invitationData={invitationData} 
-                onRegistrationComplete={invitationToken ? handleInvitationClaimed : undefined} 
+                onRegistrationComplete={(userId, userData) => {
+                  // When registration is complete, ensure profile exists and then mark invitation as claimed
+                  if (userId && invitationData) {
+                    ensureProfileExists(
+                      userId, 
+                      invitationData.firstName,
+                      invitationData.lastName,
+                      invitationData.role,
+                      invitationData.jobTitle,
+                      invitationData.email
+                    ).then(success => {
+                      if (success) {
+                        if (invitationToken) {
+                          handleInvitationClaimed();
+                        }
+                      }
+                    });
+                  } else if (userId && userData) {
+                    // For direct registrations (not through invitation)
+                    const firstName = userData.first_name || '';
+                    const lastName = userData.last_name || '';
+                    const email = userData.email || '';
+                    
+                    ensureProfileExists(userId, firstName, lastName, 'Team Member', '', email);
+                  }
+                }} 
               />
               <p className="px-8 text-center text-sm text-muted-foreground">
                 Already have an account?{' '}
