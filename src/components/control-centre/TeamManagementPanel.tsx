@@ -543,13 +543,14 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
     const body = `
 Hello,
 
-You have been invited to join our team at ${window.location.origin}.
+You have been invited to join our team at https://myhi.io.
 
 To get started:
-1. Go to: ${window.location.origin}/register
+1. Go to: https://myhi.io/register
 2. Create an account with this email address
-3. After signing up, you'll need to click a confirmation link from our system
+3. After signing up, you'll need to click a confirmation link that will be sent to your email
 4. You can then log in and access the team platform
+5. Don't forget to personalize your profile by adding a photo and updating your details
 
 Looking forward to having you on the team!
 
@@ -610,6 +611,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <p>
                     This will open your email client with a pre-filled invitation message to send to the team members.
+                    They will be guided to register at https://myhi.io and verify their email address.
                   </p>
                 </div>
               </div>
