@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { DayInput } from '@/pages/pl/components/types/PLTrackerTypes';
+import { ProcessedBudgetItem } from '@/pages/pl/hooks/useBudgetData';
 
 export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master';
 
@@ -555,7 +556,7 @@ export const syncTrackerCreditNotesToCreditNotes = async (year: number, month: n
   }
 };
 
-export const getTrackerSummaryByMonth = async (year: number, month: number, moduleType: ModuleType = 'food'): Promise<TrackerSummary> => {
+export const getTrackerSummaryByMonth = async (year: number, month: number, moduleType: ModuleType = 'food') => {
   try {
     let gpTarget = moduleType === 'food' ? 68 : 72;
     
@@ -620,3 +621,151 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
     throw error;
   }
 };
+
+export const fetchBudgetItems = async (monthName: string, year: number): Promise<ProcessedBudgetItem[]> => {
+  try {
+    const month = new Date(Date.parse(`${monthName} 1, ${year}`)).getMonth() + 1;
+    
+    const { data, error } = await supabase
+      .from('budget_items')
+      .select('*')
+      .eq('year', year)
+      .eq('month', month);
+      
+    if (error) {
+      console.error('Error fetching budget items:', error);
+      throw error;
+    }
+    
+    const processedData: ProcessedBudgetItem[] = data.map(item => ({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      budget_amount: item.budget_amount,
+      actual_amount: item.actual_amount,
+      forecast_amount: item.forecast_amount,
+      budget_percentage: item.budget_percentage,
+      isHeader: item.is_header,
+      isHighlighted: item.is_highlighted,
+      isGrossProfit: item.is_gross_profit,
+      isOperatingProfit: item.is_operating_profit,
+      tracking_type: item.tracking_type
+    }));
+    
+    return processedData;
+  } catch (error) {
+    console.error(`Error in fetchBudgetItems for ${monthName} ${year}:`, error);
+    throw error;
+  }
+};
+
+export const upsertBudgetItems = async (budgetItems: Partial<ProcessedBudgetItem>[]) => {
+  try {
+    const dbItems = budgetItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      budget_amount: item.budget_amount,
+      actual_amount: item.actual_amount,
+      forecast_amount: item.forecast_amount,
+      budget_percentage: item.budget_percentage,
+      is_header: item.isHeader,
+      is_highlighted: item.isHighlighted,
+      is_gross_profit: item.isGrossProfit,
+      is_operating_profit: item.isOperatingProfit,
+      tracking_type: item.tracking_type
+    }));
+    
+    const { data, error } = await supabase
+      .from('budget_items')
+      .upsert(dbItems)
+      .select();
+      
+    if (error) {
+      console.error('Error upserting budget items:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in upsertBudgetItems:', error);
+    throw error;
+  }
+};
+
+export const fetchBudgetDailyValues = async (budgetItemId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('budget_daily_values')
+      .select('*')
+      .eq('budget_item_id', budgetItemId);
+      
+    if (error) {
+      console.error('Error fetching budget daily values:', error);
+      throw error;
+    }
+    
+    const dayInputs: DayInput[] = data.map(item => ({
+      date: new Date(item.date),
+      value: item.value
+    }));
+    
+    return dayInputs;
+  } catch (error) {
+    console.error(`Error in fetchBudgetDailyValues for item ${budgetItemId}:`, error);
+    throw error;
+  }
+};
+
+export const upsertBudgetDailyValues = async (budgetItems: { id?: string, daily_values?: DayInput[] }[]) => {
+  try {
+    const allDailyValues: { budget_item_id: string, date: string, value: number }[] = [];
+    
+    budgetItems.forEach(item => {
+      if (item.id && item.daily_values) {
+        item.daily_values.forEach(dayValue => {
+          if (dayValue.value !== null) {
+            allDailyValues.push({
+              budget_item_id: item.id as string,
+              date: dayValue.date.toISOString().split('T')[0],
+              value: dayValue.value
+            });
+          }
+        });
+      }
+    });
+    
+    if (allDailyValues.length === 0) {
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('budget_daily_values')
+      .upsert(allDailyValues)
+      .select();
+      
+    if (error) {
+      console.error('Error upserting budget daily values:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in upsertBudgetDailyValues:', error);
+    throw error;
+  }
+};
+
+interface TrackerSummary {
+  year: number;
+  month: number;
+  moduleType: ModuleType;
+  revenue: number;
+  cost: number;
+  purchases: number;
+  creditNotes: number;
+  staffAllowance: number;
+  totalCost: number;
+  gpAmount: number;
+  gpPercentage: number;
+}

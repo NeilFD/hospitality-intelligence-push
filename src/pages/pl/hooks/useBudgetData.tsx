@@ -1,6 +1,8 @@
+
 import { useEffect, useState } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../components/types/PLTrackerTypes';
-import { fetchBudgetItems, upsertBudgetItems, fetchBudgetDailyValues, upsertBudgetDailyValues } from '@/services/kitchen-service';
+import { fetchBudgetItems, upsertBudgetItems } from '@/utils/budget/api';
+import { fetchBudgetDailyValues, upsertBudgetDailyValues } from '@/services/kitchen-service';
 
 // Export this interface so it can be used in other files
 export interface ProcessedBudgetItem {
@@ -20,7 +22,7 @@ export interface ProcessedBudgetItem {
   manually_entered_actual?: number;
 }
 
-export const useBudgetData = (currentMonthName: string, currentYear: number) => {
+export const useBudgetData = (currentYear: number, currentMonth: number) => {
   const [budgetData, setBudgetData] = useState<ProcessedBudgetItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export const useBudgetData = (currentMonthName: string, currentYear: number) => 
       setError(null);
       
       try {
-        const fetchedData = await fetchBudgetItems(currentMonthName, currentYear);
+        const fetchedData = await fetchBudgetItems(currentYear, currentMonth);
         setBudgetData(fetchedData);
       } catch (e: any) {
         setError(e.message || "Failed to fetch budget items");
@@ -41,7 +43,7 @@ export const useBudgetData = (currentMonthName: string, currentYear: number) => 
     };
     
     fetchData();
-  }, [currentMonthName, currentYear]);
+  }, [currentMonth, currentYear]);
   
   return {
     budgetData,

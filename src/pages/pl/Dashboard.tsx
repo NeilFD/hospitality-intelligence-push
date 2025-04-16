@@ -57,8 +57,9 @@ export default function PLDashboard() {
   });
 
   const {
+    budgetData: processedBudgetData,
     isLoading: isBudgetDataLoading,
-    processedBudgetData
+    error
   } = useBudgetData(currentYear, currentMonth);
   
   const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
