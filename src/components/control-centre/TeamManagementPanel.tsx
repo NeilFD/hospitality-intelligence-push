@@ -410,15 +410,15 @@ const TeamManagementPanel: React.FC = () => {
 We've created an account for you in our team management system.
 
 To get started:
-1. Go to: ${window.location.origin}/login
+1. Go to: https://myhi.io/register
 2. Enter your email: ${user.email}
-3. [ADD PASSWORD] - Please add a password for this user
-4. After logging in, they should update their password in profile settings
+3. Click the confirmation link that will be sent to your email
+4. After logging in, add a profile picture and personalize your profile
 
 Looking forward to having you on the team!
 
 Best regards,
-${currentUserProfile?.first_name || 'The Management Team'}`;
+${currentUserProfile?.first_name || 'The Hi Team'}`;
   };
   
   const handleOpenEmail = (user: UserProfile | null) => {
