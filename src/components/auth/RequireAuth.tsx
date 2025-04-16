@@ -31,16 +31,9 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         return;
       }
 
-      // God mode - always has access to everything
-      if (profile.role === 'GOD') {
-        console.log('GOD user detected - granting access to protected route');
-        setHasPermission(true);
-        return;
-      }
-
-      // Super User also has access to everything
-      if (profile.role === 'Super User') {
-        console.log('Super User detected - granting access to protected route');
+      // God mode and Super User - always has access to everything
+      if (profile.role === 'GOD' || profile.role === 'Super User') {
+        console.log(`${profile.role} user detected - granting access to protected route`);
         setHasPermission(true);
         return;
       }
@@ -54,15 +47,21 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
       try {
         setPermissionLoading(true);
         
-        // Extract the module and page from the current path
+        // Extract the module from the current path
         const pathParts = location.pathname.split('/').filter(part => part !== '');
         const moduleId = pathParts[0] || '';
+        
+        console.log(`Checking permission for module: ${moduleId}, path: ${location.pathname}, role: ${profile.role}`);
         
         // Team Member specific protection - only allow team module
         if (profile.role === 'Team Member') {
           const hasAccess = moduleId === 'team';
           console.log(`Team Member access check for module ${moduleId}: ${hasAccess}`);
           setHasPermission(hasAccess);
+          
+          if (!hasAccess) {
+            console.log(`Team Member attempt to access non-team module: ${moduleId}`);
+          }
           return;
         }
         
@@ -172,6 +171,11 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   // If we've checked permissions and user doesn't have access
   if (hasPermission === false) {
     toast.error("You don't have permission to access this page");
+    // For Team Members, always redirect to team dashboard
+    if (profile?.role === 'Team Member') {
+      return <Navigate to="/team/dashboard" replace />;
+    }
+    // For others, redirect to their default page
     return <Navigate to="/" replace />;
   }
   

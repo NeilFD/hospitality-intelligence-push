@@ -8,12 +8,17 @@ import { supabase } from '@/lib/supabase';
 const Index = () => {
   const currentModule = useCurrentModule();
   const location = useLocation();
-  const { profile } = useAuthStore();
+  const { profile, isAuthenticated } = useAuthStore();
   
   // Force a re-evaluation of the module name and log it
   useEffect(() => {
     console.log('Current module in Index:', currentModule);
   }, [currentModule]);
+  
+  // If not authenticated, redirect to login
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
   
   // If the URL contains "control-centre", redirect to control-centre with proper auth
   if (location.pathname.includes("control-centre")) {
@@ -26,13 +31,13 @@ const Index = () => {
     }
   }
   
-  // Team Members should always have access to the team module
+  // Team Members should always only have access to the team module
   if (profile?.role === 'Team Member') {
     console.log('Team Member detected - redirecting to team dashboard');
     return <Navigate to="/team/dashboard" replace />;
   }
   
-  // For other roles, check the current module
+  // For other roles, use the current module if available, or default to team
   const fallbackPath = '/team/dashboard';
   
   // Create a direct path to the dashboard based on the current module
