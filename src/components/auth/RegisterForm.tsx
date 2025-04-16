@@ -55,63 +55,47 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     },
   });
 
-  const ensureProfileExists = async (userId: string, userData: any) => {
+  const createProfileDirectly = async (userId: string, userData: any) => {
     try {
-      console.log(`Ensuring profile exists for user ${userId}`);
+      console.log(`Creating profile directly for user ${userId}`);
       
-      // Check if profile already exists
-      const { data: existingProfile, error: checkError } = await supabase
+      // Insert directly into profiles table
+      const { error: profileError } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+        .insert({
+          id: userId,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role || 'Team Member',
+          job_title: userData.job_title || '',
+          email: userData.email
+        });
         
-      if (existingProfile) {
-        console.log('Profile already exists:', existingProfile);
-        return true;
-      }
-      
-      // If no profile exists, create one manually as a fallback
-      console.log('Creating profile manually for user ID:', userId);
-      const { error: manualError } = await supabase.rpc(
-        'handle_new_user_manual',
-        {
-          user_id: userId,
-          first_name_val: userData.first_name,
-          last_name_val: userData.last_name,
-          role_val: userData.role || 'Team Member',
-          email_val: userData.email
-        }
-      );
-      
-      if (!manualError) {
-        console.log('Profile created successfully with manual function');
-        return true;
-      } else {
-        console.error('Manual profile creation failed:', manualError);
+      if (profileError) {
+        console.error('Error creating profile directly:', profileError);
         
-        // Last resort: direct insert
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            first_name: userData.first_name,
-            last_name: userData.last_name,
-            role: userData.role || 'Team Member',
-            job_title: userData.job_title || '',
-            email: userData.email
-          });
-          
-        if (!insertError) {
-          console.log('Profile created successfully with direct insert');
-          return true;
-        } else {
-          console.error('Direct profile insertion failed:', insertError);
+        // Try fallback method using RPC
+        const { error: rpcError } = await supabase.rpc(
+          'create_profile_for_user',
+          {
+            user_id: userId,
+            first_name_val: userData.first_name,
+            last_name_val: userData.last_name,
+            role_val: userData.role || 'Team Member',
+            job_title_val: userData.job_title || '',
+            email_val: userData.email
+          }
+        );
+        
+        if (rpcError) {
+          console.error('Error creating profile with RPC:', rpcError);
           return false;
         }
       }
+      
+      return true;
     } catch (error) {
-      console.error('Error in ensureProfileExists:', error);
+      console.error('Error in createProfileDirectly:', error);
       return false;
     }
   };
@@ -134,6 +118,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("Registration metadata:", metadata);
       
+      // Direct signup without invitation
       const { data, error } = await signUp(values.email, values.password, metadata);
       
       if (error) {
@@ -159,8 +144,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       // Wait a moment for Auth trigger to fire
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Ensure profile exists (fallback if trigger fails)
-      await ensureProfileExists(data.user.id, metadata);
+      // Create profile directly as fallback
+      await createProfileDirectly(data.user.id, metadata);
       
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);
@@ -185,7 +170,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
-  // Same UI, no layout changes
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
