@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,8 +105,8 @@ const FoodBible: React.FC = () => {
           id: item.id,
           name: item.name,
           category: item.category,
-          ingredients: item.ingredients || [],
-          allergens: item.allergens || [],
+          ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
+          allergens: Array.isArray(item.allergens) ? item.allergens : [],
           isVegan: item.is_vegan || false,
           isVegetarian: item.is_vegetarian || false,
           isGlutenFree: item.is_gluten_free || false,

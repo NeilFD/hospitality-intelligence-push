@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +39,6 @@ const BeverageBible: React.FC = () => {
   };
   
   const handleEdit = () => {
-    // Implement edit functionality here
     console.log('Edit recipe:', selectedRecipe);
   };
   
@@ -57,7 +55,6 @@ const BeverageBible: React.FC = () => {
         return;
       }
       
-      // Optimistically update the UI
       setRecipes(recipes.filter(r => r.id !== recipe.id));
       toast.success('Recipe deleted successfully');
       handleClose();
@@ -67,7 +64,6 @@ const BeverageBible: React.FC = () => {
     }
   };
 
-  // Fix the setRecipes assignment with proper type casting
   useEffect(() => {
     const fetchRecipes = async () => {
       setLoading(true);
@@ -83,15 +79,14 @@ const BeverageBible: React.FC = () => {
           return;
         }
 
-        // Process the recipe data to match the Recipe type
         const processedRecipes: Recipe[] = data.map(item => ({
           id: item.id,
           name: item.name,
           category: item.category,
-          ingredients: item.ingredients || [],
-          allergens: item.allergens || [],
+          ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
+          allergens: Array.isArray(item.allergens) ? item.allergens : [],
           isVegan: item.is_vegan || false,
-          isVegetarian: item.is_vegetarian || false, 
+          isVegetarian: item.is_vegetarian || false,
           isGlutenFree: item.is_gluten_free || false,
           timeToTableMinutes: item.time_to_table_minutes || 0,
           method: item.method || '',
@@ -105,8 +100,7 @@ const BeverageBible: React.FC = () => {
           },
           archived: item.archived || false,
           postedToNoticeboard: item.posted_to_noticeboard || false,
-          moduleType: 'beverage', // Fix: Specify the exact string literal type
-          // Add the missing required properties
+          moduleType: 'beverage' as const,
           createdAt: new Date(item.created_at),
           updatedAt: new Date(item.updated_at)
         }));

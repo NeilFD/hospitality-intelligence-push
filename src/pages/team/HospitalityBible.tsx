@@ -1,487 +1,223 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import RecipeCard from "@/components/recipes/RecipeCard";
-import RecipeFilters from "@/components/recipes/RecipeFilters";
-import RecipeFormDialog from "@/components/recipes/RecipeFormDialog";
-import RecipeDetailDialog from "@/components/recipes/RecipeDetailDialog";
-import { Recipe, RecipeFilterOptions, Ingredient } from "@/types/recipe-types";
-import { menuCategories, allergenTypes } from "@/data/sample-recipe-data";
-import { Plus, PanelLeft, ChevronLeft, Maximize2, Minimize2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Plus, Search } from 'lucide-react';
+import { Recipe, Ingredient } from '@/types/recipe-types';
+import { supabase } from '@/lib/supabase';
+import RecipeDetailDialog from '@/components/recipes/RecipeDetailDialog';
+import RecipeFormDialog from '@/components/recipes/RecipeFormDialog';
+import { toast } from 'sonner';
 
 const HospitalityBible: React.FC = () => {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [guides, setGuides] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<RecipeFilterOptions>({
-    searchTerm: "",
-    category: "all_categories",
-    allergens: [],
-    isVegan: null,
-    isVegetarian: null,
-    isGlutenFree: null,
-    letter: null,
-    status: "live"
-  });
-  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
-  const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarMaximized, setSidebarMaximized] = useState(false);
-  const isMobile = useIsMobile();
-
-  const hospitalityCategories = [
-    "Customer Service",
-    "Complaint Handling",
-    "Table Service",
-    "Bar Service",
-    "Opening Procedures",
-    "Closing Procedures",
-    "Till Operations",
-    "Hosting",
-    "Special Events",
-    "Staff Training"
-  ];
-
-  const hospitalityCategoryObjects = hospitalityCategories.map(category => ({
-    id: category.toLowerCase().replace(/\s+/g, '-'),
-    name: category,
-    moduleType: 'hospitality' as const
-  }));
-
-  useEffect(() => {
-    fetchRecipes();
-  }, []);
-
-  const fetchRecipes = async () => {
-    try {
-      setLoading(true);
-      console.log("Fetching hospitality guides from Supabase...");
-      const {
-        data: guidesData,
-        error: guidesError
-      } = await supabase.from('hospitality_guides').select('*');
-      
-      if (guidesError) {
-        throw guidesError;
-      }
-      
-      console.log(`Fetched ${guidesData?.length || 0} hospitality guides`);
-      
-      const mappedGuides: Recipe[] = (guidesData || []).map(guide => ({
-        id: guide.id,
-        name: guide.name,
-        category: guide.category,
-        allergens: [],
-        isVegan: false,
-        isVegetarian: false,
-        isGlutenFree: false,
-        timeToTableMinutes: guide.time_to_complete_minutes || 0,
-        miseEnPlace: guide.required_resources || '',
-        method: guide.detailed_procedure || '',
-        createdAt: new Date(guide.created_at),
-        updatedAt: new Date(guide.updated_at),
-        imageUrl: guide.image_url,
-        image_url: guide.image_url,
-        ingredients: Array.isArray(guide.steps) ? guide.steps as Ingredient[] : [],
-        costing: {
-          totalRecipeCost: 0,
-          suggestedSellingPrice: 0,
-          actualMenuPrice: 0,
-          grossProfitPercentage: 0
-        },
-        moduleType: 'hospitality' as const,
-        module_type: 'hospitality',
-        archived: guide.archived || false,
-        postedToNoticeboard: guide.posted_to_noticeboard || false
-      }));
-      
-      setRecipes(mappedGuides);
-    } catch (error) {
-      console.error('Error fetching hospitality guides:', error);
-      toast.error('Failed to load hospitality guides');
-      setRecipes([]);
-    } finally {
-      setLoading(false);
-    }
+  const [search, setSearch] = useState('');
+  const [selectedGuide, setSelectedGuide] = useState<Recipe | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  
+  const handleOpenDetailDialog = (guide: Recipe) => {
+    setSelectedGuide(guide);
+    setDetailDialogOpen(true);
   };
-
-  const saveGuideToSupabase = async (recipe: Recipe, showToast: boolean = true) => {
-    try {
-      console.log("Starting saveGuideToSupabase with guide:", recipe);
-      
-      if (!recipe.id) {
-        recipe.id = uuidv4();
-        console.log("Generated new guide ID:", recipe.id);
-      }
-      
-      const simplifiedGuide = {
-        id: recipe.id,
-        name: recipe.name,
-        category: recipe.category,
-        imageUrl: recipe.imageUrl || recipe.image_url ? "Present" : "Not present"
-      };
-      console.log("Guide data formatted for Supabase (simplified):", simplifiedGuide);
-      
-      const guideData = {
-        id: recipe.id,
-        name: recipe.name || 'Unnamed Guide',
-        category: recipe.category || 'Uncategorized',
-        time_to_complete_minutes: recipe.timeToTableMinutes || 0,
-        detailed_procedure: recipe.method || '',
-        required_resources: recipe.miseEnPlace || '', // Updated to match column name in DB
-        image_url: recipe.imageUrl || recipe.image_url || '',
-        steps: recipe.ingredients as any,
-        archived: recipe.archived || false,
-        posted_to_noticeboard: recipe.postedToNoticeboard || false
-      };
-      
-      console.log("Full guide data being saved to Supabase:", guideData);
-
-      const { data: existingGuide, error: checkError } = await supabase
-        .from('hospitality_guides')
-        .select('id')
-        .eq('id', recipe.id)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error("Error checking if guide exists:", checkError);
-      }
-      
-      console.log("Existing guide check result:", existingGuide ? "Guide exists" : "Guide doesn't exist");
-      
-      let saveError;
-      
-      if (existingGuide) {
-        console.log("Updating existing guide with ID:", recipe.id);
-        const { error } = await supabase
-          .from('hospitality_guides')
-          .update(guideData)
-          .eq('id', recipe.id);
-        
-        saveError = error;
-      } else {
-        console.log("Inserting new guide with ID:", recipe.id);
-        const { error } = await supabase
-          .from('hospitality_guides')
-          .insert([guideData]);
-        
-        saveError = error;
-      }
-      
-      if (saveError) {
-        console.error("Error saving guide:", saveError);
-        console.error("Error details:", saveError.details, saveError.hint, saveError.message);
-        throw saveError;
-      }
-      
-      console.log("Guide saved successfully with ID:", recipe.id);
-      
-      if (showToast) {
-        toast.success('Hospitality guide saved successfully');
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error saving guide:', error);
-      
-      let errorMessage = 'Failed to save hospitality guide';
-      if (error && typeof error === 'object') {
-        if ('message' in error) errorMessage += `: ${(error as any).message}`;
-        if ('details' in error) errorMessage += ` (${(error as any).details})`;
-      }
-      
-      if (showToast) {
-        toast.error(errorMessage);
-      }
-      throw error;
-    }
+  
+  const handleCloseDetailDialog = () => {
+    setDetailDialogOpen(false);
+    setSelectedGuide(null);
   };
-
-  const deleteGuideFromSupabase = async (recipeId: string) => {
+  
+  const handleOpenFormDialog = (guide?: Recipe) => {
+    setSelectedGuide(guide || null);
+    setFormDialogOpen(true);
+  };
+  
+  const handleCloseFormDialog = () => {
+    setFormDialogOpen(false);
+    setSelectedGuide(null);
+  };
+  
+  const handleGuideUpdated = (updatedGuide: Recipe) => {
+    setGuides(prevGuides =>
+      prevGuides.map(guide =>
+        guide.id === updatedGuide.id ? updatedGuide : guide
+      )
+    );
+    handleCloseFormDialog();
+  };
+  
+  const handleGuideCreated = (newGuide: Recipe) => {
+    setGuides(prevGuides => [...prevGuides, newGuide]);
+    handleCloseFormDialog();
+  };
+  
+  const handleGuideDeleted = async (guideToDelete: Recipe) => {
     try {
       const { error } = await supabase
-        .from('hospitality_guides')
+        .from('recipes')
         .delete()
-        .eq('id', recipeId);
+        .eq('id', guideToDelete.id);
         
       if (error) {
         console.error('Error deleting guide:', error);
-        throw error;
+        toast.error('Failed to delete guide');
+        return;
       }
       
-      toast.success('Hospitality guide deleted successfully');
-      return true;
-    } catch (error) {
-      console.error('Error deleting guide:', error);
-      toast.error('Failed to delete hospitality guide');
-      throw error;
-    }
-  };
-
-  const filteredRecipes = useMemo(() => {
-    return recipes.filter(recipe => {
-      if (filters.searchTerm && !recipe.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
-        return false;
-      }
-      if (filters.category && filters.category !== "all_categories" && recipe.category !== filters.category) {
-        return false;
-      }
-      if (selectedLetter && !recipe.name.toUpperCase().startsWith(selectedLetter)) {
-        return false;
-      }
-      if (filters.status === "live" && recipe.archived) {
-        return false;
-      }
-      if (filters.status === "archived" && !recipe.archived) {
-        return false;
-      }
-      return true;
-    });
-  }, [recipes, filters, selectedLetter]);
-
-  const handleFilterChange = (newFilters: RecipeFilterOptions) => {
-    setFilters(newFilters);
-  };
-
-  const handleLetterSelect = (letter: string | null) => {
-    setSelectedLetter(letter);
-    setFilters({
-      ...filters,
-      letter
-    });
-  };
-
-  const handleAddRecipe = () => {
-    setEditingRecipe(undefined);
-    setFormOpen(true);
-  };
-
-  const handleEditRecipe = (recipe: Recipe) => {
-    setEditingRecipe(recipe);
-    setFormOpen(true);
-  };
-
-  const handleSaveRecipe = async (recipe: Recipe) => {
-    try {
-      console.log("handleSaveRecipe called with:", recipe);
-      
-      if (!recipe.id) {
-        recipe.id = uuidv4();
-        console.log("Generated new guide ID in handleSaveRecipe:", recipe.id);
-      }
-      
-      await saveGuideToSupabase(recipe);
-      
-      if (editingRecipe) {
-        setRecipes(recipes.map(r => r.id === recipe.id ? recipe : r));
-      } else {
-        setRecipes(prevRecipes => [...prevRecipes, recipe]);
-      }
-      
-      setFormOpen(false);
-      setEditingRecipe(undefined);
-      
-      console.log("Refreshing guides from database after save");
-      await fetchRecipes();
-      
-      console.log("Guide form closed, state updated");
-    } catch (error) {
-      console.error('Error in handleSaveRecipe:', error);
-      toast.error('Failed to save hospitality guide. Please try again.');
-    }
-  };
-
-  const handleDeleteRecipe = async (recipe: Recipe) => {
-    try {
-      await deleteGuideFromSupabase(recipe.id);
-      setRecipes(recipes.filter(r => r.id !== recipe.id));
-      setViewingRecipe(undefined);
-    } catch (error) {
-      console.error('Error in handleDeleteRecipe:', error);
-    }
-  };
-
-  const handleViewRecipe = (recipe: Recipe) => {
-    setViewingRecipe(recipe);
-  };
-
-  const handleToggleNoticeboard = async (recipe: Recipe) => {
-    try {
-      const updatedRecipe = {
-        ...recipe,
-        postedToNoticeboard: !recipe.postedToNoticeboard
-      };
-
-      const { error } = await supabase
-        .from('hospitality_guides')
-        .update({ posted_to_noticeboard: updatedRecipe.postedToNoticeboard })
-        .eq('id', recipe.id);
-
-      if (error) throw error;
-
-      setRecipes(recipes.map(r => 
-        r.id === recipe.id ? updatedRecipe : r
-      ));
-
-      toast.success(
-        updatedRecipe.postedToNoticeboard 
-          ? 'Guide posted to Noticeboard' 
-          : 'Guide removed from Noticeboard'
+      setGuides(prevGuides =>
+        prevGuides.filter(guide => guide.id !== guideToDelete.id)
       );
+      handleCloseDetailDialog();
+      toast.success('Guide deleted successfully');
     } catch (error) {
-      console.error('Error toggling noticeboard status:', error);
-      toast.error('Failed to update noticeboard status');
+      console.error('Unexpected error deleting guide:', error);
+      toast.error('Failed to delete guide');
     }
   };
 
-  const toggleMaximized = () => {
-    setSidebarMaximized(!sidebarMaximized);
-  };
+  useEffect(() => {
+    const fetchGuides = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('recipes')
+          .select('*')
+          .eq('module_type', 'hospitality')
+          .order('name');
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+        if (error) {
+          console.error('Error fetching hospitality guides:', error);
+          return;
+        }
 
-  const DesktopSidebar = () => <div className={`border-r border-gray-200 bg-white transition-all duration-300 h-full overflow-auto relative ${sidebarMaximized ? 'w-120' : sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
-    {sidebarOpen && (
-      <div className="p-4">
-        <div className="flex justify-end mb-2">
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-60 hover:opacity-100 mr-1" onClick={toggleMaximized} title={sidebarMaximized ? "Restore sidebar" : "Maximize sidebar"}>
-            {sidebarMaximized ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={toggleSidebar} title="Collapse sidebar" className="h-6 w-6 p-0 opacity-60 hover:opacity-100 text-slate-900">
-            <ChevronLeft className="h-3 w-3" />
-          </Button>
-        </div>
-        <RecipeFilters moduleType="hospitality" categories={hospitalityCategoryObjects} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
-      </div>
-    )}
-  </div>;
+        // Process the guide data to match the Recipe type
+        const processedGuides: Recipe[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          ingredients: Array.isArray(item.ingredients) ? (item.ingredients as unknown as Ingredient[]) : [],
+          allergens: Array.isArray(item.allergens) ? item.allergens : [],
+          isVegan: item.is_vegan || false,
+          isVegetarian: item.is_vegetarian || false,
+          isGlutenFree: item.is_gluten_free || false,
+          timeToTableMinutes: item.time_to_table_minutes || 0,
+          method: item.method || '',
+          miseEnPlace: item.mise_en_place || '',
+          imageUrl: item.image_url || '',
+          costing: {
+            totalRecipeCost: item.total_recipe_cost || 0,
+            suggestedSellingPrice: item.suggested_selling_price || 0,
+            actualMenuPrice: item.actual_menu_price || 0,
+            grossProfitPercentage: item.gross_profit_percentage || 0
+          },
+          archived: item.archived || false,
+          postedToNoticeboard: item.posted_to_noticeboard || false,
+          moduleType: 'hospitality' as const,
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at)
+        }));
 
-  const MobileSidebar = () => <>
-    <Button variant="outline" size="icon" className="fixed left-4 top-20 z-40 md:hidden shadow-md bg-white" onClick={() => setSidebarOpen(true)}>
-      <PanelLeft className="h-4 w-4" />
-    </Button>
+        setGuides(processedGuides);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    <Drawer open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <DrawerContent className="max-h-[90vh]">
-        <div className="p-4 max-h-[80vh] overflow-y-auto">
-          <RecipeFilters moduleType="hospitality" categories={hospitalityCategoryObjects} allergens={[]} filters={filters} onFilterChange={handleFilterChange} onLetterSelect={handleLetterSelect} selectedLetter={selectedLetter} />
-        </div>
-      </DrawerContent>
-    </Drawer>
-  </>;
+    fetchGuides();
+  }, []);
 
-  return <div className="flex w-full min-h-svh bg-background">
-    {!sidebarOpen && !isMobile && (
-      <div className="fixed left-[288px] top-[86px] z-40 flex gap-2">
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="shadow-md bg-white" 
-          onClick={() => {
-            setSidebarOpen(true);
-            setSidebarMaximized(false);
-          }}
-          title="Open sidebar"
-        >
-          <PanelLeft className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          className="shadow-md bg-white"
-          onClick={() => {
-            setSidebarOpen(true);
-            setSidebarMaximized(!sidebarMaximized);
-          }}
-          title={sidebarMaximized ? "Restore sidebar" : "Maximize sidebar"}
-        >
-          {sidebarMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </Button>
-      </div>
-    )}
-    
-    {isMobile ? <MobileSidebar /> : <DesktopSidebar />}
-    
-    <div className="flex-1 relative">
-      <div className="container px-4 py-6 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Hospitality Bible</h1>
-            <p className="text-muted-foreground">Service guides, standards and training materials</p>
-          </div>
-          <Button onClick={() => setFormOpen(true)} className="mt-4 md:mt-0">
+  const filteredGuides = guides.filter(guide =>
+    guide.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="container mx-auto p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Hospitality Guides</h1>
+        <div className="flex items-center space-x-2">
+          <Input
+            type="search"
+            placeholder="Search guides..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="md:w-64"
+          />
+          <Button onClick={() => handleOpenFormDialog()} className="bg-green-500 text-white hover:bg-green-600">
             <Plus className="h-4 w-4 mr-2" />
-            Add Hospitality Guide
+            Add Guide
           </Button>
         </div>
-        
-        <div className="w-full">
-          {loading ? <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading hospitality guides...</p>
-              </div>
-            </div> : filteredRecipes.length > 0 ? <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredRecipes.map(recipe => (
-                <RecipeCard 
-                  key={recipe.id} 
-                  recipe={{...recipe, moduleType: 'hospitality'}}
-                  onClick={() => setViewingRecipe(recipe)}
-                  onToggleNoticeboard={() => handleToggleNoticeboard(recipe)}
-                />
-              ))}
-            </div> : <div className="flex flex-col items-center justify-center py-12">
-              <p className="text-lg text-gray-500">No hospitality guides match your filters</p>
-              <Button variant="outline" onClick={() => {
-                setFilters({
-                  searchTerm: "",
-                  category: "all_categories",
-                  allergens: [],
-                  isVegan: null,
-                  isVegetarian: null,
-                  isGlutenFree: null,
-                  letter: null,
-                  status: "live"
-                });
-                setSelectedLetter(null);
-              }} className="mt-4">
-                Clear Filters
-              </Button>
-            </div>}
-        </div>
       </div>
+
+      {loading ? (
+        <p>Loading guides...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredGuides.map((guide) => (
+                <TableRow key={guide.id}>
+                  <TableCell>{guide.name}</TableCell>
+                  <TableCell>{guide.category}</TableCell>
+                  <TableCell>
+                    <Button variant="secondary" size="sm" onClick={() => handleOpenDetailDialog(guide)}>
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
       
-      {formOpen && <RecipeFormDialog 
-        open={formOpen} 
-        onClose={() => setFormOpen(false)} 
-        onSave={handleSaveRecipe} 
-        recipe={editingRecipe} 
-        moduleType="hospitality" 
-        categories={hospitalityCategoryObjects} 
-        allergens={[]} 
-      />}
+      <RecipeDetailDialog
+        recipe={selectedGuide!}
+        open={detailDialogOpen}
+        onClose={handleCloseDetailDialog}
+        onEdit={() => handleOpenFormDialog(selectedGuide!)}
+        onDelete={handleGuideDeleted}
+      />
       
-      {viewingRecipe && <RecipeDetailDialog 
-        open={!!viewingRecipe} 
-        onClose={() => setViewingRecipe(undefined)} 
-        recipe={{...viewingRecipe, moduleType: 'hospitality'}} 
-        onEdit={() => {
-          setViewingRecipe(undefined);
-          setEditingRecipe(viewingRecipe);
-          setFormOpen(true);
-        }} 
-        onDelete={handleDeleteRecipe} 
-      />}
+      <RecipeFormDialog
+        open={formDialogOpen}
+        onClose={handleCloseFormDialog}
+        recipe={selectedGuide || undefined}
+        onSave={(guide: Recipe) => {
+          if (selectedGuide) {
+            // Handle update
+            setGuides(prevGuides =>
+              prevGuides.map(g =>
+                g.id === guide.id ? guide : g
+              )
+            );
+          } else {
+            // Handle create
+            setGuides(prevGuides => [...prevGuides, guide]);
+          }
+          handleCloseFormDialog();
+        }}
+        moduleType="hospitality"
+      />
     </div>
-  </div>;
+  );
 };
 
 export default HospitalityBible;

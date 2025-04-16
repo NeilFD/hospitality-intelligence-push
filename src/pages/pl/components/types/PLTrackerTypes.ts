@@ -1,29 +1,25 @@
 
-import { ProcessedBudgetItem } from '../../hooks/useBudgetData';
+// Add or fix types to include year and month properties
 
 export interface DayInput {
-  date: Date;
-  value: number | null;
+  day: number;  // Add the required 'day' property
+  value: number;
 }
 
-export interface PLTrackerBudgetItem extends ProcessedBudgetItem {
-  tracking_type: 'Discrete' | 'Pro-Rated';
-  manually_entered_actual?: number;
-  daily_values?: DayInput[];
-  // Adding missing properties that are being used
+export interface PLTrackerBudgetItem {
+  id: string;
+  name: string;
+  category: string;
+  budget_amount: number;
+  actual_amount?: number;
+  forecast_amount?: number;
+  budget_percentage?: number;
   isHeader?: boolean;
+  isHighlighted?: boolean;
   isGrossProfit?: boolean;
   isOperatingProfit?: boolean;
-  budget_amount: number;
-  name: string;
-  id?: string;
-  budget_percentage?: number;
-}
-
-export interface PLTrackerProps {
-  isLoading: boolean;
-  processedBudgetData: ProcessedBudgetItem[];
-  currentMonthName: string;
-  currentYear: number;
-  onClose: () => void;
+  tracking_type?: string;
+  daily_values?: DayInput[];
+  year: number;  // Add the required 'year' property
+  month: number; // Add the required 'month' property
 }
