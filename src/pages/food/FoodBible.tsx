@@ -86,7 +86,6 @@ const FoodBible: React.FC = () => {
     }
   };
 
-  // Fix the setRecipes assignment with proper type casting
   useEffect(() => {
     const fetchRecipes = async () => {
       setLoading(true);
@@ -124,8 +123,7 @@ const FoodBible: React.FC = () => {
           },
           archived: item.archived || false,
           postedToNoticeboard: item.posted_to_noticeboard || false,
-          moduleType: 'food' as const, // Fix: Specify the exact string literal type
-          // Add the missing required properties
+          moduleType: 'food' as const,
           createdAt: new Date(item.created_at),
           updatedAt: new Date(item.updated_at)
         }));
