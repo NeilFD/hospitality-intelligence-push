@@ -1,7 +1,31 @@
-
-// Only update the getTrackerSummaryByMonth function
-import { ModuleType, TrackerSummary } from '@/types/kitchen-ledger';
 import { supabase } from '@/lib/supabase';
+import { DayInput } from '@/pages/pl/components/types/PLTrackerTypes';
+
+export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master';
+
+export async function fetchWeeklyRecords(moduleType: ModuleType, year: number, month: number) {
+  try {
+    const actualModuleType = moduleType === 'master' ? 'food' : moduleType;
+    
+    const { data, error } = await supabase
+      .from('weekly_records')
+      .select('*')
+      .eq('module_type', actualModuleType)
+      .eq('year', year)
+      .eq('month', month)
+      .order('week_number');
+      
+    if (error) {
+      console.error('Error in fetchWeeklyRecords:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Unexpected error in fetchWeeklyRecords:', error);
+    return [];
+  }
+}
 
 export const fetchTrackerDataByMonth = async (year: number, month: number, moduleType: ModuleType = 'food') => {
   try {
@@ -138,7 +162,6 @@ export const upsertTrackerData = async (trackerData: {
   staff_food_allowance: number;
 }) => {
   try {
-    // Check if a record already exists
     const { data: existingData, error: fetchError } = await supabase
       .from('tracker_data')
       .select('id')
@@ -146,12 +169,11 @@ export const upsertTrackerData = async (trackerData: {
       .eq('module_type', trackerData.module_type)
       .single();
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('Error checking existing tracker data:', fetchError);
       throw fetchError;
     }
 
-    // If record exists, update it
     if (existingData?.id) {
       const { data, error } = await supabase
         .from('tracker_data')
@@ -167,7 +189,6 @@ export const upsertTrackerData = async (trackerData: {
 
       return data;
     } else {
-      // Otherwise, insert a new record
       const { data, error } = await supabase
         .from('tracker_data')
         .insert(trackerData)
@@ -193,7 +214,6 @@ export const upsertTrackerPurchase = async (purchase: {
   amount: number;
 }) => {
   try {
-    // Check if a purchase record already exists
     const { data: existingData, error: fetchError } = await supabase
       .from('tracker_purchases')
       .select('id')
@@ -206,7 +226,6 @@ export const upsertTrackerPurchase = async (purchase: {
       throw fetchError;
     }
 
-    // If record exists, update it
     if (existingData?.id) {
       const { data, error } = await supabase
         .from('tracker_purchases')
@@ -221,7 +240,6 @@ export const upsertTrackerPurchase = async (purchase: {
 
       return data[0];
     } else {
-      // Otherwise, insert a new record
       const { data, error } = await supabase
         .from('tracker_purchases')
         .insert(purchase)
@@ -246,7 +264,6 @@ export const upsertTrackerCreditNote = async (creditNote: {
   amount: number;
 }) => {
   try {
-    // Check if a credit note record already exists
     const { data: existingData, error: fetchError } = await supabase
       .from('tracker_credit_notes')
       .select('id')
@@ -259,7 +276,6 @@ export const upsertTrackerCreditNote = async (creditNote: {
       throw fetchError;
     }
 
-    // If record exists, update it
     if (existingData?.id) {
       const { data, error } = await supabase
         .from('tracker_credit_notes')
@@ -274,7 +290,6 @@ export const upsertTrackerCreditNote = async (creditNote: {
 
       return data[0];
     } else {
-      // Otherwise, insert a new record
       const { data, error } = await supabase
         .from('tracker_credit_notes')
         .insert(creditNote)
@@ -390,28 +405,27 @@ export const deleteSupplier = async (id: string) => {
   }
 };
 
-export const fetchMonthlySettings = async (year: number, month: number, moduleType: ModuleType) => {
+export async function fetchMonthlySettings(moduleType: ModuleType, year: number, month: number) {
   try {
+    const actualModuleType = moduleType === 'master' ? 'food' : moduleType;
+    
     const { data, error } = await supabase
       .from('monthly_settings')
       .select('*')
+      .eq('module_type', actualModuleType)
       .eq('year', year)
       .eq('month', month)
-      .eq('module_type', moduleType)
       .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows returned
-        return null;
-      }
-      console.error('Error fetching monthly settings:', error);
-      throw error;
+      
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error in fetchMonthlySettings:', error);
+      return null;
     }
-
+    
     return data;
   } catch (error) {
-    console.error(`Error in fetchMonthlySettings for ${year}-${month}:`, error);
-    throw error;
+    console.error('Unexpected error in fetchMonthlySettings:', error);
+    return null;
   }
 };
 
@@ -473,77 +487,56 @@ export const updateMonthlySettings = async (
   }
 };
 
-export const fetchBudgetItemTracking = async (budgetItemIds: string[]) => {
+export async function fetchBudgetItemTracking(budgetItemIds: string[]) {
   try {
+    if (!budgetItemIds || budgetItemIds.length === 0) {
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('budget_item_tracking')
       .select('*')
       .in('budget_item_id', budgetItemIds);
-
+      
     if (error) {
-      console.error('Error fetching budget item tracking:', error);
-      throw error;
+      console.error('Error in fetchBudgetItemTracking:', error);
+      return [];
     }
-
+    
     return data || [];
   } catch (error) {
-    console.error('Error in fetchBudgetItemTracking:', error);
-    throw error;
+    console.error('Unexpected error in fetchBudgetItemTracking:', error);
+    return [];
   }
-};
+}
 
-export const upsertBudgetItemTracking = async (trackingData: Array<{
-  budget_item_id: string;
-  tracking_type: 'Discrete' | 'Pro-Rated';
-}>) => {
+export async function upsertBudgetItemTracking(trackingData: { budget_item_id: string; tracking_type: 'Discrete' | 'Pro-Rated' }[]) {
   try {
-    for (const item of trackingData) {
-      // Check if an item already exists
-      const { data: existingData, error: fetchError } = await supabase
-        .from('budget_item_tracking')
-        .select('id')
-        .eq('budget_item_id', item.budget_item_id)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error checking existing budget item tracking:', fetchError);
-        throw fetchError;
-      }
-
-      if (existingData?.id) {
-        // Update existing item
-        const { error } = await supabase
-          .from('budget_item_tracking')
-          .update({ tracking_type: item.tracking_type })
-          .eq('id', existingData.id);
-
-        if (error) {
-          console.error('Error updating budget item tracking:', error);
-          throw error;
-        }
-      } else {
-        // Insert new item
-        const { error } = await supabase
-          .from('budget_item_tracking')
-          .insert(item);
-
-        if (error) {
-          console.error('Error inserting budget item tracking:', error);
-          throw error;
-        }
-      }
+    if (!trackingData || trackingData.length === 0) {
+      return true;
     }
-
+    
+    const { error } = await supabase
+      .from('budget_item_tracking')
+      .upsert(trackingData.map(item => ({
+        budget_item_id: item.budget_item_id,
+        tracking_type: item.tracking_type
+      })));
+      
+    if (error) {
+      console.error('Error in upsertBudgetItemTracking:', error);
+      return false;
+    }
+    
     return true;
   } catch (error) {
-    console.error('Error in upsertBudgetItemTracking:', error);
-    throw error;
+    console.error('Unexpected error in upsertBudgetItemTracking:', error);
+    return false;
   }
-};
+}
 
 export const syncTrackerPurchasesToPurchases = async (year: number, month: number, moduleType: ModuleType) => {
   try {
-    // Implementation would sync tracker purchases to the purchases table
     console.log(`Syncing tracker purchases to purchases for ${year}-${month} (${moduleType})`);
     return true;
   } catch (error) {
@@ -554,7 +547,6 @@ export const syncTrackerPurchasesToPurchases = async (year: number, month: numbe
 
 export const syncTrackerCreditNotesToCreditNotes = async (year: number, month: number, moduleType: ModuleType) => {
   try {
-    // Implementation would sync tracker credit notes to the credit_notes table
     console.log(`Syncing tracker credit notes to credit notes for ${year}-${month} (${moduleType})`);
     return true;
   } catch (error) {
@@ -565,8 +557,7 @@ export const syncTrackerCreditNotesToCreditNotes = async (year: number, month: n
 
 export const getTrackerSummaryByMonth = async (year: number, month: number, moduleType: ModuleType = 'food'): Promise<TrackerSummary> => {
   try {
-    // First, fetch business targets to use as defaults
-    let gpTarget = moduleType === 'food' ? 68 : 72; // Default values
+    let gpTarget = moduleType === 'food' ? 68 : 72;
     
     try {
       const { data: businessTargets, error } = await supabase
@@ -576,7 +567,6 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
         .single();
         
       if (businessTargets && !error) {
-        // Set GP target based on module type
         if (moduleType === 'food' && businessTargets.food_gp_target) {
           gpTarget = businessTargets.food_gp_target;
         } else if (moduleType === 'beverage' && businessTargets.beverage_gp_target) {
@@ -587,7 +577,6 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
       console.error('Error fetching business targets:', targetError);
     }
     
-    // Now fetch the tracker data
     const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
     
     let totalRevenue = 0;
@@ -611,7 +600,6 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
     const totalCost = totalPurchases - totalCreditNotes + totalStaffAllowance;
     const gpAmount = totalRevenue - totalCost;
     
-    // Use the actual data if available, otherwise fall back to the business target
     let gpPercentage = totalRevenue > 0 ? (gpAmount / totalRevenue) * 100 : gpTarget;
     
     return {

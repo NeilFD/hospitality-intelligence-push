@@ -124,7 +124,7 @@ const FoodBible: React.FC = () => {
           },
           archived: item.archived || false,
           postedToNoticeboard: item.posted_to_noticeboard || false,
-          moduleType: item.module_type || 'food',
+          moduleType: 'food' as const, // Fix: Specify the exact string literal type
           // Add the missing required properties
           createdAt: new Date(item.created_at),
           updatedAt: new Date(item.updated_at)

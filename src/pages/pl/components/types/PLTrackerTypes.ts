@@ -17,6 +17,7 @@ export interface PLTrackerBudgetItem extends ProcessedBudgetItem {
   budget_amount: number;
   name: string;
   id?: string;
+  budget_percentage?: number;
 }
 
 export interface PLTrackerProps {

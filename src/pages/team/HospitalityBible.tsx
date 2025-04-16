@@ -87,14 +87,14 @@ const HospitalityBible: React.FC = () => {
         updatedAt: new Date(guide.updated_at),
         imageUrl: guide.image_url,
         image_url: guide.image_url,
-        ingredients: (guide.steps || []) as Ingredient[],
+        ingredients: Array.isArray(guide.steps) ? guide.steps as Ingredient[] : [],
         costing: {
           totalRecipeCost: 0,
           suggestedSellingPrice: 0,
           actualMenuPrice: 0,
           grossProfitPercentage: 0
         },
-        moduleType: 'hospitality',
+        moduleType: 'hospitality' as const,
         module_type: 'hospitality',
         archived: guide.archived || false,
         postedToNoticeboard: guide.posted_to_noticeboard || false
@@ -135,7 +135,7 @@ const HospitalityBible: React.FC = () => {
         detailed_procedure: recipe.method || '',
         required_resources: recipe.miseEnPlace || '', // Updated to match column name in DB
         image_url: recipe.imageUrl || recipe.image_url || '',
-        steps: recipe.ingredients || [],
+        steps: recipe.ingredients as any,
         archived: recipe.archived || false,
         posted_to_noticeboard: recipe.postedToNoticeboard || false
       };
@@ -191,8 +191,8 @@ const HospitalityBible: React.FC = () => {
       
       let errorMessage = 'Failed to save hospitality guide';
       if (error && typeof error === 'object') {
-        if ('message' in error) errorMessage += `: ${error.message}`;
-        if ('details' in error) errorMessage += ` (${error.details})`;
+        if ('message' in error) errorMessage += `: ${(error as any).message}`;
+        if ('details' in error) errorMessage += ` (${(error as any).details})`;
       }
       
       if (showToast) {

@@ -1,11 +1,8 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../components/types/PLTrackerTypes';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-import { fetchDailyValues, saveDailyValues } from '@/services/budget-service';
+import { fetchBudgetItems, upsertBudgetItems, fetchBudgetDailyValues, upsertBudgetDailyValues } from '@/services/kitchen-service';
 
-// Export this interface so it can be imported by other files
+// Export this interface so it can be used in other files
 export interface ProcessedBudgetItem {
   id?: string;
   name: string;
@@ -13,272 +10,117 @@ export interface ProcessedBudgetItem {
   budget_amount: number;
   actual_amount?: number;
   forecast_amount?: number;
-  year: number;
-  month: number;
+  budget_percentage?: number;
   isHeader?: boolean;
+  isHighlighted?: boolean;
   isGrossProfit?: boolean;
   isOperatingProfit?: boolean;
-  isHighlighted?: boolean;
   tracking_type?: 'Discrete' | 'Pro-Rated';
+  daily_values?: DayInput[];
+  manually_entered_actual?: number;
 }
 
-// Add the missing useBudgetData hook export
-export function useBudgetData(year: number, month: number) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [processedBudgetData, setProcessedBudgetData] = useState<ProcessedBudgetItem[]>([]);
+export const useBudgetData = (currentMonthName: string, currentYear: number) => {
+  const [budgetData, setBudgetData] = useState<ProcessedBudgetItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    const fetchBudgetData = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
+      setError(null);
+      
       try {
-        const { data, error } = await supabase
-          .from('budget_items')
-          .select('*')
-          .eq('year', year)
-          .eq('month', month)
-          .order('category');
-          
-        if (error) {
-          console.error('Error fetching budget data:', error);
-          return;
-        }
-        
-        // Process the data here and set it to state
-        // This is a placeholder implementation
-        const processed: ProcessedBudgetItem[] = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          category: item.category,
-          budget_amount: item.budget_amount || 0,
-          actual_amount: item.actual_amount,
-          forecast_amount: item.forecast_amount,
-          year: item.year,
-          month: item.month
-        }));
-        
-        setProcessedBudgetData(processed);
-      } catch (error) {
-        console.error('Unexpected error in useBudgetData:', error);
+        const fetchedData = await fetchBudgetItems(currentMonthName, currentYear);
+        setBudgetData(fetchedData);
+      } catch (e: any) {
+        setError(e.message || "Failed to fetch budget items");
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchBudgetData();
-  }, [year, month]);
+    fetchData();
+  }, [currentMonthName, currentYear]);
   
-  return { isLoading, processedBudgetData };
-}
+  return {
+    budgetData,
+    isLoading,
+    error
+  };
+};
 
-export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
-  const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
+export const useTrackerData = (initialData: PLTrackerBudgetItem[]) => {
+  const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>(initialData);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
   
-  // Initialize tracker data when budget data changes
   useEffect(() => {
-    const initializeTrackerData = async () => {
-      console.log("Initializing tracker data with", processedBudgetData.length, "items");
-      
-      if (processedBudgetData.length === 0) {
-        return;
-      }
-      
-      // Get the current month and year for daily values
-      const currentDate = new Date();
-      const month = currentDate.getMonth() + 1; // 1-based
-      const year = currentDate.getFullYear();
-      
-      // Create a copy of the budget data with tracking information
-      const trackedData: PLTrackerBudgetItem[] = await Promise.all(processedBudgetData.map(async (item) => {
-        // Ensure tracking_type is defined
-        const trackingType = item.tracking_type || 'Discrete';
-        
-        // Fetch daily values if the item has an ID and is a discrete tracking item
-        let dailyValues: DayInput[] = [];
-        let actualAmount = item.actual_amount || 0;
-        
-        if (item.id && trackingType === 'Discrete') {
-          try {
-            // Fetch daily values from Supabase
-            const dbValues = await fetchDailyValues(item.id, month, year);
-            
-            // Convert to DayInput format
-            if (dbValues && dbValues.length > 0) {
-              console.log(`Found ${dbValues.length} daily values for ${item.name}`);
-              dailyValues = dbValues.map(dbValue => {
-                const date = new Date(year, month - 1, dbValue.day);
-                return {
-                  date,
-                  value: dbValue.value
-                };
-              });
-              
-              // Calculate the total value from daily values
-              const totalValue = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
-              
-              // For non-special items, update the actual amount
-              if (!item.name.toLowerCase().includes('revenue') &&
-                  !item.name.toLowerCase().includes('turnover') &&
-                  !item.name.toLowerCase().includes('cost of sales') &&
-                  !item.name.toLowerCase().includes('cos') &&
-                  !item.name.toLowerCase().includes('gross profit') &&
-                  !item.name.toLowerCase().includes('operating profit') &&
-                  !item.name.toLowerCase().includes('wages') &&
-                  !item.name.toLowerCase().includes('salary') &&
-                  trackingType === 'Discrete') {
-                actualAmount = totalValue;
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching daily values for item ${item.name}:`, error);
-          }
-        }
-        
-        return {
-          ...item,
-          tracking_type: trackingType,
-          daily_values: dailyValues,
-          actual_amount: actualAmount
-        };
-      }));
-      
-      setTrackedBudgetData(trackedData);
-    };
-    
-    if (processedBudgetData.length > 0) {
-      initializeTrackerData();
-    }
-  }, [processedBudgetData]);
+    setTrackedBudgetData(initialData);
+  }, [initialData]);
   
-  // Update forecast amount
   const updateForecastAmount = (index: number, value: string) => {
-    const numValue = value === '' ? undefined : parseFloat(value);
+    const updatedData = [...trackedBudgetData];
     
-    setTrackedBudgetData(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        forecast_amount: numValue
+    if (updatedData[index]) {
+      updatedData[index] = {
+        ...updatedData[index],
+        forecast_amount: parseFloat(value) || 0
       };
-      return updated;
-    });
-    
-    setHasUnsavedChanges(true);
+      setTrackedBudgetData(updatedData);
+      setHasUnsavedChanges(true);
+    }
   };
   
-  // Update manually entered actual amount
   const updateManualActualAmount = (index: number, value: string) => {
-    const numValue = value === '' ? undefined : parseFloat(value);
+    const updatedData = [...trackedBudgetData];
     
-    setTrackedBudgetData(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        manually_entered_actual: numValue,
-        actual_amount: numValue // Also update actual_amount for discrete items
+    if (updatedData[index]) {
+      updatedData[index] = {
+        ...updatedData[index],
+        manually_entered_actual: parseFloat(value) || 0
       };
-      return updated;
-    });
-    
-    setHasUnsavedChanges(true);
+      setTrackedBudgetData(updatedData);
+      setHasUnsavedChanges(true);
+    }
   };
   
-  // Update daily values
-  const updateDailyValues = (index: number, dailyValues: DayInput[]) => {
-    setTrackedBudgetData(prev => {
-      const updated = [...prev];
-      
-      // Update daily values
-      updated[index] = {
-        ...updated[index],
+  const updateDailyValues = async (index: number, dailyValues: DayInput[]) => {
+    const updatedData = [...trackedBudgetData];
+    
+    if (updatedData[index]) {
+      updatedData[index] = {
+        ...updatedData[index],
         daily_values: dailyValues
       };
-      
-      // Calculate total from daily values
-      const total = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
-      
-      // Update actual_amount for discrete items
-      if (updated[index].tracking_type === 'Discrete' &&
-          !updated[index].isHeader &&
-          !updated[index].isGrossProfit &&
-          !updated[index].isOperatingProfit) {
-        updated[index].actual_amount = total;
-      }
-      
-      return updated;
-    });
-    
-    setHasUnsavedChanges(true);
+      setTrackedBudgetData(updatedData);
+      setHasUnsavedChanges(true);
+    }
   };
   
-  // Save forecast amounts to database
-  const saveForecastAmounts = useCallback(async () => {
-    if (!hasUnsavedChanges) {
-      toast({
-        title: "No changes to save",
-        description: "You haven't made any changes to save.",
-      });
-      return;
-    }
-    
+  const saveForecastAmounts = async () => {
     setIsSaving(true);
     
     try {
-      // Prepare data for update - transform it to match the expected type
-      const updatesArray = trackedBudgetData
-        .filter(item => item.id && (item.forecast_amount !== undefined))
-        .map(item => ({
-          id: item.id,
-          forecast_amount: item.forecast_amount,
-          // Add these required fields with their original values to satisfy TypeScript
-          budget_amount: item.budget_amount,
-          category: item.category,
-          name: item.name,
-          year: item.year,
-          month: item.month
-        }));
+      const budgetItemsToUpdate = trackedBudgetData.filter(item => item.id && item.forecast_amount !== undefined);
       
-      if (updatesArray.length === 0) {
-        toast({
-          title: "No changes to save",
-          description: "You haven't made any changes to save.",
-        });
-        setIsSaving(false);
-        return;
+      if (budgetItemsToUpdate.length > 0) {
+        await upsertBudgetItems(budgetItemsToUpdate);
       }
       
-      // Update the database
-      const { error } = await supabase
-        .from('budget_items')
-        .upsert(updatesArray);
+      const dailyValuesToUpdate = trackedBudgetData.filter(item => item.id && item.daily_values);
       
-      if (error) {
-        console.error('Error saving forecast amounts:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save forecast amounts.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Forecast amounts saved successfully.",
-        });
-        setHasUnsavedChanges(false);
+      if (dailyValuesToUpdate.length > 0) {
+        await upsertBudgetDailyValues(dailyValuesToUpdate);
       }
-    } catch (err) {
-      console.error('Unexpected error saving forecast amounts:', err);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while saving.",
-        variant: "destructive",
-      });
+      
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("Error saving forecast amounts:", error);
     } finally {
       setIsSaving(false);
     }
-  }, [hasUnsavedChanges, trackedBudgetData, toast]);
+  };
   
   return {
     trackedBudgetData,
@@ -290,4 +132,4 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     updateDailyValues,
     saveForecastAmounts
   };
-}
+};
