@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,13 +68,15 @@ export const useAuthStore = create<AuthState>()(
             if (profileError) {
               console.error('Error fetching profile:', profileError);
               
-              // If no profile found, create a simple one as fallback
+              // If no profile found, create one now
               if (profileError.code === 'PGRST116') {
-                console.log('Profile not found, attempting to create one...');
+                console.log('Profile not found, creating one from user metadata...');
+                
+                // Get user metadata
+                const userData = user.user_metadata || {};
+                
                 try {
-                  const userData = user.user_metadata || {};
-                  
-                  // Create a simple profile with just the essentials
+                  // Create profile directly 
                   const { data: newProfile, error: createError } = await supabase
                     .from('profiles')
                     .insert({
@@ -81,6 +84,7 @@ export const useAuthStore = create<AuthState>()(
                       first_name: userData.first_name || '',
                       last_name: userData.last_name || '',
                       role: userData.role || 'Team Member',
+                      job_title: userData.job_title || '',
                       email: user.email
                     })
                     .select('*')
@@ -183,9 +187,9 @@ export const useAuthStore = create<AuthState>()(
           
           if (error) throw error;
           
-          // If sign up successful, load the user profile
-          // The database trigger should have created the profile
-          await get().loadUser();
+          // After successful signup, we don't attempt to create profile immediately anymore
+          // We'll create it on first login instead
+          set({ isLoading: false });
           
         } catch (error: any) {
           console.error('Error registering:', error);

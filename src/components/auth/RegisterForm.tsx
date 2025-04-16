@@ -17,7 +17,6 @@ import { useNavigate } from 'react-router-dom';
 import { signUp } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters.'),
@@ -54,129 +53,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       password: '',
     },
   });
-
-  const createProfileDirectly = async (userId: string, userData: any) => {
-    try {
-      console.log(`Creating profile directly for user ${userId}`);
-      
-      // First, wait much longer for the user record to be fully available in the database
-      // The foreign key constraint needs the auth.users record to be fully available
-      await new Promise(resolve => setTimeout(resolve, 7000)); // Increased to 7 seconds
-      
-      // Attempt 1: Direct insert into profiles table
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          role: userData.role || 'Team Member',
-          job_title: userData.job_title || '',
-          email: userData.email
-        });
-        
-      if (!insertError) {
-        console.log('Profile created successfully via direct insert');
-        return true;
-      }
-      
-      console.error('Direct profile insert failed:', insertError);
-      
-      // Wait even longer before trying the next method
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Attempt 2: RPC method
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        'create_profile_for_user',
-        {
-          user_id: userId,
-          first_name_val: userData.first_name,
-          last_name_val: userData.last_name,
-          role_val: userData.role || 'Team Member',
-          job_title_val: userData.job_title || '',
-          email_val: userData.email
-        }
-      );
-      
-      if (!rpcError && rpcResult) {
-        console.log('Profile created successfully via create_profile_for_user RPC');
-        return true;
-      }
-      
-      console.error('RPC create_profile_for_user failed:', rpcError);
-      
-      // Wait even longer before trying the next method
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Attempt 3: Manual method
-      const { data: manualResult, error: manualError } = await supabase.rpc(
-        'handle_new_user_manual',
-        {
-          user_id: userId,
-          first_name_val: userData.first_name,
-          last_name_val: userData.last_name,
-          role_val: userData.role || 'Team Member',
-          email_val: userData.email
-        }
-      );
-      
-      if (!manualError && manualResult) {
-        console.log('Profile created successfully via handle_new_user_manual RPC');
-        return true;
-      }
-      
-      console.error('handle_new_user_manual failed:', manualError);
-      
-      // Wait even longer before trying the next method
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Attempt 4: Final upsert method
-      const { error: finalError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: userId,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          email: userData.email,
-          role: userData.role || 'Team Member',
-          job_title: userData.job_title || ''
-        }, { onConflict: 'id' });
-        
-      if (!finalError) {
-        console.log('Profile created successfully via final upsert attempt');
-        return true;
-      }
-      
-      console.error('Final profile upsert failed:', finalError);
-      return false;
-    } catch (error) {
-      console.error('Error in createProfileDirectly:', error);
-      return false;
-    }
-  };
-
-  const verifyProfileCreated = async (userId: string) => {
-    try {
-      // Wait for a moment to ensure any DB operations have completed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (error) {
-        console.error('Error verifying profile:', error);
-        return false;
-      }
-      
-      return !!data;
-    } catch (error) {
-      console.error('Error in verifyProfileCreated:', error);
-      return false;
-    }
-  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -218,69 +94,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("User registered successfully, user ID:", data.user.id);
       
-      // Significantly longer wait time to ensure the database trigger has a chance to run
-      // This allows auth.users record to be completely created and available for foreign key constraints
-      await new Promise(resolve => setTimeout(resolve, 8000)); // Increased to 8 seconds
-      
-      // Check if profile was created by the trigger
-      let profileExists = await verifyProfileCreated(data.user.id);
-      
-      if (!profileExists) {
-        console.log("Profile not created by trigger, attempting manual creation");
-        // Try up to 5 times to create the profile with increasing delays
-        for (let attempt = 1; attempt <= 5; attempt++) {
-          console.log(`Manual profile creation attempt ${attempt} of 5`);
-          await new Promise(resolve => setTimeout(resolve, attempt * 3000)); // Longer delays
-          
-          const profileCreated = await createProfileDirectly(data.user.id, metadata);
-          if (profileCreated) {
-            console.log(`Profile created successfully on attempt ${attempt}`);
-            profileExists = true;
-            break;
-          }
-        }
-
-        if (!profileExists) {
-          console.warn("All direct profile creation attempts failed, trying final method");
-          
-          // One last attempt through the auth store's loadUser method
-          try {
-            // Wait a bit longer before trying to log in
-            await new Promise(resolve => setTimeout(resolve, 5000)); // Increased to 5 seconds
-            
-            const { login } = useAuthStore.getState();
-            await login(values.email, values.password);
-            console.log("Attempted login to trigger profile creation through auth store");
-            
-            // Check one more time
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            profileExists = await verifyProfileCreated(data.user.id);
-          } catch (e) {
-            console.error("Failed to auto-login for profile creation:", e);
-          }
-        }
-      }
-      
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);
       }
       
-      if (profileExists) {
-        toast.success('Account created successfully!');
-      } else {
-        toast.success('Account created, but profile setup may be incomplete.');
-      }
-      
-      try {
-        // Wait again before attempting to log in
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Increased to 3 seconds
-        await login(values.email, values.password);
-        navigate('/');
-      } catch (loginError) {
-        console.error('Auto-login failed:', loginError);
-        toast.info('Please log in with your new account');
-        navigate('/login');
-      }
+      toast.success('Account created successfully! Please log in to continue.');
+      navigate('/login');
       
     } catch (err: any) {
       console.error('Unexpected registration error:', err);
