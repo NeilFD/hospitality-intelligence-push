@@ -6,7 +6,7 @@ import { ProcessedBudgetItem } from '../hooks/useBudgetData';
 import { TrackerHeader } from './tracker/TrackerHeader';
 import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
-import { useTrackerData } from './hooks/useTrackerData';
+import { useTrackerData } from '../hooks/useBudgetData';
 import { PLTrackerSettings } from './PLTrackerSettings';
 import { calculateProRatedBudget, getActualAmount, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
 
@@ -31,7 +31,14 @@ export function PLTracker({
   // Convert ProcessedBudgetItem to PLTrackerBudgetItem to ensure tracking_type is defined
   const processedDataWithTrackingType = processedBudgetData.map(item => ({
     ...item,
-    tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined
+    tracking_type: item.tracking_type || 'Discrete', // Default to Discrete if not defined
+    // Add missing properties that might be used
+    name: item.name,
+    id: item.id,
+    budget_amount: item.budget_amount,
+    isHeader: item.isHeader || false,
+    isGrossProfit: item.isGrossProfit || false,
+    isOperatingProfit: item.isOperatingProfit || false
   })) as PLTrackerBudgetItem[];
   
   const {

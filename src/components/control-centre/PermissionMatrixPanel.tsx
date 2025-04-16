@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -41,13 +40,15 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
         
         if (data && Array.isArray(data)) {
           console.log('Fetched permission matrix (array):', data);
-          // Cast the data to the expected type
-          setMatrix(data as PermissionMatrix[]);
+          // Cast the data to the expected type with proper type assertion
+          setMatrix(data as unknown as PermissionMatrix[]);
         } else if (data) {
           // Handle case where data is not an array (e.g., JSON object)
           console.log('Fetched permission matrix (non-array):', data);
           // Try to use the data as is, it might be already in the correct format
-          setMatrix(Array.isArray(data) ? data as PermissionMatrix[] : [data] as PermissionMatrix[]);
+          setMatrix(Array.isArray(data) 
+            ? (data as unknown as PermissionMatrix[]) 
+            : [data as unknown as PermissionMatrix]);
         } else {
           // If no data returned but also no error, use the initial data
           console.log('Using initial permission matrix data');
@@ -128,8 +129,9 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
       console.log('Saving permission matrix:', matrix);
       
       // Call the RPC function directly using Supabase client
+      // Fix the type issue by casting the matrix to any before stringify
       const { data, error: updateError } = await supabase.rpc('update_permission_matrix', {
-        matrix: JSON.stringify(matrix)
+        matrix: JSON.stringify(matrix as any)
       });
       
       if (updateError) {

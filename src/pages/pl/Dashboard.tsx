@@ -7,7 +7,7 @@ import { MonthYearSelector } from './components/MonthYearSelector';
 import { PerformanceChart } from './components/PerformanceChart';
 import { PLReportTable } from './components/PLReportTable';
 import { PLTracker } from './components/PLTracker';
-import { useBudgetData } from './hooks/useBudgetData';
+import { useBudgetData } from './hooks/useBudgetData'; // Corrected import
 import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';

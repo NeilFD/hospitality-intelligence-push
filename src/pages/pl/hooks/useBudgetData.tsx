@@ -1,9 +1,74 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
+import { PLTrackerBudgetItem, DayInput } from '../components/types/PLTrackerTypes';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { fetchDailyValues, saveDailyValues } from '@/services/budget-service';
-import { ProcessedBudgetItem } from './useBudgetData';
+
+// Export this interface so it can be imported by other files
+export interface ProcessedBudgetItem {
+  id?: string;
+  name: string;
+  category: string;
+  budget_amount: number;
+  actual_amount?: number;
+  forecast_amount?: number;
+  year: number;
+  month: number;
+  isHeader?: boolean;
+  isGrossProfit?: boolean;
+  isOperatingProfit?: boolean;
+  isHighlighted?: boolean;
+  tracking_type?: 'Discrete' | 'Pro-Rated';
+}
+
+// Add the missing useBudgetData hook export
+export function useBudgetData(year: number, month: number) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [processedBudgetData, setProcessedBudgetData] = useState<ProcessedBudgetItem[]>([]);
+  
+  useEffect(() => {
+    const fetchBudgetData = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('budget_items')
+          .select('*')
+          .eq('year', year)
+          .eq('month', month)
+          .order('category');
+          
+        if (error) {
+          console.error('Error fetching budget data:', error);
+          return;
+        }
+        
+        // Process the data here and set it to state
+        // This is a placeholder implementation
+        const processed: ProcessedBudgetItem[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          budget_amount: item.budget_amount || 0,
+          actual_amount: item.actual_amount,
+          forecast_amount: item.forecast_amount,
+          year: item.year,
+          month: item.month
+        }));
+        
+        setProcessedBudgetData(processed);
+      } catch (error) {
+        console.error('Unexpected error in useBudgetData:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBudgetData();
+  }, [year, month]);
+  
+  return { isLoading, processedBudgetData };
+}
 
 export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
   const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);

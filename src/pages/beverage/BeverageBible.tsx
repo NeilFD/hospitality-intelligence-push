@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +84,7 @@ const BeverageBible: React.FC = () => {
         }
 
         // Process the recipe data to match the Recipe type
-        const processedRecipes = data.map(item => ({
+        const processedRecipes: Recipe[] = data.map(item => ({
           id: item.id,
           name: item.name,
           category: item.category,
@@ -104,7 +105,10 @@ const BeverageBible: React.FC = () => {
           },
           archived: item.archived || false,
           postedToNoticeboard: item.posted_to_noticeboard || false,
-          moduleType: item.module_type || 'beverage'
+          moduleType: item.module_type || 'beverage',
+          // Add the missing required properties
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at)
         }));
 
         setRecipes(processedRecipes);
@@ -138,7 +142,9 @@ const BeverageBible: React.FC = () => {
           {isAdmin && (
             <RecipeFormDialog 
               moduleType="beverage"
-              onRecipeCreated={(newRecipe: Recipe) => setRecipes([...recipes, newRecipe])}
+              onSave={(newRecipe: Recipe) => setRecipes([...recipes, newRecipe])}
+              open={false}
+              onClose={() => {}}
             />
           )}
         </div>

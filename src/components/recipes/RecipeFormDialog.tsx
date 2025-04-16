@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,8 @@ interface RecipeFormDialogProps {
   onSave: (recipe: Recipe) => void;
   recipe?: Recipe;
   moduleType: 'food' | 'beverage' | 'hospitality';
-  categories: MenuCategory[] | string[];
-  allergens: AllergenType[] | string[];
+  categories?: MenuCategory[] | string[];
+  allergens?: AllergenType[] | string[];
 }
 
 const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({

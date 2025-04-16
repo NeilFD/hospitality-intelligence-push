@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,7 +103,7 @@ const FoodBible: React.FC = () => {
         }
 
         // Process the recipe data to match the Recipe type
-        const processedRecipes = data.map(item => ({
+        const processedRecipes: Recipe[] = data.map(item => ({
           id: item.id,
           name: item.name,
           category: item.category,
@@ -123,7 +124,10 @@ const FoodBible: React.FC = () => {
           },
           archived: item.archived || false,
           postedToNoticeboard: item.posted_to_noticeboard || false,
-          moduleType: item.module_type || 'food'
+          moduleType: item.module_type || 'food',
+          // Add the missing required properties
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at)
         }));
 
         setRecipes(processedRecipes);
@@ -204,8 +208,21 @@ const FoodBible: React.FC = () => {
         open={formDialogOpen}
         onClose={handleCloseFormDialog}
         recipe={selectedRecipe || undefined}
-        onRecipeUpdated={handleRecipeUpdated}
-        onRecipeCreated={handleRecipeCreated}
+        onSave={(recipe: Recipe) => {
+          if (selectedRecipe) {
+            // Handle update
+            setRecipes(prevRecipes =>
+              prevRecipes.map(r =>
+                r.id === recipe.id ? recipe : r
+              )
+            );
+          } else {
+            // Handle create
+            setRecipes(prevRecipes => [...prevRecipes, recipe]);
+          }
+          handleCloseFormDialog();
+        }}
+        moduleType="food"
       />
     </div>
   );
