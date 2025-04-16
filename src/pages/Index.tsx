@@ -26,42 +26,15 @@ const Index = () => {
     }
   }
   
-  const checkModuleAccess = async (moduleId: string) => {
-    if (!profile || !profile.role) {
-      return false;
-    }
-    
-    if (profile.role === 'GOD' || profile.role === 'Super User') {
-      return true; // GOD and Super User have access to everything
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('permission_access')
-        .select('has_access')
-        .eq('role_id', profile.role)
-        .eq('module_id', moduleId)
-        .single();
-        
-      if (error) {
-        console.error('Error checking module access:', error);
-        return false;
-      }
-      
-      return data?.has_access || false;
-    } catch (error) {
-      console.error('Exception checking module access:', error);
-      return false;
-    }
-  };
-  
-  // Team Members should always have access to the team module by default
+  // Team Members should always have access to the team module
   const fallbackPath = '/team/dashboard';
   
   // Create a direct path to the dashboard based on the current module
-  const dashboardPath = currentModule ? `/${currentModule}/dashboard` : fallbackPath;
+  // For Team Members, always default to team dashboard regardless of currentModule
+  const dashboardPath = profile?.role === 'Team Member' 
+    ? fallbackPath
+    : (currentModule ? `/${currentModule}/dashboard` : fallbackPath);
   
-  // Redirect users to a module they have access to
   return <Navigate to={dashboardPath} replace />;
 };
 

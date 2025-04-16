@@ -51,6 +51,8 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         const pathParts = location.pathname.split('/').filter(part => part !== '');
         const moduleId = pathParts[0] || '';
         
+        console.log(`Checking permission for module: ${moduleId}, path: ${location.pathname}`);
+        
         // Get the module permission for the user's role
         const { data: moduleAccess, error: moduleError } = await supabase
           .from('permission_access')

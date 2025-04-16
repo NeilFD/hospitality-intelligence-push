@@ -126,6 +126,11 @@ const Layout = ({
       try {
         if (profile.role === 'GOD' || profile.role === 'Super User') {
           console.log('User has GOD or Super User role - setting all permissions to true');
+          const allModules = modules.map(m => ({
+            moduleId: m.type,
+            hasAccess: true
+          }));
+          setModulePermissions(allModules);
           setPermissionsLoaded(true);
           return;
         }
@@ -159,10 +164,12 @@ const Layout = ({
           return;
         }
 
-        setModulePermissions(moduleAccess.map(item => ({
+        const modulePerms = moduleAccess.map(item => ({
           moduleId: item.module_id,
           hasAccess: item.has_access
-        })));
+        }));
+        
+        setModulePermissions(modulePerms);
 
         const pagesWithAccess = pageAccess.map(item => {
           const pageInfo = pages.find(p => p.page_id === item.page_id);
@@ -177,7 +184,7 @@ const Layout = ({
         setPermissionsLoaded(true);
         
         console.log('Loaded permissions:', {
-          modulePermissions: moduleAccess,
+          modulePermissions: modulePerms,
           pagePermissions: pagesWithAccess
         });
       } catch (error) {
@@ -186,7 +193,7 @@ const Layout = ({
     };
 
     fetchUserPermissions();
-  }, [isAuthenticated, profile]);
+  }, [isAuthenticated, profile, modules]);
 
   const hasModuleAccess = (moduleId: string) => {
     if (!profile || !permissionsLoaded) return false;
@@ -196,11 +203,14 @@ const Layout = ({
     }
 
     const modulePermission = modulePermissions.find(p => p.moduleId === moduleId);
-    return modulePermission ? modulePermission.hasAccess : false;
+    const hasAccess = modulePermission ? modulePermission.hasAccess : false;
+    
+    console.log(`Module access check for ${moduleId}: ${hasAccess}`);
+    return hasAccess;
   };
 
   const hasPageAccess = (pageUrl: string) => {
-    if (!profile) return false;
+    if (!profile || !permissionsLoaded) return false;
 
     if (profile.role === 'GOD' || profile.role === 'Super User') {
       return true;
@@ -377,6 +387,7 @@ const Layout = ({
   useEffect(() => {
     console.log('Modules in sidebar:', modules);
     console.log('Current module:', currentModule);
+    console.log('Module permissions:', modulePermissions);
     const clearLocalStorageCache = () => {
       const storeData = localStorage.getItem('tavern-kitchen-ledger');
       if (storeData) {
@@ -520,12 +531,24 @@ const Layout = ({
   }, [sortedModules]);
 
   const filteredModuleNavItems = useMemo(() => {
-    return moduleNavItems.filter(item => hasModuleAccess(item.type as string));
+    if (!permissionsLoaded) {
+      console.log('Permissions not loaded yet');
+      return [];
+    }
+    
+    const filtered = moduleNavItems.filter(item => {
+      const hasAccess = hasModuleAccess(item.type as string);
+      console.log(`Module ${item.type} access: ${hasAccess}`);
+      return hasAccess;
+    });
+    
+    console.log('Filtered module nav items:', filtered);
+    return filtered;
   }, [moduleNavItems, modulePermissions, permissionsLoaded, profile]);
 
   const filteredModuleNav = useMemo(() => {
     return getModuleNavItems.filter(item => hasPageAccess(item.path));
-  }, [getModuleNavItems, pagePermissions, profile]);
+  }, [getModuleNavItems, pagePermissions, permissionsLoaded, profile]);
 
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
