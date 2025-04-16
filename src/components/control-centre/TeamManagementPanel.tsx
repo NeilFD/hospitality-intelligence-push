@@ -522,6 +522,52 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
     }
   };
   
+  const handleOpenInvitationEmail = (emailsString: string) => {
+    if (!emailsString.trim()) {
+      toast.error('Please enter at least one email address');
+      return;
+    }
+    
+    const emails = emailsString
+      .split(/[,\n]/)
+      .map(email => email.trim())
+      .filter(email => email.length > 0);
+      
+    if (emails.length === 0) {
+      toast.error('No valid email addresses found');
+      return;
+    }
+    
+    const bcc = emails.join(',');
+    const subject = 'Invitation to join our team';
+    const body = `
+Hello,
+
+You have been invited to join our team at ${window.location.origin}.
+
+To get started:
+1. Go to: ${window.location.origin}/register
+2. Create an account with this email address
+3. After signing up, you'll need to click a confirmation link from our system
+4. You can then log in and access the team platform
+
+Looking forward to having you on the team!
+
+Best regards,
+${currentUserProfile?.first_name || 'The Management Team'}
+  `;
+    
+    const mailtoLink = `mailto:?bcc=${encodeURIComponent(bcc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Open the email client
+    window.open(mailtoLink, '_blank');
+    
+    // Clear the textarea after opening the email client
+    setInvitationEmails('');
+    
+    toast.success('Email client opened with the invitation');
+  };
+  
   return (
     <>
       <Card>
@@ -552,28 +598,18 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
                 />
                 <div className="flex justify-end">
                   <Button
-                    onClick={handleSendInvitations}
-                    disabled={sendingInvites || !invitationEmails.trim()}
+                    onClick={() => handleOpenInvitationEmail(invitationEmails)}
+                    disabled={!invitationEmails.trim()}
                     className="flex items-center gap-2"
                   >
-                    {sendingInvites ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Sending...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        <span>Send Invitations</span>
-                      </>
-                    )}
+                    <Mail className="h-4 w-4" />
+                    <span>Open Email Client</span>
                   </Button>
                 </div>
                 <div className="text-xs text-gray-500 flex items-start gap-2 mt-2">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <p>
-                    Recipients will receive an email with a link to register at https://myhi.io/register. 
-                    After sign-up, they'll need to click a confirmation link from Supabase to complete registration.
+                    This will open your email client with a pre-filled invitation message to send to the team members.
                   </p>
                 </div>
               </div>
