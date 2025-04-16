@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import type { UserProfile } from '@/types/supabase-types';
@@ -48,7 +49,7 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Password update function with better error handling
+// Updated password function with better error handling and using simple_password_update
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     console.log(`Attempting to update password for user ${userId}`);
@@ -58,21 +59,33 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Directly use the RPC function for password updates
-    // This bypasses admin privileges requirements
-    console.log('Using direct_password_update function');
-    const { data: result, error } = await supabase.rpc('direct_password_update', {
-      user_id_val: userId,
-      password_val: password
+    // Use simple_password_update RPC function instead of direct_password_update
+    const { data, error } = await supabase.rpc('simple_password_update', {
+      user_id: userId,
+      password: password
     });
     
     if (error) {
-      console.error('Error updating password:', error);
-      return false;
+      console.error('Error updating password with simple_password_update:', error);
+      
+      // Try create_auth_user_if_not_exists as a fallback
+      const { data: fallbackData, error: fallbackError } = await supabase.rpc('create_auth_user_if_not_exists', {
+        user_id_val: userId,
+        email_val: 'user@example.com', // This will be replaced if user exists
+        password_val: password
+      });
+      
+      if (fallbackError) {
+        console.error('Error with fallback password update:', fallbackError);
+        return false;
+      }
+      
+      console.log('Password updated successfully through fallback method');
+      return fallbackData === true;
     }
     
-    console.log('Password updated successfully through RPC');
-    return result === true;
+    console.log('Password updated successfully with simple_password_update');
+    return data === true;
     
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
