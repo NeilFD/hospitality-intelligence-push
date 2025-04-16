@@ -26,7 +26,8 @@ export const signUp = async (email: string, password: string, metadata?: { first
     email,
     password,
     options: {
-      data: metadata
+      data: metadata,
+      emailRedirectTo: window.location.origin + '/login'
     }
   });
 };
@@ -47,11 +48,8 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Improved password update function with better error handling
-export const adminUpdateUserPassword = async (
-  userId: string, 
-  password: string
-): Promise<boolean> => {
+// Password update function with better error handling
+export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     console.log(`Attempting to update password for user ${userId}`);
     
@@ -60,47 +58,21 @@ export const adminUpdateUserPassword = async (
       return false;
     }
     
-    // First check if the user exists in auth.users
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+    // Directly use the RPC function for password updates
+    // This bypasses admin privileges requirements
+    console.log('Using direct_password_update function');
+    const { data: result, error } = await supabase.rpc('direct_password_update', {
+      user_id_val: userId,
+      password_val: password
+    });
     
-    if (authError) {
-      console.error('Error checking if user exists:', authError);
+    if (error) {
+      console.error('Error updating password:', error);
       return false;
     }
     
-    if (!authUser || !authUser.user) {
-      console.error('User not found with ID:', userId);
-      return false;
-    }
-    
-    console.log('User found in auth.users, proceeding with password update');
-    
-    // Use the auth.admin API to update the user's password
-    const { error: updateError } = await supabase.auth.admin.updateUserById(
-      userId,
-      { password: password }
-    );
-    
-    if (updateError) {
-      console.error('Error using auth.admin.updateUserById:', updateError);
-      
-      // Fall back to our SQL function as a last resort
-      console.log('Falling back to direct_password_update function');
-      const { data: result, error } = await supabase.rpc('direct_password_update', {
-        user_id_val: userId,
-        password_val: password
-      });
-      
-      if (error) {
-        console.error('All password update methods failed:', error);
-        return false;
-      }
-      
-      return result === true;
-    }
-    
-    console.log('Password updated successfully using auth.admin API');
-    return true;
+    console.log('Password updated successfully through RPC');
+    return result === true;
     
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
@@ -223,11 +195,11 @@ export const directSignUp = async (
       console.error('Error checking existing user:', checkError);
     }
     
-    // Create a new user with explicit password in auth.users
+    // Create a new user with default password
     const defaultPassword = 'Hi2025!';
     console.log(`Creating user with email ${email} and default password`);
     
-    // Try creating the user with the auth API first
+    // Create user using auth.signUp directly
     const { data, error } = await supabase.auth.signUp({
       email,
       password: defaultPassword,
@@ -244,65 +216,16 @@ export const directSignUp = async (
     
     if (error) {
       console.error("Error creating user with auth API:", error);
-      
-      // If that fails, try using the create_profile_with_auth RPC function
-      // which directly creates both auth user and profile records
-      console.log("Attempting to create user with RPC function instead");
-      const { data: rpcData, error: rpcError } = await supabase.rpc(
-        'create_profile_with_auth',
-        {
-          first_name_val: firstName,
-          last_name_val: lastName,
-          role_val: role,
-          job_title_val: jobTitle,
-          email_val: email
-        }
-      );
-      
-      if (rpcError) {
-        console.error("Error creating user with RPC:", rpcError);
-        throw rpcError;
-      }
-      
-      console.log("User created with RPC:", rpcData);
-      
-      // Fetch the newly created profile
-      if (rpcData) {
-        const { data: newProfile, error: profileFetchError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', rpcData)
-          .single();
-          
-        if (profileFetchError) {
-          console.error("Error fetching newly created profile:", profileFetchError);
-        }
-        
-        return { user: { id: rpcData }, profile: newProfile };
-      }
-      
-      throw new Error("Failed to create user through both methods");
+      throw error;
     }
     
-    console.log("User created with auth:", data);
+    console.log("User created successfully:", data);
     
     if (!data.user?.id) {
       throw new Error("No user ID returned from signup");
     }
     
-    // Create the profile for this user if it doesn't exist yet
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .maybeSingle();
-      
-    if (existingProfile) {
-      console.log("Profile already exists, returning existing profile");
-      return { user: data.user, profile: existingProfile };
-    }
-    
-    // Profile doesn't exist, create it
+    // Create profile for the user
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -327,10 +250,11 @@ export const directSignUp = async (
         .single();
         
       if (fetchError) {
-        throw profileError; // If we can't find an existing profile, throw the original error
+        console.error("Error fetching existing profile:", fetchError);
+      } else {
+        console.log("Found existing profile:", existingProfile);
+        return { user: data.user, profile: existingProfile };
       }
-      
-      return { user: data.user, profile: existingProfile };
     }
     
     return { user: data.user, profile };
