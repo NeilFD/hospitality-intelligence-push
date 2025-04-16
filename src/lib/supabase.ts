@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import { UserProfile } from '@/types/supabase-types';
@@ -163,10 +162,11 @@ export const directSignUp = async (
       console.error('Error checking existing user:', checkError);
     }
     
-    // Create a new user with explicit password
+    // Create a new user with explicit password in auth.users
     const defaultPassword = 'Hi2025!';
     console.log(`Creating user with email ${email} and default password`);
     
+    // Try creating the user with the auth API first
     const { data, error } = await supabase.auth.signUp({
       email,
       password: defaultPassword,
@@ -181,7 +181,47 @@ export const directSignUp = async (
       }
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating user with auth API:", error);
+      
+      // If that fails, try using the create_profile_with_auth RPC function
+      // which directly creates both auth user and profile records
+      console.log("Attempting to create user with RPC function instead");
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        'create_profile_with_auth',
+        {
+          first_name_val: firstName,
+          last_name_val: lastName,
+          role_val: role,
+          job_title_val: jobTitle,
+          email_val: email
+        }
+      );
+      
+      if (rpcError) {
+        console.error("Error creating user with RPC:", rpcError);
+        throw rpcError;
+      }
+      
+      console.log("User created with RPC:", rpcData);
+      
+      // Fetch the newly created profile
+      if (rpcData) {
+        const { data: newProfile, error: profileFetchError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', rpcData)
+          .single();
+          
+        if (profileFetchError) {
+          console.error("Error fetching newly created profile:", profileFetchError);
+        }
+        
+        return { user: { id: rpcData }, profile: newProfile };
+      }
+      
+      throw new Error("Failed to create user through both methods");
+    }
     
     console.log("User created with auth:", data);
     
@@ -189,7 +229,19 @@ export const directSignUp = async (
       throw new Error("No user ID returned from signup");
     }
     
-    // Create the profile for this user
+    // Create the profile for this user if it doesn't exist yet
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .maybeSingle();
+      
+    if (existingProfile) {
+      console.log("Profile already exists, returning existing profile");
+      return { user: data.user, profile: existingProfile };
+    }
+    
+    // Profile doesn't exist, create it
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -206,7 +258,7 @@ export const directSignUp = async (
     if (profileError) {
       console.error("Error creating profile:", profileError);
       
-      // Check if the profile already exists (which might happen if the trigger already created it)
+      // Try one more time to fetch the profile in case it was created by a trigger
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
