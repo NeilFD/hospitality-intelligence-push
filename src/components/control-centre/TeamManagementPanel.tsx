@@ -50,6 +50,8 @@ import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { SUPABASE_URL } from '@/lib/supabase';
+
 type UserRoleType = 'GOD' | 'Super User' | 'Manager' | 'Team Member' | 'Owner';
 
 const TeamManagementPanel: React.FC = () => {
@@ -462,7 +464,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
             const invitationToken = crypto.randomUUID();
             
             const response = await fetch(
-              `${supabase.supabaseUrl}/functions/v1/send-user-invitation`,
+              `${SUPABASE_URL}/functions/v1/send-user-invitation`,
               {
                 method: 'POST',
                 headers: {
