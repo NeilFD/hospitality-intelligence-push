@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { getCurrentUser as getUser } from '@/services/auth-service';
+// Remove the incorrect import and use the proper function
+// import { getCurrentUser as getUser } from '@/services/auth-service';
 
 // Initialize the Supabase client with environment variables
 const SUPABASE_URL = "https://kfiergoryrnjkewmeriy.supabase.co";
@@ -13,6 +14,124 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 export const getCurrentUser = async () => {
   const { data } = await supabase.auth.getUser();
   return data?.user || null;
+};
+
+// Add the signUp function for RegisterForm
+export const signUp = async (email: string, password: string, metadata: any = {}) => {
+  try {
+    console.log("Signing up user with email:", email);
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata
+      }
+    });
+    
+    return { data, error };
+  } catch (err) {
+    console.error("Error during sign up:", err);
+    return { data: null, error: err instanceof Error ? err : new Error('Unknown error during signup') };
+  }
+};
+
+// Add the checkProfilesCount function for TeamManagementPanel
+export const checkProfilesCount = async () => {
+  try {
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+      
+    if (error) throw error;
+    
+    return count || 0;
+  } catch (err) {
+    console.error("Error checking profiles count:", err);
+    return 0;
+  }
+};
+
+// Add the directSignUp function for TeamManagementPanel
+export const directSignUp = async (
+  email: string,
+  firstName: string,
+  lastName: string,
+  role: string = 'Team Member',
+  jobTitle: string = ''
+) => {
+  try {
+    console.log(`Creating profile for ${email} with role ${role}`);
+    
+    // Generate a random password (that will need to be reset)
+    const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+    
+    // Create the auth user
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
+        role: role,
+        job_title: jobTitle,
+        email: email
+      }
+    });
+    
+    if (authError) {
+      throw authError;
+    }
+    
+    if (!authData.user) {
+      throw new Error('Failed to create user');
+    }
+    
+    console.log("User created successfully:", authData.user.id);
+    
+    // Now wait a moment to ensure the trigger has time to create the profile
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Check if the profile was created by the trigger
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
+      
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Error checking profile:', profileError);
+    }
+    
+    if (!profileData) {
+      console.log('Profile not created by trigger, creating manually...');
+      
+      // If not, create it manually
+      const { data: manualProfile, error: manualError } = await supabase.rpc('create_profile_for_user', {
+        user_id: authData.user.id,
+        first_name_val: firstName,
+        last_name_val: lastName,
+        role_val: role,
+        job_title_val: jobTitle,
+        email_val: email
+      });
+      
+      if (manualError) {
+        console.error('Error creating profile manually:', manualError);
+        // We still return the user since they can log in
+      }
+    }
+    
+    return {
+      user: authData.user,
+      profile: profileData || null
+    };
+    
+  } catch (err) {
+    console.error("Error in directSignUp:", err);
+    throw err;
+  }
 };
 
 // Update the adminUpdateUserPassword function to use the new extremely_basic_password_update function
