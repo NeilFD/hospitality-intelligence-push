@@ -32,8 +32,8 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
       }
 
       // God mode - always has access to everything
-      if (profile.role === 'GOD') {
-        console.log('GOD user detected - granting access to protected route');
+      if (profile.role === 'GOD' || profile.role === 'Super User') {
+        console.log(`${profile.role} detected - granting access to protected route`);
         setHasPermission(true);
         return;
       }
@@ -109,7 +109,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           }
         }
         
-        // If we couldn't determine the page, default to allowing access since we already have module access
+        // If we couldn't determine the page, default to allowing access since we already have module permission
         if (!matchingPageId) {
           console.log(`No matching page found for path: ${currentPath}, defaulting to module permission`);
           setHasPermission(true);
@@ -149,12 +149,6 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   
-  // In development mode with the GOD user, always allow access
-  if (profile?.role === 'GOD') {
-    console.log('GOD user detected - granting access to protected route');
-    return <>{children}</>;
-  }
-  
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -163,7 +157,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   // If we've checked permissions and user doesn't have access
   if (hasPermission === false) {
     toast.error("You don't have permission to access this page");
-    return <Navigate to="/" replace />;
+    return <Navigate to="/team/dashboard" replace />;
   }
   
   // If a specific role is required, check if the user has it
@@ -175,7 +169,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     // If user's role value is less than required role value, they don't have permission
     if (userRoleValue < requiredRoleValue) {
       toast.error(`You need ${requiredRole} permissions to access this page`);
-      return <Navigate to="/" replace />;
+      return <Navigate to="/team/dashboard" replace />;
     }
   }
   

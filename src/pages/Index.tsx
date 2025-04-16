@@ -58,19 +58,10 @@ const Index = () => {
   // Team Members should always have access to the team module by default
   const fallbackPath = '/team/dashboard';
   
-  // If current module is not accessible to the user, redirect to team
-  if (currentModule && profile && profile.role !== 'GOD' && profile.role !== 'Super User') {
-    checkModuleAccess(currentModule).then(hasAccess => {
-      if (!hasAccess) {
-        console.log(`User does not have access to module ${currentModule}, redirecting to fallback`);
-        return <Navigate to={fallbackPath} replace />;
-      }
-    });
-  }
-  
   // Create a direct path to the dashboard based on the current module
   const dashboardPath = currentModule ? `/${currentModule}/dashboard` : fallbackPath;
   
+  // Redirect users to a module they have access to
   return <Navigate to={dashboardPath} replace />;
 };
 

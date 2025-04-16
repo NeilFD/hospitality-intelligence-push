@@ -189,7 +189,7 @@ const Layout = ({
   }, [isAuthenticated, profile]);
 
   const hasModuleAccess = (moduleId: string) => {
-    if (!profile) return false;
+    if (!profile || !permissionsLoaded) return false;
 
     if (profile.role === 'GOD' || profile.role === 'Super User') {
       return true;
@@ -521,7 +521,7 @@ const Layout = ({
 
   const filteredModuleNavItems = useMemo(() => {
     return moduleNavItems.filter(item => hasModuleAccess(item.type as string));
-  }, [moduleNavItems, modulePermissions, profile]);
+  }, [moduleNavItems, modulePermissions, permissionsLoaded, profile]);
 
   const filteredModuleNav = useMemo(() => {
     return getModuleNavItems.filter(item => hasPageAccess(item.path));
