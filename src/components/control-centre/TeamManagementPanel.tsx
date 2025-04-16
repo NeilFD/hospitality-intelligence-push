@@ -313,8 +313,8 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
 
-      if (!data) {
-        toast.error('Failed to create profile - no data returned');
+      if (data === false) {
+        toast.error('Failed to create profile - operation unsuccessful');
         return;
       }
       
