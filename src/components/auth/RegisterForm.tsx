@@ -42,7 +42,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuthStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -72,6 +71,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("Registration metadata:", metadata);
       
+      // Let's simplify the signup process
       const { data, error } = await signUp(values.email, values.password, metadata);
       
       if (error) {
