@@ -27,18 +27,18 @@ const formSchema = z.object({
 });
 
 interface RegisterFormProps {
-  invitationData?: {
-    email: string;
-    firstName: string;
-    lastName: string;
+  initialData?: {
+    email?: string;
+    firstName?: string;
+    lastName?: string;
     role?: string;
     jobTitle?: string;
-  } | null;
+  };
   onRegistrationComplete?: (userId: string, userData: any) => void;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({
-  invitationData,
+  initialData,
   onRegistrationComplete,
 }) => {
   const navigate = useNavigate();
@@ -48,23 +48,50 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: invitationData?.firstName || '',
-      lastName: invitationData?.lastName || '',
-      email: invitationData?.email || '',
+      firstName: initialData?.firstName || '',
+      lastName: initialData?.lastName || '',
+      email: initialData?.email || '',
       password: '',
     },
   });
 
-  const createProfile = async (userId: string, userData: any) => {
+  const ensureProfileExists = async (userId: string, userData: any) => {
     try {
-      console.log('Creating profile directly for user:', userId);
+      console.log(`Ensuring profile exists for user ${userId}`);
       
-      // Try all three profile creation methods in sequence
-      let profileCreated = false;
+      // Check if profile already exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (existingProfile) {
+        console.log('Profile already exists:', existingProfile);
+        return true;
+      }
       
-      // Method 1: Direct insert
-      try {
-        const { error } = await supabase
+      // If no profile exists, create one manually as a fallback
+      console.log('Creating profile manually for user ID:', userId);
+      const { error: manualError } = await supabase.rpc(
+        'handle_new_user_manual',
+        {
+          user_id: userId,
+          first_name_val: userData.first_name,
+          last_name_val: userData.last_name,
+          role_val: userData.role || 'Team Member',
+          email_val: userData.email
+        }
+      );
+      
+      if (!manualError) {
+        console.log('Profile created successfully with manual function');
+        return true;
+      } else {
+        console.error('Manual profile creation failed:', manualError);
+        
+        // Last resort: direct insert
+        const { error: insertError } = await supabase
           .from('profiles')
           .insert({
             id: userId,
@@ -74,78 +101,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             job_title: userData.job_title || '',
             email: userData.email
           });
-        
-        if (!error) {
+          
+        if (!insertError) {
           console.log('Profile created successfully with direct insert');
-          profileCreated = true;
+          return true;
         } else {
-          console.error('Direct profile insertion failed:', error);
-        }
-      } catch (insertErr) {
-        console.error('Exception during direct profile insertion:', insertErr);
-      }
-      
-      // Method 2: Try create_profile_for_user function
-      if (!profileCreated) {
-        try {
-          const { data: rpcResult, error: rpcError } = await supabase.rpc(
-            'create_profile_for_user',
-            {
-              user_id: userId,
-              first_name_val: userData.first_name,
-              last_name_val: userData.last_name,
-              role_val: userData.role || 'Team Member',
-              job_title_val: userData.job_title || '',
-              email_val: userData.email
-            }
-          );
-          
-          if (!rpcError && rpcResult === true) {
-            console.log('Profile created successfully with create_profile_for_user RPC');
-            profileCreated = true;
-          } else {
-            console.error('Profile creation failed with create_profile_for_user:', rpcError);
-          }
-        } catch (rpcErr) {
-          console.error('Exception during create_profile_for_user profile creation:', rpcErr);
+          console.error('Direct profile insertion failed:', insertError);
+          return false;
         }
       }
-      
-      // Method 3: Try handle_new_user_manual function
-      if (!profileCreated) {
-        try {
-          const { data: rpcResult, error: funcError } = await supabase.rpc(
-            'handle_new_user_manual',
-            {
-              user_id: userId,
-              first_name_val: userData.first_name,
-              last_name_val: userData.last_name,
-              role_val: userData.role || 'Team Member',
-              email_val: userData.email
-            }
-          );
-          
-          if (!funcError && rpcResult === true) {
-            console.log('Profile created successfully with handle_new_user_manual RPC');
-            profileCreated = true;
-          } else {
-            console.error('Manual profile creation failed:', funcError);
-          }
-        } catch (rpcErr) {
-          console.error('Exception during handle_new_user_manual profile creation:', rpcErr);
-        }
-      }
-      
-      // Verify profile creation
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      return !!profile;
-    } catch (err) {
-      console.error('Error in createProfile:', err);
+    } catch (error) {
+      console.error('Error in ensureProfileExists:', error);
       return false;
     }
   };
@@ -161,8 +127,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       const metadata = {
         first_name: values.firstName,
         last_name: values.lastName,
-        role: invitationData?.role || 'Team Member',
-        job_title: invitationData?.jobTitle || '',
+        role: initialData?.role || 'Team Member',
+        job_title: initialData?.jobTitle || '',
         email: values.email
       };
       
@@ -193,19 +159,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       // Wait a moment for Auth trigger to fire
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const profileCreated = await createProfile(data.user.id, metadata);
+      // Ensure profile exists (fallback if trigger fails)
+      await ensureProfileExists(data.user.id, metadata);
       
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);
       }
       
-      if (profileCreated) {
-        console.log('Profile created successfully');
-        toast.success('Account created successfully!');
-      } else {
-        console.warn('Profile may not have been created properly');
-        toast.warning('Account created, but profile setup may be incomplete.');
-      }
+      toast.success('Account created successfully!');
       
       try {
         await login(values.email, values.password);
@@ -239,7 +200,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   <Input 
                     placeholder="First Name" 
                     {...field} 
-                    disabled={!!invitationData?.firstName}
+                    disabled={!!initialData?.firstName}
                   />
                 </FormControl>
                 <FormMessage />
@@ -256,7 +217,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   <Input 
                     placeholder="Last Name" 
                     {...field} 
-                    disabled={!!invitationData?.lastName}
+                    disabled={!!initialData?.lastName}
                   />
                 </FormControl>
                 <FormMessage />
@@ -276,7 +237,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   type="email" 
                   placeholder="Email" 
                   {...field} 
-                  disabled={!!invitationData?.email}
+                  disabled={!!initialData?.email}
                 />
               </FormControl>
               <FormMessage />
