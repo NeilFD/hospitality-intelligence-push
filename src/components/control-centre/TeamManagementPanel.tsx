@@ -298,18 +298,25 @@ const TeamManagementPanel: React.FC = () => {
       
       const newUserId = crypto.randomUUID();
       
-      const { error } = await supabase
-        .from('profiles')
-        .insert({
-          id: newUserId,
-          first_name: newProfileForm.firstName,
-          last_name: newProfileForm.lastName,
-          email: newProfileForm.email,
-          role: newProfileForm.role,
-          job_title: newProfileForm.jobTitle,
-        });
-        
-      if (error) throw error;
+      const { data, error } = await supabase.rpc('create_profile_for_user', {
+        user_id: newUserId,
+        first_name_val: newProfileForm.firstName,
+        last_name_val: newProfileForm.lastName,
+        role_val: newProfileForm.role,
+        job_title_val: newProfileForm.jobTitle,
+        email_val: newProfileForm.email
+      });
+      
+      if (error) {
+        console.error('Error creating profile via RPC:', error);
+        toast.error('Failed to create profile: ' + error.message);
+        return;
+      }
+
+      if (!data) {
+        toast.error('Failed to create profile - no data returned');
+        return;
+      }
       
       setNewProfileForm({
         firstName: '',
@@ -320,7 +327,7 @@ const TeamManagementPanel: React.FC = () => {
       });
       
       setIsAddProfileDialogOpen(false);
-      fetchTeamMembers();
+      await fetchTeamMembers();
       
       toast.success('Profile created successfully');
     } catch (error) {
@@ -345,7 +352,7 @@ const TeamManagementPanel: React.FC = () => {
     if (!user) return '';
     
     return `Hello ${user.first_name},
-
+    
 We've created an account for you in our team management system.
 
 To get started:
@@ -547,6 +554,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
                     )}
                     <SelectItem value="Manager">Manager</SelectItem>
                     <SelectItem value="Team Member">Team Member</SelectItem>
+                    <SelectItem value="Owner">Owner</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -727,6 +735,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
                     )}
                     <SelectItem value="Manager">Manager</SelectItem>
                     <SelectItem value="Team Member">Team Member</SelectItem>
+                    <SelectItem value="Owner">Owner</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
