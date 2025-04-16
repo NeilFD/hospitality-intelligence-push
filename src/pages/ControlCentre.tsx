@@ -7,7 +7,7 @@ import { PermissionMatrixPanel } from '@/components/control-centre/PermissionMat
 import { ThemeSettingsPanel } from '@/components/control-centre/ThemeSettingsPanel';
 import { TargetSettingsPanel } from '@/components/control-centre/TargetSettingsPanel';
 import TeamManagementPanel from '@/components/control-centre/TeamManagementPanel';
-import RequireAuth from '@/components/auth/RequireAuth';
+import RequireAuth from '@/components/RequireAuth';
 import { getControlCentreData } from '@/services/control-centre-service';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
