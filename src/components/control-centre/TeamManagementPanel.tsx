@@ -433,17 +433,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {canManageUsers && (
-            <div className="mb-6">
-              <Button 
-                onClick={() => setIsAddProfileDialogOpen(true)} 
-                className="flex items-center gap-2"
-              >
-                <UserPlus className="h-4 w-4" />
-                Add Full Profile
-              </Button>
-            </div>
-          )}
+          
           
           {loading ? (
             <div className="flex justify-center p-6">
@@ -479,15 +469,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
                     {canManageUsers && (
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            onClick={() => openEmailDialog(member)}
-                            title="Send Instructions Email"
-                          >
-                            <Mail className="h-4 w-4" />
-                            <span className="sr-only">Email</span>
-                          </Button>
+                          
                           
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -525,6 +507,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
         </CardContent>
       </Card>
 
+      
       <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
