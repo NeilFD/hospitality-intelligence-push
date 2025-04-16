@@ -55,12 +55,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     },
   });
 
+  // Enhanced profile creation function with multiple fallback approaches
   const createProfileDirectly = async (userId: string, userData: any) => {
     try {
       console.log(`Creating profile directly for user ${userId}`);
       
-      // Insert directly into profiles table
-      const { error: profileError } = await supabase
+      // Approach 1: Direct insert
+      const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: userId,
@@ -71,29 +72,70 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           email: userData.email
         });
         
-      if (profileError) {
-        console.error('Error creating profile directly:', profileError);
-        
-        // Try fallback method using RPC
-        const { error: rpcError } = await supabase.rpc(
-          'create_profile_for_user',
-          {
-            user_id: userId,
-            first_name_val: userData.first_name,
-            last_name_val: userData.last_name,
-            role_val: userData.role || 'Team Member',
-            job_title_val: userData.job_title || '',
-            email_val: userData.email
-          }
-        );
-        
-        if (rpcError) {
-          console.error('Error creating profile with RPC:', rpcError);
-          return false;
-        }
+      if (!insertError) {
+        console.log('Profile created successfully via direct insert');
+        return true;
       }
       
-      return true;
+      console.error('Direct profile insert failed:', insertError);
+      
+      // Approach 2: Try create_profile_for_user RPC
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'create_profile_for_user',
+        {
+          user_id: userId,
+          first_name_val: userData.first_name,
+          last_name_val: userData.last_name,
+          role_val: userData.role || 'Team Member',
+          job_title_val: userData.job_title || '',
+          email_val: userData.email
+        }
+      );
+      
+      if (!rpcError && rpcResult) {
+        console.log('Profile created successfully via create_profile_for_user RPC');
+        return true;
+      }
+      
+      console.error('RPC create_profile_for_user failed:', rpcError);
+      
+      // Approach 3: Try handle_new_user_manual RPC
+      const { data: manualResult, error: manualError } = await supabase.rpc(
+        'handle_new_user_manual',
+        {
+          user_id: userId,
+          first_name_val: userData.first_name,
+          last_name_val: userData.last_name,
+          role_val: userData.role || 'Team Member',
+          email_val: userData.email
+        }
+      );
+      
+      if (!manualError && manualResult) {
+        console.log('Profile created successfully via handle_new_user_manual RPC');
+        return true;
+      }
+      
+      console.error('handle_new_user_manual failed:', manualError);
+      
+      // Final direct approach - simplest upsert with most essential fields
+      const { error: finalError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          email: userData.email,
+          role: userData.role || 'Team Member'
+        });
+        
+      if (!finalError) {
+        console.log('Profile created successfully via final upsert attempt');
+        return true;
+      }
+      
+      console.error('Final profile upsert failed:', finalError);
+      return false;
     } catch (error) {
       console.error('Error in createProfileDirectly:', error);
       return false;
@@ -144,8 +186,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       // Wait a moment for Auth trigger to fire
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Create profile directly as fallback
-      await createProfileDirectly(data.user.id, metadata);
+      // Create profile directly as fallback using multiple approaches
+      const profileCreated = await createProfileDirectly(data.user.id, metadata);
+      
+      if (profileCreated) {
+        console.log("Profile created successfully");
+      } else {
+        console.log("All profile creation attempts failed, user will need to log in to finalize setup");
+      }
       
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -137,6 +138,93 @@ const TeamManagementPanel: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Direct profile creation function - simplified and enhanced
+  const createProfileDirectly = async (userId: string, userData: any) => {
+    console.log('Creating profile directly for user:', userId, userData);
+    
+    try {
+      // Approach 1: Direct insert with complete data
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role || 'Team Member',
+          job_title: userData.job_title || '',
+          email: userData.email
+        });
+        
+      if (!insertError) {
+        console.log('Profile created successfully via direct insert');
+        return true;
+      }
+      
+      console.error('Direct profile insert failed:', insertError);
+      
+      // Approach 2: Use create_profile_for_user RPC function
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'create_profile_for_user',
+        {
+          user_id: userId,
+          first_name_val: userData.first_name,
+          last_name_val: userData.last_name,
+          role_val: userData.role || 'Team Member',
+          job_title_val: userData.job_title || '',
+          email_val: userData.email
+        }
+      );
+      
+      if (!rpcError && rpcResult) {
+        console.log('Profile created successfully via create_profile_for_user RPC');
+        return true;
+      }
+      
+      console.error('RPC create_profile_for_user failed:', rpcError);
+      
+      // Approach 3: Use handle_new_user_manual function as final fallback
+      const { data: manualResult, error: manualError } = await supabase.rpc(
+        'handle_new_user_manual',
+        {
+          user_id: userId,
+          first_name_val: userData.first_name,
+          last_name_val: userData.last_name,
+          role_val: userData.role || 'Team Member',
+          email_val: userData.email
+        }
+      );
+      
+      if (!manualError && manualResult) {
+        console.log('Profile created successfully via handle_new_user_manual RPC');
+        return true;
+      }
+      
+      console.error('handle_new_user_manual failed:', manualError);
+      
+      // Final direct approach - simplest upsert with most essential fields
+      const { error: finalError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          email: userData.email,
+          role: userData.role || 'Team Member'
+        });
+        
+      if (!finalError) {
+        console.log('Profile created successfully via final upsert attempt');
+        return true;
+      }
+      
+      console.error('Final profile upsert failed:', finalError);
+      return false;
+    } catch (error) {
+      console.error('Unexpected error in createProfileDirectly:', error);
+      return false;
+    }
+  };
   
   const handleCreateUser = async () => {
     try {
@@ -167,18 +255,20 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('Creating user with email:', newUser.email);
       
+      const metadata = {
+        first_name: newUser.firstName,
+        last_name: newUser.lastName,
+        role: newUser.role,
+        job_title: newUser.jobTitle || '',
+        email: newUser.email
+      };
+      
       // Create the auth user directly without invitation
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
         password: 'hospitalityintelligence2025',
         options: {
-          data: {
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || '',
-            email: newUser.email
-          }
+          data: metadata
         }
       });
       
@@ -197,127 +287,64 @@ const TeamManagementPanel: React.FC = () => {
       
       console.log('User created successfully:', userData.user.id);
       
-      // Wait 1 second for Auth trigger to fire (if it's going to)
+      // Wait a moment for Auth trigger to fire
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Create profile directly - no waiting for trigger
-      let profileCreated = false;
+      // Create profile directly - multiple approaches for reliability
+      const profileCreated = await createProfileDirectly(userData.user.id, metadata);
       
-      // Approach 1: Direct insert with minimal fields
-      try {
-        const { error: insertError } = await supabase
+      if (profileCreated) {
+        // Verify profile was created
+        const { data: verifyProfile } = await supabase
           .from('profiles')
-          .insert({
-            id: userData.user.id,
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            role: newUser.role,
-            job_title: newUser.jobTitle || '',
-            email: newUser.email
+          .select('*')
+          .eq('id', userData.user.id)
+          .maybeSingle();
+          
+        if (verifyProfile) {
+          console.log('Profile verified:', verifyProfile);
+          toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
+          
+          // Create manual notification for the welcome email
+          toast.success('User account credentials', {
+            description: `Login email: ${newUser.email} | Password: hospitalityintelligence2025`,
+            duration: 8000
           });
           
-        if (!insertError) {
-          console.log('Profile created successfully with direct insert');
-          profileCreated = true;
+          // Dismiss the dialog
+          setIsAddUserDialogOpen(false);
+          
+          // Reset form
+          setNewUser({
+            email: '',
+            firstName: '',
+            lastName: '',
+            role: 'Team Member',
+            jobTitle: '',
+            emailSubject: '',
+            emailBody: ''
+          });
+          
+          // Refresh team members list
+          fetchTeamMembers();
         } else {
-          console.error('Direct profile insert failed:', insertError);
+          console.log('Profile creation succeeded but verification failed');
+          toast.success(`User ${newUser.firstName} ${newUser.lastName} created!`, {
+            description: "They may need to log in once to finalize setup."
+          });
+          setIsAddUserDialogOpen(false);
+          fetchTeamMembers();
         }
-      } catch (error) {
-        console.error('Error in direct profile creation:', error);
-      }
-      
-      // Approach 2: Use create_profile_for_user function if direct insert failed
-      if (!profileCreated) {
-        try {
-          const { data: rpcResult, error: rpcError } = await supabase.rpc(
-            'create_profile_for_user',
-            {
-              user_id: userData.user.id,
-              first_name_val: newUser.firstName,
-              last_name_val: newUser.lastName,
-              role_val: newUser.role,
-              job_title_val: newUser.jobTitle || '',
-              email_val: newUser.email
-            }
-          );
-          
-          if (!rpcError && rpcResult === true) {
-            console.log('Profile created successfully with create_profile_for_user RPC');
-            profileCreated = true;
-          } else {
-            console.error('Profile creation failed with create_profile_for_user:', rpcError);
-          }
-        } catch (error) {
-          console.error('Error in RPC profile creation with create_profile_for_user:', error);
-        }
-      }
-      
-      // Approach 3: As a last resort, try handle_new_user_manual function
-      if (!profileCreated) {
-        try {
-          const { data: manualResult, error: manualError } = await supabase.rpc(
-            'handle_new_user_manual',
-            {
-              user_id: userData.user.id,
-              first_name_val: newUser.firstName,
-              last_name_val: newUser.lastName,
-              role_val: newUser.role,
-              email_val: newUser.email
-            }
-          );
-          
-          if (!manualError && manualResult === true) {
-            console.log('Profile created successfully with handle_new_user_manual RPC');
-            profileCreated = true;
-          } else {
-            console.error('Profile creation failed with handle_new_user_manual:', manualError);
-          }
-        } catch (error) {
-          console.error('Error in RPC profile creation with handle_new_user_manual:', error);
-        }
-      }
-      
-      // Verify profile was created
-      const { data: verifyProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userData.user.id)
-        .maybeSingle();
-        
-      if (verifyProfile) {
-        console.log('Profile verified:', verifyProfile);
-        toast.success(`User ${newUser.firstName} ${newUser.lastName} created successfully!`);
-        
-        // Create manual notification for the welcome email
-        toast.success('User account credentials', {
-          description: `Login email: ${newUser.email} | Password: hospitalityintelligence2025`,
-          duration: 8000
-        });
-        
-        // Dismiss the dialog
-        setIsAddUserDialogOpen(false);
-        
-        // Reset form
-        setNewUser({
-          email: '',
-          firstName: '',
-          lastName: '',
-          role: 'Team Member',
-          jobTitle: '',
-          emailSubject: '',
-          emailBody: ''
-        });
-        
-        // Refresh team members list
-        fetchTeamMembers();
       } else {
-        console.error('Could not verify profile creation');
-        toast.warning('User created but profile verification failed. They may need to log in once to finalize setup.');
+        console.error('All profile creation attempts failed');
+        toast.warning('User created but profile creation failed. They will need to log in to finalize setup.');
+        setIsAddUserDialogOpen(false);
+        fetchTeamMembers();
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Unexpected error in user creation:', error);
-      toast.error('An unexpected error occurred');
+      toast.error(error.message || 'An error occurred during user creation');
     } finally {
       setCreateUserLoading(false);
     }
