@@ -132,7 +132,7 @@ export const directSignUp = async (
   }
 };
 
-// Updated adminUpdateUserPassword function to update both auth.users and profiles table
+// Updated adminUpdateUserPassword function to update auth.users only
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     console.log(`Attempting to update password for user ${userId}`);
@@ -142,7 +142,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // First, use the extremely_basic_password_update function to update auth.users
+    // Only update the password in auth.users using the extremely_basic_password_update function
     const { data: authUpdateResult, error: authUpdateError } = await supabase.rpc('extremely_basic_password_update', {
       user_id_input: userId,
       password_input: password
@@ -153,18 +153,22 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Then, update the password_hash in profiles table as well
+    // Optionally, we can add a timestamp in the profiles table to indicate when the password was updated
+    // But we won't store the actual password (not even hashed) in the profiles table
     const { error: profileUpdateError } = await supabase
       .from('profiles')
-      .update({ password_hash: password }) // Store in plain text as it's already encrypted in auth.users
+      .update({ 
+        updated_at: new Date().toISOString(),
+        // Don't set password_hash field at all
+      })
       .eq('id', userId);
     
     if (profileUpdateError) {
-      console.error('Error updating password in profiles:', profileUpdateError);
+      console.error('Error updating profile timestamp:', profileUpdateError);
       // Continue anyway since the auth table was updated successfully
     }
     
-    console.log('Password updated successfully in both tables');
+    console.log('Password updated successfully in auth.users table');
     return authUpdateResult === true;
     
   } catch (e) {
