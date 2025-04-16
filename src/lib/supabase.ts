@@ -1,5 +1,5 @@
 
-// Password update function in the Supabase service
+// Supabase client and utility functions
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -97,14 +97,14 @@ export const directSignUp = async (
       // Create profile manually
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .insert([{
           id: userId,
           first_name: firstName,
           last_name: lastName,
           role: role,
           job_title: jobTitle,
           email: email
-        })
+        }])
         .select()
         .single();
         
@@ -133,7 +133,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Call the primary RPC function first
+    // Call the admin_update_user_password RPC function directly
     const { data, error } = await supabase.rpc(
       'admin_update_user_password',
       {

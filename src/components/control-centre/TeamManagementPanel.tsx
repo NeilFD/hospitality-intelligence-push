@@ -184,24 +184,16 @@ const TeamManagementPanel: React.FC = () => {
           return;
         }
         
-        try {
-          console.log('Starting password update for user:', selectedUser.id);
-          console.log('Password length:', editForm.password.length);
-          
-          const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
-          
-          console.log('Password update result:', result);
-          
-          if (!result) {
-            toast.error('Password update failed - please check console logs for details');
-            passwordUpdateSuccess = false;
-          } else {
-            toast.success('Password has been updated successfully');
-          }
-        } catch (err) {
-          console.error('Exception during password update:', err);
-          toast.error('Error updating password: ' + (err instanceof Error ? err.message : String(err)));
+        console.log('Starting password update for user:', selectedUser.id);
+        const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
+        
+        console.log('Password update result:', result);
+        
+        if (!result) {
+          toast.error('Password update failed - please check console logs for details');
           passwordUpdateSuccess = false;
+        } else {
+          toast.success('Password has been updated successfully');
         }
       }
       
