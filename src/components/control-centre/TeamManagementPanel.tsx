@@ -356,8 +356,8 @@ We've created an account for you in our team management system.
 To get started:
 1. Go to: ${window.location.origin}/login
 2. Enter your email: ${user.email}
-3. Click "Forgot Password" to set your initial password
-4. Follow the instructions in the email you receive
+3. Enter the default password: Hi2025!
+4. After logging in, please update your password in your profile settings
 
 Looking forward to having you on the team!
 
