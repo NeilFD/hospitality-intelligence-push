@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -174,7 +175,7 @@ const Layout = ({
     return profile?.role === 'GOD' || profile?.role === 'Super User';
   };
 
-  getSidebarBgColor = () => {
+  const getSidebarBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -192,7 +193,7 @@ const Layout = ({
     return "bg-[#806cac]";
   };
 
-  getSidebarHoverColor = () => {
+  const getSidebarHoverColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -210,7 +211,7 @@ const Layout = ({
     return "bg-white/10";
   };
 
-  getActiveItemBgColor = () => {
+  const getActiveItemBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -228,7 +229,7 @@ const Layout = ({
     return "bg-[#705b9b]";
   };
 
-  getModuleActiveBgColor = () => {
+  const getModuleActiveBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -246,7 +247,7 @@ const Layout = ({
     return "bg-white text-[#806cac]";
   };
 
-  getControlCenterBgColor = () => {
+  const getControlCenterBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -264,7 +265,7 @@ const Layout = ({
     return "bg-[#705b9b]";
   };
 
-  getTextColor = () => {
+  const getTextColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -282,7 +283,7 @@ const Layout = ({
     return "text-[#e0d9f0]";
   };
 
-  getSeparatorBgColor = () => {
+  const getSeparatorBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -300,7 +301,7 @@ const Layout = ({
     return "bg-[#9d89c9]/20";
   };
 
-  ControlCentreLink = () => {
+  const ControlCentreLink = () => {
     if (!hasControlCentreAccess()) {
       return null;
     }
@@ -464,6 +465,16 @@ const Layout = ({
     }));
   }, [sortedModules]);
 
+  // Filter module nav items based on permissions
+  const filteredModuleNavItems = useMemo(() => {
+    return moduleNavItems.filter(item => hasModuleAccess(item.type as string));
+  }, [moduleNavItems, modulePermissions, profile]);
+
+  // Filter current module nav items based on permissions
+  const filteredModuleNav = useMemo(() => {
+    return getModuleNavItems.filter(item => hasPageAccess(item.path));
+  }, [getModuleNavItems, pagePermissions, profile]);
+
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
@@ -473,8 +484,6 @@ const Layout = ({
   if (isAuthPage) {
     return <>{children}</>;
   }
-
-  const isAdminUser = true;
 
   const ProfileAvatar = () => <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-primary text-white">
@@ -698,3 +707,4 @@ const Layout = ({
 };
 
 export default Layout;
+
