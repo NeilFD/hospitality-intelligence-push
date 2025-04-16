@@ -555,7 +555,7 @@ To get started:
 Looking forward to having you on the team!
 
 Best regards,
-${currentUserProfile?.first_name || 'The Management Team'}
+The Hi Team
   `;
     
     const mailtoLink = `mailto:?bcc=${encodeURIComponent(bcc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -604,7 +604,7 @@ ${currentUserProfile?.first_name || 'The Management Team'}
                     className="flex items-center gap-2"
                   >
                     <Mail className="h-4 w-4" />
-                    <span>Open Email Client</span>
+                    <span>Send Email</span>
                   </Button>
                 </div>
                 <div className="text-xs text-gray-500 flex items-start gap-2 mt-2">
