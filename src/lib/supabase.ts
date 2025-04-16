@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import { UserProfile } from '@/types/supabase-types';
@@ -59,14 +58,12 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Call the RPC function with explicit type annotation for the response
-    const { data, error } = await supabase.rpc<boolean>(
-      'admin_update_user_password',
-      {
-        user_id: userId,
-        password: password
-      }
-    );
+    // Call the RPC function with correct type parameters
+    // The first type parameter is the return type, the second is the input type
+    const { data, error } = await supabase.rpc('admin_update_user_password', {
+      user_id: userId,
+      password: password
+    });
     
     if (error) {
       console.error('Error in adminUpdateUserPassword:', error);
