@@ -15,7 +15,7 @@ DECLARE
 BEGIN
   -- Update the user's password in auth.users
   UPDATE auth.users
-  SET encrypted_password = crypt(password, gen_salt('bf'))
+  SET encrypted_password = crypt(password, gen_salt('bf', 10))
   WHERE id = user_id;
   
   -- Check if the update was successful
@@ -49,9 +49,9 @@ AS $$
 DECLARE
   success BOOLEAN := FALSE;
 BEGIN
-  -- Use a simpler approach with a fixed salt as fallback
+  -- Use a simpler approach with explicit salt for fallback
   UPDATE auth.users
-  SET encrypted_password = crypt(password, '$2a$06$Nt1Prf2MLUKSsRxZwSHBOu')
+  SET encrypted_password = crypt(password, gen_salt('bf', 10))
   WHERE id = user_id;
   
   -- Check if the update was successful

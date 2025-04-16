@@ -97,14 +97,14 @@ export const directSignUp = async (
       // Create profile manually
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert([{
+        .insert({
           id: userId,
           first_name: firstName,
           last_name: lastName,
           role: role,
           job_title: jobTitle,
           email: email
-        }])
+        })
         .select()
         .single();
         
@@ -122,7 +122,7 @@ export const directSignUp = async (
   }
 };
 
-// Password update function in the Supabase service
+// Password update function using direct SQL RPC call
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     // Log the attempt for debugging
@@ -133,7 +133,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Call the admin_update_user_password RPC function directly
+    // Try the primary update function
     const { data, error } = await supabase.rpc(
       'admin_update_user_password',
       {
@@ -165,7 +165,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     }
     
     console.log('Password update result:', data);
-    return !!data; // Convert to boolean
+    return !!data;
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
     return false;
