@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -59,7 +58,7 @@ const Layout = ({
     hasForestGreenTheme: false,
     hasOceanBlueTheme: false,
     hasSunsetOrangeTheme: false,
-    hasBerryPurpleTheme: false,
+    hasBerryPurpleTheme: true,
     hasDarkModeTheme: false,
     hasHiPurpleTheme: false
   });
@@ -465,12 +464,10 @@ const Layout = ({
     }));
   }, [sortedModules]);
 
-  // Filter module nav items based on permissions
   const filteredModuleNavItems = useMemo(() => {
     return moduleNavItems.filter(item => hasModuleAccess(item.type as string));
   }, [moduleNavItems, modulePermissions, profile]);
 
-  // Filter current module nav items based on permissions
   const filteredModuleNav = useMemo(() => {
     return getModuleNavItems.filter(item => hasPageAccess(item.path));
   }, [getModuleNavItems, pagePermissions, profile]);
@@ -707,4 +704,3 @@ const Layout = ({
 };
 
 export default Layout;
-
