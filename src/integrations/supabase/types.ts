@@ -1708,6 +1708,10 @@ export type Database = {
         Args: { theme_id: string }
         Returns: undefined
       }
+      simple_update_password: {
+        Args: { user_id: string; new_password: string }
+        Returns: boolean
+      }
       sparsevec_out: {
         Args: { "": unknown }
         Returns: unknown

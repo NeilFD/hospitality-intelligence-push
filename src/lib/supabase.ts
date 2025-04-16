@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
-import { UserProfile } from '@/types/supabase-types';
+import type { UserProfile } from '@/types/supabase-types';
 
 // Create a single supabase client for the entire app
 const supabaseUrl = 'https://kfiergoryrnjkewmeriy.supabase.co';
@@ -47,86 +47,37 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Completely revamped password update approach with multiple fallback options
-export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
+// Completely revamped password update approach with single function
+export const adminUpdateUserPassword = async (
+  userId: string, 
+  password: string
+): Promise<boolean> => {
   try {
-    // Log the attempt for debugging
-    console.log(`Attempting to update password for user ${userId} with improved method`);
+    console.log(`Attempting to update password for user ${userId}`);
     
     if (!password || password.length < 8) {
       console.error('Password must be at least 8 characters');
       return false;
     }
     
-    // Try the direct update function first (new approach)
-    console.log('Trying direct password update function...');
-    const { data: directData, error: directError } = await supabase.rpc('direct_update_user_password', {
-      user_id_val: userId,
-      password_val: password
-    });
-    
-    if (!directError && directData === true) {
-      console.log('Password updated successfully via direct method');
-      return true;
-    } else if (directError) {
-      console.error('Error in direct password update:', directError);
-    }
-    
-    // Try using the admin password update function as backup
-    console.log('Trying admin password update function...');
-    const { data: adminData, error: adminError } = await supabase.rpc('admin_update_user_password', {
+    // Use the new simple_update_password function
+    const { data, error } = await supabase.rpc('simple_update_password', {
       user_id: userId,
-      password: password
+      new_password: password
     });
     
-    if (!adminError && adminData === true) {
-      console.log('Password updated successfully via admin function');
-      return true;
-    } else if (adminError) {
-      console.error('Error in admin password update:', adminError);
-    }
-    
-    // If both previous methods fail, try the fallback function
-    console.log('Attempting fallback password update method...');
-    const { data: fallbackData, error: fallbackError } = await supabase.rpc('update_user_password_fallback', {
-      user_id: userId,
-      password: password
-    });
-    
-    if (!fallbackError && fallbackData === true) {
-      console.log('Password updated successfully via fallback method');
-      return true;
-    } else if (fallbackError) {
-      console.error('Fallback password update failed:', fallbackError);
-    }
-    
-    // Last resort: Try using the auth API directly (requires service role key, won't work with anon key)
-    try {
-      console.log('Attempting to use a direct auth API approach as last resort...');
-      
-      // Create a simple but unique identifier for the password update
-      const updateId = `pwd_update_${Date.now()}`;
-      
-      // Store the update attempt in local storage for debugging
-      localStorage.setItem(updateId, JSON.stringify({
-        userId,
-        timestamp: new Date().toISOString(),
-        attempts: 3
-      }));
-      
-      // Log the result message to help with debugging
-      console.log(`Password update attempts exhausted. Created debug entry: ${updateId}`);
-      console.log('Try checking permissions in Supabase or directly updating via SQL in the Supabase dashboard');
-      
-      // Return false since we couldn't update the password
-      return false;
-    } catch (finalError) {
-      console.error('Final error in password update:', finalError);
+    if (error) {
+      console.error('Password update error:', error);
       return false;
     }
+    
+    // data will be true or false based on the function's return
+    console.log('Password update result:', data);
+    return data === true;
+    
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
-    return false; // Return false instead of throwing to avoid breaking UI
+    return false;
   }
 };
 
