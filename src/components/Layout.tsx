@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -66,6 +67,61 @@ const Layout = ({
   const [modulePermissions, setModulePermissions] = useState<ModulePermission[]>([]);
   const [pagePermissions, setPagePermissions] = useState<PagePermission[]>([]);
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
+
+  // Listen for theme class changes and update themeState accordingly
+  useEffect(() => {
+    const updateThemeState = () => {
+      const html = document.documentElement;
+      const newThemeState = {
+        hasForestGreenTheme: html.classList.contains('theme-forest-green'),
+        hasOceanBlueTheme: html.classList.contains('theme-ocean-blue'),
+        hasSunsetOrangeTheme: html.classList.contains('theme-sunset-orange'),
+        hasBerryPurpleTheme: html.classList.contains('theme-berry-purple'),
+        hasDarkModeTheme: html.classList.contains('theme-dark-mode'),
+        hasHiPurpleTheme: html.classList.contains('theme-hi-purple')
+      };
+      
+      // Only update state if there's a change to avoid unnecessary renders
+      if (JSON.stringify(newThemeState) !== JSON.stringify(themeState)) {
+        console.log('Theme state updated:', newThemeState);
+        setThemeState(newThemeState);
+      }
+    };
+    
+    // Run once on mount to ensure initial state is correct
+    updateThemeState();
+    
+    // Listen for theme changes
+    document.addEventListener('themeClassChanged', updateThemeState);
+    
+    return () => {
+      document.removeEventListener('themeClassChanged', updateThemeState);
+    };
+  }, [themeState]);
+
+  // Additional useEffect to check localStorage on mount
+  useEffect(() => {
+    const checkStoredTheme = () => {
+      const savedThemeName = localStorage.getItem('app-active-theme');
+      if (savedThemeName) {
+        const newThemeState = {
+          hasForestGreenTheme: savedThemeName === 'Forest Green',
+          hasOceanBlueTheme: savedThemeName === 'Ocean Blue',
+          hasSunsetOrangeTheme: savedThemeName === 'Sunset Orange',
+          hasBerryPurpleTheme: savedThemeName === 'Hi' || savedThemeName === 'Berry Purple',
+          hasDarkModeTheme: savedThemeName === 'Dark Mode',
+          hasHiPurpleTheme: savedThemeName === 'Hi Purple'
+        };
+        
+        if (JSON.stringify(newThemeState) !== JSON.stringify(themeState)) {
+          console.log('Theme state updated from localStorage:', newThemeState);
+          setThemeState(newThemeState);
+        }
+      }
+    };
+    
+    checkStoredTheme();
+  }, []);
 
   useEffect(() => {
     const fetchUserPermissions = async () => {
