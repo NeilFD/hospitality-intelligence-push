@@ -177,32 +177,7 @@ const TeamManagementPanel: React.FC = () => {
         updateData.birth_date = formattedBirthDate;
       }
       
-      let passwordUpdateSuccess = true;
-      if (editForm.password && editForm.password.trim() !== '' && canManageUsers) {
-        if (editForm.password.length < 8) {
-          toast.error('Password must be at least 8 characters long');
-          return;
-        }
-        
-        try {
-          console.log('Calling adminUpdateUserPassword for user:', selectedUser.id);
-          const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
-          
-          console.log('Password update result:', result);
-          
-          if (result === false) {
-            toast.error('Password update failed - user may not exist in auth table');
-            passwordUpdateSuccess = false;
-          } else {
-            toast.success('Password has been updated successfully');
-          }
-        } catch (err) {
-          console.error('Exception during password update:', err);
-          toast.error('Error updating password: ' + (err instanceof Error ? err.message : String(err)));
-          passwordUpdateSuccess = false;
-        }
-      }
-      
+      // Handle profile update first
       const { error: profileError } = await supabase
         .from('profiles')
         .update(updateData)
@@ -212,6 +187,47 @@ const TeamManagementPanel: React.FC = () => {
         console.error('Error updating profile:', profileError);
         toast.error('Failed to update profile: ' + profileError.message);
         return;
+      }
+      
+      // Handle password update separately to provide better feedback
+      let passwordUpdateSuccess = true;
+      let passwordMessage = '';
+      
+      if (editForm.password && editForm.password.trim() !== '' && canManageUsers) {
+        if (editForm.password.length < 8) {
+          toast.error('Password must be at least 8 characters long');
+          return;
+        }
+        
+        try {
+          console.log('Attempting password update for user:', selectedUser.id);
+          
+          // Show a loading toast for password update
+          toast.loading('Updating password...', { id: 'password-update' });
+          
+          const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
+          
+          // Dismiss the loading toast
+          toast.dismiss('password-update');
+          
+          console.log('Password update result:', result);
+          
+          if (result === false) {
+            toast.error('Password update failed - please contact your system administrator');
+            passwordUpdateSuccess = false;
+            passwordMessage = ' but password update failed';
+          } else {
+            toast.success('Password has been updated successfully');
+          }
+        } catch (err) {
+          // Dismiss the loading toast
+          toast.dismiss('password-update');
+          
+          console.error('Exception during password update:', err);
+          toast.error('Error updating password: ' + (err instanceof Error ? err.message : String(err)));
+          passwordUpdateSuccess = false;
+          passwordMessage = ' but password update failed';
+        }
       }
       
       setTeamMembers(teamMembers.map(member => 
@@ -233,11 +249,7 @@ const TeamManagementPanel: React.FC = () => {
       setIsEditUserDialogOpen(false);
       setSelectedUser(null);
       
-      if (passwordUpdateSuccess) {
-        toast.success(`${editForm.firstName}'s profile has been updated`);
-      } else {
-        toast.warning(`${editForm.firstName}'s profile was updated but password change failed`);
-      }
+      toast.success(`${editForm.firstName}'s profile has been updated${passwordMessage}`);
     } catch (error) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user profile');

@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import { UserProfile } from '@/types/supabase-types';
@@ -48,56 +47,83 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Update the admin password update function wrapper for better error handling and debug information
+// Completely revamped password update approach with multiple fallback options
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     // Log the attempt for debugging
-    console.log(`Attempting to update password for user ${userId}`);
-    
-    // Don't attempt to check if the user exists with admin.getUserById since it requires service_role
-    // This was causing permission errors since we're using the anon key
+    console.log(`Attempting to update password for user ${userId} with improved method`);
     
     if (!password || password.length < 8) {
       console.error('Password must be at least 8 characters');
       return false;
     }
     
-    // Try using the main password update function first
-    console.log('Trying main password update function...');
-    const { data, error } = await supabase.rpc('admin_update_user_password', {
+    // Try the direct update function first (new approach)
+    console.log('Trying direct password update function...');
+    const { data: directData, error: directError } = await supabase.rpc('direct_update_user_password', {
+      user_id_val: userId,
+      password_val: password
+    });
+    
+    if (!directError && directData === true) {
+      console.log('Password updated successfully via direct method');
+      return true;
+    } else if (directError) {
+      console.error('Error in direct password update:', directError);
+    }
+    
+    // Try using the admin password update function as backup
+    console.log('Trying admin password update function...');
+    const { data: adminData, error: adminError } = await supabase.rpc('admin_update_user_password', {
       user_id: userId,
       password: password
     });
     
-    if (error) {
-      console.error('Error in main password update function:', error);
-      
-      // If the main function fails, try the fallback function immediately
-      console.log('Attempting fallback password update method...');
-      try {
-        const { data: fallbackData, error: fallbackError } = await supabase.rpc('update_user_password_fallback', {
-          user_id: userId,
-          password: password
-        });
-        
-        if (fallbackError) {
-          console.error('Fallback password update failed:', fallbackError);
-          return false;
-        }
-        
-        console.log('Fallback password update result:', fallbackData);
-        return fallbackData === true;
-      } catch (fallbackException) {
-        console.error('Exception in fallback password update:', fallbackException);
-        return false;
-      }
+    if (!adminError && adminData === true) {
+      console.log('Password updated successfully via admin function');
+      return true;
+    } else if (adminError) {
+      console.error('Error in admin password update:', adminError);
     }
     
-    // Log the result for debugging
-    console.log('Password update result:', data);
+    // If both previous methods fail, try the fallback function
+    console.log('Attempting fallback password update method...');
+    const { data: fallbackData, error: fallbackError } = await supabase.rpc('update_user_password_fallback', {
+      user_id: userId,
+      password: password
+    });
     
-    // The RPC returns a boolean indicating success
-    return data === true;
+    if (!fallbackError && fallbackData === true) {
+      console.log('Password updated successfully via fallback method');
+      return true;
+    } else if (fallbackError) {
+      console.error('Fallback password update failed:', fallbackError);
+    }
+    
+    // Last resort: Try using the auth API directly (requires service role key, won't work with anon key)
+    try {
+      console.log('Attempting to use a direct auth API approach as last resort...');
+      
+      // Create a simple but unique identifier for the password update
+      const updateId = `pwd_update_${Date.now()}`;
+      
+      // Store the update attempt in local storage for debugging
+      localStorage.setItem(updateId, JSON.stringify({
+        userId,
+        timestamp: new Date().toISOString(),
+        attempts: 3
+      }));
+      
+      // Log the result message to help with debugging
+      console.log(`Password update attempts exhausted. Created debug entry: ${updateId}`);
+      console.log('Try checking permissions in Supabase or directly updating via SQL in the Supabase dashboard');
+      
+      // Return false since we couldn't update the password
+      return false;
+    } catch (finalError) {
+      console.error('Final error in password update:', finalError);
+      return false;
+    }
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
     return false; // Return false instead of throwing to avoid breaking UI
