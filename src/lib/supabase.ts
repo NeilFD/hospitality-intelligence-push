@@ -47,7 +47,7 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Update the admin password update function wrapper for better error handling
+// Update the admin password update function wrapper for better error handling and fallback
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     // Log the attempt for debugging
@@ -58,7 +58,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Call the RPC function
+    // Call the primary RPC function first
     const { data, error } = await supabase.rpc(
       'admin_update_user_password',
       {
@@ -68,15 +68,32 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     );
     
     if (error) {
-      console.error('Error in adminUpdateUserPassword:', error);
-      throw error;
+      console.error('Error in primary password update function:', error);
+      console.log('Attempting fallback password update function...');
+      
+      // Try the fallback function
+      const { data: fallbackData, error: fallbackError } = await supabase.rpc(
+        'update_user_password_fallback',
+        {
+          user_id: userId,
+          password: password
+        }
+      );
+      
+      if (fallbackError) {
+        console.error('Error in fallback password update function:', fallbackError);
+        return false;
+      }
+      
+      console.log('Password update fallback result:', fallbackData);
+      return !!fallbackData;
     }
     
     console.log('Password update result:', data);
     return !!data; // Convert to boolean
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
-    throw e;
+    return false;
   }
 };
 
