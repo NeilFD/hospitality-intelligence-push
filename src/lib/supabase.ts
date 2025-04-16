@@ -60,21 +60,47 @@ export const adminUpdateUserPassword = async (
       return false;
     }
     
-    // Use our new direct password update function
-    console.log('Using direct_password_update function with user ID:', userId);
+    // First check if the user exists in auth.users
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
     
-    const { data: result, error } = await supabase.rpc('direct_password_update', {
-      user_id_val: userId,
-      password_val: password
-    });
-    
-    if (error) {
-      console.error('Error updating password with direct_password_update:', error);
+    if (authError) {
+      console.error('Error checking if user exists:', authError);
       return false;
     }
     
-    console.log('Password update result:', result);
-    return result === true;
+    if (!authUser || !authUser.user) {
+      console.error('User not found with ID:', userId);
+      return false;
+    }
+    
+    console.log('User found in auth.users, proceeding with password update');
+    
+    // Use the auth.admin API to update the user's password
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      { password: password }
+    );
+    
+    if (updateError) {
+      console.error('Error using auth.admin.updateUserById:', updateError);
+      
+      // Fall back to our SQL function as a last resort
+      console.log('Falling back to direct_password_update function');
+      const { data: result, error } = await supabase.rpc('direct_password_update', {
+        user_id_val: userId,
+        password_val: password
+      });
+      
+      if (error) {
+        console.error('All password update methods failed:', error);
+        return false;
+      }
+      
+      return result === true;
+    }
+    
+    console.log('Password updated successfully using auth.admin API');
+    return true;
     
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
