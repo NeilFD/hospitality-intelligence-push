@@ -68,7 +68,8 @@ const TeamManagementPanel: React.FC = () => {
     birthDate: undefined as Date | undefined,
     favouriteDish: '',
     favouriteDrink: '',
-    aboutMe: ''
+    aboutMe: '',
+    password: ''
   });
   
   const [newProfileForm, setNewProfileForm] = useState({
@@ -185,6 +186,25 @@ const TeamManagementPanel: React.FC = () => {
         }
       }
       
+      if (editForm.password && canManageUsers) {
+        try {
+          const { error: passwordError } = await supabase.rpc('admin_update_user_password', {
+            user_id: selectedUser.id,
+            password: editForm.password
+          });
+          
+          if (passwordError) {
+            console.error('Error updating password:', passwordError);
+            toast.error('Failed to update password. Make sure it meets the requirements.');
+          } else {
+            toast.success('Password has been updated');
+          }
+        } catch (passwordErr) {
+          console.error('Exception in password update:', passwordErr);
+          toast.error('Failed to update password due to an unexpected error');
+        }
+      }
+      
       const { error } = await supabase
         .from('profiles')
         .update(updateData)
@@ -278,7 +298,8 @@ const TeamManagementPanel: React.FC = () => {
       birthDate: birthDate,
       favouriteDish: user.favourite_dish || '',
       favouriteDrink: user.favourite_drink || '',
-      aboutMe: user.about_me || ''
+      aboutMe: user.about_me || '',
+      password: ''
     });
     
     setIsEditUserDialogOpen(true);
@@ -350,8 +371,8 @@ We've created an account for you in our team management system.
 To get started:
 1. Go to: ${window.location.origin}/login
 2. Enter your email: ${user.email}
-3. Enter the default password: Hi2025!
-4. After logging in, please update your password in your profile settings
+3. [ADD PASSWORD] - Please add a password for this user
+4. After logging in, they should update their password in profile settings
 
 Looking forward to having you on the team!
 
@@ -622,6 +643,29 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
                 className="min-h-[100px]"
               />
             </div>
+            
+            {canManageUsers && (
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  Set Password
+                  {selectedUser?.id && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (Leave blank to keep unchanged)
+                    </span>
+                  )}
+                </Label>
+                <Input 
+                  id="password"
+                  type="password"
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                  placeholder="Enter new password"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Must contain at least 8 characters
+                </p>
+              </div>
+            )}
           </div>
           
           <DialogFooter>
