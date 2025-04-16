@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload, Mail, MessageSquare, Link2 } from 'lucide-react';
-import { supabase, checkProfilesCount, directSignUp } from '@/lib/supabase';
+import { supabase, checkProfilesCount, directSignUp, adminUpdateUserPassword } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
 import { useAuthStore } from '@/services/auth-service';
@@ -174,51 +174,41 @@ const TeamManagementPanel: React.FC = () => {
       
       if (editForm.birthDate) {
         const formattedBirthDate = format(editForm.birthDate, 'MM-dd');
-        const { data: columnInfo, error: columnError } = await supabase
-          .from('profiles')
-          .select('birth_date')
-          .limit(1);
-        
-        if (!columnError) {
-          updateData.birth_date = formattedBirthDate;
-        } else {
-          console.log('birth_date column not found, skipping this field');
-        }
+        updateData.birth_date = formattedBirthDate;
       }
       
+      let passwordUpdateSuccess = true;
       if (editForm.password && editForm.password.trim() !== '' && canManageUsers) {
-        console.log(`Attempting to update password for user ${selectedUser.id}`);
+        if (editForm.password.length < 8) {
+          toast.error('Password must be at least 8 characters long');
+          return;
+        }
         
-        const { data: passwordData, error: passwordError } = await supabase.rpc(
-          'admin_update_user_password',
-          {
-            user_id: selectedUser.id,
-            password: editForm.password.trim()
+        try {
+          const result = await adminUpdateUserPassword(selectedUser.id, editForm.password.trim());
+          if (!result) {
+            toast.error('Password update failed - user may not exist in auth table');
+            passwordUpdateSuccess = false;
+          } else {
+            toast.success('Password has been updated successfully');
           }
-        );
-        
-        console.log('Password update response:', passwordData, passwordError);
-        
-        if (passwordError) {
-          console.error('Error updating password:', passwordError);
-          toast.error('Failed to update password: ' + passwordError.message);
-          throw new Error('Password update failed');
-        } else if (passwordData === true) {
-          console.log('Password successfully updated');
-          toast.success('Password has been updated successfully');
-        } else {
-          console.warn('Password update returned false', passwordData);
-          toast.error('Password update failed - user may not exist in auth table');
-          throw new Error('Password update returned false');
+        } catch (err) {
+          console.error('Exception during password update:', err);
+          toast.error('Error updating password: ' + (err instanceof Error ? err.message : String(err)));
+          passwordUpdateSuccess = false;
         }
       }
       
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', selectedUser.id);
         
-      if (error) throw error;
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        toast.error('Failed to update profile: ' + profileError.message);
+        return;
+      }
       
       setTeamMembers(teamMembers.map(member => 
         member.id === selectedUser.id 
@@ -239,7 +229,11 @@ const TeamManagementPanel: React.FC = () => {
       setIsEditUserDialogOpen(false);
       setSelectedUser(null);
       
-      toast.success(`${editForm.firstName}'s profile has been updated`);
+      if (passwordUpdateSuccess) {
+        toast.success(`${editForm.firstName}'s profile has been updated`);
+      } else {
+        toast.warning(`${editForm.firstName}'s profile was updated but password change failed`);
+      }
     } catch (error) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user profile');

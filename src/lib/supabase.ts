@@ -47,6 +47,39 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
+// Add an admin password update function wrapper
+export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
+  try {
+    // Log the attempt for debugging
+    console.log(`Attempting to update password for user ${userId}`);
+    
+    if (!password || password.trim().length < 8) {
+      console.error('Password must be at least 8 characters');
+      return false;
+    }
+    
+    // Call the RPC function
+    const { data, error } = await supabase.rpc(
+      'admin_update_user_password',
+      {
+        user_id: userId,
+        password: password.trim()
+      }
+    );
+    
+    if (error) {
+      console.error('Error in adminUpdateUserPassword:', error);
+      throw error;
+    }
+    
+    console.log('Password update result:', data);
+    return !!data; // Convert to boolean
+  } catch (e) {
+    console.error('Exception in adminUpdateUserPassword:', e);
+    throw e;
+  }
+};
+
 // Improved checkProfilesCount function with more detailed diagnostics
 export const checkProfilesCount = async () => {
   try {
