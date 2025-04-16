@@ -31,7 +31,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         return;
       }
 
-      // God mode and Super User - always has access to everything
+      // GOD and Super User roles always have access to everything
       if (profile.role === 'GOD' || profile.role === 'Super User') {
         console.log(`${profile.role} user detected - granting access to protected route`);
         setHasPermission(true);

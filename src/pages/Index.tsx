@@ -10,10 +10,37 @@ const Index = () => {
   const location = useLocation();
   const { profile, isAuthenticated } = useAuthStore();
   
-  // Force a re-evaluation of the module name and log it
   useEffect(() => {
     console.log('Current module in Index:', currentModule);
-  }, [currentModule]);
+    
+    // Check user permissions and cache available modules
+    const checkUserPermissions = async () => {
+      if (!isAuthenticated || !profile?.role) return;
+      
+      try {
+        // Skip for GOD and Super User roles
+        if (profile.role === 'GOD' || profile.role === 'Super User') return;
+        
+        // Get all modules the user has access to
+        const { data: permittedModules, error } = await supabase
+          .from('permission_access')
+          .select('module_id')
+          .eq('role_id', profile.role)
+          .eq('has_access', true);
+          
+        if (error) {
+          console.error('Error fetching permitted modules:', error);
+          return;
+        }
+        
+        console.log('User has access to modules:', permittedModules);
+      } catch (err) {
+        console.error('Error checking permissions:', err);
+      }
+    };
+    
+    checkUserPermissions();
+  }, [currentModule, isAuthenticated, profile]);
   
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
