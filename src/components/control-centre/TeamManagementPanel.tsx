@@ -186,7 +186,7 @@ const TeamManagementPanel: React.FC = () => {
         
         try {
           console.log('Calling adminUpdateUserPassword for user:', selectedUser.id);
-          const result = await adminUpdateUserPassword(selectedUser.id, editForm.password.trim());
+          const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
           
           console.log('Password update result:', result);
           
