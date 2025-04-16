@@ -132,7 +132,7 @@ export const directSignUp = async (
   }
 };
 
-// Updated adminUpdateUserPassword function to update auth.users only
+// Fixed adminUpdateUserPassword function to ensure it correctly updates the password
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     console.log(`Attempting to update password for user ${userId}`);
@@ -142,34 +142,29 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Only update the password in auth.users using the extremely_basic_password_update function
-    const { data: authUpdateResult, error: authUpdateError } = await supabase.rpc('extremely_basic_password_update', {
+    // Directly update the password in auth.users using the PostgreSQL function
+    // This approach bypasses any middleware and ensures the password is properly hashed
+    const { data, error } = await supabase.rpc('extremely_basic_password_update', {
       user_id_input: userId,
       password_input: password
     });
     
-    if (authUpdateError) {
-      console.error('Error updating password in auth.users:', authUpdateError);
+    if (error) {
+      console.error('Error updating password:', error);
       return false;
     }
     
-    // Optionally, we can add a timestamp in the profiles table to indicate when the password was updated
-    // But we won't store the actual password (not even hashed) in the profiles table
-    const { error: profileUpdateError } = await supabase
+    // Log the result for debugging
+    console.log('Password update response:', data);
+    
+    // Update the timestamp in profiles to indicate password was updated
+    await supabase
       .from('profiles')
-      .update({ 
-        updated_at: new Date().toISOString(),
-        // Don't set password_hash field at all
-      })
+      .update({ updated_at: new Date().toISOString() })
       .eq('id', userId);
     
-    if (profileUpdateError) {
-      console.error('Error updating profile timestamp:', profileUpdateError);
-      // Continue anyway since the auth table was updated successfully
-    }
-    
     console.log('Password updated successfully in auth.users table');
-    return authUpdateResult === true;
+    return data === true;
     
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
