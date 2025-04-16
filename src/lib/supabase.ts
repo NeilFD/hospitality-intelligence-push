@@ -47,7 +47,7 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Add an admin password update function wrapper
+// Update the admin password update function wrapper for better error handling
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     // Log the attempt for debugging
@@ -58,7 +58,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Call the RPC function
+    // Call the RPC function with explicit parameter naming
     const { data, error } = await supabase.rpc(
       'admin_update_user_password',
       {

@@ -185,7 +185,11 @@ const TeamManagementPanel: React.FC = () => {
         }
         
         try {
+          console.log('Calling adminUpdateUserPassword for user:', selectedUser.id);
           const result = await adminUpdateUserPassword(selectedUser.id, editForm.password.trim());
+          
+          console.log('Password update result:', result);
+          
           if (!result) {
             toast.error('Password update failed - user may not exist in auth table');
             passwordUpdateSuccess = false;
