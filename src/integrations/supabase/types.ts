@@ -1605,6 +1605,18 @@ export type Database = {
         }
         Returns: string
       }
+      create_user_invitation: {
+        Args: {
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_role?: string
+          p_job_title?: string
+          p_created_by?: string
+          p_invitation_token?: string
+        }
+        Returns: string
+      }
       direct_password_update: {
         Args: { user_id_val: string; password_val: string }
         Returns: boolean

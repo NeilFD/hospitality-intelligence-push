@@ -25,7 +25,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload, Mail, MessageSquare, Link2 } from 'lucide-react';
+import { 
+  UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, 
+  MoreVertical, CalendarIcon, Image, Upload, Mail, MessageSquare, 
+  Link2, Send, Loader2, Users, Clipboard 
+} from 'lucide-react';
 import { supabase, checkProfilesCount, directSignUp, adminUpdateUserPassword } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
@@ -59,6 +63,8 @@ const TeamManagementPanel: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isAddProfileDialogOpen, setIsAddProfileDialogOpen] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [invitationEmails, setInvitationEmails] = useState('');
+  const [sendingInvites, setSendingInvites] = useState(false);
   
   const [editForm, setEditForm] = useState({
     firstName: '',
@@ -421,6 +427,90 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
     window.open(`mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${body}`);
   };
   
+  const handleSendInvitations = async () => {
+    if (!invitationEmails.trim()) {
+      toast.error('Please enter at least one email address');
+      return;
+    }
+    
+    setSendingInvites(true);
+    
+    try {
+      const emails = invitationEmails
+        .split(/[,\n]/)
+        .map(email => email.trim())
+        .filter(email => email.length > 0 && email.includes('@'));
+      
+      if (emails.length === 0) {
+        toast.error('No valid email addresses found');
+        setSendingInvites(false);
+        return;
+      }
+      
+      const results = await Promise.all(
+        emails.map(async (email) => {
+          try {
+            const invitationToken = crypto.randomUUID();
+            
+            const response = await fetch(
+              `https://kfiergoryrnjkewmeriy.supabase.co/functions/v1/send-user-invitation`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabase.auth.getSession()}`
+                },
+                body: JSON.stringify({
+                  email,
+                  firstName: email.split('@')[0],
+                  lastName: '',
+                  invitationToken,
+                  role: 'Team Member',
+                  created_by: currentUserProfile?.id
+                })
+              }
+            );
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+              throw new Error(result.error || 'Failed to send invitation');
+            }
+            
+            return { email, success: true, message: result.message };
+          } catch (error) {
+            console.error(`Error inviting ${email}:`, error);
+            return { 
+              email, 
+              success: false, 
+              message: error instanceof Error ? error.message : 'Unknown error'
+            };
+          }
+        })
+      );
+      
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.length - successCount;
+      
+      if (successCount > 0 && failCount === 0) {
+        toast.success(`Successfully sent ${successCount} invitation${successCount > 1 ? 's' : ''}`);
+        setInvitationEmails('');
+      } else if (successCount > 0 && failCount > 0) {
+        toast.warning(`Sent ${successCount} invitation${successCount > 1 ? 's' : ''}, but ${failCount} failed`);
+      } else {
+        toast.error(`Failed to send invitations`);
+      }
+      
+      await fetchTeamMembers();
+      
+    } catch (error) {
+      console.error('Error sending invitations:', error);
+      toast.error('Failed to send invitations');
+    } finally {
+      setSendingInvites(false);
+    }
+  };
+  
   return (
     <>
       <Card>
@@ -433,7 +523,51 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
           </CardDescription>
         </CardHeader>
         <CardContent>
-          
+          {canManageUsers && (
+            <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <h3 className="text-lg font-medium mb-2 flex items-center gap-2">
+                <Share2 className="h-5 w-5 text-blue-600" />
+                <span>Invite Team Members</span>
+              </h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Enter email addresses below (separated by commas or new lines) to send invitations to join the team.
+              </p>
+              <div className="space-y-3">
+                <Textarea 
+                  placeholder="email1@example.com, email2@example.com"
+                  value={invitationEmails}
+                  onChange={(e) => setInvitationEmails(e.target.value)}
+                  className="min-h-[80px]"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSendInvitations}
+                    disabled={sendingInvites || !invitationEmails.trim()}
+                    className="flex items-center gap-2"
+                  >
+                    {sendingInvites ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>Send Invitations</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="text-xs text-gray-500 flex items-start gap-2 mt-2">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <p>
+                    Recipients will receive an email with a link to register at https://myhi.io/register. 
+                    After sign-up, they'll need to click a confirmation link from Supabase to complete registration.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {loading ? (
             <div className="flex justify-center p-6">
