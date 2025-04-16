@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -139,12 +138,11 @@ const TeamManagementPanel: React.FC = () => {
     }
   };
 
-  // Direct profile creation function - simplified and enhanced
   const createProfileDirectly = async (userId: string, userData: any) => {
-    console.log('Creating profile directly for user:', userId, userData);
-    
     try {
-      // Approach 1: Direct insert with complete data
+      console.log(`Creating profile directly for user ${userId}`);
+      
+      // Approach 1: Direct insert
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
@@ -163,7 +161,7 @@ const TeamManagementPanel: React.FC = () => {
       
       console.error('Direct profile insert failed:', insertError);
       
-      // Approach 2: Use create_profile_for_user RPC function
+      // Approach 2: Try create_profile_for_user RPC
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         'create_profile_for_user',
         {
@@ -183,7 +181,7 @@ const TeamManagementPanel: React.FC = () => {
       
       console.error('RPC create_profile_for_user failed:', rpcError);
       
-      // Approach 3: Use handle_new_user_manual function as final fallback
+      // Approach 3: Try handle_new_user_manual RPC
       const { data: manualResult, error: manualError } = await supabase.rpc(
         'handle_new_user_manual',
         {
@@ -212,7 +210,7 @@ const TeamManagementPanel: React.FC = () => {
           email: userData.email,
           role: userData.role || 'Team Member'
         });
-        
+      
       if (!finalError) {
         console.log('Profile created successfully via final upsert attempt');
         return true;
@@ -221,7 +219,7 @@ const TeamManagementPanel: React.FC = () => {
       console.error('Final profile upsert failed:', finalError);
       return false;
     } catch (error) {
-      console.error('Unexpected error in createProfileDirectly:', error);
+      console.error('Error in createProfileDirectly:', error);
       return false;
     }
   };
@@ -263,8 +261,10 @@ const TeamManagementPanel: React.FC = () => {
         email: newUser.email
       };
       
-      // Create the auth user directly without invitation
-      const { data: userData, error: signUpError } = await supabase.auth.signUp({
+      console.log("Registration metadata:", metadata);
+      
+      // Direct signup without invitation
+      const { data, error } = await supabase.auth.signUp({
         email: newUser.email,
         password: 'hospitalityintelligence2025',
         options: {
@@ -272,33 +272,42 @@ const TeamManagementPanel: React.FC = () => {
         }
       });
       
-      if (signUpError) {
-        console.error('Signup Error:', signUpError);
-        toast.error(`User creation failed: ${signUpError.message}`);
+      if (error) {
+        console.error('Error during registration:', error);
+        
+        if (error.message.includes('already registered')) {
+          toast.error('This email is already registered. Please log in instead.');
+          setCreateUserLoading(false);
+          return;
+        }
+        
+        toast.error(`Registration failed: ${error.message}`);
         setCreateUserLoading(false);
         return;
       }
       
-      if (!userData.user) {
+      if (!data.user) {
         toast.error('Failed to create user account');
         setCreateUserLoading(false);
         return;
       }
       
-      console.log('User created successfully:', userData.user.id);
+      console.log("User registered successfully, user ID:", data.user.id);
       
       // Wait a moment for Auth trigger to fire
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Create profile directly - multiple approaches for reliability
-      const profileCreated = await createProfileDirectly(userData.user.id, metadata);
+      // Create profile directly as fallback using multiple approaches
+      const profileCreated = await createProfileDirectly(data.user.id, metadata);
       
       if (profileCreated) {
+        console.log("Profile created successfully");
+        
         // Verify profile was created
         const { data: verifyProfile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userData.user.id)
+          .eq('id', data.user.id)
           .maybeSingle();
           
         if (verifyProfile) {

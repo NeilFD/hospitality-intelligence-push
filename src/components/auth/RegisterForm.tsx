@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -55,12 +54,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     },
   });
 
-  // Enhanced profile creation function with multiple fallback approaches
   const createProfileDirectly = async (userId: string, userData: any) => {
     try {
       console.log(`Creating profile directly for user ${userId}`);
       
-      // Approach 1: Direct insert
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
@@ -79,7 +76,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('Direct profile insert failed:', insertError);
       
-      // Approach 2: Try create_profile_for_user RPC
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         'create_profile_for_user',
         {
@@ -99,7 +95,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('RPC create_profile_for_user failed:', rpcError);
       
-      // Approach 3: Try handle_new_user_manual RPC
       const { data: manualResult, error: manualError } = await supabase.rpc(
         'handle_new_user_manual',
         {
@@ -118,7 +113,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('handle_new_user_manual failed:', manualError);
       
-      // Final direct approach - simplest upsert with most essential fields
       const { error: finalError } = await supabase
         .from('profiles')
         .upsert({
@@ -160,7 +154,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("Registration metadata:", metadata);
       
-      // Direct signup without invitation
       const { data, error } = await signUp(values.email, values.password, metadata);
       
       if (error) {
@@ -183,10 +176,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("User registered successfully, user ID:", data.user.id);
       
-      // Wait a moment for Auth trigger to fire
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Create profile directly as fallback using multiple approaches
       const profileCreated = await createProfileDirectly(data.user.id, metadata);
       
       if (profileCreated) {

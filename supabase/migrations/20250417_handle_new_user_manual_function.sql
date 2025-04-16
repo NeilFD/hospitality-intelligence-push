@@ -1,16 +1,16 @@
 
-
 -- Function to manually create a profile for a user when other methods fail
 CREATE OR REPLACE FUNCTION public.handle_new_user_manual(
   user_id UUID,
   first_name_val TEXT,
   last_name_val TEXT,
-  role_val TEXT
+  role_val TEXT,
+  email_val TEXT DEFAULT NULL
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = 'public'
 AS $$
 DECLARE
   success BOOLEAN := FALSE;
@@ -24,14 +24,16 @@ BEGIN
     first_name, 
     last_name,
     role,
-    job_title
+    job_title,
+    email
   )
   VALUES (
     user_id, 
     first_name_val, 
     last_name_val,
     role_val::user_role,
-    ''
+    '',
+    email_val
   );
   
   RAISE LOG 'Profile manually created successfully for user ID: %', user_id;
@@ -43,4 +45,3 @@ EXCEPTION
     RETURN FALSE;
 END;
 $$;
-
