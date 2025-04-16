@@ -61,10 +61,10 @@ export const adminUpdateUserPassword = async (
       return false;
     }
     
-    // Use the new update_user_password function
-    const { data, error } = await supabase.rpc('update_user_password', {
-      user_id: userId,
-      new_password: password
+    // Try our new direct_update_user_password function
+    const { data, error } = await supabase.rpc('direct_update_user_password', {
+      user_id_val: userId,
+      password_val: password
     });
     
     if (error) {
