@@ -90,6 +90,8 @@ const TeamManagementPanel: React.FC = () => {
   const fetchTeamMembers = async () => {
     setLoading(true);
     try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -304,7 +306,7 @@ const TeamManagementPanel: React.FC = () => {
         newProfileForm.jobTitle
       );
       
-      if (result && result.profile) {
+      if (result && (result.profile || result.user)) {
         setNewProfileForm({
           firstName: '',
           lastName: '',
@@ -314,9 +316,11 @@ const TeamManagementPanel: React.FC = () => {
         });
         
         setIsAddProfileDialogOpen(false);
-        await fetchTeamMembers();
         
         toast.success('Profile created successfully');
+        await fetchTeamMembers();
+      } else {
+        toast.error('Failed to create profile - no data returned');
       }
     } catch (error) {
       console.error('Unexpected error creating profile:', error);

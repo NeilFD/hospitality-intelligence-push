@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import { UserProfile } from '@/types/supabase-types';
@@ -199,7 +200,22 @@ export const directSignUp = async (
       .select()
       .single();
       
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error("Error creating profile:", profileError);
+      
+      // Check if the profile already exists (which might happen if the trigger already created it)
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+        
+      if (fetchError) {
+        throw profileError; // If we can't find an existing profile, throw the original error
+      }
+      
+      return { user: data.user, profile: existingProfile };
+    }
     
     return { user: data.user, profile };
   } catch (error) {
