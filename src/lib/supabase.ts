@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize the Supabase client with environment variables
@@ -7,6 +6,9 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Export the supabase client to be used across the application
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Export the Supabase URL so it can be used in other parts of the application
+export { SUPABASE_URL };
 
 // Get the current user
 export const getCurrentUser = async () => {
