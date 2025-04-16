@@ -1,16 +1,19 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import RegisterForm from '@/components/auth/RegisterForm';
 import { LayoutProps } from '@/types/layout-types';
 import { useAuthStore } from '@/services/auth-service';
-import { supabase } from '@/lib/supabase';
+import { checkInvitationToken } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = false }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const [searchParams] = useSearchParams();
   const invitationToken = searchParams.get('token');
+  const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -21,21 +24,38 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
   useEffect(() => {
     // Check if the invitation token is valid
     if (invitationToken) {
-      const checkInvitation = async () => {
-        const { data, error } = await supabase
-          .from('user_invitations')
-          .select('*')
-          .eq('invitation_token', invitationToken)
-          .single();
+      const validateToken = async () => {
+        setIsLoading(true);
+        try {
+          const data = await checkInvitationToken(invitationToken);
           
-        if (error || !data) {
-          console.error('Invalid or expired invitation token');
+          if (!data) {
+            setIsValidToken(false);
+            toast.error('Invalid or expired invitation link');
+          } else {
+            setIsValidToken(true);
+            
+            // If the invitation is already claimed
+            if (data.is_claimed) {
+              toast.info('This invitation has already been claimed. Please log in instead.');
+              navigate('/login');
+            }
+          }
+        } catch (error) {
+          console.error('Error validating invitation token:', error);
+          setIsValidToken(false);
+          toast.error('Error validating invitation link');
+        } finally {
+          setIsLoading(false);
         }
       };
       
-      checkInvitation();
+      validateToken();
+    } else {
+      // No token means regular registration
+      setIsValidToken(null);
     }
-  }, [invitationToken]);
+  }, [invitationToken, navigate]);
 
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:grid-cols-1 lg:px-0">
@@ -48,9 +68,19 @@ const Register: React.FC<LayoutProps> = ({ showSidebar = false, showTopbar = fal
             <p className="text-sm text-muted-foreground">
               Enter your details below to create your account
             </p>
-            {invitationToken && (
+            {isLoading && (
               <p className="text-sm text-blue-600">
-                Using invitation link
+                Validating invitation...
+              </p>
+            )}
+            {isValidToken === true && (
+              <p className="text-sm text-blue-600">
+                Using valid invitation link
+              </p>
+            )}
+            {isValidToken === false && (
+              <p className="text-sm text-red-600">
+                Invalid or expired invitation link
               </p>
             )}
           </div>

@@ -79,21 +79,34 @@ serve(async (req) => {
       const existingToken = existingInvitation[0].invitation_token;
       const existingInvitationUrl = `${SITE_URL}/register?token=${existingToken}`;
       
-      // Send the email here
-      const emailResult = await sendInvitationEmail(email, firstName, existingInvitationUrl);
+      // Send the email here with better error handling
+      const { success, error } = await sendInvitationEmail(email, firstName, existingInvitationUrl);
+      
+      if (!success) {
+        console.error("Failed to send invitation email:", error);
+      }
       
       return new Response(
         JSON.stringify({ 
           message: 'An invitation has already been sent to this email address. Resending the invitation.',
           existingInvitation: true,
-          invitationUrl: existingInvitationUrl
+          invitationUrl: existingInvitationUrl,
+          emailSent: success
         }),
         { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
     
-    // Send the actual invitation email
-    const emailResult = await sendInvitationEmail(email, firstName, invitationUrl);
+    // Send the actual invitation email with better error handling
+    const { success, error } = await sendInvitationEmail(email, firstName, invitationUrl);
+    
+    if (!success) {
+      console.error("Failed to send invitation email:", error);
+      return new Response(
+        JSON.stringify({ error: error || 'Failed to send invitation email' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
     
     // Use a direct SQL query with the service role to bypass RLS policies
     const { error: insertError } = await supabase.rpc('create_user_invitation', {
@@ -150,25 +163,49 @@ async function sendInvitationEmail(
     const companyName = settings?.company_name || 'Our Company';
     
     try {
-      // Send email with the invitation URL using Supabase's email service
-      const { error: directEmailError } = await supabase.auth.admin.inviteUserByEmail(toEmail, {
-        redirectTo: invitationUrl,
-        data: {
+      // Send email with the invitation URL using Supabase's signup method
+      // This method is more reliable for sending signup emails
+      const { data, error: signUpError } = await supabase.auth.admin.createUser({
+        email: toEmail,
+        email_confirm: true,  // Set to false to force email confirmation
+        app_metadata: {
+          invitation_url: invitationUrl
+        },
+        user_metadata: {
           firstName,
           invitationUrl,
           companyName
         }
       });
       
-      if (directEmailError) {
-        throw directEmailError;
+      if (signUpError) {
+        // If user already exists, we need a different approach
+        if (signUpError.message.includes('already registered')) {
+          // For existing users, generate a magic link
+          const { error: magicLinkError } = await supabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: toEmail,
+            options: {
+              redirectTo: invitationUrl
+            }
+          });
+          
+          if (magicLinkError) {
+            throw magicLinkError;
+          }
+          
+          console.log(`Successfully sent magic link to existing user ${toEmail}`);
+          return { success: true };
+        } else {
+          throw signUpError;
+        }
       }
       
-      console.log(`Successfully sent invitation email to ${toEmail}`);
+      console.log(`Successfully created user for ${toEmail}`);
       return { success: true };
       
-    } catch (directEmailError) {
-      console.error("Direct email method failed:", directEmailError);
+    } catch (supabaseError) {
+      console.error("Supabase email method failed:", supabaseError);
       
       // Fallback: Try an alternative method to send the email
       try {
@@ -176,7 +213,12 @@ async function sendInvitationEmail(
           type: 'signup',
           email: toEmail,
           options: {
-            redirectTo: invitationUrl
+            redirectTo: invitationUrl,
+            data: {
+              firstName,
+              invitationUrl,
+              companyName
+            }
           }
         });
         
@@ -190,7 +232,6 @@ async function sendInvitationEmail(
       } catch (signInLinkError) {
         console.error("Sign-in link generation failed:", signInLinkError);
         
-        // Fallback: Log the email content for development purposes
         console.log(`
           SIMULATED EMAIL:
           To: ${toEmail}
@@ -211,7 +252,7 @@ async function sendInvitationEmail(
         `);
         
         return { 
-          success: true, 
+          success: false, 
           error: `Email sending failed but invitation was created. Error: ${signInLinkError.message}`
         };
       }
@@ -238,7 +279,7 @@ async function sendInvitationEmail(
     `);
     
     return { 
-      success: true, 
+      success: false, 
       error: `Email sending failed but invitation was created. Error: ${error.message}`
     };
   }

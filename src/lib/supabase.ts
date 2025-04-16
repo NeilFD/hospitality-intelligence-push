@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize the Supabase client with environment variables
@@ -25,7 +26,8 @@ export const signUp = async (email: string, password: string, metadata: any = {}
       email,
       password,
       options: {
-        data: metadata
+        data: metadata,
+        emailRedirectTo: `${window.location.origin}/login`
       }
     });
     
@@ -160,6 +162,8 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
 // Check if an invitation token is valid
 export const checkInvitationToken = async (token: string) => {
   try {
+    console.log("Checking invitation token:", token);
+    
     const { data, error } = await supabase
       .from('user_invitations')
       .select('*')
@@ -171,6 +175,13 @@ export const checkInvitationToken = async (token: string) => {
       return null;
     }
     
+    // Check if the invitation has expired
+    if (data && new Date(data.expires_at) < new Date()) {
+      console.error('Invitation token has expired');
+      return null;
+    }
+    
+    console.log("Invitation token data:", data);
     return data;
   } catch (err) {
     console.error('Exception checking invitation token:', err);

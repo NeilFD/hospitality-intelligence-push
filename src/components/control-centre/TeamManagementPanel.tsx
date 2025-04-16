@@ -462,8 +462,19 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
       let failCount = 0;
       let errorMessages = [];
       
-      for (const email of emails) {
+      toast.loading(`Processing ${emails.length} invitation(s)...`, { 
+        id: 'processing-invitations',
+        duration: 60000
+      });
+      
+      for (let i = 0; i < emails.length; i++) {
+        const email = emails[i];
         try {
+          toast.loading(`Processing invitation ${i + 1}/${emails.length}: ${email}`, { 
+            id: 'processing-invitations',
+            duration: 60000
+          });
+          
           const invitationToken = crypto.randomUUID();
           
           const response = await fetch(
@@ -485,13 +496,20 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
             }
           );
           
-          const result = await response.json();
-          
           if (!response.ok) {
-            throw new Error(result.error || 'Failed to send invitation');
+            const errorText = await response.text();
+            throw new Error(`Failed to send invitation (HTTP ${response.status}): ${errorText}`);
           }
           
-          await new Promise(resolve => setTimeout(resolve, 500));
+          const result = await response.json();
+          
+          if (result.error) {
+            throw new Error(result.error);
+          }
+          
+          console.log(`Invitation result for ${email}:`, result);
+          
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
           successCount++;
         } catch (error) {
@@ -500,6 +518,8 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
           errorMessages.push(`${email}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
+      
+      toast.dismiss('processing-invitations');
       
       if (successCount > 0 && failCount === 0) {
         toast.success(`Successfully sent ${successCount} invitation${successCount > 1 ? 's' : ''}`);
@@ -560,10 +580,8 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
     
     const mailtoLink = `mailto:?bcc=${encodeURIComponent(bcc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
-    // Open the email client
     window.open(mailtoLink, '_blank');
     
-    // Clear the textarea after opening the email client
     setInvitationEmails('');
     
     toast.success('Email client opened with the invitation');

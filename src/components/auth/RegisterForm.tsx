@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { signUp } from '@/lib/supabase';
+import { signUp, checkInvitationToken } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +45,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const invitationToken = searchParams.get('token');
+  const [invitationData, setInvitationData] = useState<any>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,24 +63,30 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       if (!invitationToken) return;
       
       try {
-        const { data, error } = await supabase
-          .from('user_invitations')
-          .select('*')
-          .eq('invitation_token', invitationToken)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching invitation:', error);
-          return;
-        }
+        setIsLoading(true);
+        const invData = await checkInvitationToken(invitationToken);
         
-        if (data) {
-          form.setValue('email', data.email || '');
-          form.setValue('firstName', data.first_name || '');
-          form.setValue('lastName', data.last_name || '');
+        if (invData) {
+          setInvitationData(invData);
+          form.setValue('email', invData.email || '');
+          form.setValue('firstName', invData.first_name || '');
+          form.setValue('lastName', invData.last_name || '');
+          
+          // Disable the email field if it came from invitation
+          if (invData.email) {
+            const emailField = document.getElementById('email');
+            if (emailField) {
+              (emailField as HTMLInputElement).readOnly = true;
+            }
+          }
+        } else {
+          toast.error('Invalid or expired invitation token');
         }
       } catch (err) {
         console.error('Error fetching invitation data:', err);
+        toast.error('Error loading invitation data');
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -97,8 +104,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       const metadata = {
         first_name: values.firstName,
         last_name: values.lastName,
-        role: initialData?.role || 'Team Member',
-        job_title: initialData?.jobTitle || '',
+        role: initialData?.role || (invitationData?.role || 'Team Member'),
+        job_title: initialData?.jobTitle || (invitationData?.job_title || ''),
         email: values.email
       };
       
@@ -129,10 +136,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       // If there was an invitation token, mark it as claimed
       if (invitationToken) {
-        await supabase
-          .from('user_invitations')
-          .update({ is_claimed: true })
-          .eq('invitation_token', invitationToken);
+        try {
+          await supabase
+            .from('user_invitations')
+            .update({ is_claimed: true })
+            .eq('invitation_token', invitationToken);
+            
+          console.log("Invitation marked as claimed");
+        } catch (updateErr) {
+          console.error("Error marking invitation as claimed:", updateErr);
+        }
       }
       
       if (onRegistrationComplete) {
@@ -164,7 +177,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   <Input 
                     placeholder="First Name" 
                     {...field} 
-                    disabled={!!initialData?.firstName}
+                    disabled={isLoading || !!initialData?.firstName}
                   />
                 </FormControl>
                 <FormMessage />
@@ -181,7 +194,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   <Input 
                     placeholder="Last Name" 
                     {...field} 
-                    disabled={!!initialData?.lastName}
+                    disabled={isLoading || !!initialData?.lastName}
                   />
                 </FormControl>
                 <FormMessage />
@@ -198,10 +211,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input 
+                  id="email"
                   type="email" 
                   placeholder="Email" 
                   {...field} 
-                  disabled={!!initialData?.email}
+                  disabled={isLoading || !!initialData?.email}
+                  readOnly={!!invitationData?.email}
                 />
               </FormControl>
               <FormMessage />
@@ -216,7 +231,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="Password" {...field} />
+                <Input 
+                  type="password" 
+                  placeholder="Password" 
+                  {...field} 
+                  disabled={isLoading}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
