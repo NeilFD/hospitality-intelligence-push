@@ -1,6 +1,4 @@
 
-
-
 -- Function to create a profile for a user when direct insert/upsert fails
 CREATE OR REPLACE FUNCTION public.create_profile_for_user(
   user_id UUID,
@@ -66,5 +64,3 @@ BEGIN
   RETURN success;
 END;
 $$;
-
-
