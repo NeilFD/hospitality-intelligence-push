@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -945,4 +946,88 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 <Label htmlFor="role">Role</Label>
                 <Select 
                   value={newProfileForm.role} 
-                  onValueChange={(value: UserRoleType) => setNewProfileForm({...newProfileForm, role
+                  onValueChange={(value: UserRoleType) => setNewProfileForm({...newProfileForm, role: value})}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isGod && (
+                      <>
+                        <SelectItem value="GOD">GOD</SelectItem>
+                        <SelectItem value="Super User">Super User</SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Team Member">Team Member</SelectItem>
+                    <SelectItem value="Owner">Owner</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input 
+                  id="jobTitle" 
+                  value={newProfileForm.jobTitle}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
+                  placeholder="Job title"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddProfileDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateProfile} disabled={loading}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              {loading ? 'Creating...' : 'Create Profile'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Email Instructions</DialogTitle>
+            <DialogDescription>
+              Send account instructions to {selectedUser?.first_name} {selectedUser?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="bg-gray-50 p-4 rounded-md">
+              <p className="text-sm font-medium mb-2">Email Content Preview:</p>
+              <div className="text-sm whitespace-pre-wrap border p-3 rounded bg-white">
+                {getSignupInstructions(selectedUser)}
+              </div>
+            </div>
+            
+            <div className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => handleCopyToClipboard(getSignupInstructions(selectedUser))}
+                className="flex items-center"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Text
+              </Button>
+              
+              <Button 
+                onClick={() => handleOpenEmail(selectedUser)}
+                className="flex items-center"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Open Email Client
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default TeamManagementPanel;
