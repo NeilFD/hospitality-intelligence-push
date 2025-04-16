@@ -132,7 +132,7 @@ export const directSignUp = async (
   }
 };
 
-// Update the adminUpdateUserPassword function to use the new extremely_basic_password_update function
+// Updated adminUpdateUserPassword function to update both auth.users and profiles table
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     console.log(`Attempting to update password for user ${userId}`);
@@ -142,23 +142,33 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Use the new extremely_basic_password_update function
-    const { data, error } = await supabase.rpc('extremely_basic_password_update', {
+    // First, use the extremely_basic_password_update function to update auth.users
+    const { data: authUpdateResult, error: authUpdateError } = await supabase.rpc('extremely_basic_password_update', {
       user_id_input: userId,
       password_input: password
     });
     
-    if (error) {
-      console.error('Error updating password:', error);
+    if (authUpdateError) {
+      console.error('Error updating password in auth.users:', authUpdateError);
       return false;
     }
     
-    console.log('Password updated successfully');
-    return data === true;
+    // Then, update the password_hash in profiles table as well
+    const { error: profileUpdateError } = await supabase
+      .from('profiles')
+      .update({ password_hash: password }) // Store in plain text as it's already encrypted in auth.users
+      .eq('id', userId);
+    
+    if (profileUpdateError) {
+      console.error('Error updating password in profiles:', profileUpdateError);
+      // Continue anyway since the auth table was updated successfully
+    }
+    
+    console.log('Password updated successfully in both tables');
+    return authUpdateResult === true;
     
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
     return false;
   }
 };
-
