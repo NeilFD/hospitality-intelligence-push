@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import { UserProfile } from '@/types/supabase-types';
@@ -58,8 +59,8 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Call the RPC function
-    const { data, error } = await supabase.rpc(
+    // Call the RPC function with explicit type annotation for the response
+    const { data, error } = await supabase.rpc<boolean>(
       'admin_update_user_password',
       {
         user_id: userId,
@@ -72,8 +73,11 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       throw error;
     }
     
+    // Log the result for debugging
     console.log('Password update result:', data);
-    return !!data; // Convert to boolean
+    
+    // The RPC returns a boolean indicating success
+    return data === true;
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
     throw e;
