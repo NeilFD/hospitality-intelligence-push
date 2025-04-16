@@ -64,8 +64,8 @@ export const adminUpdateUserPassword = async (
     // Log the user ID to verify it's correct
     console.log('User ID for password update:', userId);
     
-    // Try the update_user_password_fallback function which is confirmed to exist
-    const { data, error } = await supabase.rpc('update_user_password_fallback', {
+    // First try our new simple_password_update function
+    const { data, error } = await supabase.rpc('simple_password_update', {
       user_id: userId,
       password: password
     });
@@ -73,16 +73,30 @@ export const adminUpdateUserPassword = async (
     if (error) {
       console.error('Password update error:', error);
       
-      // Try the original function as last resort
-      console.log('Trying original admin_update_user_password as fallback');
-      const { data: fallbackData, error: fallbackError } = await supabase.rpc('admin_update_user_password', {
+      // Try the update_user_password_fallback function as a fallback
+      console.log('Trying update_user_password_fallback as fallback');
+      const { data: fallbackData, error: fallbackError } = await supabase.rpc('update_user_password_fallback', {
         user_id: userId,
         password: password
       });
       
       if (fallbackError) {
         console.error('Fallback password update failed:', fallbackError);
-        return false;
+        
+        // As a last resort, try admin_update_user_password
+        console.log('Trying admin_update_user_password as a last resort');
+        const { data: lastResortData, error: lastResortError } = await supabase.rpc('admin_update_user_password', {
+          user_id: userId,
+          password: password
+        });
+        
+        if (lastResortError) {
+          console.error('Last resort password update failed:', lastResortError);
+          return false;
+        }
+        
+        console.log('Last resort password update result:', lastResortData);
+        return lastResortData === true;
       }
       
       console.log('Fallback password update result:', fallbackData);
