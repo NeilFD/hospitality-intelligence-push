@@ -71,7 +71,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("Registration metadata:", metadata);
       
-      // Let's simplify the signup process
+      // Only perform the signup, don't try to create a profile immediately
       const { data, error } = await signUp(values.email, values.password, metadata);
       
       if (error) {
@@ -98,7 +98,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         onRegistrationComplete(data.user.id, metadata);
       }
       
-      toast.success('Account created successfully! Please log in to continue.');
+      toast.success('Account created successfully! Please check your email for confirmation link and then log in.');
       navigate('/login');
       
     } catch (err: any) {

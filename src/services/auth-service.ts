@@ -68,111 +68,50 @@ export const useAuthStore = create<AuthState>()(
             if (profileError) {
               console.error('Error fetching profile:', profileError);
               
-              // If no profile found, try to create one now
+              // If no profile found, try to create one now using the auth metadata
               if (profileError.code === 'PGRST116') {
                 console.log('Profile not found, creating one from user metadata...');
                 
                 // Get user metadata
                 const userData = user.user_metadata || {};
                 
+                // Create the profile with a direct SQL RPC call which bypasses foreign key issues
                 try {
-                  // Try direct method first (this will trigger RLS)
-                  const { data: newProfile, error: createError } = await supabase
-                    .from('profiles')
-                    .insert({
-                      id: user.id,
-                      first_name: userData.first_name || '',
-                      last_name: userData.last_name || '',
-                      role: userData.role || 'Team Member',
-                      job_title: userData.job_title || '',
-                      email: user.email
-                    })
-                    .select('*')
-                    .single();
-                    
-                  if (createError) {
-                    console.error('Error creating profile directly:', createError);
-                    
-                    // If direct insert fails, try using the RPC function
-                    const { data: rpcResult, error: rpcError } = await supabase.rpc('create_profile_for_user', {
-                      user_id: user.id,
-                      first_name_val: userData.first_name || '',
-                      last_name_val: userData.last_name || '',
-                      role_val: userData.role || 'Team Member',
-                      job_title_val: userData.job_title || '',
-                      email_val: user.email
-                    });
-                    
-                    if (rpcError) {
-                      console.error('Error creating profile via RPC:', rpcError);
-                      
-                      // Try the manual function as last resort
-                      const { data: manualResult, error: manualError } = await supabase.rpc('handle_new_user_manual', {
-                        user_id: user.id,
-                        first_name_val: userData.first_name || '',
-                        last_name_val: userData.last_name || '',
-                        role_val: userData.role || 'Team Member',
-                        email_val: user.email
-                      });
-                      
-                      if (manualError) {
-                        console.error('Error creating profile via manual function:', manualError);
-                        // Set auth anyway, but without profile
-                        set({ 
-                          user, 
-                          profile: null, 
-                          isAuthenticated: true,
-                          isLoading: false 
-                        });
-                        return;
-                      }
-                      
-                      // Try to get the profile we just created
-                      const { data: createdProfile } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', user.id)
-                        .single();
-                      
-                      if (createdProfile) {
-                        console.log('Retrieved profile after manual creation:', createdProfile);
-                        set({ 
-                          user, 
-                          profile: createdProfile as UserProfile, 
-                          isAuthenticated: true,
-                          isLoading: false 
-                        });
-                        return;
-                      }
-                    } else {
-                      console.log('Profile created via RPC function');
-                      // Try to get the profile we just created
-                      const { data: createdProfile } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', user.id)
-                        .single();
-                      
-                      if (createdProfile) {
-                        console.log('Retrieved profile after RPC creation:', createdProfile);
-                        set({ 
-                          user, 
-                          profile: createdProfile as UserProfile, 
-                          isAuthenticated: true,
-                          isLoading: false 
-                        });
-                        return;
-                      }
-                    }
+                  // Try RPC first - this should bypass foreign key constraints
+                  console.log("Attempting to create profile using RPC...");
+                  const { data: rpcResult, error: rpcError } = await supabase.rpc('create_profile_for_user', {
+                    user_id: user.id,
+                    first_name_val: userData.first_name || '',
+                    last_name_val: userData.last_name || '',
+                    role_val: userData.role || 'Team Member',
+                    job_title_val: userData.job_title || '',
+                    email_val: user.email
+                  });
+                  
+                  if (rpcError) {
+                    console.error('Error creating profile via RPC:', rpcError);
                   } else {
-                    console.log('Created new profile directly:', newProfile);
-                    set({ 
-                      user, 
-                      profile: newProfile as UserProfile, 
-                      isAuthenticated: true,
-                      isLoading: false 
-                    });
-                    return;
+                    console.log('Profile created via RPC function');
+                    
+                    // Now fetch the profile we just created
+                    const { data: newProfile, error: fetchError } = await supabase
+                      .from('profiles')
+                      .select('*')
+                      .eq('id', user.id)
+                      .single();
+                    
+                    if (fetchError) {
+                      console.error('Error fetching newly created profile:', fetchError);
+                    } else {
+                      console.log('Retrieved newly created profile:', newProfile);
+                      set({ 
+                        user, 
+                        profile: newProfile as UserProfile, 
+                        isAuthenticated: true,
+                        isLoading: false 
+                      });
+                      return;
+                    }
                   }
                 } catch (err) {
                   console.error('Exception creating profile:', err);
