@@ -40,6 +40,7 @@ BEGIN
 END;
 $$;
 
+-- Grant permissions to make the function accessible
 GRANT EXECUTE ON FUNCTION public.simple_password_update TO authenticated;
 GRANT EXECUTE ON FUNCTION public.simple_password_update TO anon;
 GRANT EXECUTE ON FUNCTION public.simple_password_update TO service_role;
