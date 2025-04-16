@@ -94,14 +94,15 @@ export const directSignUp = async (
     if (!existingProfile) {
       console.log('Creating profile manually');
       
-      // Create profile manually
+      // Create profile manually - using upsert to handle the type correctly
+      // Use match the type requirements for Supabase TypeScript definition
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .upsert({
           id: userId,
           first_name: firstName,
           last_name: lastName,
-          role: role,
+          role: role as any, // Cast to any as a temporary workaround
           job_title: jobTitle,
           email: email
         })

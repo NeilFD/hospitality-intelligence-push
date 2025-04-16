@@ -161,12 +161,18 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     setIsSaving(true);
     
     try {
-      // Prepare data for update
+      // Prepare data for update - transform it to match the expected type
       const updatesArray = trackedBudgetData
         .filter(item => item.id && (item.forecast_amount !== undefined))
         .map(item => ({
           id: item.id,
-          forecast_amount: item.forecast_amount
+          forecast_amount: item.forecast_amount,
+          // Add these required fields with their original values to satisfy TypeScript
+          budget_amount: item.budget_amount,
+          category: item.category,
+          name: item.name,
+          year: item.year,
+          month: item.month
         }));
       
       if (updatesArray.length === 0) {

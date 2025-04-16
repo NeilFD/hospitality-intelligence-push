@@ -41,12 +41,13 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
         
         if (data && Array.isArray(data)) {
           console.log('Fetched permission matrix (array):', data);
-          setMatrix(data);
+          // Cast the data to the expected type
+          setMatrix(data as PermissionMatrix[]);
         } else if (data) {
           // Handle case where data is not an array (e.g., JSON object)
           console.log('Fetched permission matrix (non-array):', data);
           // Try to use the data as is, it might be already in the correct format
-          setMatrix(Array.isArray(data) ? data : [data]);
+          setMatrix(Array.isArray(data) ? data as PermissionMatrix[] : [data] as PermissionMatrix[]);
         } else {
           // If no data returned but also no error, use the initial data
           console.log('Using initial permission matrix data');
@@ -128,7 +129,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
       
       // Call the RPC function directly using Supabase client
       const { data, error: updateError } = await supabase.rpc('update_permission_matrix', {
-        matrix: matrix
+        matrix: JSON.stringify(matrix)
       });
       
       if (updateError) {
