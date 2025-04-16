@@ -4,7 +4,8 @@ CREATE OR REPLACE FUNCTION public.handle_new_user_manual(
   user_id UUID,
   first_name_val TEXT,
   last_name_val TEXT,
-  role_val TEXT
+  role_val TEXT,
+  email_val TEXT DEFAULT NULL
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -15,7 +16,7 @@ DECLARE
   success BOOLEAN := FALSE;
 BEGIN
   -- Log the attempt to create a profile for debugging
-  RAISE LOG 'Manually creating profile for user ID: %, with name: % %', user_id, first_name_val, last_name_val;
+  RAISE LOG 'Manually creating profile for user ID: %, with name: % %, email: %', user_id, first_name_val, last_name_val, email_val;
   
   -- Insert user profile with explicit type casting for the role
   INSERT INTO public.profiles (
@@ -23,14 +24,16 @@ BEGIN
     first_name, 
     last_name,
     role,
-    job_title
+    job_title,
+    email
   )
   VALUES (
     user_id, 
     first_name_val, 
     last_name_val,
     (role_val)::user_role,
-    ''
+    '',
+    email_val
   );
   
   RAISE LOG 'Profile manually created successfully for user ID: %', user_id;
@@ -60,14 +63,16 @@ BEGIN
     first_name, 
     last_name,
     role,
-    job_title
+    job_title,
+    email
   )
   VALUES (
     new.id, 
     COALESCE(new.raw_user_meta_data->>'first_name', ''), 
     COALESCE(new.raw_user_meta_data->>'last_name', ''),
     (COALESCE(new.raw_user_meta_data->>'role', 'Team Member'))::user_role,
-    COALESCE(new.raw_user_meta_data->>'job_title', '')
+    COALESCE(new.raw_user_meta_data->>'job_title', ''),
+    COALESCE(new.raw_user_meta_data->>'email', new.email)
   );
   
   RAISE LOG 'Profile created successfully for user ID: %', new.id;

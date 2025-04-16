@@ -64,15 +64,16 @@ export const useAuthStore = create<AuthState>()(
               .eq('id', user.id)
               .single();
               
-            if (profileError && profileError.code !== 'PGRST116') {
+            if (profileError) {
               console.error('Error fetching profile:', profileError);
               
-              // If the profile doesn't exist but the user does, try to create a profile
-              if (profileError.code === 'PGRST104') {
+              // If no profile found, create a simple one as fallback
+              if (profileError.code === 'PGRST116') {
                 console.log('Profile not found, attempting to create one...');
                 try {
                   const userData = user.user_metadata || {};
                   
+                  // Create a simple profile with just the essentials
                   const { data: newProfile, error: createError } = await supabase
                     .from('profiles')
                     .insert({
@@ -80,13 +81,15 @@ export const useAuthStore = create<AuthState>()(
                       first_name: userData.first_name || '',
                       last_name: userData.last_name || '',
                       role: userData.role || 'Team Member',
-                      job_title: userData.job_title || ''
+                      email: user.email
                     })
                     .select('*')
                     .single();
                     
                   if (createError) {
                     console.error('Error creating profile:', createError);
+                    set({ isLoading: false, error: createError.message });
+                    return;
                   } else {
                     console.log('Created new profile:', newProfile);
                     set({ 
@@ -97,10 +100,20 @@ export const useAuthStore = create<AuthState>()(
                     });
                     return;
                   }
-                } catch (createErr) {
-                  console.error('Exception creating profile:', createErr);
+                } catch (err) {
+                  console.error('Exception creating profile:', err);
                 }
               }
+              
+              // We couldn't find or create a profile, but we still have a valid auth user
+              // Let's proceed with authentication but with a null profile
+              set({ 
+                user, 
+                profile: null, 
+                isAuthenticated: true,
+                isLoading: false 
+              });
+              return;
             }
             
             set({ 
@@ -162,7 +175,8 @@ export const useAuthStore = create<AuthState>()(
             options: {
               data: {
                 first_name: firstName,
-                last_name: lastName
+                last_name: lastName,
+                email: email
               }
             }
           });
@@ -170,6 +184,7 @@ export const useAuthStore = create<AuthState>()(
           if (error) throw error;
           
           // If sign up successful, load the user profile
+          // The database trigger should have created the profile
           await get().loadUser();
           
         } catch (error: any) {
