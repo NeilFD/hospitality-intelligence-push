@@ -18,8 +18,8 @@ interface RecipeFormDialogProps {
   onSave: (recipe: Recipe) => void;
   recipe?: Recipe;
   moduleType: 'food' | 'beverage' | 'hospitality';
-  categories?: MenuCategory[] | string[];
-  allergens?: AllergenType[] | string[];
+  categories: MenuCategory[] | string[];
+  allergens: AllergenType[] | string[];
 }
 
 const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({

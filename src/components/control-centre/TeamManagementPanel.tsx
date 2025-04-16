@@ -184,16 +184,22 @@ const TeamManagementPanel: React.FC = () => {
           return;
         }
         
-        console.log('Starting password update for user:', selectedUser.id);
-        const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
-        
-        console.log('Password update result:', result);
-        
-        if (!result) {
-          toast.error('Password update failed - please check console logs for details');
+        try {
+          console.log('Calling adminUpdateUserPassword for user:', selectedUser.id);
+          const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
+          
+          console.log('Password update result:', result);
+          
+          if (!result) {
+            toast.error('Password update failed - user may not exist in auth table');
+            passwordUpdateSuccess = false;
+          } else {
+            toast.success('Password has been updated successfully');
+          }
+        } catch (err) {
+          console.error('Exception during password update:', err);
+          toast.error('Error updating password: ' + (err instanceof Error ? err.message : String(err)));
           passwordUpdateSuccess = false;
-        } else {
-          toast.success('Password has been updated successfully');
         }
       }
       

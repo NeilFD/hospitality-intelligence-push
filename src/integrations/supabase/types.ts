@@ -1741,10 +1741,6 @@ export type Database = {
         Args: { matrix: Json }
         Returns: undefined
       }
-      update_user_password_fallback: {
-        Args: { user_id: string; password: string }
-        Returns: boolean
-      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string

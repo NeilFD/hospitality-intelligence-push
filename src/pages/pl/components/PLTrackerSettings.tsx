@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -7,7 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/kitchen-service';
 import { ProcessedBudgetItem } from '../hooks/useBudgetData';
-import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
+
+interface PLTrackerBudgetItem extends ProcessedBudgetItem {
+  tracking_type: 'Discrete' | 'Pro-Rated';
+}
 
 interface PLTrackerSettingsProps {
   isLoading: boolean;
@@ -33,22 +37,16 @@ export function PLTrackerSettings({
 
   const loadTrackingSettings = async (items: ProcessedBudgetItem[]): Promise<PLTrackerBudgetItem[]> => {
     try {
-      const itemIds = items.filter(item => item.id).map(item => item.id as string);
+      const itemIds = items.filter(item => item.id).map(item => item.id);
       
       if (itemIds.length === 0) {
         return items.map(item => ({
           ...item,
-          tracking_type: 'Discrete' as const,
-          name: item.name,
-          id: item.id,
-          budget_amount: item.budget_amount,
-          isHeader: item.isHeader || false,
-          isGrossProfit: item.isGrossProfit || false,
-          isOperatingProfit: item.isOperatingProfit || false
+          tracking_type: 'Discrete' as const
         }));
       }
       
-      const trackingData = await fetchBudgetItemTracking(itemIds);
+      const trackingData = await fetchBudgetItemTracking(itemIds as string[]);
       
       if (trackingData && trackingData.length > 0) {
         const trackingMap = trackingData.reduce((acc, curr) => {
@@ -60,49 +58,25 @@ export function PLTrackerSettings({
           if (item.id && trackingMap[item.id]) {
             return {
               ...item,
-              tracking_type: trackingMap[item.id] as 'Discrete' | 'Pro-Rated',
-              name: item.name,
-              id: item.id,
-              budget_amount: item.budget_amount,
-              isHeader: item.isHeader || false,
-              isGrossProfit: item.isGrossProfit || false,
-              isOperatingProfit: item.isOperatingProfit || false
+              tracking_type: trackingMap[item.id] as 'Discrete' | 'Pro-Rated'
             };
           }
           return {
             ...item,
-            tracking_type: 'Discrete' as const,
-            name: item.name,
-            id: item.id,
-            budget_amount: item.budget_amount,
-            isHeader: item.isHeader || false,
-            isGrossProfit: item.isGrossProfit || false,
-            isOperatingProfit: item.isOperatingProfit || false
+            tracking_type: 'Discrete' as const
           };
         });
       }
       
       return items.map(item => ({
         ...item,
-        tracking_type: 'Discrete' as const,
-        name: item.name,
-        id: item.id,
-        budget_amount: item.budget_amount,
-        isHeader: item.isHeader || false,
-        isGrossProfit: item.isGrossProfit || false,
-        isOperatingProfit: item.isOperatingProfit || false
+        tracking_type: 'Discrete' as const
       }));
     } catch (error) {
       console.error('Error in loadTrackingSettings:', error);
       return items.map(item => ({
         ...item,
-        tracking_type: 'Discrete' as const,
-        name: item.name,
-        id: item.id,
-        budget_amount: item.budget_amount,
-        isHeader: item.isHeader || false,
-        isGrossProfit: item.isGrossProfit || false,
-        isOperatingProfit: item.isOperatingProfit || false
+        tracking_type: 'Discrete' as const
       }));
     }
   };
@@ -333,3 +307,4 @@ export function PLTrackerSettings({
     </Card>
   );
 }
+
