@@ -190,7 +190,7 @@ const TeamManagementPanel: React.FC = () => {
           
           console.log('Password update result:', result);
           
-          if (!result) {
+          if (result === false) {
             toast.error('Password update failed - user may not exist in auth table');
             passwordUpdateSuccess = false;
           } else {
