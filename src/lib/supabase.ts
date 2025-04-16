@@ -142,8 +142,24 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Directly update the password in auth.users using the PostgreSQL function
-    // This approach bypasses any middleware and ensures the password is properly hashed
+    // First, try to clean up any potential plaintext password in the profiles table
+    // This is just to fix any previous bad data
+    try {
+      await supabase
+        .from('profiles')
+        .update({ 
+          password_hash: null,  // Set to null to remove any plaintext password
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', userId);
+        
+      console.log('Cleaned up profiles table password data');
+    } catch (cleanupErr) {
+      // Just log, don't fail the whole operation
+      console.log('Note: Error during profiles cleanup:', cleanupErr);
+    }
+    
+    // Now use the RPC function to update the password in auth.users
     const { data, error } = await supabase.rpc('extremely_basic_password_update', {
       user_id_input: userId,
       password_input: password
@@ -157,13 +173,6 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     // Log the result for debugging
     console.log('Password update response:', data);
     
-    // Update the timestamp in profiles to indicate password was updated
-    await supabase
-      .from('profiles')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', userId);
-    
-    console.log('Password updated successfully in auth.users table');
     return data === true;
     
   } catch (e) {
