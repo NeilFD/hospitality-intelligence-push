@@ -298,6 +298,8 @@ const TeamManagementPanel: React.FC = () => {
       
       const newUserId = crypto.randomUUID();
       
+      console.log('Creating new profile with ID:', newUserId);
+      
       const { data, error } = await supabase.rpc('create_profile_for_user', {
         user_id: newUserId,
         first_name_val: newProfileForm.firstName,
@@ -314,6 +316,7 @@ const TeamManagementPanel: React.FC = () => {
       }
 
       if (data === false) {
+        console.error('Profile creation returned false');
         toast.error('Failed to create profile - operation unsuccessful');
         return;
       }
