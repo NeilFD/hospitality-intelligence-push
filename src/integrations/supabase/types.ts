@@ -1544,6 +1544,10 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
+      check_and_clean_auth_user: {
+        Args: { email_val: string; should_delete?: boolean }
+        Returns: boolean
+      }
       check_trigger_exists: {
         Args: { trigger_name: string }
         Returns: boolean

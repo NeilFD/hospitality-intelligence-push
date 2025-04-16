@@ -296,6 +296,33 @@ const TeamManagementPanel: React.FC = () => {
     try {
       setLoading(true);
       
+      const { data: existingAuthUser, error: checkError } = await supabase
+        .from('auth.users')
+        .select('id, email')
+        .eq('email', newProfileForm.email)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing user:', checkError);
+        toast.error('Failed to check existing user');
+        return;
+      }
+
+      if (existingAuthUser) {
+        console.log('Auth user with this email already exists:', existingAuthUser);
+        
+        const { data: cleanResult, error: cleanError } = await supabase.rpc('check_and_clean_auth_user', {
+          email_val: newProfileForm.email,
+          should_delete: true
+        });
+
+        if (cleanError) {
+          console.error('Error cleaning existing user:', cleanError);
+          toast.error('Failed to clean existing user');
+          return;
+        }
+      }
+      
       const { data: newUserId, error } = await supabase.rpc('create_profile_with_auth', {
         first_name_val: newProfileForm.firstName,
         last_name_val: newProfileForm.lastName,
@@ -312,7 +339,7 @@ const TeamManagementPanel: React.FC = () => {
 
       if (!newUserId) {
         console.error('Profile creation failed, no ID returned');
-        toast.error('Failed to create profile - the email might already be in use');
+        toast.error('Failed to create profile - unknown error');
         return;
       }
       
@@ -329,7 +356,7 @@ const TeamManagementPanel: React.FC = () => {
       
       toast.success('Profile created successfully');
     } catch (error) {
-      console.error('Error creating profile:', error);
+      console.error('Unexpected error creating profile:', error);
       toast.error('Failed to create profile');
     } finally {
       setLoading(false);
