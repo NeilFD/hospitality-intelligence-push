@@ -64,7 +64,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     
     // Try using the main password update function first
     console.log('Trying main password update function...');
-    const { data, error } = await supabase.rpc<boolean>('admin_update_user_password', {
+    const { data, error } = await supabase.rpc('admin_update_user_password', {
       user_id: userId,
       password: password
     });
@@ -75,7 +75,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       // If the main function fails, try the fallback function immediately
       console.log('Attempting fallback password update method...');
       try {
-        const { data: fallbackData, error: fallbackError } = await supabase.rpc<boolean>('update_user_password_fallback', {
+        const { data: fallbackData, error: fallbackError } = await supabase.rpc('update_user_password_fallback', {
           user_id: userId,
           password: password
         });
