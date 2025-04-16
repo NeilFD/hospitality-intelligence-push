@@ -296,12 +296,7 @@ const TeamManagementPanel: React.FC = () => {
     try {
       setLoading(true);
       
-      const newUserId = crypto.randomUUID();
-      
-      console.log('Creating new profile with ID:', newUserId);
-      
-      const { data, error } = await supabase.rpc('create_profile_for_user', {
-        user_id: newUserId,
+      const { data: newUserId, error } = await supabase.rpc('create_profile_without_auth', {
         first_name_val: newProfileForm.firstName,
         last_name_val: newProfileForm.lastName,
         role_val: newProfileForm.role,
@@ -310,14 +305,14 @@ const TeamManagementPanel: React.FC = () => {
       });
       
       if (error) {
-        console.error('Error creating profile via RPC:', error);
+        console.error('Error creating profile:', error);
         toast.error('Failed to create profile: ' + error.message);
         return;
       }
 
-      if (data === false) {
-        console.error('Profile creation returned false');
-        toast.error('Failed to create profile - operation unsuccessful');
+      if (!newUserId) {
+        console.error('Profile creation failed, no ID returned');
+        toast.error('Failed to create profile - the email might already be in use');
         return;
       }
       

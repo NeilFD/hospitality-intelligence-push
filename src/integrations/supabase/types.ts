@@ -1567,6 +1567,16 @@ export type Database = {
             }
         Returns: boolean
       }
+      create_profile_without_auth: {
+        Args: {
+          first_name_val: string
+          last_name_val: string
+          role_val: string
+          job_title_val: string
+          email_val: string
+        }
+        Returns: string
+      }
       duplicate_database_structure: {
         Args: Record<PropertyKey, never>
         Returns: string
