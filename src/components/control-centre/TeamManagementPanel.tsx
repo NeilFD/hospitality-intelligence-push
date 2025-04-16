@@ -186,22 +186,33 @@ const TeamManagementPanel: React.FC = () => {
         }
       }
       
-      if (editForm.password && canManageUsers) {
+      if (editForm.password && editForm.password.trim() !== '' && canManageUsers) {
+        console.log(`Attempting to update password for user ${selectedUser.id}`);
+        
         try {
-          const { error: passwordError } = await supabase.rpc('admin_update_user_password', {
-            user_id: selectedUser.id,
-            password: editForm.password
-          });
+          const { data: passwordData, error: passwordError } = await supabase.rpc(
+            'admin_update_user_password',
+            {
+              user_id: selectedUser.id,
+              password: editForm.password.trim()
+            }
+          );
+          
+          console.log('Password update response:', passwordData, passwordError);
           
           if (passwordError) {
             console.error('Error updating password:', passwordError);
-            toast.error('Failed to update password. Make sure it meets the requirements.');
+            toast.error('Failed to update password: ' + passwordError.message);
+          } else if (passwordData === true) {
+            console.log('Password successfully updated');
+            toast.success('Password has been updated successfully');
           } else {
-            toast.success('Password has been updated');
+            console.warn('Password update returned false', passwordData);
+            toast.warning('Password update may not have been applied');
           }
         } catch (passwordErr) {
           console.error('Exception in password update:', passwordErr);
-          toast.error('Failed to update password due to an unexpected error');
+          toast.error('Unexpected error updating password');
         }
       }
       
