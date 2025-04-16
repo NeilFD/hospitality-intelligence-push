@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -58,6 +57,8 @@ const TeamManagementPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [isAddProfileDialogOpen, setIsAddProfileDialogOpen] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   
   const [editForm, setEditForm] = useState({
     firstName: '',
@@ -68,6 +69,14 @@ const TeamManagementPanel: React.FC = () => {
     favouriteDish: '',
     favouriteDrink: '',
     aboutMe: ''
+  });
+  
+  const [newProfileForm, setNewProfileForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: 'Team Member' as UserRoleType,
+    jobTitle: '',
   });
   
   const isGod = currentUserProfile?.role === 'GOD';
@@ -278,6 +287,87 @@ const TeamManagementPanel: React.FC = () => {
     setIsDeleteDialogOpen(true);
   };
   
+  const handleCreateProfile = async () => {
+    if (!newProfileForm.firstName || !newProfileForm.lastName || !newProfileForm.email) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const newUserId = crypto.randomUUID();
+      
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          id: newUserId,
+          first_name: newProfileForm.firstName,
+          last_name: newProfileForm.lastName,
+          email: newProfileForm.email,
+          role: newProfileForm.role,
+          job_title: newProfileForm.jobTitle,
+        });
+        
+      if (error) throw error;
+      
+      setNewProfileForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        role: 'Team Member',
+        jobTitle: '',
+      });
+      
+      setIsAddProfileDialogOpen(false);
+      fetchTeamMembers();
+      
+      toast.success('Profile created successfully');
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      toast.error('Failed to create profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+  
+  const openEmailDialog = (user: UserProfile) => {
+    setSelectedUser(user);
+    setIsEmailDialogOpen(true);
+  };
+  
+  const getSignupInstructions = (user: UserProfile | null) => {
+    if (!user) return '';
+    
+    return `Hello ${user.first_name},
+
+We've created an account for you in our team management system.
+
+To get started:
+1. Go to: ${window.location.origin}/login
+2. Enter your email: ${user.email}
+3. Click "Forgot Password" to set your initial password
+4. Follow the instructions in the email you receive
+
+Looking forward to having you on the team!
+
+Best regards,
+${currentUserProfile?.first_name || 'The Management Team'}`;
+  };
+  
+  const handleOpenEmail = (user: UserProfile | null) => {
+    if (!user || !user.email) return;
+    
+    const subject = 'Your New Account Details';
+    const body = encodeURIComponent(getSignupInstructions(user));
+    window.open(`mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${body}`);
+  };
+  
   return (
     <>
       <Card>
@@ -290,6 +380,18 @@ const TeamManagementPanel: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {canManageUsers && (
+            <div className="mb-6">
+              <Button 
+                onClick={() => setIsAddProfileDialogOpen(true)} 
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add Full Profile
+              </Button>
+            </div>
+          )}
+          
           {loading ? (
             <div className="flex justify-center p-6">
               <p>Loading team members...</p>
@@ -315,6 +417,7 @@ const TeamManagementPanel: React.FC = () => {
                         </Avatar>
                         <div>
                           <p className="font-medium">{member.first_name} {member.last_name}</p>
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -322,31 +425,43 @@ const TeamManagementPanel: React.FC = () => {
                     <TableCell>{member.job_title || '-'}</TableCell>
                     {canManageUsers && (
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              onClick={() => openEditDialog(member)}
-                              disabled={member.role === 'GOD' && !isGod}
-                            >
-                              <UserCog className="mr-2 h-4 w-4" />
-                              Edit User
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => openDeleteDialog(member)}
-                              disabled={member.role === 'GOD' && !isGod}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => openEmailDialog(member)}
+                            title="Send Instructions Email"
+                          >
+                            <Mail className="h-4 w-4" />
+                            <span className="sr-only">Email</span>
+                          </Button>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                onClick={() => openEditDialog(member)}
+                                disabled={member.role === 'GOD' && !isGod}
+                              >
+                                <UserCog className="mr-2 h-4 w-4" />
+                                Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => openDeleteDialog(member)}
+                                disabled={member.role === 'GOD' && !isGod}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete User
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -547,6 +662,138 @@ const TeamManagementPanel: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Dialog open={isAddProfileDialogOpen} onOpenChange={setIsAddProfileDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Team Member</DialogTitle>
+            <DialogDescription>
+              Create a new team member profile directly in the system.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="required">First Name</Label>
+                <Input 
+                  id="firstName" 
+                  value={newProfileForm.firstName}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, firstName: e.target.value})}
+                  placeholder="First name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="required">Last Name</Label>
+                <Input 
+                  id="lastName" 
+                  value={newProfileForm.lastName}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, lastName: e.target.value})}
+                  placeholder="Last name"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email" className="required">Email</Label>
+              <Input 
+                id="email" 
+                type="email"
+                value={newProfileForm.email}
+                onChange={(e) => setNewProfileForm({...newProfileForm, email: e.target.value})}
+                placeholder="Email address"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select 
+                  value={newProfileForm.role} 
+                  onValueChange={(value: UserRoleType) => setNewProfileForm({...newProfileForm, role: value})}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isGod && (
+                      <>
+                        <SelectItem value="GOD">GOD</SelectItem>
+                        <SelectItem value="Super User">Super User</SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Team Member">Team Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input 
+                  id="jobTitle" 
+                  value={newProfileForm.jobTitle}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
+                  placeholder="Job title"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddProfileDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateProfile}
+              disabled={loading}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              {loading ? 'Creating...' : 'Create Profile'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Account Instructions</DialogTitle>
+            <DialogDescription>
+              Instructions for {selectedUser?.first_name} {selectedUser?.last_name} to set up their account.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-3 bg-muted rounded-md relative">
+              <pre className="text-xs whitespace-pre-wrap">{getSignupInstructions(selectedUser)}</pre>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2" 
+                onClick={() => handleCopyToClipboard(getSignupInstructions(selectedUser))}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => handleOpenEmail(selectedUser)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Open Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
