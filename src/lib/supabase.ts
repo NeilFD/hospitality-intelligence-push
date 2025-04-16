@@ -60,62 +60,21 @@ export const adminUpdateUserPassword = async (
       return false;
     }
     
-    // Log the user ID to verify it's correct
-    console.log('User ID for password update:', userId);
+    // Use our new direct password update function
+    console.log('Using direct_password_update function with user ID:', userId);
     
-    // Direct SQL approach using our existing create_auth_user_if_not_exists function
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', userId)
-      .single();
-    
-    if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      return false;
-    }
-    
-    if (!profile || !profile.email) {
-      console.error('Profile has no email address');
-      return false;
-    }
-    
-    console.log('Found profile with email:', profile.email);
-    
-    // Try to create/update auth user first with detailed logging
-    console.log('Calling create_auth_user_if_not_exists with:', {
+    const { data: result, error } = await supabase.rpc('direct_password_update', {
       user_id_val: userId,
-      email_val: profile.email,
-      password_val: '***' // Don't log actual password
-    });
-    
-    const { data: createResult, error: createError } = await supabase.rpc('create_auth_user_if_not_exists', {
-      user_id_val: userId,
-      email_val: profile.email,
       password_val: password
     });
     
-    if (createError) {
-      console.error('Error details from create_auth_user_if_not_exists:', createError);
-      
-      // Fallback to the simple password update
-      console.log('Falling back to simple_password_update');
-      const { data, error } = await supabase.rpc('simple_password_update', {
-        user_id: userId,
-        password: password
-      });
-      
-      if (error) {
-        console.error('Simple password update also failed:', error);
-        return false;
-      }
-      
-      console.log('Direct password update result:', data);
-      return data === true;
+    if (error) {
+      console.error('Error updating password with direct_password_update:', error);
+      return false;
     }
     
-    console.log('Auth user created/updated with result:', createResult);
-    return createResult === true;
+    console.log('Password update result:', result);
+    return result === true;
     
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);

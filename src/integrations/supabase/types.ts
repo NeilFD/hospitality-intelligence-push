@@ -1595,6 +1595,10 @@ export type Database = {
         }
         Returns: string
       }
+      direct_password_update: {
+        Args: { user_id_val: string; password_val: string }
+        Returns: boolean
+      }
       duplicate_database_structure: {
         Args: Record<PropertyKey, never>
         Returns: string
