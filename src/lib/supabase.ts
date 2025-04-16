@@ -140,6 +140,74 @@ export const updateProfile = async (userId: string, updates: { first_name?: stri
   return data;
 };
 
+// Create a direct signup function without using RPC
+export const directSignUp = async (
+  email: string, 
+  firstName: string, 
+  lastName: string, 
+  role: string,
+  jobTitle: string
+) => {
+  console.log("Creating user with direct signup:", email, firstName, lastName, role);
+  
+  try {
+    // First check if user with this email exists
+    const { data: existingUser, error: checkError } = await supabase
+      .rpc('check_and_clean_auth_user', {
+        email_val: email,
+        should_delete: true
+      });
+      
+    if (checkError) {
+      console.error('Error checking existing user:', checkError);
+    }
+    
+    // Create a new user
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: 'Hi2025!',
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          role: role,
+          job_title: jobTitle,
+          email: email
+        }
+      }
+    });
+    
+    if (error) throw error;
+    
+    console.log("User created with auth:", data);
+    
+    if (!data.user?.id) {
+      throw new Error("No user ID returned from signup");
+    }
+    
+    // Create the profile for this user
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        first_name: firstName,
+        last_name: lastName,
+        role: role,
+        job_title: jobTitle,
+        email: email
+      })
+      .select()
+      .single();
+      
+    if (profileError) throw profileError;
+    
+    return { user: data.user, profile };
+  } catch (error) {
+    console.error("Error in directSignUp:", error);
+    throw error;
+  }
+};
+
 // New function to synchronize tracker_purchases with purchases table
 export const syncTrackerPurchasesToPurchases = async (year: number, month: number, moduleType: 'food' | 'beverage' = 'food') => {
   console.log(`Synchronizing ${moduleType} tracker purchases for ${year}-${month} to purchases table...`);

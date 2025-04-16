@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, MoreVertical, CalendarIcon, Image, Upload, Mail, MessageSquare, Link2 } from 'lucide-react';
-import { supabase, checkProfilesCount } from '@/lib/supabase';
+import { supabase, checkProfilesCount, directSignUp } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/supabase-types';
 import { useAuthStore } from '@/services/auth-service';
@@ -296,50 +296,31 @@ const TeamManagementPanel: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data: cleanResult, error: cleanError } = await supabase.rpc('check_and_clean_auth_user', {
-        email_val: newProfileForm.email,
-        should_delete: true
-      });
-
-      if (cleanError) {
-        console.error('Error cleaning existing user:', cleanError);
+      const result = await directSignUp(
+        newProfileForm.email,
+        newProfileForm.firstName,
+        newProfileForm.lastName,
+        newProfileForm.role,
+        newProfileForm.jobTitle
+      );
+      
+      if (result && result.profile) {
+        setNewProfileForm({
+          firstName: '',
+          lastName: '',
+          email: '',
+          role: 'Team Member',
+          jobTitle: '',
+        });
+        
+        setIsAddProfileDialogOpen(false);
+        await fetchTeamMembers();
+        
+        toast.success('Profile created successfully');
       }
-      
-      const { data: newUserId, error } = await supabase.rpc('create_profile_with_auth', {
-        first_name_val: newProfileForm.firstName,
-        last_name_val: newProfileForm.lastName,
-        role_val: newProfileForm.role,
-        job_title_val: newProfileForm.jobTitle,
-        email_val: newProfileForm.email
-      });
-      
-      if (error) {
-        console.error('Error creating profile with auth:', error);
-        toast.error('Failed to create profile: ' + error.message);
-        return;
-      }
-
-      if (!newUserId) {
-        console.error('Profile creation failed, no ID returned');
-        toast.error('Failed to create profile - unknown error');
-        return;
-      }
-      
-      setNewProfileForm({
-        firstName: '',
-        lastName: '',
-        email: '',
-        role: 'Team Member',
-        jobTitle: '',
-      });
-      
-      setIsAddProfileDialogOpen(false);
-      await fetchTeamMembers();
-      
-      toast.success('Profile created successfully');
     } catch (error) {
       console.error('Unexpected error creating profile:', error);
-      toast.error('Failed to create profile');
+      toast.error('Failed to create profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }
