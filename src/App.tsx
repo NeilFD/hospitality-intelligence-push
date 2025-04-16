@@ -53,17 +53,20 @@ import MasterWeeklyInput from '@/pages/master/WeeklyInput';
 const queryClient = new QueryClient();
 
 function App() {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, loadUser } = useAuthStore();
   const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
+    // Load user data when the app initializes
+    loadUser();
+    
     // Delay the rendering of the Auth component to avoid hydration issues
     const timer = setTimeout(() => {
       setShowAuth(true);
     }, 50);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [loadUser]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">

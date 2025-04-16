@@ -39,6 +39,8 @@ export default function LoginForm() {
     setIsSubmitting(true);
     
     try {
+      console.log(`Attempting to login with email: ${isDevLogin ? 'dev@example.com' : email}`);
+      
       // If dev login is checked, set the email to dev email
       if (isDevLogin) {
         await login('dev@example.com', password);
@@ -46,14 +48,12 @@ export default function LoginForm() {
         await login(email, password);
       }
       
-      // If there's no error and we're authenticated, navigate to home
-      // The isSubmitting state will be reset by the useEffect above
-      if (!error) {
-        navigate('/');
-      }
+      // Navigate to dashboard on successful login
+      // The navigation will happen after loadUser completes in the login function
+      navigate('/');
     } catch (err) {
       // Error is handled by the login function in the store
-      console.error('Login error:', err);
+      console.error('Login form error:', err);
       setIsSubmitting(false);
     }
   };
@@ -148,8 +148,6 @@ export default function LoginForm() {
           {isSubmitting ? 'Logging in...' : 'Login'}
         </Button>
       </motion.div>
-      
-      {/* Register link removed */}
     </form>
   </div>;
 }

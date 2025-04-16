@@ -159,12 +159,19 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
+          console.log(`Attempting to login with email: ${email}`);
+          
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
           });
           
-          if (error) throw error;
+          if (error) {
+            console.error('Login error from Supabase:', error);
+            throw error;
+          }
+          
+          console.log('Login successful, user data:', data.user?.id);
           
           // After successful login, load the user profile
           await get().loadUser();
