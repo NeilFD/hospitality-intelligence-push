@@ -296,31 +296,13 @@ const TeamManagementPanel: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data: existingAuthUser, error: checkError } = await supabase
-        .from('auth.users')
-        .select('id, email')
-        .eq('email', newProfileForm.email)
-        .maybeSingle();
+      const { data: cleanResult, error: cleanError } = await supabase.rpc('check_and_clean_auth_user', {
+        email_val: newProfileForm.email,
+        should_delete: true
+      });
 
-      if (checkError) {
-        console.error('Error checking existing user:', checkError);
-        toast.error('Failed to check existing user');
-        return;
-      }
-
-      if (existingAuthUser) {
-        console.log('Auth user with this email already exists:', existingAuthUser);
-        
-        const { data: cleanResult, error: cleanError } = await supabase.rpc('check_and_clean_auth_user', {
-          email_val: newProfileForm.email,
-          should_delete: true
-        });
-
-        if (cleanError) {
-          console.error('Error cleaning existing user:', cleanError);
-          toast.error('Failed to clean existing user');
-          return;
-        }
+      if (cleanError) {
+        console.error('Error cleaning existing user:', cleanError);
       }
       
       const { data: newUserId, error } = await supabase.rpc('create_profile_with_auth', {
