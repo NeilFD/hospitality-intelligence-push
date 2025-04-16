@@ -296,7 +296,7 @@ const TeamManagementPanel: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data: newUserId, error } = await supabase.rpc('create_profile_without_auth', {
+      const { data: newUserId, error } = await supabase.rpc('create_profile_with_auth', {
         first_name_val: newProfileForm.firstName,
         last_name_val: newProfileForm.lastName,
         role_val: newProfileForm.role,
@@ -305,7 +305,7 @@ const TeamManagementPanel: React.FC = () => {
       });
       
       if (error) {
-        console.error('Error creating profile:', error);
+        console.error('Error creating profile with auth:', error);
         toast.error('Failed to create profile: ' + error.message);
         return;
       }
