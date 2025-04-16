@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useCurrentModule } from '@/lib/store';
+import RequireAuth from '@/components/auth/RequireAuth';
 
 const Index = () => {
   const currentModule = useCurrentModule();
@@ -12,9 +13,9 @@ const Index = () => {
     console.log('Current module in Index:', currentModule);
   }, [currentModule]);
   
-  // If the URL contains "control-centre", don't redirect
+  // If the URL contains "control-centre", redirect to control-centre with proper auth
   if (location.pathname.includes("control-centre")) {
-    return null;
+    return <Navigate to="/control-centre" replace />;
   }
   
   // Create a direct path to the dashboard based on the current module

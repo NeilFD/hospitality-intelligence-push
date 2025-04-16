@@ -8,13 +8,11 @@ import { ThemeSettingsPanel } from '@/components/control-centre/ThemeSettingsPan
 import { TargetSettingsPanel } from '@/components/control-centre/TargetSettingsPanel';
 import TeamManagementPanel from '@/components/control-centre/TeamManagementPanel';
 import RequireAuth from '@/components/auth/RequireAuth';
-import { useAuth } from '@/contexts/AuthContext';
 import { getControlCentreData } from '@/services/control-centre-service';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
 const ControlCentre: React.FC = () => {
   const [activeTab, setActiveTab] = useState('targets');
-  const { isAuthenticated, userRole } = useAuth();
   const [controlCentreData, setControlCentreData] = useState<{
     permissionMatrix: PermissionMatrix[];
     currentTheme: ThemeSettings | null;
@@ -51,50 +49,44 @@ const ControlCentre: React.FC = () => {
     };
   }, []);
 
-  // Only GOD and Super Users can access Control Centre
-  if (!isAuthenticated || (userRole !== 'GOD' && userRole !== 'Super User')) {
-    return (
-      <RequireAuth requiredRole="Super User">
-        <div>You need to be authenticated as a Super User or GOD to access this page.</div>
-      </RequireAuth>
-    );
-  }
-
+  // Wrap the entire Control Centre with RequireAuth that requires Super User or higher
   return (
-    <div className="container mx-auto p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="w-full grid grid-cols-5 gap-2">
-          <TabsTrigger value="targets">Business Targets</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="permissions">Permission Matrix</TabsTrigger>
-          <TabsTrigger value="themes">Theme Settings</TabsTrigger>
-          <TabsTrigger value="database">Database</TabsTrigger>
-        </TabsList>
+    <RequireAuth requiredRole="Super User">
+      <div className="container mx-auto p-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="w-full grid grid-cols-5 gap-2">
+            <TabsTrigger value="targets">Business Targets</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="permissions">Permission Matrix</TabsTrigger>
+            <TabsTrigger value="themes">Theme Settings</TabsTrigger>
+            <TabsTrigger value="database">Database</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="targets">
-          <TargetSettingsPanel targetSettings={controlCentreData.targetSettings} />
-        </TabsContent>
+          <TabsContent value="targets">
+            <TargetSettingsPanel targetSettings={controlCentreData.targetSettings} />
+          </TabsContent>
 
-        <TabsContent value="team">
-          <TeamManagementPanel />
-        </TabsContent>
+          <TabsContent value="team">
+            <TeamManagementPanel />
+          </TabsContent>
 
-        <TabsContent value="permissions">
-          <PermissionMatrixPanel permissionMatrix={controlCentreData.permissionMatrix} />
-        </TabsContent>
+          <TabsContent value="permissions">
+            <PermissionMatrixPanel permissionMatrix={controlCentreData.permissionMatrix} />
+          </TabsContent>
 
-        <TabsContent value="themes">
-          <ThemeSettingsPanel 
-            currentTheme={controlCentreData.currentTheme} 
-            availableThemes={controlCentreData.availableThemes} 
-          />
-        </TabsContent>
+          <TabsContent value="themes">
+            <ThemeSettingsPanel 
+              currentTheme={controlCentreData.currentTheme} 
+              availableThemes={controlCentreData.availableThemes} 
+            />
+          </TabsContent>
 
-        <TabsContent value="database">
-          <DatabasePanel />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="database">
+            <DatabasePanel />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </RequireAuth>
   );
 };
 
