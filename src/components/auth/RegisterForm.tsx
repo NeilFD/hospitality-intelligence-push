@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,9 +59,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     try {
       console.log(`Creating profile directly for user ${userId}`);
       
-      // Wait longer before trying to create the profile - this is key
+      // First, wait much longer for the user record to be fully available in the database
       // The foreign key constraint needs the auth.users record to be fully available
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 7000)); // Increased to 7 seconds
       
       // Attempt 1: Direct insert into profiles table
       const { error: insertError } = await supabase
@@ -81,8 +82,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('Direct profile insert failed:', insertError);
       
-      // Wait a bit more before trying the next method
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait even longer before trying the next method
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Attempt 2: RPC method
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
@@ -104,8 +105,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('RPC create_profile_for_user failed:', rpcError);
       
-      // Wait a bit more before trying the next method
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait even longer before trying the next method
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Attempt 3: Manual method
       const { data: manualResult, error: manualError } = await supabase.rpc(
@@ -126,8 +127,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('handle_new_user_manual failed:', manualError);
       
-      // Wait a bit more before trying the next method
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Wait even longer before trying the next method
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Attempt 4: Final upsert method
       const { error: finalError } = await supabase
@@ -219,17 +220,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       // Significantly longer wait time to ensure the database trigger has a chance to run
       // This allows auth.users record to be completely created and available for foreign key constraints
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 8000)); // Increased to 8 seconds
       
       // Check if profile was created by the trigger
       let profileExists = await verifyProfileCreated(data.user.id);
       
       if (!profileExists) {
         console.log("Profile not created by trigger, attempting manual creation");
-        // Try up to 3 times to create the profile with increasing delays
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          console.log(`Manual profile creation attempt ${attempt} of 3`);
-          await new Promise(resolve => setTimeout(resolve, attempt * 2000)); // Increasing delay
+        // Try up to 5 times to create the profile with increasing delays
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          console.log(`Manual profile creation attempt ${attempt} of 5`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 3000)); // Longer delays
           
           const profileCreated = await createProfileDirectly(data.user.id, metadata);
           if (profileCreated) {
@@ -245,14 +246,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           // One last attempt through the auth store's loadUser method
           try {
             // Wait a bit longer before trying to log in
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Increased to 5 seconds
             
             const { login } = useAuthStore.getState();
             await login(values.email, values.password);
             console.log("Attempted login to trigger profile creation through auth store");
             
             // Check one more time
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             profileExists = await verifyProfileCreated(data.user.id);
           } catch (e) {
             console.error("Failed to auto-login for profile creation:", e);
@@ -272,7 +273,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       try {
         // Wait again before attempting to log in
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Increased to 3 seconds
         await login(values.email, values.password);
         navigate('/');
       } catch (loginError) {
