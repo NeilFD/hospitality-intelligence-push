@@ -53,6 +53,14 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         
         console.log(`Checking permission for module: ${moduleId}, path: ${location.pathname}`);
         
+        // Team Member specific protection - only allow team module
+        if (profile.role === 'Team Member') {
+          const hasAccess = moduleId === 'team';
+          console.log(`Team Member access check for module ${moduleId}: ${hasAccess}`);
+          setHasPermission(hasAccess);
+          return;
+        }
+        
         // Get the module permission for the user's role
         const { data: moduleAccess, error: moduleError } = await supabase
           .from('permission_access')
@@ -111,7 +119,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           }
         }
         
-        // If we couldn't determine the page, default to allowing access since we already have module permission
+        // If we couldn't determine the page, default to allowing access since we already have module access
         if (!matchingPageId) {
           console.log(`No matching page found for path: ${currentPath}, defaulting to module permission`);
           setHasPermission(true);

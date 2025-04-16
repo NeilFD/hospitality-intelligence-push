@@ -27,13 +27,16 @@ const Index = () => {
   }
   
   // Team Members should always have access to the team module
+  if (profile?.role === 'Team Member') {
+    console.log('Team Member detected - redirecting to team dashboard');
+    return <Navigate to="/team/dashboard" replace />;
+  }
+  
+  // For other roles, check the current module
   const fallbackPath = '/team/dashboard';
   
   // Create a direct path to the dashboard based on the current module
-  // For Team Members, always default to team dashboard regardless of currentModule
-  const dashboardPath = profile?.role === 'Team Member' 
-    ? fallbackPath
-    : (currentModule ? `/${currentModule}/dashboard` : fallbackPath);
+  const dashboardPath = currentModule ? `/${currentModule}/dashboard` : fallbackPath;
   
   return <Navigate to={dashboardPath} replace />;
 };
