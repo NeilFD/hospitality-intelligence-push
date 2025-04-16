@@ -1,4 +1,7 @@
 
+-- Enable the pgcrypto extension first (if not already enabled)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Function to allow administrators to update user passwords
 -- This is a privileged operation that should be restricted by RLS and app-level permissions
 CREATE OR REPLACE FUNCTION public.admin_update_user_password(user_id UUID, password TEXT)
