@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import type { UserProfile } from '@/types/supabase-types';
@@ -61,18 +60,34 @@ export const adminUpdateUserPassword = async (
       return false;
     }
     
-    // Use the correct function name admin_update_user_password
-    const { data, error } = await supabase.rpc('admin_update_user_password', {
+    // Log the user ID to verify it's correct
+    console.log('User ID for password update:', userId);
+    
+    // Try the simplified password update function
+    const { data, error } = await supabase.rpc('simple_password_update', {
       user_id: userId,
       password: password
     });
     
     if (error) {
       console.error('Password update error:', error);
-      return false;
+      
+      // Try the original function as fallback
+      console.log('Trying original admin_update_user_password as fallback');
+      const { data: fallbackData, error: fallbackError } = await supabase.rpc('admin_update_user_password', {
+        user_id: userId,
+        password: password
+      });
+      
+      if (fallbackError) {
+        console.error('Fallback password update failed:', fallbackError);
+        return false;
+      }
+      
+      console.log('Fallback password update result:', fallbackData);
+      return fallbackData === true;
     }
     
-    // data will be true or false based on the function's return
     console.log('Password update result:', data);
     return data === true;
     

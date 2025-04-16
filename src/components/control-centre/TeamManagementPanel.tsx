@@ -202,6 +202,9 @@ const TeamManagementPanel: React.FC = () => {
         try {
           console.log('Attempting password update for user:', selectedUser.id);
           
+          // Double-check the user ID format
+          console.log('User ID type:', typeof selectedUser.id);
+          
           // Show a loading toast for password update
           toast.loading('Updating password...', { id: 'password-update' });
           
