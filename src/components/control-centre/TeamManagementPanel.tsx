@@ -344,6 +344,8 @@ const TeamManagementPanel: React.FC = () => {
       toast.dismiss('create-profile');
       
       if (result && (result.profile || result.user)) {
+        console.log('User creation successful:', result);
+        
         setNewProfileForm({
           firstName: '',
           lastName: '',
@@ -354,10 +356,16 @@ const TeamManagementPanel: React.FC = () => {
         
         setIsAddProfileDialogOpen(false);
         
-        toast.success('Profile created successfully');
-        await fetchTeamMembers();
+        if (result.user && result.user.id) {
+          toast.success('Profile created successfully');
+          await fetchTeamMembers();
+        } else {
+          toast.error('Profile creation may have failed - please check the list');
+          await fetchTeamMembers();
+        }
       } else {
         toast.error('Failed to create profile - no data returned');
+        console.error('Failed to create profile, result:', result);
       }
     } catch (error: any) {
       toast.dismiss('create-profile');
