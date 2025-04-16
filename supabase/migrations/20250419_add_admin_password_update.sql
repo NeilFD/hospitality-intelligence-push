@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.admin_update_user_password(user_id UUID, passw
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public
 AS $$
 DECLARE
   success BOOLEAN := FALSE;

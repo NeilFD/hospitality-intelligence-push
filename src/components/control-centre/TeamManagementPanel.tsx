@@ -202,12 +202,14 @@ const TeamManagementPanel: React.FC = () => {
         if (passwordError) {
           console.error('Error updating password:', passwordError);
           toast.error('Failed to update password: ' + passwordError.message);
+          throw new Error('Password update failed');
         } else if (passwordData === true) {
           console.log('Password successfully updated');
           toast.success('Password has been updated successfully');
         } else {
           console.warn('Password update returned false', passwordData);
-          toast.warning('Password update may not have been applied');
+          toast.error('Password update failed - user may not exist in auth table');
+          throw new Error('Password update returned false');
         }
       }
       
