@@ -61,10 +61,7 @@ export const directSignUp = async (
   try {
     console.log(`Creating profile for ${email} with role ${role}`);
     
-    // Generate a random password (that will need to be reset)
-    const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
-    
-    // Try using create_profile_with_auth RPC function instead of admin.createUser
+    // First, use the create_profile_with_auth RPC function that includes permission checks
     const { data: authData, error: createError } = await supabase.rpc('create_profile_with_auth', {
       first_name_val: firstName,
       last_name_val: lastName,
@@ -75,40 +72,7 @@ export const directSignUp = async (
     
     if (createError) {
       console.error('Error creating user with RPC:', createError);
-      
-      // Fallback to the regular auth signup method
-      console.log("Falling back to regular signup method");
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
-        email,
-        password: tempPassword,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            role: role,
-            job_title: jobTitle,
-            email: email
-          }
-        }
-      });
-      
-      if (signupError) {
-        throw signupError;
-      }
-      
-      if (!signupData.user) {
-        throw new Error('Failed to create user with signup method');
-      }
-      
-      console.log("User created with signup method:", signupData.user.id);
-      
-      // Wait to ensure the profile trigger has time to run
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return {
-        user: signupData.user,
-        profile: null // Profile should be created by trigger
-      };
+      throw createError;
     }
     
     console.log("User created successfully with RPC function, ID:", authData);
