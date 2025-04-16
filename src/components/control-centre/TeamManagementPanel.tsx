@@ -177,7 +177,6 @@ const TeamManagementPanel: React.FC = () => {
         updateData.birth_date = formattedBirthDate;
       }
       
-      // Handle profile update first
       const { error: profileError } = await supabase
         .from('profiles')
         .update(updateData)
@@ -189,7 +188,6 @@ const TeamManagementPanel: React.FC = () => {
         return;
       }
       
-      // Handle password update separately to provide better feedback
       let passwordUpdateSuccess = true;
       let passwordMessage = '';
       
@@ -202,15 +200,12 @@ const TeamManagementPanel: React.FC = () => {
         try {
           console.log('Attempting password update for user:', selectedUser.id);
           
-          // Double-check the user ID format
           console.log('User ID type:', typeof selectedUser.id);
           
-          // Show a loading toast for password update
           toast.loading('Updating password...', { id: 'password-update' });
           
           const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
           
-          // Dismiss the loading toast
           toast.dismiss('password-update');
           
           console.log('Password update result:', result);
@@ -223,9 +218,6 @@ const TeamManagementPanel: React.FC = () => {
             toast.success('Password has been updated successfully');
           }
         } catch (err) {
-          // Dismiss the loading toast
-          toast.dismiss('password-update');
-          
           console.error('Exception during password update:', err);
           toast.error('Error updating password: ' + (err instanceof Error ? err.message : String(err)));
           passwordUpdateSuccess = false;
@@ -339,6 +331,7 @@ const TeamManagementPanel: React.FC = () => {
     
     try {
       setLoading(true);
+      toast.loading('Creating profile...', { id: 'create-profile' });
       
       const result = await directSignUp(
         newProfileForm.email,
@@ -347,6 +340,8 @@ const TeamManagementPanel: React.FC = () => {
         newProfileForm.role,
         newProfileForm.jobTitle
       );
+      
+      toast.dismiss('create-profile');
       
       if (result && (result.profile || result.user)) {
         setNewProfileForm({
@@ -364,9 +359,18 @@ const TeamManagementPanel: React.FC = () => {
       } else {
         toast.error('Failed to create profile - no data returned');
       }
-    } catch (error) {
-      console.error('Unexpected error creating profile:', error);
-      toast.error('Failed to create profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } catch (error: any) {
+      toast.dismiss('create-profile');
+      
+      console.error('Error creating profile:', error);
+      
+      if (error.message?.includes('User already registered')) {
+        toast.error('A user with this email already exists');
+      } else if (error.message?.includes('permission denied') || error.message?.includes('not allowed')) {
+        toast.error('Permission denied. You may not have admin privileges to create users.');
+      } else {
+        toast.error('Failed to create profile: ' + (error.message || 'Unknown error'));
+      }
     } finally {
       setLoading(false);
     }

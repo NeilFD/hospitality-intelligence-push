@@ -64,68 +64,66 @@ export const directSignUp = async (
     // Generate a random password (that will need to be reset)
     const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
     
-    // Create the auth user
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: {
-        first_name: firstName,
-        last_name: lastName,
-        role: role,
-        job_title: jobTitle,
-        email: email
-      }
+    // Try using create_profile_with_auth RPC function instead of admin.createUser
+    const { data: authData, error: createError } = await supabase.rpc('create_profile_with_auth', {
+      first_name_val: firstName,
+      last_name_val: lastName,
+      role_val: role,
+      job_title_val: jobTitle,
+      email_val: email
     });
     
-    if (authError) {
-      throw authError;
-    }
-    
-    if (!authData.user) {
-      throw new Error('Failed to create user');
-    }
-    
-    console.log("User created successfully:", authData.user.id);
-    
-    // Now wait a moment to ensure the trigger has time to create the profile
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if the profile was created by the trigger
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', authData.user.id)
-      .single();
+    if (createError) {
+      console.error('Error creating user with RPC:', createError);
       
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Error checking profile:', profileError);
-    }
-    
-    if (!profileData) {
-      console.log('Profile not created by trigger, creating manually...');
-      
-      // If not, create it manually
-      const { data: manualProfile, error: manualError } = await supabase.rpc('create_profile_for_user', {
-        user_id: authData.user.id,
-        first_name_val: firstName,
-        last_name_val: lastName,
-        role_val: role,
-        job_title_val: jobTitle,
-        email_val: email
+      // Fallback to the regular auth signup method
+      console.log("Falling back to regular signup method");
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+        email,
+        password: tempPassword,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            role: role,
+            job_title: jobTitle,
+            email: email
+          }
+        }
       });
       
-      if (manualError) {
-        console.error('Error creating profile manually:', manualError);
-        // We still return the user since they can log in
+      if (signupError) {
+        throw signupError;
       }
+      
+      if (!signupData.user) {
+        throw new Error('Failed to create user with signup method');
+      }
+      
+      console.log("User created with signup method:", signupData.user.id);
+      
+      // Wait to ensure the profile trigger has time to run
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        user: signupData.user,
+        profile: null // Profile should be created by trigger
+      };
     }
     
+    console.log("User created successfully with RPC function, ID:", authData);
+    
+    // In this case, the profile was created as part of the RPC call
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authData)
+      .single();
+    
     return {
-      user: authData.user,
+      user: { id: authData },
       profile: profileData || null
     };
-    
   } catch (err) {
     console.error("Error in directSignUp:", err);
     throw err;
