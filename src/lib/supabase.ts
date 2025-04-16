@@ -1,7 +1,5 @@
 
 import { createClient } from '@supabase/supabase-js';
-// Remove the incorrect import and use the proper function
-// import { getCurrentUser as getUser } from '@/services/auth-service';
 
 // Initialize the Supabase client with environment variables
 const SUPABASE_URL = "https://kfiergoryrnjkewmeriy.supabase.co";
@@ -163,3 +161,4 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     return false;
   }
 };
+
