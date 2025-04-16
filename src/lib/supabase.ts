@@ -53,17 +53,17 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     // Log the attempt for debugging
     console.log(`Attempting to update password for user ${userId}`);
     
-    if (!password || password.trim().length < 8) {
+    if (!password || password.length < 8) {
       console.error('Password must be at least 8 characters');
       return false;
     }
     
-    // Call the RPC function with explicit parameter naming
+    // Call the RPC function
     const { data, error } = await supabase.rpc(
       'admin_update_user_password',
       {
         user_id: userId,
-        password: password.trim()
+        password: password
       }
     );
     

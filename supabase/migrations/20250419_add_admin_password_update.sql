@@ -11,15 +11,11 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  hashed_password TEXT;
   success BOOLEAN := FALSE;
 BEGIN
-  -- Generate hashed password with pgcrypto's crypt function
-  hashed_password := crypt(password, gen_salt('bf'));
-  
   -- Update the user's password in auth.users
   UPDATE auth.users
-  SET encrypted_password = hashed_password
+  SET encrypted_password = crypt(password, gen_salt('bf'))
   WHERE id = user_id;
   
   -- Check if the update was successful
