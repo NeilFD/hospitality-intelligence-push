@@ -458,58 +458,58 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
         return;
       }
       
-      const results = await Promise.all(
-        emails.map(async (email) => {
-          try {
-            const invitationToken = crypto.randomUUID();
-            
-            const response = await fetch(
-              `${SUPABASE_URL}/functions/v1/send-user-invitation`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  email,
-                  firstName: email.split('@')[0],
-                  lastName: '',
-                  invitationToken,
-                  role: 'Team Member',
-                  created_by: currentUserProfile?.id
-                })
-              }
-            );
-            
-            const result = await response.json();
-            
-            if (!response.ok) {
-              throw new Error(result.error || 'Failed to send invitation');
-            }
-            
-            return { email, success: true, message: result.message };
-          } catch (error) {
-            console.error(`Error inviting ${email}:`, error);
-            return { 
-              email, 
-              success: false, 
-              message: error instanceof Error ? error.message : 'Unknown error'
-            };
-          }
-        })
-      );
+      let successCount = 0;
+      let failCount = 0;
+      let errorMessages = [];
       
-      const successCount = results.filter(r => r.success).length;
-      const failCount = results.length - successCount;
+      for (const email of emails) {
+        try {
+          const invitationToken = crypto.randomUUID();
+          
+          const response = await fetch(
+            `${SUPABASE_URL}/functions/v1/send-user-invitation`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                email,
+                firstName: email.split('@')[0],
+                lastName: '',
+                invitationToken,
+                role: 'Team Member',
+                created_by: currentUserProfile?.id
+              })
+            }
+          );
+          
+          const result = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(result.error || 'Failed to send invitation');
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          successCount++;
+        } catch (error) {
+          console.error(`Error inviting ${email}:`, error);
+          failCount++;
+          errorMessages.push(`${email}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
       
       if (successCount > 0 && failCount === 0) {
         toast.success(`Successfully sent ${successCount} invitation${successCount > 1 ? 's' : ''}`);
         setInvitationEmails('');
       } else if (successCount > 0 && failCount > 0) {
         toast.warning(`Sent ${successCount} invitation${successCount > 1 ? 's' : ''}, but ${failCount} failed`);
+        console.error('Invitation errors:', errorMessages);
       } else {
         toast.error(`Failed to send invitations`);
+        console.error('Invitation errors:', errorMessages);
       }
       
       await fetchTeamMembers();
@@ -555,7 +555,7 @@ To get started:
 Looking forward to having you on the team!
 
 Best regards,
-The Hi Team
+${currentUserProfile?.first_name || 'The Hi Team'}
   `;
     
     const mailtoLink = `mailto:?bcc=${encodeURIComponent(bcc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

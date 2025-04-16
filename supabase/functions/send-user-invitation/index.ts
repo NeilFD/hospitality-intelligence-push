@@ -64,6 +64,17 @@ serve(async (req) => {
     
     // If invitation already exists, return a specific error message
     if (existingInvitation && existingInvitation.length > 0) {
+      // Check if it's already claimed
+      if (existingInvitation[0].is_claimed) {
+        return new Response(
+          JSON.stringify({ 
+            message: 'This invitation has already been claimed. The user should be able to log in.',
+            invitationAlreadyClaimed: true
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+      
       // Resend the invitation using the existing token
       const existingToken = existingInvitation[0].invitation_token;
       const existingInvitationUrl = `${SITE_URL}/register?token=${existingToken}`;
@@ -110,6 +121,7 @@ serve(async (req) => {
     );
     
   } catch (error) {
+    console.error('Error in send-user-invitation:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Failed to process invitation' }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
@@ -152,35 +164,57 @@ async function sendInvitationEmail(
         throw directEmailError;
       }
       
+      console.log(`Successfully sent invitation email to ${toEmail}`);
       return { success: true };
       
     } catch (directEmailError) {
       console.error("Direct email method failed:", directEmailError);
       
-      // Fallback: Log the email content for development purposes
-      console.log(`
-        SIMULATED EMAIL:
-        To: ${toEmail}
-        Subject: You've been invited to join ${companyName}
+      // Fallback: Try an alternative method to send the email
+      try {
+        const { error: signInLinkError } = await supabase.auth.admin.generateLink({
+          type: 'signup',
+          email: toEmail,
+          options: {
+            redirectTo: invitationUrl
+          }
+        });
         
-        Hi ${firstName},
+        if (signInLinkError) {
+          throw signInLinkError;
+        }
         
-        You've been invited to join ${companyName}. Please click the link below to complete your registration:
+        console.log(`Successfully generated signup link for ${toEmail}`);
+        return { success: true };
         
-        ${invitationUrl}
+      } catch (signInLinkError) {
+        console.error("Sign-in link generation failed:", signInLinkError);
         
-        This invitation will expire in 7 days.
+        // Fallback: Log the email content for development purposes
+        console.log(`
+          SIMULATED EMAIL:
+          To: ${toEmail}
+          Subject: You've been invited to join ${companyName}
+          
+          Hi ${firstName},
+          
+          You've been invited to join ${companyName}. Please click the link below to complete your registration:
+          
+          ${invitationUrl}
+          
+          This invitation will expire in 7 days.
+          
+          After signing up, you will receive a confirmation link from our system which you must click on to continue.
+          Then you can return to the register page to update your profile.
+          
+          We're looking forward to having you on the team!
+        `);
         
-        After signing up, you will receive a confirmation link from our system which you must click on to continue.
-        Then you can return to the register page to update your profile.
-        
-        We're looking forward to having you on the team!
-      `);
-      
-      return { 
-        success: true, 
-        error: `Email sending failed but invitation was created. Error: ${directEmailError.message}`
-      };
+        return { 
+          success: true, 
+          error: `Email sending failed but invitation was created. Error: ${signInLinkError.message}`
+        };
+      }
     }
   } catch (error) {
     console.error("Error in email sending function:", error);
@@ -198,6 +232,9 @@ async function sendInvitationEmail(
       ${invitationUrl}
       
       This invitation will expire in 7 days.
+      
+      After signing up, you will receive a confirmation link from our system which you must click on to continue.
+      Then you can log in to access the platform.
     `);
     
     return { 

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,10 +13,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { signUp } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters.'),
@@ -42,6 +43,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const invitationToken = searchParams.get('token');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,6 +55,36 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       password: '',
     },
   });
+
+  // Check for invitation token and pre-fill form
+  useEffect(() => {
+    const fetchInvitationData = async () => {
+      if (!invitationToken) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('invitation_token', invitationToken)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching invitation:', error);
+          return;
+        }
+        
+        if (data) {
+          form.setValue('email', data.email || '');
+          form.setValue('firstName', data.first_name || '');
+          form.setValue('lastName', data.last_name || '');
+        }
+      } catch (err) {
+        console.error('Error fetching invitation data:', err);
+      }
+    };
+    
+    fetchInvitationData();
+  }, [invitationToken, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -71,7 +104,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("Registration metadata:", metadata);
       
-      // Only perform the signup, don't try to create a profile immediately
+      // Perform signup through Supabase
       const { data, error } = await signUp(values.email, values.password, metadata);
       
       if (error) {
@@ -93,6 +126,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       }
       
       console.log("User registered successfully, user ID:", data.user.id);
+      
+      // If there was an invitation token, mark it as claimed
+      if (invitationToken) {
+        await supabase
+          .from('user_invitations')
+          .update({ is_claimed: true })
+          .eq('invitation_token', invitationToken);
+      }
       
       if (onRegistrationComplete) {
         onRegistrationComplete(data.user.id, metadata);

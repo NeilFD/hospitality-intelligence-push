@@ -156,3 +156,24 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     return false;
   }
 };
+
+// Check if an invitation token is valid
+export const checkInvitationToken = async (token: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_invitations')
+      .select('*')
+      .eq('invitation_token', token)
+      .single();
+      
+    if (error) {
+      console.error('Error checking invitation token:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception checking invitation token:', err);
+    return null;
+  }
+};
