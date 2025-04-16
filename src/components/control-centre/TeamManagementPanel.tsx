@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -429,8 +428,9 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
     const body = encodeURIComponent(getSignupInstructions(user));
     window.open(`mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${body}`);
   };
-  
-  const handleSendInvitation = async () => {
+
+  // Modified to use direct email client opening
+  const handleSendInvitation = () => {
     if (!invitationEmail.trim()) {
       toast.error('Please enter an email address');
       return;
@@ -441,67 +441,35 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
       return;
     }
 
-    setSendingInvite(true);
+    // Create an invitation message
+    const subject = 'Invitation to join our team';
+    const body = `
+Hello,
 
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
+You have been invited to join our team at https://myhi.io.
 
-      if (!token) {
-        toast.error('Authentication error - please log in again');
-        setSendingInvite(false);
-        return;
-      }
+To get started:
+1. Go to: https://myhi.io/register
+2. Create an account with this email address
+3. After signing up, you'll need to click a confirmation link that will be sent to your email
+4. You can then log in and access the team platform
+5. Don't forget to personalize your profile by adding a photo and updating your details
 
-      const invitationToken = crypto.randomUUID();
+Looking forward to having you on the team!
 
-      toast.loading('Sending invitation...', { id: 'sending-invitation' });
+Best regards,
+${currentUserProfile?.first_name || 'The Hi Team'}
+`;
 
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/send-user-invitation`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            email: invitationEmail,
-            firstName: invitationEmail.split('@')[0],
-            lastName: '',
-            invitationToken,
-            role: 'Team Member',
-            created_by: currentUserProfile?.id
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to send invitation (HTTP ${response.status}): ${errorText}`);
-      }
-
-      const result = await response.json();
-
-      toast.dismiss('sending-invitation');
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      console.log('Invitation result:', result);
-
-      toast.success('Invitation sent successfully');
-      setInvitationEmail('');
-      await fetchTeamMembers();
-
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-      toast.error('Failed to send invitation');
-    } finally {
-      setSendingInvite(false);
-      toast.dismiss('sending-invitation');
-    }
+    // Open the email client
+    const mailtoLink = `mailto:${encodeURIComponent(invitationEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink, '_blank');
+    
+    // Clear the input field
+    setInvitationEmail('');
+    
+    // Show success message
+    toast.success('Email client opened with the invitation');
   };
   
   const handleOpenInvitationEmail = (emailsString: string) => {
@@ -600,8 +568,7 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 <div className="text-xs text-gray-500 flex items-start gap-2 mt-2">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <p>
-                    The invited team member will receive an email with instructions to create their account.
-                    They will need to verify their email address to complete the registration.
+                    An invitation email will be created in your email client. Send it to complete the invitation process.
                   </p>
                 </div>
               </div>
@@ -968,66 +935,4 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 <Label htmlFor="jobTitle">Job Title</Label>
                 <Input 
                   id="jobTitle" 
-                  value={newProfileForm.jobTitle}
-                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
-                  placeholder="Job title"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddProfileDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateProfile} disabled={loading}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              {loading ? 'Creating...' : 'Create Profile'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send Email Instructions</DialogTitle>
-            <DialogDescription>
-              Send account instructions to {selectedUser?.first_name} {selectedUser?.last_name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="bg-gray-50 p-4 rounded-md">
-              <p className="text-sm font-medium mb-2">Email Content Preview:</p>
-              <div className="text-sm whitespace-pre-wrap border p-3 rounded bg-white">
-                {getSignupInstructions(selectedUser)}
-              </div>
-            </div>
-            
-            <div className="flex justify-between">
-              <Button 
-                variant="outline" 
-                onClick={() => handleCopyToClipboard(getSignupInstructions(selectedUser))}
-                className="flex items-center"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Text
-              </Button>
-              
-              <Button 
-                onClick={() => handleOpenEmail(selectedUser)}
-                className="flex items-center"
-              >
-                <Mail className="mr-2 h-4 w-4" />
-                Open Email Client
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
-
-export default TeamManagementPanel;
+                  value={newProfile
