@@ -163,10 +163,13 @@ export const directSignUp = async (
       console.error('Error checking existing user:', checkError);
     }
     
-    // Create a new user
+    // Create a new user with explicit password
+    const defaultPassword = 'Hi2025!';
+    console.log(`Creating user with email ${email} and default password`);
+    
     const { data, error } = await supabase.auth.signUp({
       email,
-      password: 'Hi2025!',
+      password: defaultPassword,
       options: {
         data: {
           first_name: firstName,
