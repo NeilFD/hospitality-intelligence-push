@@ -65,8 +65,8 @@ const TeamManagementPanel: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isAddProfileDialogOpen, setIsAddProfileDialogOpen] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
-  const [invitationEmails, setInvitationEmails] = useState('');
-  const [sendingInvites, setSendingInvites] = useState(false);
+  const [invitationEmail, setInvitationEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
   
   const [editForm, setEditForm] = useState({
     firstName: '',
@@ -429,116 +429,77 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
     window.open(`mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${body}`);
   };
   
-  const handleSendInvitations = async () => {
-    if (!invitationEmails.trim()) {
-      toast.error('Please enter at least one email address');
+  const handleSendInvitation = async () => {
+    if (!invitationEmail.trim()) {
+      toast.error('Please enter an email address');
       return;
     }
-    
-    setSendingInvites(true);
-    
+
+    if (!invitationEmail.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setSendingInvite(true);
+
     try {
-      const emails = invitationEmails
-        .split(/[,\n]/)
-        .map(email => email.trim())
-        .filter(email => email.length > 0 && email.includes('@'));
-      
-      if (emails.length === 0) {
-        toast.error('No valid email addresses found');
-        setSendingInvites(false);
-        return;
-      }
-      
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      
+
       if (!token) {
         toast.error('Authentication error - please log in again');
-        setSendingInvites(false);
+        setSendingInvite(false);
         return;
       }
-      
-      let successCount = 0;
-      let failCount = 0;
-      let errorMessages = [];
-      
-      toast.loading(`Processing ${emails.length} invitation(s)...`, { 
-        id: 'processing-invitations',
-        duration: 60000
-      });
-      
-      for (let i = 0; i < emails.length; i++) {
-        const email = emails[i];
-        try {
-          toast.loading(`Processing invitation ${i + 1}/${emails.length}: ${email}`, { 
-            id: 'processing-invitations',
-            duration: 60000
-          });
-          
-          const invitationToken = crypto.randomUUID();
-          
-          const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/send-user-invitation`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                email,
-                firstName: email.split('@')[0],
-                lastName: '',
-                invitationToken,
-                role: 'Team Member',
-                created_by: currentUserProfile?.id
-              })
-            }
-          );
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to send invitation (HTTP ${response.status}): ${errorText}`);
-          }
-          
-          const result = await response.json();
-          
-          if (result.error) {
-            throw new Error(result.error);
-          }
-          
-          console.log(`Invitation result for ${email}:`, result);
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          successCount++;
-        } catch (error) {
-          console.error(`Error inviting ${email}:`, error);
-          failCount++;
-          errorMessages.push(`${email}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+      const invitationToken = crypto.randomUUID();
+
+      toast.loading('Sending invitation...', { id: 'sending-invitation' });
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/send-user-invitation`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            email: invitationEmail,
+            firstName: invitationEmail.split('@')[0],
+            lastName: '',
+            invitationToken,
+            role: 'Team Member',
+            created_by: currentUserProfile?.id
+          })
         }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to send invitation (HTTP ${response.status}): ${errorText}`);
       }
-      
-      toast.dismiss('processing-invitations');
-      
-      if (successCount > 0 && failCount === 0) {
-        toast.success(`Successfully sent ${successCount} invitation${successCount > 1 ? 's' : ''}`);
-        setInvitationEmails('');
-      } else if (successCount > 0 && failCount > 0) {
-        toast.warning(`Sent ${successCount} invitation${successCount > 1 ? 's' : ''}, but ${failCount} failed`);
-        console.error('Invitation errors:', errorMessages);
-      } else {
-        toast.error(`Failed to send invitations`);
-        console.error('Invitation errors:', errorMessages);
+
+      const result = await response.json();
+
+      toast.dismiss('sending-invitation');
+
+      if (result.error) {
+        throw new Error(result.error);
       }
-      
+
+      console.log('Invitation result:', result);
+
+      toast.success('Invitation sent successfully');
+      setInvitationEmail('');
       await fetchTeamMembers();
-      
+
     } catch (error) {
-      console.error('Error sending invitations:', error);
-      toast.error('Failed to send invitations');
+      console.error('Error sending invitation:', error);
+      toast.error('Failed to send invitation');
     } finally {
-      setSendingInvites(false);
+      setSendingInvite(false);
+      toast.dismiss('sending-invitation');
     }
   };
   
@@ -582,7 +543,7 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
     
     window.open(mailtoLink, '_blank');
     
-    setInvitationEmails('');
+    setInvitationEmail('');
     
     toast.success('Email client opened with the invitation');
   };
@@ -603,39 +564,49 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
             <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
               <h3 className="text-lg font-medium mb-2 flex items-center gap-2">
                 <Share2 className="h-5 w-5 text-blue-600" />
-                <span>Invite Team Members</span>
+                <span>Invite Team Member</span>
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Enter email addresses below (separated by commas or new lines) to send invitations to join the team.
+                Enter an email address below to send an invitation to join the team.
               </p>
               <div className="space-y-3">
-                <Textarea 
-                  placeholder="email1@example.com, email2@example.com"
-                  value={invitationEmails}
-                  onChange={(e) => setInvitationEmails(e.target.value)}
-                  className="min-h-[80px]"
+                <Input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={invitationEmail}
+                  onChange={(e) => setInvitationEmail(e.target.value)}
+                  className="w-full"
                 />
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
                   <Button
-                    onClick={() => handleOpenInvitationEmail(invitationEmails)}
-                    disabled={!invitationEmails.trim()}
+                    onClick={handleSendInvitation}
+                    disabled={!invitationEmail.trim() || sendingInvite}
                     className="flex items-center gap-2"
                   >
-                    <Mail className="h-4 w-4" />
-                    <span>Send Email</span>
+                    {sendingInvite ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>Send Invitation</span>
+                      </>
+                    )}
                   </Button>
                 </div>
                 <div className="text-xs text-gray-500 flex items-start gap-2 mt-2">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <p>
-                    This will open your email client with a pre-filled invitation message to send to the team members.
-                    They will be guided to register at https://myhi.io and verify their email address.
+                    The invited team member will receive an email with instructions to create their account.
+                    They will need to verify their email address to complete the registration.
                   </p>
                 </div>
               </div>
             </div>
           )}
-          
+
           {loading ? (
             <div className="flex justify-center p-6">
               <p>Loading team members...</p>
@@ -974,90 +945,4 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 <Label htmlFor="role">Role</Label>
                 <Select 
                   value={newProfileForm.role} 
-                  onValueChange={(value: UserRoleType) => setNewProfileForm({...newProfileForm, role: value})}
-                >
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isGod && (
-                      <>
-                        <SelectItem value="GOD">GOD</SelectItem>
-                        <SelectItem value="Super User">Super User</SelectItem>
-                      </>
-                    )}
-                    <SelectItem value="Manager">Manager</SelectItem>
-                    <SelectItem value="Team Member">Team Member</SelectItem>
-                    <SelectItem value="Owner">Owner</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="jobTitle">Job Title</Label>
-                <Input 
-                  id="jobTitle" 
-                  value={newProfileForm.jobTitle}
-                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
-                  placeholder="Job title"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddProfileDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateProfile}
-              disabled={loading}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              {loading ? 'Creating...' : 'Create Profile'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Send Account Instructions</DialogTitle>
-            <DialogDescription>
-              Instructions for {selectedUser?.first_name} {selectedUser?.last_name} to set up their account.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="p-3 bg-muted rounded-md relative">
-              <pre className="text-xs whitespace-pre-wrap">{getSignupInstructions(selectedUser)}</pre>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute top-2 right-2" 
-                onClick={() => handleCopyToClipboard(getSignupInstructions(selectedUser))}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
-              Close
-            </Button>
-            <Button onClick={() => handleOpenEmail(selectedUser)}>
-              <Mail className="mr-2 h-4 w-4" />
-              Open Email
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
-
-export default TeamManagementPanel;
+                  onValueChange={(value: UserRoleType) => setNewProfileForm({...newProfileForm, role
