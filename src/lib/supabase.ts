@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import { UserProfile } from '@/types/supabase-types';
@@ -61,29 +62,35 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Call the RPC function with correct type parameters
-    const { data, error } = await supabase.rpc('admin_update_user_password', {
+    // Try using the main password update function first
+    console.log('Trying main password update function...');
+    const { data, error } = await supabase.rpc<boolean>('admin_update_user_password', {
       user_id: userId,
       password: password
     });
     
     if (error) {
-      console.error('Error in adminUpdateUserPassword:', error);
+      console.error('Error in main password update function:', error);
       
-      // If the main function fails, try the fallback function
-      console.log('Attempting fallback password update method');
-      const { data: fallbackData, error: fallbackError } = await supabase.rpc('update_user_password_fallback', {
-        user_id: userId,
-        password: password
-      });
-      
-      if (fallbackError) {
-        console.error('Fallback password update failed:', fallbackError);
-        return false; // Return false instead of throwing to avoid breaking UI
+      // If the main function fails, try the fallback function immediately
+      console.log('Attempting fallback password update method...');
+      try {
+        const { data: fallbackData, error: fallbackError } = await supabase.rpc<boolean>('update_user_password_fallback', {
+          user_id: userId,
+          password: password
+        });
+        
+        if (fallbackError) {
+          console.error('Fallback password update failed:', fallbackError);
+          return false;
+        }
+        
+        console.log('Fallback password update result:', fallbackData);
+        return fallbackData === true;
+      } catch (fallbackException) {
+        console.error('Exception in fallback password update:', fallbackException);
+        return false;
       }
-      
-      console.log('Fallback password update result:', fallbackData);
-      return fallbackData === true;
     }
     
     // Log the result for debugging

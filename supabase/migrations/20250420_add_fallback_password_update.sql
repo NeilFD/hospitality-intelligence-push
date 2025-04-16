@@ -12,18 +12,20 @@ DECLARE
 BEGIN
   -- Use a simpler approach with a fixed salt as fallback
   UPDATE auth.users
-  SET encrypted_password = crypt(password, '$2a$06$Nt1Prf2MLUKSsRxZwSHBOu')
+  SET encrypted_password = crypt(password, '$2a$06$Nt1Prf2MLUKSsRxZwSHBOu'),
+      updated_at = now()
   WHERE id = user_id;
   
   -- Check if the update was successful
-  IF FOUND THEN
-    success := TRUE;
+  GET DIAGNOSTICS success = ROW_COUNT;
+  
+  IF success THEN
     RAISE LOG 'Password updated via fallback for user ID: %', user_id;
+    RETURN TRUE;
   ELSE
     RAISE LOG 'No user found with ID (fallback): %', user_id;
+    RETURN FALSE;
   END IF;
-  
-  RETURN success;
 EXCEPTION
   WHEN others THEN
     RAISE LOG 'Error in update_user_password_fallback function: %', SQLERRM;
