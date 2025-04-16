@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import type { UserProfile } from '@/types/supabase-types';
@@ -49,7 +48,7 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Updated password function with better error handling and using simple_password_update
+// Updated password function to use extremely_basic_password_update
 export const adminUpdateUserPassword = async (userId: string, password: string): Promise<boolean> => {
   try {
     console.log(`Attempting to update password for user ${userId}`);
@@ -59,32 +58,18 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       return false;
     }
     
-    // Use simple_password_update RPC function instead of direct_password_update
-    const { data, error } = await supabase.rpc('simple_password_update', {
-      user_id: userId,
-      password: password
+    // Use the new extremely_basic_password_update function
+    const { data, error } = await supabase.rpc('extremely_basic_password_update', {
+      user_id_input: userId,
+      password_input: password
     });
     
     if (error) {
-      console.error('Error updating password with simple_password_update:', error);
-      
-      // Try create_auth_user_if_not_exists as a fallback
-      const { data: fallbackData, error: fallbackError } = await supabase.rpc('create_auth_user_if_not_exists', {
-        user_id_val: userId,
-        email_val: 'user@example.com', // This will be replaced if user exists
-        password_val: password
-      });
-      
-      if (fallbackError) {
-        console.error('Error with fallback password update:', fallbackError);
-        return false;
-      }
-      
-      console.log('Password updated successfully through fallback method');
-      return fallbackData === true;
+      console.error('Error updating password:', error);
+      return false;
     }
     
-    console.log('Password updated successfully with simple_password_update');
+    console.log('Password updated successfully');
     return data === true;
     
   } catch (e) {

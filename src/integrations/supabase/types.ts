@@ -1603,6 +1603,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      extremely_basic_password_update: {
+        Args: { user_id_input: string; password_input: string }
+        Returns: boolean
+      }
       get_database_statistics: {
         Args: Record<PropertyKey, never>
         Returns: {
