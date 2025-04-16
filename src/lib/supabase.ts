@@ -53,15 +53,8 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     // Log the attempt for debugging
     console.log(`Attempting to update password for user ${userId}`);
     
-    // First, check if the user exists in the auth table
-    const { data: authUser, error: authCheckError } = await supabase.auth.admin.getUserById(userId);
-    
-    if (authCheckError) {
-      console.error('Error checking if user exists in auth table:', authCheckError);
-      // Continue anyway, as the RPC function will also check
-    }
-    
-    console.log('Auth user check result:', authUser ? 'User exists in auth table' : 'User not found in auth table');
+    // Don't attempt to check if the user exists with admin.getUserById since it requires service_role
+    // This was causing permission errors since we're using the anon key
     
     if (!password || password.length < 8) {
       console.error('Password must be at least 8 characters');
@@ -86,7 +79,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
       
       if (fallbackError) {
         console.error('Fallback password update failed:', fallbackError);
-        throw fallbackError;
+        return false; // Return false instead of throwing to avoid breaking UI
       }
       
       console.log('Fallback password update result:', fallbackData);
@@ -100,7 +93,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     return data === true;
   } catch (e) {
     console.error('Exception in adminUpdateUserPassword:', e);
-    throw e;
+    return false; // Return false instead of throwing to avoid breaking UI
   }
 };
 
