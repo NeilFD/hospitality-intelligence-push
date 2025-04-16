@@ -1556,6 +1556,16 @@ export type Database = {
         Args: { trigger_name: string }
         Returns: boolean
       }
+      create_auth_user_and_profile: {
+        Args: {
+          first_name_val: string
+          last_name_val: string
+          role_val: string
+          job_title_val: string
+          email_val: string
+        }
+        Returns: string
+      }
       create_profile_for_user: {
         Args:
           | {

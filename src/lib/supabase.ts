@@ -59,10 +59,10 @@ export const directSignUp = async (
   jobTitle: string = ''
 ) => {
   try {
-    console.log(`Creating profile for ${email} with role ${role}`);
+    console.log(`Creating user for ${email} with role ${role}`);
     
-    // First, try to use the create_profile_with_auth RPC function
-    const { data: authData, error: createError } = await supabase.rpc('create_profile_with_auth', {
+    // Use the new create_auth_user_and_profile function
+    const { data: userId, error: createError } = await supabase.rpc('create_auth_user_and_profile', {
       first_name_val: firstName,
       last_name_val: lastName,
       role_val: role,
@@ -75,31 +75,29 @@ export const directSignUp = async (
       throw createError;
     }
     
-    console.log("User created successfully with RPC function, ID:", authData);
-    
-    // If authData is returned, it should contain the new user's ID
-    // Let's verify the profile was created by fetching it
-    if (!authData) {
+    if (!userId) {
       throw new Error('No user ID returned from user creation');
     }
+    
+    console.log("User created successfully with new RPC function, ID:", userId);
     
     // Wait a moment to ensure database consistency
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // In this case, the profile was created as part of the RPC call
+    // Fetch the newly created profile
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', authData)
+      .eq('id', userId)
       .single();
     
     if (profileError) {
       console.error('Error fetching new profile:', profileError);
-      // The user might be created but profile failed - we should still return something
+      // Still return the user ID since the user was created
     }
     
     return {
-      user: { id: authData },
+      user: { id: userId },
       profile: profileData || null
     };
   } catch (err) {
