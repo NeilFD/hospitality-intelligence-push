@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -68,7 +67,6 @@ const Layout = ({
   const [pagePermissions, setPagePermissions] = useState<PagePermission[]>([]);
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
 
-  // Listen for theme class changes and update themeState accordingly
   useEffect(() => {
     const updateThemeState = () => {
       const html = document.documentElement;
@@ -81,17 +79,14 @@ const Layout = ({
         hasHiPurpleTheme: html.classList.contains('theme-hi-purple')
       };
       
-      // Only update state if there's a change to avoid unnecessary renders
       if (JSON.stringify(newThemeState) !== JSON.stringify(themeState)) {
         console.log('Theme state updated:', newThemeState);
         setThemeState(newThemeState);
       }
     };
     
-    // Run once on mount to ensure initial state is correct
     updateThemeState();
     
-    // Listen for theme changes
     document.addEventListener('themeClassChanged', updateThemeState);
     
     return () => {
@@ -99,7 +94,6 @@ const Layout = ({
     };
   }, [themeState]);
 
-  // Additional useEffect to check localStorage on mount
   useEffect(() => {
     const checkStoredTheme = () => {
       const savedThemeName = localStorage.getItem('app-active-theme');
@@ -130,7 +124,8 @@ const Layout = ({
       }
 
       try {
-        if (profile.role === 'GOD') {
+        if (profile.role === 'GOD' || profile.role === 'Super User') {
+          console.log('User has GOD or Super User role - setting all permissions to true');
           setPermissionsLoaded(true);
           return;
         }
@@ -194,7 +189,9 @@ const Layout = ({
   }, [isAuthenticated, profile]);
 
   const hasModuleAccess = (moduleId: string) => {
-    if (profile?.role === 'GOD' || profile?.role === 'Super User') {
+    if (!profile) return false;
+
+    if (profile.role === 'GOD' || profile.role === 'Super User') {
       return true;
     }
 
@@ -203,7 +200,9 @@ const Layout = ({
   };
 
   const hasPageAccess = (pageUrl: string) => {
-    if (profile?.role === 'GOD' || profile?.role === 'Super User') {
+    if (!profile) return false;
+
+    if (profile.role === 'GOD' || profile.role === 'Super User') {
       return true;
     }
 
