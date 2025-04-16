@@ -447,18 +447,27 @@ ${currentUserProfile?.first_name || 'The Management Team'}`;
         return;
       }
       
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      if (!token) {
+        toast.error('Authentication error - please log in again');
+        setSendingInvites(false);
+        return;
+      }
+      
       const results = await Promise.all(
         emails.map(async (email) => {
           try {
             const invitationToken = crypto.randomUUID();
             
             const response = await fetch(
-              `https://kfiergoryrnjkewmeriy.supabase.co/functions/v1/send-user-invitation`,
+              `${supabase.supabaseUrl}/functions/v1/send-user-invitation`,
               {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabase.auth.getSession()}`
+                  'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                   email,
