@@ -58,6 +58,14 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         const pathParts = location.pathname.split('/').filter(part => part !== '');
         const moduleId = pathParts[0] || '';
         
+        // Team Member specific protection - only allow team module
+        if (profile.role === 'Team Member') {
+          const hasAccess = moduleId === 'team';
+          console.log(`Team Member access check for module ${moduleId}: ${hasAccess}`);
+          setHasPermission(hasAccess);
+          return;
+        }
+        
         // Get the module permission for the user's role
         const { data: moduleAccess, error: moduleError } = await supabase
           .from('permission_access')
