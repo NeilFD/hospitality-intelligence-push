@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import type { UserProfile } from '@/types/supabase-types';
@@ -47,7 +48,7 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Completely revamped password update approach with single function
+// Simple, straightforward password update function
 export const adminUpdateUserPassword = async (
   userId: string, 
   password: string
@@ -60,8 +61,8 @@ export const adminUpdateUserPassword = async (
       return false;
     }
     
-    // Use the new simple_update_password function
-    const { data, error } = await supabase.rpc('simple_update_password', {
+    // Use the new update_user_password function
+    const { data, error } = await supabase.rpc('update_user_password', {
       user_id: userId,
       new_password: password
     });

@@ -1745,6 +1745,10 @@ export type Database = {
         Args: { matrix: Json }
         Returns: undefined
       }
+      update_user_password: {
+        Args: { user_id: string; new_password: string }
+        Returns: boolean
+      }
       update_user_password_fallback: {
         Args: { user_id: string; password: string }
         Returns: boolean
