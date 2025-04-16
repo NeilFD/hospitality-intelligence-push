@@ -60,7 +60,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     
     // Try the direct update function first (new approach)
     console.log('Trying direct password update function...');
-    const { data: directData, error: directError } = await supabase.rpc<boolean, { user_id_val: string, password_val: string }>('direct_update_user_password', {
+    const { data: directData, error: directError } = await supabase.rpc('direct_update_user_password', {
       user_id_val: userId,
       password_val: password
     });
@@ -74,7 +74,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     
     // Try using the admin password update function as backup
     console.log('Trying admin password update function...');
-    const { data: adminData, error: adminError } = await supabase.rpc<boolean, { user_id: string, password: string }>('admin_update_user_password', {
+    const { data: adminData, error: adminError } = await supabase.rpc('admin_update_user_password', {
       user_id: userId,
       password: password
     });
@@ -88,7 +88,7 @@ export const adminUpdateUserPassword = async (userId: string, password: string):
     
     // If both previous methods fail, try the fallback function
     console.log('Attempting fallback password update method...');
-    const { data: fallbackData, error: fallbackError } = await supabase.rpc<boolean, { user_id: string, password: string }>('update_user_password_fallback', {
+    const { data: fallbackData, error: fallbackError } = await supabase.rpc('update_user_password_fallback', {
       user_id: userId,
       password: password
     });
