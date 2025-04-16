@@ -429,7 +429,6 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
     window.open(`mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${body}`);
   };
 
-  // Modified to use direct email client opening
   const handleSendInvitation = () => {
     if (!invitationEmail.trim()) {
       toast.error('Please enter an email address');
@@ -441,7 +440,6 @@ ${currentUserProfile?.first_name || 'The Hi Team'}`;
       return;
     }
 
-    // Create an invitation message
     const subject = 'Invitation to join our team';
     const body = `
 Hello,
@@ -461,14 +459,11 @@ Best regards,
 ${currentUserProfile?.first_name || 'The Hi Team'}
 `;
 
-    // Open the email client
     const mailtoLink = `mailto:${encodeURIComponent(invitationEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoLink, '_blank');
     
-    // Clear the input field
     setInvitationEmail('');
     
-    // Show success message
     toast.success('Email client opened with the invitation');
   };
   
@@ -609,8 +604,6 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                     {canManageUsers && (
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          
-                          
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">
@@ -647,7 +640,6 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
         </CardContent>
       </Card>
 
-      
       <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -935,4 +927,32 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 <Label htmlFor="jobTitle">Job Title</Label>
                 <Input 
                   id="jobTitle" 
-                  value={newProfile
+                  value={newProfileForm.jobTitle}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
+                  placeholder="Job title"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddProfileDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateProfile}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create Profile
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default TeamManagementPanel;
