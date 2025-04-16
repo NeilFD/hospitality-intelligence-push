@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,6 +59,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     try {
       console.log(`Creating profile directly for user ${userId}`);
       
+      // Sleep for 500ms to ensure auth setup is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Attempt 1: Direct insert into profiles table
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
@@ -76,6 +81,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('Direct profile insert failed:', insertError);
       
+      // Wait a bit more before trying the next method
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Attempt 2: RPC method
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         'create_profile_for_user',
         {
@@ -95,6 +104,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('RPC create_profile_for_user failed:', rpcError);
       
+      // Wait a bit more before trying the next method
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Attempt 3: Manual method
       const { data: manualResult, error: manualError } = await supabase.rpc(
         'handle_new_user_manual',
         {
@@ -113,6 +126,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.error('handle_new_user_manual failed:', manualError);
       
+      // Wait a bit more before trying the next method
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Attempt 4: Final upsert method
       const { error: finalError } = await supabase
         .from('profiles')
         .upsert({
@@ -121,7 +138,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           last_name: userData.last_name,
           email: userData.email,
           role: userData.role || 'Team Member'
-        });
+        }, { onConflict: 'id' });
         
       if (!finalError) {
         console.log('Profile created successfully via final upsert attempt');
@@ -176,14 +193,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       console.log("User registered successfully, user ID:", data.user.id);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait to ensure the database trigger has a chance to run
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       const profileCreated = await createProfileDirectly(data.user.id, metadata);
       
       if (profileCreated) {
         console.log("Profile created successfully");
       } else {
-        console.log("All profile creation attempts failed, user will need to log in to finalize setup");
+        console.warn("All profile creation attempts failed, user will need to log in to finalize setup");
+        // One last attempt through the auth store's loadUser method
+        try {
+          const { login } = useAuthStore.getState();
+          await login(values.email, values.password);
+          console.log("Attempted login to trigger profile creation through auth store");
+        } catch (e) {
+          console.error("Failed to auto-login for profile creation:", e);
+        }
       }
       
       if (onRegistrationComplete) {
