@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase-types';
 import type { UserProfile } from '@/types/supabase-types';
@@ -48,7 +47,7 @@ export const getCurrentUser = async () => {
   return data?.session?.user || null;
 };
 
-// Modified password update function with direct SQL approach
+// Improved password update function with better error handling
 export const adminUpdateUserPassword = async (
   userId: string, 
   password: string
@@ -64,7 +63,7 @@ export const adminUpdateUserPassword = async (
     // Log the user ID to verify it's correct
     console.log('User ID for password update:', userId);
     
-    // Direct SQL approach - this will work even if the user is in profiles but not in auth.users
+    // Direct SQL approach using our existing create_auth_user_if_not_exists function
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('email')
@@ -83,7 +82,13 @@ export const adminUpdateUserPassword = async (
     
     console.log('Found profile with email:', profile.email);
     
-    // Create auth user if it doesn't exist
+    // Try to create/update auth user first with detailed logging
+    console.log('Calling create_auth_user_if_not_exists with:', {
+      user_id_val: userId,
+      email_val: profile.email,
+      password_val: '***' // Don't log actual password
+    });
+    
     const { data: createResult, error: createError } = await supabase.rpc('create_auth_user_if_not_exists', {
       user_id_val: userId,
       email_val: profile.email,
@@ -91,14 +96,21 @@ export const adminUpdateUserPassword = async (
     });
     
     if (createError) {
-      console.error('Create/update user error:', createError);
-      // Direct SQL fallback using existing function
+      console.error('Error details from create_auth_user_if_not_exists:', createError);
+      
+      // Fallback to the simple password update
+      console.log('Falling back to simple_password_update');
       const { data, error } = await supabase.rpc('simple_password_update', {
         user_id: userId,
         password: password
       });
       
-      console.log('Direct password update result:', data, error);
+      if (error) {
+        console.error('Simple password update also failed:', error);
+        return false;
+      }
+      
+      console.log('Direct password update result:', data);
       return data === true;
     }
     
