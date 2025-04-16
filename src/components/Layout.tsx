@@ -17,9 +17,23 @@ import { useCurrentModule, useSetCurrentModule, useModules } from "@/lib/store";
 import { ModuleIcon } from "./ModuleIcons";
 import NotificationsDropdown from "./notifications/NotificationsDropdown";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
+
 interface LayoutProps {
   children: ReactNode;
 }
+
+interface ModulePermission {
+  moduleId: string;
+  hasAccess: boolean;
+}
+
+interface PagePermission {
+  pageId: string;
+  pageUrl: string;
+  hasAccess: boolean;
+}
+
 const Layout = ({
   children
 }: LayoutProps) => {
@@ -48,28 +62,119 @@ const Layout = ({
     hasDarkModeTheme: false,
     hasHiPurpleTheme: false
   });
+
+  const [modulePermissions, setModulePermissions] = useState<ModulePermission[]>([]);
+  const [pagePermissions, setPagePermissions] = useState<PagePermission[]>([]);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
+
   useEffect(() => {
-    const checkThemeClasses = () => {
-      const htmlElement = document.documentElement;
-      setThemeState({
-        hasForestGreenTheme: htmlElement.classList.contains('theme-forest-green'),
-        hasOceanBlueTheme: htmlElement.classList.contains('theme-ocean-blue'),
-        hasSunsetOrangeTheme: htmlElement.classList.contains('theme-sunset-orange'),
-        hasBerryPurpleTheme: htmlElement.classList.contains('theme-berry-purple'),
-        hasDarkModeTheme: htmlElement.classList.contains('theme-dark-mode'),
-        hasHiPurpleTheme: htmlElement.classList.contains('theme-hi-purple')
-      });
+    const fetchUserPermissions = async () => {
+      if (!isAuthenticated || !profile || !profile.role) {
+        return;
+      }
+
+      try {
+        if (profile.role === 'GOD') {
+          setPermissionsLoaded(true);
+          return;
+        }
+
+        const { data: moduleAccess, error: moduleError } = await supabase
+          .from('permission_access')
+          .select('module_id, has_access')
+          .eq('role_id', profile.role);
+
+        if (moduleError) {
+          console.error('Error fetching module permissions:', moduleError);
+          return;
+        }
+
+        const { data: pageAccess, error: pageError } = await supabase
+          .from('permission_page_access')
+          .select('page_id, has_access')
+          .eq('role_id', profile.role);
+
+        if (pageError) {
+          console.error('Error fetching page permissions:', pageError);
+          return;
+        }
+
+        const { data: pages, error: pagesError } = await supabase
+          .from('permission_pages')
+          .select('page_id, page_url');
+
+        if (pagesError) {
+          console.error('Error fetching pages:', pagesError);
+          return;
+        }
+
+        setModulePermissions(moduleAccess.map(item => ({
+          moduleId: item.module_id,
+          hasAccess: item.has_access
+        })));
+
+        const pagesWithAccess = pageAccess.map(item => {
+          const pageInfo = pages.find(p => p.page_id === item.page_id);
+          return {
+            pageId: item.page_id,
+            pageUrl: pageInfo?.page_url || '',
+            hasAccess: item.has_access
+          };
+        });
+
+        setPagePermissions(pagesWithAccess);
+        setPermissionsLoaded(true);
+        
+        console.log('Loaded permissions:', {
+          modulePermissions: moduleAccess,
+          pagePermissions: pagesWithAccess
+        });
+      } catch (error) {
+        console.error('Error fetching permissions:', error);
+      }
     };
-    checkThemeClasses();
-    const handleThemeChange = () => {
-      checkThemeClasses();
-    };
-    document.addEventListener('themeClassChanged', handleThemeChange);
-    return () => {
-      document.removeEventListener('themeClassChanged', handleThemeChange);
-    };
-  }, []);
-  const getSidebarBgColor = () => {
+
+    fetchUserPermissions();
+  }, [isAuthenticated, profile]);
+
+  const hasModuleAccess = (moduleId: string) => {
+    if (profile?.role === 'GOD' || profile?.role === 'Super User') {
+      return true;
+    }
+
+    const modulePermission = modulePermissions.find(p => p.moduleId === moduleId);
+    return modulePermission ? modulePermission.hasAccess : false;
+  };
+
+  const hasPageAccess = (pageUrl: string) => {
+    if (profile?.role === 'GOD' || profile?.role === 'Super User') {
+      return true;
+    }
+
+    const exactPageMatch = pagePermissions.find(p => p.pageUrl === pageUrl);
+    if (exactPageMatch) {
+      return exactPageMatch.hasAccess;
+    }
+
+    for (const page of pagePermissions) {
+      if (page.pageUrl.includes('{')) {
+        const pageUrlPattern = page.pageUrl.replace(/\{[^}]+\}/g, '[^/]+');
+        const pageRegex = new RegExp(`^${pageUrlPattern}$`);
+        
+        if (pageRegex.test(pageUrl) && page.hasAccess) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  const hasControlCentreAccess = () => {
+    return profile?.role === 'GOD' || profile?.role === 'Super User';
+  };
+
+  getSidebarBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -86,7 +191,8 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#806cac]";
     return "bg-[#806cac]";
   };
-  const getSidebarHoverColor = () => {
+
+  getSidebarHoverColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -103,7 +209,8 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-white/10";
     return "bg-white/10";
   };
-  const getActiveItemBgColor = () => {
+
+  getActiveItemBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -120,7 +227,8 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#9d89c9]";
     return "bg-[#705b9b]";
   };
-  const getModuleActiveBgColor = () => {
+
+  getModuleActiveBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -137,7 +245,8 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-white text-[#806cac]";
     return "bg-white text-[#806cac]";
   };
-  const getControlCenterBgColor = () => {
+
+  getControlCenterBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -154,7 +263,8 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#9d89c9]";
     return "bg-[#705b9b]";
   };
-  const getTextColor = () => {
+
+  getTextColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -171,7 +281,8 @@ const Layout = ({
     if (hasHiPurpleTheme) return "text-[#e0d9f0]";
     return "text-[#e0d9f0]";
   };
-  const getSeparatorBgColor = () => {
+
+  getSeparatorBgColor = () => {
     const {
       hasForestGreenTheme,
       hasOceanBlueTheme,
@@ -188,7 +299,12 @@ const Layout = ({
     if (hasHiPurpleTheme) return "bg-[#9d89c9]/20";
     return "bg-[#9d89c9]/20";
   };
-  const ControlCentreLink = () => {
+
+  ControlCentreLink = () => {
+    if (!hasControlCentreAccess()) {
+      return null;
+    }
+
     return <Link to="/control-centre" className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
         <div className={sidebarCollapsed ? "mx-auto" : ""}>
           <Sliders className="h-4 w-4 mr-2" />
@@ -196,11 +312,13 @@ const Layout = ({
         {!sidebarCollapsed && <span>Control Centre</span>}
       </Link>;
   };
+
   useEffect(() => {
     console.log('Current user profile:', profile);
     console.log('Is authenticated:', isAuthenticated);
     console.log('Current user:', user);
   }, [profile, isAuthenticated, user]);
+
   useEffect(() => {
     console.log('Modules in sidebar:', modules);
     console.log('Current module:', currentModule);
@@ -227,12 +345,15 @@ const Layout = ({
     };
     clearLocalStorageCache();
   }, []);
+
   const sortedModules = useMemo(() => {
     return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
+
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
+
   const handleLogout = async () => {
     try {
       if (isAuthenticated) {
@@ -245,12 +366,14 @@ const Layout = ({
       toast.error('Failed to log out. Please try again.');
     }
   };
+
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
+
   const getModuleNavItems = useMemo(() => {
     switch (currentModule) {
       case 'food':
@@ -331,6 +454,7 @@ const Layout = ({
         return [];
     }
   }, [currentModule, currentYear, currentMonth]);
+
   const moduleNavItems = useMemo(() => {
     return sortedModules.map(module => ({
       name: module.type === 'master' ? 'Daily Info' : module.type === 'team' ? 'Team' : module.type === 'pl' ? 'P&L Tracker' : module.type === 'wages' ? 'Wages Tracker' : module.type === 'food' ? 'Food Hub' : module.type === 'beverage' ? 'Beverage Hub' : module.type === 'performance' ? 'Performance and Analysis' : module.name,
@@ -339,14 +463,19 @@ const Layout = ({
       type: module.type
     }));
   }, [sortedModules]);
+
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
   };
+
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
   if (isAuthPage) {
     return <>{children}</>;
   }
+
   const isAdminUser = true;
+
   const ProfileAvatar = () => <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-primary text-white">
         {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
@@ -355,6 +484,7 @@ const Layout = ({
           {profile.first_name || 'User'}
         </span>}
     </div>;
+
   const Sidebar = <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
@@ -371,7 +501,7 @@ const Layout = ({
         </div>
         
         <nav className="space-y-1">
-          {moduleNavItems.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
+          {filteredModuleNavItems.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={() => handleModuleSelect(item.type as ModuleType)}>
@@ -403,7 +533,7 @@ const Layout = ({
         </div>
         
         <nav className="space-y-1">
-          {getModuleNavItems.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
+          {filteredModuleNav.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
@@ -428,7 +558,8 @@ const Layout = ({
       <>
         <Separator className={getSeparatorBgColor()} />
         <div className="p-2">
-          {sidebarCollapsed ? <TooltipProvider>
+          {hasControlCentreAccess() && (
+            sidebarCollapsed ? <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link to="/control-centre" className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
@@ -441,7 +572,8 @@ const Layout = ({
                   <p>Control Centre</p>
                 </TooltipContent>
               </Tooltip>
-            </TooltipProvider> : <ControlCentreLink />}
+            </TooltipProvider> : <ControlCentreLink />
+          )}
         </div>
       </>
       
@@ -449,6 +581,7 @@ const Layout = ({
         {!sidebarCollapsed && <p className={cn("text-xs", getTextColor())}>© 2025 Hi</p>}
       </div>
     </div>;
+
   return <div className="flex h-screen bg-background overflow-hidden">
       {isMobile ? <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -563,4 +696,5 @@ const Layout = ({
         </>}
     </div>;
 };
+
 export default Layout;

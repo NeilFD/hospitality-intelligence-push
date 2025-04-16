@@ -38,6 +38,13 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         return;
       }
 
+      // Super User also has access to everything
+      if (profile.role === 'Super User') {
+        console.log('Super User detected - granting access to protected route');
+        setHasPermission(true);
+        return;
+      }
+
       // Skip permission check for non-protected routes
       if (['/login', '/register', '/'].includes(location.pathname)) {
         setHasPermission(true);
