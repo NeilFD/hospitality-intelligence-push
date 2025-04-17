@@ -68,7 +68,6 @@ const createInitialState = (): AppState => {
 
 // Add a rehydration handler to ensure all required modules are present and ordered correctly
 const handleRehydratedState = (state: AppState): AppState => {
-  // Make a copy of the state to avoid mutations
   const newState = { ...state };
   
   // Clear localStorage cache for modules if needed
