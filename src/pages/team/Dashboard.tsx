@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,14 +34,8 @@ const TeamDashboard: React.FC = () => {
         const members = await getTeamMembers();
         
         if (members && Array.isArray(members)) {
-          const filteredMembers = profile?.role === 'GOD' 
-            ? members 
-            : members.filter(member => 
-                canSeeRole(profile?.role, member.role || 'Team Member')
-              );
-          
-          setTeamMembers(filteredMembers);
-          console.log("Fetched team members:", filteredMembers);
+          setTeamMembers(members);
+          console.log("Fetched team members:", members);
         } else {
           setError('Invalid data format received');
         }
@@ -58,16 +51,9 @@ const TeamDashboard: React.FC = () => {
     fetchTeamMembers();
   }, [profile]);
 
-  // Updated to show all available roles based on the user's permission level
   const getAvailableRoleFilters = () => {
     const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member', 'Owner'];
-    
-    if (!profile || !profile.role) return ['Team Member'];
-    
-    if (profile.role === 'GOD') return allRoles;
-    
-    // Filter roles based on what the current user can see
-    return allRoles.filter(role => canSeeRole(profile.role, role));
+    return allRoles;
   };
 
   const filteredMembers = roleFilter === 'all'
