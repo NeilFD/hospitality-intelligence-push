@@ -10,7 +10,6 @@ const TeamKnowledge: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {/* Food Bible Card */}
       <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-green-200 rounded-xl group relative">
-        {/* Food Background Image */}
         <div className="absolute inset-0 bg-cover bg-center opacity-10 z-0" 
              style={{ backgroundImage: "url('/lovable-uploads/d7e475f7-c18d-4312-91d6-2bf24f07af7a.png')" }} />
         
@@ -33,24 +32,20 @@ const TeamKnowledge: React.FC = () => {
       </Card>
       
       {/* Beverage Bible Card */}
-      <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-hi-purple-light/20 rounded-xl group relative">
-        {/* Beverage Background Image */}
-        <div className="absolute inset-0 bg-cover bg-center opacity-10 z-0" 
-             style={{ backgroundImage: "url('/lovable-uploads/bfd620b2-f0d0-4190-9cf3-87808593f9d0.png')" }} />
-             
-        <CardHeader className="pt-6 pb-0 px-6 relative z-10">
-          <div className="bg-gradient-to-br from-hi-purple to-hi-purple-dark text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
+      <Card className="overflow-hidden shadow-none rounded-lg group relative bg-white">
+        <CardHeader className="p-4">
+          <div className="bg-purple-600 text-white p-4 rounded mb-2 inline-flex">
             <Wine className="h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl font-bold text-hi-purple-dark">Beverage Bible</CardTitle>
+          <CardTitle className="text-lg font-bold text-gray-800">Beverage Bible</CardTitle>
         </CardHeader>
-        <CardContent className="pt-4 px-6 relative z-10">
-          <p className="text-hi-purple min-h-[80px]">Access drink recipes, cocktail guides, and beverage preparation instructions.</p>
+        <CardContent className="px-4 pb-4">
+          <p className="text-gray-600 text-sm">Access drink recipes, cocktail guides, and beverage preparation instructions.</p>
         </CardContent>
-        <CardFooter className="pt-0 px-6 pb-6 relative z-10">
-          <Button asChild className="w-full justify-between bg-gradient-to-r from-hi-purple to-hi-purple-dark hover:from-hi-purple-dark hover:to-hi-purple-dark rounded-lg text-white shadow group-hover:shadow-md transition-all">
+        <CardFooter className="p-4 pt-0">
+          <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 text-white">
             <Link to="/beverage/bible">
-              View Beverage Bible <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              View Beverage Bible
             </Link>
           </Button>
         </CardFooter>
@@ -58,7 +53,6 @@ const TeamKnowledge: React.FC = () => {
       
       {/* Hospitality Bible Card */}
       <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-blue-200 rounded-xl group relative">
-        {/* Hospitality Background Image */}
         <div className="absolute inset-0 bg-cover bg-center opacity-10 z-0" 
              style={{ backgroundImage: "url('/lovable-uploads/d0fa3279-2855-4f82-b009-47d725cad839.png')" }} />
              
@@ -84,3 +78,4 @@ const TeamKnowledge: React.FC = () => {
 };
 
 export default TeamKnowledge;
+
