@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -253,7 +254,9 @@ const HomeDashboard: React.FC = () => {
                   Loading chat rooms...
                 </div>
               ) : generalRoomId ? (
-                <TeamChat initialRoomId={generalRoomId} compact={true} />
+                <div className="h-full w-full">
+                  <TeamChat key={`dashboard-chat-${generalRoomId}`} initialRoomId={generalRoomId} compact={true} />
+                </div>
               ) : (
                 <div className="flex justify-center items-center h-full text-gray-500">
                   No chat rooms available

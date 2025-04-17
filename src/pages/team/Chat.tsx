@@ -1,5 +1,4 @@
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -16,6 +15,8 @@ const Chat: React.FC = () => {
   const searchParams = new URLSearchParams(location.search);
   const roomSlug = searchParams.get('room') || 'general';
   const { user } = useAuthStore();
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
   
   // Fetch chat rooms with better error handling
   const { data: rooms = [], isLoading: isLoadingRooms, error: roomsError } = useQuery({
@@ -26,16 +27,18 @@ const Chat: React.FC = () => {
   });
   
   // Find the room ID based on the slug in the URL with improved error handling
-  const roomId = React.useMemo(() => {
+  useEffect(() => {
     if (!rooms || rooms.length === 0) {
       console.log('No rooms available yet');
-      return null;
+      return;
     }
     
     // First check if roomSlug is already a UUID (might be passed directly)
     if (roomSlug && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomSlug)) {
       console.log('Room ID is already a UUID:', roomSlug);
-      return roomSlug;
+      setRoomId(roomSlug);
+      setIsReady(true);
+      return;
     }
     
     // Otherwise look for a room by slug
@@ -43,16 +46,23 @@ const Chat: React.FC = () => {
     console.log('Finding room by slug or name:', roomSlug, 'Found:', room);
     
     // If we found a room by slug, use its ID
-    if (room) return room.id;
+    if (room) {
+      setRoomId(room.id);
+      setIsReady(true);
+      return;
+    }
     
     // Fall back to first room if available
     if (rooms.length > 0) {
       console.log('Falling back to first room:', rooms[0]);
-      return rooms[0].id;
+      setRoomId(rooms[0].id);
+      setIsReady(true);
+      return;
     }
     
     console.log('No rooms available, returning null');
-    return null;
+    setRoomId(null);
+    setIsReady(true);
   }, [rooms, roomSlug]);
   
   useEffect(() => {
@@ -115,8 +125,12 @@ const Chat: React.FC = () => {
           <div className="flex justify-center items-center h-full">
             <p className="text-red-500">Error loading chat rooms. Please refresh.</p>
           </div>
+        ) : !isReady ? (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-gray-500">Preparing chat interface...</p>
+          </div>
         ) : roomId ? (
-          <TeamChat key={roomId} initialRoomId={roomId} />
+          <TeamChat key={`chat-${roomId}`} initialRoomId={roomId} />
         ) : (
           <div className="flex justify-center items-center h-full">
             <p className="text-gray-500">No chat rooms available</p>

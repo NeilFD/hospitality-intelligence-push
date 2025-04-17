@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -411,6 +410,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [showMentionSelector, setShowMentionSelector] = useState(false);
   const [mentionStart, setMentionStart] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isMessageAreaReady, setIsMessageAreaReady] = useState(false);
   
   const {
     data: rooms = [],
@@ -447,11 +447,17 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     },
     enabled: !!selectedRoomId,
     retry: 1,
-    staleTime: 10000 // 10 seconds
+    staleTime: 10000, // 10 seconds
+    onSuccess: () => {
+      setTimeout(() => {
+        setIsMessageAreaReady(true);
+      }, 100);
+    }
   });
   
   useEffect(() => {
     if (selectedRoomId) {
+      setIsMessageAreaReady(false);
       refetchMessages();
     }
   }, [selectedRoomId, refetchMessages]);
@@ -504,12 +510,16 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   });
   
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: 'smooth'
-      });
+    if (messagesEndRef.current && messages.length > 0 && isMessageAreaReady) {
+      try {
+        messagesEndRef.current.scrollIntoView({
+          behavior: 'smooth'
+        });
+      } catch (error) {
+        console.error("Error scrolling to bottom:", error);
+      }
     }
-  }, [messages]);
+  }, [messages, isMessageAreaReady]);
   
   const findMessageAuthor = (authorId: string) => {
     return teamMembers.find(member => member.id === authorId);
@@ -859,7 +869,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     ? "p-2 border-t"
     : "p-3 border-t";
   
-  // Safe rendering of messages with error handling
   const renderMessages = () => {
     if (isLoadingMessages) {
       return (
@@ -885,12 +894,22 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       );
     }
     
-    // Only render non-deleted messages
-    return (
-      <>
-        {messages
-          .filter(message => !message.deleted)
-          .map(message => (
+    try {
+      const safeMessages = Array.isArray(messages) 
+        ? messages.filter(msg => msg && typeof msg === 'object' && !msg.deleted)
+        : [];
+        
+      if (safeMessages.length === 0) {
+        return (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-gray-500">No messages to display.</p>
+          </div>
+        );
+      }
+      
+      return (
+        <>
+          {safeMessages.map(message => (
             <Message 
               key={message.id} 
               message={message} 
@@ -902,9 +921,17 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               currentUserId={user?.id || ''} 
             />
           ))}
-        <div ref={messagesEndRef} />
-      </>
-    );
+          <div ref={messagesEndRef} />
+        </>
+      );
+    } catch (error) {
+      console.error("Error rendering messages:", error);
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-red-500">Something went wrong displaying messages.</p>
+        </div>
+      );
+    }
   };
 
   return (
@@ -924,7 +951,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               </div>
             )}
             
-            <div className={chatContentClasses}>
+            <div className={chatContentClasses} style={{maxHeight: compact ? '320px' : undefined}}>
               {renderMessages()}
             </div>
             
