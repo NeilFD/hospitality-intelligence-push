@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -23,7 +24,7 @@ const initialSuppliers: Supplier[] = [
   { id: '5', name: 'Local Farm Co-op' },
 ];
 
-// Updated default modules with Home module moved above Master
+// Updated default modules with Home module moved to the top
 const defaultModules: Module[] = [
   { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 0 },
   { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 1 },
