@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CircleDollarSign, TrendingUp, User, BarChart, Bot } from "lucide-react";
+
 export default function AnalyticsModules() {
   const modules = [{
     title: "P&L Analysis",
@@ -9,11 +10,9 @@ export default function AnalyticsModules() {
     icon: <CircleDollarSign className="h-8 w-8 text-white" />,
     path: "/performance/pl-analysis",
     color: "bg-hi-purple",
-    // Ensure this remains purple
     hoverColor: "bg-hi-purple-dark",
     borderColor: "border-hi-purple/20",
     textColor: "text-white",
-    // Explicitly set title to white
     descriptionColor: "text-white/80"
   }, {
     title: "Wage Optimization",
@@ -24,7 +23,6 @@ export default function AnalyticsModules() {
     hoverColor: "bg-pastel-blue-dark/90",
     borderColor: "border-pastel-blue-dark/20",
     textColor: "text-white",
-    // Change to white
     descriptionColor: "text-black/80"
   }, {
     title: "Food & Beverage Analysis",
@@ -35,7 +33,6 @@ export default function AnalyticsModules() {
     hoverColor: "bg-pastel-green-dark/90",
     borderColor: "border-pastel-green/20",
     textColor: "text-white",
-    // Change to white
     descriptionColor: "text-black/80"
   }, {
     title: "Data Explorer",
@@ -46,9 +43,9 @@ export default function AnalyticsModules() {
     hoverColor: "bg-sky-600",
     borderColor: "border-sky-500/20",
     textColor: "text-white",
-    // Change to white
     descriptionColor: "text-black/80"
   }];
+
   return <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-hi-purple flex items-center gap-2">
         <TrendingUp className="h-6 w-6" />
@@ -58,7 +55,7 @@ export default function AnalyticsModules() {
         {modules.map((module, index) => <Card key={index} className="rounded-xl overflow-hidden border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
             <CardHeader className="bg-purple-900">
               <div className="flex justify-between items-center">
-                <CardTitle className={`text-lg font-medium ${module.textColor}`}>{module.title}</CardTitle>
+                <CardTitle className="text-lg font-medium text-white">{module.title}</CardTitle>
                 <div className="rounded-full p-2">
                   {module.icon}
                 </div>
