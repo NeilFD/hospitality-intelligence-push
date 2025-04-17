@@ -217,8 +217,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin h-8 w-8 border-4 border-amber-300 border-t-amber-600 rounded-full"></div>
+      <div className="flex justify-center items-center p-4">
+        <div className="animate-spin h-6 w-6 border-4 border-amber-300 border-t-amber-600 rounded-full"></div>
       </div>
     );
   }
@@ -242,7 +242,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     );
   }
 
-  // Make sure we're only showing pinned notes if pinnedOnly is true
+  // Make sure we're showing all notes
   const displayNotes = pinnedOnly 
     ? notes.filter(note => note.pinned === true)
     : notes;
@@ -253,7 +253,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       return (
         <Card 
           key={item.id} 
-          className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
+          className="mb-3 min-w-[280px] border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
           onClick={() => handleNoteClick(item)}
         >
           <CardContent className={compact ? "p-3" : "p-4"}>
@@ -277,13 +277,13 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                       {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                     </span>
                     {item.pinned && (
-                      <span className="text-gray-400 ml-1 opacity-60">
+                      <span className="text-gray-400 ml-1 opacity-40">
                         <span className="text-xs">📌</span>
                       </span>
                     )}
                   </div>
                 </div>
-                <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-700 mt-1`}>
+                <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-700 mt-1 line-clamp-2`}>
                   {item.content}
                 </p>
                 <div className="text-xs text-blue-500 mt-2 flex items-center">
@@ -323,7 +323,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     return (
       <Card 
         key={item.id} 
-        className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
+        className="mb-3 min-w-[280px] border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
         onClick={() => handleNoteClick(item)}
       >
         <CardContent className={compact ? "p-3" : "p-4"}>
@@ -343,7 +343,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                     {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                   </span>
                   {item.pinned && (
-                    <span className="text-gray-400 ml-1 opacity-60">
+                    <span className="text-gray-400 ml-1 opacity-40">
                       <span className="text-xs">📌</span>
                     </span>
                   )}
@@ -374,9 +374,9 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
   };
 
   return (
-    <div>
+    <div className="w-full">
       {/* Horizontal scrolling container */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto pb-2">
         <div className="flex space-x-4 py-2" style={{ minWidth: 'max-content' }}>
           {displayNotes.map(renderNoticeCard)}
         </div>
