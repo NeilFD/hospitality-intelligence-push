@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +13,8 @@ export default function AnalyticsModules() {
       color: "bg-hi-purple",
       hoverColor: "bg-hi-purple-dark",
       borderColor: "border-hi-purple/20",
-      textColor: "text-black",
-      descriptionColor: "text-black/80"
+      textColor: "text-white",
+      descriptionColor: "text-white/80"
     },
     {
       title: "Wage Optimization",
@@ -88,4 +87,3 @@ export default function AnalyticsModules() {
     </div>
   );
 }
-
