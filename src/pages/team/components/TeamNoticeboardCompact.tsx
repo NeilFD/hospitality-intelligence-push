@@ -20,6 +20,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
   const fetchNotes = async () => {
     try {
       setLoading(true);
+      console.log('Fetching notes with pinnedOnly:', pinnedOnly);
       
       // Build the query - using a simpler approach without joins
       let query = supabase
@@ -30,27 +31,37 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       // Filter for pinned notes only if requested
       if (pinnedOnly) {
         query = query.eq('pinned', true);
+        console.log('Filtering for pinned notes only');
       }
       
       // Limit the number of notes if in compact mode
       if (compact) {
-        query = query.limit(5);
+        // If we're showing pinned only, let's get more to ensure we have enough
+        const limit = pinnedOnly ? 10 : 5;
+        query = query.limit(limit);
+        console.log('Using compact mode with limit:', limit);
       }
       
       const { data: notesData, error: fetchError } = await query;
       
       if (fetchError) throw fetchError;
       
+      console.log('Raw notes data fetched:', notesData?.length || 0, 'notes');
+      
       // If we have notes, fetch the author profiles separately
       if (notesData && notesData.length > 0) {
         const notesWithProfiles = await Promise.all(
           notesData.map(async (note) => {
             // Fetch author profile for each note
-            const { data: profileData } = await supabase
+            const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', note.author_id)
               .single();
+              
+            if (profileError) {
+              console.error('Error fetching profile for note:', note.id, profileError);
+            }
               
             return {
               ...note,
@@ -59,9 +70,13 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
           })
         );
         
-        console.log('Fetched notes with profiles:', notesWithProfiles);
+        console.log('Fetched notes with profiles:', notesWithProfiles.length, 'notes');
+        if (pinnedOnly) {
+          console.log('Pinned notes count:', notesWithProfiles.filter(n => n.pinned).length);
+        }
         setNotes(notesWithProfiles);
       } else {
+        console.log('No notes data returned from query');
         setNotes([]);
       }
     } catch (err: any) {
@@ -83,7 +98,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         event: '*', 
         schema: 'public', 
         table: 'team_notes' 
-      }, () => {
+      }, (payload) => {
+        console.log('Realtime event received for team_notes:', payload.eventType);
         // Just refetch all notes when any change happens
         fetchNotes();
       })
@@ -121,9 +137,14 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     );
   }
 
+  // Make sure we're only showing pinned notes if pinnedOnly is true
+  const displayNotes = pinnedOnly 
+    ? notes.filter(note => note.pinned === true)
+    : notes;
+
   return (
     <div className={`space-y-${compact ? '2' : '4'}`}>
-      {notes.map((note) => (
+      {displayNotes.map((note) => (
         <Card 
           key={note.id} 
           className={`relative border ${note.color ? `border-${note.color}-200` : 'border-amber-100'} bg-white shadow-sm hover:shadow-md transition-shadow`}
