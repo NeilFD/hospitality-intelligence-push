@@ -222,8 +222,14 @@ export const deleteNoteReply = async (replyId: string): Promise<void> => {
 
 export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
   try {
-    if (!roomId || roomId === 'general' || roomId === 'undefined') {
-      console.error('Invalid room ID provided to getMessages:', roomId);
+    if (!roomId) {
+      console.error('Invalid room ID provided to getMessages: room ID is empty');
+      return [];
+    }
+    
+    // Check if roomId is a valid UUID format
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomId)) {
+      console.error('Invalid room ID format provided to getMessages:', roomId);
       return [];
     }
     
@@ -240,6 +246,7 @@ export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
       throw error;
     }
     
+    console.log(`Successfully fetched ${data?.length || 0} messages for room ${roomId}`);
     return data || [];
   } catch (e) {
     console.error('Exception in getMessages:', e);

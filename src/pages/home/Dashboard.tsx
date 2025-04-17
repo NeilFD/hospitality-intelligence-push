@@ -39,7 +39,7 @@ const HomeDashboard: React.FC = () => {
   const yesterday = subDays(new Date(), 1);
   const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
   
-  const { data: chatRooms } = useQuery({
+  const { data: chatRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ['chatRooms'],
     queryFn: getChatRooms,
     staleTime: 5 * 60 * 1000 // 5 minutes
@@ -100,8 +100,17 @@ const HomeDashboard: React.FC = () => {
     if (chatRooms && chatRooms.length > 0) {
       const generalRoom = chatRooms.find(room => room.slug === 'general');
       if (generalRoom) {
+        console.log('Found general room:', generalRoom);
         setGeneralRoomId(generalRoom.id);
+      } else {
+        console.log('No general room found in:', chatRooms);
+        if (chatRooms[0]) {
+          console.log('Using first available room instead:', chatRooms[0]);
+          setGeneralRoomId(chatRooms[0].id);
+        }
       }
+    } else {
+      console.log('No chat rooms available or still loading:', chatRooms);
     }
   }, [chatRooms]);
 
@@ -122,7 +131,6 @@ const HomeDashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Noticeboard Section */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-medium text-amber-800 flex items-center">
@@ -139,7 +147,6 @@ const HomeDashboard: React.FC = () => {
         </div>
       </div>
       
-      {/* Yesterday's Performance - Now Full Width */}
       <Card className="shadow-md rounded-lg overflow-hidden bg-white border border-gray-100 mb-6">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-3">
           <div className="flex justify-between items-center">
@@ -232,7 +239,6 @@ const HomeDashboard: React.FC = () => {
       </Card>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Team Chat - Left Column */}
         <div className="lg:col-span-2">
           <Card className="shadow-md rounded-lg overflow-hidden border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 pb-3">
@@ -242,18 +248,21 @@ const HomeDashboard: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 h-[400px]">
-              {generalRoomId ? (
+              {isLoadingRooms ? (
+                <div className="flex justify-center items-center h-full text-gray-500">
+                  Loading chat rooms...
+                </div>
+              ) : generalRoomId ? (
                 <TeamChat initialRoomId={generalRoomId} compact={true} />
               ) : (
                 <div className="flex justify-center items-center h-full text-gray-500">
-                  Loading chat rooms...
+                  No chat rooms available
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
         
-        {/* Quick Navigation Section - Right Column */}
         <div className="lg:col-span-1">
           <Card className="shadow-md rounded-lg overflow-hidden h-full border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 pb-3">
@@ -265,7 +274,6 @@ const HomeDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="grid grid-cols-2 gap-3">
                 {availableModules.map((module) => {
-                  // Custom styling based on module type
                   let bgGradient, iconBg, hoverBg, borderColor, shadowColor;
                   
                   switch(module.type) {
@@ -325,7 +333,6 @@ const HomeDashboard: React.FC = () => {
                       to={`/${module.type}/dashboard`}
                       className={`bg-gradient-to-br ${bgGradient} rounded-xl border ${borderColor} p-3 flex flex-col items-center justify-center h-28 shadow-sm ${shadowColor} transition-all duration-300 hover:shadow-md hover:-translate-y-1 group overflow-hidden relative`}
                     >
-                      {/* Background animated accent */}
                       <div className="absolute -right-8 -top-8 w-16 h-16 rounded-full bg-white/30 opacity-0 group-hover:opacity-30 transition-opacity duration-700"></div>
                       
                       <div className={`${iconBg} ${hoverBg} rounded-full p-3 mb-2 transition-colors duration-300 relative z-10`}>
@@ -336,7 +343,6 @@ const HomeDashboard: React.FC = () => {
                         {module.name}
                       </span>
                       
-                      {/* Hover indicator */}
                       <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out"></div>
                     </Link>
                   );

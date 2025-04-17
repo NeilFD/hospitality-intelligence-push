@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,15 +15,34 @@ const Chat: React.FC = () => {
   const searchParams = new URLSearchParams(location.search);
   const roomSlug = searchParams.get('room') || 'general';
   const { user } = useAuthStore();
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
     queryKey: ['chatRooms'],
     queryFn: getChatRooms
   });
   
   // Find the room ID based on the slug in the URL
   const roomId = React.useMemo(() => {
+    // First check if roomSlug is already a UUID (might be passed directly)
+    if (roomSlug && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomSlug)) {
+      console.log('Room ID is already a UUID:', roomSlug);
+      return roomSlug;
+    }
+    
+    // Otherwise look for a room by slug
     const room = rooms.find(r => r.slug === roomSlug);
-    return room?.id || (rooms[0]?.id || null);
+    console.log('Found room by slug:', room, 'for slug:', roomSlug);
+    
+    // If we found a room by slug, use its ID
+    if (room) return room.id;
+    
+    // Fall back to first room if available
+    if (rooms.length > 0) {
+      console.log('Falling back to first room:', rooms[0]);
+      return rooms[0].id;
+    }
+    
+    console.log('No rooms available, returning null');
+    return null;
   }, [rooms, roomSlug]);
   
   useEffect(() => {
@@ -79,11 +97,15 @@ const Chat: React.FC = () => {
   return (
     <div className={cn("container mx-auto overflow-hidden", isMobile ? "p-0 max-w-full" : "p-4")}>
       <div className="overflow-hidden h-[calc(100vh-130px)] border border-gray-100 rounded-lg">
-        {roomId ? (
+        {isLoadingRooms ? (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-gray-500">Loading chat rooms...</p>
+          </div>
+        ) : roomId ? (
           <TeamChat initialRoomId={roomId} />
         ) : (
           <div className="flex justify-center items-center h-full">
-            <p className="text-gray-500">Loading chat rooms...</p>
+            <p className="text-gray-500">No chat rooms available</p>
           </div>
         )}
       </div>
