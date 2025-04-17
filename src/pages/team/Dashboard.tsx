@@ -164,7 +164,7 @@ const TeamDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/d2abeaa8-da6c-45de-8633-f0da3c4ef2d5.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/d336d95c-5439-44c5-8a0c-a033440fb915.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
