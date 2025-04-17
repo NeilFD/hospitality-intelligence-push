@@ -5,6 +5,11 @@ import { TavernLogo } from '@/components/TavernLogo';
 import { motion } from 'framer-motion';
 
 export default function Login() {
+  // Set document title when component mounts
+  useEffect(() => {
+    document.title = 'Hospitality Intelligence';
+  }, []);
+
   return (
     <div 
       className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-[#9b87f5] via-[#d3e4fd] to-[#F2FCE2]"

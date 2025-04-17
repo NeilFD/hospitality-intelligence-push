@@ -9,6 +9,7 @@ import { UserProfile } from '@/types/supabase-types';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/services/auth-service';
+
 const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
   const roleHierarchy = {
     'GOD': 4,
@@ -20,6 +21,7 @@ const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: strin
   const seeRoleValue = roleHierarchy[roleToSee] || 0;
   return currentRoleValue >= seeRoleValue;
 };
+
 const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +30,7 @@ const TeamDashboard: React.FC = () => {
   const {
     profile
   } = useAuthStore();
+
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
@@ -50,17 +53,21 @@ const TeamDashboard: React.FC = () => {
     };
     fetchTeamMembers();
   }, [profile]);
+
   const getAvailableRoleFilters = () => {
     const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member', 'Owner'];
     return allRoles;
   };
+
   const filteredMembers = roleFilter === 'all' ? teamMembers : teamMembers.filter(member => member.role === roleFilter || roleFilter === 'Team Member' && !member.role);
+
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
+
   return <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-hi-purple-light/20 to-hi-purple/10 rounded-lg p-6 mb-6 shadow-md border border-hi-purple/20">
         <div className="flex justify-between items-center">
@@ -239,4 +246,5 @@ const TeamDashboard: React.FC = () => {
       </div>
     </div>;
 };
+
 export default TeamDashboard;
