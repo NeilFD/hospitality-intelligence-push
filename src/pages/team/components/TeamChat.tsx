@@ -412,7 +412,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [mentionStart, setMentionStart] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMessageAreaReady, setIsMessageAreaReady] = useState(false);
-  const [scrollToBottomAttempted, setScrollToBottomAttempted] = useState(false);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   
   const {
     data: rooms = [],
@@ -454,8 +454,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       onSettled: () => {
         setTimeout(() => {
           setIsMessageAreaReady(true);
-          setScrollToBottomAttempted(false);
-          scrollToBottom();
+          setShouldScrollToBottom(true);
         }, 100);
       }
     }
@@ -464,7 +463,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   useEffect(() => {
     if (selectedRoomId) {
       setIsMessageAreaReady(false);
-      setScrollToBottomAttempted(false);
+      setShouldScrollToBottom(true);
       refetchMessages();
     }
   }, [selectedRoomId, refetchMessages]);
@@ -517,47 +516,35 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   });
   
   const scrollToBottom = () => {
-    if (!messagesEndRef.current || scrollToBottomAttempted) return;
+    if (!messagesEndRef.current || !shouldScrollToBottom) return;
     
     try {
-      console.log('Attempting to scroll to bottom');
       messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
-      
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          console.log('Delayed scroll to bottom');
-          messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
-        }
-      }, 100);
-      
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          console.log('Final smooth scroll to bottom');
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-        setScrollToBottomAttempted(true);
-      }, 300);
+      setShouldScrollToBottom(false);
     } catch (error) {
       console.error("Error scrolling to bottom:", error);
     }
   };
   
   useEffect(() => {
-    if (messages.length > 0 && isMessageAreaReady && !scrollToBottomAttempted) {
-      scrollToBottom();
+    if (messages.length > 0 && isMessageAreaReady && shouldScrollToBottom) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 150);
+      
+      return () => clearTimeout(timer);
     }
-  }, [messages, isMessageAreaReady]);
-  
-  useEffect(() => {
-    if (scrollContainerRef.current && !scrollToBottomAttempted) {
-      scrollToBottom();
-    }
-  }, [scrollContainerRef.current]);
+  }, [messages, isMessageAreaReady, shouldScrollToBottom]);
   
   useEffect(() => {
     const handleResize = () => {
-      if (isMessageAreaReady && !scrollToBottomAttempted) {
-        scrollToBottom();
+      if (isMessageAreaReady) {
+        setShouldScrollToBottom(true);
+        const timer = setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+        
+        return () => clearTimeout(timer);
       }
     };
     
@@ -669,8 +656,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       
       toast.success('Message sent');
       
-      setScrollToBottomAttempted(false);
-      setTimeout(scrollToBottom, 100);
+      setShouldScrollToBottom(true);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -698,7 +684,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     if (roomId !== selectedRoomId) {
       console.log('Changing selected room from', selectedRoomId, 'to', roomId);
       setSelectedRoomId(roomId);
-      setScrollToBottomAttempted(false);
+      setShouldScrollToBottom(true);
       queryClient.invalidateQueries({
         queryKey: ['teamMessages', roomId]
       });
@@ -968,7 +954,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               currentUserId={user?.id || ''} 
             />
           ))}
-          <div ref={messagesEndRef} className="h-0 w-full" />
+          <div ref={messagesEndRef} className="h-1 w-full" />
         </>
       );
     } catch (error) {
@@ -1002,9 +988,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               ref={scrollContainerRef}
               className={chatContentClasses} 
               style={{maxHeight: compact ? '320px' : undefined}}
-              onLoad={() => {
-                if (!scrollToBottomAttempted) scrollToBottom();
-              }}
             >
               {renderMessages()}
             </div>
