@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -13,6 +12,7 @@ import { toast } from 'sonner';
 interface WelcomeMessage {
   id: string;
   content: string;
+  subject?: string;
   image_url?: string;
   created_at: string;
   author_id: string;
@@ -27,6 +27,7 @@ export const WelcomeMessage = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [newSubject, setNewSubject] = useState('');
   const { profile } = useAuthStore();
 
   const canEdit = profile?.role && ['GOD', 'Super User', 'Manager'].includes(profile.role);
@@ -37,7 +38,6 @@ export const WelcomeMessage = () => {
 
   const fetchLatestMessage = async () => {
     try {
-      // Modified query to avoid using the join that isn't working
       const { data: messageData, error } = await supabase
         .from('team_welcome_messages')
         .select('*')
@@ -50,7 +50,6 @@ export const WelcomeMessage = () => {
         return;
       }
       
-      // If we have a message, fetch the author details separately
       if (messageData) {
         const { data: authorData, error: authorError } = await supabase
           .from('profiles')
@@ -122,17 +121,12 @@ export const WelcomeMessage = () => {
         imageUrl = await uploadImage(selectedImage);
       }
 
-      console.log('Submitting welcome message:', {
-        content: newContent,
-        image_url: imageUrl,
-        author_id: profile.id
-      });
-
       if (message?.id) {
         const { error } = await supabase
           .from('team_welcome_messages')
           .update({
             content: newContent,
+            subject: newSubject,
             image_url: imageUrl,
           })
           .eq('id', message.id);
@@ -143,6 +137,7 @@ export const WelcomeMessage = () => {
           .from('team_welcome_messages')
           .insert({
             content: newContent,
+            subject: newSubject,
             image_url: imageUrl,
             author_id: profile.id,
           });
@@ -180,6 +175,7 @@ export const WelcomeMessage = () => {
 
   const startEditing = () => {
     setNewContent(message?.content || '');
+    setNewSubject(message?.subject || '');
     setImagePreview(message?.image_url || null);
     setIsEditing(true);
   };
@@ -194,6 +190,11 @@ export const WelcomeMessage = () => {
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-4">
               <div>
+                {message.subject && (
+                  <h2 className="text-xl font-bold text-purple-700 mb-2">
+                    {message.subject}
+                  </h2>
+                )}
                 <p className="text-sm font-medium text-purple-700 mb-1 flex items-center">
                   Posted by {message.author_first_name} {message.author_last_name}
                 </p>
@@ -263,6 +264,12 @@ export const WelcomeMessage = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <Input
+              placeholder="Subject (optional)"
+              value={newSubject}
+              onChange={(e) => setNewSubject(e.target.value)}
+              className="font-medium"
+            />
             <Textarea
               placeholder="Enter your message..."
               value={newContent}
