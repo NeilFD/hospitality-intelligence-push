@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clipboard, AlertCircle, Utensils, Beer, ChefHat } from 'lucide-react';
+import { Clipboard, AlertCircle, Utensils, Beer, ChefHat, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import RecipeCardExpanded from './RecipeCardExpanded';
 
 interface NoticeboardProps {
   pinnedOnly?: boolean;
@@ -16,6 +18,10 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNote, setSelectedNote] = useState<any | null>(null);
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState<any | null>(null);
+  const [isRecipeDialogOpen, setIsRecipeDialogOpen] = useState(false);
 
   const fetchNotesAndRecipes = async () => {
     try {
@@ -199,6 +205,16 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     };
   }, [pinnedOnly, compact]);
 
+  const handleNoteClick = (item: any) => {
+    if (item.type === 'team_note') {
+      setSelectedNote(item);
+      setIsNoteDialogOpen(true);
+    } else {
+      setSelectedRecipe(item);
+      setIsRecipeDialogOpen(true);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -237,7 +253,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       return (
         <Card 
           key={item.id} 
-          className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+          className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
+          onClick={() => handleNoteClick(item)}
         >
           <CardContent className={compact ? "p-3" : "p-4"}>
             <div className="flex gap-3">
@@ -260,8 +277,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                       {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                     </span>
                     {item.pinned && (
-                      <span className="text-amber-500 ml-1">
-                        <span className="h-3 w-3 text-amber-400 inline-block">📌</span>
+                      <span className="text-gray-400 ml-1 opacity-60">
+                        <span className="text-xs">📌</span>
                       </span>
                     )}
                   </div>
@@ -269,6 +286,10 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                 <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-700 mt-1`}>
                   {item.content}
                 </p>
+                <div className="text-xs text-blue-500 mt-2 flex items-center">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  View full note
+                </div>
               </div>
             </div>
           </CardContent>
@@ -302,7 +323,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     return (
       <Card 
         key={item.id} 
-        className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+        className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
+        onClick={() => handleNoteClick(item)}
       >
         <CardContent className={compact ? "p-3" : "p-4"}>
           <div className="flex gap-3">
@@ -321,8 +343,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                     {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                   </span>
                   {item.pinned && (
-                    <span className="text-amber-400 ml-1">
-                      <span className="h-3 w-3 text-amber-400 inline-block">📌</span>
+                    <span className="text-gray-400 ml-1 opacity-60">
+                      <span className="text-xs">📌</span>
                     </span>
                   )}
                 </div>
@@ -340,6 +362,10 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                   </p>
                 )}
               </div>
+              <div className="text-xs text-blue-500 mt-2 flex items-center">
+                <ExternalLink className="h-3 w-3 mr-1" />
+                View details
+              </div>
             </div>
           </div>
         </CardContent>
@@ -348,8 +374,72 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
   };
 
   return (
-    <div className={`space-y-${compact ? '2' : '4'}`}>
-      {displayNotes.map(renderNoticeCard)}
+    <div>
+      {/* Horizontal scrolling container */}
+      <div className="overflow-x-auto">
+        <div className="flex space-x-4 py-2" style={{ minWidth: 'max-content' }}>
+          {displayNotes.map(renderNoticeCard)}
+        </div>
+      </div>
+
+      {/* Dialog for note details */}
+      <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          {selectedNote && selectedNote.type === 'team_note' && (
+            <div className="p-4">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-12 w-12">
+                  {selectedNote.profiles?.avatar_url ? (
+                    <AvatarImage src={selectedNote.profiles.avatar_url} alt={selectedNote.profiles?.first_name} />
+                  ) : (
+                    <AvatarFallback className="bg-blue-100 text-blue-800">
+                      {selectedNote.profiles?.first_name?.[0] || ''}{selectedNote.profiles?.last_name?.[0] || ''}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div>
+                  <h3 className="font-bold text-lg">
+                    {selectedNote.profiles?.first_name || 'Unknown'} {selectedNote.profiles?.last_name || ''}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {new Date(selectedNote.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-800 whitespace-pre-wrap">{selectedNote.content}</p>
+              </div>
+              {selectedNote.attachment_url && (
+                <div className="mt-4">
+                  {selectedNote.type === 'image' || selectedNote.type === 'gif' ? (
+                    <img src={selectedNote.attachment_url} alt="Attachment" className="rounded-md max-w-full h-auto" />
+                  ) : selectedNote.type === 'voice' ? (
+                    <audio controls className="w-full">
+                      <source src={selectedNote.attachment_url} type="audio/mpeg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                  ) : null}
+                </div>
+              )}
+              {/* Link to the full note in the Team Noticeboard */}
+              <div className="mt-4 text-sm text-center">
+                <a href="/team/noticeboard" className="text-blue-600 hover:underline">
+                  View in Team Noticeboard to add replies
+                </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for recipe details */}
+      {selectedRecipe && (
+        <RecipeCardExpanded 
+          recipe={selectedRecipe}
+          isOpen={isRecipeDialogOpen}
+          onClose={() => setIsRecipeDialogOpen(false)}
+        />
+      )}
     </div>
   );
 };
