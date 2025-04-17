@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,26 +22,6 @@ interface ExtendedDailyRecord {
   purchases?: Record<string, number>; // supplierId -> amount
   creditNotes?: number[];
   staffFoodAllowance?: number;
-}
-
-interface BevStore {
-  getState: () => {
-    annualRecord: {
-      months: Array<{
-        year: number;
-        month: number;
-        weeks: Array<{
-          days: Array<ExtendedDailyRecord>;
-        }>;
-      }>;
-    };
-  };
-}
-
-declare global {
-  interface Window {
-    bevStore?: BevStore;
-  }
 }
 
 interface Message {
