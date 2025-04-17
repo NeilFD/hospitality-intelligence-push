@@ -22,11 +22,12 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       try {
         setLoading(true);
         
+        // Build the query
         let query = supabase
           .from('team_notes')
           .select(`
             *,
-            author:author_id(id, first_name, last_name, avatar_url, role)
+            profiles:author_id(id, first_name, last_name, avatar_url, role)
           `)
           .order('created_at', { ascending: false });
         
@@ -44,6 +45,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         
         if (fetchError) throw fetchError;
         
+        console.log('Fetched notes data:', data);
         setNotes(data || []);
       } catch (err: any) {
         console.error('Error fetching notes:', err);
@@ -63,7 +65,10 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         event: '*', 
         schema: 'public', 
         table: 'team_notes' 
-      }, fetchNotes)
+      }, payload => {
+        console.log('Real-time update received:', payload);
+        fetchNotes();
+      })
       .subscribe();
       
     return () => {
@@ -82,7 +87,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
   if (error) {
     return (
       <div className="p-4 bg-red-50 rounded-lg text-red-800 flex items-center gap-2">
-        <AlertCircle className="h-5 w-5" />
+        <AlertCircle className="h-4 w-4" />
         <p>{error}</p>
       </div>
     );
@@ -113,18 +118,18 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
           <CardContent className={compact ? "p-3" : "p-4"}>
             <div className="flex gap-3">
               <Avatar className="h-8 w-8">
-                {note.author?.avatar_url ? (
-                  <AvatarImage src={note.author.avatar_url} alt={note.author.first_name} />
+                {note.profiles?.avatar_url ? (
+                  <AvatarImage src={note.profiles.avatar_url} alt={note.profiles.first_name} />
                 ) : (
                   <AvatarFallback className="bg-amber-100 text-amber-800">
-                    {note.author?.first_name?.[0] || ''}{note.author?.last_name?.[0] || ''}
+                    {note.profiles?.first_name?.[0] || ''}{note.profiles?.last_name?.[0] || ''}
                   </AvatarFallback>
                 )}
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
                   <p className="font-medium text-gray-900 truncate">
-                    {note.author?.first_name} {note.author?.last_name}
+                    {note.profiles?.first_name} {note.profiles?.last_name}
                   </p>
                   <span className="text-xs text-gray-500">
                     {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
