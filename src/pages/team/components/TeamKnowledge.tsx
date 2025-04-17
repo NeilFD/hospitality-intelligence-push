@@ -32,20 +32,23 @@ const TeamKnowledge: React.FC = () => {
       </Card>
       
       {/* Beverage Bible Card */}
-      <Card className="overflow-hidden shadow-none rounded-lg group relative bg-white">
-        <CardHeader className="p-4">
-          <div className="bg-purple-600 text-white p-4 rounded mb-2 inline-flex">
+      <Card className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border-purple-200 rounded-xl group relative">
+        <div className="absolute inset-0 bg-cover bg-center opacity-10 z-0" 
+             style={{ backgroundImage: "url('/lovable-uploads/6df964b5-8830-465b-923b-e08055a63da6.png')" }} />
+        
+        <CardHeader className="pt-6 pb-0 px-6 relative z-10">
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl inline-flex shadow-md mb-4 transform group-hover:scale-105 transition-transform">
             <Wine className="h-8 w-8" />
           </div>
-          <CardTitle className="text-lg font-bold text-gray-800">Beverage Bible</CardTitle>
+          <CardTitle className="text-2xl font-bold text-purple-800">Beverage Bible</CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <p className="text-gray-600 text-sm">Access drink recipes, cocktail guides, and beverage preparation instructions.</p>
+        <CardContent className="pt-4 px-6 relative z-10">
+          <p className="text-purple-700 min-h-[80px]">Access drink recipes, cocktail guides, and beverage preparation instructions.</p>
         </CardContent>
-        <CardFooter className="p-4 pt-0">
-          <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+        <CardFooter className="pt-0 px-6 pb-6 relative z-10">
+          <Button asChild className="w-full justify-between bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-lg text-white shadow group-hover:shadow-md transition-all">
             <Link to="/beverage/bible">
-              View Beverage Bible
+              View Beverage Bible <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </Button>
         </CardFooter>
@@ -78,4 +81,3 @@ const TeamKnowledge: React.FC = () => {
 };
 
 export default TeamKnowledge;
-
