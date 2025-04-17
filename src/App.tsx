@@ -47,6 +47,7 @@ import FoodBible from '@/pages/food/FoodBible';
 import BeverageBible from '@/pages/beverage/BeverageBible';
 import FoodWeeklyTracker from '@/pages/food/WeeklyTracker';
 import BeverageWeeklyTracker from '@/pages/beverage/WeeklyTracker';
+import WeeklyTracker from '@/pages/WeeklyTracker';
 
 // Import Master components
 import MasterDashboard from '@/pages/master/Dashboard';
@@ -111,6 +112,8 @@ function App() {
                 <Route path="/food/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
                 <Route path="/food/bible" element={<Layout><FoodBible /></Layout>} />
                 <Route path="/food/weekly-tracker" element={<Layout><FoodWeeklyTracker /></Layout>} />
+                {/* Add new routes for food week */}
+                <Route path="/food/week/:year/:month/:week" element={<Layout><WeeklyTracker modulePrefix="Food" moduleType="food" /></Layout>} />
                 
                 {/* Beverage Module Routes - Each route points to its specific component */}
                 <Route path="/beverage/dashboard" element={<Layout><BeverageDashboard /></Layout>} />
@@ -119,6 +122,8 @@ function App() {
                 <Route path="/beverage/annual-summary" element={<Layout><AnnualSummary /></Layout>} />
                 <Route path="/beverage/bible" element={<Layout><BeverageBible /></Layout>} />
                 <Route path="/beverage/weekly-tracker" element={<Layout><BeverageWeeklyTracker /></Layout>} />
+                {/* Add new routes for beverage week */}
+                <Route path="/beverage/week/:year/:month/:week" element={<Layout><WeeklyTracker modulePrefix="Beverage" moduleType="beverage" /></Layout>} />
                 
                 {/* Master Module Routes */}
                 <Route path="/master/dashboard" element={<Layout><MasterDashboard /></Layout>} />
