@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -209,7 +210,7 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={chartData}
-                margin={{ top: 5, right: 5, bottom: 20, left: 0 }}
+                margin={{ top: 15, right: 15, bottom: 20, left: 15 }}
               >
                 <XAxis 
                   dataKey="name"
@@ -220,7 +221,7 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
                 <YAxis
                   allowDecimals={false}
                   domain={[0, Math.max(...chartData.map(item => item.votes), 1)]}
-                  tickCount={2}
+                  ticks={[0, 1, 2, 3, 4, 5].filter(tick => tick <= Math.max(...chartData.map(item => item.votes), 1))}
                   tickLine={false}
                   axisLine={true}
                   tick={{ fill: '#4B5563', fontSize: 12 }}
@@ -229,9 +230,8 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
                   dataKey="votes" 
                   fill="#6366F1"
                   radius={[4, 4, 0, 0]}
-                  barSize={30}
-                  minPointSize={5}
-                  isAnimationActive={false}
+                  barSize={40}
+                  minPointSize={3}
                 />
               </BarChart>
             </ResponsiveContainer>
