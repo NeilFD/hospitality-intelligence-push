@@ -28,22 +28,24 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     const checkPermission = async () => {
       // Skip permission check if user is not authenticated yet or is currently loading
       if (!isAuthenticated || isLoading || !profile || !profile.role) {
+        console.log(`[RequireAuth] Skipping permission check - Auth state: ${isAuthenticated ? 'Authenticated' : 'Not authenticated'}, Loading: ${isLoading}, Profile exists: ${!!profile}`);
         return;
       }
 
       // Role-based debug information
-      console.log(`Checking permissions for user: ${profile.first_name} ${profile.last_name}, role: ${profile.role}`);
-      console.log(`Current path: ${location.pathname}`);
+      console.log(`[RequireAuth] Checking permissions for user: ${profile.first_name} ${profile.last_name}, role: ${profile.role}`);
+      console.log(`[RequireAuth] Current path: ${location.pathname}`);
 
       // GOD and Super User roles always have access to everything
       if (profile.role === 'GOD' || profile.role === 'Super User') {
-        console.log(`${profile.role} user detected - granting access to protected route`);
+        console.log(`[RequireAuth] ${profile.role} user detected - granting access to protected route`);
         setHasPermission(true);
         return;
       }
 
       // Skip permission check for non-protected routes
       if (['/login', '/register', '/'].includes(location.pathname)) {
+        console.log('[RequireAuth] Non-protected route detected - granting access');
         setHasPermission(true);
         return;
       }
@@ -52,11 +54,14 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
       const pathParts = location.pathname.split('/').filter(part => part !== '');
       const moduleId = pathParts[0] || '';
       
-      console.log(`Checking module access for "${moduleId}" and role "${profile.role}"`);
+      console.log(`[RequireAuth] Checking module access for "${moduleId}" and role "${profile.role}"`);
       
       try {
         setPermissionLoading(true);
         
+        // First, log details about the permission tables
+        console.log(`[RequireAuth] Checking permission tables for role "${profile.role}" and module "${moduleId}"`);
+
         // First, verify the role exists in permission_roles
         const { data: roleExists, error: roleError } = await supabase
           .from('permission_roles')
@@ -65,9 +70,9 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           .single();
           
         if (roleError) {
-          console.error(`Role check error for "${profile.role}":`, roleError);
+          console.error(`[RequireAuth] Role check error for "${profile.role}":`, roleError);
         } else {
-          console.log(`Role "${profile.role}" exists in permission_roles:`, roleExists);
+          console.log(`[RequireAuth] Role "${profile.role}" exists in permission_roles:`, roleExists);
         }
         
         // Next, verify the module exists in permission_modules
@@ -78,9 +83,33 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           .single();
           
         if (moduleExistsError) {
-          console.error(`Module check error for "${moduleId}":`, moduleExistsError);
+          console.error(`[RequireAuth] Module check error for "${moduleId}":`, moduleExistsError);
         } else {
-          console.log(`Module "${moduleId}" exists in permission_modules:`, moduleExists);
+          console.log(`[RequireAuth] Module "${moduleId}" exists in permission_modules:`, moduleExists);
+        }
+        
+        // Debug: Check all permission_access entries for this role
+        const { data: allModuleAccess, error: allModuleError } = await supabase
+          .from('permission_access')
+          .select('module_id, has_access')
+          .eq('role_id', profile.role);
+        
+        if (allModuleError) {
+          console.error(`[RequireAuth] Error checking all module access for role "${profile.role}":`, allModuleError);
+        } else {
+          console.log(`[RequireAuth] All module access for role "${profile.role}":`, allModuleAccess);
+        }
+        
+        // Debug: Check all permission_page_access entries for this role
+        const { data: allPageAccess, error: allPageError } = await supabase
+          .from('permission_page_access')
+          .select('page_id, has_access')
+          .eq('role_id', profile.role);
+        
+        if (allPageError) {
+          console.error(`[RequireAuth] Error checking all page access for role "${profile.role}":`, allPageError);
+        } else {
+          console.log(`[RequireAuth] All page access for role "${profile.role}":`, allPageAccess);
         }
         
         // Check if the user's role has access to this module
@@ -92,26 +121,26 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           .maybeSingle();
         
         if (moduleError) {
-          console.error(`Permission check error for role "${profile.role}" and module "${moduleId}":`, moduleError);
+          console.error(`[RequireAuth] Permission check error for role "${profile.role}" and module "${moduleId}":`, moduleError);
           setHasPermission(false);
           return;
         }
         
-        console.log(`Module access result for "${moduleId}":`, moduleAccess);
+        console.log(`[RequireAuth] Module access result for "${moduleId}":`, moduleAccess);
         
         // If no module access record or has_access is false, deny access
         if (!moduleAccess || !moduleAccess.has_access) {
-          console.log(`User with role ${profile.role} does not have access to module: ${moduleId}`);
+          console.log(`[RequireAuth] User with role ${profile.role} does not have access to module: ${moduleId}`);
           setHasPermission(false);
           return;
         }
         
         // If we get here, user has access to the module
-        console.log(`User with role ${profile.role} has access to module: ${moduleId}`);
+        console.log(`[RequireAuth] User with role ${profile.role} has access to module: ${moduleId}`);
         setHasPermission(true);
         
       } catch (error) {
-        console.error('Error checking permissions:', error);
+        console.error('[RequireAuth] Error checking permissions:', error);
         setHasPermission(false);
       } finally {
         setPermissionLoading(false);
@@ -128,11 +157,13 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
+    console.log('[RequireAuth] User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   // If we've checked permissions and user doesn't have access
   if (hasPermission === false) {
+    console.log('[RequireAuth] User does not have permission, redirecting to accessible module');
     toast.error("You don't have permission to access this page");
     
     // Find an accessible module for the user
@@ -146,20 +177,22 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           .order('module_id');
           
         if (error || !permittedModules || permittedModules.length === 0) {
-          console.error('Error finding permitted modules or none found:', error);
+          console.error('[RequireAuth] Error finding permitted modules or none found:', error);
           return '/';
         }
         
         // Redirect to the first permitted module
         const firstModuleId = permittedModules[0].module_id;
+        console.log(`[RequireAuth] Found accessible module: ${firstModuleId}`);
         return `/${firstModuleId}/dashboard`;
       } catch (err) {
-        console.error('Error finding accessible module:', err);
+        console.error('[RequireAuth] Error finding accessible module:', err);
         return '/';
       }
     };
     
     // Use team dashboard as a fallback while finding an accessible module
+    console.log('[RequireAuth] Redirecting to team dashboard as fallback');
     return <Navigate to="/team/dashboard" replace />;
   }
   
@@ -169,14 +202,18 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     const userRoleValue = profile.role ? roleHierarchy[profile.role as AuthServiceRole] || 0 : 0;
     const requiredRoleValue = roleHierarchy[requiredRole] || 0;
     
+    console.log(`[RequireAuth] Checking role requirement: User role value ${userRoleValue}, Required role value ${requiredRoleValue}`);
+    
     // If user's role value is less than required role value, they don't have permission
     if (userRoleValue < requiredRoleValue) {
+      console.log(`[RequireAuth] User does not have required role ${requiredRole}, redirecting to home`);
       toast.error(`You need ${requiredRole} permissions to access this page`);
       return <Navigate to="/" replace />;
     }
   }
   
   // Allow access to the page
+  console.log('[RequireAuth] User has permission, allowing access to the page');
   return <>{children}</>;
 };
 
