@@ -11,10 +11,10 @@ export default function AnalyticsModules() {
       description: "Financial performance forecasting, expense pattern detection, and category breakdowns.",
       icon: <CircleDollarSign className="h-8 w-8 text-white" />,
       path: "/performance/pl-analysis",
-      color: "bg-hi-purple",
+      color: "bg-hi-purple", // Ensure this remains purple
       hoverColor: "bg-hi-purple-dark",
       borderColor: "border-hi-purple/20",
-      textColor: "text-white",
+      textColor: "text-white", // Explicitly set title to white
       descriptionColor: "text-white/80"
     },
     {
@@ -25,7 +25,7 @@ export default function AnalyticsModules() {
       color: "bg-pastel-blue-dark",
       hoverColor: "bg-pastel-blue-dark/90",
       borderColor: "border-pastel-blue-dark/20",
-      textColor: "text-black",
+      textColor: "text-white", // Change to white
       descriptionColor: "text-black/80"
     },
     {
@@ -36,7 +36,7 @@ export default function AnalyticsModules() {
       color: "bg-pastel-green-dark",
       hoverColor: "bg-pastel-green-dark/90",
       borderColor: "border-pastel-green/20",
-      textColor: "text-black",
+      textColor: "text-white", // Change to white
       descriptionColor: "text-black/80"
     },
     {
@@ -47,7 +47,7 @@ export default function AnalyticsModules() {
       color: "bg-sky-500",
       hoverColor: "bg-sky-600",
       borderColor: "border-sky-500/20",
-      textColor: "text-black",
+      textColor: "text-white", // Change to white
       descriptionColor: "text-black/80"
     }
   ];
