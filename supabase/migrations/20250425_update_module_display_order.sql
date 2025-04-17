@@ -1,13 +1,13 @@
 
 -- First, ensure the 'master' module type exists in the modules table
 INSERT INTO permission_modules (module_id, module_name, module_type, display_order)
-VALUES ('master', 'Daily Info', 'master', 1)
+VALUES ('master', 'Daily Info', 'master', 2)
 ON CONFLICT (module_id) DO UPDATE
-SET module_name = 'Daily Info', module_type = 'master', display_order = 1;
+SET module_name = 'Daily Info', module_type = 'master', display_order = 2;
 
--- Next, make sure the Home module has display_order = 2
+-- Next, make sure the Home module has display_order = 1
 UPDATE permission_modules
-SET display_order = 2
+SET display_order = 1
 WHERE module_id = 'home';
 
 -- Update the remaining modules to ensure they have the correct display order

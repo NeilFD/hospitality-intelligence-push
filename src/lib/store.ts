@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -25,8 +26,8 @@ const initialSuppliers: Supplier[] = [
 
 // Updated default modules to match the order in the image
 const defaultModules: Module[] = [
-  { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 1 },
-  { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 2 },
+  { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 1 },
+  { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 2 },
   { id: '2', type: 'pl', name: 'P&L Tracker', enabled: true, displayOrder: 3 },
   { id: '3', type: 'wages', name: 'Wages Tracker', enabled: true, displayOrder: 4 },
   { id: '4', type: 'food', name: 'Food Hub', enabled: true, displayOrder: 5 },
