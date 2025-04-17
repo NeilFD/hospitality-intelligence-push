@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ const TeamDashboard: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { profile } = useAuthStore();
 
+  // This function is not needed for filtering team members anymore, but kept for reference
   const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
     const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
     const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
@@ -34,6 +36,7 @@ const TeamDashboard: React.FC = () => {
         const members = await getTeamMembers();
         
         if (members && Array.isArray(members)) {
+          // Show all team members regardless of role
           setTeamMembers(members);
           console.log("Fetched team members:", members);
         } else {
@@ -51,6 +54,7 @@ const TeamDashboard: React.FC = () => {
     fetchTeamMembers();
   }, [profile]);
 
+  // Return all role options for filtering regardless of user's role
   const getAvailableRoleFilters = () => {
     const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member', 'Owner'];
     return allRoles;
