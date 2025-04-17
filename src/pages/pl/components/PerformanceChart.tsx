@@ -63,7 +63,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     ebitda: true
   });
 
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  // Default to today's date when component loads
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Format the day of week for selected date
   const getDayOfWeek = (date: Date): string => {
@@ -120,8 +121,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
           <div className="flex items-center gap-4">
             <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
             {selectedDate && (
-              <span className="text-sm text-muted-foreground">
-                Selected: {getDayOfWeek(selectedDate)}, {format(selectedDate, "do MMMM")}
+              <span className="text-sm font-medium bg-purple-100 px-3 py-1 rounded-full">
+                {getDayOfWeek(selectedDate)}, {format(selectedDate, "do MMMM")}
               </span>
             )}
           </div>
@@ -141,7 +142,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={setSelectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
                   className="rounded-md border pointer-events-auto"
                   month={new Date(currentYear, new Date().getMonth())}
                 />
