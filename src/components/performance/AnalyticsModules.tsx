@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,7 @@ export default function AnalyticsModules() {
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {modules.map((module, index) => <Card key={index} className="rounded-xl overflow-hidden border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-            <CardHeader className={module.color}>
+            <CardHeader className="bg-purple-900">
               <div className="flex justify-between items-center">
                 <CardTitle className={`text-lg font-medium ${module.textColor}`}>{module.title}</CardTitle>
                 <div className="rounded-full p-2">
