@@ -28,6 +28,7 @@ interface MessageProps {
 
 interface TeamChatProps {
   initialRoomId?: string | null;
+  compact?: boolean;
 }
 
 const EMOJI_CATEGORIES = [{
@@ -393,7 +394,7 @@ const Message: React.FC<MessageProps> = ({
     </div>;
 };
 
-const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId }) => {
+const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('');

@@ -12,7 +12,7 @@ interface NoticeboardProps {
   compact?: boolean;
 }
 
-const TeamNoticeboard: React.FC<NoticeboardProps> = ({ pinnedOnly = false, compact = false }) => {
+const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false, compact = false }) => {
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,4 +142,4 @@ const TeamNoticeboard: React.FC<NoticeboardProps> = ({ pinnedOnly = false, compa
   );
 };
 
-export default TeamNoticeboard;
+export default TeamNoticeboardCompact;

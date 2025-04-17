@@ -19,7 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { formatDistanceToNow, format, subDays } from 'date-fns';
-import TeamNoticeboard from '@/pages/team/components/TeamNoticeboard';
+import TeamNoticeboardCompact from '@/pages/team/components/TeamNoticeboardCompact';
 import TeamChat from '@/pages/team/components/TeamChat';
 import { getHasAccessToModule } from '@/services/permissions-service';
 import { ModuleType } from '@/types/kitchen-ledger';
@@ -194,7 +194,7 @@ const HomeDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="p-0 max-h-[calc(100%-4rem)] overflow-y-auto">
               <div className="p-3">
-                <TeamNoticeboard pinnedOnly={true} compact={true} />
+                <TeamNoticeboardCompact pinnedOnly={true} compact={true} />
               </div>
               <div className="px-4 py-3 bg-amber-50/50 border-t border-amber-100/50 text-center">
                 <Button asChild variant="ghost" className="text-amber-600 hover:text-amber-700 hover:bg-amber-100">
@@ -217,7 +217,7 @@ const HomeDashboard: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 h-[400px]">
-              <TeamChat roomSlug="general" compact={true} />
+              <TeamChat initialRoomId="general" compact={true} />
             </CardContent>
           </Card>
         </div>
