@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,14 +17,21 @@ const Chat: React.FC = () => {
   const roomSlug = searchParams.get('room') || 'general';
   const { user } = useAuthStore();
   
-  // Fetch chat rooms
-  const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
+  // Fetch chat rooms with better error handling
+  const { data: rooms = [], isLoading: isLoadingRooms, error: roomsError } = useQuery({
     queryKey: ['chatRooms'],
-    queryFn: getChatRooms
+    queryFn: getChatRooms,
+    staleTime: 60000, // 1 minute
+    retry: 2
   });
   
-  // Find the room ID based on the slug in the URL
+  // Find the room ID based on the slug in the URL with improved error handling
   const roomId = React.useMemo(() => {
+    if (!rooms || rooms.length === 0) {
+      console.log('No rooms available yet');
+      return null;
+    }
+    
     // First check if roomSlug is already a UUID (might be passed directly)
     if (roomSlug && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomSlug)) {
       console.log('Room ID is already a UUID:', roomSlug);
@@ -102,6 +110,10 @@ const Chat: React.FC = () => {
         {isLoadingRooms ? (
           <div className="flex justify-center items-center h-full">
             <p className="text-gray-500">Loading chat rooms...</p>
+          </div>
+        ) : roomsError ? (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-red-500">Error loading chat rooms. Please refresh.</p>
           </div>
         ) : roomId ? (
           <TeamChat key={roomId} initialRoomId={roomId} />

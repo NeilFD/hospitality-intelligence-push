@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -432,14 +433,21 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const {
     data: messages = [],
     isLoading: isLoadingMessages,
-    refetch: refetchMessages
+    refetch: refetchMessages,
+    error: messagesError
   } = useQuery({
     queryKey: ['teamMessages', selectedRoomId],
     queryFn: () => {
+      if (!selectedRoomId) {
+        console.log('No selected room ID, skipping message fetch');
+        return Promise.resolve([]);
+      }
       console.log('Fetching messages for room ID:', selectedRoomId);
-      return selectedRoomId ? getMessages(selectedRoomId) : Promise.resolve([]);
+      return getMessages(selectedRoomId);
     },
-    enabled: !!selectedRoomId
+    enabled: !!selectedRoomId,
+    retry: 1,
+    staleTime: 10000 // 10 seconds
   });
   
   useEffect(() => {
@@ -836,8 +844,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   };
 
   const componentClasses = compact 
-    ? "flex h-full" 
-    : "flex h-[calc(100vh-120px)]";
+    ? "flex h-full overflow-hidden" 
+    : "flex h-[calc(100vh-120px)] overflow-hidden";
   
   const mainChatClasses = compact
     ? "flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden"
@@ -851,7 +859,56 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     ? "p-2 border-t"
     : "p-3 border-t";
   
-  return <div className={componentClasses}>
+  // Safe rendering of messages with error handling
+  const renderMessages = () => {
+    if (isLoadingMessages) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-gray-500">Loading messages...</p>
+        </div>
+      );
+    }
+    
+    if (messagesError) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-red-500">Error loading messages. Please try again.</p>
+        </div>
+      );
+    }
+    
+    if (!messages || messages.length === 0) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-gray-500">No messages yet. Start the conversation!</p>
+        </div>
+      );
+    }
+    
+    // Only render non-deleted messages
+    return (
+      <>
+        {messages
+          .filter(message => !message.deleted)
+          .map(message => (
+            <Message 
+              key={message.id} 
+              message={message} 
+              isOwnMessage={message.author_id === user?.id} 
+              author={findMessageAuthor(message.author_id)} 
+              onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)} 
+              onDeleteMessage={handleDeleteMessage} 
+              teamMembers={teamMembers || []} 
+              currentUserId={user?.id || ''} 
+            />
+          ))}
+        <div ref={messagesEndRef} />
+      </>
+    );
+  };
+
+  return (
+    <div className={componentClasses}>
       <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
       
       <div className={mainChatClasses}>
@@ -868,31 +925,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
             )}
             
             <div className={chatContentClasses}>
-              {isLoadingMessages ? (
-                <div className="flex justify-center items-center h-full">
-                  <p className="text-gray-500">Loading messages...</p>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="flex justify-center items-center h-full">
-                  <p className="text-gray-500">No messages yet. Start the conversation!</p>
-                </div>
-              ) : (
-                <>
-                  {messages.filter(message => !message.deleted).map(message => (
-                    <Message 
-                      key={message.id} 
-                      message={message} 
-                      isOwnMessage={message.author_id === user?.id} 
-                      author={findMessageAuthor(message.author_id)} 
-                      onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)} 
-                      onDeleteMessage={handleDeleteMessage} 
-                      teamMembers={teamMembers || []} 
-                      currentUserId={user?.id || ''} 
-                    />
-                  ))}
-                  <div ref={messagesEndRef} />
-                </>
-              )}
+              {renderMessages()}
             </div>
             
             <div className={`relative ${inputAreaClasses}`}>
@@ -996,7 +1029,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
           }
         }} 
       />
-    </div>;
+    </div>
+  );
 };
 
 export default TeamChat;
