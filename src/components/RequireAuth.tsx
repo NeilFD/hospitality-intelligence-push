@@ -79,12 +79,14 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           return;
         }
         
-        // If no module access, deny permission
+        // If no module access or has_access is false, deny permission
         if (!moduleAccess || !moduleAccess.has_access) {
           console.log(`User with role ${profile.role} does not have access to module: ${moduleId}`);
           setHasPermission(false);
           return;
         }
+        
+        console.log(`Module permission check passed for ${profile.role} on module ${moduleId}`);
         
         // Find the appropriate page_id for this path
         const currentPath = location.pathname;
@@ -101,13 +103,17 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           return;
         }
         
+        // Log all pages for debugging
+        console.log('Available pages for module:', moduleId, pages);
+        
         // Find matching page (considering parameterized routes)
         let matchingPageId = null;
-        if (pages) {
+        if (pages && pages.length > 0) {
           // First try an exact match
           const exactMatch = pages.find(page => page.page_url === currentPath);
           if (exactMatch) {
             matchingPageId = exactMatch.page_id;
+            console.log(`Exact page match found: ${matchingPageId}`);
           } else {
             // Then try to match parameterized routes (replacing {param} parts with wildcards)
             for (const page of pages) {
@@ -115,8 +121,12 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
               const pageUrlPattern = page.page_url.replace(/\{[^}]+\}/g, '[^/]+');
               const pageRegex = new RegExp(`^${pageUrlPattern}$`);
               
+              // Log the matching attempt
+              console.log(`Trying to match ${currentPath} against pattern: ${pageUrlPattern}`);
+              
               if (pageRegex.test(currentPath)) {
                 matchingPageId = page.page_id;
+                console.log(`Parameterized page match found: ${matchingPageId}`);
                 break;
               }
             }
@@ -144,8 +154,9 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           return;
         }
         
-        setHasPermission(pageAccess?.has_access || false);
-        console.log(`Permission check for ${profile.role} on page ${matchingPageId}: ${pageAccess?.has_access}`);
+        const hasPageAccess = pageAccess?.has_access || false;
+        setHasPermission(hasPageAccess);
+        console.log(`Page permission check for ${profile.role} on page ${matchingPageId}: ${hasPageAccess}`);
         
       } catch (error) {
         console.error('Error checking permissions:', error);
