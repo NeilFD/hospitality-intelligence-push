@@ -448,10 +448,12 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     enabled: !!selectedRoomId,
     retry: 1,
     staleTime: 10000, // 10 seconds
-    onSuccess: () => {
-      setTimeout(() => {
-        setIsMessageAreaReady(true);
-      }, 100);
+    meta: {
+      onSettled: () => {
+        setTimeout(() => {
+          setIsMessageAreaReady(true);
+        }, 100);
+      }
     }
   });
   
@@ -953,6 +955,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
             
             <div className={chatContentClasses} style={{maxHeight: compact ? '320px' : undefined}}>
               {renderMessages()}
+              <div ref={messagesEndRef} />
             </div>
             
             <div className={`relative ${inputAreaClasses}`}>
