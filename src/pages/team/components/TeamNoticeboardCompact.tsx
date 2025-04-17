@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,21 +27,17 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       setLoading(true);
       console.log('Fetching notes and recipes with pinnedOnly:', pinnedOnly);
       
-      // Build the query for team notes
       let noteQuery = supabase
         .from('team_notes')
         .select('*')
         .order('created_at', { ascending: false });
       
-      // Filter for pinned notes only if requested
       if (pinnedOnly) {
         noteQuery = noteQuery.eq('pinned', true);
         console.log('Filtering for pinned notes only');
       }
       
-      // Limit the number of notes if in compact mode
       if (compact) {
-        // If we're showing pinned only, let's get more to ensure we have enough
         const limit = pinnedOnly ? 10 : 5;
         noteQuery = noteQuery.limit(limit);
         console.log('Using compact mode with limit for notes:', limit);
@@ -54,14 +49,11 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       
       console.log('Raw notes data fetched:', notesData?.length || 0, 'notes');
       
-      // Array to collect all our notices (notes and recipes)
       let allNotices = [];
       
-      // Process team notes if we have any
       if (notesData && notesData.length > 0) {
         const notesWithProfiles = await Promise.all(
           notesData.map(async (note) => {
-            // Fetch author profile for each note
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('*')
@@ -84,9 +76,6 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         allNotices = [...notesWithProfiles];
       }
       
-      // Only fetch recipes if we're showing pinned items or if we're not in pinnedOnly mode
-      // This ensures we always fetch recipes regardless of pinnedOnly setting
-      // Fetch pinned food recipes
       const { data: foodRecipes, error: foodError } = await supabase
         .from('recipes')
         .select('*')
@@ -107,7 +96,6 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         allNotices = [...allNotices, ...foodRecipesWithType];
       }
       
-      // Fetch pinned beverage recipes
       const { data: bevRecipes, error: bevError } = await supabase
         .from('recipes')
         .select('*')
@@ -128,7 +116,6 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         allNotices = [...allNotices, ...bevRecipesWithType];
       }
       
-      // Fetch pinned hospitality guides
       const { data: guides, error: guidesError } = await supabase
         .from('hospitality_guides')
         .select('*')
@@ -148,12 +135,10 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         allNotices = [...allNotices, ...guidesWithType];
       }
       
-      // Sort all notices by created_at date (newest first)
       allNotices.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
-      // Apply limit if needed (after sorting)
       if (compact) {
-        allNotices = allNotices.slice(0, pinnedOnly ? 10 : 5);
+        allNotices = allNotices.slice(0, 10);
       }
       
       console.log('Total notices to display:', allNotices.length);
@@ -170,7 +155,6 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
   useEffect(() => {
     fetchNotesAndRecipes();
     
-    // Set up real-time subscription for notes and recipes
     const notesSubscription = supabase
       .channel('team_notes_changes')
       .on('postgres_changes', { 
@@ -241,16 +225,14 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     );
   }
 
-  // Show all notices without additional filtering
   const displayNotes = notes;
 
   const renderNoticeCard = (item: any) => {
-    // For team notes
     if (item.type === 'team_note') {
       return (
         <Card 
           key={item.id} 
-          className="mb-3 min-w-[280px] border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
+          className="min-w-[250px] border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer flex-shrink-0"
           onClick={() => handleNoteClick(item)}
         >
           <CardContent className={compact ? "p-3" : "p-4"}>
@@ -274,7 +256,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                       {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                     </span>
                     {item.pinned && (
-                      <span className="text-gray-400 ml-1 opacity-30">
+                      <span className="text-amber-500 ml-1 opacity-80">
                         <span className="text-xs">📌</span>
                       </span>
                     )}
@@ -294,7 +276,6 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       );
     }
     
-    // For food or beverage recipes or hospitality guides
     let moduleIcon = null;
     let moduleLabel = '';
     let moduleType = '';
@@ -320,7 +301,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     return (
       <Card 
         key={item.id} 
-        className="mb-3 min-w-[280px] border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
+        className="min-w-[250px] border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer flex-shrink-0"
         onClick={() => handleNoteClick(item)}
       >
         <CardContent className={compact ? "p-3" : "p-4"}>
@@ -340,7 +321,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                     {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                   </span>
                   {item.pinned && (
-                    <span className="text-gray-400 ml-1 opacity-30">
+                    <span className="text-amber-500 ml-1 opacity-80">
                       <span className="text-xs">📌</span>
                     </span>
                   )}
@@ -372,14 +353,12 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
 
   return (
     <div className="w-full">
-      {/* Horizontal scrolling container */}
       <div className="overflow-x-auto pb-2">
-        <div className="flex space-x-4 py-2" style={{ minWidth: 'max-content' }}>
+        <div className="flex gap-4 py-2">
           {displayNotes.map(renderNoticeCard)}
         </div>
       </div>
 
-      {/* Dialog for note details */}
       <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           {selectedNote && selectedNote.type === 'team_note' && (
@@ -418,7 +397,6 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                   ) : null}
                 </div>
               )}
-              {/* Link to the full note in the Team Noticeboard */}
               <div className="mt-4 text-sm text-center">
                 <a href="/team/noticeboard" className="text-blue-600 hover:underline">
                   View in Team Noticeboard to add replies
@@ -429,7 +407,6 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         </DialogContent>
       </Dialog>
 
-      {/* Dialog for recipe details */}
       {selectedRecipe && (
         <RecipeCardExpanded 
           recipe={selectedRecipe}

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -100,6 +101,23 @@ const HomeDashboard: React.FC = () => {
           Your daily hospitality intelligence hub
         </p>
       </div>
+
+      {/* Noticeboard Section */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-medium text-amber-800 flex items-center">
+            <Clipboard className="h-4 w-4 mr-2" /> Pinned Notices
+          </h2>
+          <Button asChild variant="ghost" className="text-amber-600 hover:text-amber-700 hover:bg-amber-100">
+            <Link to="/team/noticeboard">
+              View Full Noticeboard <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </Button>
+        </div>
+        <div className="w-full overflow-x-auto pb-2">
+          <TeamNoticeboardCompact pinnedOnly={true} compact={true} />
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -181,43 +199,6 @@ const HomeDashboard: React.FC = () => {
         
         <div className="lg:col-span-1">
           <Card className="shadow-md rounded-lg overflow-hidden h-full border border-gray-100">
-            <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 pb-3">
-              <CardTitle className="flex items-center text-xl font-bold text-gray-800">
-                <Clipboard className="h-5 w-5 mr-2 text-amber-600" />
-                Pinned Notices
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 max-h-[calc(100%-4rem)] overflow-y-auto">
-              <div className="p-3">
-                <TeamNoticeboardCompact pinnedOnly={true} compact={true} />
-              </div>
-              <div className="px-4 py-3 bg-amber-50/50 border-t border-amber-100/50 text-center">
-                <Button asChild variant="ghost" className="text-amber-600 hover:text-amber-700 hover:bg-amber-100">
-                  <Link to="/team/noticeboard">
-                    View Full Noticeboard <ChevronRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-2">
-          <Card className="shadow-md rounded-lg overflow-hidden border border-gray-100">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 pb-3">
-              <CardTitle className="flex items-center text-xl font-bold text-gray-800">
-                <MessageSquare className="h-5 w-5 mr-2 text-green-600" />
-                Team Chat
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 h-[400px]">
-              <TeamChat initialRoomId="general" compact={true} />
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-1">
-          <Card className="shadow-md rounded-lg overflow-hidden border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 pb-3">
               <CardTitle className="flex items-center text-xl font-bold text-gray-800">
                 <Users className="h-5 w-5 mr-2 text-purple-600" />
@@ -242,6 +223,20 @@ const HomeDashboard: React.FC = () => {
                   </Button>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="lg:col-span-2">
+          <Card className="shadow-md rounded-lg overflow-hidden border border-gray-100">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 pb-3">
+              <CardTitle className="flex items-center text-xl font-bold text-gray-800">
+                <MessageSquare className="h-5 w-5 mr-2 text-green-600" />
+                Team Chat
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 h-[400px]">
+              <TeamChat initialRoomId="general" compact={true} />
             </CardContent>
           </Card>
         </div>
