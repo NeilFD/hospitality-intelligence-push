@@ -57,10 +57,13 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             applyCustomFont(data.custom_font);
           }
           
-          // Save the company name to localStorage
+          // Save the company name to localStorage - only convert if exactly "Hi"
           if (data.company_name) {
-            localStorage.setItem('company-name', data.company_name);
-            console.log('Saved company name to localStorage:', data.company_name);
+            const processedName = data.company_name === 'Hi' || data.company_name === 'H i' 
+              ? 'Hospitality Intelligence' 
+              : data.company_name;
+            localStorage.setItem('company-name', processedName);
+            console.log('Saved company name to localStorage:', processedName);
           }
           
           // Save the logo URL to localStorage
@@ -108,7 +111,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       
       // Reset company name in case it was set to "Hi"
       const companyName = localStorage.getItem('company-name');
-      if (companyName === 'Hi') {
+      if (companyName === 'Hi' || companyName === 'H i') {
         localStorage.setItem('company-name', 'Hospitality Intelligence');
       }
       
@@ -145,10 +148,13 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Save theme name to localStorage for persistence
         localStorage.setItem('app-active-theme', themeName);
         
-        // Save company name to localStorage if available
+        // Save company name to localStorage if available - only convert if exactly "Hi"
         if (companyName) {
-          localStorage.setItem('company-name', companyName);
-          console.log('Saving company name to localStorage:', companyName);
+          const processedName = companyName === 'Hi' || companyName === 'H i' 
+            ? 'Hospitality Intelligence' 
+            : companyName;
+          localStorage.setItem('company-name', processedName);
+          console.log('Saving company name to localStorage:', processedName);
         }
         
         // Save logo URL to localStorage if available

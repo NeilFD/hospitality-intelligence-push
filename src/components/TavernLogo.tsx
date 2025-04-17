@@ -34,7 +34,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
           return;
         }
         
-        // If the active theme is "Hi", change it to Berry Purple
+        // If the active theme is exactly "Hi", change it to Berry Purple
         if (data && data.name === 'Hi') {
           // Get Berry Purple theme
           const { data: berryTheme } = await supabase

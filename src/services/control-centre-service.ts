@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
@@ -42,8 +43,8 @@ export const getControlCentreData = async () => {
     console.error('Error fetching company settings:', companySettingsError);
   }
   
-  // Set proper company name, ensuring it's not "Hi"
-  const companyName = companySettingsData?.company_name === 'Hi' 
+  // Set proper company name, only convert if exactly "Hi" or "H i"
+  const companyName = (companySettingsData?.company_name === 'Hi' || companySettingsData?.company_name === 'H i')
     ? 'Hospitality Intelligence' 
     : (companySettingsData?.company_name || 'Hospitality Intelligence');
   

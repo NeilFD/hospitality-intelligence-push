@@ -31,14 +31,14 @@ export function fixHiTheme() {
     localStorage.setItem('app-active-theme', 'Berry Purple');
   }
   
-  // Fix company name in localStorage
+  // Fix company name in localStorage only if it's exactly "Hi" or "H i"
   const companyName = localStorage.getItem('company-name');
   if (companyName === 'Hi' || companyName === 'H i') {
     console.log('Fixing localStorage company name from', companyName, 'to Hospitality Intelligence');
     localStorage.setItem('company-name', 'Hospitality Intelligence');
   }
   
-  // Fix company name in database through event
+  // Fix company name in database through event only if it's exactly "Hi" or "H i"
   const companyNameUpdateEvent = new CustomEvent('company-name-updated', {
     detail: { companyName: 'Hospitality Intelligence' }
   });
@@ -62,16 +62,24 @@ export function runDatabaseFix() {
       // Import the supabase client
       const { supabase } = await import('@/lib/supabase');
       
-      // Fix company name in company_settings table
-      const { error: companyError } = await supabase
+      // Fix company name in company_settings table only if it's exactly "Hi"
+      const { data: companySettings } = await supabase
         .from('company_settings')
-        .update({ company_name: 'Hospitality Intelligence' })
-        .eq('id', 1);
-      
-      if (companyError) {
-        console.error('Error fixing company name in database:', companyError);
-      } else {
-        console.log('Successfully fixed company name in database');
+        .select('company_name')
+        .eq('id', 1)
+        .single();
+        
+      if (companySettings && (companySettings.company_name === 'Hi' || companySettings.company_name === 'H i')) {
+        const { error: companyError } = await supabase
+          .from('company_settings')
+          .update({ company_name: 'Hospitality Intelligence' })
+          .eq('id', 1);
+        
+        if (companyError) {
+          console.error('Error fixing company name in database:', companyError);
+        } else {
+          console.log('Successfully fixed company name in database');
+        }
       }
       
       // Get Berry Purple theme ID

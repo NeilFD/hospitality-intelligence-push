@@ -31,7 +31,7 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
         // First try to get from localStorage (for immediate display while DB loads)
         const cachedName = localStorage.getItem('company-name');
         
-        // Never display "Hi" or "H i" as company name
+        // Only reject if it's exactly "Hi" or "H i" (not "H I" or other variations)
         if (cachedName && cachedName !== 'Hi' && cachedName !== 'H i') {
           console.log('Using company name from localStorage:', cachedName);
           setCompanyName(cachedName);
@@ -55,7 +55,7 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
         }
         
         if (data && data.company_name) {
-          // Never use "Hi" or "H i" as company name
+          // Only reject if it's exactly "Hi" or "H i" (not "H I" or other variations)
           const companyNameFromDB = data.company_name;
           const properName = (companyNameFromDB === 'Hi' || companyNameFromDB === 'H i') 
             ? 'Hospitality Intelligence' 
@@ -94,7 +94,7 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
       if (event.detail && event.detail.companyName) {
         const newName = event.detail.companyName;
         
-        // Never use "Hi" or "H i" as company name
+        // Only reject if it's exactly "Hi" or "H i" (not "H I" or other variations)
         if (newName === 'Hi' || newName === 'H i') {
           console.log('Rejecting company name update to Hi, using Hospitality Intelligence instead');
           setCompanyName('Hospitality Intelligence');
