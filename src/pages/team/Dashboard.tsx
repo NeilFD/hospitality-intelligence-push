@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,22 +58,22 @@ const TeamDashboard: React.FC = () => {
     fetchTeamMembers();
   }, [profile]);
 
+  // Updated to show all available roles based on the user's permission level
   const getAvailableRoleFilters = () => {
-    const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member'];
+    const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member', 'Owner'];
     
     if (!profile || !profile.role) return ['Team Member'];
     
     if (profile.role === 'GOD') return allRoles;
     
+    // Filter roles based on what the current user can see
     return allRoles.filter(role => canSeeRole(profile.role, role));
   };
 
-  const filteredMembers = profile?.role === 'GOD' && roleFilter === 'all'
+  const filteredMembers = roleFilter === 'all'
     ? teamMembers
-    : roleFilter === 'all'
-      ? teamMembers
-      : teamMembers.filter(member => member.role === roleFilter || 
-          (roleFilter === 'Team Member' && !member.role));
+    : teamMembers.filter(member => member.role === roleFilter || 
+        (roleFilter === 'Team Member' && !member.role));
 
   const getUserInitials = () => {
     if (!profile) return '?';
