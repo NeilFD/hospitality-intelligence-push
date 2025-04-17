@@ -399,6 +399,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -411,6 +412,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [mentionStart, setMentionStart] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMessageAreaReady, setIsMessageAreaReady] = useState(false);
+  const [scrollToBottomAttempted, setScrollToBottomAttempted] = useState(false);
   
   const {
     data: rooms = [],
@@ -452,6 +454,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       onSettled: () => {
         setTimeout(() => {
           setIsMessageAreaReady(true);
+          setScrollToBottomAttempted(false);
+          scrollToBottom();
         }, 100);
       }
     }
@@ -460,6 +464,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   useEffect(() => {
     if (selectedRoomId) {
       setIsMessageAreaReady(false);
+      setScrollToBottomAttempted(false);
       refetchMessages();
     }
   }, [selectedRoomId, refetchMessages]);
@@ -511,17 +516,54 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     }
   });
   
+  const scrollToBottom = () => {
+    if (!messagesEndRef.current || scrollToBottomAttempted) return;
+    
+    try {
+      console.log('Attempting to scroll to bottom');
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+      
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          console.log('Delayed scroll to bottom');
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+        }
+      }, 100);
+      
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          console.log('Final smooth scroll to bottom');
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+        setScrollToBottomAttempted(true);
+      }, 300);
+    } catch (error) {
+      console.error("Error scrolling to bottom:", error);
+    }
+  };
+  
   useEffect(() => {
-    if (messagesEndRef.current && messages.length > 0 && isMessageAreaReady) {
-      try {
-        messagesEndRef.current.scrollIntoView({
-          behavior: 'smooth'
-        });
-      } catch (error) {
-        console.error("Error scrolling to bottom:", error);
-      }
+    if (messages.length > 0 && isMessageAreaReady && !scrollToBottomAttempted) {
+      scrollToBottom();
     }
   }, [messages, isMessageAreaReady]);
+  
+  useEffect(() => {
+    if (scrollContainerRef.current && !scrollToBottomAttempted) {
+      scrollToBottom();
+    }
+  }, [scrollContainerRef.current]);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      if (isMessageAreaReady && !scrollToBottomAttempted) {
+        scrollToBottom();
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isMessageAreaReady]);
   
   const findMessageAuthor = (authorId: string) => {
     return teamMembers.find(member => member.id === authorId);
@@ -626,6 +668,9 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       }
       
       toast.success('Message sent');
+      
+      setScrollToBottomAttempted(false);
+      setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -653,7 +698,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     if (roomId !== selectedRoomId) {
       console.log('Changing selected room from', selectedRoomId, 'to', roomId);
       setSelectedRoomId(roomId);
-      
+      setScrollToBottomAttempted(false);
       queryClient.invalidateQueries({
         queryKey: ['teamMessages', roomId]
       });
@@ -923,7 +968,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               currentUserId={user?.id || ''} 
             />
           ))}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-0 w-full" />
         </>
       );
     } catch (error) {
@@ -953,9 +998,15 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               </div>
             )}
             
-            <div className={chatContentClasses} style={{maxHeight: compact ? '320px' : undefined}}>
+            <div 
+              ref={scrollContainerRef}
+              className={chatContentClasses} 
+              style={{maxHeight: compact ? '320px' : undefined}}
+              onLoad={() => {
+                if (!scrollToBottomAttempted) scrollToBottom();
+              }}
+            >
               {renderMessages()}
-              <div ref={messagesEndRef} />
             </div>
             
             <div className={`relative ${inputAreaClasses}`}>
