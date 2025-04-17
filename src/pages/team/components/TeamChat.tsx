@@ -45,7 +45,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -835,7 +835,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     );
   };
 
-  // Determine component style based on if it's in compact mode (for dashboard)
   const componentClasses = compact 
     ? "flex h-full" 
     : "flex h-[calc(100vh-120px)]";
@@ -853,7 +852,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     : "p-3 border-t";
   
   return <div className={componentClasses}>
-      {!compact && <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />}
+      <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
       
       <div className={mainChatClasses}>
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
@@ -900,16 +899,28 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               {renderMentionSelector()}
               
               <div className="flex items-end gap-2">
-                <Textarea placeholder="Type a message... Use @ to mention users or @all for everyone" value={messageText} onChange={handleInputChange} ref={textareaRef} className="min-h-[60px] max-h-[120px] resize-none" onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                } else if (e.key === 'Escape' && showMentionSelector) {
-                  e.preventDefault();
-                  setShowMentionSelector(false);
-                }
-              }} />
-                <Button onClick={handleSendMessage} disabled={isSubmitting || !messageText.trim()} size="icon" className="h-10 w-10 rounded-full">
+                <Textarea 
+                  placeholder="Type a message... Use @ to mention users or @all for everyone" 
+                  value={messageText} 
+                  onChange={handleInputChange} 
+                  ref={textareaRef} 
+                  className="min-h-[60px] max-h-[120px] resize-none" 
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    } else if (e.key === 'Escape' && showMentionSelector) {
+                      e.preventDefault();
+                      setShowMentionSelector(false);
+                    }
+                  }} 
+                />
+                <Button 
+                  onClick={handleSendMessage} 
+                  disabled={isSubmitting || !messageText.trim()} 
+                  size="icon" 
+                  className="h-10 w-10 rounded-full"
+                >
                   <Send className="h-5 w-5" />
                 </Button>
               </div>
@@ -926,24 +937,24 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
                     <Paperclip className="h-5 w-5" />
                   </Button>
                   <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={() => {
-                  if (textareaRef.current) {
-                    const cursorPosition = textareaRef.current.selectionStart;
-                    const textBefore = messageText.substring(0, cursorPosition);
-                    const textAfter = messageText.substring(cursorPosition);
-                    const newText = `${textBefore}@${textAfter}`;
-                    setMessageText(newText);
-                    setMentionStart(cursorPosition);
-                    setMentionQuery('');
-                    setShowMentionSelector(true);
-                    textareaRef.current.focus();
-                    setTimeout(() => {
-                      if (textareaRef.current) {
-                        textareaRef.current.selectionStart = cursorPosition + 1;
-                        textareaRef.current.selectionEnd = cursorPosition + 1;
-                      }
-                    }, 0);
-                  }
-                }}>
+                    if (textareaRef.current) {
+                      const cursorPosition = textareaRef.current.selectionStart;
+                      const textBefore = messageText.substring(0, cursorPosition);
+                      const textAfter = messageText.substring(cursorPosition);
+                      const newText = `${textBefore}@${textAfter}`;
+                      setMessageText(newText);
+                      setMentionStart(cursorPosition);
+                      setMentionQuery('');
+                      setShowMentionSelector(true);
+                      textareaRef.current.focus();
+                      setTimeout(() => {
+                        if (textareaRef.current) {
+                          textareaRef.current.selectionStart = cursorPosition + 1;
+                          textareaRef.current.selectionEnd = cursorPosition + 1;
+                        }
+                      }, 0);
+                    }
+                  }}>
                     <AtSign className="h-5 w-5" />
                   </Button>
                 </div>
@@ -953,34 +964,38 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
         </Card>
       </div>
       
-      <input type="file" ref={fileInputRef} style={{
-        display: 'none'
-      }} accept="image/*" onChange={async e => {
-        const file = e.target.files?.[0];
-        if (file && user && selectedRoomId) {
-          try {
-            setIsSubmitting(true);
-            toast.loading('Uploading image...');
-            const attachmentUrl = await uploadTeamFile(file, 'messages');
-            await createMessageMutation.mutateAsync({
-              content: messageText,
-              author_id: user.id,
-              type: 'image',
-              attachment_url: attachmentUrl,
-              room_id: selectedRoomId,
-              read_by: [user.id]
-            });
-            setMessageText('');
-            toast.dismiss();
-            toast.success('Image sent');
-          } catch (error) {
-            console.error('Error uploading image:', error);
-            toast.error('Failed to upload image');
-          } finally {
-            setIsSubmitting(false);
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        accept="image/*" 
+        onChange={async e => {
+          const file = e.target.files?.[0];
+          if (file && user && selectedRoomId) {
+            try {
+              setIsSubmitting(true);
+              toast.loading('Uploading image...');
+              const attachmentUrl = await uploadTeamFile(file, 'messages');
+              await createMessageMutation.mutateAsync({
+                content: messageText,
+                author_id: user.id,
+                type: 'image',
+                attachment_url: attachmentUrl,
+                room_id: selectedRoomId,
+                read_by: [user.id]
+              });
+              setMessageText('');
+              toast.dismiss();
+              toast.success('Image sent');
+            } catch (error) {
+              console.error('Error uploading image:', error);
+              toast.error('Failed to upload image');
+            } finally {
+              setIsSubmitting(false);
+            }
           }
-        }
-      }} />
+        }} 
+      />
     </div>;
 };
 
