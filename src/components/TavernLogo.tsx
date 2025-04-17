@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -12,7 +13,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
   size = 'lg'
 }) => {
   const [logoUrl, setLogoUrl] = useState<string | null>(
-    localStorage.getItem('app-logo-url')
+    localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png"
   );
   
   useEffect(() => {
@@ -24,7 +25,7 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
       try {
         const { data, error } = await supabase
           .from('themes')
-          .select('logo_url')
+          .select('logo_url, name')
           .eq('is_active', true)
           .single();
         
@@ -33,7 +34,43 @@ export const TavernLogo: React.FC<TavernLogoProps> = ({
           return;
         }
         
-        if (data && data.logo_url) {
+        // If the active theme is "Hi", change it to Berry Purple
+        if (data && data.name === 'Hi') {
+          // Get Berry Purple theme
+          const { data: berryTheme } = await supabase
+            .from('themes')
+            .select('id, logo_url')
+            .eq('name', 'Berry Purple')
+            .single();
+            
+          if (berryTheme) {
+            // Deactivate all themes
+            await supabase
+              .from('themes')
+              .update({ is_active: false })
+              .neq('id', 0);
+              
+            // Activate Berry Purple
+            await supabase
+              .from('themes')
+              .update({ is_active: true })
+              .eq('id', berryTheme.id);
+              
+            // Use Berry Purple logo
+            if (berryTheme.logo_url) {
+              localStorage.setItem('app-logo-url', berryTheme.logo_url);
+              setLogoUrl(berryTheme.logo_url);
+              
+              // Dispatch logo update event
+              const logoEvent = new CustomEvent('app-logo-updated', {
+                detail: { logoUrl: berryTheme.logo_url }
+              });
+              window.dispatchEvent(logoEvent);
+            }
+          }
+        }
+        // Normal case - use the active theme's logo
+        else if (data && data.logo_url) {
           // Save to localStorage and update state
           localStorage.setItem('app-logo-url', data.logo_url);
           setLogoUrl(data.logo_url);

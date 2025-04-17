@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -12,7 +13,7 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
   const [logoUrl, setLogoUrl] = useState<string>(
     localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png"
   );
-  const [companyName, setCompanyName] = useState<string>('');
+  const [companyName, setCompanyName] = useState<string>('Hospitality Intelligence');
   
   const sizeClasses = {
     sm: 'h-8 w-8',
@@ -29,12 +30,16 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
       try {
         // First try to get from localStorage (for immediate display while DB loads)
         const cachedName = localStorage.getItem('company-name');
-        if (cachedName && cachedName !== 'Hi') {
+        
+        // Never display "Hi" or "H i" as company name
+        if (cachedName && cachedName !== 'Hi' && cachedName !== 'H i') {
           console.log('Using company name from localStorage:', cachedName);
           setCompanyName(cachedName);
         } else {
-          // Set default if it was "Hi"
+          // Set default name - always Hospitality Intelligence
+          console.log('Using default company name: Hospitality Intelligence');
           setCompanyName('Hospitality Intelligence');
+          localStorage.setItem('company-name', 'Hospitality Intelligence');
         }
         
         // Then fetch from database for most up-to-date value
@@ -50,12 +55,35 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
         }
         
         if (data && data.company_name) {
-          // Replace "Hi" with "Hospitality Intelligence"
-          const properName = data.company_name === 'Hi' ? 'Hospitality Intelligence' : data.company_name;
+          // Never use "Hi" or "H i" as company name
+          const companyNameFromDB = data.company_name;
+          const properName = (companyNameFromDB === 'Hi' || companyNameFromDB === 'H i') 
+            ? 'Hospitality Intelligence' 
+            : companyNameFromDB;
+          
           console.log('Fetched company name from database:', properName);
           setCompanyName(properName);
+          
           // Update localStorage cache
           localStorage.setItem('company-name', properName);
+          
+          // If the database had "Hi" as company name, update it
+          if (companyNameFromDB === 'Hi' || companyNameFromDB === 'H i') {
+            try {
+              const { error: updateError } = await supabase
+                .from('company_settings')
+                .update({ company_name: 'Hospitality Intelligence' })
+                .eq('id', 1);
+                
+              if (updateError) {
+                console.error('Error updating company name in DB:', updateError);
+              } else {
+                console.log('Successfully updated company name in DB to Hospitality Intelligence');
+              }
+            } catch (err) {
+              console.error('Error updating company name:', err);
+            }
+          }
         }
       } catch (err) {
         console.error('Error in fetchCompanyName:', err);
@@ -64,10 +92,18 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
     
     const handleCompanyNameUpdate = (event: any) => {
       if (event.detail && event.detail.companyName) {
-        const newName = event.detail.companyName === 'Hi' ? 'Hospitality Intelligence' : event.detail.companyName;
-        console.log('Company name updated via event:', newName);
-        setCompanyName(newName);
-        localStorage.setItem('company-name', newName);
+        const newName = event.detail.companyName;
+        
+        // Never use "Hi" or "H i" as company name
+        if (newName === 'Hi' || newName === 'H i') {
+          console.log('Rejecting company name update to Hi, using Hospitality Intelligence instead');
+          setCompanyName('Hospitality Intelligence');
+          localStorage.setItem('company-name', 'Hospitality Intelligence');
+        } else {
+          console.log('Company name updated via event:', newName);
+          setCompanyName(newName);
+          localStorage.setItem('company-name', newName);
+        }
       }
     };
     
@@ -107,7 +143,7 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
           }}
         />
       </Link>
-      {companyName && (
+      {companyName && companyName !== 'Hi' && companyName !== 'H i' && (
         <div className="mt-2 text-center">
           <span className="text-white text-sm font-medium">{companyName}</span>
         </div>
