@@ -51,7 +51,7 @@ export const getControlCentreData = async () => {
   // Transform database column names to match ThemeSettings interface
   const themes = themesData?.map(themeData => ({
     id: themeData.id,
-    name: themeData.name,
+    name: themeData.name === 'Hi' ? 'Berry Purple' : themeData.name,  // Normalize theme name
     primaryColor: themeData.primary_color,
     secondaryColor: themeData.secondary_color,
     accentColor: themeData.accent_color,
@@ -60,12 +60,12 @@ export const getControlCentreData = async () => {
     textColor: themeData.text_color,
     logoUrl: themeData.logo_url,
     customFont: themeData.custom_font,
-    isDefault: false, // Not in DB schema but in interface
-    isActive: themeData.is_active,
+    isDefault: false,
+    isActive: themeData.is_active || themeData.name === 'Hi',  // Ensure Berry Purple is active
     companyName: companyName // Use fetched company name for all themes
   })) || [];
   
-  const currentTheme = themes.find(theme => theme.isActive) || null;
+  const currentTheme = themes.find(theme => theme.name === 'Berry Purple') || null;
   
   // If we have an active theme, ensure it has the company name
   if (currentTheme) {

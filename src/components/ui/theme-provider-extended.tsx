@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "react-router-dom";
@@ -10,22 +9,27 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
   console.log("ThemeProviderExtended rendered", location.pathname);
 
   useEffect(() => {
-    // Load the active theme from the database
     const loadActiveTheme = async () => {
       try {
-        // First, check localStorage for a persisted theme
+        // Modify default theme logic
         const savedThemeName = localStorage.getItem('app-active-theme');
-        console.log('Saved theme from localStorage:', savedThemeName);
         
-        // Apply saved theme immediately while waiting for DB response
-        // If no theme is saved, default to "Hi" (former Berry Purple)
+        // Always default to 'Berry Purple' instead of 'Hi'
+        const defaultThemeName = 'Berry Purple';
+        
         if (savedThemeName) {
-          console.log('Applying saved theme from localStorage immediately:', savedThemeName);
-          applyThemeClass(savedThemeName);
+          // Convert old 'Hi' theme to 'Berry Purple'
+          const normalizedThemeName = savedThemeName === 'Hi' || savedThemeName === 'Berry Purple' 
+            ? 'Berry Purple' 
+            : savedThemeName;
+          
+          console.log('Applying saved theme:', normalizedThemeName);
+          applyThemeClass(normalizedThemeName);
+          localStorage.setItem('app-active-theme', normalizedThemeName);
         } else {
-          console.log('No saved theme, applying default theme: Hi');
-          applyThemeClass('Hi');
-          localStorage.setItem('app-active-theme', 'Hi');
+          console.log('Applying default theme: Berry Purple');
+          applyThemeClass('Berry Purple');
+          localStorage.setItem('app-active-theme', 'Berry Purple');
         }
         
         const { data, error } = await supabase
@@ -68,28 +72,45 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         } else {
           // If no active theme in DB, ensure we use the default Hi theme
           console.log('No active theme in database, using default Hi theme');
-          applyThemeClass('Hi');
+          applyThemeClass('Berry Purple');
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
-        
-        // Recover using localStorage if DB fetch fails
-        const savedThemeName = localStorage.getItem('app-active-theme');
-        if (savedThemeName) {
-          console.log('Recovering with saved theme from localStorage:', savedThemeName);
-          applyThemeClass(savedThemeName);
-        } else {
-          // Default to "Hi" theme if no saved theme
-          console.log('No saved theme, applying default theme: Hi');
-          applyThemeClass('Hi');
-          localStorage.setItem('app-active-theme', 'Hi');
-        }
-      } finally {
-        setThemeLoaded(true);
       }
     };
 
-    loadActiveTheme();
+    const applyThemeClass = (themeName: string) => {
+      const html = document.documentElement;
+      
+      // Remove existing theme classes
+      const themeClasses = [
+        'theme-forest-green', 
+        'theme-ocean-blue', 
+        'theme-sunset-orange', 
+        'theme-berry-purple', 
+        'theme-dark-mode', 
+        'theme-hi-purple'  // Remove this
+      ];
+      themeClasses.forEach(cls => {
+        html.classList.remove(cls);
+      });
+      
+      // Update theme class mapping
+      if (themeName === 'Forest Green') {
+        html.classList.add('theme-forest-green');
+      } else if (themeName === 'Ocean Blue') {
+        html.classList.add('theme-ocean-blue');
+      } else if (themeName === 'Sunset Orange') {
+        html.classList.add('theme-sunset-orange');
+      } else if (themeName === 'Berry Purple') {  // Simplified theme mapping
+        html.classList.add('theme-berry-purple');
+      } else if (themeName === 'Dark Mode') {
+        html.classList.add('theme-dark-mode');
+      }
+      
+      // Trigger change event
+      document.dispatchEvent(new Event('themeClassChanged'));
+    };
 
     // Set up listener for theme updates
     const handleThemeUpdate = (event: any) => {
@@ -135,35 +156,6 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Fallback to database call if no theme in event
         loadActiveTheme();
       }
-    };
-    
-    // Helper function to apply theme class
-    const applyThemeClass = (themeName: string) => {
-      const html = document.documentElement;
-      
-      // Remove any existing theme classes
-      const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode', 'theme-hi-purple'];
-      themeClasses.forEach(cls => {
-        html.classList.remove(cls);
-      });
-      
-      // Add the new theme class based on the theme name
-      if (themeName === 'Forest Green') {
-        html.classList.add('theme-forest-green');
-      } else if (themeName === 'Ocean Blue') {
-        html.classList.add('theme-ocean-blue');
-      } else if (themeName === 'Sunset Orange') {
-        html.classList.add('theme-sunset-orange');
-      } else if (themeName === 'Hi' || themeName === 'Berry Purple') {
-        html.classList.add('theme-berry-purple');
-      } else if (themeName === 'Dark Mode') {
-        html.classList.add('theme-dark-mode');
-      } else if (themeName === 'Hi Purple') {
-        html.classList.add('theme-hi-purple');
-      }
-      
-      // Trigger change event
-      document.dispatchEvent(new Event('themeClassChanged'));
     };
     
     // Helper function to apply custom font
