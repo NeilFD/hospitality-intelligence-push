@@ -7,13 +7,25 @@ import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
+import { getChatRooms } from '@/services/team-service';
 
 const Chat: React.FC = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const roomId = searchParams.get('room');
+  const roomSlug = searchParams.get('room') || 'general';
   const { user } = useAuthStore();
+  const { data: rooms = [] } = useQuery({
+    queryKey: ['chatRooms'],
+    queryFn: getChatRooms
+  });
+  
+  // Find the room ID based on the slug in the URL
+  const roomId = React.useMemo(() => {
+    const room = rooms.find(r => r.slug === roomSlug);
+    return room?.id || (rooms[0]?.id || null);
+  }, [rooms, roomSlug]);
   
   useEffect(() => {
     if (!user) return;
@@ -67,7 +79,13 @@ const Chat: React.FC = () => {
   return (
     <div className={cn("container mx-auto overflow-hidden", isMobile ? "p-0 max-w-full" : "p-4")}>
       <div className="overflow-hidden h-[calc(100vh-130px)] border border-gray-100 rounded-lg">
-        <TeamChat initialRoomId={roomId} />
+        {roomId ? (
+          <TeamChat initialRoomId={roomId} />
+        ) : (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-gray-500">Loading chat rooms...</p>
+          </div>
+        )}
       </div>
     </div>
   );

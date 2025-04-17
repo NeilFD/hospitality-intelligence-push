@@ -222,6 +222,13 @@ export const deleteNoteReply = async (replyId: string): Promise<void> => {
 
 export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
   try {
+    if (!roomId || roomId === 'general' || roomId === 'undefined') {
+      console.error('Invalid room ID provided to getMessages:', roomId);
+      return [];
+    }
+    
+    console.log('Fetching messages for room ID:', roomId);
+    
     const { data, error } = await supabase
       .from('team_messages')
       .select('*')
@@ -593,7 +600,8 @@ export const uploadTeamFile = async (file: File, folder: 'notes' | 'messages' | 
 export const getChatRooms = async (): Promise<ChatRoom[]> => {
   const { data, error } = await supabase
     .from('team_chat_rooms')
-    .select('*');
+    .select('*')
+    .order('name', { ascending: true });
     
   if (error) {
     console.error('Error fetching chat rooms:', error);
@@ -601,4 +609,19 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
   }
   
   return data || [];
+};
+
+export const getChatRoomBySlug = async (slug: string): Promise<ChatRoom | null> => {
+  const { data, error } = await supabase
+    .from('team_chat_rooms')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+    
+  if (error) {
+    console.error(`Error fetching chat room with slug "${slug}":`, error);
+    return null;
+  }
+  
+  return data;
 };

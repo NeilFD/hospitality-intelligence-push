@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -26,16 +25,25 @@ import TeamChat from '@/pages/team/components/TeamChat';
 import { getHasAccessToModule } from '@/services/permissions-service';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { formatCurrency } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { getChatRooms } from '@/services/team-service';
 
 const HomeDashboard: React.FC = () => {
   const [yesterdayData, setYesterdayData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [availableModules, setAvailableModules] = useState<{type: ModuleType, name: string}[]>([]);
+  const [generalRoomId, setGeneralRoomId] = useState<string | null>(null);
   const { profile } = useAuthStore();
   
   const yesterday = subDays(new Date(), 1);
   const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
+  
+  const { data: chatRooms } = useQuery({
+    queryKey: ['chatRooms'],
+    queryFn: getChatRooms,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  });
   
   useEffect(() => {
     const fetchYesterdayData = async () => {
@@ -87,6 +95,15 @@ const HomeDashboard: React.FC = () => {
     
     checkModuleAccess();
   }, [profile]);
+
+  useEffect(() => {
+    if (chatRooms && chatRooms.length > 0) {
+      const generalRoom = chatRooms.find(room => room.slug === 'general');
+      if (generalRoom) {
+        setGeneralRoomId(generalRoom.id);
+      }
+    }
+  }, [chatRooms]);
 
   return (
     <div className="container mx-auto p-4">
@@ -225,7 +242,13 @@ const HomeDashboard: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 h-[400px]">
-              <TeamChat initialRoomId="general" compact={true} />
+              {generalRoomId ? (
+                <TeamChat initialRoomId={generalRoomId} compact={true} />
+              ) : (
+                <div className="flex justify-center items-center h-full text-gray-500">
+                  Loading chat rooms...
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
