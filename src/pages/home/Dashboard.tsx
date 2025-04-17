@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -15,6 +16,7 @@ import {
   Clipboard, 
   AlertCircle,
   ChevronRight,
+  ChevronLeft,
   Info,
   ArrowUp,
   ArrowDown,
@@ -29,6 +31,8 @@ import { ModuleType } from '@/types/kitchen-ledger';
 import { formatCurrency } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const HomeDashboard: React.FC = () => {
   const [yesterdayData, setYesterdayData] = useState<any>(null);
