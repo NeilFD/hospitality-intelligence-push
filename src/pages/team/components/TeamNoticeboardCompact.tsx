@@ -240,8 +240,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
           className={`relative border ${item.color ? `border-${item.color}-200` : 'border-amber-100'} bg-white shadow-sm hover:shadow-md transition-shadow`}
         >
           {item.pinned && (
-            <div className="absolute top-2 right-2">
-              <Pin className="h-4 w-4 text-amber-500 fill-amber-500" />
+            <div className="absolute top-2 right-2 text-amber-500 opacity-50">
+              <Pin className="h-3 w-3" fill="currentColor" />
             </div>
           )}
           <CardContent className={compact ? "p-3" : "p-4"}>
@@ -280,13 +280,13 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         key={item.id} 
         className="relative border border-blue-100 bg-white shadow-sm hover:shadow-md transition-shadow"
       >
-        <div className="absolute top-2 right-2">
-          <Pin className="h-4 w-4 text-amber-500 fill-amber-500" />
+        <div className="absolute top-2 right-2 text-amber-500 opacity-50 flex items-center">
+          <Pin className="h-3 w-3 mr-1" fill="currentColor" />
           {item.type === 'food_recipe' && (
-            <Utensils className="h-4 w-4 text-green-600 mt-1" />
+            <Utensils className="h-3 w-3 text-green-600" />
           )}
           {item.type === 'beverage_recipe' && (
-            <Beer className="h-4 w-4 text-purple-600 mt-1" />
+            <Beer className="h-3 w-3 text-purple-600" />
           )}
         </div>
         <CardContent className={compact ? "p-3" : "p-4"}>
