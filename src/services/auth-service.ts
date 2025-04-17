@@ -230,6 +230,9 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false, 
             isLoading: false 
           });
+          
+          // Force redirect to the login page after logout
+          window.location.href = '/login';
         } catch (error: any) {
           console.error('Error logging out:', error);
           set({ 

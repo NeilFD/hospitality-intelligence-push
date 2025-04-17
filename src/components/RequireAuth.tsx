@@ -16,6 +16,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [permissionLoading, setPermissionLoading] = useState(false);
   
+  // Load user authentication state on component mount
   useEffect(() => {
     // If we're not authenticated and not already loading, try to load the user
     if (!isAuthenticated && !isLoading) {
@@ -24,7 +25,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   }, [isAuthenticated, isLoading, loadUser]);
 
   // Check permission based on the current path and user role
-  // Runs on every location change to ensure permissions are checked on navigation
+  // This useEffect will run on every location change
   useEffect(() => {
     const checkPermission = async () => {
       // Skip permission check if user is not authenticated yet or is currently loading
@@ -38,8 +39,6 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
       const moduleId = pathParts[0] || '';
       
       console.log(`[RequireAuth] Checking module access for "${moduleId}" and role "${profile.role}"`);
-      
-      // Role-based debug information
       console.log(`[RequireAuth] User: ${profile.first_name} ${profile.last_name}, role: ${profile.role}`);
       console.log(`[RequireAuth] Current path: ${location.pathname}`);
 
@@ -131,7 +130,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     if (userRoleValue < requiredRoleValue) {
       console.log(`[RequireAuth] User does not have required role ${requiredRole}, redirecting to home`);
       toast.error(`You need ${requiredRole} permissions to access this page`);
-      return <Navigate to="/" replace />;
+      return <Navigate to="/team/dashboard" replace />;
     }
   }
   
