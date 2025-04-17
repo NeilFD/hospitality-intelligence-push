@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "react-router-dom";
@@ -14,12 +15,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Modify default theme logic
         const savedThemeName = localStorage.getItem('app-active-theme');
         
-        // Always default to 'Berry Purple' instead of 'Hi'
+        // Always default to 'Berry Purple' and remove 'Hi' completely
         const defaultThemeName = 'Berry Purple';
         
         if (savedThemeName) {
-          // Convert old 'Hi' theme to 'Berry Purple'
-          const normalizedThemeName = savedThemeName === 'Hi' || savedThemeName === 'Berry Purple' 
+          // Convert any 'Hi' theme to 'Berry Purple'
+          const normalizedThemeName = savedThemeName === 'Hi' 
             ? 'Berry Purple' 
             : savedThemeName;
           
@@ -45,8 +46,11 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         }
         
         if (data) {
+          // Check for Hi theme and replace with Berry Purple
+          const themeName = data.name === 'Hi' ? 'Berry Purple' : data.name;
+          
           // Apply theme class to the html element
-          applyThemeClass(data.name);
+          applyThemeClass(themeName);
           
           // Apply custom font if available
           if (data.custom_font) {
@@ -65,14 +69,15 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             console.log('Saved logo URL to localStorage:', data.logo_url);
           }
           
-          // Save the current theme to localStorage
-          localStorage.setItem('app-active-theme', data.name);
+          // Save the current theme to localStorage, ensuring Hi is replaced
+          localStorage.setItem('app-active-theme', themeName);
           
-          console.log('Applied theme from database:', data.name, 'with font:', data.custom_font, 'and company name:', data.company_name);
+          console.log('Applied theme from database:', themeName, 'with font:', data.custom_font, 'and company name:', data.company_name);
         } else {
-          // If no active theme in DB, ensure we use the default Hi theme
-          console.log('No active theme in database, using default Hi theme');
+          // If no active theme in DB, ensure we use Berry Purple theme
+          console.log('No active theme in database, using Berry Purple theme');
           applyThemeClass('Berry Purple');
+          localStorage.setItem('app-active-theme', 'Berry Purple');
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
@@ -89,11 +94,23 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'theme-sunset-orange', 
         'theme-berry-purple', 
         'theme-dark-mode', 
-        'theme-hi-purple'  // Remove this
+        'theme-hi-purple'  // This class might be the issue
       ];
+      
+      // Thoroughly clean up themes - remove all theme classes
       themeClasses.forEach(cls => {
         html.classList.remove(cls);
       });
+      
+      // Additional cleanup for any Hi-related classes
+      html.classList.remove('hi');
+      html.classList.remove('theme-hi');
+      
+      // Reset company name in case it was set to "Hi"
+      const companyName = localStorage.getItem('company-name');
+      if (companyName === 'Hi') {
+        localStorage.setItem('company-name', 'Hospitality Intelligence');
+      }
       
       // Update theme class mapping
       if (themeName === 'Forest Green') {
@@ -102,7 +119,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.add('theme-ocean-blue');
       } else if (themeName === 'Sunset Orange') {
         html.classList.add('theme-sunset-orange');
-      } else if (themeName === 'Berry Purple') {  // Simplified theme mapping
+      } else if (themeName === 'Berry Purple' || themeName === 'Hi') {  // Map both to Berry Purple
         html.classList.add('theme-berry-purple');
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');

@@ -1,11 +1,15 @@
 
-import { createRoot } from 'react-dom/client'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { AuthProvider } from '@/contexts/AuthContext'
+import { fixHiTheme } from './theme-fixer.ts'
 
-createRoot(document.getElementById("root")!).render(
-  <AuthProvider>
+// Execute the Hi theme fix before rendering the app
+fixHiTheme();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
     <App />
-  </AuthProvider>
-);
+  </React.StrictMode>,
+)

@@ -14,7 +14,7 @@ export const availableFonts: { name: string; value: string }[] = [
   { name: 'Courier Prime', value: '"Courier Prime", "Courier New", monospace' },
 ];
 
-// Modify getControlCentreData to fetch the company name
+// Modify getControlCentreData to ensure Hi theme is properly removed
 export const getControlCentreData = async () => {
   // Initialize database if needed
   
@@ -42,30 +42,77 @@ export const getControlCentreData = async () => {
     console.error('Error fetching company settings:', companySettingsError);
   }
   
-  const companyName = companySettingsData?.company_name || 'Hospitality Intelligence';
+  // Set proper company name, ensuring it's not "Hi"
+  const companyName = companySettingsData?.company_name === 'Hi' 
+    ? 'Hospitality Intelligence' 
+    : (companySettingsData?.company_name || 'Hospitality Intelligence');
   
   // Store company name in localStorage for persistence
   localStorage.setItem('company-name', companyName);
   console.log('Stored company name in localStorage:', companyName);
   
-  // Transform database column names to match ThemeSettings interface
-  const themes = themesData?.map(themeData => ({
-    id: themeData.id,
-    name: themeData.name === 'Hi' ? 'Berry Purple' : themeData.name,  // Normalize theme name
-    primaryColor: themeData.primary_color,
-    secondaryColor: themeData.secondary_color,
-    accentColor: themeData.accent_color,
-    sidebarColor: themeData.sidebar_color,
-    buttonColor: themeData.button_color,
-    textColor: themeData.text_color,
-    logoUrl: themeData.logo_url,
-    customFont: themeData.custom_font,
-    isDefault: false,
-    isActive: themeData.is_active || themeData.name === 'Hi',  // Ensure Berry Purple is active
-    companyName: companyName // Use fetched company name for all themes
-  })) || [];
+  // Find if there's an active "Hi" theme that needs to be replaced
+  const hiThemeIsActive = themesData?.some(theme => theme.name === 'Hi' && theme.is_active) || false;
   
-  const currentTheme = themes.find(theme => theme.name === 'Berry Purple') || null;
+  // Find the Berry Purple theme
+  const berryPurpleTheme = themesData?.find(theme => theme.name === 'Berry Purple');
+  
+  // If Hi theme is active, we need to fix that in the database
+  if (hiThemeIsActive && berryPurpleTheme) {
+    try {
+      // Set all themes to inactive first
+      await supabase
+        .from('themes')
+        .update({ is_active: false })
+        .neq('id', 0);
+      
+      // Activate Berry Purple theme
+      await supabase
+        .from('themes')
+        .update({ is_active: true })
+        .eq('id', berryPurpleTheme.id);
+      
+      console.log('Switched active theme from Hi to Berry Purple in database');
+    } catch (err) {
+      console.error('Error updating theme activity:', err);
+    }
+  }
+  
+  // Transform database column names to match ThemeSettings interface
+  const themes = themesData?.map(themeData => {
+    // Replace any "Hi" theme with "Berry Purple"
+    const isHiTheme = themeData.name === 'Hi';
+    
+    return {
+      id: themeData.id,
+      name: isHiTheme ? 'Berry Purple' : themeData.name,
+      primaryColor: themeData.primary_color,
+      secondaryColor: themeData.secondary_color,
+      accentColor: themeData.accent_color,
+      sidebarColor: themeData.sidebar_color,
+      buttonColor: themeData.button_color,
+      textColor: themeData.text_color,
+      logoUrl: themeData.logo_url,
+      customFont: themeData.custom_font,
+      isDefault: false,
+      isActive: isHiTheme ? false : (themeData.is_active || themeData.name === 'Berry Purple'),
+      companyName: companyName
+    };
+  }) || [];
+  
+  // Make sure Berry Purple is active if no other theme is
+  const hasActiveTheme = themes.some(theme => theme.isActive);
+  if (!hasActiveTheme) {
+    const berryPurpleIndex = themes.findIndex(theme => theme.name === 'Berry Purple');
+    if (berryPurpleIndex >= 0) {
+      themes[berryPurpleIndex].isActive = true;
+    }
+  }
+  
+  // Ensure we return Berry Purple as the current theme, not Hi
+  const currentTheme = themes.find(theme => theme.isActive) || 
+                      themes.find(theme => theme.name === 'Berry Purple') || 
+                      null;
   
   // If we have an active theme, ensure it has the company name
   if (currentTheme) {

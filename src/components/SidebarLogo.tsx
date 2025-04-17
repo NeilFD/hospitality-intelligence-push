@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -30,9 +29,12 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
       try {
         // First try to get from localStorage (for immediate display while DB loads)
         const cachedName = localStorage.getItem('company-name');
-        if (cachedName) {
+        if (cachedName && cachedName !== 'Hi') {
           console.log('Using company name from localStorage:', cachedName);
           setCompanyName(cachedName);
+        } else {
+          // Set default if it was "Hi"
+          setCompanyName('Hospitality Intelligence');
         }
         
         // Then fetch from database for most up-to-date value
@@ -48,10 +50,12 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
         }
         
         if (data && data.company_name) {
-          console.log('Fetched company name from database:', data.company_name);
-          setCompanyName(data.company_name);
+          // Replace "Hi" with "Hospitality Intelligence"
+          const properName = data.company_name === 'Hi' ? 'Hospitality Intelligence' : data.company_name;
+          console.log('Fetched company name from database:', properName);
+          setCompanyName(properName);
           // Update localStorage cache
-          localStorage.setItem('company-name', data.company_name);
+          localStorage.setItem('company-name', properName);
         }
       } catch (err) {
         console.error('Error in fetchCompanyName:', err);
@@ -60,9 +64,10 @@ export function SidebarLogo({ size = 'md', className }: SidebarLogoProps) {
     
     const handleCompanyNameUpdate = (event: any) => {
       if (event.detail && event.detail.companyName) {
-        console.log('Company name updated via event:', event.detail.companyName);
-        setCompanyName(event.detail.companyName);
-        localStorage.setItem('company-name', event.detail.companyName);
+        const newName = event.detail.companyName === 'Hi' ? 'Hospitality Intelligence' : event.detail.companyName;
+        console.log('Company name updated via event:', newName);
+        setCompanyName(newName);
+        localStorage.setItem('company-name', newName);
       }
     };
     
