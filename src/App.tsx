@@ -37,6 +37,7 @@ import TeamChat from '@/pages/team/Chat';
 import TeamKnowledge from '@/pages/team/Knowledge';
 import Hospitality from '@/pages/team/Hospitality';
 import HospitalityBible from '@/pages/team/HospitalityBible';
+import WageOptimization from '@/pages/performance/WageOptimization';
 
 // Import Food and Beverage specific routes
 import FoodInputSettings from '@/pages/food/InputSettings';
@@ -139,6 +140,7 @@ function App() {
                 
                 {/* Performance Module Routes */}
                 <Route path="/performance/dashboard" element={<Layout><PerformanceDashboard /></Layout>} />
+                <Route path="/performance/wage-optimization" element={<Layout><WageOptimization /></Layout>} />
                 
                 {/* Team Module Routes */}
                 <Route path="/team/dashboard" element={<Layout><TeamDashboard /></Layout>} />
