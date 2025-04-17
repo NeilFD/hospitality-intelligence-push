@@ -19,14 +19,18 @@ const Index = () => {
       
       try {
         // Skip for GOD and Super User roles
-        if (profile.role === 'GOD' || profile.role === 'Super User') return;
+        if (profile.role === 'GOD' || profile.role === 'Super User') {
+          console.log(`${profile.role} user has full access to all modules`);
+          return;
+        }
         
         // Get all modules the user has access to
         const { data: permittedModules, error } = await supabase
           .from('permission_access')
-          .select('module_id')
+          .select('module_id, permission_modules(module_name)')
           .eq('role_id', profile.role)
-          .eq('has_access', true);
+          .eq('has_access', true)
+          .order('module_id');
           
         if (error) {
           console.error('Error fetching permitted modules:', error);

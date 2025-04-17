@@ -31,6 +31,9 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         return;
       }
 
+      // Detailed role logging
+      console.log(`Checking permissions for user: ${profile.first_name} ${profile.last_name}, role: ${profile.role}`);
+
       // GOD and Super User roles always have access to everything
       if (profile.role === 'GOD' || profile.role === 'Super User') {
         console.log(`${profile.role} user detected - granting access to protected route`);
@@ -65,6 +68,22 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           return;
         }
         
+        // First, check if this module exists in permission_modules
+        const { data: moduleData, error: moduleDataError } = await supabase
+          .from('permission_modules')
+          .select('module_id, module_name')
+          .eq('module_id', moduleId)
+          .single();
+          
+        if (moduleDataError) {
+          console.error('Error retrieving module data:', moduleDataError);
+          // If module doesn't exist in permissions, deny access
+          setHasPermission(false);
+          return;
+        }
+        
+        console.log('Found module in permission_modules:', moduleData);
+        
         // Get the module permission for the user's role
         const { data: moduleAccess, error: moduleError } = await supabase
           .from('permission_access')
@@ -73,11 +92,14 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           .eq('module_id', moduleId)
           .single();
           
-        if (moduleError && moduleError.code !== 'PGRST116') {
+        if (moduleError) {
           console.error('Error checking module permission:', moduleError);
+          // No access record found, deny permission
           setHasPermission(false);
           return;
         }
+        
+        console.log('Module access record:', moduleAccess);
         
         // If no module access or has_access is false, deny permission
         if (!moduleAccess || !moduleAccess.has_access) {
@@ -94,41 +116,51 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         // Get all pages to match against
         const { data: pages, error: pagesError } = await supabase
           .from('permission_pages')
-          .select('page_id, page_url')
+          .select('page_id, page_url, page_name')
           .eq('module_id', moduleId);
           
         if (pagesError) {
           console.error('Error fetching pages:', pagesError);
-          setHasPermission(false);
+          // If we can't get pages, use module level permission
+          console.log('Defaulting to module level permission since pages could not be fetched');
+          setHasPermission(true);
           return;
         }
         
         // Log all pages for debugging
         console.log('Available pages for module:', moduleId, pages);
         
+        // If no pages defined for this module, allow access by default (module permission is already granted)
+        if (!pages || pages.length === 0) {
+          console.log(`No pages defined for module ${moduleId}, defaulting to allow access`);
+          setHasPermission(true);
+          return;
+        }
+        
         // Find matching page (considering parameterized routes)
         let matchingPageId = null;
-        if (pages && pages.length > 0) {
-          // First try an exact match
-          const exactMatch = pages.find(page => page.page_url === currentPath);
-          if (exactMatch) {
-            matchingPageId = exactMatch.page_id;
-            console.log(`Exact page match found: ${matchingPageId}`);
-          } else {
-            // Then try to match parameterized routes (replacing {param} parts with wildcards)
-            for (const page of pages) {
-              // Convert route patterns like '/food/month/{year}/{month}' to regex
-              const pageUrlPattern = page.page_url.replace(/\{[^}]+\}/g, '[^/]+');
-              const pageRegex = new RegExp(`^${pageUrlPattern}$`);
-              
-              // Log the matching attempt
-              console.log(`Trying to match ${currentPath} against pattern: ${pageUrlPattern}`);
-              
-              if (pageRegex.test(currentPath)) {
-                matchingPageId = page.page_id;
-                console.log(`Parameterized page match found: ${matchingPageId}`);
-                break;
-              }
+        let matchedPage = null;
+        
+        // First try an exact match
+        matchedPage = pages.find(page => page.page_url === currentPath);
+        if (matchedPage) {
+          matchingPageId = matchedPage.page_id;
+          console.log(`Exact page match found: ${matchingPageId} (${matchedPage.page_name}) - ${matchedPage.page_url}`);
+        } else {
+          // Then try to match parameterized routes (replacing {param} parts with wildcards)
+          for (const page of pages) {
+            // Convert route patterns like '/food/month/{year}/{month}' to regex
+            const pageUrlPattern = page.page_url.replace(/\{[^}]+\}/g, '[^/]+');
+            const pageRegex = new RegExp(`^${pageUrlPattern}$`);
+            
+            // Log the matching attempt
+            console.log(`Trying to match ${currentPath} against pattern: ${pageUrlPattern} from page ${page.page_id} (${page.page_name})`);
+            
+            if (pageRegex.test(currentPath)) {
+              matchingPageId = page.page_id;
+              matchedPage = page;
+              console.log(`Parameterized page match found: ${matchingPageId} (${page.page_name})`);
+              break;
             }
           }
         }
@@ -148,15 +180,16 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           .eq('page_id', matchingPageId)
           .single();
           
-        if (pageError && pageError.code !== 'PGRST116') {
+        if (pageError) {
           console.error('Error checking page permission:', pageError);
-          setHasPermission(false);
+          console.log('Page permission record not found, defaulting to allow since module access is granted');
+          setHasPermission(true);
           return;
         }
         
         const hasPageAccess = pageAccess?.has_access || false;
         setHasPermission(hasPageAccess);
-        console.log(`Page permission check for ${profile.role} on page ${matchingPageId}: ${hasPageAccess}`);
+        console.log(`Page permission check for ${profile.role} on page ${matchingPageId} (${matchedPage?.page_name}): ${hasPageAccess}`);
         
       } catch (error) {
         console.error('Error checking permissions:', error);
