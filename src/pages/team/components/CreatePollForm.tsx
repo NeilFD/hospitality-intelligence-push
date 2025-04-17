@@ -46,7 +46,8 @@ const CreatePollForm: React.FC<CreatePollFormProps> = ({ onClose }) => {
         question,
         author_id: user.id,
         multiple_choice: multipleChoice,
-        color: POLL_COLORS[colorIndex]
+        color: POLL_COLORS[colorIndex],
+        active: true // Added the missing active property
       }, options);
     },
     onSuccess: () => {

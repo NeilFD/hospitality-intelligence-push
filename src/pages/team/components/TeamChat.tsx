@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -516,12 +515,10 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     }
   });
   
-  // Improved scroll to bottom function
   const scrollToBottom = () => {
     if (!scrollContainerRef.current || !shouldScrollToBottom) return;
     
     try {
-      // Use scrollTop directly for more reliable scrolling
       const scrollContainer = scrollContainerRef.current;
       scrollContainer.scrollTop = scrollContainer.scrollHeight;
       setShouldScrollToBottom(false);
@@ -530,13 +527,10 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     }
   };
   
-  // Scroll when messages load or change
   useEffect(() => {
     if (messages.length > 0 && isMessageAreaReady && shouldScrollToBottom) {
-      // Immediate scroll
       scrollToBottom();
       
-      // Delayed scroll to account for image loading, etc.
       const timer = setTimeout(() => {
         scrollToBottom();
       }, 200);
@@ -545,7 +539,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     }
   }, [messages, isMessageAreaReady, shouldScrollToBottom]);
   
-  // Scroll on window resize
   useEffect(() => {
     const handleResize = () => {
       if (isMessageAreaReady) {
@@ -662,10 +655,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       
       toast.success('Message sent');
       
-      // Set flag to scroll to bottom after message is sent
       setShouldScrollToBottom(true);
       
-      // Force an immediate scroll
       setTimeout(() => {
         scrollToBottom();
       }, 50);
@@ -723,7 +714,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               type: 'image',
               attachment_url: attachmentUrl,
               room_id: selectedRoomId,
-              read_by: [user.id]
+              read_by: [user.id],
+              mentioned_users: []
             });
             setMessageText('');
             toast.dismiss();
@@ -781,7 +773,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
                 type: 'voice',
                 attachment_url: attachmentUrl,
                 room_id: selectedRoomId,
-                read_by: [user.id]
+                read_by: [user.id],
+                mentioned_users: []
               });
               setMessageText('');
               setAudioChunks([]);
@@ -825,7 +818,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
             type: 'file',
             attachment_url: attachmentUrl,
             room_id: selectedRoomId,
-            read_by: [user.id]
+            read_by: [user.id],
+            mentioned_users: []
           });
           setMessageText('');
           toast.dismiss();
@@ -1001,7 +995,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               className={chatContentClasses} 
               style={{maxHeight: compact ? '320px' : undefined}}
               onScroll={(e) => {
-                // If user manually scrolls up, don't auto-scroll on next message
                 const element = e.target as HTMLDivElement;
                 const isScrolledToBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 10;
                 if (!isScrolledToBottom) {
@@ -1099,7 +1092,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
                 type: 'image',
                 attachment_url: attachmentUrl,
                 room_id: selectedRoomId,
-                read_by: [user.id]
+                read_by: [user.id],
+                mentioned_users: []
               });
               setMessageText('');
               toast.dismiss();
