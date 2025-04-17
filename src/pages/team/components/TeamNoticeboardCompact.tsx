@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clipboard, AlertCircle, Pin, Utensils, Beer } from 'lucide-react';
+import { Clipboard, AlertCircle, Utensils, Beer, ChefHat } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -237,32 +237,34 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
       return (
         <Card 
           key={item.id} 
-          className={`relative border ${item.color ? `border-${item.color}-200` : 'border-amber-100'} bg-white shadow-sm hover:shadow-md transition-shadow`}
+          className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden"
         >
-          {item.pinned && (
-            <div className="absolute top-2 right-2 text-amber-500 opacity-50">
-              <Pin className="h-3 w-3" fill="currentColor" />
-            </div>
-          )}
           <CardContent className={compact ? "p-3" : "p-4"}>
             <div className="flex gap-3">
-              <Avatar className="h-8 w-8">
+              <Avatar className="h-10 w-10 mt-0.5">
                 {item.profiles?.avatar_url ? (
                   <AvatarImage src={item.profiles.avatar_url} alt={item.profiles?.first_name} />
                 ) : (
-                  <AvatarFallback className="bg-amber-100 text-amber-800">
+                  <AvatarFallback className="bg-blue-100 text-blue-800">
                     {item.profiles?.first_name?.[0] || ''}{item.profiles?.last_name?.[0] || ''}
                   </AvatarFallback>
                 )}
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
-                  <p className="font-medium text-gray-900 truncate">
+                  <p className="font-medium text-gray-900">
                     {item.profiles?.first_name || 'Unknown'} {item.profiles?.last_name || ''}
                   </p>
-                  <span className="text-xs text-gray-500">
-                    {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                  </span>
+                  <div className="flex items-center">
+                    <span className="text-xs text-gray-500 mr-1">
+                      {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                    </span>
+                    {item.pinned && (
+                      <span className="text-amber-500 ml-1">
+                        <span className="h-3 w-3 text-amber-400 inline-block">📌</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-700 mt-1`}>
                   {item.content}
@@ -275,49 +277,68 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     }
     
     // For food or beverage recipes or hospitality guides
+    let moduleIcon = null;
+    let moduleLabel = '';
+    let moduleType = '';
+    let avatarBg = '';
+    
+    if (item.type === 'food_recipe') {
+      moduleIcon = <Utensils className="h-4 w-4 text-emerald-600" />;
+      moduleLabel = 'Food Recipe';
+      moduleType = 'F';
+      avatarBg = 'bg-emerald-100 text-emerald-800';
+    } else if (item.type === 'beverage_recipe') {
+      moduleIcon = <Beer className="h-4 w-4 text-purple-600" />;
+      moduleLabel = 'Beverage Recipe';
+      moduleType = 'B';
+      avatarBg = 'bg-purple-100 text-purple-800';
+    } else {
+      moduleIcon = <ChefHat className="h-4 w-4 text-blue-600" />;
+      moduleLabel = 'Hospitality Guide';
+      moduleType = 'H';
+      avatarBg = 'bg-blue-100 text-blue-800';
+    }
+    
     return (
       <Card 
         key={item.id} 
-        className="relative border border-blue-100 bg-white shadow-sm hover:shadow-md transition-shadow"
+        className="mb-3 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden"
       >
-        <div className="absolute top-2 right-2 text-amber-500 opacity-50 flex items-center">
-          <Pin className="h-3 w-3 mr-1" fill="currentColor" />
-          {item.type === 'food_recipe' && (
-            <Utensils className="h-3 w-3 text-green-600" />
-          )}
-          {item.type === 'beverage_recipe' && (
-            <Beer className="h-3 w-3 text-purple-600" />
-          )}
-        </div>
         <CardContent className={compact ? "p-3" : "p-4"}>
           <div className="flex gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className={`
-                ${item.type === 'food_recipe' ? 'bg-green-100 text-green-800' : ''} 
-                ${item.type === 'beverage_recipe' ? 'bg-purple-100 text-purple-800' : ''}
-                ${item.type === 'hospitality_guide' ? 'bg-blue-100 text-blue-800' : ''}
-              `}>
-                {item.type === 'food_recipe' ? 'F' : item.type === 'beverage_recipe' ? 'B' : 'H'}
+            <Avatar className="h-10 w-10 mt-0.5">
+              <AvatarFallback className={avatarBg}>
+                {moduleType}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start">
-                <p className="font-medium text-gray-900 truncate">
+                <p className="font-medium text-gray-900">
                   {item.name}
                 </p>
-                <span className="text-xs text-gray-500">
-                  {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                </span>
+                <div className="flex items-center">
+                  <span className="text-xs text-gray-500 mr-1">
+                    {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                  </span>
+                  {item.pinned && (
+                    <span className="text-amber-400 ml-1">
+                      <span className="h-3 w-3 text-amber-400 inline-block">📌</span>
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex mt-1">
-                <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-700`}>
-                  {item.type === 'food_recipe' ? 'Food Recipe' : 
-                   item.type === 'beverage_recipe' ? 'Beverage Recipe' : 
-                   'Hospitality Guide'}
+              <div className="flex mt-1 items-center">
+                <span className="inline-flex items-center mr-2">
+                  {moduleIcon}
+                </span>
+                <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-600`}>
+                  {moduleLabel}
                 </p>
-                <p className="text-sm text-gray-500 ml-2">
-                  {item.category}
-                </p>
+                {item.category && (
+                  <p className="text-xs text-gray-500 ml-2 bg-gray-100 px-2 py-0.5 rounded">
+                    {item.category}
+                  </p>
+                )}
               </div>
             </div>
           </div>
