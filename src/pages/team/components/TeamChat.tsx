@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -397,7 +398,7 @@ const Message: React.FC<MessageProps> = ({
 const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState('');
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -416,18 +417,26 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     isLoading: isLoadingRooms
   } = useQuery({
     queryKey: ['chatRooms'],
-    queryFn: getChatRooms
+    queryFn: getChatRooms,
+    staleTime: 60000, // 1 minute cache
   });
   
+  // Set initial room ID when component mounts or when initialRoomId changes
   useEffect(() => {
-    if (initialRoomId) {
-      console.log('Setting initial room ID:', initialRoomId);
+    console.log('TeamChat: initialRoomId changed:', initialRoomId);
+    if (initialRoomId && initialRoomId !== selectedRoomId) {
+      console.log('Setting selected room ID from initialRoomId:', initialRoomId);
       setSelectedRoomId(initialRoomId);
-    } else if (!selectedRoomId && rooms.length > 0) {
+    }
+  }, [initialRoomId]);
+  
+  // Fallback to first room if no room is selected and rooms are loaded
+  useEffect(() => {
+    if (!selectedRoomId && rooms.length > 0 && !isLoadingRooms) {
       console.log('No selected room, setting first room:', rooms[0].id);
       setSelectedRoomId(rooms[0].id);
     }
-  }, [rooms, initialRoomId]);
+  }, [rooms, selectedRoomId, isLoadingRooms]);
   
   const {
     data: messages = [],
@@ -439,11 +448,14 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       console.log('Fetching messages for room ID:', selectedRoomId);
       return selectedRoomId ? getMessages(selectedRoomId) : Promise.resolve([]);
     },
-    enabled: !!selectedRoomId
+    enabled: !!selectedRoomId,
+    staleTime: 10000, // 10 seconds cache
   });
   
+  // Refetch messages when selected room changes
   useEffect(() => {
     if (selectedRoomId) {
+      console.log('Selected room changed, refetching messages for:', selectedRoomId);
       refetchMessages();
     }
   }, [selectedRoomId, refetchMessages]);
@@ -633,6 +645,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     if (roomId !== selectedRoomId) {
       setSelectedRoomId(roomId);
       
+      // Invalidate and refetch messages for the new room
       queryClient.invalidateQueries({
         queryKey: ['teamMessages', roomId]
       });
@@ -835,7 +848,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   };
 
   return <div className="flex h-[calc(100vh-120px)]">
-      <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
+      <ChatRoomSidebar selectedRoomId={selectedRoomId || ''} onRoomSelect={handleRoomSelect} />
       
       <div className="flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden">
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
