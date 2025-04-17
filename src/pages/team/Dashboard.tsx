@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -164,7 +165,7 @@ const TeamDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/48208391-d6e6-4038-a00e-63f4db5f8398.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/4f5f4d60-b997-4b9d-becf-01d4306193d2.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
@@ -207,7 +208,7 @@ const TeamDashboard: React.FC = () => {
         
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/48208391-d6e6-4038-a00e-63f4db5f8398.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/4f5f4d60-b997-4b9d-becf-01d4306193d2.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
@@ -250,7 +251,7 @@ const TeamDashboard: React.FC = () => {
         
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/48208391-d6e6-4038-a00e-63f4db5f8398.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/4f5f4d60-b997-4b9d-becf-01d4306193d2.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
