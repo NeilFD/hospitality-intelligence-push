@@ -21,13 +21,10 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     try {
       setLoading(true);
       
-      // Build the query
+      // Build the query - using a simpler approach without joins
       let query = supabase
         .from('team_notes')
-        .select(`
-          *,
-          profiles:author_id(id, first_name, last_name, avatar_url, role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
       // Filter for pinned notes only if requested
@@ -40,12 +37,33 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         query = query.limit(5);
       }
       
-      const { data, error: fetchError } = await query;
+      const { data: notesData, error: fetchError } = await query;
       
       if (fetchError) throw fetchError;
       
-      console.log('Fetched notes data:', data);
-      setNotes(data || []);
+      // If we have notes, fetch the author profiles separately
+      if (notesData && notesData.length > 0) {
+        const notesWithProfiles = await Promise.all(
+          notesData.map(async (note) => {
+            // Fetch author profile for each note
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', note.author_id)
+              .single();
+              
+            return {
+              ...note,
+              profiles: profileData || null
+            };
+          })
+        );
+        
+        console.log('Fetched notes with profiles:', notesWithProfiles);
+        setNotes(notesWithProfiles);
+      } else {
+        setNotes([]);
+      }
     } catch (err: any) {
       console.error('Error fetching notes:', err);
       setError(err.message || 'Failed to load noticeboard');
@@ -65,8 +83,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         event: '*', 
         schema: 'public', 
         table: 'team_notes' 
-      }, payload => {
-        console.log('Real-time update received:', payload);
+      }, () => {
+        // Just refetch all notes when any change happens
         fetchNotes();
       })
       .subscribe();
@@ -119,7 +137,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
             <div className="flex gap-3">
               <Avatar className="h-8 w-8">
                 {note.profiles?.avatar_url ? (
-                  <AvatarImage src={note.profiles.avatar_url} alt={note.profiles.first_name} />
+                  <AvatarImage src={note.profiles.avatar_url} alt={note.profiles?.first_name} />
                 ) : (
                   <AvatarFallback className="bg-amber-100 text-amber-800">
                     {note.profiles?.first_name?.[0] || ''}{note.profiles?.last_name?.[0] || ''}
@@ -129,7 +147,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
                   <p className="font-medium text-gray-900 truncate">
-                    {note.profiles?.first_name} {note.profiles?.last_name}
+                    {note.profiles?.first_name || 'Unknown'} {note.profiles?.last_name || ''}
                   </p>
                   <span className="text-xs text-gray-500">
                     {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
