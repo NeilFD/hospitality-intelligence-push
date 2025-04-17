@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,9 @@ export default function AnalyticsModules() {
       path: "/performance/pl-analysis",
       color: "bg-hi-purple",
       hoverColor: "bg-hi-purple-dark",
-      borderColor: "border-hi-purple/20"
+      borderColor: "border-hi-purple/20",
+      textColor: "text-white",
+      descriptionColor: "text-white/80"
     },
     {
       title: "Wage Optimization",
@@ -38,9 +39,11 @@ export default function AnalyticsModules() {
       description: "Custom data exploration with natural language queries and advanced data visualizations.",
       icon: <Bot className="h-8 w-8 text-white" />,
       path: "/performance/data-explorer",
-      color: "bg-sky-500", // Changed from bg-hi-purple-light
-      hoverColor: "bg-sky-600", // Added complementary hover state
-      borderColor: "border-sky-500/20" // Updated border color to match
+      color: "bg-sky-500",
+      hoverColor: "bg-sky-600",
+      borderColor: "border-sky-500/20",
+      textColor: "text-white",
+      descriptionColor: "text-white/80"
     }
   ];
 
@@ -58,14 +61,14 @@ export default function AnalyticsModules() {
           >
             <CardHeader className={`${module.color} p-5`}>
               <div className="flex justify-between items-center">
-                <CardTitle className="text-lg font-medium text-white">{module.title}</CardTitle>
+                <CardTitle className={`text-lg font-medium ${module.textColor}`}>{module.title}</CardTitle>
                 <div className={`rounded-full p-2 ${module.color}`}>
                   {module.icon}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-5">
-              <CardDescription className="mb-5 text-sm min-h-[70px] text-gray-600">
+              <CardDescription className={`mb-5 text-sm min-h-[70px] ${module.descriptionColor || 'text-gray-600'}`}>
                 {module.description}
               </CardDescription>
               <Button asChild className={`w-full justify-between ${module.color} hover:${module.hoverColor} text-white shadow-sm`}>
@@ -80,4 +83,3 @@ export default function AnalyticsModules() {
     </div>
   );
 }
-
