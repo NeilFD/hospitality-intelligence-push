@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Define all the types that are being referenced
@@ -10,6 +9,13 @@ export interface WelcomeMessage {
   subject?: string;
   created_at: string;
   updated_at: string;
+  author_first_name?: string;
+  author_last_name?: string;
+}
+
+export interface MessageReactionData {
+  emoji: string;
+  user_ids: string[];
 }
 
 export interface TeamMessage {
@@ -22,6 +28,7 @@ export interface TeamMessage {
   attachment_url?: string;
   read_by: string[];
   mentioned_users?: string[];
+  reactions?: MessageReactionData[];
 }
 
 export interface TeamNote {
@@ -87,7 +94,7 @@ export const createWelcomeMessage = async (
         content: message.content,
         author_id: message.author_id,
         image_url: message.image_url,
-        subject: message.subject  // Now explicitly including subject
+        subject: message.subject
       })
       .select('*')
       .single();
@@ -110,7 +117,7 @@ export const updateWelcomeMessage = async (
       .from('team_welcome_messages')
       .update({
         content: updates.content,
-        subject: updates.subject,  // Now explicitly including subject
+        subject: updates.subject,
         image_url: updates.image_url
       })
       .eq('id', id);
@@ -351,7 +358,6 @@ export const createPoll = async (
   options: Array<{ option_text: string; option_type: string; option_order: number }>
 ) => {
   try {
-    // Insert the poll
     const { data: pollData, error: pollError } = await supabase
       .from('team_polls')
       .insert(poll)
@@ -360,7 +366,6 @@ export const createPoll = async (
       
     if (pollError) throw pollError;
     
-    // Insert options with the poll_id
     const pollOptions = options.map(option => ({
       ...option,
       poll_id: pollData.id
@@ -381,7 +386,6 @@ export const createPoll = async (
 
 export const votePoll = async ({ poll_id, option_id, user_id }: { poll_id: string; option_id: string; user_id: string }) => {
   try {
-    // Check if user has already voted in this poll
     const { data: existingVotes, error: checkError } = await supabase
       .from('team_poll_votes')
       .select('*')
@@ -390,7 +394,6 @@ export const votePoll = async ({ poll_id, option_id, user_id }: { poll_id: strin
       
     if (checkError) throw checkError;
     
-    // Get poll to check if multiple choice is allowed
     const { data: poll, error: pollError } = await supabase
       .from('team_polls')
       .select('multiple_choice')
@@ -399,7 +402,6 @@ export const votePoll = async ({ poll_id, option_id, user_id }: { poll_id: strin
       
     if (pollError) throw pollError;
     
-    // If not multiple choice and user has voted, remove previous vote
     if (!poll.multiple_choice && existingVotes && existingVotes.length > 0) {
       const { error: deleteError } = await supabase
         .from('team_poll_votes')
@@ -410,11 +412,9 @@ export const votePoll = async ({ poll_id, option_id, user_id }: { poll_id: strin
       if (deleteError) throw deleteError;
     }
     
-    // Check if user has already voted for this specific option
     const alreadyVotedForOption = existingVotes?.some(vote => vote.option_id === option_id);
     
     if (alreadyVotedForOption) {
-      // Remove the vote if already voted for this option
       const { error: removeError } = await supabase
         .from('team_poll_votes')
         .delete()
@@ -426,7 +426,6 @@ export const votePoll = async ({ poll_id, option_id, user_id }: { poll_id: strin
       
       return { action: 'removed' };
     } else {
-      // Add the new vote
       const { error: voteError } = await supabase
         .from('team_poll_votes')
         .insert({
