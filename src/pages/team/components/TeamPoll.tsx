@@ -209,7 +209,7 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={chartData}
-                margin={{ top: 5, right: 5, bottom: 20, left: 0 }}
+                margin={{ top: 10, right: 10, bottom: 20, left: 10 }}
               >
                 <XAxis 
                   dataKey="name"
@@ -218,20 +218,16 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
                   tick={{ fill: '#4B5563', fontSize: 12 }}
                 />
                 <YAxis
-                  allowDecimals={false}
-                  domain={[0, Math.max(...chartData.map(item => item.votes), 1)]}
-                  tickCount={2}
                   tickLine={false}
                   axisLine={true}
                   tick={{ fill: '#4B5563', fontSize: 12 }}
+                  domain={[0, 'auto']}
                 />
                 <Bar 
                   dataKey="votes" 
                   fill="#6366F1"
                   radius={[4, 4, 0, 0]}
                   barSize={30}
-                  minPointSize={5}
-                  isAnimationActive={false}
                 />
               </BarChart>
             </ResponsiveContainer>
