@@ -132,15 +132,21 @@ export const updateWelcomeMessage = async (
   }
 };
 
-// Add the missing functions that are being imported from this file
+// Update the getChatRooms function to query the correct table
 export const getChatRooms = async (): Promise<ChatRoom[]> => {
   try {
+    console.log('Fetching chat rooms from team_chat_rooms table');
     const { data, error } = await supabase
-      .from('chat_rooms')
+      .from('team_chat_rooms')
       .select('*')
       .order('created_at', { ascending: true });
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching chat rooms:', error);
+      throw error;
+    }
+    
+    console.log('Chat rooms retrieved:', data);
     return data || [];
   } catch (error) {
     console.error('Error fetching chat rooms:', error);

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,8 +24,18 @@ const Chat: React.FC = () => {
     queryKey: ['chatRooms'],
     queryFn: getChatRooms,
     staleTime: 60000, // 1 minute
-    retry: 2
+    retry: 2,
+    onError: (error) => {
+      console.error('Error fetching chat rooms:', error);
+      toast.error('Failed to load chat rooms');
+    }
   });
+  
+  // Additional debugging
+  useEffect(() => {
+    console.log('Chat component rendered with slug:', roomSlug);
+    console.log('Available rooms:', rooms);
+  }, [roomSlug, rooms]);
   
   // Find the room ID based on the slug in the URL with improved error handling
   useEffect(() => {
@@ -123,7 +134,7 @@ const Chat: React.FC = () => {
           </div>
         ) : roomsError ? (
           <div className="flex justify-center items-center h-full">
-            <p className="text-red-500">Error loading chat rooms. Please refresh.</p>
+            <p className="text-red-500">Error loading chat rooms: {roomsError instanceof Error ? roomsError.message : 'Unknown error'}</p>
           </div>
         ) : !isReady ? (
           <div className="flex justify-center items-center h-full">
