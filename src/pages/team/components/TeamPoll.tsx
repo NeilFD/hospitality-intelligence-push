@@ -208,12 +208,27 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
         </div>
         
         {totalVotes > 0 && (
-          <div className="mt-4 h-32 w-full">
+          <div className="mt-4 h-32 w-full bg-white/80 rounded-lg p-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+              <BarChart 
+                data={chartData} 
+                margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                className="w-full h-full"
+              >
+                <XAxis 
+                  dataKey="name" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tick={{ fill: '#4B5563' }}
+                />
                 <YAxis hide />
-                <Bar dataKey="votes" fill="#6366F1" radius={[4, 4, 0, 0]} />
+                <Bar 
+                  dataKey="votes" 
+                  fill="#6366F1" 
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={false}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
