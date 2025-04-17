@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,21 +62,21 @@ export default function AnalyticsModules() {
         {modules.map((module, index) => (
           <Card 
             key={index} 
-            className={`rounded-xl overflow-hidden border ${module.borderColor} shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1`}
+            className="rounded-xl overflow-hidden border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
           >
             <CardHeader className={`${module.color} p-5`}>
               <div className="flex justify-between items-center">
                 <CardTitle className={`text-lg font-medium ${module.textColor}`}>{module.title}</CardTitle>
-                <div className={`rounded-full p-2 ${module.color}`}>
+                <div className="rounded-full p-2">
                   {module.icon}
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-5">
-              <CardDescription className={`mb-5 text-sm min-h-[70px] ${module.descriptionColor || 'text-gray-600'}`}>
+            <CardContent className="p-5 bg-white">
+              <CardDescription className="mb-5 text-sm min-h-[70px] text-gray-600">
                 {module.description}
               </CardDescription>
-              <Button asChild className={`w-full justify-between ${module.color} hover:${module.hoverColor} text-white shadow-sm`}>
+              <Button asChild className="w-full justify-between bg-hi-purple hover:bg-hi-purple-dark text-white shadow-sm">
                 <Link to={module.path}>
                   Explore <ArrowRight className="h-4 w-4" />
                 </Link>
