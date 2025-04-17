@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +17,6 @@ const TeamDashboard: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { profile } = useAuthStore();
 
-  // This function is not needed for filtering team members anymore, but kept for reference
   const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
     const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
     const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
@@ -36,7 +34,6 @@ const TeamDashboard: React.FC = () => {
         const members = await getTeamMembers();
         
         if (members && Array.isArray(members)) {
-          // Show all team members regardless of role
           setTeamMembers(members);
           console.log("Fetched team members:", members);
         } else {
@@ -54,7 +51,6 @@ const TeamDashboard: React.FC = () => {
     fetchTeamMembers();
   }, [profile]);
 
-  // Return all role options for filtering regardless of user's role
   const getAvailableRoleFilters = () => {
     const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member', 'Owner'];
     return allRoles;
@@ -166,11 +162,9 @@ const TeamDashboard: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Noticeboard Card with first bar image */}
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
-          {/* Background Image */}
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/7766bf9b-4c96-43cd-9362-4cb48586a2ed.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/48208391-d6e6-4038-a00e-63f4db5f8398.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
@@ -211,11 +205,9 @@ const TeamDashboard: React.FC = () => {
           </div>
         </Card>
         
-        {/* Chat Card with restaurant image */}
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
-          {/* Background Image */}
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/cddc5297-8f1d-4710-a467-704ad723101e.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/48208391-d6e6-4038-a00e-63f4db5f8398.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
@@ -256,11 +248,9 @@ const TeamDashboard: React.FC = () => {
           </div>
         </Card>
         
-        {/* Knowledge Base Card with cocktails image */}
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
-          {/* Background Image */}
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/2c6c40a8-d88f-4c20-a5ff-16277dca4007.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/48208391-d6e6-4038-a00e-63f4db5f8398.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
