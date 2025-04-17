@@ -67,37 +67,27 @@ const createInitialState = (): AppState => {
   };
 };
 
-// Add a rehydration handler to ensure all required modules are present
+// Add a rehydration handler to ensure all required modules are present and ordered correctly
 const handleRehydratedState = (state: AppState): AppState => {
   // Make a copy of the state to avoid mutations
   const newState = { ...state };
   
-  // Ensure all default modules exist
+  // Clear localStorage cache for modules if needed
+  try {
+    localStorage.removeItem('tavern-kitchen-ledger');
+    console.log("Cleared localStorage cache to ensure proper module order");
+  } catch (error) {
+    console.error("Error clearing localStorage:", error);
+  }
+  
+  // Ensure all default modules exist and have the correct order
   if (!newState.modules || newState.modules.length === 0) {
     console.log("No modules found, initializing with defaults");
     newState.modules = defaultModules;
   } else {
-    // Check for each required module and add if missing
-    const moduleTypes = newState.modules.map(m => m.type);
-    
-    defaultModules.forEach(defaultModule => {
-      if (!moduleTypes.includes(defaultModule.type)) {
-        console.log(`Adding missing module: ${defaultModule.name}`);
-        newState.modules.push({ ...defaultModule });
-      } else {
-        // Update existing module names to match default module names
-        const existingModule = newState.modules.find(m => m.type === defaultModule.type);
-        if (existingModule) {
-          existingModule.name = defaultModule.name;
-        }
-      }
-    });
-    
-    // Ensure module IDs are unique
-    newState.modules = newState.modules.map((module, index) => ({
-      ...module,
-      id: String(index + 1)
-    }));
+    // Update the modules to match the default order
+    newState.modules = [...defaultModules];
+    console.log("Updated modules to match database order:", newState.modules);
   }
   
   // Ensure we have an annual record
