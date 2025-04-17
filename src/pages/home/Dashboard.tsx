@@ -239,25 +239,85 @@ const HomeDashboard: React.FC = () => {
                 Quick Navigation
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               <div className="grid grid-cols-2 gap-3">
-                {availableModules.map((module) => (
-                  <Button
-                    key={module.type}
-                    asChild
-                    variant="outline"
-                    className="flex flex-col items-center justify-center h-24 bg-gradient-to-br from-white to-purple-50 hover:from-purple-50 hover:to-purple-100 p-2 gap-1 border-purple-200 shadow-sm hover:shadow transition-all duration-300 transform hover:-translate-y-1 overflow-hidden group"
-                  >
-                    <Link to={`/${module.type}/dashboard`}>
-                      <div className="bg-purple-100 rounded-full p-3 mb-1 transition-all duration-300 group-hover:bg-purple-200">
-                        <ModuleIcon type={module.type} className="h-5 w-5 text-purple-700" />
+                {availableModules.map((module) => {
+                  // Custom styling based on module type
+                  let bgGradient, iconBg, hoverBg, borderColor, shadowColor;
+                  
+                  switch(module.type) {
+                    case 'food':
+                      bgGradient = "from-emerald-50 to-green-50";
+                      iconBg = "bg-emerald-100";
+                      hoverBg = "group-hover:bg-emerald-200";
+                      borderColor = "border-emerald-200";
+                      shadowColor = "shadow-emerald-200/40";
+                      break;
+                    case 'beverage':
+                      bgGradient = "from-purple-50 to-indigo-50";
+                      iconBg = "bg-purple-100";
+                      hoverBg = "group-hover:bg-purple-200";
+                      borderColor = "border-purple-200";
+                      shadowColor = "shadow-purple-200/40";
+                      break;
+                    case 'pl':
+                      bgGradient = "from-amber-50 to-yellow-50";
+                      iconBg = "bg-amber-100";
+                      hoverBg = "group-hover:bg-amber-200";
+                      borderColor = "border-amber-200";
+                      shadowColor = "shadow-amber-200/40";
+                      break;
+                    case 'wages':
+                      bgGradient = "from-blue-50 to-sky-50";
+                      iconBg = "bg-blue-100";
+                      hoverBg = "group-hover:bg-blue-200";
+                      borderColor = "border-blue-200";
+                      shadowColor = "shadow-blue-200/40";
+                      break;
+                    case 'performance':
+                      bgGradient = "from-rose-50 to-red-50";
+                      iconBg = "bg-rose-100";
+                      hoverBg = "group-hover:bg-rose-200";
+                      borderColor = "border-rose-200";
+                      shadowColor = "shadow-rose-200/40";
+                      break;
+                    case 'team':
+                      bgGradient = "from-teal-50 to-cyan-50";
+                      iconBg = "bg-teal-100";
+                      hoverBg = "group-hover:bg-teal-200";
+                      borderColor = "border-teal-200";
+                      shadowColor = "shadow-teal-200/40";
+                      break;
+                    default:
+                      bgGradient = "from-gray-50 to-slate-50";
+                      iconBg = "bg-gray-100";
+                      hoverBg = "group-hover:bg-gray-200";
+                      borderColor = "border-gray-200";
+                      shadowColor = "shadow-gray-200/40";
+                  }
+                  
+                  return (
+                    <Link
+                      key={module.type}
+                      to={`/${module.type}/dashboard`}
+                      className={`bg-gradient-to-br ${bgGradient} rounded-xl border ${borderColor} p-3 flex flex-col items-center justify-center h-28 shadow-sm ${shadowColor} transition-all duration-300 hover:shadow-md hover:-translate-y-1 group overflow-hidden relative`}
+                    >
+                      {/* Background animated accent */}
+                      <div className="absolute -right-8 -top-8 w-16 h-16 rounded-full bg-white/30 opacity-0 group-hover:opacity-30 transition-opacity duration-700"></div>
+                      
+                      <div className={`${iconBg} ${hoverBg} rounded-full p-3 mb-2 transition-colors duration-300 relative z-10`}>
+                        <ModuleIcon type={module.type} className="h-5 w-5 text-gray-700" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700 mt-1 whitespace-normal text-center">
+                      
+                      <span className="font-medium text-gray-800 relative z-10 text-center leading-tight">
                         {module.name}
                       </span>
+                      
+                      {/* Hover indicator */}
+                      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out"></div>
                     </Link>
-                  </Button>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
