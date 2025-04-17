@@ -608,7 +608,16 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
   const { data, error } = await supabase
     .from('team_chat_rooms')
     .select('*')
-    .order('name', { ascending: true });
+    .order('name', { 
+      ascending: true, 
+      referencedTable: {
+        general: 1,
+        team: 2,
+        announcements: 3,
+        food: 4,
+        beverage: 5
+      }
+    });
     
   if (error) {
     console.error('Error fetching chat rooms:', error);
