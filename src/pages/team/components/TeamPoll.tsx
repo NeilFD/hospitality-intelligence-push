@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,26 +100,24 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
     }
   };
   
-  // Check if the user has voted for a specific option
   const hasVotedFor = (optionId: string) => {
     if (!user || !poll.votes) return false;
     return poll.votes.some(vote => vote.user_id === user.id && vote.option_id === optionId);
   };
   
-  // Check if the user has voted at all in this poll
   const hasVoted = () => {
     if (!user || !poll.votes) return false;
     return poll.votes.some(vote => vote.user_id === user.id);
   };
   
-  // Prepare data for the chart
   const chartData = poll.options?.map(option => ({
     name: option.option_text,
     votes: option.vote_count || 0
   })) || [];
   
-  // Get total votes
   const totalVotes = poll.votes?.length || 0;
+  
+  const hasChartData = chartData.length > 0 && chartData.some(item => item.votes > 0);
   
   return (
     <Card className={`${poll.color || POLL_COLORS[0]} ${glassStyle} p-4 rounded-lg min-h-[200px] flex flex-col`}>
@@ -208,26 +205,37 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
         </div>
         
         {totalVotes > 0 && (
-          <div className="mt-4 h-32 w-full bg-white/80 rounded-lg p-2">
+          <div className="mt-4 h-40 w-full bg-white/90 rounded-lg p-2 shadow-sm">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={chartData} 
-                margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
                 className="w-full h-full"
+                layout="vertical"
               >
                 <XAxis 
-                  dataKey="name" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  axisLine={false} 
+                  type="number"
+                  tickLine={true}
+                  axisLine={true} 
                   tick={{ fill: '#4B5563' }}
+                  domain={[0, 'dataMax + 1']}
                 />
-                <YAxis hide />
+                <YAxis 
+                  dataKey="name" 
+                  type="category"
+                  tickLine={false}
+                  axisLine={true}
+                  width={100}
+                  tick={{ fill: '#4B5563', fontSize: 12 }}
+                />
                 <Bar 
                   dataKey="votes" 
                   fill="#6366F1" 
-                  radius={[4, 4, 0, 0]}
+                  radius={[0, 4, 4, 0]}
                   isAnimationActive={false}
+                  minPointSize={3}
+                  barSize={20}
+                  name="Votes"
                 />
               </BarChart>
             </ResponsiveContainer>
