@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -8,20 +9,12 @@ import { Image, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 import { toast } from 'sonner';
+import { createWelcomeMessage, updateWelcomeMessage, WelcomeMessage as WelcomeMessageType } from '@/services/team-service';
 
-interface WelcomeMessage {
-  id: string;
-  content: string;
-  subject?: string;
-  image_url?: string;
-  created_at: string;
-  author_id: string;
-  author_first_name?: string;
-  author_last_name?: string;
-}
+interface WelcomeMessageProps {}
 
-export const WelcomeMessage = () => {
-  const [message, setMessage] = useState<WelcomeMessage | null>(null);
+export const WelcomeMessage: React.FC<WelcomeMessageProps> = () => {
+  const [message, setMessage] = useState<WelcomeMessageType | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [newContent, setNewContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -122,27 +115,18 @@ export const WelcomeMessage = () => {
       }
 
       if (message?.id) {
-        const { error } = await supabase
-          .from('team_welcome_messages')
-          .update({
-            content: newContent,
-            subject: newSubject,
-            image_url: imageUrl,
-          })
-          .eq('id', message.id);
-
-        if (error) throw error;
+        await updateWelcomeMessage(message.id, {
+          content: newContent,
+          subject: newSubject,
+          image_url: imageUrl,
+        });
       } else {
-        const { error } = await supabase
-          .from('team_welcome_messages')
-          .insert({
-            content: newContent,
-            subject: newSubject,
-            image_url: imageUrl,
-            author_id: profile.id,
-          });
-
-        if (error) throw error;
+        await createWelcomeMessage({
+          content: newContent,
+          subject: newSubject,
+          image_url: imageUrl,
+          author_id: profile.id,
+        });
       }
 
       toast.success('Welcome message updated successfully');
