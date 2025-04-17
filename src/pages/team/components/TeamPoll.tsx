@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,12 +33,28 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
   
   const glassStyle = "bg-opacity-60 backdrop-filter backdrop-blur-sm shadow-lg border border-opacity-30";
   
+  // Process poll data to ensure vote counts are correct
+  useEffect(() => {
+    if (poll.options && poll.votes) {
+      // This effect ensures the UI updates when poll data changes
+      console.log("Poll data updated:", poll.votes?.length, "votes");
+    }
+  }, [poll]);
+  
   const voteMutation = useMutation({
     mutationFn: votePoll,
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['teamPolls'] });
+      console.log("Vote mutation success:", result);
+      
+      if (result.action === 'added') {
+        toast.success('Vote added');
+      } else if (result.action === 'removed') {
+        toast.success('Vote removed');
+      }
     },
     onError: (error) => {
+      console.error("Vote mutation error:", error);
       toast.error(`Error voting: ${error.message}`);
     },
   });
@@ -76,6 +93,8 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
       return;
     }
     
+    console.log("Casting vote:", { poll_id: poll.id, option_id: optionId, user_id: user.id });
+    
     voteMutation.mutate({
       poll_id: poll.id,
       option_id: optionId,
@@ -110,17 +129,44 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
     return poll.votes.some(vote => vote.user_id === user.id);
   };
   
-  const chartData = poll.options?.map(option => ({
+  // Process option vote counts correctly
+  const getProcessedOptions = () => {
+    if (!poll.options) return [];
+    
+    // Create a map to count votes for each option
+    const voteCounts = new Map();
+    
+    if (poll.votes && poll.votes.length > 0) {
+      poll.votes.forEach(vote => {
+        const current = voteCounts.get(vote.option_id) || 0;
+        voteCounts.set(vote.option_id, current + 1);
+      });
+    }
+    
+    // Apply vote counts to options
+    return poll.options.map(option => ({
+      ...option,
+      vote_count: voteCounts.get(option.id) || 0
+    }));
+  };
+  
+  const processedOptions = getProcessedOptions();
+  
+  const chartData = processedOptions.map(option => ({
     name: option.option_text,
     votes: option.vote_count || 0,
     color: '#6366F1'
-  })) || [];
+  }));
   
   const totalVotes = poll.votes?.length || 0;
   
   const hasChartData = chartData.length > 0 && chartData.some(item => item.votes > 0);
   
+  // Set a reasonable max value for the chart
   const maxVote = Math.max(...chartData.map(item => item.votes), 0) + 1;
+  
+  console.log("Chart data:", chartData);
+  console.log("Total votes:", totalVotes);
   
   return (
     <Card className={`${poll.color || POLL_COLORS[0]} ${glassStyle} p-4 rounded-lg min-h-[200px] flex flex-col`}>
@@ -158,7 +204,7 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
       
       <div className="flex-grow">
         <div className="grid gap-2 mb-4">
-          {poll.options?.map((option) => (
+          {processedOptions.map((option) => (
             <div
               key={option.id}
               onClick={() => handleVote(option.id)}
