@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useCurrentModule } from '@/lib/store';
 import { useAuthStore } from '@/services/auth-service';
@@ -9,54 +9,93 @@ import { toast } from 'sonner';
 const Index = () => {
   const currentModule = useCurrentModule();
   const location = useLocation();
-  const { profile, isAuthenticated } = useAuthStore();
+  const { profile, isAuthenticated, isLoading } = useAuthStore();
+  const [accessibleModule, setAccessibleModule] = useState<string | null>(null);
+  const [isCheckingPermissions, setIsCheckingPermissions] = useState(false);
   
   useEffect(() => {
     console.log('[Index] Rendering Index component');
     console.log('[Index] Current module:', currentModule);
-    console.log('[Index] Authentication state:', isAuthenticated);
+    console.log('[Index] Authentication state:', isAuthenticated, 'Loading:', isLoading);
     console.log('[Index] User profile:', profile);
     
-    // Check user permissions and cache available modules
+    // Check user permissions and find accessible module
     const checkUserPermissions = async () => {
-      if (!isAuthenticated || !profile?.role) {
-        console.log('[Index] User not authenticated or no role defined, skipping permission check');
+      if (!isAuthenticated || isLoading || !profile?.role) {
+        console.log('[Index] User not authenticated or still loading, skipping permission check');
         return;
       }
+      
+      setIsCheckingPermissions(true);
       
       try {
         // Skip for GOD and Super User roles
         if (profile.role === 'GOD' || profile.role === 'Super User') {
           console.log(`[Index] ${profile.role} user has full access to all modules`);
+          if (currentModule) {
+            setAccessibleModule(currentModule);
+          } else {
+            // Default module for admin users
+            setAccessibleModule('team');
+          }
           return;
         }
         
         // Get all modules the user has access to
         const { data: permittedModules, error } = await supabase
           .from('permission_access')
-          .select('module_id, permission_modules(module_name)')
+          .select('module_id')
           .eq('role_id', profile.role)
           .eq('has_access', true)
           .order('module_id');
           
         if (error) {
           console.error('[Index] Error fetching permitted modules:', error);
+          // Default to team module on error
+          setAccessibleModule('team');
+          return;
+        }
+        
+        if (!permittedModules || permittedModules.length === 0) {
+          console.log('[Index] No permitted modules found for role:', profile.role);
+          // User has no module access, default to team
+          setAccessibleModule('team');
           return;
         }
         
         console.log('[Index] User has access to modules:', permittedModules);
+        
+        // Check if current module is in permitted modules
+        if (currentModule && permittedModules.some(m => m.module_id === currentModule)) {
+          console.log(`[Index] Current module ${currentModule} is accessible`);
+          setAccessibleModule(currentModule);
+        } else {
+          // Use first permitted module
+          console.log(`[Index] Using first permitted module: ${permittedModules[0].module_id}`);
+          setAccessibleModule(permittedModules[0].module_id);
+        }
       } catch (err) {
         console.error('[Index] Error checking permissions:', err);
+        // Default to team module on error
+        setAccessibleModule('team');
+      } finally {
+        setIsCheckingPermissions(false);
       }
     };
     
     checkUserPermissions();
-  }, [currentModule, isAuthenticated, profile]);
+  }, [currentModule, isAuthenticated, isLoading, profile]);
   
   // If not authenticated, redirect to login
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isLoading) {
     console.log('[Index] User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
+  }
+  
+  // Show loading while checking authentication or permissions
+  if (isLoading || isCheckingPermissions) {
+    console.log('[Index] Still loading or checking permissions');
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   
   // Handle control-centre separately
@@ -69,62 +108,20 @@ const Index = () => {
     } else {
       console.log('[Index] User does not have permission for Control Centre');
       toast.error('You do not have access to the Control Centre');
-      return <Navigate to="/" replace />;
+      return <Navigate to="/team/dashboard" replace />;
     }
   }
   
-  const findFirstAccessibleModule = async () => {
-    console.log('[Index] Finding first accessible module for user role:', profile?.role);
-    try {
-      // Get modules the user has access to based on permission_access
-      const { data: permittedModules, error } = await supabase
-        .from('permission_access')
-        .select('module_id')
-        .eq('role_id', profile?.role || '')
-        .eq('has_access', true)
-        .order('module_id');
-        
-      if (error || !permittedModules || permittedModules.length === 0) {
-        console.error('[Index] Error fetching permitted modules or no modules found:', error);
-        console.log('[Index] Using team dashboard as fallback');
-        // Default to team dashboard as fallback
-        return '/team/dashboard';
-      }
-      
-      // Use the first accessible module as default
-      const firstModuleId = permittedModules[0].module_id;
-      console.log(`[Index] User has access to first module: ${firstModuleId}`);
-      return `/${firstModuleId}/dashboard`;
-      
-    } catch (err) {
-      console.error('[Index] Exception finding accessible module:', err);
-      console.log('[Index] Using team dashboard as fallback');
-      return '/team/dashboard';
-    }
-  };
-  
-  // For all roles, use the current module if available
-  const fallbackPath = '/team/dashboard';
-  
-  if (currentModule) {
-    const dashboardPath = `/${currentModule}/dashboard`;
+  // Navigate to the accessible module's dashboard
+  if (accessibleModule) {
+    const dashboardPath = `/${accessibleModule}/dashboard`;
     console.log(`[Index] Redirecting to module: ${dashboardPath}`);
     return <Navigate to={dashboardPath} replace />;
   }
   
-  // If no current module, find first accessible module based on permissions
-  useEffect(() => {
-    if (!currentModule && profile?.role) {
-      console.log('[Index] No current module, finding first accessible module');
-      findFirstAccessibleModule().then(path => {
-        console.log(`[Index] No current module, redirecting to: ${path}`);
-      });
-    }
-  }, [currentModule, profile]);
-  
-  // Default to team dashboard as fallback while permission check is in progress
-  console.log('[Index] No current module, using fallback path:', fallbackPath);
-  return <Navigate to={fallbackPath} replace />;
+  // Default fallback while permission check is in progress
+  console.log('[Index] Using fallback path: /team/dashboard');
+  return <Navigate to="/team/dashboard" replace />;
 };
 
 export default Index;

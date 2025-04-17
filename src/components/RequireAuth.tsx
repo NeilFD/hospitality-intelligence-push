@@ -59,59 +59,6 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
       try {
         setPermissionLoading(true);
         
-        // First, log details about the permission tables
-        console.log(`[RequireAuth] Checking permission tables for role "${profile.role}" and module "${moduleId}"`);
-
-        // First, verify the role exists in permission_roles
-        const { data: roleExists, error: roleError } = await supabase
-          .from('permission_roles')
-          .select('role_id')
-          .eq('role_id', profile.role)
-          .single();
-          
-        if (roleError) {
-          console.error(`[RequireAuth] Role check error for "${profile.role}":`, roleError);
-        } else {
-          console.log(`[RequireAuth] Role "${profile.role}" exists in permission_roles:`, roleExists);
-        }
-        
-        // Next, verify the module exists in permission_modules
-        const { data: moduleExists, error: moduleExistsError } = await supabase
-          .from('permission_modules')
-          .select('module_id, module_name')
-          .eq('module_id', moduleId)
-          .single();
-          
-        if (moduleExistsError) {
-          console.error(`[RequireAuth] Module check error for "${moduleId}":`, moduleExistsError);
-        } else {
-          console.log(`[RequireAuth] Module "${moduleId}" exists in permission_modules:`, moduleExists);
-        }
-        
-        // Debug: Check all permission_access entries for this role
-        const { data: allModuleAccess, error: allModuleError } = await supabase
-          .from('permission_access')
-          .select('module_id, has_access')
-          .eq('role_id', profile.role);
-        
-        if (allModuleError) {
-          console.error(`[RequireAuth] Error checking all module access for role "${profile.role}":`, allModuleError);
-        } else {
-          console.log(`[RequireAuth] All module access for role "${profile.role}":`, allModuleAccess);
-        }
-        
-        // Debug: Check all permission_page_access entries for this role
-        const { data: allPageAccess, error: allPageError } = await supabase
-          .from('permission_page_access')
-          .select('page_id, has_access')
-          .eq('role_id', profile.role);
-        
-        if (allPageError) {
-          console.error(`[RequireAuth] Error checking all page access for role "${profile.role}":`, allPageError);
-        } else {
-          console.log(`[RequireAuth] All page access for role "${profile.role}":`, allPageAccess);
-        }
-        
         // Check if the user's role has access to this module
         const { data: moduleAccess, error: moduleError } = await supabase
           .from('permission_access')
