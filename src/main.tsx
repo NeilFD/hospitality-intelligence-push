@@ -21,7 +21,8 @@ window.formatDateWithDayOfWeek = (date: Date) => {
 declare global {
   interface Window {
     formatDateWithDayOfWeek: (date: Date) => string;
-    bevStore?: any;
+    // Using the same type as the existing declaration elsewhere in the codebase
+    bevStore?: BevStore;
   }
 }
 
