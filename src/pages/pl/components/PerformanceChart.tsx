@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,11 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
 
   const [selectedDate, setSelectedDate] = useState<Date>();
 
+  // Format the day of week for selected date
+  const getDayOfWeek = (date: Date): string => {
+    return format(date, "EEEE");
+  };
+
   const CustomLegend = () => {
     const allSeries = [
       { dataKey: 'revenue', value: 'Revenue', color: '#7E69AB' },
@@ -115,7 +121,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
             <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
             {selectedDate && (
               <span className="text-sm text-muted-foreground">
-                Selected: {format(selectedDate, "EEEE, do MMMM")}
+                Selected: {getDayOfWeek(selectedDate)}, {format(selectedDate, "do MMMM")}
               </span>
             )}
           </div>
