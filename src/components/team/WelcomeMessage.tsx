@@ -49,7 +49,11 @@ export const WelcomeMessage = () => {
         .limit(1)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching welcome message:', error);
+        return;
+      }
+      
       setMessage(messageData);
     } catch (error) {
       console.error('Error fetching welcome message:', error);
@@ -70,26 +74,45 @@ export const WelcomeMessage = () => {
     const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
+    console.log('Uploading image to team_message_images bucket:', filePath);
+
+    const { error: uploadError, data } = await supabase.storage
       .from('team_message_images')
       .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      throw uploadError;
+    }
 
-    const { data } = supabase.storage
+    console.log('Upload successful, getting public URL');
+
+    const { data: urlData } = supabase.storage
       .from('team_message_images')
       .getPublicUrl(filePath);
 
-    return data.publicUrl;
+    console.log('Public URL:', urlData.publicUrl);
+    return urlData.publicUrl;
   };
 
   const handleSubmit = async () => {
+    if (!profile?.id) {
+      toast.error('You must be logged in to post a message');
+      return;
+    }
+
     try {
       let imageUrl = message?.image_url;
 
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
       }
+
+      console.log('Submitting welcome message:', {
+        content: newContent,
+        image_url: imageUrl,
+        author_id: profile.id
+      });
 
       if (message?.id) {
         const { error } = await supabase
@@ -107,7 +130,7 @@ export const WelcomeMessage = () => {
           .insert({
             content: newContent,
             image_url: imageUrl,
-            author_id: profile?.id,
+            author_id: profile.id,
           });
 
         if (error) throw error;
