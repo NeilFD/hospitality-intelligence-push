@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
@@ -49,7 +48,6 @@ const ControlCentre: React.FC = () => {
     };
   }, []);
 
-  // Wrap the entire Control Centre with RequireAuth that requires Super User or higher
   return (
     <RequireAuth requiredRole="Super User">
       <div className="container mx-auto p-4">
