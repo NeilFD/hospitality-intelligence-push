@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Cell, LabelList } from 'recharts';
 import { Trash2, Check, CheckCheck, AlertCircle } from 'lucide-react';
 import { TeamPoll, TeamPollOption, votePoll, updatePollStatus, deletePoll } from '@/services/team-service';
 import { useAuthStore } from '@/services/auth-service';
@@ -113,12 +112,15 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
   
   const chartData = poll.options?.map(option => ({
     name: option.option_text,
-    votes: option.vote_count || 0
+    votes: option.vote_count || 0,
+    color: '#6366F1'
   })) || [];
   
   const totalVotes = poll.votes?.length || 0;
   
   const hasChartData = chartData.length > 0 && chartData.some(item => item.votes > 0);
+  
+  const maxVote = Math.max(...chartData.map(item => item.votes), 1);
   
   return (
     <Card className={`${poll.color || POLL_COLORS[0]} ${glassStyle} p-4 rounded-lg min-h-[200px] flex flex-col`}>
@@ -210,7 +212,8 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={chartData}
-                margin={{ top: 15, right: 15, bottom: 20, left: 15 }}
+                margin={{ top: 5, right: 30, bottom: 20, left: 10 }}
+                barGap={8}
               >
                 <XAxis 
                   dataKey="name"
@@ -220,8 +223,8 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
                 />
                 <YAxis
                   allowDecimals={false}
-                  domain={[0, Math.max(...chartData.map(item => item.votes), 1)]}
-                  ticks={[0, 1, 2, 3, 4, 5].filter(tick => tick <= Math.max(...chartData.map(item => item.votes), 1))}
+                  domain={[0, Math.max(1, maxVote)]}
+                  ticks={Array.from({length: maxVote + 1}, (_, i) => i)}
                   tickLine={false}
                   axisLine={true}
                   tick={{ fill: '#4B5563', fontSize: 12 }}
@@ -230,9 +233,14 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
                   dataKey="votes" 
                   fill="#6366F1"
                   radius={[4, 4, 0, 0]}
-                  barSize={40}
+                  barSize={48}
                   minPointSize={3}
-                />
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                  <LabelList dataKey="votes" position="top" fill="#4B5563" fontSize={12} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
