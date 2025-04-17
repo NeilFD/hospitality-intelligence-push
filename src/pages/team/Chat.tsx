@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -32,8 +31,8 @@ const Chat: React.FC = () => {
     }
     
     // Otherwise look for a room by slug
-    const room = rooms.find(r => r.slug === roomSlug);
-    console.log('Finding room by slug:', roomSlug, 'Found:', room);
+    const room = rooms.find(r => r.slug === roomSlug || r.name.toLowerCase() === roomSlug.toLowerCase());
+    console.log('Finding room by slug or name:', roomSlug, 'Found:', room);
     
     // If we found a room by slug, use its ID
     if (room) return room.id;
