@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,6 +16,8 @@ const Chat: React.FC = () => {
   const searchParams = new URLSearchParams(location.search);
   const roomSlug = searchParams.get('room') || 'general';
   const { user } = useAuthStore();
+  
+  // Fetch chat rooms
   const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
     queryKey: ['chatRooms'],
     queryFn: getChatRooms
@@ -30,7 +33,7 @@ const Chat: React.FC = () => {
     
     // Otherwise look for a room by slug
     const room = rooms.find(r => r.slug === roomSlug);
-    console.log('Found room by slug:', room, 'for slug:', roomSlug);
+    console.log('Finding room by slug:', roomSlug, 'Found:', room);
     
     // If we found a room by slug, use its ID
     if (room) return room.id;

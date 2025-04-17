@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
@@ -195,6 +196,12 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
     setMinimized(!minimized);
   };
 
+  // Add debugging to understand what's happening when rooms are clicked
+  const handleRoomClick = (roomId: string) => {
+    console.log('Room clicked:', roomId, 'Previous selected:', selectedRoomId);
+    onRoomSelect(roomId);
+  };
+
   return (
     <div className={cn(
       "transition-all duration-300 bg-transparent backdrop-blur-sm h-full border-r border-white/20 flex-shrink-0 relative",
@@ -239,7 +246,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                   isMobile && minimized ? "p-2" : "",
                   isMobile ? "h-12" : "h-10"
                 )}
-                onClick={() => onRoomSelect(room.id)}
+                onClick={() => handleRoomClick(room.id)}
                 title={room.name}
               >
                 {room.is_announcement_only ? (

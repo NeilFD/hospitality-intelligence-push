@@ -45,7 +45,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -399,9 +399,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const {
-    user
-  } = useAuthStore();
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -423,11 +421,13 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   
   useEffect(() => {
     if (initialRoomId) {
+      console.log('Setting initial room ID:', initialRoomId);
       setSelectedRoomId(initialRoomId);
     } else if (!selectedRoomId && rooms.length > 0) {
+      console.log('No selected room, setting first room:', rooms[0].id);
       setSelectedRoomId(rooms[0].id);
     }
-  }, [rooms, selectedRoomId, initialRoomId]);
+  }, [rooms, initialRoomId]);
   
   const {
     data: messages = [],
@@ -435,9 +435,18 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     refetch: refetchMessages
   } = useQuery({
     queryKey: ['teamMessages', selectedRoomId],
-    queryFn: () => selectedRoomId ? getMessages(selectedRoomId) : Promise.resolve([]),
+    queryFn: () => {
+      console.log('Fetching messages for room ID:', selectedRoomId);
+      return selectedRoomId ? getMessages(selectedRoomId) : Promise.resolve([]);
+    },
     enabled: !!selectedRoomId
   });
+  
+  useEffect(() => {
+    if (selectedRoomId) {
+      refetchMessages();
+    }
+  }, [selectedRoomId, refetchMessages]);
   
   const {
     data: teamMembers = []
@@ -620,7 +629,14 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   };
   
   const handleRoomSelect = (roomId: string) => {
-    setSelectedRoomId(roomId);
+    console.log('Changing selected room from', selectedRoomId, 'to', roomId);
+    if (roomId !== selectedRoomId) {
+      setSelectedRoomId(roomId);
+      
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', roomId]
+      });
+    }
   };
   
   const handleImageUpload = () => {
@@ -825,20 +841,39 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
           <CardContent className="p-0 flex flex-col h-full">
             <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
-              {selectedRoomId && rooms.length > 0 && <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
+              {selectedRoomId && rooms.length > 0 && (
+                <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
                   {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
-                </h2>}
+                </h2>
+              )}
             </div>
             
             <div className="flex-1 p-4 overflow-y-auto">
-              {isLoadingMessages ? <div className="flex justify-center items-center h-full">
+              {isLoadingMessages ? (
+                <div className="flex justify-center items-center h-full">
                   <p className="text-gray-500">Loading messages...</p>
-                </div> : messages.length === 0 ? <div className="flex justify-center items-center h-full">
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex justify-center items-center h-full">
                   <p className="text-gray-500">No messages yet. Start the conversation!</p>
-                </div> : <>
-                  {messages.filter(message => !message.deleted).map(message => <Message key={message.id} message={message} isOwnMessage={message.author_id === user?.id} author={findMessageAuthor(message.author_id)} onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)} onDeleteMessage={handleDeleteMessage} teamMembers={teamMembers || []} currentUserId={user?.id || ''} />)}
+                </div>
+              ) : (
+                <>
+                  {messages.filter(message => !message.deleted).map(message => (
+                    <Message 
+                      key={message.id} 
+                      message={message} 
+                      isOwnMessage={message.author_id === user?.id} 
+                      author={findMessageAuthor(message.author_id)} 
+                      onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)} 
+                      onDeleteMessage={handleDeleteMessage} 
+                      teamMembers={teamMembers || []} 
+                      currentUserId={user?.id || ''} 
+                    />
+                  ))}
                   <div ref={messagesEndRef} />
-                </>}
+                </>
+              )}
             </div>
             
             <div className="p-3 border-t relative">
@@ -897,33 +932,33 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       </div>
       
       <input type="file" ref={fileInputRef} style={{
-      display: 'none'
-    }} accept="image/*" onChange={async e => {
-      const file = e.target.files?.[0];
-      if (file && user && selectedRoomId) {
-        try {
-          setIsSubmitting(true);
-          toast.loading('Uploading image...');
-          const attachmentUrl = await uploadTeamFile(file, 'messages');
-          await createMessageMutation.mutateAsync({
-            content: messageText,
-            author_id: user.id,
-            type: 'image',
-            attachment_url: attachmentUrl,
-            room_id: selectedRoomId,
-            read_by: [user.id]
-          });
-          setMessageText('');
-          toast.dismiss();
-          toast.success('Image sent');
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          toast.error('Failed to upload image');
-        } finally {
-          setIsSubmitting(false);
+        display: 'none'
+      }} accept="image/*" onChange={async e => {
+        const file = e.target.files?.[0];
+        if (file && user && selectedRoomId) {
+          try {
+            setIsSubmitting(true);
+            toast.loading('Uploading image...');
+            const attachmentUrl = await uploadTeamFile(file, 'messages');
+            await createMessageMutation.mutateAsync({
+              content: messageText,
+              author_id: user.id,
+              type: 'image',
+              attachment_url: attachmentUrl,
+              room_id: selectedRoomId,
+              read_by: [user.id]
+            });
+            setMessageText('');
+            toast.dismiss();
+            toast.success('Image sent');
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Failed to upload image');
+          } finally {
+            setIsSubmitting(false);
+          }
         }
-      }
-    }} />
+      }} />
     </div>;
 };
 
