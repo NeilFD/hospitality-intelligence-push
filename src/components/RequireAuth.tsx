@@ -52,21 +52,38 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
       const pathParts = location.pathname.split('/').filter(part => part !== '');
       const moduleId = pathParts[0] || '';
       
-      // Special case for Team Members - they can only access team module
-      if (profile.role === 'Team Member') {
-        // Team Members can only access team module
-        const hasAccess = moduleId === 'team';
-        console.log(`Team Member access check for module ${moduleId}: ${hasAccess}`);
-        setHasPermission(hasAccess);
-        return;
-      }
+      console.log(`Checking module access for "${moduleId}" and role "${profile.role}"`);
       
       try {
         setPermissionLoading(true);
         
-        // First, check if the user's role has access to this module
-        console.log(`Checking if role ${profile.role} has access to module ${moduleId}`);
+        // First, verify the role exists in permission_roles
+        const { data: roleExists, error: roleError } = await supabase
+          .from('permission_roles')
+          .select('role_id')
+          .eq('role_id', profile.role)
+          .single();
+          
+        if (roleError) {
+          console.error(`Role check error for "${profile.role}":`, roleError);
+        } else {
+          console.log(`Role "${profile.role}" exists in permission_roles:`, roleExists);
+        }
         
+        // Next, verify the module exists in permission_modules
+        const { data: moduleExists, error: moduleExistsError } = await supabase
+          .from('permission_modules')
+          .select('module_id, module_name')
+          .eq('module_id', moduleId)
+          .single();
+          
+        if (moduleExistsError) {
+          console.error(`Module check error for "${moduleId}":`, moduleExistsError);
+        } else {
+          console.log(`Module "${moduleId}" exists in permission_modules:`, moduleExists);
+        }
+        
+        // Check if the user's role has access to this module
         const { data: moduleAccess, error: moduleError } = await supabase
           .from('permission_access')
           .select('has_access')
@@ -75,12 +92,12 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           .maybeSingle();
         
         if (moduleError) {
-          console.error('Error checking module permission:', moduleError);
+          console.error(`Permission check error for role "${profile.role}" and module "${moduleId}":`, moduleError);
           setHasPermission(false);
           return;
         }
         
-        console.log('Module access check result:', moduleAccess);
+        console.log(`Module access result for "${moduleId}":`, moduleAccess);
         
         // If no module access record or has_access is false, deny access
         if (!moduleAccess || !moduleAccess.has_access) {
@@ -89,7 +106,8 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
           return;
         }
         
-        // Module access is granted, now check for specific page access if needed
+        // If we get here, user has access to the module
+        console.log(`User with role ${profile.role} has access to module: ${moduleId}`);
         setHasPermission(true);
         
       } catch (error) {
@@ -116,12 +134,33 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   // If we've checked permissions and user doesn't have access
   if (hasPermission === false) {
     toast.error("You don't have permission to access this page");
-    // For Team Members, always redirect to team dashboard
-    if (profile?.role === 'Team Member') {
-      return <Navigate to="/team/dashboard" replace />;
-    }
-    // For others, redirect to their default page
-    return <Navigate to="/" replace />;
+    
+    // Find an accessible module for the user
+    const findAccessibleModule = async () => {
+      try {
+        const { data: permittedModules, error } = await supabase
+          .from('permission_access')
+          .select('module_id')
+          .eq('role_id', profile?.role || '')
+          .eq('has_access', true)
+          .order('module_id');
+          
+        if (error || !permittedModules || permittedModules.length === 0) {
+          console.error('Error finding permitted modules or none found:', error);
+          return '/';
+        }
+        
+        // Redirect to the first permitted module
+        const firstModuleId = permittedModules[0].module_id;
+        return `/${firstModuleId}/dashboard`;
+      } catch (err) {
+        console.error('Error finding accessible module:', err);
+        return '/';
+      }
+    };
+    
+    // Use team dashboard as a fallback while finding an accessible module
+    return <Navigate to="/team/dashboard" replace />;
   }
   
   // If a specific role is required, check if the user has it

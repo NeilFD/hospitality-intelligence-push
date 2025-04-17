@@ -52,12 +52,6 @@ const Index = () => {
     return <Navigate to="/login" replace />;
   }
   
-  // Always direct Team Members to team dashboard
-  if (profile?.role === 'Team Member') {
-    console.log('Team Member detected - redirecting to team dashboard');
-    return <Navigate to="/team/dashboard" replace />;
-  }
-  
   // Handle control-centre separately
   if (location.pathname.includes("control-centre")) {
     // Only GOD and Super User can access control-centre
@@ -65,11 +59,38 @@ const Index = () => {
       return <Navigate to="/control-centre" replace />;
     } else {
       toast.error('You do not have access to the Control Centre');
-      return <Navigate to="/team/dashboard" replace />;
+      return <Navigate to="/" replace />;
     }
   }
   
-  // For other roles, use the current module if available
+  const findFirstAccessibleModule = async () => {
+    try {
+      // Get modules the user has access to based on permission_access
+      const { data: permittedModules, error } = await supabase
+        .from('permission_access')
+        .select('module_id')
+        .eq('role_id', profile?.role || '')
+        .eq('has_access', true)
+        .order('module_id');
+        
+      if (error || !permittedModules || permittedModules.length === 0) {
+        console.error('Error fetching permitted modules or no modules found:', error);
+        // Default to team dashboard as fallback
+        return '/team/dashboard';
+      }
+      
+      // Use the first accessible module as default
+      const firstModuleId = permittedModules[0].module_id;
+      console.log(`User has access to first module: ${firstModuleId}`);
+      return `/${firstModuleId}/dashboard`;
+      
+    } catch (err) {
+      console.error('Exception finding accessible module:', err);
+      return '/team/dashboard';
+    }
+  };
+  
+  // For all roles, use the current module if available
   const fallbackPath = '/team/dashboard';
   
   if (currentModule) {
@@ -78,7 +99,16 @@ const Index = () => {
     return <Navigate to={dashboardPath} replace />;
   }
   
-  // Default to team dashboard as fallback
+  // If no current module, find first accessible module based on permissions
+  useEffect(() => {
+    if (!currentModule && profile?.role) {
+      findFirstAccessibleModule().then(path => {
+        console.log(`No current module, redirecting to: ${path}`);
+      });
+    }
+  }, [currentModule, profile]);
+  
+  // Default to team dashboard as fallback while permission check is in progress
   console.log('No current module, using fallback path:', fallbackPath);
   return <Navigate to={fallbackPath} replace />;
 };
