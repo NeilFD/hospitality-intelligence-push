@@ -25,9 +25,14 @@ const Chat: React.FC = () => {
     queryFn: getChatRooms,
     staleTime: 60000, // 1 minute
     retry: 2,
-    onError: (error) => {
-      console.error('Error fetching chat rooms:', error);
-      toast.error('Failed to load chat rooms');
+    onSuccess: (data) => {
+      console.log('Successfully fetched chat rooms:', data);
+    },
+    onSettled: (data, error) => {
+      if (error) {
+        console.error('Error fetching chat rooms:', error);
+        toast.error('Failed to load chat rooms');
+      }
     }
   });
   
