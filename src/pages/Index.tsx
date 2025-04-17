@@ -40,13 +40,13 @@ const Index = () => {
     } else {
       console.log('[Index] User does not have permission for Control Centre');
       toast.error('You do not have access to the Control Centre');
-      return <Navigate to="/team/dashboard" replace />;
+      return <Navigate to="/home/dashboard" replace />;
     }
   }
   
-  // Always redirect to team dashboard as default landing page
-  console.log('[Index] Redirecting to team dashboard');
-  return <Navigate to="/team/dashboard" replace />;
+  // Always redirect to Home dashboard as default landing page
+  console.log('[Index] Redirecting to home dashboard');
+  return <Navigate to="/home/dashboard" replace />;
 };
 
 export default Index;

@@ -23,6 +23,9 @@ import WagesDashboard from '@/pages/wages/WagesDashboard';
 import Index from '@/pages/Index';
 import ProfilePage from '@/pages/ProfilePage';
 
+// Import Home dashboard
+import HomeDashboard from '@/pages/home/Dashboard';
+
 // Import PL dashboard component
 import PLDashboard from '@/pages/pl/Dashboard';
 
@@ -85,12 +88,15 @@ function App() {
                 <Route path="/" element={<Index />} />
                 
                 {/* Auth Routes */}
-                <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+                <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/home/dashboard" />} />
                 <Route path="/register" element={<Register />} />
                 
                 {/* Profile Routes */}
                 <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
                 <Route path="/profile/:id" element={<Layout><ProfilePage /></Layout>} />
+                
+                {/* Home Module Route */}
+                <Route path="/home/dashboard" element={<Layout><HomeDashboard /></Layout>} />
                 
                 {/* App Routes - All wrapped with Layout */}
                 <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />

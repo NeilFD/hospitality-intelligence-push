@@ -1,6 +1,5 @@
-
 // Comprehensive type definitions for the kitchen ledger application
-export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'master' | 'team';
+export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'performance' | 'team' | 'master' | 'home';
 
 export interface Supplier {
   id: string;

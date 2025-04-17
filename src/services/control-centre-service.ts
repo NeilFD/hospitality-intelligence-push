@@ -206,6 +206,7 @@ const initializeControlCentreDatabase = async () => {
       
       // Define default modules
       const modules = [
+        { module_id: 'home', module_name: 'Home', module_type: 'home', display_order: 0 },
         { module_id: 'food', module_name: 'Food Hub', module_type: 'food', display_order: 1 },
         { module_id: 'beverage', module_name: 'Beverage Hub', module_type: 'beverage', display_order: 2 },
         { module_id: 'pl', module_name: 'P&L', module_type: 'pl', display_order: 3 },
@@ -226,6 +227,9 @@ const initializeControlCentreDatabase = async () => {
       
       // Define pages for each module
       const pages = [
+        // Home pages
+        { module_id: 'home', page_id: 'home-dashboard', page_name: 'Dashboard', page_url: '/home/dashboard', display_order: 1 },
+        
         // Food Hub pages
         { module_id: 'food', page_id: 'food-dashboard', page_name: 'Dashboard', page_url: '/food/dashboard', display_order: 1 },
         { module_id: 'food', page_id: 'food-input-settings', page_name: 'Input Settings', page_url: '/food/input-settings', display_order: 2 },

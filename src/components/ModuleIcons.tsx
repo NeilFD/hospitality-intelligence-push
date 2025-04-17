@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ModuleType } from '@/types/kitchen-ledger';
-import { Sandwich, Wine, Clock, ChartBar, BarChart, Users, ConciergeBell } from 'lucide-react';
+import { Sandwich, Wine, Clock, ChartBar, BarChart, Users, ConciergeBell, Home } from 'lucide-react';
 
 interface ModuleIconProps {
   type: ModuleType | 'hospitality';
@@ -10,6 +10,8 @@ interface ModuleIconProps {
 
 export const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
   switch (type) {
+    case 'home':
+      return <Home className={className} />;
     case 'food':
       return <Sandwich className={className} />;
     case 'beverage':
