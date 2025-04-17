@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,30 +9,31 @@ import { UserProfile } from '@/types/supabase-types';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/services/auth-service';
-
 const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
-  const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
+  const roleHierarchy = {
+    'GOD': 4,
+    'Super User': 3,
+    'Manager': 2,
+    'Team Member': 1
+  };
   const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
   const seeRoleValue = roleHierarchy[roleToSee] || 0;
-  
   return currentRoleValue >= seeRoleValue;
 };
-
 const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const { profile } = useAuthStore();
-
+  const {
+    profile
+  } = useAuthStore();
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        
         const members = await getTeamMembers();
-        
         if (members && Array.isArray(members)) {
           setTeamMembers(members);
           console.log("Fetched team members:", members);
@@ -48,27 +48,19 @@ const TeamDashboard: React.FC = () => {
         setIsLoading(false);
       }
     };
-    
     fetchTeamMembers();
   }, [profile]);
-
   const getAvailableRoleFilters = () => {
     const allRoles = ['GOD', 'Super User', 'Manager', 'Team Member', 'Owner'];
     return allRoles;
   };
-
-  const filteredMembers = roleFilter === 'all'
-    ? teamMembers
-    : teamMembers.filter(member => member.role === roleFilter || 
-        (roleFilter === 'Team Member' && !member.role));
-
+  const filteredMembers = roleFilter === 'all' ? teamMembers : teamMembers.filter(member => member.role === roleFilter || roleFilter === 'Team Member' && !member.role);
   const getUserInitials = () => {
     if (!profile) return '?';
     const firstName = profile.first_name || '';
     const lastName = profile.last_name || '';
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-
   return <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-hi-purple-light/20 to-hi-purple/10 rounded-lg p-6 mb-6 shadow-md border border-hi-purple/20">
         <div className="flex justify-between items-center">
@@ -76,16 +68,11 @@ const TeamDashboard: React.FC = () => {
             <Users className="h-8 w-8 text-hi-purple" /> Team
           </h1>
           
-          {profile && (
-            <Link to="/profile" className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
+          {profile && <Link to="/profile" className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
               <Avatar className="h-10 w-10 border-2 border-hi-purple-light">
-                {profile.avatar_url ? (
-                  <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
-                ) : (
-                  <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple">
+                {profile.avatar_url ? <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} /> : <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple">
                     {getUserInitials()}
-                  </AvatarFallback>
-                )}
+                  </AvatarFallback>}
               </Avatar>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-gray-800">
@@ -93,8 +80,7 @@ const TeamDashboard: React.FC = () => {
                 </span>
                 <span className="text-xs text-gray-500">{profile.role || 'Team Member'}</span>
               </div>
-            </Link>
-          )}
+            </Link>}
         </div>
         <p className="text-gray-600">
           Connect with your team, share updates, and stay informed.
@@ -116,49 +102,29 @@ const TeamDashboard: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                {getAvailableRoleFilters().map(role => (
-                  <SelectItem key={role} value={role}>{role}</SelectItem>
-                ))}
+                {getAvailableRoleFilters().map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
         </div>
         
         <div className="flex flex-wrap gap-4 items-center">
-          {isLoading ? (
-            <div className="w-full flex justify-center py-4">
+          {isLoading ? <div className="w-full flex justify-center py-4">
               <Loader2 className="h-8 w-8 text-hi-purple animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="w-full flex items-center justify-center py-4 text-red-500">
+            </div> : error ? <div className="w-full flex items-center justify-center py-4 text-red-500">
               <AlertCircle className="h-5 w-5 mr-2" />
               {error}
-            </div>
-          ) : filteredMembers.length === 0 ? (
-            <p className="text-gray-500 italic">No team members found</p>
-          ) : (
-            filteredMembers.map((member) => (
-              <Link 
-                key={member.id} 
-                to={`/profile/${member.id}`}
-                className="flex flex-col items-center gap-1 bg-gray-50 hover:bg-gray-100 transition-colors p-3 rounded-lg"
-              >
+            </div> : filteredMembers.length === 0 ? <p className="text-gray-500 italic">No team members found</p> : filteredMembers.map(member => <Link key={member.id} to={`/profile/${member.id}`} className="flex flex-col items-center gap-1 bg-gray-50 hover:bg-gray-100 transition-colors p-3 rounded-lg">
                 <Avatar className="h-16 w-16 border-2 border-hi-purple-light/30">
-                  {member.avatar_url ? (
-                    <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} />
-                  ) : (
-                    <AvatarFallback className="bg-hi-purple-light/20 text-hi-purple text-lg">
+                  {member.avatar_url ? <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} /> : <AvatarFallback className="bg-hi-purple-light/20 text-hi-purple text-lg">
                       {member.first_name?.[0] || ''}{member.last_name?.[0] || ''}
-                    </AvatarFallback>
-                  )}
+                    </AvatarFallback>}
                 </Avatar>
                 <span className="text-sm font-medium text-gray-800">
                   {member.first_name} {member.last_name}
                 </span>
                 <span className="text-xs text-gray-500">{member.role || 'Team Member'}</span>
-              </Link>
-            ))
-          )}
+              </Link>)}
         </div>
       </div>
       
@@ -167,7 +133,7 @@ const TeamDashboard: React.FC = () => {
           <CardHeader className="pt-5 pb-0 px-5">
             <div className="flex items-center gap-3">
               <Clipboard className="h-6 w-6 text-hi-purple" />
-              <CardTitle className="text-xl font-bold text-hi-purple">Team Noticeboard</CardTitle>
+              <CardTitle className="text-xl font-bold text-hi-purple text-purple-900">Team Noticeboard</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-2 pt-3 px-5 flex-grow">
@@ -273,5 +239,4 @@ const TeamDashboard: React.FC = () => {
       </div>
     </div>;
 };
-
 export default TeamDashboard;
