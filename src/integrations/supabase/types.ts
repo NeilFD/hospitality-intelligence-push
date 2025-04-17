@@ -1814,7 +1814,7 @@ export type Database = {
     }
     Enums: {
       message_type: "text" | "image" | "voice" | "gif" | "file"
-      module_type: "food" | "beverage" | "pl" | "wages" | "performance"
+      module_type: "food" | "beverage" | "pl" | "wages" | "performance" | "home"
       poll_option_type: "text" | "image"
       user_role: "Owner" | "Manager" | "Team Member" | "GOD" | "Super User"
     }
@@ -1933,7 +1933,7 @@ export const Constants = {
   public: {
     Enums: {
       message_type: ["text", "image", "voice", "gif", "file"],
-      module_type: ["food", "beverage", "pl", "wages", "performance"],
+      module_type: ["food", "beverage", "pl", "wages", "performance", "home"],
       poll_option_type: ["text", "image"],
       user_role: ["Owner", "Manager", "Team Member", "GOD", "Super User"],
     },

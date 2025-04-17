@@ -4,6 +4,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useCurrentModule } from '@/lib/store';
 import FoodDashboard from '@/pages/food/Dashboard';
 import BeverageDashboard from '@/pages/beverage/Dashboard';
+import HomeDashboard from '@/pages/home/Dashboard';
 
 export default function Dashboard() {
   const currentModule = useCurrentModule();
@@ -17,7 +18,9 @@ export default function Dashboard() {
   }, [path, currentModule]);
   
   // Route to the specific dashboard component based on the path
-  if (path.includes('/beverage/dashboard')) {
+  if (path.includes('/home/dashboard')) {
+    return <HomeDashboard />;
+  } else if (path.includes('/beverage/dashboard')) {
     return <BeverageDashboard />;
   } else if (path.includes('/food/dashboard')) {
     return <FoodDashboard />;
