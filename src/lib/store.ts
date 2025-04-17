@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -24,7 +23,7 @@ const initialSuppliers: Supplier[] = [
   { id: '5', name: 'Local Farm Co-op' },
 ];
 
-// Updated default modules to match the order in the database
+// Updated default modules
 const defaultModules: Module[] = [
   { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 1 },
   { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 2 },
@@ -74,7 +73,7 @@ const handleRehydratedState = (state: AppState): AppState => {
   
   // Clear localStorage cache for modules if needed
   try {
-    localStorage.removeItem('tavern-kitchen-ledger');
+    localStorage.removeItem('hospitality-intelligence');
     console.log("Cleared localStorage cache to ensure proper module order");
   } catch (error) {
     console.error("Error clearing localStorage:", error);
@@ -107,7 +106,7 @@ export const useStore = create<AppState>()(
   persist(
     () => createInitialState(),
     {
-      name: 'tavern-kitchen-ledger',
+      name: 'hospitality-intelligence',
       onRehydrateStorage: () => (state) => {
         console.log("Rehydrating store...");
         if (state) {
