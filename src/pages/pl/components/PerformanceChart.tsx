@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
-import { Info, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
 
 interface ChartDataItem {
   name: string;
@@ -56,33 +54,28 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export function PerformanceChart({ chartData, currentMonthName, currentYear, isLoading }: PerformanceChartProps) {
+  // Add state to track visible series
   const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
     revenue: true,
     costs: true,
     ebitda: true
   });
 
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
-  useEffect(() => {
-    const day = getDayOfWeek(selectedDate);
-    console.log("Day of week:", day, "for date:", format(selectedDate, "do MMMM"));
-  }, []);
-
-  const getDayOfWeek = (date: Date): string => {
-    return format(date, "EEEE");
-  };
-
+  // Custom Legend component that handles toggle functionality
   const CustomLegend = () => {
+    // Define all available series regardless of what's in the chart payload
     const allSeries = [
       { dataKey: 'revenue', value: 'Revenue', color: '#7E69AB' },
       { dataKey: 'costs', value: 'Costs', color: '#A5C0E2' },
       { dataKey: 'ebitda', value: 'EBITDA', color: '#6C7787' }
     ];
-
+    
+    // Toggle visibility when clicking on a legend item
     const toggleItem = (dataKey: keyof VisibleSeries) => {
+      // Count how many series are currently visible
       const visibleCount = Object.values(visibleSeries).filter(Boolean).length;
       
+      // If trying to hide the last visible item, show a message and return without changing state
       if (visibleSeries[dataKey] && visibleCount <= 1) {
         toast.info("At least one series must remain visible");
         return;
@@ -93,7 +86,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
         [dataKey]: !prev[dataKey]
       }));
     };
-
+    
     return (
       <div className="flex flex-wrap justify-center gap-4 pt-4">
         {allSeries.map((entry, index) => {
@@ -120,42 +113,10 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-3">
       <CardHeader className="bg-white/40 border-b">
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
-            <span className="text-sm font-medium bg-purple-100 px-3 py-1 rounded-full">
-              {getDayOfWeek(selectedDate)}, {format(selectedDate, "do MMMM")}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center gap-1"
-                >
-                  <CalendarIcon size={14} />
-                  <span>Select Day</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  className="rounded-md border pointer-events-auto"
-                  month={new Date(currentYear, new Date().getMonth())}
-                />
-              </PopoverContent>
-            </Popover>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1 border-[#48495e] text-[#48495e] hover:bg-[#48495e] hover:text-white"
-            >
-              <Info size={14} /> Details
-            </Button>
-          </div>
+          <span>Monthly Performance Overview - {currentMonthName} {currentYear}</span>
+          <Button variant="outline" size="sm" className="flex items-center gap-1 border-[#48495e] text-[#48495e] hover:bg-[#48495e] hover:text-white">
+            <Info size={14} /> Details
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
@@ -166,26 +127,26 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
         ) : (
           <ChartContainer config={{
             revenue: {
-              color: '#7E69AB'
+              color: '#7E69AB' // Complementary purple
             },
             costs: {
-              color: '#A5C0E2'
+              color: '#A5C0E2' // Complementary blue
             },
             ebitda: {
-              color: '#6C7787'
+              color: '#6C7787' // Muted complementary color
             }
           }}>
             <BarChart data={chartData}>
               <CartesianGrid 
                 vertical={false} 
                 horizontal={true} 
-                stroke="#F1F0FB"
+                stroke="#F1F0FB"  // Soft Gray from the color palette 
                 strokeWidth={1}
                 strokeDasharray="0" 
               />
               <ReferenceLine 
                 y={0} 
-                stroke="#9F9EA1"
+                stroke="#9F9EA1" // Softer silver gray line
                 strokeWidth={1} 
                 isFront={true} 
               />
