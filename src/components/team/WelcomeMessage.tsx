@@ -16,10 +16,8 @@ interface WelcomeMessage {
   image_url?: string;
   created_at: string;
   author_id: string;
-  author?: {
-    first_name: string;
-    last_name: string;
-  };
+  author_first_name?: string;
+  author_last_name?: string;
 }
 
 export const WelcomeMessage = () => {
@@ -39,12 +37,10 @@ export const WelcomeMessage = () => {
 
   const fetchLatestMessage = async () => {
     try {
+      // Modified query to avoid using the join that isn't working
       const { data: messageData, error } = await supabase
         .from('team_welcome_messages')
-        .select(`
-          *,
-          author:profiles(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -54,7 +50,25 @@ export const WelcomeMessage = () => {
         return;
       }
       
-      setMessage(messageData);
+      // If we have a message, fetch the author details separately
+      if (messageData) {
+        const { data: authorData, error: authorError } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', messageData.author_id)
+          .single();
+        
+        if (!authorError && authorData) {
+          setMessage({
+            ...messageData,
+            author_first_name: authorData.first_name,
+            author_last_name: authorData.last_name
+          });
+        } else {
+          console.error('Error fetching author details:', authorError);
+          setMessage(messageData);
+        }
+      }
     } catch (error) {
       console.error('Error fetching welcome message:', error);
     }
@@ -177,7 +191,7 @@ export const WelcomeMessage = () => {
           <div className="flex justify-between items-start mb-2">
             <div>
               <p className="text-sm text-gray-600">
-                Posted by {message.author?.first_name} {message.author?.last_name}
+                Posted by {message.author_first_name} {message.author_last_name}
               </p>
               <p className="text-xs text-gray-500">
                 {format(new Date(message.created_at), 'PPpp')}
