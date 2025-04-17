@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -24,16 +23,16 @@ const initialSuppliers: Supplier[] = [
   { id: '5', name: 'Local Farm Co-op' },
 ];
 
-// Updated default modules with Home module moved to the top
+// Updated default modules with new display order
 const defaultModules: Module[] = [
-  { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 0 },
-  { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 1 },
-  { id: '2', type: 'pl', name: 'P&L Tracker', enabled: true, displayOrder: 2 },
-  { id: '3', type: 'wages', name: 'Wages Tracker', enabled: true, displayOrder: 3 },
-  { id: '4', type: 'food', name: 'Food Hub', enabled: true, displayOrder: 4 },
-  { id: '5', type: 'beverage', name: 'Beverage Hub', enabled: true, displayOrder: 5 },
-  { id: '6', type: 'performance', name: 'Performance and Analysis', enabled: true, displayOrder: 6 },
-  { id: '7', type: 'team', name: 'Team Communication', enabled: true, displayOrder: 7 }
+  { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 1 },
+  { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 2 },
+  { id: '2', type: 'pl', name: 'P&L Tracker', enabled: true, displayOrder: 3 },
+  { id: '3', type: 'wages', name: 'Wages Tracker', enabled: true, displayOrder: 4 },
+  { id: '4', type: 'food', name: 'Food Hub', enabled: true, displayOrder: 5 },
+  { id: '5', type: 'beverage', name: 'Beverage Hub', enabled: true, displayOrder: 6 },
+  { id: '6', type: 'performance', name: 'Performance and Analysis', enabled: true, displayOrder: 7 },
+  { id: '7', type: 'team', name: 'Team Communication', enabled: true, displayOrder: 8 }
 ];
 
 // Create initial month record with empty weeks
