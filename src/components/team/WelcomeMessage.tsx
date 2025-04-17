@@ -187,63 +187,68 @@ export const WelcomeMessage = () => {
   return (
     <div className="w-full">
       {message ? (
-        <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 mt-4 shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-sm text-gray-600">
-                Posted by {message.author_first_name} {message.author_last_name}
-              </p>
-              <p className="text-xs text-gray-500">
-                {format(new Date(message.created_at), 'PPpp')}
-              </p>
+        <div className="relative bg-gradient-to-r from-purple-50 via-white to-purple-50 rounded-lg p-6 mt-6 shadow-lg border border-purple-100 animate-fade-in hover:shadow-xl transition-all duration-300 overflow-hidden">
+          <div className="absolute -right-20 -top-20 w-40 h-40 rounded-full bg-gradient-to-br from-purple-200/30 to-transparent opacity-50"></div>
+          <div className="absolute -left-20 -bottom-20 w-40 h-40 rounded-full bg-gradient-to-tl from-purple-200/30 to-transparent opacity-50"></div>
+          
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-sm font-medium text-purple-700 mb-1 flex items-center">
+                  Posted by {message.author_first_name} {message.author_last_name}
+                </p>
+                <p className="text-xs text-purple-500">
+                  {format(new Date(message.created_at), 'PPpp')}
+                </p>
+              </div>
+              {canEdit && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={startEditing}
+                    className="text-purple-600 hover:text-purple-900 hover:bg-purple-50"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    className="text-red-600 hover:text-red-900 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
-            {canEdit && (
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={startEditing}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="text-red-600 hover:text-red-900"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            <p className="text-gray-800 whitespace-pre-wrap text-lg leading-relaxed">{message.content}</p>
+            {message.image_url && (
+              <div className="mt-4 transform hover:scale-[1.02] transition-transform duration-200">
+                <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
+                  <DialogTrigger asChild>
+                    <img
+                      src={message.image_url}
+                      alt="Welcome message"
+                      className="max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition-opacity shadow-md"
+                    />
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl">
+                    <img
+                      src={message.image_url}
+                      alt="Welcome message"
+                      className="w-full rounded-lg"
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
           </div>
-          <p className="text-gray-800 whitespace-pre-wrap">{message.content}</p>
-          {message.image_url && (
-            <div className="mt-3">
-              <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
-                <DialogTrigger asChild>
-                  <img
-                    src={message.image_url}
-                    alt="Welcome message"
-                    className="max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                  />
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl">
-                  <img
-                    src={message.image_url}
-                    alt="Welcome message"
-                    className="w-full rounded-lg"
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
         </div>
       ) : canEdit ? (
         <Button
           onClick={() => setIsEditing(true)}
-          className="mt-4 gap-2"
+          className="mt-6 gap-2 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 shadow-sm animate-fade-in"
           variant="outline"
         >
           <Plus className="h-4 w-4" /> Add Welcome Message
