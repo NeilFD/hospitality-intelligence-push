@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -31,7 +30,6 @@ const HomeDashboard: React.FC = () => {
   const [availableModules, setAvailableModules] = useState<{type: ModuleType, name: string}[]>([]);
   const { profile } = useAuthStore();
   
-  // Get yesterday's date in YYYY-MM-DD format
   const yesterday = subDays(new Date(), 1);
   const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
   
@@ -88,7 +86,6 @@ const HomeDashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      {/* Welcome Header Section */}
       <div className="bg-gradient-to-r from-hi-purple-light/20 to-hi-purple/10 rounded-lg p-6 mb-6 shadow-md border border-hi-purple/20">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-hi-purple">
@@ -105,7 +102,6 @@ const HomeDashboard: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Yesterday's Trading Data */}
         <div className="lg:col-span-2">
           <Card className="shadow-md rounded-lg overflow-hidden bg-white border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-3">
@@ -183,7 +179,6 @@ const HomeDashboard: React.FC = () => {
           </Card>
         </div>
         
-        {/* Pinned Noticeboard */}
         <div className="lg:col-span-1">
           <Card className="shadow-md rounded-lg overflow-hidden h-full border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 pb-3">
@@ -207,7 +202,6 @@ const HomeDashboard: React.FC = () => {
           </Card>
         </div>
         
-        {/* Team Chat */}
         <div className="lg:col-span-2">
           <Card className="shadow-md rounded-lg overflow-hidden border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 pb-3">
@@ -222,7 +216,6 @@ const HomeDashboard: React.FC = () => {
           </Card>
         </div>
         
-        {/* Quick Navigation */}
         <div className="lg:col-span-1">
           <Card className="shadow-md rounded-lg overflow-hidden border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 pb-3">
