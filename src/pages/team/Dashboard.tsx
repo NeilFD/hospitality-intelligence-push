@@ -162,133 +162,112 @@ const TeamDashboard: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
-          <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/d336d95c-5439-44c5-8a0c-a033440fb915.png')" }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
-          </div>
-          
-          <div className="relative z-10 h-full flex flex-col">
-            <CardHeader className="pt-6 pb-0 px-6">
-              <div className="bg-white/20 text-white p-4 rounded-xl inline-flex shadow-md mb-4 backdrop-blur-md border border-white/30 transform group-hover:scale-105 transition-transform">
-                <Clipboard className="h-8 w-8" />
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-hi-purple-light/10 to-hi-purple/5 backdrop-blur-md border border-hi-purple/10 rounded-xl group relative h-[420px]">
+          <CardHeader className="pt-6 pb-0 px-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Clipboard className="h-8 w-8 text-hi-purple" />
+              <CardTitle className="text-2xl font-bold text-hi-purple">Team Noticeboard</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-4 px-6 flex-grow">
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-hi-purple/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <CardTitle className="text-2xl font-bold text-white">Team Noticeboard</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 pt-4 px-6 flex-grow">
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Announcements</span>
+              <span className="text-sm">Announcements</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-hi-purple/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Updates & Events</span>
+              <span className="text-sm">Updates & Events</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-hi-purple/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Important Information</span>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0 px-6 pb-6">
-              <Button asChild className="w-full justify-between bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-lg text-white border border-white/30 shadow group-hover:shadow-md transition-all">
-                <Link to="/team/noticeboard">
-                  Open Noticeboard <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-            </CardFooter>
-          </div>
+              <span className="text-sm">Important Information</span>
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 px-6 pb-6">
+            <Button asChild className="w-full justify-between bg-hi-purple/80 hover:bg-hi-purple rounded-lg text-white border border-hi-purple/20 shadow group-hover:shadow-md transition-all">
+              <Link to="/team/noticeboard">
+                Open Noticeboard <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+          </CardFooter>
         </Card>
         
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
-          <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/4f5f4d60-b997-4b9d-becf-01d4306193d2.png')" }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
-          </div>
-          
-          <div className="relative z-10 h-full flex flex-col">
-            <CardHeader className="pt-6 pb-0 px-6">
-              <div className="bg-white/20 text-white p-4 rounded-xl inline-flex shadow-md mb-4 backdrop-blur-md border border-white/30 transform group-hover:scale-105 transition-transform">
-                <MessageSquare className="h-8 w-8" />
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-200/10 to-blue-300/5 backdrop-blur-md border border-blue-300/10 rounded-xl group relative h-[420px]">
+          <CardHeader className="pt-6 pb-0 px-6">
+            <div className="flex items-center gap-3 mb-2">
+              <MessageSquare className="h-8 w-8 text-blue-500" />
+              <CardTitle className="text-2xl font-bold text-blue-500">Team Chat</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-4 px-6 flex-grow">
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-blue-500/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <CardTitle className="text-2xl font-bold text-white">Team Chat</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 pt-4 px-6 flex-grow">
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Real-time Messaging</span>
+              <span className="text-sm">Real-time Messaging</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-blue-500/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Collaborate Together</span>
+              <span className="text-sm">Collaborate Together</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-blue-500/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Share Files & Images</span>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0 px-6 pb-6">
-              <Button asChild className="w-full justify-between bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-lg text-white border border-white/30 shadow group-hover:shadow-md transition-all">
-                <Link to="/team/chat">
-                  Open Chat <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-            </CardFooter>
-          </div>
+              <span className="text-sm">Share Files & Images</span>
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 px-6 pb-6">
+            <Button asChild className="w-full justify-between bg-blue-500/80 hover:bg-blue-500 rounded-lg text-white border border-blue-300/20 shadow group-hover:shadow-md transition-all">
+              <Link to="/team/chat">
+                Open Chat <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+          </CardFooter>
         </Card>
         
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
-          <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png')" }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
-          </div>
-          
-          <div className="relative z-10 h-full flex flex-col">
-            <CardHeader className="pt-6 pb-0 px-6">
-              <div className="bg-white/20 text-white p-4 rounded-xl inline-flex shadow-md mb-4 backdrop-blur-md border border-white/30 transform group-hover:scale-105 transition-transform">
-                <Book className="h-8 w-8" />
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-green-200/10 to-green-300/5 backdrop-blur-md border border-green-300/10 rounded-xl group relative h-[420px]">
+          <CardHeader className="pt-6 pb-0 px-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Book className="h-8 w-8 text-green-600" />
+              <CardTitle className="text-2xl font-bold text-green-600">Knowledge Base</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-4 px-6 flex-grow">
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-green-600/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <CardTitle className="text-2xl font-bold text-white">Knowledge Base</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 pt-4 px-6 flex-grow">
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Recipes & Guides</span>
+              <span className="text-sm">Recipes & Guides</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-green-600/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Service Standards</span>
+              <span className="text-sm">Service Standards</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-700">
+              <div className="bg-green-600/10 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <div className="flex items-center gap-3 text-white/90">
-                <div className="bg-white/30 backdrop-blur-sm p-1 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-sm">Training Materials</span>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0 px-6 pb-6">
-              <Button asChild className="w-full justify-between bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-lg text-white border border-white/30 shadow group-hover:shadow-md transition-all">
-                <Link to="/team/knowledge">
-                  Browse Knowledge <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-            </CardFooter>
-          </div>
+              <span className="text-sm">Training Materials</span>
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 px-6 pb-6">
+            <Button asChild className="w-full justify-between bg-green-600/80 hover:bg-green-600 rounded-lg text-white border border-green-300/20 shadow group-hover:shadow-md transition-all">
+              <Link to="/team/knowledge">
+                Browse Knowledge <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     </div>;
