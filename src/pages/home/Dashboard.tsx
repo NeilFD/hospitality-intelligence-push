@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -33,6 +32,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { WelcomeMessage } from '@/components/team/WelcomeMessage';
 
 const HomeDashboard: React.FC = () => {
   const [yesterdayData, setYesterdayData] = useState<any>(null);
@@ -138,6 +138,7 @@ const HomeDashboard: React.FC = () => {
         <p className="text-gray-600 mt-2">
           Your daily hospitality intelligence hub
         </p>
+        <WelcomeMessage />
       </div>
 
       <div className="mb-6">
