@@ -605,24 +605,17 @@ export const uploadTeamFile = async (file: File, folder: 'notes' | 'messages' | 
 };
 
 export const getChatRooms = async (): Promise<ChatRoom[]> => {
-  try {
-    console.log('Fetching chat rooms');
-    const { data, error } = await supabase
-      .from('team_chat_rooms')
-      .select('*')
-      .order('name', { ascending: true });
-      
-    if (error) {
-      console.error('Error fetching chat rooms:', error);
-      throw error;
-    }
+  const { data, error } = await supabase
+    .from('team_chat_rooms')
+    .select('*')
+    .order('name', { ascending: true });
     
-    console.log(`Successfully fetched ${data?.length || 0} chat rooms`);
-    return data || [];
-  } catch (e) {
-    console.error('Exception in getChatRooms:', e);
-    return [];
+  if (error) {
+    console.error('Error fetching chat rooms:', error);
+    throw error;
   }
+  
+  return data || [];
 };
 
 export const getChatRoomBySlug = async (slug: string): Promise<ChatRoom | null> => {

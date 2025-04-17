@@ -397,7 +397,7 @@ const Message: React.FC<MessageProps> = ({
 const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -416,24 +416,18 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     isLoading: isLoadingRooms
   } = useQuery({
     queryKey: ['chatRooms'],
-    queryFn: getChatRooms,
-    staleTime: 60000, // 1 minute cache
+    queryFn: getChatRooms
   });
   
   useEffect(() => {
-    console.log('TeamChat: initialRoomId changed:', initialRoomId);
-    if (initialRoomId && initialRoomId !== selectedRoomId) {
-      console.log('Setting selected room ID from initialRoomId:', initialRoomId);
+    if (initialRoomId) {
+      console.log('Setting initial room ID:', initialRoomId);
       setSelectedRoomId(initialRoomId);
-    }
-  }, [initialRoomId]);
-  
-  useEffect(() => {
-    if (!selectedRoomId && rooms.length > 0 && !isLoadingRooms) {
+    } else if (!selectedRoomId && rooms.length > 0) {
       console.log('No selected room, setting first room:', rooms[0].id);
       setSelectedRoomId(rooms[0].id);
     }
-  }, [rooms, selectedRoomId, isLoadingRooms]);
+  }, [rooms, initialRoomId]);
   
   const {
     data: messages = [],
@@ -442,24 +436,14 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   } = useQuery({
     queryKey: ['teamMessages', selectedRoomId],
     queryFn: () => {
-      if (!selectedRoomId) {
-        console.log('No room ID selected, skipping message fetch');
-        return Promise.resolve([]);
-      }
-      
       console.log('Fetching messages for room ID:', selectedRoomId);
-      return getMessages(selectedRoomId).catch(error => {
-        console.error('Error fetching messages:', error);
-        return [];
-      });
+      return selectedRoomId ? getMessages(selectedRoomId) : Promise.resolve([]);
     },
-    enabled: !!selectedRoomId,
-    staleTime: 10000, // 10 seconds cache
+    enabled: !!selectedRoomId
   });
   
   useEffect(() => {
     if (selectedRoomId) {
-      console.log('Selected room changed, refetching messages for:', selectedRoomId);
       refetchMessages();
     }
   }, [selectedRoomId, refetchMessages]);
@@ -850,23 +834,21 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     );
   };
 
-  return <div className={`flex ${compact ? 'h-full' : 'h-[calc(100vh-120px)]'}`}>
-      {!compact && <ChatRoomSidebar selectedRoomId={selectedRoomId || ''} onRoomSelect={handleRoomSelect} />}
+  return <div className="flex h-[calc(100vh-120px)]">
+      <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
       
       <div className="flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden">
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
           <CardContent className="p-0 flex flex-col h-full">
-            {!compact && (
-              <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
-                {selectedRoomId && rooms.length > 0 && (
-                  <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
-                    {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
-                  </h2>
-                )}
-              </div>
-            )}
+            <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
+              {selectedRoomId && rooms.length > 0 && (
+                <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
+                  {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
+                </h2>
+              )}
+            </div>
             
-            <div className={`flex-1 ${compact ? 'p-2' : 'p-4'} overflow-y-auto`}>
+            <div className="flex-1 p-4 overflow-y-auto">
               {isLoadingMessages ? (
                 <div className="flex justify-center items-center h-full">
                   <p className="text-gray-500">Loading messages...</p>
@@ -894,65 +876,56 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               )}
             </div>
             
-            <div className={`${compact ? 'p-2' : 'p-3'} border-t relative`}>
+            <div className="p-3 border-t relative">
               {renderMentionSelector()}
               
               <div className="flex items-end gap-2">
-                <Textarea 
-                  placeholder={compact ? "Type a message..." : "Type a message... Use @ to mention users or @all for everyone"} 
-                  value={messageText} 
-                  onChange={handleInputChange} 
-                  ref={textareaRef} 
-                  className={`min-h-[${compact ? '40px' : '60px'}] max-h-[120px] resize-none`} 
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    } else if (e.key === 'Escape' && showMentionSelector) {
-                      e.preventDefault();
-                      setShowMentionSelector(false);
-                    }
-                  }} 
-                />
+                <Textarea placeholder="Type a message... Use @ to mention users or @all for everyone" value={messageText} onChange={handleInputChange} ref={textareaRef} className="min-h-[60px] max-h-[120px] resize-none" onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                } else if (e.key === 'Escape' && showMentionSelector) {
+                  e.preventDefault();
+                  setShowMentionSelector(false);
+                }
+              }} />
                 <Button onClick={handleSendMessage} disabled={isSubmitting || !messageText.trim()} size="icon" className="h-10 w-10 rounded-full">
                   <Send className="h-5 w-5" />
                 </Button>
               </div>
               
-              {!compact && (
-                <div className="flex justify-between w-full gap-1 mt-2">
-                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
-                    <Image className="h-5 w-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className={`flex-1 text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
-                    <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
-                    <Paperclip className="h-5 w-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={() => {
+              <div className="flex justify-between w-full gap-1 mt-2">
+                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
+                  <Image className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className={`flex-1 text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
+                  <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
+                </Button>
+                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={() => {
+                if (textareaRef.current) {
+                  const cursorPosition = textareaRef.current.selectionStart;
+                  const textBefore = messageText.substring(0, cursorPosition);
+                  const textAfter = messageText.substring(cursorPosition);
+                  const newText = `${textBefore}@${textAfter}`;
+                  setMessageText(newText);
+                  setMentionStart(cursorPosition);
+                  setMentionQuery('');
+                  setShowMentionSelector(true);
+                  textareaRef.current.focus();
+                  setTimeout(() => {
                     if (textareaRef.current) {
-                      const cursorPosition = textareaRef.current.selectionStart;
-                      const textBefore = messageText.substring(0, cursorPosition);
-                      const textAfter = messageText.substring(cursorPosition);
-                      const newText = `${textBefore}@${textAfter}`;
-                      setMessageText(newText);
-                      setMentionStart(cursorPosition);
-                      setMentionQuery('');
-                      setShowMentionSelector(true);
-                      textareaRef.current.focus();
-                      setTimeout(() => {
-                        if (textareaRef.current) {
-                          textareaRef.current.selectionStart = cursorPosition + 1;
-                          textareaRef.current.selectionEnd = cursorPosition + 1;
-                        }
-                      }, 0);
+                      textareaRef.current.selectionStart = cursorPosition + 1;
+                      textareaRef.current.selectionEnd = cursorPosition + 1;
                     }
-                  }}>
-                    <AtSign className="h-5 w-5" />
-                  </Button>
-                </div>
-              )}
+                  }, 0);
+                }
+              }}>
+                  <AtSign className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -20,8 +20,7 @@ const Chat: React.FC = () => {
   // Fetch chat rooms
   const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
     queryKey: ['chatRooms'],
-    queryFn: getChatRooms,
-    staleTime: 60000, // 1 minute cache
+    queryFn: getChatRooms
   });
   
   // Find the room ID based on the slug in the URL
