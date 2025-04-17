@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -161,15 +162,15 @@ const TeamDashboard: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-hi-purple-light/10 to-hi-purple/5 backdrop-blur-md border border-hi-purple/10 rounded-xl group relative h-[420px]">
-          <CardHeader className="pt-6 pb-0 px-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Clipboard className="h-8 w-8 text-hi-purple" />
-              <CardTitle className="text-2xl font-bold text-hi-purple">Team Noticeboard</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-hi-purple/5 backdrop-blur-md border border-hi-purple/10 rounded-xl group relative h-[320px]">
+          <CardHeader className="pt-5 pb-0 px-5">
+            <div className="flex items-center gap-3">
+              <Clipboard className="h-6 w-6 text-hi-purple" />
+              <CardTitle className="text-xl font-bold text-hi-purple">Team Noticeboard</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2 pt-4 px-6 flex-grow">
+          <CardContent className="space-y-2 pt-3 px-5 flex-grow">
             <div className="flex items-center gap-3 text-gray-700">
               <div className="bg-hi-purple/10 p-1 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -189,8 +190,8 @@ const TeamDashboard: React.FC = () => {
               <span className="text-sm">Important Information</span>
             </div>
           </CardContent>
-          <CardFooter className="pt-0 px-6 pb-6">
-            <Button asChild className="w-full justify-between bg-hi-purple/80 hover:bg-hi-purple rounded-lg text-white border border-hi-purple/20 shadow group-hover:shadow-md transition-all">
+          <CardFooter className="pt-0 px-5 pb-5">
+            <Button asChild className="w-full justify-between bg-hi-purple/70 hover:bg-hi-purple rounded-lg text-white border border-hi-purple/20 shadow-sm group-hover:shadow-md transition-all">
               <Link to="/team/noticeboard">
                 Open Noticeboard <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -198,14 +199,14 @@ const TeamDashboard: React.FC = () => {
           </CardFooter>
         </Card>
         
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-200/10 to-blue-300/5 backdrop-blur-md border border-blue-300/10 rounded-xl group relative h-[420px]">
-          <CardHeader className="pt-6 pb-0 px-6">
-            <div className="flex items-center gap-3 mb-2">
-              <MessageSquare className="h-8 w-8 text-blue-500" />
-              <CardTitle className="text-2xl font-bold text-blue-500">Team Chat</CardTitle>
+        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-blue-500/5 backdrop-blur-md border border-blue-300/10 rounded-xl group relative h-[320px]">
+          <CardHeader className="pt-5 pb-0 px-5">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="h-6 w-6 text-blue-500" />
+              <CardTitle className="text-xl font-bold text-blue-500">Team Chat</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2 pt-4 px-6 flex-grow">
+          <CardContent className="space-y-2 pt-3 px-5 flex-grow">
             <div className="flex items-center gap-3 text-gray-700">
               <div className="bg-blue-500/10 p-1 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -225,8 +226,8 @@ const TeamDashboard: React.FC = () => {
               <span className="text-sm">Share Files & Images</span>
             </div>
           </CardContent>
-          <CardFooter className="pt-0 px-6 pb-6">
-            <Button asChild className="w-full justify-between bg-blue-500/80 hover:bg-blue-500 rounded-lg text-white border border-blue-300/20 shadow group-hover:shadow-md transition-all">
+          <CardFooter className="pt-0 px-5 pb-5">
+            <Button asChild className="w-full justify-between bg-blue-500/70 hover:bg-blue-500 rounded-lg text-white border border-blue-300/20 shadow-sm group-hover:shadow-md transition-all">
               <Link to="/team/chat">
                 Open Chat <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -234,14 +235,14 @@ const TeamDashboard: React.FC = () => {
           </CardFooter>
         </Card>
         
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-green-200/10 to-green-300/5 backdrop-blur-md border border-green-300/10 rounded-xl group relative h-[420px]">
-          <CardHeader className="pt-6 pb-0 px-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Book className="h-8 w-8 text-green-600" />
-              <CardTitle className="text-2xl font-bold text-green-600">Knowledge Base</CardTitle>
+        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-green-500/5 backdrop-blur-md border border-green-300/10 rounded-xl group relative h-[320px]">
+          <CardHeader className="pt-5 pb-0 px-5">
+            <div className="flex items-center gap-3">
+              <Book className="h-6 w-6 text-green-600" />
+              <CardTitle className="text-xl font-bold text-green-600">Knowledge Base</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2 pt-4 px-6 flex-grow">
+          <CardContent className="space-y-2 pt-3 px-5 flex-grow">
             <div className="flex items-center gap-3 text-gray-700">
               <div className="bg-green-600/10 p-1 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -261,8 +262,8 @@ const TeamDashboard: React.FC = () => {
               <span className="text-sm">Training Materials</span>
             </div>
           </CardContent>
-          <CardFooter className="pt-0 px-6 pb-6">
-            <Button asChild className="w-full justify-between bg-green-600/80 hover:bg-green-600 rounded-lg text-white border border-green-300/20 shadow group-hover:shadow-md transition-all">
+          <CardFooter className="pt-0 px-5 pb-5">
+            <Button asChild className="w-full justify-between bg-green-600/70 hover:bg-green-600 rounded-lg text-white border border-green-300/20 shadow-sm group-hover:shadow-md transition-all">
               <Link to="/team/knowledge">
                 Browse Knowledge <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
