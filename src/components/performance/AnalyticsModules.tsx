@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,8 @@ export default function AnalyticsModules() {
       color: "bg-hi-purple",
       hoverColor: "bg-hi-purple-dark",
       borderColor: "border-hi-purple/20",
-      textColor: "text-white",
-      descriptionColor: "text-white/80"
+      textColor: "text-black",
+      descriptionColor: "text-black/80"
     },
     {
       title: "Wage Optimization",
@@ -23,7 +24,9 @@ export default function AnalyticsModules() {
       path: "/performance/wage-optimization",
       color: "bg-pastel-blue-dark",
       hoverColor: "bg-pastel-blue-dark/90",
-      borderColor: "border-pastel-blue-dark/20"
+      borderColor: "border-pastel-blue-dark/20",
+      textColor: "text-black",
+      descriptionColor: "text-black/80"
     },
     {
       title: "Food & Beverage Analysis",
@@ -32,7 +35,9 @@ export default function AnalyticsModules() {
       path: "/performance/fb-analysis",
       color: "bg-pastel-green-dark",
       hoverColor: "bg-pastel-green-dark/90",
-      borderColor: "border-pastel-green/20"
+      borderColor: "border-pastel-green/20",
+      textColor: "text-black",
+      descriptionColor: "text-black/80"
     },
     {
       title: "Data Explorer",
@@ -42,8 +47,8 @@ export default function AnalyticsModules() {
       color: "bg-sky-500",
       hoverColor: "bg-sky-600",
       borderColor: "border-sky-500/20",
-      textColor: "text-white",
-      descriptionColor: "text-white/80"
+      textColor: "text-black",
+      descriptionColor: "text-black/80"
     }
   ];
 
@@ -83,3 +88,4 @@ export default function AnalyticsModules() {
     </div>
   );
 }
+
