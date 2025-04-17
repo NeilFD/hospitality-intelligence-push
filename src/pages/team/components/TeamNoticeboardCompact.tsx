@@ -84,69 +84,68 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
         allNotices = [...notesWithProfiles];
       }
       
-      // Only fetch recipes if we're showing pinned items
-      if (pinnedOnly) {
-        // Fetch pinned food recipes
-        const { data: foodRecipes, error: foodError } = await supabase
-          .from('recipes')
-          .select('*')
-          .eq('posted_to_noticeboard', true)
-          .eq('archived', false)
-          .eq('module_type', 'food')
-          .order('created_at', { ascending: false });
-          
-        if (foodError) {
-          console.error('Error fetching food recipes:', foodError);
-        } else if (foodRecipes && foodRecipes.length > 0) {
-          console.log('Fetched pinned food recipes:', foodRecipes.length);
-          const foodRecipesWithType = foodRecipes.map(recipe => ({
-            ...recipe,
-            type: 'food_recipe',
-            pinned: true
-          }));
-          allNotices = [...allNotices, ...foodRecipesWithType];
-        }
+      // Only fetch recipes if we're showing pinned items or if we're not in pinnedOnly mode
+      // This ensures we always fetch recipes regardless of pinnedOnly setting
+      // Fetch pinned food recipes
+      const { data: foodRecipes, error: foodError } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('posted_to_noticeboard', true)
+        .eq('archived', false)
+        .eq('module_type', 'food')
+        .order('created_at', { ascending: false });
         
-        // Fetch pinned beverage recipes
-        const { data: bevRecipes, error: bevError } = await supabase
-          .from('recipes')
-          .select('*')
-          .eq('posted_to_noticeboard', true)
-          .eq('archived', false)
-          .eq('module_type', 'beverage')
-          .order('created_at', { ascending: false });
-          
-        if (bevError) {
-          console.error('Error fetching beverage recipes:', bevError);
-        } else if (bevRecipes && bevRecipes.length > 0) {
-          console.log('Fetched pinned beverage recipes:', bevRecipes.length);
-          const bevRecipesWithType = bevRecipes.map(recipe => ({
-            ...recipe,
-            type: 'beverage_recipe',
-            pinned: true
-          }));
-          allNotices = [...allNotices, ...bevRecipesWithType];
-        }
+      if (foodError) {
+        console.error('Error fetching food recipes:', foodError);
+      } else if (foodRecipes && foodRecipes.length > 0) {
+        console.log('Fetched pinned food recipes:', foodRecipes.length);
+        const foodRecipesWithType = foodRecipes.map(recipe => ({
+          ...recipe,
+          type: 'food_recipe',
+          pinned: true
+        }));
+        allNotices = [...allNotices, ...foodRecipesWithType];
+      }
+      
+      // Fetch pinned beverage recipes
+      const { data: bevRecipes, error: bevError } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('posted_to_noticeboard', true)
+        .eq('archived', false)
+        .eq('module_type', 'beverage')
+        .order('created_at', { ascending: false });
         
-        // Fetch pinned hospitality guides
-        const { data: guides, error: guidesError } = await supabase
-          .from('hospitality_guides')
-          .select('*')
-          .eq('posted_to_noticeboard', true)
-          .eq('archived', false)
-          .order('created_at', { ascending: false });
-          
-        if (guidesError) {
-          console.error('Error fetching hospitality guides:', guidesError);
-        } else if (guides && guides.length > 0) {
-          console.log('Fetched pinned hospitality guides:', guides.length);
-          const guidesWithType = guides.map(guide => ({
-            ...guide,
-            type: 'hospitality_guide',
-            pinned: true
-          }));
-          allNotices = [...allNotices, ...guidesWithType];
-        }
+      if (bevError) {
+        console.error('Error fetching beverage recipes:', bevError);
+      } else if (bevRecipes && bevRecipes.length > 0) {
+        console.log('Fetched pinned beverage recipes:', bevRecipes.length);
+        const bevRecipesWithType = bevRecipes.map(recipe => ({
+          ...recipe,
+          type: 'beverage_recipe',
+          pinned: true
+        }));
+        allNotices = [...allNotices, ...bevRecipesWithType];
+      }
+      
+      // Fetch pinned hospitality guides
+      const { data: guides, error: guidesError } = await supabase
+        .from('hospitality_guides')
+        .select('*')
+        .eq('posted_to_noticeboard', true)
+        .eq('archived', false)
+        .order('created_at', { ascending: false });
+        
+      if (guidesError) {
+        console.error('Error fetching hospitality guides:', guidesError);
+      } else if (guides && guides.length > 0) {
+        console.log('Fetched pinned hospitality guides:', guides.length);
+        const guidesWithType = guides.map(guide => ({
+          ...guide,
+          type: 'hospitality_guide',
+          pinned: true
+        }));
+        allNotices = [...allNotices, ...guidesWithType];
       }
       
       // Sort all notices by created_at date (newest first)
@@ -242,10 +241,8 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
     );
   }
 
-  // Make sure we're showing all notes
-  const displayNotes = pinnedOnly 
-    ? notes.filter(note => note.pinned === true)
-    : notes;
+  // Show all notices without additional filtering
+  const displayNotes = notes;
 
   const renderNoticeCard = (item: any) => {
     // For team notes
@@ -277,7 +274,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                       {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                     </span>
                     {item.pinned && (
-                      <span className="text-gray-400 ml-1 opacity-40">
+                      <span className="text-gray-400 ml-1 opacity-30">
                         <span className="text-xs">📌</span>
                       </span>
                     )}
@@ -343,7 +340,7 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
                     {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                   </span>
                   {item.pinned && (
-                    <span className="text-gray-400 ml-1 opacity-40">
+                    <span className="text-gray-400 ml-1 opacity-30">
                       <span className="text-xs">📌</span>
                     </span>
                   )}
