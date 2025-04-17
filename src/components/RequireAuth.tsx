@@ -24,6 +24,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   }, [isAuthenticated, isLoading, loadUser]);
 
   // Check permission based on the current path and user role
+  // Runs on every location change to ensure permissions are checked on navigation
   useEffect(() => {
     const checkPermission = async () => {
       // Skip permission check if user is not authenticated yet or is currently loading
@@ -32,8 +33,14 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         return;
       }
 
+      // Extract the module from the current path
+      const pathParts = location.pathname.split('/').filter(part => part !== '');
+      const moduleId = pathParts[0] || '';
+      
+      console.log(`[RequireAuth] Checking module access for "${moduleId}" and role "${profile.role}"`);
+      
       // Role-based debug information
-      console.log(`[RequireAuth] Checking permissions for user: ${profile.first_name} ${profile.last_name}, role: ${profile.role}`);
+      console.log(`[RequireAuth] User: ${profile.first_name} ${profile.last_name}, role: ${profile.role}`);
       console.log(`[RequireAuth] Current path: ${location.pathname}`);
 
       // GOD and Super User roles always have access to everything
@@ -49,12 +56,6 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         setHasPermission(true);
         return;
       }
-
-      // Parse the current path to get module and page
-      const pathParts = location.pathname.split('/').filter(part => part !== '');
-      const moduleId = pathParts[0] || '';
-      
-      console.log(`[RequireAuth] Checking module access for "${moduleId}" and role "${profile.role}"`);
       
       try {
         setPermissionLoading(true);
@@ -94,6 +95,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
       }
     };
 
+    // Run the permission check whenever the location changes
     checkPermission();
   }, [isAuthenticated, isLoading, profile, location.pathname]);
   
@@ -113,33 +115,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     console.log('[RequireAuth] User does not have permission, redirecting to accessible module');
     toast.error("You don't have permission to access this page");
     
-    // Find an accessible module for the user
-    const findAccessibleModule = async () => {
-      try {
-        const { data: permittedModules, error } = await supabase
-          .from('permission_access')
-          .select('module_id')
-          .eq('role_id', profile?.role || '')
-          .eq('has_access', true)
-          .order('module_id');
-          
-        if (error || !permittedModules || permittedModules.length === 0) {
-          console.error('[RequireAuth] Error finding permitted modules or none found:', error);
-          return '/';
-        }
-        
-        // Redirect to the first permitted module
-        const firstModuleId = permittedModules[0].module_id;
-        console.log(`[RequireAuth] Found accessible module: ${firstModuleId}`);
-        return `/${firstModuleId}/dashboard`;
-      } catch (err) {
-        console.error('[RequireAuth] Error finding accessible module:', err);
-        return '/';
-      }
-    };
-    
-    // Use team dashboard as a fallback while finding an accessible module
-    console.log('[RequireAuth] Redirecting to team dashboard as fallback');
+    // Redirect to team dashboard as a safe default - this should be a module everyone has access to
     return <Navigate to="/team/dashboard" replace />;
   }
   
