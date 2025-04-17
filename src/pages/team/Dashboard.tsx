@@ -10,20 +10,20 @@ import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/services/auth-service';
 
+const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
+  const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
+  const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
+  const seeRoleValue = roleHierarchy[roleToSee] || 0;
+  
+  return currentRoleValue >= seeRoleValue;
+};
+
 const TeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { profile } = useAuthStore();
-
-  const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
-    const roleHierarchy = { 'GOD': 4, 'Super User': 3, 'Manager': 2, 'Team Member': 1 };
-    const currentRoleValue = currentUserRole ? roleHierarchy[currentUserRole] || 0 : 0;
-    const seeRoleValue = roleHierarchy[roleToSee] || 0;
-    
-    return currentRoleValue >= seeRoleValue;
-  };
 
   useEffect(() => {
     const fetchTeamMembers = async () => {
@@ -250,7 +250,7 @@ const TeamDashboard: React.FC = () => {
         
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/4f5f4d60-b997-4b9d-becf-01d4306193d2.png')" }}>
+               style={{ backgroundImage: "url('/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png')" }}>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
