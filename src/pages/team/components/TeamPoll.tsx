@@ -120,7 +120,7 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
   
   const hasChartData = chartData.length > 0 && chartData.some(item => item.votes > 0);
   
-  const maxVote = Math.max(...chartData.map(item => item.votes), 1);
+  const maxVote = Math.max(...chartData.map(item => item.votes), 0) + 1;
   
   return (
     <Card className={`${poll.color || POLL_COLORS[0]} ${glassStyle} p-4 rounded-lg min-h-[200px] flex flex-col`}>
@@ -212,8 +212,8 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={chartData}
-                margin={{ top: 5, right: 30, bottom: 20, left: 10 }}
-                barGap={8}
+                margin={{ top: 20, right: 30, bottom: 20, left: 20 }}
+                barGap={12}
               >
                 <XAxis 
                   dataKey="name"
@@ -223,23 +223,30 @@ const TeamPollCard: React.FC<TeamPollCardProps> = ({
                 />
                 <YAxis
                   allowDecimals={false}
-                  domain={[0, Math.max(1, maxVote)]}
+                  domain={[0, maxVote]}
                   ticks={Array.from({length: maxVote + 1}, (_, i) => i)}
                   tickLine={false}
                   axisLine={true}
                   tick={{ fill: '#4B5563', fontSize: 12 }}
+                  width={20}
                 />
                 <Bar 
                   dataKey="votes" 
-                  fill="#6366F1"
-                  radius={[4, 4, 0, 0]}
-                  barSize={48}
-                  minPointSize={3}
+                  radius={[6, 6, 0, 0]}
+                  barSize={60}
+                  minPointSize={5}
                 >
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill="#6366F1" fillOpacity={0.8} />
                   ))}
-                  <LabelList dataKey="votes" position="top" fill="#4B5563" fontSize={12} />
+                  <LabelList 
+                    dataKey="votes" 
+                    position="top" 
+                    fill="#4B5563" 
+                    fontSize={13} 
+                    fontWeight="600"
+                    formatter={(value: number) => value.toString()}
+                  />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
