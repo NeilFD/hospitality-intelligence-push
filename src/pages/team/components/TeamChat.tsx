@@ -397,7 +397,7 @@ const Message: React.FC<MessageProps> = ({
 const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState('');
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -420,7 +420,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   });
   
   useEffect(() => {
-    if (initialRoomId) {
+    if (initialRoomId && !selectedRoomId) {
       console.log('Setting initial room ID:', initialRoomId);
       setSelectedRoomId(initialRoomId);
     } else if (!selectedRoomId && rooms.length > 0) {

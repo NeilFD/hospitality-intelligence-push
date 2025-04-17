@@ -105,7 +105,7 @@ const Chat: React.FC = () => {
             <p className="text-gray-500">Loading chat rooms...</p>
           </div>
         ) : roomId ? (
-          <TeamChat initialRoomId={roomId} />
+          <TeamChat key={roomId} initialRoomId={roomId} />
         ) : (
           <div className="flex justify-center items-center h-full">
             <p className="text-gray-500">No chat rooms available</p>
