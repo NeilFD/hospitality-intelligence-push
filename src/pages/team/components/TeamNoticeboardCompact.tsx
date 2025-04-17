@@ -17,45 +17,45 @@ const TeamNoticeboardCompact: React.FC<NoticeboardProps> = ({ pinnedOnly = false
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchNotes = async () => {
-      try {
-        setLoading(true);
-        
-        // Build the query
-        let query = supabase
-          .from('team_notes')
-          .select(`
-            *,
-            profiles:author_id(id, first_name, last_name, avatar_url, role)
-          `)
-          .order('created_at', { ascending: false });
-        
-        // Filter for pinned notes only if requested
-        if (pinnedOnly) {
-          query = query.eq('pinned', true);
-        }
-        
-        // Limit the number of notes if in compact mode
-        if (compact) {
-          query = query.limit(5);
-        }
-        
-        const { data, error: fetchError } = await query;
-        
-        if (fetchError) throw fetchError;
-        
-        console.log('Fetched notes data:', data);
-        setNotes(data || []);
-      } catch (err: any) {
-        console.error('Error fetching notes:', err);
-        setError(err.message || 'Failed to load noticeboard');
-        toast.error('Failed to load noticeboard');
-      } finally {
-        setLoading(false);
+  const fetchNotes = async () => {
+    try {
+      setLoading(true);
+      
+      // Build the query
+      let query = supabase
+        .from('team_notes')
+        .select(`
+          *,
+          profiles:author_id(id, first_name, last_name, avatar_url, role)
+        `)
+        .order('created_at', { ascending: false });
+      
+      // Filter for pinned notes only if requested
+      if (pinnedOnly) {
+        query = query.eq('pinned', true);
       }
-    };
-    
+      
+      // Limit the number of notes if in compact mode
+      if (compact) {
+        query = query.limit(5);
+      }
+      
+      const { data, error: fetchError } = await query;
+      
+      if (fetchError) throw fetchError;
+      
+      console.log('Fetched notes data:', data);
+      setNotes(data || []);
+    } catch (err: any) {
+      console.error('Error fetching notes:', err);
+      setError(err.message || 'Failed to load noticeboard');
+      toast.error('Failed to load noticeboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchNotes();
     
     // Set up real-time subscription for notes
