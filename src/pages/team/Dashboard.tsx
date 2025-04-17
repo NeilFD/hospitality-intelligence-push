@@ -166,11 +166,12 @@ const TeamDashboard: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 rounded-xl group relative h-[420px]">
-          {/* Background Image with Overlay */}
+        {/* Noticeboard Card with first bar image */}
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
+          {/* Background Image */}
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/ff9c2cbe-cde5-43da-90f2-40c2235892ef.png')" }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-hi-purple-light/80 to-hi-purple/90 backdrop-blur-sm"></div>
+               style={{ backgroundImage: "url('/lovable-uploads/7766bf9b-4c96-43cd-9362-4cb48586a2ed.png')" }}>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
           <div className="relative z-10 h-full flex flex-col">
@@ -210,11 +211,12 @@ const TeamDashboard: React.FC = () => {
           </div>
         </Card>
         
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 rounded-xl group relative h-[420px]">
-          {/* Background Image with Overlay */}
+        {/* Chat Card with restaurant image */}
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
+          {/* Background Image */}
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/ff9c2cbe-cde5-43da-90f2-40c2235892ef.png')" }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/80 to-emerald-600/90 backdrop-blur-sm"></div>
+               style={{ backgroundImage: "url('/lovable-uploads/cddc5297-8f1d-4710-a467-704ad723101e.png')" }}>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
           <div className="relative z-10 h-full flex flex-col">
@@ -254,11 +256,12 @@ const TeamDashboard: React.FC = () => {
           </div>
         </Card>
         
-        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0 rounded-xl group relative h-[420px]">
-          {/* Background Image with Overlay */}
+        {/* Knowledge Base Card with cocktails image */}
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 rounded-xl group relative h-[420px]">
+          {/* Background Image */}
           <div className="absolute inset-0 bg-cover bg-center z-0" 
-               style={{ backgroundImage: "url('/lovable-uploads/ff9c2cbe-cde5-43da-90f2-40c2235892ef.png')" }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-amber-500/80 to-amber-600/90 backdrop-blur-sm"></div>
+               style={{ backgroundImage: "url('/lovable-uploads/2c6c40a8-d88f-4c20-a5ff-16277dca4007.png')" }}>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/80 backdrop-blur-[2px]"></div>
           </div>
           
           <div className="relative z-10 h-full flex flex-col">
