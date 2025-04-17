@@ -24,7 +24,7 @@ const initialSuppliers: Supplier[] = [
   { id: '5', name: 'Local Farm Co-op' },
 ];
 
-// Updated default modules to match the order in the image
+// Updated default modules to match the order in the database
 const defaultModules: Module[] = [
   { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 1 },
   { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 2 },
