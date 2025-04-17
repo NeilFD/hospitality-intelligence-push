@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
 import { useAuthStore } from '@/services/auth-service';
@@ -18,9 +17,11 @@ import {
   ChevronRight,
   Info,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Calendar as CalendarIcon,
+  Cloud
 } from 'lucide-react';
-import { formatDistanceToNow, format, subDays } from 'date-fns';
+import { format, addDays, subDays } from 'date-fns';
 import TeamNoticeboardCompact from '@/pages/team/components/TeamNoticeboardCompact';
 import TeamChat from '@/pages/team/components/TeamChat';
 import { getHasAccessToModule } from '@/services/permissions-service';
@@ -35,10 +36,10 @@ const HomeDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [availableModules, setAvailableModules] = useState<{type: ModuleType, name: string}[]>([]);
   const [generalRoomId, setGeneralRoomId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(subDays(new Date(), 1));
   const { profile } = useAuthStore();
   
-  const yesterday = subDays(new Date(), 1);
-  const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
+  const yesterdayFormatted = format(selectedDate, 'yyyy-MM-dd');
   
   const { data: chatRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ['chatRooms'],
@@ -47,22 +48,22 @@ const HomeDashboard: React.FC = () => {
   });
   
   useEffect(() => {
-    const fetchYesterdayData = async () => {
+    const fetchSelectedDateData = async () => {
       try {
         setLoading(true);
         const data = await fetchMasterDailyRecord(yesterdayFormatted);
         setYesterdayData(data);
       } catch (err) {
-        console.error('Error fetching yesterday data:', err);
-        setError('Failed to load yesterday\'s trading data');
-        toast.error('Failed to load yesterday\'s trading data');
+        console.error('Error fetching data:', err);
+        setError('Failed to load trading data');
+        toast.error('Failed to load trading data');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchYesterdayData();
-  }, [yesterdayFormatted]);
+    fetchSelectedDateData();
+  }, [selectedDate]);
   
   useEffect(() => {
     const checkModuleAccess = async () => {
@@ -115,6 +116,9 @@ const HomeDashboard: React.FC = () => {
     }
   }, [chatRooms]);
 
+  const goToPreviousDay = () => setSelectedDate(prev => subDays(prev, 1));
+  const goToNextDay = () => setSelectedDate(prev => addDays(prev, 1));
+
   return (
     <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-hi-purple-light/20 to-hi-purple/10 rounded-lg p-6 mb-6 shadow-md border border-hi-purple/20">
@@ -153,11 +157,44 @@ const HomeDashboard: React.FC = () => {
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center text-xl font-bold text-gray-800">
               <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
-              Yesterday's Performance
+              Performance
             </CardTitle>
-            <Badge variant="outline" className="bg-white">
-              {yesterday && format(yesterday, 'EEEE, MMM d')}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToPreviousDay}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="min-w-[140px]">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {format(selectedDate, 'dd MMM yyyy')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToNextDay}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -220,6 +257,35 @@ const HomeDashboard: React.FC = () => {
                   <p className="text-xs text-gray-500">Food/Beverage %</p>
                 </div>
               </div>
+              
+              {(yesterdayData.weatherDescription || yesterdayData.temperature) && (
+                <div className="p-4 bg-gray-50/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Cloud className="h-4 w-4 text-blue-500" />
+                    <h3 className="font-semibold text-gray-800">Weather Conditions</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {yesterdayData.weatherDescription && (
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <p className="text-sm text-gray-600">Conditions</p>
+                        <p className="font-medium">{yesterdayData.weatherDescription}</p>
+                      </div>
+                    )}
+                    {yesterdayData.temperature !== undefined && (
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <p className="text-sm text-gray-600">Temperature</p>
+                        <p className="font-medium">{yesterdayData.temperature}°C</p>
+                      </div>
+                    )}
+                    {yesterdayData.windSpeed !== undefined && (
+                      <div className="bg-white rounded-lg p-3 shadow-sm">
+                        <p className="text-sm text-gray-600">Wind Speed</p>
+                        <p className="font-medium">{yesterdayData.windSpeed} mph</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               
               <div className="p-4">
                 <h3 className="font-semibold text-gray-800 mb-2">Operational Notes</h3>
