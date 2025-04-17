@@ -427,7 +427,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       console.log('No selected room, setting first room:', rooms[0].id);
       setSelectedRoomId(rooms[0].id);
     }
-  }, [rooms, initialRoomId]);
+  }, [rooms, initialRoomId, selectedRoomId]);
   
   const {
     data: messages = [],
@@ -629,8 +629,9 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   };
   
   const handleRoomSelect = (roomId: string) => {
-    console.log('Changing selected room from', selectedRoomId, 'to', roomId);
+    console.log('Room clicked:', roomId, 'Previous selected:', selectedRoomId);
     if (roomId !== selectedRoomId) {
+      console.log('Changing selected room from', selectedRoomId, 'to', roomId);
       setSelectedRoomId(roomId);
       
       queryClient.invalidateQueries({
@@ -834,21 +835,40 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     );
   };
 
-  return <div className="flex h-[calc(100vh-120px)]">
-      <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
+  // Determine component style based on if it's in compact mode (for dashboard)
+  const componentClasses = compact 
+    ? "flex h-full" 
+    : "flex h-[calc(100vh-120px)]";
+  
+  const mainChatClasses = compact
+    ? "flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden"
+    : "flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden";
+  
+  const chatContentClasses = compact
+    ? "flex-1 p-2 overflow-y-auto"
+    : "flex-1 p-4 overflow-y-auto";
+  
+  const inputAreaClasses = compact
+    ? "p-2 border-t"
+    : "p-3 border-t";
+  
+  return <div className={componentClasses}>
+      {!compact && <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />}
       
-      <div className="flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden">
+      <div className={mainChatClasses}>
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
           <CardContent className="p-0 flex flex-col h-full">
-            <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
-              {selectedRoomId && rooms.length > 0 && (
-                <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
-                  {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
-                </h2>
-              )}
-            </div>
+            {!compact && (
+              <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
+                {selectedRoomId && rooms.length > 0 && (
+                  <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
+                    {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
+                  </h2>
+                )}
+              </div>
+            )}
             
-            <div className="flex-1 p-4 overflow-y-auto">
+            <div className={chatContentClasses}>
               {isLoadingMessages ? (
                 <div className="flex justify-center items-center h-full">
                   <p className="text-gray-500">Loading messages...</p>
@@ -876,7 +896,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
               )}
             </div>
             
-            <div className="p-3 border-t relative">
+            <div className={`relative ${inputAreaClasses}`}>
               {renderMentionSelector()}
               
               <div className="flex items-end gap-2">
@@ -894,38 +914,40 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
                 </Button>
               </div>
               
-              <div className="flex justify-between w-full gap-1 mt-2">
-                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
-                  <Image className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className={`flex-1 text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
-                  <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
-                </Button>
-                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={() => {
-                if (textareaRef.current) {
-                  const cursorPosition = textareaRef.current.selectionStart;
-                  const textBefore = messageText.substring(0, cursorPosition);
-                  const textAfter = messageText.substring(cursorPosition);
-                  const newText = `${textBefore}@${textAfter}`;
-                  setMessageText(newText);
-                  setMentionStart(cursorPosition);
-                  setMentionQuery('');
-                  setShowMentionSelector(true);
-                  textareaRef.current.focus();
-                  setTimeout(() => {
-                    if (textareaRef.current) {
-                      textareaRef.current.selectionStart = cursorPosition + 1;
-                      textareaRef.current.selectionEnd = cursorPosition + 1;
-                    }
-                  }, 0);
-                }
-              }}>
-                  <AtSign className="h-5 w-5" />
-                </Button>
-              </div>
+              {!compact && (
+                <div className="flex justify-between w-full gap-1 mt-2">
+                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
+                    <Image className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className={`flex-1 text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
+                    <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={() => {
+                  if (textareaRef.current) {
+                    const cursorPosition = textareaRef.current.selectionStart;
+                    const textBefore = messageText.substring(0, cursorPosition);
+                    const textAfter = messageText.substring(cursorPosition);
+                    const newText = `${textBefore}@${textAfter}`;
+                    setMessageText(newText);
+                    setMentionStart(cursorPosition);
+                    setMentionQuery('');
+                    setShowMentionSelector(true);
+                    textareaRef.current.focus();
+                    setTimeout(() => {
+                      if (textareaRef.current) {
+                        textareaRef.current.selectionStart = cursorPosition + 1;
+                        textareaRef.current.selectionEnd = cursorPosition + 1;
+                      }
+                    }, 0);
+                  }
+                }}>
+                    <AtSign className="h-5 w-5" />
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
