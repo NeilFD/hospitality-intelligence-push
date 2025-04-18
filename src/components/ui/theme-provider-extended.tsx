@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "react-router-dom";
@@ -16,30 +15,76 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         const defaultThemeName = 'Berry Purple';
         
         // Override any saved theme to Berry Purple
-        const savedThemeName = 'Berry Purple';
+        const savedThemeName = localStorage.getItem('app-active-theme') || 'Berry Purple';
         
-        console.log('Applying Berry Purple theme as fallback');
-        applyThemeClass(savedThemeName);
-        localStorage.setItem('app-active-theme', savedThemeName);
+        console.log('Applying theme:', savedThemeName, 'with Berry Purple as fallback');
         
+        // First apply Berry Purple as initial fallback
+        applyThemeClass('Berry Purple');
+        
+        // Apply Berry Purple theme colors as initial values
+        applyBerryPurpleThemeColors();
+        
+        // Then try to load the requested theme from database
+        let themeNameToLoad = savedThemeName;
+        
+        // For problematic themes like NFD, we'll still try to load them but keep Berry Purple ready
         const { data, error } = await supabase
           .from('themes')
           .select('*')
-          .eq('name', 'Berry Purple')
+          .eq('name', themeNameToLoad)
           .maybeSingle();
         
-        if (error) {
-          console.error('Error loading active theme:', error);
+        if (error || !data) {
+          console.error('Error loading theme or theme not found:', error);
+          console.log('Keeping Berry Purple theme as fallback');
+          
+          // If there was an error loading the theme, explicitly load Berry Purple
+          const { data: berryPurpleData } = await supabase
+            .from('themes')
+            .select('*')
+            .eq('name', 'Berry Purple')
+            .maybeSingle();
+            
+          if (berryPurpleData) {
+            // Apply Berry Purple theme class
+            applyThemeClass('Berry Purple');
+            localStorage.setItem('app-active-theme', 'Berry Purple');
+            
+            // Apply Berry Purple theme colors
+            applyCustomThemeColors({
+              primaryColor: berryPurpleData.primary_color || '#9d89c9',
+              secondaryColor: berryPurpleData.secondary_color || '#f3e5f5',
+              accentColor: berryPurpleData.accent_color || '#ab47bc',
+              sidebarColor: berryPurpleData.sidebar_color || '#7e57c2',
+              buttonColor: berryPurpleData.button_color || '#7e57c2',
+              textColor: berryPurpleData.text_color || '#333333'
+            });
+          }
           return;
         }
         
-        if (data) {
-          console.log('Found Berry Purple theme in database:', data);
+        console.log('Found theme in database:', data);
+        
+        // Handle NFD theme specifically
+        if (data.name === 'NFD Theme' || data.name === 'NFD') {
+          console.log('Applying NFD theme colors');
+          applyThemeClass('nfd-theme');
           
-          // Apply theme class to the html element
-          applyThemeClass('Berry Purple');
+          // Apply NFD theme colors specifically
+          applyCustomThemeColors({
+            primaryColor: '#ec193a',
+            secondaryColor: '#ffebee',
+            accentColor: '#d81b60',
+            sidebarColor: '#ec193a',
+            buttonColor: '#ec193a',
+            textColor: '#212121'
+          });
+        } else {
+          // Apply the theme class
+          applyThemeClass(data.name);
           
-          // Apply Berry Purple theme colors
+          // Apply theme colors
           applyCustomThemeColors({
             primaryColor: data.primary_color || '#9d89c9',
             secondaryColor: data.secondary_color || '#f3e5f5',
@@ -51,6 +96,8 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
+        // Apply Berry Purple theme colors as fallback in case of any error
+        applyBerryPurpleThemeColors();
       }
     };
 
@@ -74,12 +121,39 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.remove(cls);
       });
       
-      // ALWAYS apply Berry Purple theme class
-      html.classList.add('theme-berry-purple');
+      // Map theme names to theme classes
+      const themeClassMap: {[key: string]: string} = {
+        'Berry Purple': 'theme-berry-purple',
+        'Forest Green': 'theme-forest-green',
+        'Ocean Blue': 'theme-ocean-blue',
+        'Sunset Orange': 'theme-sunset-orange',
+        'Dark Mode': 'theme-dark-mode',
+        'NFD Theme': 'theme-nfd-theme',
+        'NFD': 'theme-nfd-theme',
+        'Hi': 'theme-berry-purple', // Force Hi theme to use Berry Purple
+        'Tavern Blue': 'theme-berry-purple', // Force Tavern Blue to use Berry Purple
+        'Custom Theme': 'theme-purple-700'
+      };
+      
+      // Get the theme class or default to Berry Purple theme class
+      const themeClass = themeClassMap[themeName] || 'theme-berry-purple';
+      html.classList.add(themeClass);
       
       // Trigger change event
       document.dispatchEvent(new Event('themeClassChanged'));
-      console.log('Theme applied directly:', themeName);
+      console.log('Theme applied directly:', themeName, 'with class:', themeClass);
+    };
+    
+    // Function to apply Berry Purple theme colors as fallback
+    const applyBerryPurpleThemeColors = () => {
+      applyCustomThemeColors({
+        primaryColor: '#9d89c9',
+        secondaryColor: '#f3e5f5',
+        accentColor: '#ab47bc',
+        sidebarColor: '#8e24aa',
+        buttonColor: '#7e57c2',
+        textColor: '#333333'
+      });
     };
     
     // Function to apply custom theme colors using CSS variables
@@ -93,7 +167,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     }) => {
       const html = document.documentElement;
       
-      // Set CSS variables for Berry Purple colors
+      // Set CSS variables
       html.style.setProperty('--custom-primary-color', colors.primaryColor);
       html.style.setProperty('--custom-secondary-color', colors.secondaryColor);
       html.style.setProperty('--custom-accent-color', colors.accentColor);
@@ -111,6 +185,11 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           (sidebar as HTMLElement).style.backgroundColor = colors.sidebarColor;
         });
       }
+      
+      // Dispatch event for theme color updates
+      window.dispatchEvent(new CustomEvent('app-theme-updated', {
+        detail: { colors }
+      }));
     };
     
     // Initial theme load

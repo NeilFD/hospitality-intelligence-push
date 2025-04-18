@@ -37,11 +37,11 @@
     
     --app-font-family: system-ui, sans-serif;
     
-    /* Custom theme variables with fallback values */
+    /* Berry Purple theme colors as fallback values */
     --custom-primary-color: #9d89c9;
     --custom-secondary-color: #f3e5f5; 
     --custom-accent-color: #ab47bc;
-    --custom-sidebar-color: #7e57c2;
+    --custom-sidebar-color: #8e24aa;
     --custom-button-color: #7e57c2;
     --custom-text-color: #333333;
   }
@@ -76,6 +76,7 @@
     --ring: 212.7 26.8% 83.9%;
   }
 
+  /* NFD Theme - Define clear values with !important to override any defaults */
   .theme-nfd-theme {
     --primary: 0 93% 47%;
     --primary-foreground: 0 0% 100%;
@@ -84,26 +85,45 @@
     --muted: 300 10% 95%;
     --background: 0 0% 100%;
     --foreground: 0 0% 13%;
-    --sidebar-color: #ec193a;
-    --button-color: #ec193a;
-    --custom-primary-color: #ec193a;
-    --custom-secondary-color: #ffebee;
-    --custom-accent-color: #d81b60;
-    --custom-sidebar-color: #ec193a;
-    --custom-button-color: #ec193a;
-    --custom-text-color: #212121;
+    --sidebar-color: #ec193a !important;
+    --button-color: #ec193a !important;
+    --custom-primary-color: #ec193a !important;
+    --custom-secondary-color: #ffebee !important;
+    --custom-accent-color: #d81b60 !important;
+    --custom-sidebar-color: #ec193a !important;
+    --custom-button-color: #ec193a !important;
+    --custom-text-color: #212121 !important;
+  }
+  
+  /* Berry Purple Theme - Define explicit values */
+  .theme-berry-purple {
+    --primary: 271 61% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 300 100% 97%;
+    --accent: 302 59% 41%;
+    --muted: 300 10% 95%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+    --sidebar-color: #8e24aa !important;
+    --button-color: #7e57c2 !important;
+    --custom-primary-color: #9d89c9 !important;
+    --custom-secondary-color: #f3e5f5 !important;
+    --custom-accent-color: #ab47bc !important;
+    --custom-sidebar-color: #8e24aa !important;
+    --custom-button-color: #7e57c2 !important;
+    --custom-text-color: #333333 !important;
   }
   
   /* Theme class for custom themes */
   .theme-purple-700 {
-    --primary: var(--custom-primary-color);
+    --primary: var(--custom-primary-color, #9d89c9);
     --primary-foreground: 0 0% 100%;
-    --secondary: var(--custom-secondary-color);
-    --accent: var(--custom-accent-color);
+    --secondary: var(--custom-secondary-color, #f3e5f5);
+    --accent: var(--custom-accent-color, #ab47bc);
     --background: 0 0% 100%;
-    --foreground: var(--custom-text-color);
-    --sidebar-color: var(--custom-sidebar-color);
-    --button-color: var(--custom-button-color);
+    --foreground: var(--custom-text-color, #333333);
+    --sidebar-color: var(--custom-sidebar-color, #8e24aa);
+    --button-color: var(--custom-button-color, #7e57c2);
   }
 }
  
@@ -142,34 +162,34 @@
   
   /* Apply sidebar styling directly for custom themes */
   .sidebar {
-    /* If inline style is set, it will override this */
-    background-color: var(--custom-sidebar-color, #7e57c2);
+    /* Berry Purple as fallback with !important to ensure it works */
+    background-color: var(--custom-sidebar-color, #8e24aa) !important;
     transition: background-color 0.3s ease-in-out;
   }
   
-  /* Theme-specific sidebar colors */
+  /* Theme-specific sidebar colors with !important to ensure they override */
   .theme-forest-green .sidebar {
-    background-color: #2e7d32;
+    background-color: #2e7d32 !important;
   }
   
   .theme-ocean-blue .sidebar {
-    background-color: #1976d2;
+    background-color: #1976d2 !important;
   }
   
   .theme-sunset-orange .sidebar {
-    background-color: #ef6c00;
+    background-color: #ef6c00 !important;
   }
   
   .theme-berry-purple .sidebar {
-    background-color: #8e24aa;
+    background-color: #8e24aa !important;
   }
   
   .theme-dark-mode .sidebar {
-    background-color: #333333;
+    background-color: #333333 !important;
   }
   
   .theme-nfd-theme .sidebar {
-    background-color: #ec193a;
+    background-color: #ec193a !important;
   }
 }
 

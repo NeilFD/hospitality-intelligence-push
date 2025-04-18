@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from "react";
 
-// You would replace this with your actual sidebar component or just add the useEffect logic to your existing sidebar
 export const Sidebar = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => {
   const [sidebarColor, setSidebarColor] = useState<string | null>(null);
 
@@ -10,6 +9,9 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
     const updateSidebarColor = () => {
       const html = document.documentElement;
       
+      // Berry Purple fallback color - will be used if nothing else works
+      let fallbackColor = '#8e24aa';
+      
       // For custom themes, apply the custom sidebar color directly
       if (html.classList.contains('theme-purple-700')) {
         // Get the sidebar color from CSS variable or localStorage
@@ -17,13 +19,14 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
         const localStorageColor = localStorage.getItem('custom-sidebar-color');
         
         // Use either the CSS variable or localStorage value, preferring localStorage for immediate updates
-        const color = localStorageColor || cssVarColor;
+        const color = localStorageColor || cssVarColor || fallbackColor;
         
         if (color) {
           setSidebarColor(color);
           console.log('Applied custom sidebar color from stored value:', color);
         }
       } else if (html.classList.contains('theme-nfd-theme')) {
+        // Specific handling for NFD theme
         setSidebarColor('#ec193a');
         console.log('Applied NFD theme sidebar color');
       } else if (html.classList.contains('theme-berry-purple')) {
@@ -42,9 +45,9 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
         setSidebarColor('#333333');
         console.log('Applied Dark Mode sidebar color');
       } else {
-        // Default fallback
-        setSidebarColor('#7e57c2');
-        console.log('Applied default sidebar color');
+        // Default fallback to Berry Purple if no theme class matches
+        setSidebarColor(fallbackColor);
+        console.log('Applied Berry Purple fallback sidebar color');
       }
     };
     
@@ -71,7 +74,7 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
   return (
     <div 
       className={`sidebar ${className}`} 
-      style={{ backgroundColor: sidebarColor || undefined }}
+      style={{ backgroundColor: sidebarColor || '#8e24aa' }}
     >
       {children}
     </div>
