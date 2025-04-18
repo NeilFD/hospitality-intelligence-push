@@ -1004,132 +1004,60 @@ export function ThemeSettingsPanel({
               </div>
 
               <div className="pt-4 grid gap-6">
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="primaryColor">Primary Color</Label>
-                      <div className="flex items-center mt-2">
-                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.primaryColor }}></div>
-                        <Input
-                          type="text"
-                          name="primaryColor"
-                          id="primaryColor"
-                          value={activeTheme.primaryColor}
-                          onChange={handleInputChange}
-                          className="flex-1"
-                        />
-                      </div>
-                      <ColorSliderGroup
-                        name="primary"
-                        rgbValues={primaryRgb}
-                        onChange={handlePrimaryRgbChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="secondaryColor">Secondary Color</Label>
-                      <div className="flex items-center mt-2">
-                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.secondaryColor }}></div>
-                        <Input
-                          type="text"
-                          name="secondaryColor"
-                          id="secondaryColor"
-                          value={activeTheme.secondaryColor}
-                          onChange={handleInputChange}
-                          className="flex-1"
-                        />
-                      </div>
-                      <ColorSliderGroup
-                        name="secondary"
-                        rgbValues={secondaryRgb}
-                        onChange={handleSecondaryRgbChange}
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="primaryColor">Primary Color</Label>
+                    <ColorPicker
+                      color={activeTheme.primaryColor}
+                      onChange={(color) => handleInputChange({ target: { name: 'primaryColor', value: color } } as any)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="secondaryColor">Secondary Color</Label>
+                    <ColorPicker
+                      color={activeTheme.secondaryColor}
+                      onChange={(color) => handleInputChange({ target: { name: 'secondaryColor', value: color } } as any)}
+                      className="mt-2"
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="accentColor">Accent Color</Label>
-                      <div className="flex items-center mt-2">
-                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.accentColor }}></div>
-                        <Input
-                          type="text"
-                          name="accentColor"
-                          id="accentColor"
-                          value={activeTheme.accentColor}
-                          onChange={handleInputChange}
-                          className="flex-1"
-                        />
-                      </div>
-                      <ColorSliderGroup
-                        name="accent"
-                        rgbValues={accentRgb}
-                        onChange={handleAccentRgbChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sidebarColor">Sidebar Color</Label>
-                      <div className="flex items-center mt-2">
-                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.sidebarColor }}></div>
-                        <Input
-                          type="text"
-                          name="sidebarColor"
-                          id="sidebarColor"
-                          value={activeTheme.sidebarColor}
-                          onChange={handleInputChange}
-                          className="flex-1"
-                        />
-                      </div>
-                      <ColorSliderGroup
-                        name="sidebar"
-                        rgbValues={sidebarRgb}
-                        onChange={handleSidebarRgbChange}
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="accentColor">Accent Color</Label>
+                    <ColorPicker
+                      color={activeTheme.accentColor}
+                      onChange={(color) => handleInputChange({ target: { name: 'accentColor', value: color } } as any)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="sidebarColor">Sidebar Color</Label>
+                    <ColorPicker
+                      color={activeTheme.sidebarColor}
+                      onChange={(color) => handleInputChange({ target: { name: 'sidebarColor', value: color } } as any)}
+                      className="mt-2"
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="buttonColor">Button Color</Label>
-                      <div className="flex items-center mt-2">
-                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.buttonColor }}></div>
-                        <Input
-                          type="text"
-                          name="buttonColor"
-                          id="buttonColor"
-                          value={activeTheme.buttonColor}
-                          onChange={handleInputChange}
-                          className="flex-1"
-                        />
-                      </div>
-                      <ColorSliderGroup
-                        name="button"
-                        rgbValues={buttonRgb}
-                        onChange={handleButtonRgbChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="textColor">Text Color</Label>
-                      <div className="flex items-center mt-2">
-                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.textColor }}></div>
-                        <Input
-                          type="text"
-                          name="textColor"
-                          id="textColor"
-                          value={activeTheme.textColor}
-                          onChange={handleInputChange}
-                          className="flex-1"
-                        />
-                      </div>
-                      <ColorSliderGroup
-                        name="text"
-                        rgbValues={textRgb}
-                        onChange={handleTextRgbChange}
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="buttonColor">Button Color</Label>
+                    <ColorPicker
+                      color={activeTheme.buttonColor}
+                      onChange={(color) => handleInputChange({ target: { name: 'buttonColor', value: color } } as any)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="textColor">Text Color</Label>
+                    <ColorPicker
+                      color={activeTheme.textColor}
+                      onChange={(color) => handleInputChange({ target: { name: 'textColor', value: color } } as any)}
+                      className="mt-2"
+                    />
                   </div>
                 </div>
 
