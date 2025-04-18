@@ -33,8 +33,12 @@ export function ColorPicker({
             variant="outline" 
             size="icon" 
             className="h-9 w-9 p-0 border border-input"
-            style={{ backgroundColor: color }}
           >
+            <div 
+              className="w-full h-full rounded-sm" 
+              style={{ backgroundColor: color }}
+              aria-hidden="true"
+            />
             <span className="sr-only">Open color picker</span>
           </Button>
         </PopoverTrigger>
