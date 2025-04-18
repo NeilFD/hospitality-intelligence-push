@@ -11,18 +11,46 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Scripter+Serif&display=swap">
     <title>Hospitality Intelligence</title>
+    <style>
+      /* Add immediate styles to prevent FOUC */
+      body {
+        opacity: 1 !important;
+        transition: opacity 0.3s ease;
+        background-color: #ffffff;
+      }
+      .sidebar {
+        background-color: #8e24aa;
+      }
+      /* Force remove purple-700 theme */
+      html:not(.theme-loaded) {
+        opacity: 1 !important;
+      }
+    </style>
     <script>
-      // Prevent FOUC by hiding body during theme initialization
-      document.documentElement.classList.add('theme-initializing');
+      // Initialize with default theme to prevent blank screen
+      document.documentElement.classList.remove('theme-purple-700', 'purple-700');
+      document.documentElement.classList.add('theme-berry-purple');
+      
+      // Force document to be visible after a short delay regardless of theme state
       setTimeout(() => {
         document.documentElement.classList.remove('theme-initializing');
         document.documentElement.classList.add('theme-loaded');
+        document.body.style.opacity = '1';
       }, 100);
       
-      // Remove any purple-700 classes at the earliest possible moment
-      document.addEventListener('DOMContentLoaded', function() {
+      // Emergency failsafe - force visibility after 2 seconds no matter what
+      setTimeout(() => {
+        document.body.style.opacity = '1';
+        document.body.style.visibility = 'visible';
+        
+        // Force remove any purple classes
         document.documentElement.classList.remove('theme-purple-700', 'purple-700');
-      });
+        
+        // Emergency styles if needed
+        if (!document.body.innerHTML.trim()) {
+          document.body.innerHTML = '<div id="root"></div>';
+        }
+      }, 2000);
     </script>
   </head>
   <body>
