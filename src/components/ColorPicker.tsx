@@ -57,7 +57,7 @@ export function ColorPicker({
         </PopoverContent>
       </Popover>
       <div 
-        className="w-8 h-8 rounded cursor-pointer border border-gray-300"
+        className="w-8 h-8 rounded-md cursor-pointer border border-gray-300"
         style={{ backgroundColor: color }}
         onClick={() => {}} // Placeholder to ensure it's still interactive
       />
