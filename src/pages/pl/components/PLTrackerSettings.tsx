@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -32,7 +31,7 @@ export function PLTrackerSettings({
 }: PLTrackerSettingsProps) {
   const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(isSaving);
   const { toast } = useToast();
 
   const loadTrackingSettings = async (items: ProcessedBudgetItem[]): Promise<PLTrackerBudgetItem[]> => {
@@ -82,6 +81,34 @@ export function PLTrackerSettings({
   };
 
   useEffect(() => {
+    // Add CSS for custom theme support
+    const styleId = 'custom-theme-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
+        /* Custom theme variables application */
+        .theme-purple-700 .sidebar {
+          background-color: var(--custom-sidebar-color, #9C27B0);
+        }
+        .theme-purple-700 .bg-primary {
+          background-color: var(--custom-primary-color, #6a1b9a);
+        }
+        .theme-purple-700 .text-primary {
+          color: var(--custom-primary-color, #6a1b9a);
+        }
+        .theme-purple-700 .border-primary {
+          border-color: var(--custom-primary-color, #6a1b9a);
+        }
+        .theme-purple-700 .hover\\:bg-primary:hover {
+          background-color: var(--custom-primary-color, #6a1b9a);
+        }
+        /* Add more custom theme CSS variables as needed */
+      `;
+      document.head.appendChild(style);
+      console.log('Added custom theme styles to document head');
+    }
+    
     if (processedBudgetData.length > 0) {
       const initializeData = async () => {
         let trackedData = processedBudgetData.map(item => {
@@ -307,4 +334,3 @@ export function PLTrackerSettings({
     </Card>
   );
 }
-

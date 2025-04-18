@@ -15,21 +15,23 @@ export function fixHiTheme() {
     'hi',
     'theme-hi-theme',
     'theme-tavern-blue', // Remove Tavern Blue
-    'theme-purple-700'   // Reset any custom theme class
+    'theme-purple-700'   // Don't remove custom theme class - we'll handle it separately
   ];
   
-  // Remove all Hi-related theme classes
+  // Remove only Hi-related and Tavern Blue theme classes, but preserve custom themes
   themeClasses.forEach(cls => {
-    html.classList.remove(cls);
+    if (cls !== 'theme-purple-700') { // Keep custom theme class if present
+      html.classList.remove(cls);
+    }
   });
   
-  // Force Berry Purple theme
-  html.classList.add('theme-berry-purple');
-  
-  // Update localStorage settings
-  const savedTheme = localStorage.getItem('app-active-theme');
-  if (savedTheme === 'Hi' || savedTheme === 'H i' || savedTheme === 'Tavern Blue') {
-    console.log('Fixing localStorage theme from', savedTheme, 'to Berry Purple');
+  // Only force Berry Purple theme if we're currently using Hi or Tavern Blue
+  const currentTheme = localStorage.getItem('app-active-theme');
+  if (currentTheme === 'Hi' || currentTheme === 'H i' || currentTheme === 'Tavern Blue') {
+    html.classList.add('theme-berry-purple');
+    
+    // Update localStorage settings
+    console.log('Fixing localStorage theme from', currentTheme, 'to Berry Purple');
     localStorage.setItem('app-active-theme', 'Berry Purple');
   }
   
@@ -46,11 +48,13 @@ export function fixHiTheme() {
   });
   window.dispatchEvent(companyNameUpdateEvent);
   
-  // Force theme update event
-  const themeUpdateEvent = new CustomEvent('app-theme-updated', {
-    detail: { theme: { name: 'Berry Purple' } }
-  });
-  window.dispatchEvent(themeUpdateEvent);
+  // Only force theme update event if we're using Hi or Tavern Blue
+  if (currentTheme === 'Hi' || currentTheme === 'H i' || currentTheme === 'Tavern Blue') {
+    const themeUpdateEvent = new CustomEvent('app-theme-updated', {
+      detail: { theme: { name: 'Berry Purple' } }
+    });
+    window.dispatchEvent(themeUpdateEvent);
+  }
   
   // Return true to indicate successful execution
   console.log('Enhanced theme fixer executed');
@@ -92,14 +96,14 @@ export function runDatabaseFix() {
         .single();
       
       if (berryThemeData) {
-        // Activate Berry Purple theme if no other theme is active
+        // Only activate Berry Purple theme if current active theme is Tavern Blue or Hi
         const { data: activeTheme } = await supabase
           .from('themes')
           .select('id, name')
           .eq('is_active', true)
           .single();
           
-        if (!activeTheme || activeTheme.name === 'Tavern Blue' || activeTheme.name === 'Hi') {
+        if (activeTheme && (activeTheme.name === 'Tavern Blue' || activeTheme.name === 'Hi')) {
           // Deactivate all themes
           await supabase
             .from('themes')
@@ -118,7 +122,7 @@ export function runDatabaseFix() {
             console.log('Successfully set Berry Purple as active in database');
           }
         } else {
-          console.log('Keeping current active theme:', activeTheme.name);
+          console.log('Keeping current active theme:', activeTheme?.name);
         }
       }
       
@@ -181,11 +185,7 @@ export function runDatabaseFix() {
         }
       }
       
-      // Force application to use updated theme
-      const themeUpdateEvent = new CustomEvent('app-theme-updated', {
-        detail: { theme: { name: 'Berry Purple' } }
-      });
-      window.dispatchEvent(themeUpdateEvent);
+      // Don't force application theme update here - let the current theme remain
       
     } catch (error) {
       console.error('Error in database fix:', error);

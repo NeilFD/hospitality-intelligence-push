@@ -617,9 +617,12 @@ export function ThemeSettingsPanel({
       } else if (newTheme.name === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
       } else {
-        // For custom themes like NFD Theme
+        // For custom themes 
         html.classList.add('theme-purple-700');
         console.log('Applied custom theme class directly for:', newTheme.name);
+        
+        // Apply custom colors directly
+        applyCustomThemeColors(newTheme);
       }
       
       // Force a direct document event
@@ -764,6 +767,9 @@ export function ThemeSettingsPanel({
       setSidebarRgb(hexToRgb(preset.originalTheme.sidebarColor));
       setButtonRgb(hexToRgb(preset.originalTheme.buttonColor));
       setTextRgb(hexToRgb(preset.originalTheme.textColor));
+      
+      // Apply custom theme colors immediately
+      applyCustomThemeColors(preset.originalTheme);
     } else {
       setActiveTheme(prev => ({
         ...prev,
@@ -789,7 +795,13 @@ export function ThemeSettingsPanel({
     setPresetSelectAnimation(true);
     setTimeout(() => setPresetSelectAnimation(false), 800);
     
+    // Apply theme directly to visual feedback
     applyThemeDirectly(preset.name);
+    
+    // If it's a custom theme, apply the colors directly
+    if (preset.isCustom && preset.originalTheme) {
+      applyCustomThemeColors(preset.originalTheme);
+    }
   };
 
   const ColorSliderGroup = ({
@@ -1327,3 +1339,31 @@ export function ThemeSettingsPanel({
     </Card>
   );
 }
+
+const applyCustomThemeColors = (theme: any) => {
+  const html = document.documentElement;
+  
+  // Set CSS variables for the custom theme colors
+  html.style.setProperty('--custom-primary-color', theme.primaryColor);
+  html.style.setProperty('--custom-secondary-color', theme.secondaryColor);
+  html.style.setProperty('--custom-accent-color', theme.accentColor);
+  html.style.setProperty('--custom-sidebar-color', theme.sidebarColor);
+  html.style.setProperty('--custom-button-color', theme.buttonColor);
+  html.style.setProperty('--custom-text-color', theme.textColor);
+  
+  // Apply the sidebar color directly to ensure immediate visual feedback
+  const sidebar = document.querySelector('.sidebar') as HTMLElement;
+  if (sidebar) {
+    sidebar.style.backgroundColor = theme.sidebarColor;
+    console.log('Applied sidebar color directly:', theme.sidebarColor);
+  }
+  
+  console.log('Applied custom theme colors', {
+    primary: theme.primaryColor,
+    secondary: theme.secondaryColor,
+    accent: theme.accentColor,
+    sidebar: theme.sidebarColor,
+    button: theme.buttonColor,
+    text: theme.textColor
+  });
+};
