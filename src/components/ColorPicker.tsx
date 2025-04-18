@@ -26,6 +26,23 @@ export function ColorPicker({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
+      {label && <span className="text-sm text-gray-600">{label}</span>}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-9 w-9 p-0 border border-input overflow-hidden"
+            style={{ backgroundColor: color }}
+            title="Select color"
+          >
+            <span className="sr-only">Open color picker</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <ChromePicker color={color} onChange={handleColorChange} disableAlpha />
+        </PopoverContent>
+      </Popover>
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" size="icon" title="Pick color" className="h-9 w-9 shrink-0 bg-purple-900 hover:bg-purple-800">
