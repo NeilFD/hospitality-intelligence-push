@@ -58,3 +58,22 @@ export interface MasterMonthlyRecord {
   month: number;
   weeks: MasterWeeklyRecord[];
 }
+
+export interface WeatherForecast {
+  date: string;
+  description: string;
+  temperature: number;
+  precipitation: number;
+  windSpeed: number;
+}
+
+export interface RevenueForecast {
+  date: string;
+  dayOfWeek: string;
+  foodRevenue: number;
+  beverageRevenue: number;
+  totalRevenue: number;
+  weatherDescription: string;
+  temperature: number;
+  confidence: number; // Percentage confidence in the forecast
+}
