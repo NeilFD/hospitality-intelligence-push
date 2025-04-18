@@ -2,6 +2,7 @@
 import React from 'react';
 import { Pipette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface ColorPickerProps {
   color: string;
@@ -17,11 +18,21 @@ export function ColorPicker({ color, onChange, label, className = '' }: ColorPic
       if ('EyeDropper' in window) {
         // @ts-ignore - TypeScript doesn't know about EyeDropper yet
         const eyeDropper = new window.EyeDropper();
+        console.log('EyeDropper initialized:', eyeDropper);
+        
+        toast.info('Click anywhere on screen to pick a color');
+        
         const result = await eyeDropper.open();
+        console.log('EyeDropper result:', result);
         onChange(result.sRGBHex);
+        toast.success('Color picked successfully');
+      } else {
+        console.log('EyeDropper API not available in this browser');
+        toast.error('Color picker not supported in this browser');
       }
     } catch (e) {
-      console.log('EyeDropper API not supported or user cancelled');
+      console.error('EyeDropper error:', e);
+      toast.error('Color picker cancelled or failed');
     }
   };
 
