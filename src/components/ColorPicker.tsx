@@ -32,14 +32,9 @@ export function ColorPicker({
           <Button 
             variant="outline" 
             size="icon" 
-            className="h-9 w-9 p-0 border border-input overflow-hidden"
+            className="h-9 w-9 p-0 border border-input"
             style={{ backgroundColor: color }}
-            aria-label="Select color"
           >
-            <div 
-              className="w-full h-full" 
-              style={{ backgroundColor: color }}
-            />
             <span className="sr-only">Open color picker</span>
           </Button>
         </PopoverTrigger>
