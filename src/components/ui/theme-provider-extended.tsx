@@ -97,7 +97,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'theme-sunset-orange', 
         'theme-berry-purple', 
         'theme-dark-mode', 
-        'theme-hi-purple'  // This class might be the issue
+        'theme-hi-purple',
+        'theme-purple-700', // Remove any old theme classes
+        'theme-tavern-blue' // Explicitly remove Tavern Blue
       ];
       
       // Thoroughly clean up themes - remove all theme classes
@@ -126,6 +128,13 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.add('theme-berry-purple');
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
+      } else if (themeName === 'NFD Theme') {
+        // Handle custom theme if not one of the defaults
+        html.classList.add('theme-purple-700'); // Use this class for custom themes
+      } else {
+        // Fallback to Berry Purple for any unknown theme
+        html.classList.add('theme-berry-purple');
+        console.log('Unknown theme name, defaulting to Berry Purple:', themeName);
       }
       
       // Trigger change event

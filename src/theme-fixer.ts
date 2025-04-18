@@ -13,7 +13,8 @@ export function fixHiTheme() {
     'theme-hi',
     'theme-hi-purple',
     'hi',
-    'theme-hi-theme'
+    'theme-hi-theme',
+    'theme-tavern-blue' // Remove Tavern Blue
   ];
   
   // Remove all Hi-related theme classes
@@ -26,7 +27,7 @@ export function fixHiTheme() {
   
   // Update localStorage settings
   const savedTheme = localStorage.getItem('app-active-theme');
-  if (savedTheme === 'Hi' || savedTheme === 'H i') {
+  if (savedTheme === 'Hi' || savedTheme === 'H i' || savedTheme === 'Tavern Blue') {
     console.log('Fixing localStorage theme from', savedTheme, 'to Berry Purple');
     localStorage.setItem('app-active-theme', 'Berry Purple');
   }
@@ -131,6 +132,30 @@ export function runDatabaseFix() {
           console.error('Error renaming Hi theme in database:', renameError);
         } else {
           console.log('Successfully renamed Hi theme in database');
+        }
+      }
+      
+      // Check for and rename any 'Tavern Blue' themes
+      const { data: tavernBlueThemeData } = await supabase
+        .from('themes')
+        .select('id')
+        .eq('name', 'Tavern Blue')
+        .single();
+      
+      if (tavernBlueThemeData) {
+        // Rename Tavern Blue theme to Berry Purple
+        const { error: renameError } = await supabase
+          .from('themes')
+          .update({ 
+            name: 'Berry Purple (converted)', 
+            is_active: false
+          })
+          .eq('id', tavernBlueThemeData.id);
+        
+        if (renameError) {
+          console.error('Error renaming Tavern Blue theme in database:', renameError);
+        } else {
+          console.log('Successfully renamed Tavern Blue theme in database');
         }
       }
       

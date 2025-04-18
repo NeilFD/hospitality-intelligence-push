@@ -604,7 +604,17 @@ export function ThemeSettingsPanel({
   const applyThemeDirectly = (themeName: string) => {
     const html = document.documentElement;
     
-    const themeClasses = ['theme-forest-green', 'theme-ocean-blue', 'theme-sunset-orange', 'theme-berry-purple', 'theme-dark-mode', 'theme-hi-purple'];
+    const themeClasses = [
+      'theme-forest-green', 
+      'theme-ocean-blue', 
+      'theme-sunset-orange', 
+      'theme-berry-purple', 
+      'theme-dark-mode', 
+      'theme-hi-purple',
+      'theme-tavern-blue',
+      'theme-purple-700'
+    ];
+    
     themeClasses.forEach(cls => {
       html.classList.remove(cls);
     });
@@ -620,7 +630,7 @@ export function ThemeSettingsPanel({
     } else if (themeName === 'Dark Mode') {
       html.classList.add('theme-dark-mode');
     } else if (themeName === 'Hi Purple') {
-      html.classList.add('theme-hi-purple');
+      html.classList.add('theme-berry-purple');
     } else {
       html.classList.add('theme-purple-700');
     }

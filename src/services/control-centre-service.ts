@@ -14,7 +14,6 @@ export const availableFonts: { name: string; value: string }[] = [
   { name: 'Courier Prime', value: '"Courier Prime", "Courier New", monospace' },
 ];
 
-// Modify getControlCentreData to ensure Hi theme is properly removed
 export const getControlCentreData = async () => {
   // Initialize database if needed
   
@@ -130,8 +129,45 @@ export const getControlCentreData = async () => {
   if (currentTheme) {
     currentTheme.companyName = companyName;
     
-    // Dispatch an event to apply the theme immediately
+    // Apply the active theme immediately on load to prevent flashing of incorrect theme
     if (typeof window !== 'undefined') {
+      // Save active theme to localStorage for immediate access
+      localStorage.setItem('app-active-theme', currentTheme.name);
+      
+      // Force application of the theme directly to HTML element
+      const html = document.documentElement;
+      const themeClasses = [
+        'theme-forest-green', 
+        'theme-ocean-blue', 
+        'theme-sunset-orange', 
+        'theme-berry-purple', 
+        'theme-dark-mode',
+        'theme-hi-purple',
+        'theme-tavern-blue',
+        'theme-purple-700'
+      ];
+      
+      themeClasses.forEach(cls => {
+        html.classList.remove(cls);
+      });
+      
+      // Apply the correct theme class based on name
+      if (currentTheme.name === 'Forest Green') {
+        html.classList.add('theme-forest-green');
+      } else if (currentTheme.name === 'Ocean Blue') {
+        html.classList.add('theme-ocean-blue');
+      } else if (currentTheme.name === 'Sunset Orange') {
+        html.classList.add('theme-sunset-orange');
+      } else if (currentTheme.name === 'Berry Purple') {
+        html.classList.add('theme-berry-purple');
+      } else if (currentTheme.name === 'Dark Mode') {
+        html.classList.add('theme-dark-mode');
+      } else {
+        // For custom themes like 'NFD Theme' or other custom themes
+        html.classList.add('theme-purple-700');
+      }
+      
+      // Dispatch an event to apply the theme immediately
       const themeEvent = new CustomEvent('app-theme-updated', {
         detail: {
           theme: currentTheme
