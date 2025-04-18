@@ -36,6 +36,14 @@
     --radius: 0.5rem;
     
     --app-font-family: system-ui, sans-serif;
+    
+    /* Custom theme variables with fallback values */
+    --custom-primary-color: #9d89c9;
+    --custom-secondary-color: #f3e5f5; 
+    --custom-accent-color: #ab47bc;
+    --custom-sidebar-color: #7e57c2;
+    --custom-button-color: #7e57c2;
+    --custom-text-color: #333333;
   }
  
   .dark {
@@ -78,6 +86,18 @@
     --foreground: 0 0% 13%;
     --sidebar-color: #ec193a;
     --button-color: #9c27b0;
+  }
+  
+  /* Theme class for custom themes */
+  .theme-purple-700 {
+    --primary: var(--custom-primary-color);
+    --primary-foreground: 0 0% 100%;
+    --secondary: var(--custom-secondary-color);
+    --accent: var(--custom-accent-color);
+    --background: 0 0% 100%;
+    --foreground: var(--custom-text-color);
+    --sidebar-color: var(--custom-sidebar-color);
+    --button-color: var(--custom-button-color);
   }
 }
  

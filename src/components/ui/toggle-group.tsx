@@ -37,6 +37,10 @@ const ToggleGroup = React.forwardRef<
         setThemeStyles("bg-[#e0d9f0]/30");
       } else if (htmlElement.classList.contains('theme-nfd-theme')) {
         setThemeStyles("bg-[#ffebee]/30");
+      } else if (htmlElement.classList.contains('theme-purple-700')) {
+        // For custom themes, use CSS variables with a lighter variant
+        const secondaryColor = getComputedStyle(htmlElement).getPropertyValue('--custom-secondary-color');
+        setThemeStyles(`bg-[${secondaryColor}]/30`);
       } else {
         setThemeStyles("bg-muted/50");
       }
@@ -91,6 +95,10 @@ const ToggleGroupItem = React.forwardRef<
         setThemeStyles("data-[state=on]:bg-[#9d89c9] data-[state=on]:text-white");
       } else if (htmlElement.classList.contains('theme-nfd-theme')) {
         setThemeStyles("data-[state=on]:bg-[#ec193a] data-[state=on]:text-white");
+      } else if (htmlElement.classList.contains('theme-purple-700')) {
+        // For custom themes, use CSS variables
+        const buttonColor = getComputedStyle(htmlElement).getPropertyValue('--custom-button-color');
+        setThemeStyles(`data-[state=on]:bg-[${buttonColor}] data-[state=on]:text-white`);
       } else {
         setThemeStyles("data-[state=on]:bg-accent data-[state=on]:text-accent-foreground");
       }

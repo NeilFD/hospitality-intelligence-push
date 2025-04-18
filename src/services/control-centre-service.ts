@@ -145,6 +145,7 @@ export const getControlCentreData = async () => {
         'theme-dark-mode',
         'theme-hi-purple',
         'theme-tavern-blue',
+        'theme-nfd-theme',
         'theme-purple-700'
       ];
       
@@ -163,9 +164,20 @@ export const getControlCentreData = async () => {
         html.classList.add('theme-berry-purple');
       } else if (currentTheme.name === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
+      } else if (currentTheme.name === 'NFD Theme') {
+        html.classList.add('theme-nfd-theme');
       } else {
         // For custom themes or non-default themes
         html.classList.add('theme-purple-700');
+        
+        // Also set CSS variables for the custom theme
+        html.style.setProperty('--custom-primary-color', currentTheme.primaryColor || '#9d89c9');
+        html.style.setProperty('--custom-secondary-color', currentTheme.secondaryColor || '#f3e5f5');
+        html.style.setProperty('--custom-accent-color', currentTheme.accentColor || '#ab47bc');
+        html.style.setProperty('--custom-sidebar-color', currentTheme.sidebarColor || '#7e57c2');
+        html.style.setProperty('--custom-button-color', currentTheme.buttonColor || '#7e57c2');
+        html.style.setProperty('--custom-text-color', currentTheme.textColor || '#333333');
+        
         console.log('Applied custom theme class for:', currentTheme.name);
       }
       

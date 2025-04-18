@@ -51,6 +51,10 @@ const Toggle = React.forwardRef<
         setThemeStyles("data-[state=on]:bg-[#9d89c9] data-[state=on]:text-white");
       } else if (htmlElement.classList.contains('theme-nfd-theme')) {
         setThemeStyles("data-[state=on]:bg-[#ec193a] data-[state=on]:text-white");
+      } else if (htmlElement.classList.contains('theme-purple-700')) {
+        // For custom themes, use CSS variables
+        const buttonColor = getComputedStyle(htmlElement).getPropertyValue('--custom-button-color');
+        setThemeStyles(`data-[state=on]:bg-[${buttonColor}] data-[state=on]:text-white`);
       } else {
         setThemeStyles("data-[state=on]:bg-accent data-[state=on]:text-accent-foreground");
       }
