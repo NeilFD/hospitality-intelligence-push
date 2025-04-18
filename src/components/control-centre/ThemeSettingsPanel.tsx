@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { ThemeSettings, PresetTheme, CustomFont } from '@/types/control-centre-types';
 import { availableFonts } from '@/services/control-centre-service';
 import { supabase } from '@/lib/supabase';
-import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image, Building } from 'lucide-react';
+import { Check, ChevronsUpDown, Copy, Loader2, SaveIcon, Palette, Sliders, Upload, Image, Building, Edit, Trash2 } from 'lucide-react';
 import { ColorPicker } from '@/components/ColorPicker';
 
 const presetThemes: PresetTheme[] = [{
@@ -911,8 +911,15 @@ export function ThemeSettingsPanel({
                         ${selectedPreset === theme.id ? 'ring-4 ring-purple-500 shadow-lg transform scale-105' : 'hover:shadow-md'}
                         ${presetSelectAnimation && selectedPreset === theme.id ? 'animate-pulse' : ''}
                         relative
+                        group
                       `}
-                      onClick={() => applyPresetTheme(theme)}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest('.theme-actions')) {
+                          e.stopPropagation();
+                          return;
+                        }
+                        applyPresetTheme(theme);
+                      }}
                     >
                       <div className="h-24 relative" style={{
                         backgroundColor: theme.colors.primary
@@ -931,9 +938,51 @@ export function ThemeSettingsPanel({
                           </div>
                         )}
                         {theme.isCustom && (
-                          <div className="absolute top-1 right-1 bg-white/50 text-xs px-1 rounded">
-                            Custom
-                          </div>
+                          <>
+                            <div className="absolute top-1 right-1 bg-white/50 text-xs px-1 rounded">
+                              Custom
+                            </div>
+                            <div className="theme-actions absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="secondary"
+                                size="icon"
+                                className="h-8 w-8 bg-white/90 hover:bg-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (theme.originalTheme) {
+                                    setActiveTheme(theme.originalTheme);
+                                    setActiveTab('custom');
+                                  }
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (theme.originalTheme?.id) {
+                                    const { error } = await supabase
+                                      .from('themes')
+                                      .delete()
+                                      .eq('id', theme.originalTheme.id);
+                                    
+                                    if (error) {
+                                      toast.error('Failed to delete theme');
+                                      return;
+                                    }
+                                    
+                                    toast.success('Theme deleted successfully');
+                                    fetchThemes();
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </>
                         )}
                         {selectedPreset === theme.id && (
                           <div className="absolute bottom-1 right-1">
