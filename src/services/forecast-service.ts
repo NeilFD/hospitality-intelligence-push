@@ -4,37 +4,30 @@ import { MasterDailyRecord, WeatherForecast, RevenueForecast } from '@/types/mas
 import { fetchMasterMonthlyRecords } from './master-record-service';
 import { getDayName } from '@/lib/date-utils';
 
-// Mock weather forecast API data (replace with actual API)
+// Use actual weather API for forecast instead of mock data
 export const fetchWeatherForecast = async (startDate: string, endDate: string): Promise<WeatherForecast[]> => {
-  console.log(`Fetching weather forecast from ${startDate} to ${endDate}`);
+  console.log(`Fetching actual weather forecast from ${startDate} to ${endDate}`);
   
-  // In a real implementation, you would call a weather API here
-  // For now, we'll generate mock data
-  const forecasts: WeatherForecast[] = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // Fetch actual weather data from Supabase master_daily_records
+  const { data, error } = await supabase
+    .from('master_daily_records')
+    .select('date, weather_description, temperature, precipitation, wind_speed')
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date');
   
-  for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-    const date = day.toISOString().split('T')[0];
-    forecasts.push({
-      date,
-      description: getRandomWeatherDescription(),
-      temperature: 15 + Math.floor(Math.random() * 15), // 15-30°C
-      precipitation: Math.random() * 10, // 0-10mm
-      windSpeed: Math.random() * 30, // 0-30km/h
-    });
+  if (error) {
+    console.error('Weather forecast fetch error:', error);
+    throw error;
   }
   
-  return forecasts;
-};
-
-// Get a random weather description for mock data
-const getRandomWeatherDescription = (): string => {
-  const descriptions = [
-    'Clear sky', 'Partly cloudy', 'Cloudy', 'Light rain', 
-    'Heavy rain', 'Thunderstorm', 'Foggy', 'Sunny'
-  ];
-  return descriptions[Math.floor(Math.random() * descriptions.length)];
+  return data.map(record => ({
+    date: record.date,
+    description: record.weather_description || 'Unknown',
+    temperature: record.temperature || 15,
+    precipitation: record.precipitation || 0,
+    windSpeed: record.wind_speed || 0
+  }));
 };
 
 // Analyze historical data to understand weather impact on sales
@@ -48,7 +41,6 @@ export const analyzeWeatherImpact = async (
   averageBevRevenue: number,
   count: number
 }>>> => {
-  // Initialize data structure to store weather impact by day of week
   const weatherImpact: Record<string, Record<string, {
     weatherCondition: string,
     averageFoodRevenue: number,
@@ -56,19 +48,23 @@ export const analyzeWeatherImpact = async (
     count: number
   }>> = {};
   
-  // Initialize days of week
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const weatherConditions = [
+    'Clear sky', 'Partly cloudy', 'Cloudy', 'Light rain', 
+    'Heavy rain', 'Thunderstorm', 'Foggy', 'Sunny'
+  ];
+  
+  // Initialize data structure
   daysOfWeek.forEach(day => {
-    weatherImpact[day] = {
-      'Clear sky': { weatherCondition: 'Clear sky', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 },
-      'Partly cloudy': { weatherCondition: 'Partly cloudy', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 },
-      'Cloudy': { weatherCondition: 'Cloudy', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 },
-      'Light rain': { weatherCondition: 'Light rain', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 },
-      'Heavy rain': { weatherCondition: 'Heavy rain', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 },
-      'Thunderstorm': { weatherCondition: 'Thunderstorm', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 },
-      'Foggy': { weatherCondition: 'Foggy', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 },
-      'Sunny': { weatherCondition: 'Sunny', averageFoodRevenue: 0, averageBevRevenue: 0, count: 0 }
-    };
+    weatherImpact[day] = {};
+    weatherConditions.forEach(condition => {
+      weatherImpact[day][condition] = { 
+        weatherCondition: condition, 
+        averageFoodRevenue: 0, 
+        averageBevRevenue: 0, 
+        count: 0 
+      };
+    });
   });
   
   // Fetch historical data for the past numMonths
@@ -78,28 +74,24 @@ export const analyzeWeatherImpact = async (
   let currentYear = startYear;
   let currentMonth = startMonth;
   
-  // Loop through the past months to collect data
   for (let i = 0; i < numMonths; i++) {
-    console.log(`Analyzing data for ${currentMonth}/${currentYear}`);
     const monthData = await fetchMasterMonthlyRecords(currentYear, currentMonth);
     
     monthData.forEach(record => {
       const dayOfWeek = record.dayOfWeek;
-      const weatherDesc = record.weatherDescription || 'Sunny'; // Default to sunny if missing
+      const weatherDesc = record.weatherDescription || 'Sunny';
       
       if (record.foodRevenue > 0 || record.beverageRevenue > 0) {
-        const weatherKey = mapToGeneralWeatherCondition(weatherDesc);
+        const generalWeather = mapToGeneralWeatherCondition(weatherDesc);
         
-        const dayWeatherData = weatherImpact[dayOfWeek][weatherKey];
+        const dayWeatherData = weatherImpact[dayOfWeek][generalWeather];
         
-        // Update running totals
         dayWeatherData.averageFoodRevenue += record.foodRevenue;
         dayWeatherData.averageBevRevenue += record.beverageRevenue;
         dayWeatherData.count++;
       }
     });
     
-    // Move to next month
     currentMonth++;
     if (currentMonth > 12) {
       currentMonth = 1;
@@ -109,7 +101,7 @@ export const analyzeWeatherImpact = async (
   
   // Calculate averages
   daysOfWeek.forEach(day => {
-    Object.keys(weatherImpact[day]).forEach(weather => {
+    weatherConditions.forEach(weather => {
       const data = weatherImpact[day][weather];
       if (data.count > 0) {
         data.averageFoodRevenue = data.averageFoodRevenue / data.count;
@@ -133,40 +125,31 @@ const mapToGeneralWeatherCondition = (description: string): string => {
   if (desc.includes('thunder') || desc.includes('storm')) return 'Thunderstorm';
   if (desc.includes('fog') || desc.includes('mist')) return 'Foggy';
   
-  // Default to sunny for unknown descriptions
   return 'Sunny';
 };
 
-// Generate revenue forecast based on weather data and historical patterns
+// Generate revenue forecast based on actual weather data and historical patterns
 export const generateRevenueForecast = async (
   startDate: string, 
   endDate: string
 ): Promise<RevenueForecast[]> => {
-  // Get weather forecast for the specified date range
   const weatherForecast = await fetchWeatherForecast(startDate, endDate);
   
-  // Get current month and year for analysis
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   
-  // Analyze historical weather impact
   const weatherImpact = await analyzeWeatherImpact(currentYear, currentMonth, 3);
   
-  // Generate revenue forecasts based on weather and historical data
   const revenueForecast: RevenueForecast[] = weatherForecast.map(forecast => {
     const date = forecast.date;
     const dayOfWeek = getDayName(date);
-    
-    // Map the forecast weather to our general categories
     const weatherCondition = mapToGeneralWeatherCondition(forecast.description);
     
-    // Get the historical average revenues for this day and weather
     let foodRevenue = 0;
     let bevRevenue = 0;
-    let confidence = 70; // Default confidence
+    let confidence = 70;
     
-    // If we have data for this day and weather, use it
     if (weatherImpact[dayOfWeek] && weatherImpact[dayOfWeek][weatherCondition]) {
       const impact = weatherImpact[dayOfWeek][weatherCondition];
       
@@ -174,50 +157,23 @@ export const generateRevenueForecast = async (
         foodRevenue = impact.averageFoodRevenue;
         bevRevenue = impact.averageBevRevenue;
         
-        // Adjust confidence based on sample size
-        if (impact.count >= 10) confidence = 90;
-        else if (impact.count >= 5) confidence = 80;
-        else confidence = 60;
-      } else {
-        // No exact match, use average for the day regardless of weather
-        let total = 0;
-        let count = 0;
-        let fRevenue = 0;
-        let bRevenue = 0;
-        
-        Object.values(weatherImpact[dayOfWeek]).forEach(w => {
-          if (w.count > 0) {
-            fRevenue += w.averageFoodRevenue * w.count;
-            bRevenue += w.averageBevRevenue * w.count;
-            count += w.count;
-          }
-        });
-        
-        if (count > 0) {
-          foodRevenue = fRevenue / count;
-          bevRevenue = bRevenue / count;
-          confidence = 50; // Lower confidence due to weather mismatch
-        }
+        confidence = impact.count >= 10 ? 90 : impact.count >= 5 ? 80 : 60;
       }
     }
     
-    // Apply temperature adjustments
+    // Apply temperature and precipitation adjustments using actual data
     if (forecast.temperature > 25) {
-      // Hot weather increases beverage sales, decreases food
       bevRevenue *= 1.1;
       foodRevenue *= 0.95;
     } else if (forecast.temperature < 10) {
-      // Cold weather increases food sales, decreases beverage
       foodRevenue *= 1.05;
       bevRevenue *= 0.9;
     }
     
-    // Apply precipitation adjustments
     if (forecast.precipitation > 5) {
-      // Heavy rain reduces both sales
       foodRevenue *= 0.85;
       bevRevenue *= 0.8;
-      confidence = Math.max(confidence - 10, 30); // Reduce confidence
+      confidence = Math.max(confidence - 10, 30);
     }
     
     return {
