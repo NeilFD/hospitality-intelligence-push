@@ -12,20 +12,58 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
       // Berry Purple fallback color - will be used if nothing else works
       let fallbackColor = '#8e24aa';
       
+      // NFD theme gets highest priority
       if (html.classList.contains('theme-nfd-theme')) {
-        // Specific handling for NFD theme - highest priority
         setSidebarColor('#ec193a');
         console.log('Applied NFD theme sidebar color: #ec193a');
-      } else if (html.classList.contains('theme-purple-700')) {
-        // Custom theme handling
-        const cssVarColor = getComputedStyle(html).getPropertyValue('--custom-sidebar-color').trim();
+        return; // Exit early for NFD theme
+      }
+      
+      // Custom theme handling - high priority
+      if (html.classList.contains('theme-purple-700')) {
+        // Try multiple methods to get the custom sidebar color
+        
+        // 1. First check localStorage (most reliable and up-to-date)
         const localStorageColor = localStorage.getItem('custom-sidebar-color');
         
-        // Use either the CSS variable or localStorage value, preferring localStorage
-        const color = localStorageColor || cssVarColor || fallbackColor;
-        setSidebarColor(color);
-        console.log('Applied custom sidebar color:', color);
-      } else if (html.classList.contains('theme-berry-purple')) {
+        // 2. Then check CSS variable
+        const cssVarColor = getComputedStyle(html).getPropertyValue('--custom-sidebar-color').trim();
+        
+        // Use the most reliable source with fallbacks
+        if (localStorageColor && localStorageColor !== '') {
+          setSidebarColor(localStorageColor);
+          console.log('Applied custom sidebar color from localStorage:', localStorageColor);
+        } else if (cssVarColor && cssVarColor !== '') {
+          setSidebarColor(cssVarColor);
+          console.log('Applied custom sidebar color from CSS var:', cssVarColor);
+        } else {
+          // Last resort - try to get theme data from localStorage
+          const activeTheme = localStorage.getItem('app-active-theme');
+          if (activeTheme) {
+            const themeData = localStorage.getItem(`theme-${activeTheme}`);
+            if (themeData) {
+              try {
+                const parsedData = JSON.parse(themeData);
+                if (parsedData && parsedData.sidebarColor) {
+                  setSidebarColor(parsedData.sidebarColor);
+                  console.log('Applied sidebar color from theme data:', parsedData.sidebarColor);
+                  return;
+                }
+              } catch (e) {
+                console.error('Error parsing theme data:', e);
+              }
+            }
+          }
+          
+          // Ultimate fallback - use Berry Purple
+          setSidebarColor(fallbackColor);
+          console.log('Fallback to Berry Purple sidebar color:', fallbackColor);
+        }
+        return; // Exit after handling custom theme
+      }
+      
+      // Built-in themes
+      if (html.classList.contains('theme-berry-purple')) {
         setSidebarColor('#8e24aa');
         console.log('Applied Berry Purple sidebar color: #8e24aa');
       } else if (html.classList.contains('theme-forest-green')) {

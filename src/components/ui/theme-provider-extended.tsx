@@ -18,7 +18,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Get saved theme name, default to Berry Purple
         const savedThemeName = localStorage.getItem('app-active-theme') || 'Berry Purple';
         
-        console.log('Applying theme:', savedThemeName, 'with Berry Purple as fallback');
+        console.log('Loading theme:', savedThemeName, 'with Berry Purple as fallback');
         
         // First apply Berry Purple as initial fallback
         applyThemeClass('Berry Purple');
@@ -26,11 +26,8 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Apply Berry Purple theme colors as initial values
         applyBerryPurpleThemeColors();
         
-        // Then try to load the requested theme from database
-        let themeNameToLoad = savedThemeName;
-        
         // Special handling for NFD theme
-        if (themeNameToLoad === 'NFD' || themeNameToLoad === 'NFD Theme') {
+        if (savedThemeName === 'NFD' || savedThemeName === 'NFD Theme') {
           console.log('NFD theme detected, applying NFD-specific settings');
           applyThemeClass('nfd-theme');
           
@@ -44,8 +41,41 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             textColor: '#212121'
           });
           
-          // Exit early since we've manually applied NFD theme
-          return;
+          // Save NFD theme data to localStorage for persistence
+          localStorage.setItem('custom-sidebar-color', '#ec193a');
+          localStorage.setItem('theme-NFD Theme', JSON.stringify({
+            primaryColor: '#ec193a',
+            secondaryColor: '#ffebee',
+            accentColor: '#d81b60',
+            sidebarColor: '#ec193a',
+            buttonColor: '#ec193a',
+            textColor: '#212121'
+          }));
+          
+          // Dispatch theme updated event for components to react
+          window.dispatchEvent(new CustomEvent('app-theme-updated', {
+            detail: { colors: {
+              primaryColor: '#ec193a',
+              secondaryColor: '#ffebee',
+              accentColor: '#d81b60',
+              sidebarColor: '#ec193a',
+              buttonColor: '#ec193a',
+              textColor: '#212121'
+            }}
+          }));
+          
+          return; // Exit early for NFD theme
+        }
+        
+        // Then try to load the requested theme from database
+        let themeNameToLoad = savedThemeName;
+        let isCustomTheme = false;
+        
+        // Check if this is a custom theme (not one of the preset themes)
+        const presetThemes = ['Berry Purple', 'Forest Green', 'Ocean Blue', 'Sunset Orange', 'Dark Mode', 'NFD Theme', 'NFD'];
+        if (!presetThemes.includes(themeNameToLoad)) {
+          isCustomTheme = true;
+          console.log('Custom theme detected:', themeNameToLoad);
         }
         
         // For other themes, try to load from database
@@ -89,33 +119,34 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         console.log('Found theme in database:', data);
         
-        // Handle NFD theme specifically
-        if (data.name === 'NFD Theme' || data.name === 'NFD') {
-          console.log('Applying NFD theme colors');
-          applyThemeClass('nfd-theme');
-          
-          // Apply NFD theme colors specifically
-          applyCustomThemeColors({
-            primaryColor: '#ec193a',
-            secondaryColor: '#ffebee',
-            accentColor: '#d81b60',
-            sidebarColor: '#ec193a',
-            buttonColor: '#ec193a',
-            textColor: '#212121'
-          });
+        // Apply the theme class
+        if (isCustomTheme) {
+          // For custom themes, use the purple-700 class
+          applyThemeClass('Custom Theme');
         } else {
-          // Apply the theme class
           applyThemeClass(data.name);
-          
-          // Apply theme colors
-          applyCustomThemeColors({
+        }
+        
+        // Apply theme colors
+        applyCustomThemeColors({
+          primaryColor: data.primary_color || '#9d89c9',
+          secondaryColor: data.secondary_color || '#f3e5f5',
+          accentColor: data.accent_color || '#ab47bc',
+          sidebarColor: data.sidebar_color || '#8e24aa',
+          buttonColor: data.button_color || '#7e57c2',
+          textColor: data.text_color || '#333333'
+        });
+        
+        // For custom themes, save the color data to localStorage
+        if (isCustomTheme) {
+          localStorage.setItem(`theme-${data.name}`, JSON.stringify({
             primaryColor: data.primary_color || '#9d89c9',
             secondaryColor: data.secondary_color || '#f3e5f5',
             accentColor: data.accent_color || '#ab47bc',
             sidebarColor: data.sidebar_color || '#8e24aa',
             buttonColor: data.button_color || '#7e57c2',
             textColor: data.text_color || '#333333'
-          });
+          }));
         }
       } catch (err) {
         console.error('Error in theme loading:', err);
@@ -160,7 +191,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       };
       
       // Get the theme class or default to Berry Purple theme class
-      const themeClass = themeClassMap[themeName] || 'theme-berry-purple';
+      const themeClass = themeClassMap[themeName] || 'theme-purple-700';
       html.classList.add(themeClass);
       
       // Trigger change event
@@ -191,13 +222,14 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     }) => {
       const html = document.documentElement;
       
-      // Set CSS variables
-      html.style.setProperty('--custom-primary-color', colors.primaryColor);
-      html.style.setProperty('--custom-secondary-color', colors.secondaryColor);
-      html.style.setProperty('--custom-accent-color', colors.accentColor);
-      html.style.setProperty('--custom-sidebar-color', colors.sidebarColor);
-      html.style.setProperty('--custom-button-color', colors.buttonColor);
-      html.style.setProperty('--custom-text-color', colors.textColor);
+      // Set CSS variables with !important to ensure they override any other styles
+      html.style.setProperty('--custom-primary-color', colors.primaryColor, 'important');
+      html.style.setProperty('--custom-secondary-color', colors.secondaryColor, 'important');
+      html.style.setProperty('--custom-accent-color', colors.accentColor, 'important');
+      html.style.setProperty('--custom-sidebar-color', colors.sidebarColor, 'important');
+      html.style.setProperty('--custom-button-color', colors.buttonColor, 'important');
+      html.style.setProperty('--custom-text-color', colors.textColor, 'important');
+      html.style.setProperty('--sidebar-color', colors.sidebarColor, 'important');
       
       // Store sidebar color in localStorage
       localStorage.setItem('custom-sidebar-color', colors.sidebarColor);
@@ -206,7 +238,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       const sidebarElements = document.querySelectorAll('.sidebar');
       if (sidebarElements && sidebarElements.length > 0) {
         sidebarElements.forEach(sidebar => {
-          (sidebar as HTMLElement).style.backgroundColor = colors.sidebarColor;
+          (sidebar as HTMLElement).style.setProperty('background-color', colors.sidebarColor, 'important');
         });
       }
       
@@ -218,6 +250,19 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     
     // Initial theme load
     loadActiveTheme();
+    
+    // Force an additional theme color application after a short delay
+    // to catch any elements that might load after the initial application
+    const forceThemeTimer = setTimeout(() => {
+      // Re-trigger theme class changed event
+      document.dispatchEvent(new Event('themeClassChanged'));
+      // Re-trigger theme updated event
+      window.dispatchEvent(new Event('app-theme-updated'));
+    }, 500);
+    
+    return () => {
+      clearTimeout(forceThemeTimer);
+    };
   }, []);
 
   // Make sure the Layout component has access to the router context

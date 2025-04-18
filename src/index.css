@@ -44,6 +44,7 @@
     --custom-sidebar-color: #8e24aa;
     --custom-button-color: #7e57c2;
     --custom-text-color: #333333;
+    --sidebar-color: #8e24aa;
   }
  
   .dark {
@@ -116,14 +117,17 @@
   
   /* Theme class for custom themes */
   .theme-purple-700 {
-    --primary: var(--custom-primary-color, #9d89c9);
+    --primary: var(--custom-primary-color, #9d89c9) !important;
     --primary-foreground: 0 0% 100%;
-    --secondary: var(--custom-secondary-color, #f3e5f5);
-    --accent: var(--custom-accent-color, #ab47bc);
+    --secondary: var(--custom-secondary-color, #f3e5f5) !important;
+    --accent: var(--custom-accent-color, #ab47bc) !important;
     --background: 0 0% 100%;
-    --foreground: var(--custom-text-color, #333333);
-    --sidebar-color: var(--custom-sidebar-color, #8e24aa);
-    --button-color: var(--custom-button-color, #7e57c2);
+    --foreground: var(--custom-text-color, #333333) !important;
+    --sidebar-color: var(--custom-sidebar-color, #8e24aa) !important;
+    --button-color: var(--custom-button-color, #7e57c2) !important;
+    
+    /* Special handling for custom themes - direct color values */
+    color-scheme: light;
   }
 }
  
@@ -190,6 +194,19 @@
   
   .theme-nfd-theme .sidebar {
     background-color: #ec193a !important;
+  }
+  
+  /* Custom theme sidebar with highest specificity */
+  .theme-purple-700 .sidebar,
+  html.theme-purple-700 .sidebar,
+  body .theme-purple-700 .sidebar {
+    background-color: var(--custom-sidebar-color, #8e24aa) !important;
+  }
+  
+  /* Buttons for custom themes */
+  .theme-purple-700 button[class*="bg-primary"],
+  .theme-purple-700 a[class*="bg-primary"] {
+    background-color: var(--custom-button-color, #7e57c2) !important;
   }
 }
 
