@@ -297,6 +297,13 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             buttonColor: event.detail.theme.buttonColor || '#7e57c2',
             textColor: event.detail.theme.textColor || '#333333'
           });
+          
+          // Additionally, directly apply the sidebar color to the sidebar element
+          const sidebar = document.querySelector('.sidebar') as HTMLElement;
+          if (sidebar && event.detail.theme.sidebarColor) {
+            sidebar.style.backgroundColor = event.detail.theme.sidebarColor;
+            console.log('Directly applied sidebar color:', event.detail.theme.sidebarColor);
+          }
         }
         
         // Apply custom font if available
@@ -362,7 +369,6 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     // Initial theme load
     loadActiveTheme();
     
-    // Clean up event listener
     return () => {
       window.removeEventListener('app-theme-updated', handleThemeUpdate);
     };

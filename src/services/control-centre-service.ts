@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
@@ -177,6 +178,13 @@ export const getControlCentreData = async () => {
         html.style.setProperty('--custom-sidebar-color', currentTheme.sidebarColor || '#7e57c2');
         html.style.setProperty('--custom-button-color', currentTheme.buttonColor || '#7e57c2');
         html.style.setProperty('--custom-text-color', currentTheme.textColor || '#333333');
+        
+        // Additionally, directly apply sidebar color to the sidebar element
+        const sidebar = document.querySelector('.sidebar') as HTMLElement;
+        if (sidebar) {
+          sidebar.style.backgroundColor = currentTheme.sidebarColor;
+          console.log('Applied custom sidebar color:', currentTheme.sidebarColor);
+        }
         
         console.log('Applied custom theme class for:', currentTheme.name);
       }

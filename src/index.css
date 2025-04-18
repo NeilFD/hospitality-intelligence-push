@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -137,6 +138,11 @@
   
   body.theme-loaded {
     opacity: 1;
+  }
+  
+  /* Apply sidebar styling directly for custom themes */
+  .sidebar.custom-theme {
+    background-color: var(--custom-sidebar-color);
   }
 }
 
