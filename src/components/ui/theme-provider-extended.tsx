@@ -126,10 +126,47 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.add('theme-berry-purple');
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
+      } else {
+        // Handle custom themes by adding a generic class and custom CSS variables
+        html.classList.add('theme-custom');
+        // We'll look up the colors from database in a moment
+        console.log('Applied custom theme:', themeName);
+        loadCustomThemeColors(themeName);
       }
       
       // Trigger change event
       document.dispatchEvent(new Event('themeClassChanged'));
+    };
+    
+    // New function to load custom theme colors
+    const loadCustomThemeColors = async (themeName: string) => {
+      try {
+        console.log('Loading custom theme colors for:', themeName);
+        const { data, error } = await supabase
+          .from('themes')
+          .select('primary_color, secondary_color, accent_color, sidebar_color, button_color, text_color')
+          .eq('name', themeName)
+          .maybeSingle();
+          
+        if (error) {
+          console.error('Error loading custom theme colors:', error);
+          return;
+        }
+        
+        if (data) {
+          console.log('Custom theme colors loaded:', data);
+          // Apply CSS variables for the custom theme
+          const html = document.documentElement;
+          html.style.setProperty('--theme-primary', data.primary_color);
+          html.style.setProperty('--theme-secondary', data.secondary_color);
+          html.style.setProperty('--theme-accent', data.accent_color);
+          html.style.setProperty('--theme-sidebar', data.sidebar_color);
+          html.style.setProperty('--theme-button', data.button_color);
+          html.style.setProperty('--theme-text', data.text_color);
+        }
+      } catch (err) {
+        console.error('Error loading custom theme colors:', err);
+      }
     };
 
     // Set up listener for theme updates
@@ -225,6 +262,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     
     // Listen for custom theme update event
     window.addEventListener('app-theme-updated', handleThemeUpdate);
+    
+    // Initial load of active theme
+    loadActiveTheme();
     
     // Clean up event listener
     return () => {
