@@ -15,12 +15,7 @@ export const availableFonts: { name: string; value: string }[] = [
 ];
 
 export const getControlCentreData = async () => {
-  // Initialize database if needed
-  
-  // Get permission matrix from database
-  const permissionMatrix = await getPermissionMatrix();
-  
-  // Fetch current active theme and available themes
+  // Always default to Berry Purple theme, replacing any problematic themes
   const { data: themesData, error: themeError } = await supabase
     .from('themes')
     .select('*')
@@ -80,12 +75,14 @@ export const getControlCentreData = async () => {
   
   // Transform database column names to match ThemeSettings interface
   const themes = themesData?.map(themeData => {
-    // Replace any "Hi" or "Tavern Blue" theme with "Berry Purple"
-    const isProblematicTheme = themeData.name === 'Hi' || themeData.name === 'Tavern Blue';
+    // Force replace any problematic theme names with Berry Purple
+    const safeName = ['Hi', 'Tavern Blue', 'Tavern', 'Custom Theme'].includes(themeData.name) 
+      ? 'Berry Purple' 
+      : themeData.name;
     
     return {
       id: themeData.id,
-      name: isProblematicTheme ? 'Berry Purple' : themeData.name,
+      name: safeName,
       primaryColor: themeData.primary_color || '#9d89c9',
       secondaryColor: themeData.secondary_color || '#f3e5f5',
       accentColor: themeData.accent_color || '#ab47bc',
@@ -95,130 +92,39 @@ export const getControlCentreData = async () => {
       logoUrl: themeData.logo_url,
       customFont: themeData.custom_font,
       isDefault: false,
-      isActive: isProblematicTheme ? false : themeData.is_active,
+      isActive: safeName === 'Berry Purple', // Force Berry Purple to be active
       companyName: companyName
     };
   }) || [];
   
-  // Make sure Berry Purple is active if no other theme is
-  const hasActiveTheme = themes.some(theme => theme.isActive);
-  if (!hasActiveTheme) {
-    const berryPurpleIndex = themes.findIndex(theme => theme.name === 'Berry Purple');
-    if (berryPurpleIndex >= 0) {
-      themes[berryPurpleIndex].isActive = true;
-      
-      // Also update the database to reflect this
-      try {
-        await supabase
-          .from('themes')
-          .update({ is_active: true })
-          .eq('id', themes[berryPurpleIndex].id);
-        
-        console.log('Set Berry Purple theme as active in database');
-      } catch (err) {
-        console.error('Error setting Berry Purple as active:', err);
-      }
-    }
-  }
+  // Ensure Berry Purple theme is always considered active
+  const currentTheme = themes.find(theme => theme.name === 'Berry Purple') || 
+                       themes[0] || // Fallback to first theme if no Berry Purple
+                       null;
   
-  // Ensure we return the active theme
-  const currentTheme = themes.find(theme => theme.isActive) || 
-                      themes.find(theme => theme.name === 'Berry Purple') || 
-                      null;
-  
-  // If we have an active theme, ensure it has the company name
+  // Force save Berry Purple as active theme
   if (currentTheme) {
-    currentTheme.companyName = companyName;
+    localStorage.setItem('app-active-theme', 'Berry Purple');
     
-    // Apply the active theme immediately on load to prevent flashing of incorrect theme
+    // Additional theme application logic
     if (typeof window !== 'undefined') {
-      // Save active theme to localStorage for immediate access
-      localStorage.setItem('app-active-theme', currentTheme.name);
-      
-      // For custom themes, save the sidebar color directly to localStorage for immediate access
-      if (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'NFD Theme'].includes(currentTheme.name)) {
-        localStorage.setItem('custom-sidebar-color', currentTheme.sidebarColor);
-        console.log('Saved custom sidebar color to localStorage:', currentTheme.sidebarColor);
-        
-        // Save all theme data for consistent access
-        localStorage.setItem(`theme-${currentTheme.name}`, JSON.stringify({
-          primaryColor: currentTheme.primaryColor,
-          secondaryColor: currentTheme.secondaryColor,
-          accentColor: currentTheme.accentColor,
-          sidebarColor: currentTheme.sidebarColor,
-          buttonColor: currentTheme.buttonColor,
-          textColor: currentTheme.textColor
-        }));
-      }
-      
-      // Force application of the theme directly to HTML element
-      const html = document.documentElement;
-      const themeClasses = [
-        'theme-forest-green', 
-        'theme-ocean-blue', 
-        'theme-sunset-orange', 
-        'theme-berry-purple', 
-        'theme-dark-mode',
-        'theme-hi-purple',
-        'theme-tavern-blue',
-        'theme-nfd-theme',
-        'theme-purple-700'
-      ];
-      
-      themeClasses.forEach(cls => {
-        html.classList.remove(cls);
-      });
-      
-      // Apply the correct theme class based on name
-      if (currentTheme.name === 'Forest Green') {
-        html.classList.add('theme-forest-green');
-      } else if (currentTheme.name === 'Ocean Blue') {
-        html.classList.add('theme-ocean-blue');
-      } else if (currentTheme.name === 'Sunset Orange') {
-        html.classList.add('theme-sunset-orange');
-      } else if (currentTheme.name === 'Berry Purple') {
-        html.classList.add('theme-berry-purple');
-      } else if (currentTheme.name === 'Dark Mode') {
-        html.classList.add('theme-dark-mode');
-      } else if (currentTheme.name === 'NFD Theme') {
-        html.classList.add('theme-nfd-theme');
-      } else {
-        // For custom themes or non-default themes
-        html.classList.add('theme-purple-700');
-        
-        // Also set CSS variables for the custom theme - ensure default values if properties are missing
-        html.style.setProperty('--custom-primary-color', currentTheme.primaryColor || '#9d89c9');
-        html.style.setProperty('--custom-secondary-color', currentTheme.secondaryColor || '#f3e5f5');
-        html.style.setProperty('--custom-accent-color', currentTheme.accentColor || '#ab47bc');
-        html.style.setProperty('--custom-sidebar-color', currentTheme.sidebarColor || '#7e57c2');
-        html.style.setProperty('--custom-button-color', currentTheme.buttonColor || '#7e57c2');
-        html.style.setProperty('--custom-text-color', currentTheme.textColor || '#333333');
-        
-        // Additionally, directly apply sidebar color to the sidebar element
-        const sidebarElements = document.querySelectorAll('.sidebar');
-        if (sidebarElements.length > 0) {
-          sidebarElements.forEach(sidebar => {
-            (sidebar as HTMLElement).style.backgroundColor = currentTheme.sidebarColor;
-          });
-          console.log('Applied custom sidebar color directly to elements:', currentTheme.sidebarColor);
-        }
-        
-        console.log('Applied custom theme class for:', currentTheme.name);
-      }
-      
-      // Dispatch an event to apply the theme immediately with full theme details
-      const themeEvent = new CustomEvent('app-theme-updated', {
-        detail: {
-          theme: currentTheme
-        }
-      });
-      window.dispatchEvent(themeEvent);
-      console.log('Dispatched theme event for active theme:', currentTheme.name);
-      
-      // Also trigger the theme changed event for components that listen for it
-      document.dispatchEvent(new Event('themeClassChanged'));
+      // Save all theme data for Berry Purple
+      localStorage.setItem('custom-sidebar-color', currentTheme.sidebarColor);
+      localStorage.setItem('theme-Berry Purple', JSON.stringify({
+        primaryColor: currentTheme.primaryColor,
+        secondaryColor: currentTheme.secondaryColor,
+        accentColor: currentTheme.accentColor,
+        sidebarColor: currentTheme.sidebarColor,
+        buttonColor: currentTheme.buttonColor,
+        textColor: currentTheme.textColor
+      }));
     }
   }
+  
+  // Initialize database if needed
+  
+  // Get permission matrix from database
+  const permissionMatrix = await getPermissionMatrix();
   
   // Fetch target settings from business_targets table
   const { data: targetData, error: targetError } = await supabase
@@ -246,7 +152,7 @@ export const getControlCentreData = async () => {
   
   return {
     permissionMatrix,
-    currentTheme,
+    currentTheme: currentTheme, // Ensure Berry Purple is always the current theme
     availableThemes: themes,
     targetSettings,
   };
