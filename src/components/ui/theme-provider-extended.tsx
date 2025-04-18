@@ -57,7 +57,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           applyThemeClass(themeName);
           
           // Apply theme colors for custom themes
-          if (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode'].includes(themeName)) {
+          if (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'NFD Theme'].includes(themeName)) {
             // This is a custom theme, apply its colors directly
             console.log('Applying custom theme colors for:', themeName);
             applyCustomThemeColors({
@@ -118,6 +118,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'theme-hi-purple',
         'theme-purple-700', // Include custom theme class for proper removal
         'theme-tavern-blue', // Explicitly remove Tavern Blue
+        'theme-nfd-theme', // Include NFD theme
         'hi', // Remove any Hi remnants
         'theme-hi' // Remove any Hi theme
       ];
@@ -146,9 +147,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.add('theme-berry-purple');
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
-      } else if (themeName === 'NFD Theme' || 
-                 themeName === 'Tavern Blue' ||
-                (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'Hi'].includes(themeName))) {
+      } else if (themeName === 'NFD Theme') {
+        html.classList.add('theme-nfd-theme');
+        // Also load NFD theme colors
+        loadAndApplyCustomThemeColors('NFD Theme');
+      } else if (themeName === 'Tavern Blue' ||
+                (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'Hi', 'NFD Theme'].includes(themeName))) {
         // Handle custom theme - add the class and also load theme details to apply colors
         if (themeName === 'Tavern Blue') {
           html.classList.add('theme-berry-purple');

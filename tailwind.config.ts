@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -71,6 +72,13 @@ export default {
           amber: "#FBBF24",
           red: "#EF4444"
         },
+        nfd: {
+          red: "#ec193a",
+          "red-light": "#f50709",
+          purple: "#9c27b0",
+          accent: "#ab47bc",
+          background: "#f3e5f5"
+        }
       },
       borderRadius: {
         lg: "var(--radius)",
