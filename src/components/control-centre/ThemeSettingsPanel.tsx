@@ -106,6 +106,7 @@ export function ThemeSettingsPanel({
     companyName: 'My Company'
   });
 
+  const [allThemes, setAllThemes] = useState<ThemeSettings[]>(availableThemes || []);
   const [primaryRgb, setPrimaryRgb] = useState(hexToRgb(activeTheme.primaryColor));
   const [secondaryRgb, setSecondaryRgb] = useState(hexToRgb(activeTheme.secondaryColor));
   const [accentRgb, setAccentRgb] = useState(hexToRgb(activeTheme.accentColor));
@@ -118,6 +119,45 @@ export function ThemeSettingsPanel({
   const [activeTab, setActiveTab] = useState("presets");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [presetSelectAnimation, setPresetSelectAnimation] = useState(false);
+
+  const fetchThemes = async () => {
+    try {
+      const { data: themesData, error: themeError } = await supabase
+        .from('themes')
+        .select('*')
+        .order('created_at');
+      
+      if (themeError) {
+        console.error('Error fetching themes:', themeError);
+        return;
+      }
+      
+      if (!themesData) {
+        return;
+      }
+      
+      const updatedThemes = themesData.map(themeData => ({
+        id: themeData.id,
+        name: themeData.name === 'Hi' ? 'Berry Purple' : themeData.name,
+        primaryColor: themeData.primary_color,
+        secondaryColor: themeData.secondary_color,
+        accentColor: themeData.accent_color,
+        sidebarColor: themeData.sidebar_color,
+        buttonColor: themeData.button_color,
+        textColor: themeData.text_color,
+        logoUrl: themeData.logo_url,
+        customFont: themeData.custom_font,
+        isDefault: false,
+        isActive: themeData.is_active,
+        companyName: themeData.company_name || 'My Company'
+      }));
+      
+      console.log('Fetched themes:', updatedThemes);
+      setAllThemes(updatedThemes);
+    } catch (err) {
+      console.error('Error fetching themes:', err);
+    }
+  };
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -140,6 +180,8 @@ export function ThemeSettingsPanel({
       console.log("Courier Prime font not found in available options");
     }
     
+    fetchThemes();
+    
     return () => {
       const existingLink = document.head.querySelector('link[href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap"]');
       if (existingLink && existingLink === link) {
@@ -157,6 +199,10 @@ export function ThemeSettingsPanel({
       setSidebarRgb(hexToRgb(currentTheme.sidebarColor));
       setButtonRgb(hexToRgb(currentTheme.buttonColor));
       setTextRgb(hexToRgb(currentTheme.textColor));
+    }
+    
+    if (availableThemes && availableThemes.length > 0) {
+      setAllThemes(availableThemes);
     }
     
     const fetchCompanyName = async () => {
@@ -185,7 +231,7 @@ export function ThemeSettingsPanel({
     };
     
     fetchCompanyName();
-  }, [currentTheme]);
+  }, [currentTheme, availableThemes]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -389,7 +435,6 @@ export function ThemeSettingsPanel({
     try {
       console.log("Saving theme settings with company name:", theme.companyName);
       
-      // Update existing theme
       if (theme.id) {
         const { error } = await supabase.from('themes').update({
           name: theme.name,
@@ -409,9 +454,7 @@ export function ThemeSettingsPanel({
           throw error;
         }
         
-        // Only dispatch events if this is the active theme
         if (theme.isActive) {
-          // Dispatch theme update event
           const themeEvent = new CustomEvent('app-theme-updated', {
             detail: {
               theme
@@ -419,7 +462,6 @@ export function ThemeSettingsPanel({
           });
           window.dispatchEvent(themeEvent);
           
-          // Dispatch company name update event
           const companyNameEvent = new CustomEvent('company-name-updated', {
             detail: {
               companyName: theme.companyName
@@ -427,7 +469,6 @@ export function ThemeSettingsPanel({
           });
           window.dispatchEvent(companyNameEvent);
           
-          // Also update localStorage directly as a backup
           localStorage.setItem('company-name', theme.companyName);
           console.log("Updated company name in localStorage:", theme.companyName);
         }
@@ -437,7 +478,6 @@ export function ThemeSettingsPanel({
         };
       }
       
-      // Create new theme - but do NOT set it as active
       const { data, error } = await supabase.from('themes').insert({
         name: theme.name,
         primary_color: theme.primaryColor,
@@ -448,7 +488,7 @@ export function ThemeSettingsPanel({
         text_color: theme.textColor,
         logo_url: theme.logoUrl,
         custom_font: theme.customFont,
-        is_active: false, // Important: Always set new themes to inactive
+        is_active: false,
         company_name: theme.companyName
       }).select().single();
       
@@ -473,7 +513,6 @@ export function ThemeSettingsPanel({
     try {
       setSaving(true);
 
-      // Update company name in the company_settings table
       const { error: companyNameError } = await supabase
         .from('company_settings')
         .update({ company_name: activeTheme.companyName })
@@ -485,7 +524,6 @@ export function ThemeSettingsPanel({
         return;
       }
 
-      // Dispatch company name update event
       const companyNameEvent = new CustomEvent('company-name-updated', {
         detail: {
           companyName: activeTheme.companyName
@@ -493,8 +531,6 @@ export function ThemeSettingsPanel({
       });
       window.dispatchEvent(companyNameEvent);
       
-      // When saving from the "Create Theme" tab, we want to create a new theme
-      // without activating it
       const newTheme = {
         id: activeTheme.id,
         name: activeTheme.name,
@@ -506,7 +542,7 @@ export function ThemeSettingsPanel({
         textColor: activeTheme.textColor,
         logoUrl: activeTheme.logoUrl,
         customFont: activeTheme.customFont,
-        isActive: false, // Always set to false for new themes
+        isActive: false,
         companyName: activeTheme.companyName
       };
       
@@ -518,16 +554,15 @@ export function ThemeSettingsPanel({
         return;
       }
       
-      // Reset the form and switch to the presets tab to show the new theme
+      fetchThemes();
+      
       if (activeTab === 'custom' && !activeTheme.id) {
-        // Only switch tabs if we're creating a new theme
         setActiveTab('presets');
         toast.success('Theme saved! You can now select it from the presets.');
       } else {
         toast.success('Theme updated successfully');
       }
       
-      // If we've modified the font, we still want to load it
       if (activeTheme.customFont) {
         const fontName = activeTheme.customFont.split(',')[0].trim().replace(/[\"']/g, '');
         if (!document.querySelector(`link[href*="${fontName}"]`)) {
@@ -584,24 +619,74 @@ export function ThemeSettingsPanel({
     }, 3000);
   };
 
-  const applyPresetTheme = (preset: PresetTheme) => {
-    setActiveTheme(prev => ({
-      ...prev,
+  const createCombinedThemesList = () => {
+    const basePresets = presetThemes.map(preset => ({
+      id: preset.id,
       name: preset.name,
-      primaryColor: preset.colors.primary,
-      secondaryColor: preset.colors.secondary,
-      accentColor: preset.colors.accent,
-      sidebarColor: preset.colors.sidebar,
-      buttonColor: preset.colors.button,
-      textColor: preset.colors.text
+      colors: preset.colors,
+      isDefault: preset.id === 'berry-purple'
     }));
+    
+    const customThemes = allThemes
+      .filter(theme => 
+        !presetThemes.some(preset => preset.name === theme.name) &&
+        theme.name !== 'Hi'
+      )
+      .map(theme => ({
+        id: `custom-${theme.id}`,
+        name: theme.name,
+        colors: {
+          primary: theme.primaryColor,
+          secondary: theme.secondaryColor,
+          accent: theme.accentColor,
+          sidebar: theme.sidebarColor,
+          button: theme.buttonColor,
+          text: theme.textColor
+        },
+        isDefault: false,
+        isCustom: true,
+        originalTheme: theme
+      }));
+    
+    return [...basePresets, ...customThemes];
+  };
 
-    setPrimaryRgb(hexToRgb(preset.colors.primary));
-    setSecondaryRgb(hexToRgb(preset.colors.secondary));
-    setAccentRgb(hexToRgb(preset.colors.accent));
-    setSidebarRgb(hexToRgb(preset.colors.sidebar));
-    setButtonRgb(hexToRgb(preset.colors.button));
-    setTextRgb(hexToRgb(preset.colors.text));
+  const getCustomThemeFromPreset = (presetId: string) => {
+    if (presetId.startsWith('custom-')) {
+      const themeId = presetId.replace('custom-', '');
+      return allThemes.find(theme => theme.id === themeId);
+    }
+    return null;
+  };
+
+  const applyPresetTheme = (preset: any) => {
+    if (preset.isCustom && preset.originalTheme) {
+      setActiveTheme(preset.originalTheme);
+      setPrimaryRgb(hexToRgb(preset.originalTheme.primaryColor));
+      setSecondaryRgb(hexToRgb(preset.originalTheme.secondaryColor));
+      setAccentRgb(hexToRgb(preset.originalTheme.accentColor));
+      setSidebarRgb(hexToRgb(preset.originalTheme.sidebarColor));
+      setButtonRgb(hexToRgb(preset.originalTheme.buttonColor));
+      setTextRgb(hexToRgb(preset.originalTheme.textColor));
+    } else {
+      setActiveTheme(prev => ({
+        ...prev,
+        name: preset.name,
+        primaryColor: preset.colors.primary,
+        secondaryColor: preset.colors.secondary,
+        accentColor: preset.colors.accent,
+        sidebarColor: preset.colors.sidebar,
+        buttonColor: preset.colors.button,
+        textColor: preset.colors.text
+      }));
+
+      setPrimaryRgb(hexToRgb(preset.colors.primary));
+      setSecondaryRgb(hexToRgb(preset.colors.secondary));
+      setAccentRgb(hexToRgb(preset.colors.accent));
+      setSidebarRgb(hexToRgb(preset.colors.sidebar));
+      setButtonRgb(hexToRgb(preset.colors.button));
+      setTextRgb(hexToRgb(preset.colors.text));
+    }
     
     setSelectedPreset(preset.id);
     setPresetSelectAnimation(true);
@@ -708,7 +793,7 @@ export function ThemeSettingsPanel({
 
   const currentLogoUrl = activeTheme.logoUrl || localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png";
 
-  const filteredPresetThemes = presetThemes;
+  const combinedThemes = createCombinedThemesList();
 
   return (
     <Card>
@@ -813,7 +898,7 @@ export function ThemeSettingsPanel({
                   Select a Preset Theme
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {filteredPresetThemes.map(theme => (
+                  {combinedThemes.map(theme => (
                     <div 
                       key={theme.id} 
                       className={`
@@ -836,9 +921,14 @@ export function ThemeSettingsPanel({
                             backgroundColor: theme.colors.button
                           }}></div>
                         </div>
-                        {theme.id === 'berry-purple' && (
+                        {theme.isDefault && (
                           <div className="absolute top-1 left-1 bg-white/50 text-xs px-1 rounded">
                             Default
+                          </div>
+                        )}
+                        {theme.isCustom && (
+                          <div className="absolute top-1 right-1 bg-white/50 text-xs px-1 rounded">
+                            Custom
                           </div>
                         )}
                         {selectedPreset === theme.id && (
