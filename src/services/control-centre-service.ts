@@ -95,7 +95,7 @@ export const getControlCentreData = async () => {
       logoUrl: themeData.logo_url,
       customFont: themeData.custom_font,
       isDefault: false,
-      isActive: isHiTheme ? false : (themeData.is_active || themeData.name === 'Berry Purple'),
+      isActive: isHiTheme ? false : themeData.is_active,
       companyName: companyName
     };
   }) || [];
@@ -106,10 +106,22 @@ export const getControlCentreData = async () => {
     const berryPurpleIndex = themes.findIndex(theme => theme.name === 'Berry Purple');
     if (berryPurpleIndex >= 0) {
       themes[berryPurpleIndex].isActive = true;
+      
+      // Also update the database to reflect this
+      try {
+        await supabase
+          .from('themes')
+          .update({ is_active: true })
+          .eq('id', themes[berryPurpleIndex].id);
+        
+        console.log('Set Berry Purple theme as active in database');
+      } catch (err) {
+        console.error('Error setting Berry Purple as active:', err);
+      }
     }
   }
   
-  // Ensure we return Berry Purple as the current theme, not Hi
+  // Ensure we return the active theme
   const currentTheme = themes.find(theme => theme.isActive) || 
                       themes.find(theme => theme.name === 'Berry Purple') || 
                       null;
@@ -117,6 +129,17 @@ export const getControlCentreData = async () => {
   // If we have an active theme, ensure it has the company name
   if (currentTheme) {
     currentTheme.companyName = companyName;
+    
+    // Dispatch an event to apply the theme immediately
+    if (typeof window !== 'undefined') {
+      const themeEvent = new CustomEvent('app-theme-updated', {
+        detail: {
+          theme: currentTheme
+        }
+      });
+      window.dispatchEvent(themeEvent);
+      console.log('Dispatched theme event for active theme:', currentTheme.name);
+    }
   }
   
   // Fetch target settings from business_targets table

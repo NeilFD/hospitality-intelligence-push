@@ -450,7 +450,8 @@ export function ThemeSettingsPanel({
           text_color: theme.textColor,
           logo_url: theme.logoUrl,
           custom_font: theme.customFont,
-          company_name: theme.companyName
+          company_name: theme.companyName,
+          is_active: theme.isActive
         }).eq('id', theme.id);
         
         if (error) {
@@ -492,7 +493,7 @@ export function ThemeSettingsPanel({
         text_color: theme.textColor,
         logo_url: theme.logoUrl,
         custom_font: theme.customFont,
-        is_active: false,
+        is_active: theme.isActive,
         company_name: theme.companyName
       }).select().single();
       
@@ -546,9 +547,14 @@ export function ThemeSettingsPanel({
         textColor: activeTheme.textColor,
         logoUrl: activeTheme.logoUrl,
         customFont: activeTheme.customFont,
-        isActive: false,
+        isActive: true,
         companyName: activeTheme.companyName
       };
+      
+      await supabase
+        .from('themes')
+        .update({ is_active: false })
+        .neq('id', 0);
       
       const saveResult = await saveThemeSettings(newTheme);
       
@@ -557,6 +563,15 @@ export function ThemeSettingsPanel({
         toast.error('Failed to save theme settings');
         return;
       }
+      
+      const themeEvent = new CustomEvent('app-theme-updated', {
+        detail: {
+          theme: newTheme
+        }
+      });
+      window.dispatchEvent(themeEvent);
+      
+      applyThemeDirectly(newTheme.name);
       
       fetchThemes();
       
@@ -665,7 +680,10 @@ export function ThemeSettingsPanel({
 
   const applyPresetTheme = (preset: any) => {
     if (preset.isCustom && preset.originalTheme) {
-      setActiveTheme(preset.originalTheme);
+      setActiveTheme({
+        ...preset.originalTheme,
+        isActive: true
+      });
       setPrimaryRgb(hexToRgb(preset.originalTheme.primaryColor));
       setSecondaryRgb(hexToRgb(preset.originalTheme.secondaryColor));
       setAccentRgb(hexToRgb(preset.originalTheme.accentColor));
@@ -681,7 +699,8 @@ export function ThemeSettingsPanel({
         accentColor: preset.colors.accent,
         sidebarColor: preset.colors.sidebar,
         buttonColor: preset.colors.button,
-        textColor: preset.colors.text
+        textColor: preset.colors.text,
+        isActive: true
       }));
 
       setPrimaryRgb(hexToRgb(preset.colors.primary));
@@ -695,6 +714,8 @@ export function ThemeSettingsPanel({
     setSelectedPreset(preset.id);
     setPresetSelectAnimation(true);
     setTimeout(() => setPresetSelectAnimation(false), 800);
+    
+    applyThemeDirectly(preset.name);
   };
 
   const ColorSliderGroup = ({

@@ -130,6 +130,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       
       // Trigger change event
       document.dispatchEvent(new Event('themeClassChanged'));
+      console.log('Theme applied directly:', themeName);
     };
 
     // Set up listener for theme updates
@@ -225,6 +226,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     
     // Listen for custom theme update event
     window.addEventListener('app-theme-updated', handleThemeUpdate);
+    
+    // Initial theme load
+    loadActiveTheme();
     
     // Clean up event listener
     return () => {
