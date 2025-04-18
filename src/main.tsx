@@ -61,7 +61,7 @@ const applyInitialTheme = () => {
     immediateColor = '#8e24aa';
     themeClass = 'theme-berry-purple';
   } else {
-    // For custom or unknown themes - use theme-custom instead of theme-purple-700
+    // For custom or unknown themes - use theme-custom
     themeClass = 'theme-custom';
     
     // Try to load theme data from localStorage first
