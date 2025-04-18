@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChromePicker } from 'react-color';
 import { Pipette } from 'lucide-react';
@@ -24,9 +25,10 @@ export function ColorPicker({
       {label && <span className="text-sm text-gray-600">{label}</span>}
       <Popover>
         <PopoverTrigger asChild>
-          <div className="w-8 h-8 rounded-md cursor-pointer border border-gray-300" style={{
-          backgroundColor: color
-        }} />
+          <div 
+            className="w-8 h-8 rounded-md cursor-pointer border border-gray-300"
+            style={{ backgroundColor: color }}
+          />
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
           <ChromePicker color={color} onChange={handleColorChange} disableAlpha />
@@ -43,7 +45,7 @@ export function ColorPicker({
         </PopoverContent>
       </Popover>
       
-      
+      <input type="color" value={color} onChange={e => onChange(e.target.value)} className="w-8 h-8 border-0 p-0 cursor-pointer rounded-md" />
       <input type="text" value={color} onChange={e => onChange(e.target.value)} className="flex-1 h-9 px-3 py-1 rounded-md border border-gray-300 text-sm" placeholder="#000000" />
     </div>;
 }
