@@ -244,7 +244,7 @@ export default function FoodBeverageForecast() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">Hot Weather (>25°C)</h3>
+                <h3 className="font-medium mb-2">Hot Weather (&gt;25°C)</h3>
                 <ul className="list-disc pl-5 space-y-1">
                   <li>Beverage sales increase by approximately 10%</li>
                   <li>Food sales typically decrease by 5%</li>
