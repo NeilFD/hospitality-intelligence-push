@@ -141,8 +141,35 @@
   }
   
   /* Apply sidebar styling directly for custom themes */
-  .sidebar.custom-theme {
-    background-color: var(--custom-sidebar-color);
+  .sidebar {
+    /* If inline style is set, it will override this */
+    background-color: var(--custom-sidebar-color, #7e57c2);
+    transition: background-color 0.3s ease-in-out;
+  }
+  
+  /* Theme-specific sidebar colors */
+  .theme-forest-green .sidebar {
+    background-color: #2e7d32;
+  }
+  
+  .theme-ocean-blue .sidebar {
+    background-color: #1976d2;
+  }
+  
+  .theme-sunset-orange .sidebar {
+    background-color: #ef6c00;
+  }
+  
+  .theme-berry-purple .sidebar {
+    background-color: #8e24aa;
+  }
+  
+  .theme-dark-mode .sidebar {
+    background-color: #333333;
+  }
+  
+  .theme-nfd-theme .sidebar {
+    background-color: #ec193a;
   }
 }
 

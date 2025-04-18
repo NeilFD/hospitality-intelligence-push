@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { PermissionMatrix, ThemeSettings, TargetSettings } from '@/types/control-centre-types';
 
@@ -136,6 +135,22 @@ export const getControlCentreData = async () => {
       // Save active theme to localStorage for immediate access
       localStorage.setItem('app-active-theme', currentTheme.name);
       
+      // For custom themes, save the sidebar color directly to localStorage for immediate access
+      if (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'NFD Theme'].includes(currentTheme.name)) {
+        localStorage.setItem('custom-sidebar-color', currentTheme.sidebarColor);
+        console.log('Saved custom sidebar color to localStorage:', currentTheme.sidebarColor);
+        
+        // Save all theme data for consistent access
+        localStorage.setItem(`theme-${currentTheme.name}`, JSON.stringify({
+          primaryColor: currentTheme.primaryColor,
+          secondaryColor: currentTheme.secondaryColor,
+          accentColor: currentTheme.accentColor,
+          sidebarColor: currentTheme.sidebarColor,
+          buttonColor: currentTheme.buttonColor,
+          textColor: currentTheme.textColor
+        }));
+      }
+      
       // Force application of the theme directly to HTML element
       const html = document.documentElement;
       const themeClasses = [
@@ -180,10 +195,12 @@ export const getControlCentreData = async () => {
         html.style.setProperty('--custom-text-color', currentTheme.textColor || '#333333');
         
         // Additionally, directly apply sidebar color to the sidebar element
-        const sidebar = document.querySelector('.sidebar') as HTMLElement;
-        if (sidebar) {
-          sidebar.style.backgroundColor = currentTheme.sidebarColor;
-          console.log('Applied custom sidebar color:', currentTheme.sidebarColor);
+        const sidebarElements = document.querySelectorAll('.sidebar');
+        if (sidebarElements.length > 0) {
+          sidebarElements.forEach(sidebar => {
+            (sidebar as HTMLElement).style.backgroundColor = currentTheme.sidebarColor;
+          });
+          console.log('Applied custom sidebar color directly to elements:', currentTheme.sidebarColor);
         }
         
         console.log('Applied custom theme class for:', currentTheme.name);

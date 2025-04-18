@@ -60,6 +60,23 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           if (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'NFD Theme'].includes(themeName)) {
             // This is a custom theme, apply its colors directly
             console.log('Applying custom theme colors for:', themeName);
+            
+            // Store sidebar color in localStorage for immediate access by sidebar
+            if (data.sidebar_color) {
+              localStorage.setItem('custom-sidebar-color', data.sidebar_color);
+              console.log('Stored sidebar color in localStorage:', data.sidebar_color);
+            }
+            
+            // Store all theme data for consistent access
+            localStorage.setItem(`theme-${themeName}`, JSON.stringify({
+              primaryColor: data.primary_color,
+              secondaryColor: data.secondary_color,
+              accentColor: data.accent_color,
+              sidebarColor: data.sidebar_color,
+              buttonColor: data.button_color,
+              textColor: data.text_color
+            }));
+            
             applyCustomThemeColors({
               primaryColor: data.primary_color || '#9d89c9',
               secondaryColor: data.secondary_color || '#f3e5f5',
@@ -194,6 +211,23 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         if (data) {
           console.log('Found custom theme colors:', data);
+          
+          // Store sidebar color in localStorage for immediate access by sidebar components
+          if (data.sidebar_color) {
+            localStorage.setItem('custom-sidebar-color', data.sidebar_color);
+            console.log('Stored custom sidebar color in localStorage:', data.sidebar_color);
+          }
+          
+          // Store all theme data
+          localStorage.setItem(`theme-${themeName}`, JSON.stringify({
+            primaryColor: data.primary_color,
+            secondaryColor: data.secondary_color,
+            accentColor: data.accent_color,
+            sidebarColor: data.sidebar_color,
+            buttonColor: data.button_color,
+            textColor: data.text_color
+          }));
+          
           applyCustomThemeColors({
             primaryColor: data.primary_color || '#9d89c9',
             secondaryColor: data.secondary_color || '#f3e5f5',
@@ -207,6 +241,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
           
           // If it's NFD Theme and no data, apply hardcoded values
           if (themeName === 'NFD Theme') {
+            // Store sidebar color in localStorage
+            localStorage.setItem('custom-sidebar-color', '#ec193a');
+            
             applyCustomThemeColors({
               primaryColor: '#ec193a',
               secondaryColor: '#ffebee',
@@ -241,10 +278,16 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       html.style.setProperty('--custom-button-color', colors.buttonColor);
       html.style.setProperty('--custom-text-color', colors.textColor);
       
-      // Apply the sidebar color directly to the sidebar
-      const sidebar = document.querySelector('.sidebar') as HTMLElement;
-      if (sidebar) {
-        sidebar.style.backgroundColor = colors.sidebarColor;
+      // Store sidebar color in localStorage for direct access by components
+      localStorage.setItem('custom-sidebar-color', colors.sidebarColor);
+      
+      // Apply the sidebar color directly to any existing sidebar element
+      const sidebarElements = document.querySelectorAll('.sidebar');
+      if (sidebarElements && sidebarElements.length > 0) {
+        sidebarElements.forEach(sidebar => {
+          (sidebar as HTMLElement).style.backgroundColor = colors.sidebarColor;
+        });
+        console.log('Applied sidebar color directly to elements:', colors.sidebarColor);
       }
       
       console.log('Applied custom theme colors', colors);
@@ -289,6 +332,21 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         // Apply custom theme colors if provided in the event
         if (event.detail.theme.primaryColor) {
+          // Store sidebar color immediately in localStorage
+          if (event.detail.theme.sidebarColor) {
+            localStorage.setItem('custom-sidebar-color', event.detail.theme.sidebarColor);
+            
+            // Store all theme data for consistent access
+            localStorage.setItem(`theme-${themeName}`, JSON.stringify({
+              primaryColor: event.detail.theme.primaryColor,
+              secondaryColor: event.detail.theme.secondaryColor,
+              accentColor: event.detail.theme.accentColor,
+              sidebarColor: event.detail.theme.sidebarColor,
+              buttonColor: event.detail.theme.buttonColor,
+              textColor: event.detail.theme.textColor
+            }));
+          }
+          
           applyCustomThemeColors({
             primaryColor: event.detail.theme.primaryColor || '#9d89c9',
             secondaryColor: event.detail.theme.secondaryColor || '#f3e5f5',
@@ -298,11 +356,13 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             textColor: event.detail.theme.textColor || '#333333'
           });
           
-          // Additionally, directly apply the sidebar color to the sidebar element
-          const sidebar = document.querySelector('.sidebar') as HTMLElement;
-          if (sidebar && event.detail.theme.sidebarColor) {
-            sidebar.style.backgroundColor = event.detail.theme.sidebarColor;
-            console.log('Directly applied sidebar color:', event.detail.theme.sidebarColor);
+          // Additionally, directly apply the sidebar color to all sidebar elements
+          const sidebarElements = document.querySelectorAll('.sidebar');
+          if (sidebarElements.length > 0 && event.detail.theme.sidebarColor) {
+            sidebarElements.forEach(sidebar => {
+              (sidebar as HTMLElement).style.backgroundColor = event.detail.theme.sidebarColor;
+            });
+            console.log('Directly applied sidebar color to all elements:', event.detail.theme.sidebarColor);
           }
         }
         

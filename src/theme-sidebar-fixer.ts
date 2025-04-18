@@ -30,34 +30,58 @@ const applySidebarColor = () => {
   } else if (html.classList.contains('theme-nfd-theme')) {
     sidebarColor = '#ec193a';
   } else if (html.classList.contains('theme-purple-700')) {
-    // For custom themes, use the CSS variable
-    sidebarColor = getComputedStyle(html).getPropertyValue('--custom-sidebar-color').trim();
+    // For custom themes, check localStorage first for most up-to-date value
+    sidebarColor = localStorage.getItem('custom-sidebar-color') || '';
     
-    // If the variable is empty or has quotes, try to get it directly
-    if (!sidebarColor || sidebarColor.includes('"') || sidebarColor.includes("'")) {
-      // Fallback to localStorage
+    // If not found in localStorage, try CSS variable
+    if (!sidebarColor) {
+      sidebarColor = getComputedStyle(html).getPropertyValue('--custom-sidebar-color').trim();
+      
+      // Clean up the color value if it has quotes
+      sidebarColor = sidebarColor.replace(/['"]/g, '');
+    }
+    
+    // If still no color, try one more approach - check the active theme from localStorage
+    if (!sidebarColor || sidebarColor === '') {
       const themeName = localStorage.getItem('app-active-theme');
-      if (themeName && themeName !== 'Berry Purple' && 
+      
+      // If current theme is not one of the presets, it's likely custom
+      if (themeName && 
+          themeName !== 'Berry Purple' && 
           themeName !== 'Forest Green' &&
           themeName !== 'Ocean Blue' &&
           themeName !== 'Sunset Orange' &&
           themeName !== 'Dark Mode' &&
           themeName !== 'NFD Theme') {
-        // This is likely a custom theme, try to load its sidebar color from localStorage
-        const customSidebarColor = localStorage.getItem('custom-sidebar-color');
-        if (customSidebarColor) {
-          sidebarColor = customSidebarColor;
+        
+        // Get raw sidebar color data from localStorage if available
+        const themeDataString = localStorage.getItem(`theme-${themeName}`);
+        if (themeDataString) {
+          try {
+            const themeData = JSON.parse(themeDataString);
+            if (themeData && themeData.sidebarColor) {
+              sidebarColor = themeData.sidebarColor;
+              console.log('Got sidebar color from localStorage theme data:', sidebarColor);
+            }
+          } catch (e) {
+            console.error('Error parsing theme data from localStorage', e);
+          }
         }
       }
     }
   }
   
-  // Apply the color to all sidebar elements
-  if (sidebarColor) {
+  // Apply the color to all sidebar elements if we have a valid color
+  if (sidebarColor && sidebarColor !== '') {
+    // Store the color in localStorage for consistent access
+    localStorage.setItem('custom-sidebar-color', sidebarColor);
+    
     sidebarElements.forEach(sidebar => {
       (sidebar as HTMLElement).style.backgroundColor = sidebarColor;
     });
     console.log('Theme-sidebar-fixer: Applied sidebar color:', sidebarColor);
+  } else {
+    console.log('Theme-sidebar-fixer: No valid sidebar color found');
   }
 };
 
