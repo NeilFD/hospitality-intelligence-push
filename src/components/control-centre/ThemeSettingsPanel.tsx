@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -848,9 +848,6 @@ export function ThemeSettingsPanel({
   const currentLogoUrl = activeTheme.logoUrl || localStorage.getItem('app-logo-url') || "/lovable-uploads/3ea13c06-cab2-45cb-9b59-d96f32f78ecd.png";
 
   const combinedThemes = createCombinedThemesList();
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Brand & Theme Settings</CardTitle>
-        <CardDescription
+  
+  // Function to handle custom theme deletion
+  const handleDeleteCustomTheme = async (themeId: string, event: React.MouseEvent) => {
