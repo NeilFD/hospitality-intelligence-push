@@ -619,7 +619,7 @@ export function ThemeSettingsPanel({
     }, 3000);
   };
 
-  const createCombinedThemesList = () => {
+  const createCombinedThemesList = (): PresetTheme[] => {
     const basePresets = presetThemes.map(preset => ({
       id: preset.id,
       name: preset.name,
@@ -646,7 +646,7 @@ export function ThemeSettingsPanel({
         isDefault: false,
         isCustom: true,
         originalTheme: theme
-      }));
+      } as PresetTheme));
     
     return [...basePresets, ...customThemes];
   };

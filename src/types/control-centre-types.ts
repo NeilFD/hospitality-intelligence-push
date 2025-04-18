@@ -1,3 +1,4 @@
+
 export interface PermissionMatrix {
   roleId: 'GOD' | 'Super User' | 'Manager' | 'Team Member';
   modulePermissions: ModulePermission[];
@@ -34,12 +35,6 @@ export interface ThemeSettings {
   companyName: string;
 }
 
-export interface TargetSettings {
-  foodGpTarget: number;
-  beverageGpTarget: number;
-  wageCostTarget: number;
-}
-
 export type CustomFont = {
   name: string;
   value: string;
@@ -55,5 +50,8 @@ export type PresetTheme = {
     sidebar: string;
     button: string;
     text: string;
-  }
+  };
+  isDefault: boolean;
+  isCustom?: boolean;
+  originalTheme?: ThemeSettings;
 };
