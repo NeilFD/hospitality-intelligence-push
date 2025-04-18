@@ -1,4 +1,3 @@
-
 /**
  * This module ensures that custom theme colors are correctly applied to the sidebar
  * It runs automatically when imported and monitors theme changes to update the sidebar color
@@ -77,8 +76,11 @@ const applySidebarColor = () => {
         'theme-custom',
         'theme-tavern-blue',
         'tavern-blue',
+        'theme-nfd-theme',
         'theme-hi',
-        'theme-hi-purple'
+        'theme-hi-purple',
+        'theme-purple-700',
+        'purple-700'
       ];
       
       themeClasses.forEach(cls => {
@@ -138,7 +140,9 @@ const applySidebarColor = () => {
         'tavern-blue',
         'theme-nfd-theme',
         'theme-hi',
-        'theme-hi-purple'
+        'theme-hi-purple',
+        'theme-purple-700',
+        'purple-700'
       ];
       
       themeClasses.forEach(cls => {
@@ -197,7 +201,9 @@ const applySidebarColor = () => {
             'theme-tavern-blue',
             'tavern-blue',
             'theme-hi',
-            'theme-hi-purple'
+            'theme-hi-purple',
+            'theme-purple-700',
+            'purple-700'
           ];
           
           themeClasses.forEach(cls => {

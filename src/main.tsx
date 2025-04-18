@@ -1,4 +1,3 @@
-
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
@@ -123,7 +122,9 @@ const applyInitialTheme = () => {
     'theme-tavern-blue',
     'tavern-blue',
     'theme-nfd-theme',
-    'theme-custom'
+    'theme-custom',
+    'theme-purple-700',
+    'purple-700'
   ];
   
   themeClasses.forEach(cls => {

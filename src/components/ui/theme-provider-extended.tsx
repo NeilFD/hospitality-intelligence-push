@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "react-router-dom";
@@ -175,10 +174,14 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'theme-sunset-orange', 
         'theme-berry-purple', 
         'theme-dark-mode',
-        'theme-hi-purple',
-        'theme-tavern-blue',
         'theme-nfd-theme',
-        'theme-custom'
+        'theme-custom',
+        'theme-tavern-blue',
+        'tavern-blue',
+        'theme-hi',
+        'theme-hi-purple',
+        'theme-purple-700',
+        'purple-700'
       ];
       
       themeClasses.forEach(cls => {
