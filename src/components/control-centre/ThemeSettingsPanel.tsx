@@ -620,29 +620,31 @@ export function ThemeSettingsPanel({
       b: number;
     };
     onChange: (values: number[]) => void;
-  }) => <div className="space-y-2">
+  }) => (
+    <div className="space-y-2">
       <div className="flex items-center">
         <div className="w-6 h-6 mr-2" style={{
-        backgroundColor: `rgb(${rgbValues.r}, 0, 0)`
-      }}></div>
+          backgroundColor: `rgb(${rgbValues.r}, 0, 0)`
+        }}></div>
         <Slider defaultValue={[rgbValues.r]} max={255} step={1} value={[rgbValues.r]} onValueChange={values => onChange([values[0], rgbValues.g, rgbValues.b])} className="flex-1" />
         <span className="ml-2 w-8 text-center text-xs">{rgbValues.r}</span>
       </div>
       <div className="flex items-center">
         <div className="w-6 h-6 mr-2" style={{
-        backgroundColor: `rgb(0, ${rgbValues.g}, 0)`
-      }}></div>
+          backgroundColor: `rgb(0, ${rgbValues.g}, 0)`
+        }}></div>
         <Slider defaultValue={[rgbValues.g]} max={255} step={1} value={[rgbValues.g]} onValueChange={values => onChange([rgbValues.r, values[0], rgbValues.b])} className="flex-1" />
         <span className="ml-2 w-8 text-center text-xs">{rgbValues.g}</span>
       </div>
       <div className="flex items-center">
         <div className="w-6 h-6 mr-2" style={{
-        backgroundColor: `rgb(0, 0, ${rgbValues.b})`
-      }}></div>
+          backgroundColor: `rgb(0, 0, ${rgbValues.b})`
+        }}></div>
         <Slider defaultValue={[rgbValues.b]} max={255} step={1} value={[rgbValues.b]} onValueChange={values => onChange([rgbValues.r, rgbValues.g, values[0]])} className="flex-1" />
         <span className="ml-2 w-8 text-center text-xs">{rgbValues.b}</span>
       </div>
-    </div>;
+    </div>
+  );
 
   const getActiveThemeClasses = () => {
     const htmlElement = document.documentElement;
@@ -854,4 +856,308 @@ export function ThemeSettingsPanel({
               </div>
               
               <div className="mt-4 space-y-3">
-                <Label htmlFor="fontSelect" className="flex items
+                <Label htmlFor="fontSelect" className="flex items-center gap-2">
+                  <Building className="h-5 w-5 text-muted-foreground" />
+                  Font Style
+                </Label>
+                <Select 
+                  value={activeTheme.customFont || ''} 
+                  onValueChange={handleSelectChange}
+                >
+                  <SelectTrigger id="fontSelect" className="w-full">
+                    <SelectValue placeholder="Select a font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableFonts.map((font) => (
+                      <SelectItem 
+                        key={font.value} 
+                        value={font.value} 
+                        style={{ fontFamily: font.value }}
+                      >
+                        {font.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div 
+                  className="p-4 border rounded-md mt-2 text-center text-lg" 
+                  style={{ fontFamily: activeTheme.customFont || 'inherit' }}
+                >
+                  Sample text with the {activeTheme.customFont?.split(",")[0].replace(/['"]/g, '') || 'selected'} font
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Image className="h-5 w-5 text-muted-foreground" />
+                  Logo Image
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col space-y-3">
+                    <div className="border p-4 rounded-md bg-gray-50 flex items-center justify-center h-40">
+                      {currentLogoUrl ? (
+                        <img 
+                          src={currentLogoUrl} 
+                          alt="Company Logo" 
+                          className="max-h-32 max-w-full object-contain" 
+                        />
+                      ) : (
+                        <div className="text-gray-400 text-center">
+                          <Upload className="mx-auto h-10 w-10 mb-2" />
+                          <p>No logo uploaded</p>
+                        </div>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="relative"
+                      disabled={uploading}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Logo
+                        </>
+                      )}
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                        onChange={handleLogoUpload}
+                        accept="image/*"
+                        disabled={uploading}
+                      />
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="companyName">Company Name</Label>
+                      <Input 
+                        id="companyName"
+                        name="companyName"
+                        className="mt-1"
+                        value={activeTheme.companyName}
+                        onChange={handleInputChange}
+                        placeholder="Enter company name"
+                      />
+                    </div>
+                    <div className="pt-2">
+                      <Button
+                        onClick={saveTheme}
+                        disabled={saving}
+                        className="w-full"
+                        size="lg"
+                      >
+                        {saving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <SaveIcon className="mr-2 h-4 w-4" />
+                            Save Changes
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="custom" className="space-y-6">
+            <div className="space-y-4">
+              <div className="grid gap-4">
+                <Label htmlFor="customName" className="flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-muted-foreground" />
+                  Theme Name
+                </Label>
+                <Input 
+                  type="text" 
+                  id="customName" 
+                  name="name" 
+                  value={activeTheme.name} 
+                  onChange={handleInputChange} 
+                  className={`
+                    w-full 
+                    py-3 
+                    px-4 
+                    rounded-lg 
+                    text-lg 
+                    font-normal 
+                    shadow-sm 
+                    transition-all 
+                    duration-300 
+                    border-2 
+                    focus:outline-none 
+                    focus:ring-2 
+                    ${getThemeNameInputClasses()}
+                  `}
+                  placeholder="Enter a theme name"
+                />
+              </div>
+
+              <div className="pt-4 grid gap-6">
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="primaryColor">Primary Color</Label>
+                      <div className="flex items-center mt-2">
+                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.primaryColor }}></div>
+                        <Input
+                          type="text"
+                          name="primaryColor"
+                          id="primaryColor"
+                          value={activeTheme.primaryColor}
+                          onChange={handleInputChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <ColorSliderGroup
+                        name="primary"
+                        rgbValues={primaryRgb}
+                        onChange={handlePrimaryRgbChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="secondaryColor">Secondary Color</Label>
+                      <div className="flex items-center mt-2">
+                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.secondaryColor }}></div>
+                        <Input
+                          type="text"
+                          name="secondaryColor"
+                          id="secondaryColor"
+                          value={activeTheme.secondaryColor}
+                          onChange={handleInputChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <ColorSliderGroup
+                        name="secondary"
+                        rgbValues={secondaryRgb}
+                        onChange={handleSecondaryRgbChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="accentColor">Accent Color</Label>
+                      <div className="flex items-center mt-2">
+                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.accentColor }}></div>
+                        <Input
+                          type="text"
+                          name="accentColor"
+                          id="accentColor"
+                          value={activeTheme.accentColor}
+                          onChange={handleInputChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <ColorSliderGroup
+                        name="accent"
+                        rgbValues={accentRgb}
+                        onChange={handleAccentRgbChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sidebarColor">Sidebar Color</Label>
+                      <div className="flex items-center mt-2">
+                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.sidebarColor }}></div>
+                        <Input
+                          type="text"
+                          name="sidebarColor"
+                          id="sidebarColor"
+                          value={activeTheme.sidebarColor}
+                          onChange={handleInputChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <ColorSliderGroup
+                        name="sidebar"
+                        rgbValues={sidebarRgb}
+                        onChange={handleSidebarRgbChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="buttonColor">Button Color</Label>
+                      <div className="flex items-center mt-2">
+                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.buttonColor }}></div>
+                        <Input
+                          type="text"
+                          name="buttonColor"
+                          id="buttonColor"
+                          value={activeTheme.buttonColor}
+                          onChange={handleInputChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <ColorSliderGroup
+                        name="button"
+                        rgbValues={buttonRgb}
+                        onChange={handleButtonRgbChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="textColor">Text Color</Label>
+                      <div className="flex items-center mt-2">
+                        <div className="w-10 h-10 rounded mr-2" style={{ backgroundColor: activeTheme.textColor }}></div>
+                        <Input
+                          type="text"
+                          name="textColor"
+                          id="textColor"
+                          value={activeTheme.textColor}
+                          onChange={handleInputChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <ColorSliderGroup
+                        name="text"
+                        rgbValues={textRgb}
+                        onChange={handleTextRgbChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <Button 
+                    onClick={saveTheme}
+                    disabled={saving}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <SaveIcon className="mr-2 h-4 w-4" />
+                        Save Theme
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}
