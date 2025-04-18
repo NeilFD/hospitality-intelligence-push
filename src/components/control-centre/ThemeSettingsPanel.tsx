@@ -616,6 +616,8 @@ export function ThemeSettingsPanel({
         html.classList.add('theme-berry-purple');
       } else if (newTheme.name === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
+      } else if (newTheme.name === 'Hi Purple') {
+        html.classList.add('theme-berry-purple');
       } else {
         // For custom themes 
         html.classList.add('theme-purple-700');
@@ -915,404 +917,231 @@ export function ThemeSettingsPanel({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full mb-6 p-1 bg-purple-100 rounded-lg">
-            <TabsTrigger 
-              value="presets" 
+        <div className="grid gap-6">
+          <div className="grid gap-4">
+            <Label htmlFor="name" className="flex items-center gap-2">
+              <Palette className="h-5 w-5 text-muted-foreground" />
+              Theme Name
+            </Label>
+            <Input 
+              type="text" 
+              id="name" 
+              name="name" 
+              value={activeTheme.name} 
+              onChange={handleInputChange} 
               className={`
-                flex-1 
+                w-full 
+                py-3 
+                px-4 
+                rounded-lg 
+                text-lg 
+                font-normal 
+                shadow-sm 
                 transition-all 
                 duration-300 
-                ease-in-out
-                ${activeTab === 'presets' 
-                  ? `${getActiveThemeClasses()} shadow-md` 
-                  : 'bg-transparent text-purple-900 hover:bg-purple-200'}
-                rounded-md
-                py-2
-                flex 
-                items-center 
-                justify-center
-                gap-2
-                font-medium
-                border
-                ${activeTab === 'presets' 
-                  ? `${getActiveThemeBorder()}` 
-                  : 'border-purple-200 hover:border-purple-300'}
+                border-2 
+                focus:outline-none 
+                focus:ring-2 
+                ${getThemeNameInputClasses()}
               `}
-            >
-              <Palette className="h-4 w-4" />
-              Preset Themes & Logo
-            </TabsTrigger>
-            <TabsTrigger 
-              value="custom" 
-              className={`
-                flex-1 
-                transition-all 
-                duration-300 
-                ease-in-out
-                ${activeTab === 'custom' 
-                  ? `${getActiveThemeClasses()} shadow-md` 
-                  : 'bg-transparent text-purple-900 hover:bg-purple-200'}
-                rounded-md
-                py-2
-                flex 
-                items-center 
-                justify-center
-                gap-2
-                font-medium
-                border
-                ${activeTab === 'custom' 
-                  ? `${getActiveThemeBorder()}` 
-                  : 'border-purple-200 hover:border-purple-300'}
-              `}
-            >
-              <Sliders className="h-4 w-4" />
-              Create Theme
-            </TabsTrigger>
-          </TabsList>
+              placeholder="Enter a theme name"
+            />
+          </div>
           
-          <TabsContent value="presets" className="space-y-6">
-            <div className="grid gap-6">
-              <div className="grid gap-4">
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-muted-foreground" />
-                  Theme Name
-                </Label>
-                <Input 
-                  type="text" 
-                  id="name" 
-                  name="name" 
-                  value={activeTheme.name} 
-                  onChange={handleInputChange} 
-                  className={`
-                    w-full 
-                    py-3 
-                    px-4 
-                    rounded-lg 
-                    text-lg 
-                    font-normal 
-                    shadow-sm 
-                    transition-all 
-                    duration-300 
-                    border-2 
-                    focus:outline-none 
-                    focus:ring-2 
-                    ${getThemeNameInputClasses()}
-                  `}
-                  placeholder="Enter a theme name"
-                />
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-3 flex items-center">
-                  <Palette className="mr-2 h-5 w-5" />
-                  Select a Preset Theme
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {combinedThemes.map(theme => (
-                    <div 
-                      key={theme.id} 
-                      className={`
-                        border rounded-md overflow-hidden cursor-pointer 
-                        transition-all duration-300 
-                        ${selectedPreset === theme.id ? 'ring-4 ring-purple-500 shadow-lg transform scale-105' : 'hover:shadow-md'}
-                        ${presetSelectAnimation && selectedPreset === theme.id ? 'animate-pulse' : ''}
-                        relative
-                        group
-                      `}
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest('.theme-actions')) {
-                          e.stopPropagation();
-                          return;
-                        }
-                        applyPresetTheme(theme);
-                      }}
-                    >
-                      <div className="h-24 relative" style={{
-                        backgroundColor: theme.colors.primary
-                      }}>
-                        <div className="h-8 w-full" style={{
-                          backgroundColor: theme.colors.sidebar
-                        }}></div>
-                        <div className="flex justify-center mt-2">
-                          <div className="h-8 w-16 rounded" style={{
-                            backgroundColor: theme.colors.button
-                          }}></div>
-                        </div>
-                        {theme.isDefault && (
-                          <div className="absolute top-1 left-1 bg-white/50 text-xs px-1 rounded">
-                            Default
-                          </div>
-                        )}
-                        {theme.isCustom && (
-                          <>
-                            <div className="absolute top-1 right-1 bg-white/50 text-xs px-1 rounded">
-                              Custom
-                            </div>
-                            <div className="theme-actions absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="secondary"
-                                size="icon"
-                                className="h-8 w-8 bg-white/90 hover:bg-white"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (theme.originalTheme) {
-                                    setActiveTheme(theme.originalTheme);
-                                    setActiveTab('custom');
-                                  }
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (theme.originalTheme?.id) {
-                                    const { error } = await supabase
-                                      .from('themes')
-                                      .delete()
-                                      .eq('id', theme.originalTheme.id);
-                                    
-                                    if (error) {
-                                      toast.error('Failed to delete theme');
-                                      return;
-                                    }
-                                    
-                                    toast.success('Theme deleted successfully');
-                                    fetchThemes();
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                        {selectedPreset === theme.id && (
-                          <div className="absolute bottom-1 right-1">
-                            <Check className="h-5 w-5 text-white bg-green-500 rounded-full p-1" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-2 text-center text-sm font-medium">
-                        {theme.name}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="mt-4 space-y-3">
-                <Label htmlFor="fontSelect" className="flex items-center gap-2">
-                  <Building className="h-5 w-5 text-muted-foreground" />
-                  Font Style
-                </Label>
-                <Select 
-                  value={activeTheme.customFont || ''} 
-                  onValueChange={handleSelectChange}
-                >
-                  <SelectTrigger id="fontSelect" className="w-full">
-                    <SelectValue placeholder="Select a font" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableFonts.map((font) => (
-                      <SelectItem 
-                        key={font.value} 
-                        value={font.value} 
-                        style={{ fontFamily: font.value }}
-                      >
-                        {font.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <div>
+            <h3 className="text-lg font-medium mb-3 flex items-center">
+              <Palette className="mr-2 h-5 w-5" />
+              Select a Preset Theme
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              {combinedThemes.map(theme => (
                 <div 
-                  className="p-4 border rounded-md mt-2 text-center text-lg" 
-                  style={{ fontFamily: activeTheme.customFont || 'inherit' }}
-                >
-                  Sample text with the {activeTheme.customFont?.split(",")[0].replace(/['"]/g, '') || 'selected'} font
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                <Label className="flex items-center gap-2">
-                  <Image className="h-5 w-5 text-muted-foreground" />
-                  Logo Image
-                </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col space-y-3">
-                    <div className="border p-4 rounded-md bg-gray-50 flex items-center justify-center h-40">
-                      {currentLogoUrl ? (
-                        <img 
-                          src={currentLogoUrl} 
-                          alt="Company Logo" 
-                          className="max-h-32 max-w-full object-contain" 
-                        />
-                      ) : (
-                        <div className="text-gray-400 text-center">
-                          <Upload className="mx-auto h-10 w-10 mb-2" />
-                          <p>No logo uploaded</p>
-                        </div>
-                      )}
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="relative"
-                      disabled={uploading}
-                    >
-                      {uploading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Logo
-                        </>
-                      )}
-                      <input 
-                        type="file" 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                        onChange={handleLogoUpload}
-                        accept="image/*"
-                        disabled={uploading}
-                      />
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="companyName">Company Name</Label>
-                      <Input 
-                        id="companyName"
-                        name="companyName"
-                        className="mt-1"
-                        value={activeTheme.companyName}
-                        onChange={handleInputChange}
-                        placeholder="Enter company name"
-                      />
-                    </div>
-                    <div className="pt-2">
-                      <Button
-                        onClick={saveTheme}
-                        disabled={saving}
-                        className="w-full"
-                        size="lg"
-                      >
-                        {saving ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <SaveIcon className="mr-2 h-4 w-4" />
-                            Save Changes
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="custom" className="space-y-6">
-            <div className="space-y-4">
-              <div className="grid gap-4">
-                <Label htmlFor="customName" className="flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-muted-foreground" />
-                  Theme Name
-                </Label>
-                <Input 
-                  type="text" 
-                  id="customName" 
-                  name="name" 
-                  value={activeTheme.name} 
-                  onChange={handleInputChange} 
+                  key={theme.id} 
                   className={`
-                    w-full 
-                    py-3 
-                    px-4 
-                    rounded-lg 
-                    text-lg 
-                    font-normal 
-                    shadow-sm 
-                    transition-all 
-                    duration-300 
-                    border-2 
-                    focus:outline-none 
-                    focus:ring-2 
-                    ${getThemeNameInputClasses()}
+                    border rounded-md overflow-hidden cursor-pointer 
+                    transition-all duration-300 
+                    ${selectedPreset === theme.id ? 'ring-4 ring-purple-500 shadow-lg transform scale-105' : 'hover:shadow-md'}
+                    ${presetSelectAnimation && selectedPreset === theme.id ? 'animate-pulse' : ''}
+                    relative
+                    group
                   `}
-                  placeholder="Enter a theme name"
-                />
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('.theme-actions')) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    applyPresetTheme(theme);
+                  }}
+                >
+                  <div className="h-24 relative" style={{
+                    backgroundColor: theme.colors.primary
+                  }}>
+                    <div className="h-8 w-full" style={{
+                      backgroundColor: theme.colors.sidebar
+                    }}></div>
+                    <div className="flex justify-center mt-2">
+                      <div className="h-8 w-16 rounded" style={{
+                        backgroundColor: theme.colors.button
+                      }}></div>
+                    </div>
+                    {theme.isDefault && (
+                      <div className="absolute top-1 left-1 bg-white/50 text-xs px-1 rounded">
+                        Default
+                      </div>
+                    )}
+                    {theme.isCustom && (
+                      <>
+                        <div className="absolute top-1 right-1 bg-white/50 text-xs px-1 rounded">
+                          Custom
+                        </div>
+                        <div className="theme-actions absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-8 w-8 bg-white/90 hover:bg-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (theme.originalTheme) {
+                                setActiveTheme(theme.originalTheme);
+                                setActiveTab('custom');
+                              }
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (theme.originalTheme?.id) {
+                                const { error } = await supabase
+                                  .from('themes')
+                                  .delete()
+                                  .eq('id', theme.originalTheme.id);
+                                
+                                if (error) {
+                                  toast.error('Failed to delete theme');
+                                  return;
+                                }
+                                
+                                toast.success('Theme deleted successfully');
+                                fetchThemes();
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {selectedPreset === theme.id && (
+                      <div className="absolute bottom-1 right-1">
+                        <Check className="h-5 w-5 text-white bg-green-500 rounded-full p-1" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2 text-center text-sm font-medium">
+                    {theme.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="mt-4 space-y-3">
+            <Label htmlFor="fontSelect" className="flex items-center gap-2">
+              <Building className="h-5 w-5 text-muted-foreground" />
+              Font Style
+            </Label>
+            <Select 
+              value={activeTheme.customFont || ''} 
+              onValueChange={handleSelectChange}
+            >
+              <SelectTrigger id="fontSelect" className="w-full">
+                <SelectValue placeholder="Select a font" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableFonts.map((font) => (
+                  <SelectItem 
+                    key={font.value} 
+                    value={font.value} 
+                    style={{ fontFamily: font.value }}
+                  >
+                    {font.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div 
+              className="p-4 border rounded-md mt-2 text-center text-lg" 
+              style={{ fontFamily: activeTheme.customFont || 'inherit' }}
+            >
+              Sample text with the {activeTheme.customFont?.split(",")[0].replace(/['"]/g, '') || 'selected'} font
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Image className="h-5 w-5 text-muted-foreground" />
+              Logo Image
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col space-y-3">
+                <div className="border p-4 rounded-md bg-gray-50 flex items-center justify-center h-40">
+                  {currentLogoUrl ? (
+                    <img 
+                      src={currentLogoUrl} 
+                      alt="Company Logo" 
+                      className="max-h-32 max-w-full object-contain" 
+                    />
+                  ) : (
+                    <div className="text-gray-400 text-center">
+                      <Upload className="mx-auto h-10 w-10 mb-2" />
+                      <p>No logo uploaded</p>
+                    </div>
+                  )}
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="relative"
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Logo
+                    </>
+                  )}
+                  <input 
+                    type="file" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                    onChange={handleLogoUpload}
+                    accept="image/*"
+                    disabled={uploading}
+                  />
+                </Button>
               </div>
-
-              <div className="pt-4 grid gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primaryColor">Primary Color</Label>
-                    <ColorPicker
-                      color={activeTheme.primaryColor}
-                      onChange={(color) => handleInputChange({ target: { name: 'primaryColor', value: color } } as any)}
-                      className="mt-2"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="secondaryColor">Secondary Color</Label>
-                    <ColorPicker
-                      color={activeTheme.secondaryColor}
-                      onChange={(color) => handleInputChange({ target: { name: 'secondaryColor', value: color } } as any)}
-                      className="mt-2"
-                    />
-                  </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <Input 
+                    id="companyName"
+                    name="companyName"
+                    className="mt-1"
+                    value={activeTheme.companyName}
+                    onChange={handleInputChange}
+                    placeholder="Enter company name"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="accentColor">Accent Color</Label>
-                    <ColorPicker
-                      color={activeTheme.accentColor}
-                      onChange={(color) => handleInputChange({ target: { name: 'accentColor', value: color } } as any)}
-                      className="mt-2"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="sidebarColor">Sidebar Color</Label>
-                    <ColorPicker
-                      color={activeTheme.sidebarColor}
-                      onChange={(color) => handleInputChange({ target: { name: 'sidebarColor', value: color } } as any)}
-                      className="mt-2"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="buttonColor">Button Color</Label>
-                    <ColorPicker
-                      color={activeTheme.buttonColor}
-                      onChange={(color) => handleInputChange({ target: { name: 'buttonColor', value: color } } as any)}
-                      className="mt-2"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="textColor">Text Color</Label>
-                    <ColorPicker
-                      color={activeTheme.textColor}
-                      onChange={(color) => handleInputChange({ target: { name: 'textColor', value: color } } as any)}
-                      className="mt-2"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Button 
+                <div className="pt-2">
+                  <Button
                     onClick={saveTheme}
                     disabled={saving}
                     className="w-full"
@@ -1326,15 +1155,15 @@ export function ThemeSettingsPanel({
                     ) : (
                       <>
                         <SaveIcon className="mr-2 h-4 w-4" />
-                        Save Theme
+                        Save Changes
                       </>
                     )}
                   </Button>
                 </div>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
