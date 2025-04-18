@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet, Sliders, Bell } from "lucide-react";
+import { Home, Settings, Calendar, ChartBar, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, LogOut, User, Clipboard, MessageSquare, Users, Book, Wallet, Sliders, Bell, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -488,6 +488,10 @@ const Layout = ({
           name: "P&L Dashboard",
           path: "/pl/dashboard",
           icon: <Home className="mr-2 h-4 w-4" />
+        }, {
+          name: "Food & Beverage Forecast",
+          path: "/pl/food-beverage-forecast",
+          icon: <TrendingUp className="mr-2 h-4 w-4" />
         }];
       case 'wages':
         return [{

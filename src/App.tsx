@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -54,6 +53,9 @@ import WeeklyTracker from '@/pages/WeeklyTracker';
 import MasterDashboard from '@/pages/master/Dashboard';
 import MasterMonthSummary from '@/pages/master/MonthSummary';
 import MasterWeeklyInput from '@/pages/master/WeeklyInput';
+
+// Import Food & Beverage Forecast page
+import FoodBeverageForecast from '@/pages/pl/FoodBeverageForecast';
 
 const queryClient = new QueryClient();
 
@@ -134,6 +136,7 @@ function App() {
                 
                 {/* P&L Module Routes */}
                 <Route path="/pl/dashboard" element={<Layout><PLDashboard /></Layout>} />
+                <Route path="/pl/food-beverage-forecast" element={<Layout><FoodBeverageForecast /></Layout>} />
                 
                 {/* Wages Module Routes */}
                 <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
