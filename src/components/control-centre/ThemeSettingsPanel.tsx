@@ -851,3 +851,425 @@ export function ThemeSettingsPanel({
   
   // Function to handle custom theme deletion
   const handleDeleteCustomTheme = async (themeId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the parent card click
+    
+    try {
+      // Extract the actual theme ID if it's a custom theme
+      const actualThemeId = themeId.startsWith('custom-') ? themeId.replace('custom-', '') : themeId;
+      
+      const { error } = await supabase
+        .from('themes')
+        .delete()
+        .eq('id', actualThemeId);
+        
+      if (error) {
+        console.error('Error deleting theme:', error);
+        toast.error('Failed to delete theme');
+        return;
+      }
+      
+      toast.success('Theme deleted successfully');
+      
+      // Refresh the themes list
+      fetchThemes();
+      
+      // If the deleted theme was the active one, switch to the default theme
+      if (activeTheme.id === actualThemeId) {
+        const defaultTheme = presetThemes.find(theme => theme.isDefault);
+        if (defaultTheme) {
+          applyPresetTheme(defaultTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleDeleteCustomTheme:', error);
+      toast.error('An unexpected error occurred');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Brand & Theme Settings</CardTitle>
+        <CardDescription>
+          Customize the look and feel of your application with themes and branding options.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="presets">Theme Presets</TabsTrigger>
+            <TabsTrigger value="custom">Custom Theme</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="presets" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {combinedThemes.map((theme) => (
+                <div
+                  key={theme.id}
+                  className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:shadow-md ${
+                    selectedPreset === theme.id
+                      ? `${getActiveThemeBorder()} border-2`
+                      : 'border-gray-200'
+                  } ${presetSelectAnimation && selectedPreset === theme.id ? 'animate-pulse' : ''}`}
+                  onClick={() => applyPresetTheme(theme)}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-medium text-sm">{theme.name}</h3>
+                    {theme.isCustom && (
+                      <button
+                        onClick={(e) => handleDeleteCustomTheme(theme.id, e)}
+                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                        title="Delete theme"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div
+                      className="rounded-md h-12"
+                      style={{ backgroundColor: theme.colors.primary }}
+                      title="Primary"
+                    ></div>
+                    <div
+                      className="rounded-md h-12"
+                      style={{ backgroundColor: theme.colors.secondary }}
+                      title="Secondary"
+                    ></div>
+                    <div
+                      className="rounded-md h-12"
+                      style={{ backgroundColor: theme.colors.accent }}
+                      title="Accent"
+                    ></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div
+                      className="rounded-md h-8"
+                      style={{ backgroundColor: theme.colors.sidebar }}
+                      title="Sidebar"
+                    ></div>
+                    <div
+                      className="rounded-md h-8"
+                      style={{ backgroundColor: theme.colors.button }}
+                      title="Button"
+                    ></div>
+                    <div
+                      className="rounded-md h-8"
+                      style={{ backgroundColor: theme.colors.text }}
+                      title="Text"
+                    ></div>
+                  </div>
+                  {selectedPreset === theme.id && (
+                    <div className="absolute top-2 right-2">
+                      <Check className="h-4 w-4 text-green-500" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="custom" className="space-y-6 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="themeName">Theme Name</Label>
+                <Input
+                  id="themeName"
+                  name="name"
+                  value={activeTheme.name}
+                  onChange={handleInputChange}
+                  className={getThemeNameInputClasses()}
+                  placeholder="My Custom Theme"
+                />
+              </div>
+              <div>
+                <Label htmlFor="companyName">Company Name</Label>
+                <Input
+                  id="companyName"
+                  name="companyName"
+                  value={activeTheme.companyName}
+                  onChange={handleInputChange}
+                  className={getThemeNameInputClasses()}
+                  placeholder="My Company"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="primaryColor">Primary Color</Label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      color={activeTheme.primaryColor}
+                      onChange={(color) => {
+                        setActiveTheme((prev) => ({
+                          ...prev,
+                          primaryColor: color,
+                        }));
+                        setPrimaryRgb(hexToRgb(color));
+                      }}
+                    />
+                    <Input
+                      id="primaryColor"
+                      name="primaryColor"
+                      value={activeTheme.primaryColor}
+                      onChange={handleInputChange}
+                      className="w-28"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <ColorSliderGroup
+                      name="primaryColor"
+                      rgbValues={primaryRgb}
+                      onChange={handlePrimaryRgbChange}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="secondaryColor">Secondary Color</Label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      color={activeTheme.secondaryColor}
+                      onChange={(color) => {
+                        setActiveTheme((prev) => ({
+                          ...prev,
+                          secondaryColor: color,
+                        }));
+                        setSecondaryRgb(hexToRgb(color));
+                      }}
+                    />
+                    <Input
+                      id="secondaryColor"
+                      name="secondaryColor"
+                      value={activeTheme.secondaryColor}
+                      onChange={handleInputChange}
+                      className="w-28"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <ColorSliderGroup
+                      name="secondaryColor"
+                      rgbValues={secondaryRgb}
+                      onChange={handleSecondaryRgbChange}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="accentColor">Accent Color</Label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      color={activeTheme.accentColor}
+                      onChange={(color) => {
+                        setActiveTheme((prev) => ({
+                          ...prev,
+                          accentColor: color,
+                        }));
+                        setAccentRgb(hexToRgb(color));
+                      }}
+                    />
+                    <Input
+                      id="accentColor"
+                      name="accentColor"
+                      value={activeTheme.accentColor}
+                      onChange={handleInputChange}
+                      className="w-28"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <ColorSliderGroup
+                      name="accentColor"
+                      rgbValues={accentRgb}
+                      onChange={handleAccentRgbChange}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="sidebarColor">Sidebar Color</Label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      color={activeTheme.sidebarColor}
+                      onChange={(color) => {
+                        setActiveTheme((prev) => ({
+                          ...prev,
+                          sidebarColor: color,
+                        }));
+                        setSidebarRgb(hexToRgb(color));
+                      }}
+                    />
+                    <Input
+                      id="sidebarColor"
+                      name="sidebarColor"
+                      value={activeTheme.sidebarColor}
+                      onChange={handleInputChange}
+                      className="w-28"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <ColorSliderGroup
+                      name="sidebarColor"
+                      rgbValues={sidebarRgb}
+                      onChange={handleSidebarRgbChange}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="buttonColor">Button Color</Label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      color={activeTheme.buttonColor}
+                      onChange={(color) => {
+                        setActiveTheme((prev) => ({
+                          ...prev,
+                          buttonColor: color,
+                        }));
+                        setButtonRgb(hexToRgb(color));
+                      }}
+                    />
+                    <Input
+                      id="buttonColor"
+                      name="buttonColor"
+                      value={activeTheme.buttonColor}
+                      onChange={handleInputChange}
+                      className="w-28"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <ColorSliderGroup
+                      name="buttonColor"
+                      rgbValues={buttonRgb}
+                      onChange={handleButtonRgbChange}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="textColor">Text Color</Label>
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      color={activeTheme.textColor}
+                      onChange={(color) => {
+                        setActiveTheme((prev) => ({
+                          ...prev,
+                          textColor: color,
+                        }));
+                        setTextRgb(hexToRgb(color));
+                      }}
+                    />
+                    <Input
+                      id="textColor"
+                      name="textColor"
+                      value={activeTheme.textColor}
+                      onChange={handleInputChange}
+                      className="w-28"
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <ColorSliderGroup
+                      name="textColor"
+                      rgbValues={textRgb}
+                      onChange={handleTextRgbChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="customFont">Font Family</Label>
+                <Select
+                  value={activeTheme.customFont}
+                  onValueChange={handleSelectChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableFonts.map((font) => (
+                      <SelectItem key={font.value} value={font.value}>
+                        {font.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="logoUpload">Company Logo</Label>
+                <div className="flex flex-col space-y-2">
+                  <div className="bg-gray-50 rounded-md p-4 flex justify-center items-center h-32">
+                    {currentLogoUrl ? (
+                      <img
+                        src={currentLogoUrl}
+                        alt="Company Logo"
+                        className="max-h-28 max-w-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-gray-400 flex flex-col items-center">
+                        <Building className="h-10 w-10 mb-2" />
+                        <span>No logo uploaded</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex">
+                    <label
+                      htmlFor="logo-upload"
+                      className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose file
+                      <input
+                        id="logo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {uploading && (
+                      <div className="ml-2 flex items-center text-sm text-gray-600">
+                        <Loader2 className="animate-spin h-4 w-4 mr-1" />
+                        Uploading...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={activeTheme.isActive}
+                onCheckedChange={handleSwitchChange}
+              />
+              <Label htmlFor="isActive">Set as active theme</Label>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      <CardFooter className="flex justify-end">
+        <Button onClick={saveTheme} disabled={saving}>
+          {saving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <SaveIcon className="mr-2 h-4 w-4" />
+              Save Theme
+            </>
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
