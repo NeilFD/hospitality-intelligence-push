@@ -1,3 +1,4 @@
+
 /**
  * This module ensures that custom theme colors are correctly applied to the sidebar
  * It runs automatically when imported and monitors theme changes to update the sidebar color
@@ -100,6 +101,66 @@ const applySidebarColor = () => {
       return;
     }
     
+    // Define direct mapping for known themes
+    const knownThemes: Record<string, {color: string, className: string}> = {
+      'Forest Green': {color: '#2e7d32', className: 'theme-forest-green'},
+      'Ocean Blue': {color: '#1976d2', className: 'theme-ocean-blue'},
+      'Sunset Orange': {color: '#ef6c00', className: 'theme-sunset-orange'},
+      'Berry Purple': {color: '#8e24aa', className: 'theme-berry-purple'},
+      'Dark Mode': {color: '#333333', className: 'theme-dark-mode'}
+    };
+    
+    if (activeName in knownThemes) {
+      const themeData = knownThemes[activeName];
+      console.log(`Theme-sidebar-fixer: Applying known theme ${activeName}:`, themeData);
+      
+      // Store the color in localStorage
+      localStorage.setItem('custom-sidebar-color', themeData.color);
+      
+      // Apply to all sidebar elements
+      sidebarElements.forEach(sidebar => {
+        (sidebar as HTMLElement).style.setProperty('background-color', themeData.color, 'important');
+      });
+      
+      // Set CSS variables
+      html.style.setProperty('--custom-sidebar-color', themeData.color, 'important');
+      html.style.setProperty('--sidebar-color', themeData.color, 'important');
+      
+      // Update theme class
+      const themeClasses = [
+        'theme-forest-green', 
+        'theme-ocean-blue', 
+        'theme-sunset-orange', 
+        'theme-berry-purple', 
+        'theme-dark-mode',
+        'theme-purple-700',
+        'theme-tavern-blue',
+        'tavern-blue',
+        'theme-nfd-theme',
+        'theme-hi',
+        'theme-hi-purple'
+      ];
+      
+      themeClasses.forEach(cls => {
+        html.classList.remove(cls);
+      });
+      
+      html.classList.add(themeData.className);
+      
+      // Force body style update
+      document.body.setAttribute('style', `--custom-sidebar-color: ${themeData.color} !important; --sidebar-color: ${themeData.color} !important;`);
+      
+      // Trigger theme changed events
+      document.dispatchEvent(new Event('themeClassChanged'));
+      window.dispatchEvent(new CustomEvent('app-theme-updated', {
+        detail: { 
+          colors: { sidebarColor: themeData.color }
+        }
+      }));
+      
+      return;
+    }
+    
     // For other named themes, try to get stored theme data
     const themeData = localStorage.getItem(`theme-${activeName}`);
     if (themeData) {
@@ -117,21 +178,15 @@ const applySidebarColor = () => {
           });
           
           // Also set CSS variables with !important flag
+          html.style.setProperty('--custom-primary-color', parsedData.primaryColor || '#9d89c9', 'important');
+          html.style.setProperty('--custom-secondary-color', parsedData.secondaryColor || '#f3e5f5', 'important');
+          html.style.setProperty('--custom-accent-color', parsedData.accentColor || '#ab47bc', 'important');
           html.style.setProperty('--custom-sidebar-color', parsedData.sidebarColor, 'important');
+          html.style.setProperty('--custom-button-color', parsedData.buttonColor || '#7e57c2', 'important');
+          html.style.setProperty('--custom-text-color', parsedData.textColor || '#333333', 'important');
           html.style.setProperty('--sidebar-color', parsedData.sidebarColor, 'important');
           
-          // Apply the appropriate theme class if it's a known theme
-          const themeClassMap: {[key: string]: string} = {
-            'Berry Purple': 'theme-berry-purple',
-            'Forest Green': 'theme-forest-green',
-            'Ocean Blue': 'theme-ocean-blue',
-            'Sunset Orange': 'theme-sunset-orange',
-            'Dark Mode': 'theme-dark-mode',
-            'NFD': 'theme-nfd-theme',
-            'NFD Theme': 'theme-nfd-theme'
-          };
-          
-          // Remove all existing theme classes first
+          // For custom themes, set to theme-purple-700
           const themeClasses = [
             'theme-forest-green', 
             'theme-ocean-blue', 
@@ -150,14 +205,8 @@ const applySidebarColor = () => {
             html.classList.remove(cls);
           });
           
-          // Set custom theme class if not one of the presets
-          if (activeName in themeClassMap) {
-            // Add the correct theme class
-            html.classList.add(themeClassMap[activeName]);
-          } else {
-            // This is a custom theme, use the purple-700 class
-            html.classList.add('theme-purple-700');
-          }
+          // This is a custom theme, use the purple-700 class
+          html.classList.add('theme-purple-700');
           
           // Force body style update to ensure variables are applied
           document.body.setAttribute('style', `--custom-sidebar-color: ${parsedData.sidebarColor} !important; --sidebar-color: ${parsedData.sidebarColor} !important;`);
@@ -166,7 +215,14 @@ const applySidebarColor = () => {
           document.dispatchEvent(new Event('themeClassChanged'));
           window.dispatchEvent(new CustomEvent('app-theme-updated', {
             detail: { 
-              colors: { sidebarColor: parsedData.sidebarColor }
+              colors: { 
+                sidebarColor: parsedData.sidebarColor,
+                primaryColor: parsedData.primaryColor,
+                secondaryColor: parsedData.secondaryColor,
+                accentColor: parsedData.accentColor,
+                buttonColor: parsedData.buttonColor,
+                textColor: parsedData.textColor
+              }
             }
           }));
           
@@ -178,35 +234,14 @@ const applySidebarColor = () => {
     }
   }
   
-  // NFD theme class gets highest priority if still looking
-  if (html.classList.contains('theme-nfd-theme')) {
-    const sidebarColor = '#ec193a';
-    console.log('Theme-sidebar-fixer: Applied NFD theme sidebar color:', sidebarColor);
-    
-    // Store the color in localStorage for consistent access
-    localStorage.setItem('custom-sidebar-color', sidebarColor);
-    
-    // Apply to all sidebar elements
-    sidebarElements.forEach(sidebar => {
-      (sidebar as HTMLElement).style.setProperty('background-color', sidebarColor, 'important');
-    });
-    
-    // Also set CSS variables
-    html.style.setProperty('--custom-sidebar-color', sidebarColor, 'important');
-    html.style.setProperty('--sidebar-color', sidebarColor, 'important');
-    
-    // Force body style update
-    document.body.setAttribute('style', `--custom-sidebar-color: ${sidebarColor} !important; --sidebar-color: ${sidebarColor} !important;`);
-    return;
-  }
-  
-  // Handle other theme classes with direct color mapping
+  // Check theme classes on HTML element if we haven't returned yet
   const themeColorMap: Record<string, string> = {
     'theme-forest-green': '#2e7d32',
     'theme-ocean-blue': '#1976d2',
     'theme-sunset-orange': '#ef6c00', 
     'theme-berry-purple': '#8e24aa',
-    'theme-dark-mode': '#333333'
+    'theme-dark-mode': '#333333',
+    'theme-nfd-theme': '#ec193a'
   };
   
   // Check for predefined themes
@@ -333,9 +368,36 @@ const applySidebarColor = () => {
     return;
   }
   
-  // If we get here, no theme class was matched - use Berry Purple
+  // We should only reach here if no theme is set or there was an error - respect active theme name
+  if (activeName) {
+    // Try to get color from known themes
+    const knownThemes: Record<string, string> = {
+      'Forest Green': '#2e7d32',
+      'Ocean Blue': '#1976d2',
+      'Sunset Orange': '#ef6c00',
+      'Berry Purple': '#8e24aa',
+      'Dark Mode': '#333333',
+      'NFD': '#ec193a',
+      'NFD Theme': '#ec193a'
+    };
+    
+    if (activeName in knownThemes) {
+      const color = knownThemes[activeName];
+      console.log(`Theme-sidebar-fixer: Using color for known theme ${activeName}:`, color);
+      
+      // Store and apply color
+      localStorage.setItem('custom-sidebar-color', color);
+      sidebarElements.forEach(sidebar => {
+        (sidebar as HTMLElement).style.setProperty('background-color', color, 'important');
+      });
+      
+      return;
+    }
+  }
+  
+  // Final fallback to Berry Purple - should rarely reach here
   const defaultColor = '#8e24aa';
-  console.log('Theme-sidebar-fixer: Using default Berry Purple color:', defaultColor);
+  console.log('Theme-sidebar-fixer: Using default Berry Purple color as last resort:', defaultColor);
   
   // Store the color in localStorage for consistent access
   localStorage.setItem('custom-sidebar-color', defaultColor);
@@ -356,6 +418,56 @@ const applySidebarColor = () => {
 // Apply sidebar color immediately
 applySidebarColor();
 
+// Set up handlers for the Control Centre page
+const setupControlCentreHandlers = () => {
+  if (typeof window === 'undefined' || !window.location.pathname.includes('control-centre')) {
+    return;
+  }
+  
+  console.log('Setting up Control Centre theme handlers');
+  
+  // Run applySidebarColor multiple times with delays to ensure theme is applied
+  setTimeout(applySidebarColor, 100);
+  setTimeout(applySidebarColor, 500);
+  setTimeout(applySidebarColor, 1000);
+  
+  // Add click listener for theme selection in Control Centre
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    
+    // Check if this might be a theme selection click
+    const themeElement = target.closest('[class*="theme"]') || 
+                         target.closest('[role="button"]') || 
+                         target.closest('[class*="card"]') ||
+                         target.closest('button');
+    
+    if (themeElement) {
+      console.log('Theme selection click detected in Control Centre');
+      
+      // Wait for React to update state/localStorage
+      setTimeout(() => {
+        const themeName = localStorage.getItem('app-active-theme');
+        console.log('Theme name after click:', themeName);
+        
+        if (themeName && themeName !== 'Tavern Blue') {
+          // Force theme update events
+          window.dispatchEvent(new CustomEvent('app-theme-updated', {
+            detail: { theme: { name: themeName } }
+          }));
+          
+          // Apply theme
+          applySidebarColor();
+        }
+      }, 100);
+      
+      // Apply again after UI updates
+      setTimeout(applySidebarColor, 300);
+      setTimeout(applySidebarColor, 600);
+      setTimeout(applySidebarColor, 1000);
+    }
+  });
+};
+
 // Set up a MutationObserver to watch for class changes on the html element
 const setupThemeObserver = () => {
   if (typeof window === 'undefined') return;
@@ -363,63 +475,8 @@ const setupThemeObserver = () => {
   // Apply immediately
   applySidebarColor();
   
-  // Special handling for Control Centre page
-  if (window.location.pathname.includes('control-centre')) {
-    console.log('Control Centre page detected in theme-sidebar-fixer');
-    
-    // Run multiple times with delays to ensure theme is applied
-    setTimeout(applySidebarColor, 100);
-    setTimeout(applySidebarColor, 500);
-    setTimeout(applySidebarColor, 1000);
-    
-    // Set up click event listeners for theme selection
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      
-      // Check if this might be a theme selection click
-      if (target.closest('button') || target.closest('[role="button"]') || 
-          target.closest('[class*="theme"]') || target.closest('[class*="card"]')) {
-        
-        console.log('Potential theme selection click detected');
-        
-        // Apply with delays to catch theme changes
-        setTimeout(applySidebarColor, 100);
-        setTimeout(applySidebarColor, 300);
-        setTimeout(applySidebarColor, 500);
-      }
-    });
-    
-    // Extra enforcement for NFD theme
-    if (localStorage.getItem('app-active-theme') === 'NFD' || 
-        localStorage.getItem('app-active-theme') === 'NFD Theme') {
-      const nfdColor = '#ec193a';
-      
-      // Force CSS variables
-      document.documentElement.style.setProperty('--custom-sidebar-color', nfdColor, 'important');
-      document.documentElement.style.setProperty('--sidebar-color', nfdColor, 'important');
-      
-      // Force html class
-      document.documentElement.classList.remove(
-        'theme-tavern-blue',
-        'tavern-blue',
-        'theme-forest-green', 
-        'theme-ocean-blue', 
-        'theme-sunset-orange', 
-        'theme-berry-purple', 
-        'theme-dark-mode',
-        'theme-purple-700'
-      );
-      document.documentElement.classList.add('theme-nfd-theme');
-      
-      // Apply to sidebar elements
-      const sidebarElements = document.querySelectorAll('.sidebar');
-      if (sidebarElements && sidebarElements.length > 0) {
-        sidebarElements.forEach(sidebar => {
-          (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
-        });
-      }
-    }
-  }
+  // Run Control Centre specific handlers
+  setupControlCentreHandlers();
   
   // Set up event listeners
   document.addEventListener('themeClassChanged', applySidebarColor);
@@ -461,6 +518,11 @@ const setupThemeObserver = () => {
   
   // Set up an interval to continuously check and enforce the sidebar color
   const enforceInterval = setInterval(() => {
+    // Get current active theme
+    const activeName = localStorage.getItem('app-active-theme');
+    console.log('Interval check for theme:', activeName);
+    
+    // Always apply current theme
     applySidebarColor();
     
     // Also check for and purge Tavern Blue specifically
@@ -468,16 +530,13 @@ const setupThemeObserver = () => {
       localStorage.setItem('app-active-theme', 'Berry Purple');
       console.log('Purged Tavern Blue from localStorage during interval check');
       
-      // Force refresh the page if we're on control-centre to ensure theme is applied
-      if (window.location.pathname.includes('control-centre')) {
-        // Just trigger theme updates, don't actually refresh
-        document.dispatchEvent(new Event('themeClassChanged'));
-        window.dispatchEvent(new CustomEvent('app-theme-updated', {
-          detail: { 
-            theme: { name: 'Berry Purple' }
-          }
-        }));
-      }
+      // Force Berry Purple theme updates
+      document.dispatchEvent(new Event('themeClassChanged'));
+      window.dispatchEvent(new CustomEvent('app-theme-updated', {
+        detail: { 
+          theme: { name: 'Berry Purple' }
+        }
+      }));
     }
   }, 2000);
   
@@ -493,62 +552,25 @@ const setupThemeObserver = () => {
 // Run the setup
 const cleanup = setupThemeObserver();
 
-// Apply again after a short delay to catch any late DOM changes
+// Apply again after delays to catch late DOM changes
 setTimeout(applySidebarColor, 200);
-
-// Apply one more time after a longer delay to catch very late DOM changes
 setTimeout(applySidebarColor, 1000);
 
-// Add special handling for the Control Centre page where theme settings are changed
+// Add special handling for URL changes
 if (typeof window !== 'undefined') {
   // Apply theme color when navigating to Control Centre
   const controlCentreApplier = () => {
     if (window.location.pathname.includes('control-centre')) {
       console.log('Control Centre page detected, forcing theme application');
       
-      // Check for immediate sidebar application
+      // Set up Control Centre-specific handlers
+      setupControlCentreHandlers();
+      
+      // Force theme application
       setTimeout(applySidebarColor, 0);
       setTimeout(applySidebarColor, 200);
       setTimeout(applySidebarColor, 500);
       setTimeout(applySidebarColor, 1000);
-      
-      // Check if we have a theme name that should be applied
-      const themeName = localStorage.getItem('app-active-theme');
-      if (themeName) {
-        console.log('Active theme found in Control Centre:', themeName);
-        
-        // Special handling for NFD theme
-        if (themeName === 'NFD' || themeName === 'NFD Theme') {
-          const nfdColor = '#ec193a';
-          console.log('NFD theme found in Control Centre, applying color:', nfdColor);
-          
-          // Set to localStorage and force apply
-          localStorage.setItem('custom-sidebar-color', nfdColor);
-          
-          // Force theme class update
-          document.documentElement.classList.remove(
-            'theme-forest-green', 
-            'theme-ocean-blue', 
-            'theme-sunset-orange', 
-            'theme-berry-purple', 
-            'theme-dark-mode',
-            'theme-purple-700',
-            'theme-tavern-blue',
-            'tavern-blue'
-          );
-          document.documentElement.classList.add('theme-nfd-theme');
-          
-          // Force sidebar color
-          const sidebarElements = document.querySelectorAll('.sidebar');
-          sidebarElements.forEach(sidebar => {
-            (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
-          });
-          
-          // Force CSS variables
-          document.documentElement.style.setProperty('--custom-sidebar-color', nfdColor, 'important');
-          document.documentElement.style.setProperty('--sidebar-color', nfdColor, 'important');
-        }
-      }
     }
   };
   
@@ -557,11 +579,6 @@ if (typeof window !== 'undefined') {
   
   // Run when URL changes
   window.addEventListener('popstate', controlCentreApplier);
-  
-  // Clean up event listener
-  window.addEventListener('beforeunload', () => {
-    window.removeEventListener('popstate', controlCentreApplier);
-  });
 }
 
 // Final check to purge Tavern Blue

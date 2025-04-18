@@ -210,7 +210,62 @@ setTimeout(() => {
   console.log('Forced re-application of theme after delay');
 }, 500);
 
-// Add special handling for Control Centre page - it needs extra attention
+// Fix the Control Centre page theme loading issue
+if (typeof window !== 'undefined') {
+  // Watch for navigation to Control Centre page
+  const observer = new MutationObserver(() => {
+    if (window.location.pathname.includes('control-centre')) {
+      // Fix theme selection handling for Control Centre
+      const handleThemeSelection = (event) => {
+        // Get the clicked element
+        const target = event.target as HTMLElement;
+        
+        // Look for theme-related clicks
+        const themeCard = target.closest('[class*="theme-card"]') || 
+                          target.closest('[class*="theme-option"]') || 
+                          target.closest('[role="button"]');
+                          
+        if (themeCard) {
+          // Get the theme name from various possible attributes
+          const themeName = themeCard.getAttribute('data-theme-name') || 
+                           themeCard.getAttribute('data-value') ||
+                           themeCard.textContent?.trim();
+                           
+          if (themeName) {
+            console.log('Theme selection detected in Control Centre:', themeName);
+            
+            // Update localStorage immediately
+            localStorage.setItem('app-active-theme', themeName);
+            
+            // Force theme update with short delay to let React update state
+            setTimeout(() => {
+              // Dispatch theme updated event
+              window.dispatchEvent(new CustomEvent('app-theme-updated', {
+                detail: { 
+                  theme: { name: themeName }
+                }
+              }));
+              
+              // Also reapply theme
+              applyInitialTheme();
+            }, 50);
+          }
+        }
+      };
+      
+      // Add event listener to control centre container for theme selections
+      const controlCentre = document.querySelector('.container');
+      if (controlCentre) {
+        controlCentre.addEventListener('click', handleThemeSelection);
+      }
+    }
+  });
+  
+  // Start observing for URL changes
+  observer.observe(document.body, { subtree: true, childList: true });
+}
+
+// Special handling for Control Centre page - it needs extra attention
 setTimeout(() => {
   if (window.location.pathname.includes('control-centre')) {
     console.log('Control Centre page detected, applying extra theme enforcement');
@@ -259,50 +314,51 @@ setTimeout(() => {
   }
 }, 1000);
 
-// Add a click handler for the Control Centre page to refresh themes when clicked
+// Fix Control Centre theme selection handling
 if (typeof window !== 'undefined' && window.location.pathname.includes('control-centre')) {
   document.addEventListener('click', (event) => {
     const target = event.target as HTMLElement;
     
-    // Check if this might be a theme-related click
-    if (target.closest('button') || target.closest('[role="button"]') || 
-        target.closest('[class*="theme"]') || target.closest('[class*="card"]')) {
+    // Check for theme cards or buttons that might change themes
+    if (target.closest('[class*="theme"]') || 
+        target.closest('[role="button"]') ||
+        target.closest('[class*="card"]')) {
       
-      console.log('Potential theme selection click in Control Centre');
-      
-      // Reapply themes with delays
-      setTimeout(applyInitialTheme, 100);
-      setTimeout(applyInitialTheme, 300);
-      setTimeout(applyInitialTheme, 500);
-      
-      // Also check for NFD theme selection
-      setTimeout(() => {
-        if (localStorage.getItem('app-active-theme') === 'NFD' || 
-            localStorage.getItem('app-active-theme') === 'NFD Theme') {
-          
-          const nfdColor = '#ec193a';
-          console.log('NFD theme detected after click, forcing application');
-          
-          // Force NFD theme application
-          document.documentElement.classList.remove(
-            'theme-forest-green', 
-            'theme-ocean-blue', 
-            'theme-sunset-orange', 
-            'theme-berry-purple', 
-            'theme-dark-mode',
-            'theme-purple-700'
-          );
-          document.documentElement.classList.add('theme-nfd-theme');
-          
-          // Force sidebar color
-          const sidebarElements = document.querySelectorAll('.sidebar');
-          if (sidebarElements.length > 0) {
-            sidebarElements.forEach(sidebar => {
-              (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
-            });
+      // Get possible theme container 
+      const themeElement = target.closest('[data-theme-name]') || 
+                           target.closest('[data-value]') ||
+                           target.closest('button') ||
+                           target.closest('[role="button"]');
+                           
+      if (themeElement) {
+        console.log('Potential theme selection detected in Control Centre');
+        
+        // Wait a moment for React to update state
+        setTimeout(() => {
+          // Get the current theme from localStorage
+          const currentTheme = localStorage.getItem('app-active-theme');
+          if (currentTheme && currentTheme !== 'Tavern Blue') {
+            console.log('Applying selected theme after click:', currentTheme);
+            
+            // Force application
+            applyInitialTheme();
+            
+            // Extra enforcement for difficult themes
+            if (currentTheme === 'NFD' || currentTheme === 'NFD Theme') {
+              const nfdColor = '#ec193a';
+              
+              // Force NFD theme to sidebar
+              const sidebarElements = document.querySelectorAll('.sidebar');
+              sidebarElements.forEach(sidebar => {
+                (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
+              });
+            }
           }
-        }
-      }, 200);
+        }, 100);
+        
+        // Apply again after a bit longer delay to catch UI updates
+        setTimeout(applyInitialTheme, 300);
+      }
     }
   });
 }

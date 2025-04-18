@@ -5,6 +5,12 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
   const [sidebarColor, setSidebarColor] = useState<string | null>(null);
 
   useEffect(() => {
+    // Special handling for Control Centre page
+    const isControlCentrePage = window.location.pathname.includes('control-centre');
+    if (isControlCentrePage) {
+      console.log('Sidebar component detected Control Centre page');
+    }
+    
     // Force NFD as highest priority
     const forceNFDTheme = () => {
       // Check if theme is NFD in localStorage
@@ -58,6 +64,84 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
       // Force NFD theme as highest priority
       if (forceNFDTheme()) return;
       
+      // Get active theme name - critical for theme selection in Control Centre
+      const activeName = localStorage.getItem('app-active-theme');
+      console.log('Sidebar updating with active theme name:', activeName);
+      
+      // Don't default to Berry Purple - use the actual saved theme
+      if (activeName) {
+        // Get theme data
+        const themeData = localStorage.getItem(`theme-${activeName}`);
+        
+        // Handle known theme names directly
+        const knownThemes: Record<string, string> = {
+          'Forest Green': '#2e7d32',
+          'Ocean Blue': '#1976d2',
+          'Sunset Orange': '#ef6c00',
+          'Berry Purple': '#8e24aa',
+          'Dark Mode': '#333333',
+          'NFD': '#ec193a',
+          'NFD Theme': '#ec193a'
+        };
+        
+        if (activeName in knownThemes) {
+          const themeColor = knownThemes[activeName];
+          console.log(`Applying known theme color for ${activeName}:`, themeColor);
+          
+          // Set sidebar color
+          setSidebarColor(themeColor);
+          localStorage.setItem('custom-sidebar-color', themeColor);
+          applySidebarColorDirectly(themeColor);
+          
+          // Get and apply the correct theme class
+          const themeClassMap: Record<string, string> = {
+            'Berry Purple': 'theme-berry-purple',
+            'Forest Green': 'theme-forest-green',
+            'Ocean Blue': 'theme-ocean-blue',
+            'Sunset Orange': 'theme-sunset-orange',
+            'Dark Mode': 'theme-dark-mode',
+            'NFD': 'theme-nfd-theme',
+            'NFD Theme': 'theme-nfd-theme'
+          };
+          
+          // Remove current theme classes
+          themeClasses.forEach(cls => {
+            html.classList.remove(cls);
+          });
+          
+          // Add the correct theme class
+          if (activeName in themeClassMap) {
+            html.classList.add(themeClassMap[activeName]);
+            console.log(`Applied theme class for ${activeName}:`, themeClassMap[activeName]);
+          }
+          
+          return;
+        }
+        
+        // For custom themes, try to load from theme data
+        if (themeData) {
+          try {
+            const parsedData = JSON.parse(themeData);
+            if (parsedData && parsedData.sidebarColor) {
+              console.log('Found custom theme data for:', activeName, parsedData);
+              setSidebarColor(parsedData.sidebarColor);
+              localStorage.setItem('custom-sidebar-color', parsedData.sidebarColor);
+              applySidebarColorDirectly(parsedData.sidebarColor);
+              
+              // For custom themes, use the purple-700 class
+              themeClasses.forEach(cls => {
+                html.classList.remove(cls);
+              });
+              html.classList.add('theme-purple-700');
+              
+              return;
+            }
+          } catch (e) {
+            console.error('Error parsing theme data:', e);
+          }
+        }
+      }
+      
       // Get from localStorage first (most reliable source)
       const storedColor = localStorage.getItem('custom-sidebar-color');
       
@@ -90,28 +174,6 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
         document.documentElement.classList.add('theme-nfd-theme');
         
         return;
-      }
-      
-      // Check for active theme name
-      const activeName = localStorage.getItem('app-active-theme');
-      
-      // If we have an active theme, try to get its theme data
-      if (activeName) {
-        const themeData = localStorage.getItem(`theme-${activeName}`);
-        if (themeData) {
-          try {
-            const parsedData = JSON.parse(themeData);
-            if (parsedData && parsedData.sidebarColor) {
-              setSidebarColor(parsedData.sidebarColor);
-              localStorage.setItem('custom-sidebar-color', parsedData.sidebarColor);
-              applySidebarColorDirectly(parsedData.sidebarColor);
-              console.log('Applied sidebar color from theme data:', parsedData.sidebarColor);
-              return;
-            }
-          } catch (e) {
-            console.error('Error parsing theme data:', e);
-          }
-        }
       }
       
       // Then check theme classes
@@ -169,21 +231,40 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
           }
         }
         
-        // Fallback to Berry Purple
-        const fallbackColor = '#8e24aa';
-        setSidebarColor(fallbackColor);
-        localStorage.setItem('custom-sidebar-color', fallbackColor);
-        applySidebarColorDirectly(fallbackColor);
-        console.log('Applied Berry Purple fallback sidebar color:', fallbackColor);
+        // Fallback to Berry Purple only if no other theme is found
+        if (!activeName || activeName === 'Berry Purple') {
+          const fallbackColor = '#8e24aa';
+          setSidebarColor(fallbackColor);
+          localStorage.setItem('custom-sidebar-color', fallbackColor);
+          applySidebarColorDirectly(fallbackColor);
+          console.log('Applied Berry Purple fallback sidebar color:', fallbackColor);
+        }
       } else {
-        // Default fallback to Berry Purple if no theme class matches
-        const defaultColor = '#8e24aa';
-        setSidebarColor(defaultColor);
-        localStorage.setItem('custom-sidebar-color', defaultColor);
-        applySidebarColorDirectly(defaultColor);
-        console.log('Applied Berry Purple default sidebar color:', defaultColor);
+        // Default fallback to Berry Purple only if no other theme is specified
+        if (!activeName || activeName === 'Berry Purple') {
+          const defaultColor = '#8e24aa';
+          setSidebarColor(defaultColor);
+          localStorage.setItem('custom-sidebar-color', defaultColor);
+          applySidebarColorDirectly(defaultColor);
+          console.log('Applied Berry Purple default sidebar color:', defaultColor);
+        }
       }
     };
+    
+    // List of all theme classes to manage
+    const themeClasses = [
+      'theme-forest-green', 
+      'theme-ocean-blue', 
+      'theme-sunset-orange', 
+      'theme-berry-purple', 
+      'theme-dark-mode',
+      'theme-nfd-theme',
+      'theme-purple-700',
+      'theme-tavern-blue',
+      'tavern-blue',
+      'theme-hi',
+      'theme-hi-purple'
+    ];
     
     // Update color on mount and whenever the state changes
     updateSidebarColor();
@@ -191,22 +272,38 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
     // Listen for theme updates from other components
     const handleThemeUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
-      if (customEvent.detail && customEvent.detail.colors && customEvent.detail.colors.sidebarColor) {
-        setSidebarColor(customEvent.detail.colors.sidebarColor);
-        localStorage.setItem('custom-sidebar-color', customEvent.detail.colors.sidebarColor);
-        setTimeout(() => {
-          // Force reapply after a short delay to ensure it takes precedence
-          const color = customEvent.detail.colors.sidebarColor;
-          const sidebarElement = document.querySelector('.sidebar') as HTMLElement;
-          if (sidebarElement) {
-            sidebarElement.style.setProperty('background-color', color, 'important');
-          }
-        }, 50);
-        console.log('Theme update event with sidebar color:', customEvent.detail.colors.sidebarColor);
-      } else {
-        // If no specific color, recompute
-        updateSidebarColor();
+      
+      // Always get the active theme name first
+      const activeName = localStorage.getItem('app-active-theme');
+      console.log('Theme update event received with active theme:', activeName);
+      
+      if (customEvent.detail) {
+        // Check if there's a specific theme name in the event
+        if (customEvent.detail.theme && customEvent.detail.theme.name) {
+          console.log('Theme update has theme name:', customEvent.detail.theme.name);
+          // Store theme name in localStorage
+          localStorage.setItem('app-active-theme', customEvent.detail.theme.name);
+        }
+        
+        // Check if there's a specific sidebar color
+        if (customEvent.detail.colors && customEvent.detail.colors.sidebarColor) {
+          console.log('Theme update has sidebar color:', customEvent.detail.colors.sidebarColor);
+          setSidebarColor(customEvent.detail.colors.sidebarColor);
+          localStorage.setItem('custom-sidebar-color', customEvent.detail.colors.sidebarColor);
+          
+          // Apply color directly after a short delay
+          setTimeout(() => {
+            const color = customEvent.detail.colors.sidebarColor;
+            const sidebarElement = document.querySelector('.sidebar') as HTMLElement;
+            if (sidebarElement) {
+              sidebarElement.style.setProperty('background-color', color, 'important');
+            }
+          }, 50);
+        }
       }
+      
+      // Always recompute after an event
+      updateSidebarColor();
     };
     
     // Apply a purge function to remove Tavern Blue
@@ -266,17 +363,61 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
       setTimeout(updateSidebarColor, 500);
       setTimeout(updateSidebarColor, 1000);
       
-      // Add extra event listeners for theme changes
+      // Add extra event listeners for theme changes in Control Centre
       document.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('a') || target.closest('div[role="button"]')) {
+        
+        // Look for potential theme selection clicks
+        if (target.closest('button') || 
+            target.closest('a') || 
+            target.closest('div[role="button"]') || 
+            target.closest('[class*="theme"]') || 
+            target.closest('[class*="card"]')) {
+          
+          console.log('Potential theme click detected in Control Centre');
+          
+          // Apply color with delays to catch theme changes
           setTimeout(updateSidebarColor, 100);
+          setTimeout(updateSidebarColor, 300);
+          setTimeout(updateSidebarColor, 500);
+          
+          // Check for the current theme name
+          setTimeout(() => {
+            const themeName = localStorage.getItem('app-active-theme');
+            console.log('After click, active theme is:', themeName);
+            
+            // If there's a specific theme, force it
+            if (themeName && themeName !== 'Tavern Blue') {
+              // Handle known themes
+              const knownThemes: Record<string, string> = {
+                'Forest Green': '#2e7d32',
+                'Ocean Blue': '#1976d2',
+                'Sunset Orange': '#ef6c00',
+                'Berry Purple': '#8e24aa',
+                'Dark Mode': '#333333',
+                'NFD': '#ec193a',
+                'NFD Theme': '#ec193a'
+              };
+              
+              if (themeName in knownThemes) {
+                const themeColor = knownThemes[themeName];
+                setSidebarColor(themeColor);
+                localStorage.setItem('custom-sidebar-color', themeColor);
+                applySidebarColorDirectly(themeColor);
+                console.log(`Applied clicked theme ${themeName} color:`, themeColor);
+              }
+            }
+          }, 200);
         }
       });
     }
     
     // Force periodic color checks to ensure it stays applied
     const forceCheckInterval = setInterval(() => {
+      // Get current active theme
+      const activeName = localStorage.getItem('app-active-theme');
+      
+      // Check if we have a color stored for current sidebar
       if (sidebarColor) {
         const sidebarElement = document.querySelector('.sidebar') as HTMLElement;
         if (sidebarElement && sidebarElement.style.backgroundColor !== sidebarColor) {
@@ -301,21 +442,54 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
     if (window.location.pathname.includes('control-centre')) {
       // For the Control Centre page specifically, enforce sidebar color more aggressively
       const enforceInterval = setInterval(() => {
+        // Get current active theme from localStorage
+        const activeName = localStorage.getItem('app-active-theme');
+        console.log('Control Centre sidebar enforcer checking theme:', activeName);
+        
+        // Apply theme-specific colors
+        if (activeName) {
+          // Check for known themes
+          const knownThemes: Record<string, string> = {
+            'Forest Green': '#2e7d32',
+            'Ocean Blue': '#1976d2',
+            'Sunset Orange': '#ef6c00',
+            'Berry Purple': '#8e24aa',
+            'Dark Mode': '#333333',
+            'NFD': '#ec193a',
+            'NFD Theme': '#ec193a'
+          };
+          
+          if (activeName in knownThemes) {
+            const color = knownThemes[activeName];
+            const sidebarEl = document.querySelector('.sidebar') as HTMLElement;
+            if (sidebarEl) {
+              sidebarEl.style.setProperty('background-color', color, 'important');
+            }
+          } else {
+            // Check for custom theme data
+            const themeData = localStorage.getItem(`theme-${activeName}`);
+            if (themeData) {
+              try {
+                const parsedData = JSON.parse(themeData);
+                if (parsedData && parsedData.sidebarColor) {
+                  const sidebarEl = document.querySelector('.sidebar') as HTMLElement;
+                  if (sidebarEl) {
+                    sidebarEl.style.setProperty('background-color', parsedData.sidebarColor, 'important');
+                  }
+                }
+              } catch (e) {
+                console.error('Error parsing theme data in enforcer:', e);
+              }
+            }
+          }
+        }
+        
+        // Also check for sidebar color in localStorage
         const storedColor = localStorage.getItem('custom-sidebar-color');
         if (storedColor) {
           const sidebarEl = document.querySelector('.sidebar') as HTMLElement;
           if (sidebarEl) {
             sidebarEl.style.setProperty('background-color', storedColor, 'important');
-          }
-        }
-        
-        // Also check for NFD theme
-        const activeName = localStorage.getItem('app-active-theme');
-        if (activeName === 'NFD' || activeName === 'NFD Theme') {
-          const nfdColor = '#ec193a';
-          const sidebarEl = document.querySelector('.sidebar') as HTMLElement;
-          if (sidebarEl) {
-            sidebarEl.style.setProperty('background-color', nfdColor, 'important');
           }
         }
       }, 500);
