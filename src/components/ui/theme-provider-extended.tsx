@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "react-router-dom";
@@ -14,7 +15,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // ALWAYS default to Berry Purple
         const defaultThemeName = 'Berry Purple';
         
-        // Override any saved theme to Berry Purple
+        // Get saved theme name, default to Berry Purple
         const savedThemeName = localStorage.getItem('app-active-theme') || 'Berry Purple';
         
         console.log('Applying theme:', savedThemeName, 'with Berry Purple as fallback');
@@ -28,7 +29,26 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Then try to load the requested theme from database
         let themeNameToLoad = savedThemeName;
         
-        // For problematic themes like NFD, we'll still try to load them but keep Berry Purple ready
+        // Special handling for NFD theme
+        if (themeNameToLoad === 'NFD' || themeNameToLoad === 'NFD Theme') {
+          console.log('NFD theme detected, applying NFD-specific settings');
+          applyThemeClass('nfd-theme');
+          
+          // Apply NFD theme colors directly
+          applyCustomThemeColors({
+            primaryColor: '#ec193a',
+            secondaryColor: '#ffebee',
+            accentColor: '#d81b60',
+            sidebarColor: '#ec193a',
+            buttonColor: '#ec193a',
+            textColor: '#212121'
+          });
+          
+          // Exit early since we've manually applied NFD theme
+          return;
+        }
+        
+        // For other themes, try to load from database
         const { data, error } = await supabase
           .from('themes')
           .select('*')
@@ -56,10 +76,13 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
               primaryColor: berryPurpleData.primary_color || '#9d89c9',
               secondaryColor: berryPurpleData.secondary_color || '#f3e5f5',
               accentColor: berryPurpleData.accent_color || '#ab47bc',
-              sidebarColor: berryPurpleData.sidebar_color || '#7e57c2',
+              sidebarColor: berryPurpleData.sidebar_color || '#8e24aa',
               buttonColor: berryPurpleData.button_color || '#7e57c2',
               textColor: berryPurpleData.text_color || '#333333'
             });
+          } else {
+            // If no Berry Purple in database, use hardcoded values
+            applyBerryPurpleThemeColors();
           }
           return;
         }
@@ -89,7 +112,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             primaryColor: data.primary_color || '#9d89c9',
             secondaryColor: data.secondary_color || '#f3e5f5',
             accentColor: data.accent_color || '#ab47bc',
-            sidebarColor: data.sidebar_color || '#7e57c2',
+            sidebarColor: data.sidebar_color || '#8e24aa',
             buttonColor: data.button_color || '#7e57c2',
             textColor: data.text_color || '#333333'
           });
@@ -132,7 +155,8 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'NFD': 'theme-nfd-theme',
         'Hi': 'theme-berry-purple', // Force Hi theme to use Berry Purple
         'Tavern Blue': 'theme-berry-purple', // Force Tavern Blue to use Berry Purple
-        'Custom Theme': 'theme-purple-700'
+        'Custom Theme': 'theme-purple-700',
+        'nfd-theme': 'theme-nfd-theme' // Handle special case for NFD theme
       };
       
       // Get the theme class or default to Berry Purple theme class

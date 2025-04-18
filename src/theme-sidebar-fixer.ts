@@ -17,7 +17,11 @@ const applySidebarColor = () => {
   // Berry Purple fallback color
   let sidebarColor = '#8e24aa';
   
-  if (html.classList.contains('theme-forest-green')) {
+  // NFD theme gets highest priority
+  if (html.classList.contains('theme-nfd-theme')) {
+    sidebarColor = '#ec193a';
+    console.log('Theme-sidebar-fixer: Applied NFD theme sidebar color: #ec193a');
+  } else if (html.classList.contains('theme-forest-green')) {
     sidebarColor = '#2e7d32';
   } else if (html.classList.contains('theme-ocean-blue')) {
     sidebarColor = '#1976d2';
@@ -27,8 +31,6 @@ const applySidebarColor = () => {
     sidebarColor = '#8e24aa';
   } else if (html.classList.contains('theme-dark-mode')) {
     sidebarColor = '#333333';
-  } else if (html.classList.contains('theme-nfd-theme')) {
-    sidebarColor = '#ec193a';
   } else if (html.classList.contains('theme-purple-700')) {
     // For custom themes, check localStorage first for most up-to-date value
     const localStorageColor = localStorage.getItem('custom-sidebar-color');
