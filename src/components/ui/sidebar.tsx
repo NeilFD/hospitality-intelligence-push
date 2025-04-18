@@ -9,64 +9,24 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
     const updateSidebarColor = () => {
       const html = document.documentElement;
       
-      // Berry Purple fallback color - will be used if nothing else works
-      let fallbackColor = '#8e24aa';
+      // Get from localStorage first (most reliable source)
+      const storedColor = localStorage.getItem('custom-sidebar-color');
+      
+      if (storedColor && storedColor !== '') {
+        setSidebarColor(storedColor);
+        console.log('Applied sidebar color from localStorage:', storedColor);
+        return;
+      }
       
       // NFD theme gets highest priority
       if (html.classList.contains('theme-nfd-theme')) {
         setSidebarColor('#ec193a');
         console.log('Applied NFD theme sidebar color: #ec193a');
-        return; // Exit early for NFD theme
+        return;
       }
       
-      // Custom theme handling - high priority
-      if (html.classList.contains('theme-purple-700')) {
-        // Try multiple methods to get the custom sidebar color
-        
-        // 1. First check localStorage (most reliable and up-to-date)
-        const localStorageColor = localStorage.getItem('custom-sidebar-color');
-        
-        // 2. Then check CSS variable
-        const cssVarColor = getComputedStyle(html).getPropertyValue('--custom-sidebar-color').trim();
-        
-        // Use the most reliable source with fallbacks
-        if (localStorageColor && localStorageColor !== '') {
-          setSidebarColor(localStorageColor);
-          console.log('Applied custom sidebar color from localStorage:', localStorageColor);
-        } else if (cssVarColor && cssVarColor !== '') {
-          setSidebarColor(cssVarColor);
-          console.log('Applied custom sidebar color from CSS var:', cssVarColor);
-        } else {
-          // Last resort - try to get theme data from localStorage
-          const activeTheme = localStorage.getItem('app-active-theme');
-          if (activeTheme) {
-            const themeData = localStorage.getItem(`theme-${activeTheme}`);
-            if (themeData) {
-              try {
-                const parsedData = JSON.parse(themeData);
-                if (parsedData && parsedData.sidebarColor) {
-                  setSidebarColor(parsedData.sidebarColor);
-                  console.log('Applied sidebar color from theme data:', parsedData.sidebarColor);
-                  return;
-                }
-              } catch (e) {
-                console.error('Error parsing theme data:', e);
-              }
-            }
-          }
-          
-          // Ultimate fallback - use Berry Purple
-          setSidebarColor(fallbackColor);
-          console.log('Fallback to Berry Purple sidebar color:', fallbackColor);
-        }
-        return; // Exit after handling custom theme
-      }
-      
-      // Built-in themes
-      if (html.classList.contains('theme-berry-purple')) {
-        setSidebarColor('#8e24aa');
-        console.log('Applied Berry Purple sidebar color: #8e24aa');
-      } else if (html.classList.contains('theme-forest-green')) {
+      // Then check theme classes
+      if (html.classList.contains('theme-forest-green')) {
         setSidebarColor('#2e7d32');
         console.log('Applied Forest Green sidebar color: #2e7d32');
       } else if (html.classList.contains('theme-ocean-blue')) {
@@ -78,9 +38,23 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
       } else if (html.classList.contains('theme-dark-mode')) {
         setSidebarColor('#333333');
         console.log('Applied Dark Mode sidebar color: #333333');
+      } else if (html.classList.contains('theme-berry-purple')) {
+        setSidebarColor('#8e24aa');
+        console.log('Applied Berry Purple sidebar color: #8e24aa');
+      } else if (html.classList.contains('theme-purple-700')) {
+        // For custom themes, try to get from CSS variable
+        const cssVarColor = getComputedStyle(html).getPropertyValue('--custom-sidebar-color').trim();
+        if (cssVarColor && cssVarColor !== '') {
+          setSidebarColor(cssVarColor);
+          console.log('Applied custom sidebar color from CSS var:', cssVarColor);
+        } else {
+          // Fallback to Berry Purple
+          setSidebarColor('#8e24aa');
+          console.log('Fallback to Berry Purple sidebar color: #8e24aa');
+        }
       } else {
         // Default fallback to Berry Purple if no theme class matches
-        setSidebarColor(fallbackColor);
+        setSidebarColor('#8e24aa');
         console.log('Applied Berry Purple fallback sidebar color: #8e24aa');
       }
     };
@@ -88,9 +62,29 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
     // Update color on mount
     updateSidebarColor();
     
+    // Create a function to forcefully apply the sidebar color to DOM elements
+    const forceApplySidebarColor = () => {
+      if (sidebarColor) {
+        const sidebarElements = document.querySelectorAll('.sidebar');
+        sidebarElements.forEach(sidebar => {
+          (sidebar as HTMLElement).style.setProperty('background-color', sidebarColor, 'important');
+        });
+      }
+    };
+    
+    // Run the force apply function whenever sidebarColor changes
+    if (sidebarColor) {
+      forceApplySidebarColor();
+      
+      // Also store in localStorage for persistence
+      localStorage.setItem('custom-sidebar-color', sidebarColor);
+    }
+    
     // Update on theme changes
     const handleThemeChange = () => {
       updateSidebarColor();
+      // Short delay to ensure DOM is updated
+      setTimeout(forceApplySidebarColor, 50);
     };
     
     // Listen for theme class changes
@@ -99,16 +93,29 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
     // Listen for the app theme updated event
     window.addEventListener('app-theme-updated', handleThemeChange);
     
+    // Set up a MutationObserver to watch for class changes on the html element
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          handleThemeChange();
+        }
+      });
+    });
+    
+    // Start observing the html element
+    observer.observe(document.documentElement, { attributes: true });
+    
     return () => {
       document.removeEventListener('themeClassChanged', handleThemeChange);
       window.removeEventListener('app-theme-updated', handleThemeChange);
+      observer.disconnect();
     };
-  }, []);
+  }, [sidebarColor]);
 
   return (
     <div 
       className={`sidebar ${className}`} 
-      style={{ backgroundColor: sidebarColor || '#8e24aa' }}
+      style={{ backgroundColor: sidebarColor || '#8e24aa', transition: 'background-color 0.3s ease' }}
     >
       {children}
     </div>

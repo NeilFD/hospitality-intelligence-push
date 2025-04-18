@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -164,7 +163,7 @@
     opacity: 1;
   }
   
-  /* Apply sidebar styling directly for custom themes */
+  /* Apply sidebar styling directly for custom themes with !important */
   .sidebar {
     /* Berry Purple as fallback with !important to ensure it works */
     background-color: var(--custom-sidebar-color, #8e24aa) !important;
@@ -172,41 +171,87 @@
   }
   
   /* Theme-specific sidebar colors with !important to ensure they override */
-  .theme-forest-green .sidebar {
+  .theme-forest-green .sidebar,
+  html.theme-forest-green .sidebar {
     background-color: #2e7d32 !important;
   }
   
-  .theme-ocean-blue .sidebar {
+  .theme-ocean-blue .sidebar,
+  html.theme-ocean-blue .sidebar {
     background-color: #1976d2 !important;
   }
   
-  .theme-sunset-orange .sidebar {
+  .theme-sunset-orange .sidebar,
+  html.theme-sunset-orange .sidebar {
     background-color: #ef6c00 !important;
   }
   
-  .theme-berry-purple .sidebar {
+  .theme-berry-purple .sidebar,
+  html.theme-berry-purple .sidebar {
     background-color: #8e24aa !important;
   }
   
-  .theme-dark-mode .sidebar {
+  .theme-dark-mode .sidebar,
+  html.theme-dark-mode .sidebar {
     background-color: #333333 !important;
   }
   
-  .theme-nfd-theme .sidebar {
+  .theme-nfd-theme .sidebar,
+  html.theme-nfd-theme .sidebar {
     background-color: #ec193a !important;
   }
   
   /* Custom theme sidebar with highest specificity */
   .theme-purple-700 .sidebar,
   html.theme-purple-700 .sidebar,
-  body .theme-purple-700 .sidebar {
+  body .theme-purple-700 .sidebar,
+  body.theme-purple-700 .sidebar {
     background-color: var(--custom-sidebar-color, #8e24aa) !important;
+  }
+  
+  /* Improve theme-specific button colors */
+  .theme-nfd-theme button[class*="bg-primary"],
+  .theme-nfd-theme a[class*="bg-primary"] {
+    background-color: #ec193a !important;
+  }
+  
+  .theme-berry-purple button[class*="bg-primary"],
+  .theme-berry-purple a[class*="bg-primary"] {
+    background-color: #7e57c2 !important;
+  }
+  
+  .theme-forest-green button[class*="bg-primary"],
+  .theme-forest-green a[class*="bg-primary"] {
+    background-color: #2e7d32 !important;
+  }
+  
+  .theme-ocean-blue button[class*="bg-primary"],
+  .theme-ocean-blue a[class*="bg-primary"] {
+    background-color: #1976d2 !important;
+  }
+  
+  .theme-sunset-orange button[class*="bg-primary"],
+  .theme-sunset-orange a[class*="bg-primary"] {
+    background-color: #ef6c00 !important;
+  }
+  
+  .theme-dark-mode button[class*="bg-primary"],
+  .theme-dark-mode a[class*="bg-primary"] {
+    background-color: #333333 !important;
   }
   
   /* Buttons for custom themes */
   .theme-purple-700 button[class*="bg-primary"],
-  .theme-purple-700 a[class*="bg-primary"] {
+  .theme-purple-700 a[class*="bg-primary"],
+  html.theme-purple-700 button[class*="bg-primary"],
+  html.theme-purple-700 a[class*="bg-primary"] {
     background-color: var(--custom-button-color, #7e57c2) !important;
+  }
+  
+  /* Force theme texts */
+  .theme-purple-700,
+  html.theme-purple-700 {
+    color: var(--custom-text-color, #333333);
   }
 }
 
