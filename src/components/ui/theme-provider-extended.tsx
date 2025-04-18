@@ -15,11 +15,11 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Modify default theme logic
         const savedThemeName = localStorage.getItem('app-active-theme');
         
-        // Always default to 'Berry Purple' and remove 'Hi' completely
+        // Always default to 'Berry Purple' and remove 'Hi' and 'Tavern Blue' completely
         const defaultThemeName = 'Berry Purple';
         
         if (savedThemeName) {
-          // Convert any 'Hi' theme to 'Berry Purple'
+          // Convert any 'Hi' or 'Tavern Blue' theme to 'Berry Purple'
           const normalizedThemeName = savedThemeName === 'Hi' || savedThemeName === 'Tavern Blue'
             ? 'Berry Purple' 
             : savedThemeName;
@@ -101,17 +101,15 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'theme-dark-mode', 
         'theme-hi-purple',
         'theme-purple-700', // Custom theme class
-        'theme-tavern-blue' // Explicitly remove Tavern Blue
+        'theme-tavern-blue', // Explicitly remove Tavern Blue
+        'hi', // Remove any Hi remnants
+        'theme-hi' // Remove any Hi theme
       ];
       
       // Thoroughly clean up themes - remove all theme classes
       themeClasses.forEach(cls => {
         html.classList.remove(cls);
       });
-      
-      // Additional cleanup for any Hi-related classes
-      html.classList.remove('hi');
-      html.classList.remove('theme-hi');
       
       // Reset company name in case it was set to "Hi"
       const companyName = localStorage.getItem('company-name');
@@ -121,7 +119,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       
       console.log('Applying theme:', themeName);
       
-      // Update theme class mapping
+      // Update theme class mapping - improved handling for custom themes
       if (themeName === 'Forest Green') {
         html.classList.add('theme-forest-green');
       } else if (themeName === 'Ocean Blue') {
@@ -133,10 +131,18 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
       } else if (themeName === 'NFD Theme' || 
+                 themeName === 'Tavern Blue' ||
                 (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'Hi'].includes(themeName))) {
-        // Handle custom theme if not one of the defaults
-        html.classList.add('theme-purple-700'); // Use this class for custom themes
-        console.log('Applied custom theme class for:', themeName);
+        // Handle custom theme
+        if (themeName === 'Tavern Blue') {
+          html.classList.add('theme-berry-purple');
+          localStorage.setItem('app-active-theme', 'Berry Purple');
+          console.log('Converted Tavern Blue to Berry Purple');
+        } else {
+          // Apply custom theme class for all other themes
+          html.classList.add('theme-purple-700');
+          console.log('Applied custom theme class for:', themeName);
+        }
       } else {
         // Fallback to Berry Purple for any unknown theme
         html.classList.add('theme-berry-purple');

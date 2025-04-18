@@ -92,22 +92,33 @@ export function runDatabaseFix() {
         .single();
       
       if (berryThemeData) {
-        // Deactivate all themes
-        await supabase
+        // Activate Berry Purple theme if no other theme is active
+        const { data: activeTheme } = await supabase
           .from('themes')
-          .update({ is_active: false })
-          .neq('id', 0);
-        
-        // Activate Berry Purple theme
-        const { error: themeError } = await supabase
-          .from('themes')
-          .update({ is_active: true })
-          .eq('id', berryThemeData.id);
-        
-        if (themeError) {
-          console.error('Error setting Berry Purple as active in database:', themeError);
+          .select('id, name')
+          .eq('is_active', true)
+          .single();
+          
+        if (!activeTheme || activeTheme.name === 'Tavern Blue' || activeTheme.name === 'Hi') {
+          // Deactivate all themes
+          await supabase
+            .from('themes')
+            .update({ is_active: false })
+            .neq('id', 0);
+            
+          // Activate Berry Purple theme
+          const { error: themeError } = await supabase
+            .from('themes')
+            .update({ is_active: true })
+            .eq('id', berryThemeData.id);
+          
+          if (themeError) {
+            console.error('Error setting Berry Purple as active in database:', themeError);
+          } else {
+            console.log('Successfully set Berry Purple as active in database');
+          }
         } else {
-          console.log('Successfully set Berry Purple as active in database');
+          console.log('Keeping current active theme:', activeTheme.name);
         }
       }
       
@@ -136,7 +147,7 @@ export function runDatabaseFix() {
         }
       }
       
-      // Check for and rename any 'Tavern Blue' themes
+      // Check for and delete any 'Tavern Blue' themes
       const { data: tavernBlueThemeData } = await supabase
         .from('themes')
         .select('id')
@@ -144,19 +155,29 @@ export function runDatabaseFix() {
         .single();
       
       if (tavernBlueThemeData) {
-        // Rename Tavern Blue theme to Berry Purple
-        const { error: renameError } = await supabase
+        // Delete Tavern Blue theme completely
+        const { error: deleteError } = await supabase
           .from('themes')
-          .update({ 
-            name: 'Berry Purple (converted)', 
-            is_active: false
-          })
+          .delete()
           .eq('id', tavernBlueThemeData.id);
         
-        if (renameError) {
-          console.error('Error renaming Tavern Blue theme in database:', renameError);
+        if (deleteError) {
+          console.error('Error deleting Tavern Blue theme from database:', deleteError);
+          
+          // If we can't delete, rename it and deactivate
+          const { error: renameError } = await supabase
+            .from('themes')
+            .update({ 
+              name: 'Berry Purple (converted)', 
+              is_active: false
+            })
+            .eq('id', tavernBlueThemeData.id);
+          
+          if (!renameError) {
+            console.log('Renamed Tavern Blue theme in database since it could not be deleted');
+          }
         } else {
-          console.log('Successfully renamed Tavern Blue theme in database');
+          console.log('Successfully deleted Tavern Blue theme from database');
         }
       }
       

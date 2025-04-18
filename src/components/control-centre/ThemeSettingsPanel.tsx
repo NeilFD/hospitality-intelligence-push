@@ -584,9 +584,69 @@ export function ThemeSettingsPanel({
       });
       window.dispatchEvent(themeEvent);
       
-      // Apply theme directly to ensure immediate visual feedback
-      applyThemeDirectly(newTheme.name);
+      // Apply theme directly - added for extra reliability
+      const html = document.documentElement;
       
+      // Remove all existing theme classes
+      const themeClasses = [
+        'theme-forest-green', 
+        'theme-ocean-blue', 
+        'theme-sunset-orange', 
+        'theme-berry-purple', 
+        'theme-dark-mode', 
+        'theme-hi-purple',
+        'theme-purple-700',
+        'theme-tavern-blue',
+        'hi',
+        'theme-hi'
+      ];
+      
+      themeClasses.forEach(cls => {
+        html.classList.remove(cls);
+      });
+
+      // Apply class based on theme
+      if (newTheme.name === 'Forest Green') {
+        html.classList.add('theme-forest-green');
+      } else if (newTheme.name === 'Ocean Blue') {
+        html.classList.add('theme-ocean-blue');
+      } else if (newTheme.name === 'Sunset Orange') {
+        html.classList.add('theme-sunset-orange');
+      } else if (newTheme.name === 'Berry Purple') {
+        html.classList.add('theme-berry-purple');
+      } else if (newTheme.name === 'Dark Mode') {
+        html.classList.add('theme-dark-mode');
+      } else {
+        // For custom themes like NFD Theme
+        html.classList.add('theme-purple-700');
+        console.log('Applied custom theme class directly for:', newTheme.name);
+      }
+      
+      // Force a direct document event
+      document.dispatchEvent(new Event('themeClassChanged'));
+      
+      // Apply custom font if available
+      if (newTheme.customFont) {
+        const fontName = newTheme.customFont.split(',')[0].trim().replace(/[\"']/g, '');
+        if (!document.querySelector(`link[href*="${fontName}"]`)) {
+          const formattedFontName = fontName.replace(/\s+/g, '+');
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${formattedFontName}:wght@400;700&display=swap`;
+          document.head.appendChild(link);
+          console.log(`Added Google Font link for: ${fontName}`);
+        }
+        
+        // Apply font to html and body
+        document.documentElement.style.setProperty('--app-font-family', newTheme.customFont);
+        document.documentElement.style.fontFamily = newTheme.customFont;
+        document.body.style.fontFamily = newTheme.customFont;
+      }
+      
+      // Update localStorage for immediate effect
+      localStorage.setItem('app-active-theme', newTheme.name);
+      
+      // Fetch updated themes
       fetchThemes();
       
       if (activeTab === 'custom' && !activeTheme.id) {
@@ -596,17 +656,6 @@ export function ThemeSettingsPanel({
         toast.success('Theme updated successfully');
       }
       
-      if (activeTheme.customFont) {
-        const fontName = activeTheme.customFont.split(',')[0].trim().replace(/[\"']/g, '');
-        if (!document.querySelector(`link[href*="${fontName}"]`)) {
-          const formattedFontName = fontName.replace(/\s+/g, '+');
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = `https://fonts.googleapis.com/css2?family=${formattedFontName}:wght@400;700&display=swap`;
-          document.head.appendChild(link);
-          console.log(`Added Google Font link for: ${fontName}`);
-        }
-      }
     } catch (error) {
       console.error('Error saving theme settings:', error);
       toast.error('An unexpected error occurred');
