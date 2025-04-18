@@ -11,6 +11,19 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Scripter+Serif&display=swap">
     <title>Hospitality Intelligence</title>
+    <script>
+      // Prevent FOUC by hiding body during theme initialization
+      document.documentElement.classList.add('theme-initializing');
+      setTimeout(() => {
+        document.documentElement.classList.remove('theme-initializing');
+        document.documentElement.classList.add('theme-loaded');
+      }, 100);
+      
+      // Remove any purple-700 classes at the earliest possible moment
+      document.addEventListener('DOMContentLoaded', function() {
+        document.documentElement.classList.remove('theme-purple-700', 'purple-700');
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
