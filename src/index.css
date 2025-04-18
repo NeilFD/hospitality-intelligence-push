@@ -116,20 +116,20 @@
   }
   
   /* Theme class for custom themes */
-  .theme-purple-700 {
-    /* Force direct color values with !important for all theme properties */
-    --primary: var(--custom-primary-color, #9d89c9) !important;
+  .theme-custom {
+    /* Force direct color values with !important for all theme properties without any preset colors */
+    --primary: var(--custom-primary-color) !important;
     --primary-foreground: 0 0% 100% !important;
-    --secondary: var(--custom-secondary-color, #f3e5f5) !important;
-    --accent: var(--custom-accent-color, #ab47bc) !important;
+    --secondary: var(--custom-secondary-color) !important;
+    --accent: var(--custom-accent-color) !important;
     --background: 0 0% 100% !important;
-    --foreground: var(--custom-text-color, #333333) !important;
-    --sidebar-color: var(--custom-sidebar-color, #8e24aa) !important;
-    --button-color: var(--custom-button-color, #7e57c2) !important;
+    --foreground: var(--custom-text-color) !important;
+    --sidebar-color: var(--custom-sidebar-color) !important;
+    --button-color: var(--custom-button-color) !important;
     
-    /* Apply direct colors for buttons and elements that might use these values */
+    /* Apply direct colors without preset purple fallbacks */
     background-color: var(--background) !important;
-    color: var(--custom-text-color, #333333) !important;
+    color: var(--custom-text-color) !important;
     
     /* Special handling for custom themes - direct color values */
     color-scheme: light;
@@ -283,22 +283,22 @@
     background-color: #ec193a !important;
   }
   
-  /* Custom theme sidebar with highest specificity */
-  .theme-purple-700 .sidebar,
-  html.theme-purple-700 .sidebar,
-  body .theme-purple-700 .sidebar,
-  body.theme-purple-700 .sidebar,
-  *[class*="theme-purple-700"] .sidebar {
-    background-color: var(--custom-sidebar-color, #8e24aa) !important;
+  /* Custom theme sidebar with highest specificity - no purple-700 reference */
+  .theme-custom .sidebar,
+  html.theme-custom .sidebar,
+  body .theme-custom .sidebar,
+  body.theme-custom .sidebar,
+  *[class*="theme-custom"] .sidebar {
+    background-color: var(--custom-sidebar-color) !important;
   }
   
   /* Apply direct inline styles to sidebar elements for custom themes */
-  html.theme-purple-700 .sidebar {
-    background-color: var(--custom-sidebar-color, #8e24aa) !important;
+  html.theme-custom .sidebar {
+    background-color: var(--custom-sidebar-color) !important;
   }
   
-  body.theme-purple-700 .sidebar {
-    background-color: var(--custom-sidebar-color, #8e24aa) !important;
+  body.theme-custom .sidebar {
+    background-color: var(--custom-sidebar-color) !important;
   }
   
   /* Improve theme-specific button colors */
@@ -333,31 +333,31 @@
   }
   
   /* Buttons for custom themes - use direct CSS var reference */
-  .theme-purple-700 button[class*="bg-primary"],
-  .theme-purple-700 a[class*="bg-primary"],
-  html.theme-purple-700 button[class*="bg-primary"],
-  html.theme-purple-700 a[class*="bg-primary"],
-  body.theme-purple-700 button[class*="bg-primary"],
-  body.theme-purple-700 a[class*="bg-primary"] {
-    background-color: var(--custom-button-color, #7e57c2) !important;
+  .theme-custom button[class*="bg-primary"],
+  .theme-custom a[class*="bg-primary"],
+  html.theme-custom button[class*="bg-primary"],
+  html.theme-custom a[class*="bg-primary"],
+  body.theme-custom button[class*="bg-primary"],
+  body.theme-custom a[class*="bg-primary"] {
+    background-color: var(--custom-button-color) !important;
   }
   
   /* Force text colors to match theme */
-  .theme-purple-700,
-  html.theme-purple-700,
-  body.theme-purple-700 {
-    color: var(--custom-text-color, #333333) !important;
+  .theme-custom,
+  html.theme-custom,
+  body.theme-custom {
+    color: var(--custom-text-color) !important;
   }
   
   /* Special case for navigation buttons in custom themes */
-  .theme-purple-700 [role="tab"][data-state="active"] {
-    background-color: var(--custom-button-color, #7e57c2) !important;
+  .theme-custom [role="tab"][data-state="active"] {
+    background-color: var(--custom-button-color) !important;
     color: white !important;
   }
   
   /* Tab styling for custom themes */
-  .theme-purple-700 button[class*="shadow-md"] {
-    background-color: var(--custom-button-color, #7e57c2) !important;
+  .theme-custom button[class*="shadow-md"] {
+    background-color: var(--custom-button-color) !important;
   }
 }
 

@@ -61,8 +61,8 @@ const applyInitialTheme = () => {
     immediateColor = '#8e24aa';
     themeClass = 'theme-berry-purple';
   } else {
-    // For custom or unknown themes
-    themeClass = 'theme-purple-700';
+    // For custom or unknown themes - use theme-custom instead of theme-purple-700
+    themeClass = 'theme-custom';
     
     // Try to load theme data from localStorage first
     const themeData = localStorage.getItem(`theme-${activeName}`);
@@ -123,7 +123,7 @@ const applyInitialTheme = () => {
     'theme-tavern-blue',
     'tavern-blue',
     'theme-nfd-theme',
-    'theme-purple-700'
+    'theme-custom'
   ];
   
   themeClasses.forEach(cls => {
@@ -134,8 +134,8 @@ const applyInitialTheme = () => {
   html.classList.add(themeClass);
   console.log('Applied theme class:', themeClass);
   
-  // Special handling for custom themes (theme-purple-700)
-  if (themeClass === 'theme-purple-700') {
+  // Special handling for custom themes (theme-custom)
+  if (themeClass === 'theme-custom') {
     console.log('Setting CSS variables for custom theme:', activeName);
     
     // Try to get theme data one more time
@@ -293,7 +293,7 @@ setTimeout(() => {
         'theme-sunset-orange', 
         'theme-berry-purple', 
         'theme-dark-mode',
-        'theme-purple-700',
+        'theme-custom',
         'theme-tavern-blue',
         'tavern-blue'
       );

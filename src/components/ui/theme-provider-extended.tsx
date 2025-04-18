@@ -121,7 +121,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         // Apply the theme class
         if (isCustomTheme) {
-          // For custom themes, use the purple-700 class
+          // For custom themes, use the theme-custom class
           applyThemeClass('Custom Theme');
           
           // Save theme data to localStorage with this specific name
@@ -178,7 +178,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'theme-hi-purple',
         'theme-tavern-blue',
         'theme-nfd-theme',
-        'theme-purple-700'
+        'theme-custom'
       ];
       
       themeClasses.forEach(cls => {
@@ -196,12 +196,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'NFD': 'theme-nfd-theme',
         'Hi': 'theme-berry-purple', // Force Hi theme to use Berry Purple
         'Tavern Blue': 'theme-berry-purple', // Force Tavern Blue to use Berry Purple
-        'Custom Theme': 'theme-purple-700',
+        'Custom Theme': 'theme-custom', // Use theme-custom for custom themes
         'nfd-theme': 'theme-nfd-theme' // Handle special case for NFD theme
       };
       
       // Get the theme class or default to custom theme class
-      const themeClass = themeClassMap[themeName] || 'theme-purple-700';
+      const themeClass = themeClassMap[themeName] || 'theme-custom';
       html.classList.add(themeClass);
       
       // Trigger change event

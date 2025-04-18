@@ -74,7 +74,7 @@ const applySidebarColor = () => {
         'theme-sunset-orange', 
         'theme-berry-purple', 
         'theme-dark-mode',
-        'theme-purple-700',
+        'theme-custom',
         'theme-tavern-blue',
         'tavern-blue',
         'theme-hi',
@@ -133,7 +133,7 @@ const applySidebarColor = () => {
         'theme-sunset-orange', 
         'theme-berry-purple', 
         'theme-dark-mode',
-        'theme-purple-700',
+        'theme-custom',
         'theme-tavern-blue',
         'tavern-blue',
         'theme-nfd-theme',
@@ -186,7 +186,7 @@ const applySidebarColor = () => {
           html.style.setProperty('--custom-text-color', parsedData.textColor || '#333333', 'important');
           html.style.setProperty('--sidebar-color', parsedData.sidebarColor, 'important');
           
-          // For custom themes, set to theme-purple-700
+          // For custom themes, use custom theme class instead of purple-700
           const themeClasses = [
             'theme-forest-green', 
             'theme-ocean-blue', 
@@ -194,7 +194,6 @@ const applySidebarColor = () => {
             'theme-berry-purple', 
             'theme-dark-mode',
             'theme-nfd-theme',
-            'theme-purple-700',
             'theme-tavern-blue',
             'tavern-blue',
             'theme-hi',
@@ -205,8 +204,8 @@ const applySidebarColor = () => {
             html.classList.remove(cls);
           });
           
-          // This is a custom theme, use the purple-700 class
-          html.classList.add('theme-purple-700');
+          // Use theme-custom instead of theme-purple-700
+          html.classList.add('theme-custom');
           
           // Force body style update to ensure variables are applied
           document.body.setAttribute('style', `--custom-sidebar-color: ${parsedData.sidebarColor} !important; --sidebar-color: ${parsedData.sidebarColor} !important;`);
@@ -267,8 +266,8 @@ const applySidebarColor = () => {
     }
   }
   
-  // Handle custom theme (theme-purple-700)
-  if (html.classList.contains('theme-purple-700')) {
+  // Handle custom theme (now theme-custom)
+  if (html.classList.contains('theme-custom')) {
     // For custom themes, read from multiple sources
     
     // 1. First check localStorage for custom sidebar color (most reliable)
@@ -556,52 +555,18 @@ const cleanup = setupThemeObserver();
 setTimeout(applySidebarColor, 200);
 setTimeout(applySidebarColor, 1000);
 
-// Add special handling for URL changes
-if (typeof window !== 'undefined') {
-  // Apply theme color when navigating to Control Centre
-  const controlCentreApplier = () => {
-    if (window.location.pathname.includes('control-centre')) {
-      console.log('Control Centre page detected, forcing theme application');
-      
-      // Set up Control Centre-specific handlers
-      setupControlCentreHandlers();
-      
-      // Force theme application
-      setTimeout(applySidebarColor, 0);
-      setTimeout(applySidebarColor, 200);
-      setTimeout(applySidebarColor, 500);
-      setTimeout(applySidebarColor, 1000);
-    }
-  };
+// Special handling for Control Centre page
+if (typeof window !== 'undefined' && window.location.pathname.includes('control-centre')) {
+  // Apply theme immediately on Control Centre page
+  applySidebarColor();
   
-  // Run initially
-  controlCentreApplier();
+  // Set additional interval for Control Centre page
+  const controlCentreInterval = setInterval(() => {
+    applySidebarColor();
+  }, 1000);
   
-  // Run when URL changes
-  window.addEventListener('popstate', controlCentreApplier);
+  // Clean up interval after 10 seconds
+  setTimeout(() => {
+    clearInterval(controlCentreInterval);
+  }, 10000);
 }
-
-// Final check to purge Tavern Blue
-if (typeof window !== 'undefined') {
-  if (localStorage.getItem('app-active-theme') === 'Tavern Blue') {
-    localStorage.setItem('app-active-theme', 'Berry Purple');
-    console.log('Final purge of Tavern Blue theme from localStorage');
-    
-    // Force Berry Purple theme application
-    setTimeout(() => {
-      if (document.documentElement.classList.contains('theme-tavern-blue') || 
-          document.documentElement.classList.contains('tavern-blue')) {
-        document.documentElement.classList.remove('theme-tavern-blue', 'tavern-blue');
-        document.documentElement.classList.add('theme-berry-purple');
-      }
-      
-      // Force theme update events
-      document.dispatchEvent(new Event('themeClassChanged'));
-      window.dispatchEvent(new CustomEvent('app-theme-updated', {
-        detail: { theme: { name: 'Berry Purple' } }
-      }));
-    }, 100);
-  }
-}
-
-export default {};

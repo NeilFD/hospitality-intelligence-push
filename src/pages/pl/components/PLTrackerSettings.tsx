@@ -89,20 +89,20 @@ export function PLTrackerSettings({
       style.id = styleId;
       style.innerHTML = `
         /* Custom theme variables application */
-        .theme-purple-700 .sidebar {
-          background-color: var(--custom-sidebar-color, #9C27B0);
+        .theme-custom .sidebar {
+          background-color: var(--custom-sidebar-color);
         }
-        .theme-purple-700 .bg-primary {
-          background-color: var(--custom-primary-color, #6a1b9a);
+        .theme-custom .bg-primary {
+          background-color: var(--custom-primary-color);
         }
-        .theme-purple-700 .text-primary {
-          color: var(--custom-primary-color, #6a1b9a);
+        .theme-custom .text-primary {
+          color: var(--custom-primary-color);
         }
-        .theme-purple-700 .border-primary {
-          border-color: var(--custom-primary-color, #6a1b9a);
+        .theme-custom .border-primary {
+          border-color: var(--custom-primary-color);
         }
-        .theme-purple-700 .hover\\:bg-primary:hover {
-          background-color: var(--custom-primary-color, #6a1b9a);
+        .theme-custom .hover\\:bg-primary:hover {
+          background-color: var(--custom-primary-color);
         }
         /* Add more custom theme CSS variables as needed */
       `;
