@@ -16,7 +16,6 @@ export const availableFonts: { name: string; value: string }[] = [
 
 // Modify getControlCentreData to ensure Hi theme is properly removed
 export const getControlCentreData = async () => {
-  console.log('Getting control centre data...');
   // Initialize database if needed
   
   // Get permission matrix from database
@@ -101,26 +100,12 @@ export const getControlCentreData = async () => {
     };
   }) || [];
   
-  // Log the themes we got from the database
-  console.log('Themes from database:', themes);
-  
   // Make sure Berry Purple is active if no other theme is
   const hasActiveTheme = themes.some(theme => theme.isActive);
   if (!hasActiveTheme) {
     const berryPurpleIndex = themes.findIndex(theme => theme.name === 'Berry Purple');
     if (berryPurpleIndex >= 0) {
       themes[berryPurpleIndex].isActive = true;
-      
-      // Also update in the database
-      try {
-        await supabase
-          .from('themes')
-          .update({ is_active: true })
-          .eq('id', themes[berryPurpleIndex].id);
-        console.log('Set Berry Purple as active in database');
-      } catch (err) {
-        console.error('Error setting Berry Purple as active:', err);
-      }
     }
   }
   
@@ -132,20 +117,6 @@ export const getControlCentreData = async () => {
   // If we have an active theme, ensure it has the company name
   if (currentTheme) {
     currentTheme.companyName = companyName;
-    console.log('Current active theme:', currentTheme.name);
-    
-    // Dispatch theme update event to ensure UI consistency
-    if (typeof window !== 'undefined') {
-      console.log('Dispatching theme update event from service');
-      const themeEvent = new CustomEvent('app-theme-updated', {
-        detail: {
-          theme: currentTheme
-        }
-      });
-      window.dispatchEvent(themeEvent);
-    }
-  } else {
-    console.log('No active theme found');
   }
   
   // Fetch target settings from business_targets table
