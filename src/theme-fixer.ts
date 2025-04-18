@@ -56,9 +56,42 @@ export function fixHiTheme() {
     window.dispatchEvent(themeUpdateEvent);
   }
   
+  // Apply custom theme CSS variable support
+  applyCustomThemeSupport();
+  
   // Return true to indicate successful execution
   console.log('Enhanced theme fixer executed');
   return true;
+}
+
+// Apply CSS variables for custom themes
+function applyCustomThemeSupport() {
+  const styleId = 'custom-theme-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = `
+      /* Custom theme variables application */
+      .theme-purple-700 .sidebar {
+        background-color: var(--custom-sidebar-color, #9C27B0);
+      }
+      .theme-purple-700 .bg-primary {
+        background-color: var(--custom-primary-color, #6a1b9a);
+      }
+      .theme-purple-700 .text-primary {
+        color: var(--custom-primary-color, #6a1b9a);
+      }
+      .theme-purple-700 .border-primary {
+        border-color: var(--custom-primary-color, #6a1b9a);
+      }
+      .theme-purple-700 .hover\\:bg-primary:hover {
+        background-color: var(--custom-primary-color, #6a1b9a);
+      }
+      /* Add more custom theme CSS variables as needed */
+    `;
+    document.head.appendChild(style);
+    console.log('Added custom theme styles to document head');
+  }
 }
 
 // Run a database fix function after a delay to ensure database connection is ready

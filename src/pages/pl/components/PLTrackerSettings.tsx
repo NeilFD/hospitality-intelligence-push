@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -31,7 +32,7 @@ export function PLTrackerSettings({
 }: PLTrackerSettingsProps) {
   const [trackedBudgetData, setTrackedBudgetData] = useState<PLTrackerBudgetItem[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(isSaving);
+  const [isSaving, setIsSaving] = useState(false); // Fixed the variable initialization
   const { toast } = useToast();
 
   const loadTrackingSettings = async (items: ProcessedBudgetItem[]): Promise<PLTrackerBudgetItem[]> => {
