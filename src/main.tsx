@@ -34,6 +34,9 @@ const applyInitialTheme = () => {
       buttonColor: '#ec193a',
       textColor: '#212121'
     }));
+    
+    // Force the NFD color to apply to all needed elements
+    document.body.setAttribute('style', `--custom-sidebar-color: ${immediateColor} !important; --sidebar-color: ${immediateColor} !important;`);
   } 
   // Handle other built-in themes
   else if (activeName === 'Forest Green') {
@@ -65,6 +68,9 @@ const applyInitialTheme = () => {
           immediateColor = parsedData.sidebarColor;
           console.log('Applying custom theme sidebar color:', immediateColor);
           
+          // Force the theme data to be available in localStorage
+          localStorage.setItem('custom-sidebar-color', parsedData.sidebarColor);
+          
           // Also set all theme CSS variables directly
           html.style.setProperty('--custom-primary-color', parsedData.primaryColor || '#9d89c9', 'important');
           html.style.setProperty('--custom-secondary-color', parsedData.secondaryColor || '#f3e5f5', 'important');
@@ -73,6 +79,9 @@ const applyInitialTheme = () => {
           html.style.setProperty('--custom-button-color', parsedData.buttonColor || '#7e57c2', 'important');
           html.style.setProperty('--custom-text-color', parsedData.textColor || '#333333', 'important');
           html.style.setProperty('--sidebar-color', parsedData.sidebarColor || immediateColor, 'important');
+          
+          // Force body style to ensure CSS variables are applied
+          document.body.setAttribute('style', `--custom-sidebar-color: ${parsedData.sidebarColor} !important; --sidebar-color: ${parsedData.sidebarColor} !important;`);
         }
       } catch (e) {
         console.error('Error parsing theme data:', e);
@@ -83,6 +92,13 @@ const applyInitialTheme = () => {
       if (savedColor) {
         immediateColor = savedColor;
         console.log('Using saved sidebar color from localStorage:', savedColor);
+        
+        // Force CSS variables
+        html.style.setProperty('--custom-sidebar-color', savedColor, 'important');
+        html.style.setProperty('--sidebar-color', savedColor, 'important');
+        
+        // Force body style
+        document.body.setAttribute('style', `--custom-sidebar-color: ${savedColor} !important; --sidebar-color: ${savedColor} !important;`);
       }
     }
   }
@@ -130,6 +146,9 @@ const applyInitialTheme = () => {
           html.style.setProperty('--custom-text-color', parsedData.textColor || '#333333', 'important');
           html.style.setProperty('--sidebar-color', parsedData.sidebarColor || immediateColor, 'important');
           
+          // Force body style
+          document.body.setAttribute('style', `--custom-sidebar-color: ${parsedData.sidebarColor} !important; --sidebar-color: ${parsedData.sidebarColor} !important;`);
+          
           console.log('Applied CSS variables for custom theme:', parsedData);
         }
       } catch (e) {
@@ -137,11 +156,17 @@ const applyInitialTheme = () => {
         // Set fallback values
         html.style.setProperty('--custom-sidebar-color', immediateColor, 'important');
         html.style.setProperty('--sidebar-color', immediateColor, 'important');
+        
+        // Force body style
+        document.body.setAttribute('style', `--custom-sidebar-color: ${immediateColor} !important; --sidebar-color: ${immediateColor} !important;`);
       }
     } else {
       // Set at least the sidebar color
       html.style.setProperty('--custom-sidebar-color', immediateColor, 'important');
       html.style.setProperty('--sidebar-color', immediateColor, 'important');
+      
+      // Force body style
+      document.body.setAttribute('style', `--custom-sidebar-color: ${immediateColor} !important; --sidebar-color: ${immediateColor} !important;`);
     }
   }
   
@@ -177,6 +202,24 @@ setTimeout(() => {
   applyInitialTheme();
   console.log('Forced re-application of theme after delay');
 }, 500);
+
+// Add special handling for Control Centre page - it needs extra attention
+setTimeout(() => {
+  if (window.location.pathname.includes('control-centre')) {
+    console.log('Control Centre page detected, applying extra theme enforcement');
+    applyInitialTheme();
+    
+    // Force color application to any sidebar elements
+    const sidebarColor = localStorage.getItem('custom-sidebar-color') || '#8e24aa';
+    const sidebarElements = document.querySelectorAll('.sidebar');
+    if (sidebarElements.length > 0) {
+      sidebarElements.forEach(sidebar => {
+        (sidebar as HTMLElement).style.setProperty('background-color', sidebarColor, 'important');
+      });
+      console.log('Forced sidebar color on Control Centre page:', sidebarColor);
+    }
+  }
+}, 1000);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
