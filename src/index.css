@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -85,7 +84,13 @@
     --background: 0 0% 100%;
     --foreground: 0 0% 13%;
     --sidebar-color: #ec193a;
-    --button-color: #9c27b0;
+    --button-color: #ec193a;
+    --custom-primary-color: #ec193a;
+    --custom-secondary-color: #ffebee;
+    --custom-accent-color: #d81b60;
+    --custom-sidebar-color: #ec193a;
+    --custom-button-color: #ec193a;
+    --custom-text-color: #212121;
   }
   
   /* Theme class for custom themes */

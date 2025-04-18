@@ -86,12 +86,12 @@ export const getControlCentreData = async () => {
     return {
       id: themeData.id,
       name: isProblematicTheme ? 'Berry Purple' : themeData.name,
-      primaryColor: themeData.primary_color,
-      secondaryColor: themeData.secondary_color,
-      accentColor: themeData.accent_color,
-      sidebarColor: themeData.sidebar_color,
-      buttonColor: themeData.button_color,
-      textColor: themeData.text_color,
+      primaryColor: themeData.primary_color || '#9d89c9',
+      secondaryColor: themeData.secondary_color || '#f3e5f5',
+      accentColor: themeData.accent_color || '#ab47bc',
+      sidebarColor: themeData.sidebar_color || '#7e57c2',
+      buttonColor: themeData.button_color || '#7e57c2',
+      textColor: themeData.text_color || '#333333',
       logoUrl: themeData.logo_url,
       customFont: themeData.custom_font,
       isDefault: false,
@@ -170,7 +170,7 @@ export const getControlCentreData = async () => {
         // For custom themes or non-default themes
         html.classList.add('theme-purple-700');
         
-        // Also set CSS variables for the custom theme
+        // Also set CSS variables for the custom theme - ensure default values if properties are missing
         html.style.setProperty('--custom-primary-color', currentTheme.primaryColor || '#9d89c9');
         html.style.setProperty('--custom-secondary-color', currentTheme.secondaryColor || '#f3e5f5');
         html.style.setProperty('--custom-accent-color', currentTheme.accentColor || '#ab47bc');
@@ -189,6 +189,9 @@ export const getControlCentreData = async () => {
       });
       window.dispatchEvent(themeEvent);
       console.log('Dispatched theme event for active theme:', currentTheme.name);
+      
+      // Also trigger the theme changed event for components that listen for it
+      document.dispatchEvent(new Event('themeClassChanged'));
     }
   }
   

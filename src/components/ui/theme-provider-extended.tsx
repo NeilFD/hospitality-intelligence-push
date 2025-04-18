@@ -61,12 +61,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
             // This is a custom theme, apply its colors directly
             console.log('Applying custom theme colors for:', themeName);
             applyCustomThemeColors({
-              primaryColor: data.primary_color,
-              secondaryColor: data.secondary_color,
-              accentColor: data.accent_color,
-              sidebarColor: data.sidebar_color,
-              buttonColor: data.button_color,
-              textColor: data.text_color
+              primaryColor: data.primary_color || '#9d89c9',
+              secondaryColor: data.secondary_color || '#f3e5f5',
+              accentColor: data.accent_color || '#ab47bc',
+              sidebarColor: data.sidebar_color || '#7e57c2',
+              buttonColor: data.button_color || '#7e57c2',
+              textColor: data.text_color || '#333333'
             });
           }
           
@@ -195,13 +195,27 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         if (data) {
           console.log('Found custom theme colors:', data);
           applyCustomThemeColors({
-            primaryColor: data.primary_color,
-            secondaryColor: data.secondary_color,
-            accentColor: data.accent_color,
-            sidebarColor: data.sidebar_color,
-            buttonColor: data.button_color,
-            textColor: data.text_color
+            primaryColor: data.primary_color || '#9d89c9',
+            secondaryColor: data.secondary_color || '#f3e5f5',
+            accentColor: data.accent_color || '#ab47bc',
+            sidebarColor: data.sidebar_color || '#7e57c2',
+            buttonColor: data.button_color || '#7e57c2',
+            textColor: data.text_color || '#333333'
           });
+        } else {
+          console.log('No custom theme data found for:', themeName);
+          
+          // If it's NFD Theme and no data, apply hardcoded values
+          if (themeName === 'NFD Theme') {
+            applyCustomThemeColors({
+              primaryColor: '#ec193a',
+              secondaryColor: '#ffebee',
+              accentColor: '#d81b60',
+              sidebarColor: '#ec193a',
+              buttonColor: '#ec193a',
+              textColor: '#212121'
+            });
+          }
         }
       } catch (err) {
         console.error('Error loading custom theme colors:', err);
@@ -234,6 +248,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       }
       
       console.log('Applied custom theme colors', colors);
+      
+      // Trigger change event to update components that use these colors
+      document.dispatchEvent(new Event('themeClassChanged'));
     };
 
     // Set up listener for theme updates
@@ -273,12 +290,12 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         // Apply custom theme colors if provided in the event
         if (event.detail.theme.primaryColor) {
           applyCustomThemeColors({
-            primaryColor: event.detail.theme.primaryColor,
-            secondaryColor: event.detail.theme.secondaryColor,
-            accentColor: event.detail.theme.accentColor,
-            sidebarColor: event.detail.theme.sidebarColor,
-            buttonColor: event.detail.theme.buttonColor,
-            textColor: event.detail.theme.textColor
+            primaryColor: event.detail.theme.primaryColor || '#9d89c9',
+            secondaryColor: event.detail.theme.secondaryColor || '#f3e5f5',
+            accentColor: event.detail.theme.accentColor || '#ab47bc',
+            sidebarColor: event.detail.theme.sidebarColor || '#7e57c2',
+            buttonColor: event.detail.theme.buttonColor || '#7e57c2',
+            textColor: event.detail.theme.textColor || '#333333'
           });
         }
         

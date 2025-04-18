@@ -23,7 +23,20 @@ const ToggleGroup = React.forwardRef<
   React.useEffect(() => {
     const handleThemeChange = () => {
       const htmlElement = document.documentElement;
-      if (htmlElement.classList.contains('theme-forest-green')) {
+      
+      if (htmlElement.classList.contains('theme-nfd-theme')) {
+        setThemeStyles("bg-[#ffebee]/30");
+      } else if (htmlElement.classList.contains('theme-purple-700')) {
+        // For custom themes, directly use CSS variables rather than computed styles
+        const secondaryColor = getComputedStyle(htmlElement).getPropertyValue('--custom-secondary-color').trim();
+        // Only apply if we have a valid color
+        if (secondaryColor && secondaryColor !== '') {
+          setThemeStyles(`bg-[${secondaryColor}]/30`);
+        } else {
+          // Fallback
+          setThemeStyles("bg-muted/50");
+        }
+      } else if (htmlElement.classList.contains('theme-forest-green')) {
         setThemeStyles("bg-[#e8f5e9]/30");
       } else if (htmlElement.classList.contains('theme-ocean-blue')) {
         setThemeStyles("bg-[#e3f2fd]/30");
@@ -35,12 +48,6 @@ const ToggleGroup = React.forwardRef<
         setThemeStyles("bg-[#424242]/30");
       } else if (htmlElement.classList.contains('theme-hi-purple')) {
         setThemeStyles("bg-[#e0d9f0]/30");
-      } else if (htmlElement.classList.contains('theme-nfd-theme')) {
-        setThemeStyles("bg-[#ffebee]/30");
-      } else if (htmlElement.classList.contains('theme-purple-700')) {
-        // For custom themes, use CSS variables with a lighter variant
-        const secondaryColor = getComputedStyle(htmlElement).getPropertyValue('--custom-secondary-color');
-        setThemeStyles(`bg-[${secondaryColor}]/30`);
       } else {
         setThemeStyles("bg-muted/50");
       }
@@ -81,7 +88,20 @@ const ToggleGroupItem = React.forwardRef<
   React.useEffect(() => {
     const handleThemeChange = () => {
       const htmlElement = document.documentElement;
-      if (htmlElement.classList.contains('theme-forest-green')) {
+      
+      if (htmlElement.classList.contains('theme-nfd-theme')) {
+        setThemeStyles("data-[state=on]:bg-[#ec193a] data-[state=on]:text-white");
+      } else if (htmlElement.classList.contains('theme-purple-700')) {
+        // For custom themes, directly use CSS variables rather than computed styles
+        const buttonColor = getComputedStyle(htmlElement).getPropertyValue('--custom-button-color').trim();
+        // Only apply if we have a valid color
+        if (buttonColor && buttonColor !== '') {
+          setThemeStyles(`data-[state=on]:bg-[${buttonColor}] data-[state=on]:text-white`);
+        } else {
+          // Fallback
+          setThemeStyles("data-[state=on]:bg-accent data-[state=on]:text-accent-foreground");
+        }
+      } else if (htmlElement.classList.contains('theme-forest-green')) {
         setThemeStyles("data-[state=on]:bg-[#2e7d32] data-[state=on]:text-white");
       } else if (htmlElement.classList.contains('theme-ocean-blue')) {
         setThemeStyles("data-[state=on]:bg-[#1976d2] data-[state=on]:text-white");
@@ -93,12 +113,6 @@ const ToggleGroupItem = React.forwardRef<
         setThemeStyles("data-[state=on]:bg-[#333333] data-[state=on]:text-white");
       } else if (htmlElement.classList.contains('theme-hi-purple')) {
         setThemeStyles("data-[state=on]:bg-[#9d89c9] data-[state=on]:text-white");
-      } else if (htmlElement.classList.contains('theme-nfd-theme')) {
-        setThemeStyles("data-[state=on]:bg-[#ec193a] data-[state=on]:text-white");
-      } else if (htmlElement.classList.contains('theme-purple-700')) {
-        // For custom themes, use CSS variables
-        const buttonColor = getComputedStyle(htmlElement).getPropertyValue('--custom-button-color');
-        setThemeStyles(`data-[state=on]:bg-[${buttonColor}] data-[state=on]:text-white`);
       } else {
         setThemeStyles("data-[state=on]:bg-accent data-[state=on]:text-accent-foreground");
       }
