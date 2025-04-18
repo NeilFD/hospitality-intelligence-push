@@ -128,11 +128,11 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
               localStorage.setItem('custom-sidebar-color', parsedData.sidebarColor);
               applySidebarColorDirectly(parsedData.sidebarColor);
               
-              // For custom themes, use the purple-700 class
+              // For custom themes, use the theme-custom class instead of purple-700
               themeClasses.forEach(cls => {
                 html.classList.remove(cls);
               });
-              html.classList.add('theme-purple-700');
+              html.classList.add('theme-custom');
               
               return;
             }
@@ -169,7 +169,7 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
           'theme-sunset-orange', 
           'theme-berry-purple', 
           'theme-dark-mode',
-          'theme-purple-700'
+          'theme-custom'
         );
         document.documentElement.classList.add('theme-nfd-theme');
         
@@ -197,8 +197,8 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
         }
       }
       
-      // Handle custom theme (theme-purple-700)
-      if (html.classList.contains('theme-purple-700')) {
+      // Handle custom theme
+      if (html.classList.contains('theme-custom')) {
         // For custom themes, try to get from CSS variable
         const cssVarColor = getComputedStyle(html).getPropertyValue('--custom-sidebar-color').trim();
         if (cssVarColor && cssVarColor !== '') {
@@ -259,7 +259,7 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
       'theme-berry-purple', 
       'theme-dark-mode',
       'theme-nfd-theme',
-      'theme-purple-700',
+      'theme-custom',
       'theme-tavern-blue',
       'tavern-blue',
       'theme-hi',

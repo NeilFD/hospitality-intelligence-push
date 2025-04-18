@@ -186,7 +186,7 @@ const applySidebarColor = () => {
           html.style.setProperty('--custom-text-color', parsedData.textColor || '#333333', 'important');
           html.style.setProperty('--sidebar-color', parsedData.sidebarColor, 'important');
           
-          // For custom themes, use custom theme class instead of purple-700
+          // For custom themes, use custom theme class
           const themeClasses = [
             'theme-forest-green', 
             'theme-ocean-blue', 
@@ -204,7 +204,7 @@ const applySidebarColor = () => {
             html.classList.remove(cls);
           });
           
-          // Use theme-custom instead of theme-purple-700
+          // Use theme-custom for custom themes
           html.classList.add('theme-custom');
           
           // Force body style update to ensure variables are applied
@@ -266,7 +266,7 @@ const applySidebarColor = () => {
     }
   }
   
-  // Handle custom theme (now theme-custom)
+  // Handle custom theme
   if (html.classList.contains('theme-custom')) {
     // For custom themes, read from multiple sources
     
