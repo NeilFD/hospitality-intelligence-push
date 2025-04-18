@@ -1,8 +1,9 @@
 
-import React from 'react';
-import { Pipette } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Pipette, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ColorPickerProps {
   color: string;
@@ -12,9 +13,15 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ color, onChange, label, className = '' }: ColorPickerProps) {
+  const [isEyeDropperSupported, setIsEyeDropperSupported] = useState(false);
+  
+  useEffect(() => {
+    // Check if the EyeDropper API is available
+    setIsEyeDropperSupported('EyeDropper' in window);
+  }, []);
+
   const handlePipetteClick = async () => {
     try {
-      // Check if the EyeDropper API is available
       if ('EyeDropper' in window) {
         // @ts-ignore - TypeScript doesn't know about EyeDropper yet
         const eyeDropper = new window.EyeDropper();
@@ -38,15 +45,31 @@ export function ColorPicker({ color, onChange, label, className = '' }: ColorPic
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <Button 
-        variant="outline" 
-        size="icon"
-        onClick={handlePipetteClick}
-        title="Pick color from screen"
-        className="h-9 w-9 shrink-0"
-      >
-        <Pipette className="h-4 w-4" />
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handlePipetteClick}
+              title="Pick color from screen"
+              className={`h-9 w-9 shrink-0 ${!isEyeDropperSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={!isEyeDropperSupported}
+            >
+              {isEyeDropperSupported ? (
+                <Pipette className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            {isEyeDropperSupported 
+              ? "Pick color from screen" 
+              : "Color picker not supported in this browser"}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <input
         type="color"
         value={color}
