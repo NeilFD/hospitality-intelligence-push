@@ -24,7 +24,8 @@ const presetThemes: PresetTheme[] = [{
     sidebar: '#8e24aa',
     button: '#9c27b0',
     text: '#212121'
-  }
+  },
+  isDefault: true
 }, {
   id: 'forest-green',
   name: 'Forest Green',
@@ -35,7 +36,8 @@ const presetThemes: PresetTheme[] = [{
     sidebar: '#2e7d32',
     button: '#43a047',
     text: '#212121'
-  }
+  },
+  isDefault: false
 }, {
   id: 'ocean-blue',
   name: 'Ocean Blue',
@@ -46,7 +48,8 @@ const presetThemes: PresetTheme[] = [{
     sidebar: '#1976d2',
     button: '#2196f3',
     text: '#212121'
-  }
+  },
+  isDefault: false
 }, {
   id: 'sunset-orange',
   name: 'Sunset Orange',
@@ -57,7 +60,8 @@ const presetThemes: PresetTheme[] = [{
     sidebar: '#ef6c00',
     button: '#f57c00',
     text: '#212121'
-  }
+  },
+  isDefault: false
 }];
 
 const hexToRgb = (hex: string): {

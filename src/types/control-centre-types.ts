@@ -35,6 +35,12 @@ export interface ThemeSettings {
   companyName: string;
 }
 
+export interface TargetSettings {
+  foodGpTarget: number;
+  beverageGpTarget: number;
+  wageCostTarget: number;
+}
+
 export type CustomFont = {
   name: string;
   value: string;
