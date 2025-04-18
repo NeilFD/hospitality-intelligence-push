@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -116,6 +117,7 @@
   
   /* Theme class for custom themes */
   .theme-custom {
+    /* Force direct color values with !important for all theme properties without any preset colors */
     --primary: var(--custom-primary-color) !important;
     --primary-foreground: 0 0% 100% !important;
     --secondary: var(--custom-secondary-color) !important;
@@ -125,9 +127,11 @@
     --sidebar-color: var(--custom-sidebar-color) !important;
     --button-color: var(--custom-button-color) !important;
     
+    /* Apply direct colors without preset purple fallbacks */
     background-color: var(--background) !important;
     color: var(--custom-text-color) !important;
     
+    /* Special handling for custom themes - direct color values */
     color-scheme: light;
   }
   
@@ -206,12 +210,6 @@
     --custom-button-color: #424242 !important;
     --custom-text-color: #212121 !important;
   }
-  
-  .theme-purple-700, .purple-700 {
-    --custom-sidebar-color: inherit !important;
-    --sidebar-color: inherit !important;
-    background-color: inherit !important;
-  }
 }
  
 @layer base {
@@ -232,10 +230,12 @@
     font-family: inherit;
   }
   
+  /* Ensure headings, buttons, and other elements inherit font family */
   h1, h2, h3, h4, h5, h6, button, input, select, textarea {
     font-family: inherit;
   }
   
+  /* Ensure theme persistence across page reloads */
   body.theme-initializing {
     opacity: 0;
     transition: opacity 0.3s ease-in;
@@ -245,11 +245,14 @@
     opacity: 1;
   }
   
+  /* Apply sidebar styling directly for custom themes with !important */
   .sidebar {
+    /* Berry Purple as fallback with !important to ensure it works */
     background-color: var(--custom-sidebar-color, #8e24aa) !important;
     transition: background-color 0.3s ease-in-out;
   }
   
+  /* Theme-specific sidebar colors with !important to ensure they override */
   .theme-forest-green .sidebar,
   html.theme-forest-green .sidebar {
     background-color: #2e7d32 !important;
@@ -280,13 +283,7 @@
     background-color: #ec193a !important;
   }
   
-  .theme-purple-700 .sidebar,
-  .purple-700 .sidebar,
-  html.theme-purple-700 .sidebar,
-  html.purple-700 .sidebar {
-    background-color: inherit !important;
-  }
-  
+  /* Custom theme sidebar with highest specificity */
   .theme-custom .sidebar,
   html.theme-custom .sidebar,
   body .theme-custom .sidebar,
@@ -295,6 +292,7 @@
     background-color: var(--custom-sidebar-color) !important;
   }
   
+  /* Apply direct inline styles to sidebar elements for custom themes */
   html.theme-custom .sidebar {
     background-color: var(--custom-sidebar-color) !important;
   }
@@ -303,6 +301,7 @@
     background-color: var(--custom-sidebar-color) !important;
   }
   
+  /* Improve theme-specific button colors */
   .theme-nfd-theme button[class*="bg-primary"],
   .theme-nfd-theme a[class*="bg-primary"] {
     background-color: #ec193a !important;
@@ -333,6 +332,7 @@
     background-color: #333333 !important;
   }
   
+  /* Buttons for custom themes - use direct CSS var reference */
   .theme-custom button[class*="bg-primary"],
   .theme-custom a[class*="bg-primary"],
   html.theme-custom button[class*="bg-primary"],
@@ -342,17 +342,20 @@
     background-color: var(--custom-button-color) !important;
   }
   
+  /* Force text colors to match theme */
   .theme-custom,
   html.theme-custom,
   body.theme-custom {
     color: var(--custom-text-color) !important;
   }
   
+  /* Special case for navigation buttons in custom themes */
   .theme-custom [role="tab"][data-state="active"] {
     background-color: var(--custom-button-color) !important;
     color: white !important;
   }
   
+  /* Tab styling for custom themes */
   .theme-custom button[class*="shadow-md"] {
     background-color: var(--custom-button-color) !important;
   }

@@ -7,33 +7,6 @@ const applySidebarColor = () => {
   // Only run in browser
   if (typeof window === 'undefined') return;
   
-  // Special handling for purple-700 classes - explicit cleanup
-  const purgePurple700 = () => {
-    const html = document.documentElement;
-    html.classList.remove('theme-purple-700', 'purple-700');
-    
-    // Also remove inline styles that might be set with purple colors
-    if (html.style.getPropertyValue('--custom-sidebar-color').includes('#9C27B0')) {
-      html.style.removeProperty('--custom-sidebar-color');
-    }
-    if (html.style.getPropertyValue('--sidebar-color').includes('#9C27B0')) {
-      html.style.removeProperty('--sidebar-color');
-    }
-    
-    // Check for and remove body styles with purple
-    if (document.body.style.getPropertyValue('--custom-sidebar-color').includes('#9C27B0')) {
-      document.body.style.removeProperty('--custom-sidebar-color');
-    }
-    if (document.body.style.getPropertyValue('--sidebar-color').includes('#9C27B0')) {
-      document.body.style.removeProperty('--sidebar-color');
-    }
-    
-    console.log('Purged purple-700 classes and styles');
-  };
-  
-  // Execute purple-700 purge
-  purgePurple700();
-  
   // Find all sidebar elements
   const sidebarElements = document.querySelectorAll('.sidebar');
   if (!sidebarElements || sidebarElements.length === 0) return;
@@ -92,9 +65,6 @@ const applySidebarColor = () => {
       // Also set CSS variables with !important flag
       html.style.setProperty('--custom-sidebar-color', nfdColor, 'important');
       html.style.setProperty('--sidebar-color', nfdColor, 'important');
-      
-      // Run extra purple-700 purge
-      purgePurple700();
       
       // Update html class for NFD theme and remove other theme classes
       const themeClasses = [
@@ -453,36 +423,6 @@ const applySidebarColor = () => {
 // Apply sidebar color immediately
 applySidebarColor();
 
-// Enhanced Control Centre handling
-if (typeof window !== 'undefined' && window.location.pathname.includes('control-centre')) {
-  // Additional purple-700 purging especially on Control Centre page
-  const purgeInterval = setInterval(() => {
-    document.documentElement.classList.remove('theme-purple-700', 'purple-700');
-    
-    // Check current theme
-    const activeName = localStorage.getItem('app-active-theme');
-    if (activeName === 'NFD' || activeName === 'NFD Theme') {
-      // Force NFD theme
-      const nfdColor = '#ec193a';
-      const sidebarElements = document.querySelectorAll('.sidebar');
-      sidebarElements.forEach(sidebar => {
-        (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
-      });
-      
-      // Force CSS variables
-      document.documentElement.style.setProperty('--custom-sidebar-color', nfdColor, 'important');
-      document.documentElement.style.setProperty('--sidebar-color', nfdColor, 'important');
-      document.body.style.setProperty('--custom-sidebar-color', nfdColor, 'important');
-      document.body.style.setProperty('--sidebar-color', nfdColor, 'important');
-    }
-  }, 250); // More frequent checking on Control Centre page
-  
-  // Clean up after 15 seconds
-  setTimeout(() => {
-    clearInterval(purgeInterval);
-  }, 15000);
-}
-
 // Set up handlers for the Control Centre page
 const setupControlCentreHandlers = () => {
   if (typeof window === 'undefined' || !window.location.pathname.includes('control-centre')) {
@@ -625,42 +565,6 @@ setTimeout(applySidebarColor, 1000);
 if (typeof window !== 'undefined' && window.location.pathname.includes('control-centre')) {
   // Apply theme immediately on Control Centre page
   applySidebarColor();
-  
-  // Add specific click handlers for theme selection in Control Centre
-  document.addEventListener('click', (event) => {
-    const target = event.target as HTMLElement;
-    
-    // Check for NFD theme card or button
-    if (target.textContent?.includes('NFD') || 
-        target.closest('[data-theme-name="NFD"]') ||
-        target.closest('[data-value="NFD"]')) {
-      
-      console.log('NFD theme selection detected!');
-      
-      // Force immediate NFD application
-      const nfdColor = '#ec193a';
-      localStorage.setItem('app-active-theme', 'NFD');
-      localStorage.setItem('custom-sidebar-color', nfdColor);
-      
-      // Remove purple-700 classes
-      document.documentElement.classList.remove('theme-purple-700', 'purple-700');
-      document.documentElement.classList.add('theme-nfd-theme');
-      
-      // Apply NFD color to sidebar
-      const sidebarElements = document.querySelectorAll('.sidebar');
-      sidebarElements.forEach(sidebar => {
-        (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
-      });
-      
-      // Apply with delays
-      setTimeout(() => {
-        applySidebarColor();
-      }, 50);
-      setTimeout(() => {
-        applySidebarColor();
-      }, 200);
-    }
-  }, { capture: true });
   
   // Set additional interval for Control Centre page
   const controlCentreInterval = setInterval(() => {
