@@ -14,7 +14,126 @@ const applySidebarColor = () => {
   
   const html = document.documentElement;
   
-  // NFD theme gets highest priority
+  // First check for active theme name in localStorage
+  const activeName = localStorage.getItem('app-active-theme');
+  
+  // If we have a theme name, check for its specific color data first
+  if (activeName) {
+    console.log('Looking for theme data for:', activeName);
+    
+    // Handle NFD theme name specially with highest priority
+    if (activeName === 'NFD' || activeName === 'NFD Theme') {
+      const nfdColor = '#ec193a';
+      console.log('Theme-sidebar-fixer: Applied NFD theme color:', nfdColor);
+      
+      // Store the color in localStorage for consistent access
+      localStorage.setItem('custom-sidebar-color', nfdColor);
+      
+      // Apply to all sidebar elements
+      sidebarElements.forEach(sidebar => {
+        (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
+      });
+      
+      // Also set CSS variables
+      html.style.setProperty('--custom-sidebar-color', nfdColor, 'important');
+      html.style.setProperty('--sidebar-color', nfdColor, 'important');
+      
+      // Update html class for NFD theme
+      const themeClasses = [
+        'theme-forest-green', 
+        'theme-ocean-blue', 
+        'theme-sunset-orange', 
+        'theme-berry-purple', 
+        'theme-dark-mode',
+        'theme-purple-700'
+      ];
+      
+      themeClasses.forEach(cls => {
+        html.classList.remove(cls);
+      });
+      
+      html.classList.add('theme-nfd-theme');
+      
+      return;
+    }
+    
+    // For other named themes, try to get stored theme data
+    const themeData = localStorage.getItem(`theme-${activeName}`);
+    if (themeData) {
+      try {
+        const parsedData = JSON.parse(themeData);
+        if (parsedData && parsedData.sidebarColor) {
+          console.log('Theme-sidebar-fixer: Found color for theme in localStorage:', parsedData.sidebarColor);
+          
+          // Store the color in localStorage for consistent access
+          localStorage.setItem('custom-sidebar-color', parsedData.sidebarColor);
+          
+          // Apply to all sidebar elements with !important
+          sidebarElements.forEach(sidebar => {
+            (sidebar as HTMLElement).style.setProperty('background-color', parsedData.sidebarColor, 'important');
+          });
+          
+          // Also set CSS variables
+          html.style.setProperty('--custom-sidebar-color', parsedData.sidebarColor, 'important');
+          html.style.setProperty('--sidebar-color', parsedData.sidebarColor, 'important');
+          
+          // Apply the appropriate theme class if it's a known theme
+          const themeClassMap: {[key: string]: string} = {
+            'Berry Purple': 'theme-berry-purple',
+            'Forest Green': 'theme-forest-green',
+            'Ocean Blue': 'theme-ocean-blue',
+            'Sunset Orange': 'theme-sunset-orange',
+            'Dark Mode': 'theme-dark-mode',
+            'NFD': 'theme-nfd-theme',
+            'NFD Theme': 'theme-nfd-theme'
+          };
+          
+          // Set custom theme class if not one of the presets
+          if (activeName in themeClassMap) {
+            // Remove all existing theme classes
+            const themeClasses = [
+              'theme-forest-green', 
+              'theme-ocean-blue', 
+              'theme-sunset-orange', 
+              'theme-berry-purple', 
+              'theme-dark-mode',
+              'theme-nfd-theme',
+              'theme-purple-700'
+            ];
+            
+            themeClasses.forEach(cls => {
+              html.classList.remove(cls);
+            });
+            
+            // Add the correct theme class
+            html.classList.add(themeClassMap[activeName]);
+          } else {
+            // This is a custom theme, use the purple-700 class
+            const themeClasses = [
+              'theme-forest-green', 
+              'theme-ocean-blue', 
+              'theme-sunset-orange', 
+              'theme-berry-purple', 
+              'theme-dark-mode',
+              'theme-nfd-theme'
+            ];
+            
+            themeClasses.forEach(cls => {
+              html.classList.remove(cls);
+            });
+            
+            html.classList.add('theme-purple-700');
+          }
+          
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing theme data from localStorage', e);
+      }
+    }
+  }
+  
+  // NFD theme gets highest priority if still looking
   if (html.classList.contains('theme-nfd-theme')) {
     const sidebarColor = '#ec193a';
     console.log('Theme-sidebar-fixer: Applied NFD theme sidebar color:', sidebarColor);
@@ -42,7 +161,7 @@ const applySidebarColor = () => {
     'theme-dark-mode': '#333333'
   };
   
-  // Check for predefined themes first
+  // Check for predefined themes
   for (const [themeClass, color] of Object.entries(themeColorMap)) {
     if (html.classList.contains(themeClass)) {
       console.log(`Theme-sidebar-fixer: Applied ${themeClass} sidebar color:`, color);
@@ -220,7 +339,7 @@ const setupThemeObserver = () => {
   };
 };
 
-// Ensure theme is applied immediately
+// Execute immediately
 applySidebarColor();
 
 // Run the setup

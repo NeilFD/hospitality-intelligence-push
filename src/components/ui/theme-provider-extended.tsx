@@ -123,6 +123,16 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         if (isCustomTheme) {
           // For custom themes, use the purple-700 class
           applyThemeClass('Custom Theme');
+          
+          // Save theme data to localStorage with this specific name
+          localStorage.setItem(`theme-${data.name}`, JSON.stringify({
+            primaryColor: data.primary_color || '#9d89c9',
+            secondaryColor: data.secondary_color || '#f3e5f5',
+            accentColor: data.accent_color || '#ab47bc',
+            sidebarColor: data.sidebar_color || '#8e24aa',
+            buttonColor: data.button_color || '#7e57c2',
+            textColor: data.text_color || '#333333'
+          }));
         } else {
           applyThemeClass(data.name);
         }
@@ -190,7 +200,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'nfd-theme': 'theme-nfd-theme' // Handle special case for NFD theme
       };
       
-      // Get the theme class or default to Berry Purple theme class
+      // Get the theme class or default to custom theme class
       const themeClass = themeClassMap[themeName] || 'theme-purple-700';
       html.classList.add(themeClass);
       
@@ -251,6 +261,34 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
     // Initial theme load
     loadActiveTheme();
     
+    // Add a specialized mechanism for immediate sidebar updates when the DOM changes
+    const observeForSidebar = () => {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList') {
+            const sidebarElements = document.querySelectorAll('.sidebar');
+            if (sidebarElements && sidebarElements.length > 0) {
+              const currentColor = localStorage.getItem('custom-sidebar-color');
+              if (currentColor) {
+                sidebarElements.forEach(sidebar => {
+                  (sidebar as HTMLElement).style.setProperty('background-color', currentColor, 'important');
+                });
+                console.log('Applied immediate color to new sidebar elements:', currentColor);
+              }
+            }
+          }
+        });
+      });
+      
+      // Start observing the document.body for DOM changes
+      observer.observe(document.body, { childList: true, subtree: true });
+      
+      return observer;
+    };
+    
+    // Start the sidebar observer
+    const sidebarObserver = observeForSidebar();
+    
     // Force an additional theme color application after a short delay
     // to catch any elements that might load after the initial application
     const forceThemeTimer = setTimeout(() => {
@@ -258,10 +296,25 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
       document.dispatchEvent(new Event('themeClassChanged'));
       // Re-trigger theme updated event
       window.dispatchEvent(new Event('app-theme-updated'));
+      
+      // Apply any saved sidebar color directly to elements
+      const savedColor = localStorage.getItem('custom-sidebar-color');
+      if (savedColor) {
+        const sidebarElements = document.querySelectorAll('.sidebar');
+        if (sidebarElements && sidebarElements.length > 0) {
+          sidebarElements.forEach(sidebar => {
+            (sidebar as HTMLElement).style.setProperty('background-color', savedColor, 'important');
+          });
+          console.log('Force-applied sidebar color after delay:', savedColor);
+        }
+      }
     }, 500);
     
     return () => {
       clearTimeout(forceThemeTimer);
+      if (sidebarObserver) {
+        sidebarObserver.disconnect();
+      }
     };
   }, []);
 

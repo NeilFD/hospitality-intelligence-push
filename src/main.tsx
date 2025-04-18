@@ -11,6 +11,8 @@ const applyInitialTheme = () => {
   const activeName = localStorage.getItem('app-active-theme') || 'Berry Purple';
   const html = document.documentElement;
   
+  console.log('Initial theme application, loading theme:', activeName);
+  
   // Apply theme-specific color immediately based on known theme names
   let immediateColor = '#8e24aa'; // Berry Purple as default
   
@@ -50,27 +52,39 @@ const applyInitialTheme = () => {
     immediateColor = '#8e24aa';
     themeClass = 'theme-berry-purple';
   } else {
-    // For custom or unknown themes, try to get saved color
-    const savedColor = localStorage.getItem('custom-sidebar-color');
-    if (savedColor) {
-      immediateColor = savedColor;
-    } else {
-      // Try to get from theme storage
-      const themeData = localStorage.getItem(`theme-${activeName}`);
-      if (themeData) {
-        try {
-          const parsedData = JSON.parse(themeData);
-          if (parsedData && parsedData.sidebarColor) {
-            immediateColor = parsedData.sidebarColor;
-          }
-        } catch (e) {
-          console.error('Error parsing theme data:', e);
+    // For custom or unknown themes
+    themeClass = 'theme-purple-700';
+    
+    // Try to load theme data from localStorage first
+    const themeData = localStorage.getItem(`theme-${activeName}`);
+    if (themeData) {
+      try {
+        console.log('Found custom theme data for:', activeName);
+        const parsedData = JSON.parse(themeData);
+        if (parsedData && parsedData.sidebarColor) {
+          immediateColor = parsedData.sidebarColor;
+          console.log('Applying custom theme sidebar color:', immediateColor);
+          
+          // Also set all theme CSS variables directly
+          html.style.setProperty('--custom-primary-color', parsedData.primaryColor || '#9d89c9', 'important');
+          html.style.setProperty('--custom-secondary-color', parsedData.secondaryColor || '#f3e5f5', 'important');
+          html.style.setProperty('--custom-accent-color', parsedData.accentColor || '#ab47bc', 'important');
+          html.style.setProperty('--custom-sidebar-color', parsedData.sidebarColor || immediateColor, 'important');
+          html.style.setProperty('--custom-button-color', parsedData.buttonColor || '#7e57c2', 'important');
+          html.style.setProperty('--custom-text-color', parsedData.textColor || '#333333', 'important');
+          html.style.setProperty('--sidebar-color', parsedData.sidebarColor || immediateColor, 'important');
         }
+      } catch (e) {
+        console.error('Error parsing theme data:', e);
+      }
+    } else {
+      // Try to get from localStorage color directly
+      const savedColor = localStorage.getItem('custom-sidebar-color');
+      if (savedColor) {
+        immediateColor = savedColor;
+        console.log('Using saved sidebar color from localStorage:', savedColor);
       }
     }
-    
-    // Custom theme uses purple-700 class
-    themeClass = 'theme-purple-700';
   }
   
   // Store the color for consistent access
@@ -95,14 +109,19 @@ const applyInitialTheme = () => {
   
   // Apply the theme class
   html.classList.add(themeClass);
+  console.log('Applied theme class:', themeClass);
   
-  // Set CSS variables for the theme colors
+  // Special handling for custom themes (theme-purple-700)
   if (themeClass === 'theme-purple-700') {
+    console.log('Setting CSS variables for custom theme:', activeName);
+    
+    // Try to get theme data one more time
     const themeData = localStorage.getItem(`theme-${activeName}`);
     if (themeData) {
       try {
         const parsedData = JSON.parse(themeData);
         if (parsedData) {
+          // Set CSS variables with !important to override any default values
           html.style.setProperty('--custom-primary-color', parsedData.primaryColor || '#9d89c9', 'important');
           html.style.setProperty('--custom-secondary-color', parsedData.secondaryColor || '#f3e5f5', 'important');
           html.style.setProperty('--custom-accent-color', parsedData.accentColor || '#ab47bc', 'important');
@@ -110,16 +129,17 @@ const applyInitialTheme = () => {
           html.style.setProperty('--custom-button-color', parsedData.buttonColor || '#7e57c2', 'important');
           html.style.setProperty('--custom-text-color', parsedData.textColor || '#333333', 'important');
           html.style.setProperty('--sidebar-color', parsedData.sidebarColor || immediateColor, 'important');
+          
+          console.log('Applied CSS variables for custom theme:', parsedData);
         }
       } catch (e) {
-        console.error('Error parsing theme data:', e);
-        
-        // Fallback to setting at least the sidebar color
+        console.error('Error parsing theme data for CSS vars:', e);
+        // Set fallback values
         html.style.setProperty('--custom-sidebar-color', immediateColor, 'important');
         html.style.setProperty('--sidebar-color', immediateColor, 'important');
       }
     } else {
-      // Fallback to setting at least the sidebar color
+      // Set at least the sidebar color
       html.style.setProperty('--custom-sidebar-color', immediateColor, 'important');
       html.style.setProperty('--sidebar-color', immediateColor, 'important');
     }
@@ -151,6 +171,12 @@ applyInitialTheme();
 
 // Apply on DOMContentLoaded for safety
 document.addEventListener('DOMContentLoaded', applyInitialTheme);
+
+// Force delayed re-application for components that might load late
+setTimeout(() => {
+  applyInitialTheme();
+  console.log('Forced re-application of theme after delay');
+}, 500);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

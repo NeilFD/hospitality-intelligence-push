@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -116,17 +117,98 @@
   
   /* Theme class for custom themes */
   .theme-purple-700 {
+    /* Force direct color values with !important for all theme properties */
     --primary: var(--custom-primary-color, #9d89c9) !important;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 100% !important;
     --secondary: var(--custom-secondary-color, #f3e5f5) !important;
     --accent: var(--custom-accent-color, #ab47bc) !important;
-    --background: 0 0% 100%;
+    --background: 0 0% 100% !important;
     --foreground: var(--custom-text-color, #333333) !important;
     --sidebar-color: var(--custom-sidebar-color, #8e24aa) !important;
     --button-color: var(--custom-button-color, #7e57c2) !important;
     
+    /* Apply direct colors for buttons and elements that might use these values */
+    background-color: var(--background) !important;
+    color: var(--custom-text-color, #333333) !important;
+    
     /* Special handling for custom themes - direct color values */
     color-scheme: light;
+  }
+  
+  /* Forest Green Theme */
+  .theme-forest-green {
+    --primary: 122 44% 41%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 120 25% 95%;
+    --accent: 120 29% 43%;
+    --muted: 120 16% 93%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+    --sidebar-color: #2e7d32 !important;
+    --button-color: #2e7d32 !important;
+    --custom-primary-color: #1b5e20 !important;
+    --custom-secondary-color: #e8f5e9 !important;
+    --custom-accent-color: #66bb6a !important;
+    --custom-sidebar-color: #2e7d32 !important;
+    --custom-button-color: #43a047 !important;
+    --custom-text-color: #212121 !important;
+  }
+  
+  /* Ocean Blue Theme */
+  .theme-ocean-blue {
+    --primary: 210 79% 46%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 100% 97%;
+    --accent: 210 79% 46%;
+    --muted: 210 20% 90%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+    --sidebar-color: #1976d2 !important;
+    --button-color: #1976d2 !important;
+    --custom-primary-color: #1565c0 !important;
+    --custom-secondary-color: #e3f2fd !important;
+    --custom-accent-color: #42a5f5 !important;
+    --custom-sidebar-color: #1976d2 !important;
+    --custom-button-color: #2196f3 !important;
+    --custom-text-color: #212121 !important;
+  }
+  
+  /* Sunset Orange Theme */
+  .theme-sunset-orange {
+    --primary: 30 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 100% 96%;
+    --accent: 30 100% 50%;
+    --muted: 30 30% 90%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+    --sidebar-color: #ef6c00 !important;
+    --button-color: #ef6c00 !important;
+    --custom-primary-color: #e65100 !important;
+    --custom-secondary-color: #fff3e0 !important;
+    --custom-accent-color: #ff9800 !important;
+    --custom-sidebar-color: #ef6c00 !important;
+    --custom-button-color: #f57c00 !important;
+    --custom-text-color: #212121 !important;
+  }
+  
+  /* Dark Mode Theme */
+  .theme-dark-mode {
+    --primary: 0 0% 20%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 93%;
+    --accent: 0 0% 25%;
+    --muted: 0 0% 15%;
+    --background: 0 0% 95%;
+    --foreground: 0 0% 10%;
+    --sidebar-color: #333333 !important;
+    --button-color: #333333 !important;
+    --custom-primary-color: #333333 !important;
+    --custom-secondary-color: #f5f5f5 !important;
+    --custom-accent-color: #757575 !important;
+    --custom-sidebar-color: #333333 !important;
+    --custom-button-color: #424242 !important;
+    --custom-text-color: #212121 !important;
   }
 }
  
@@ -205,6 +287,16 @@
   .theme-purple-700 .sidebar,
   html.theme-purple-700 .sidebar,
   body .theme-purple-700 .sidebar,
+  body.theme-purple-700 .sidebar,
+  *[class*="theme-purple-700"] .sidebar {
+    background-color: var(--custom-sidebar-color, #8e24aa) !important;
+  }
+  
+  /* Apply direct inline styles to sidebar elements for custom themes */
+  html.theme-purple-700 .sidebar {
+    background-color: var(--custom-sidebar-color, #8e24aa) !important;
+  }
+  
   body.theme-purple-700 .sidebar {
     background-color: var(--custom-sidebar-color, #8e24aa) !important;
   }
@@ -240,18 +332,32 @@
     background-color: #333333 !important;
   }
   
-  /* Buttons for custom themes */
+  /* Buttons for custom themes - use direct CSS var reference */
   .theme-purple-700 button[class*="bg-primary"],
   .theme-purple-700 a[class*="bg-primary"],
   html.theme-purple-700 button[class*="bg-primary"],
-  html.theme-purple-700 a[class*="bg-primary"] {
+  html.theme-purple-700 a[class*="bg-primary"],
+  body.theme-purple-700 button[class*="bg-primary"],
+  body.theme-purple-700 a[class*="bg-primary"] {
     background-color: var(--custom-button-color, #7e57c2) !important;
   }
   
-  /* Force theme texts */
+  /* Force text colors to match theme */
   .theme-purple-700,
-  html.theme-purple-700 {
-    color: var(--custom-text-color, #333333);
+  html.theme-purple-700,
+  body.theme-purple-700 {
+    color: var(--custom-text-color, #333333) !important;
+  }
+  
+  /* Special case for navigation buttons in custom themes */
+  .theme-purple-700 [role="tab"][data-state="active"] {
+    background-color: var(--custom-button-color, #7e57c2) !important;
+    color: white !important;
+  }
+  
+  /* Tab styling for custom themes */
+  .theme-purple-700 button[class*="shadow-md"] {
+    background-color: var(--custom-button-color, #7e57c2) !important;
   }
 }
 
