@@ -5,8 +5,14 @@ import App from './App.tsx'
 import './index.css'
 import './theme-sidebar-fixer' // Import our sidebar fixer
 
-// Function to ensure immediate and correct theme application
+// Function to purge Tavern Blue and ensure immediate and correct theme application
 const applyInitialTheme = () => {
+  // Purge Tavern Blue
+  if (localStorage.getItem('app-active-theme') === 'Tavern Blue') {
+    localStorage.setItem('app-active-theme', 'Berry Purple');
+    console.log('Initial purge: Replaced Tavern Blue with Berry Purple');
+  }
+  
   // Try to get the active theme name
   const activeName = localStorage.getItem('app-active-theme') || 'Berry Purple';
   const html = document.documentElement;
@@ -115,6 +121,7 @@ const applyInitialTheme = () => {
     'theme-dark-mode',
     'theme-hi-purple',
     'theme-tavern-blue',
+    'tavern-blue',
     'theme-nfd-theme',
     'theme-purple-700'
   ];
@@ -218,8 +225,87 @@ setTimeout(() => {
       });
       console.log('Forced sidebar color on Control Centre page:', sidebarColor);
     }
+    
+    // Special handling for NFD theme in Control Centre
+    if (localStorage.getItem('app-active-theme') === 'NFD' || 
+        localStorage.getItem('app-active-theme') === 'NFD Theme') {
+      const nfdColor = '#ec193a';
+      
+      // Force direct application of NFD color
+      document.documentElement.classList.remove(
+        'theme-forest-green', 
+        'theme-ocean-blue', 
+        'theme-sunset-orange', 
+        'theme-berry-purple', 
+        'theme-dark-mode',
+        'theme-purple-700',
+        'theme-tavern-blue',
+        'tavern-blue'
+      );
+      document.documentElement.classList.add('theme-nfd-theme');
+      
+      // Apply to all sidebar elements
+      const sidebarElements = document.querySelectorAll('.sidebar');
+      if (sidebarElements.length > 0) {
+        sidebarElements.forEach(sidebar => {
+          (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
+        });
+      }
+      
+      // Force CSS variables
+      document.documentElement.style.setProperty('--custom-sidebar-color', nfdColor, 'important');
+      document.documentElement.style.setProperty('--sidebar-color', nfdColor, 'important');
+    }
   }
 }, 1000);
+
+// Add a click handler for the Control Centre page to refresh themes when clicked
+if (typeof window !== 'undefined' && window.location.pathname.includes('control-centre')) {
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    
+    // Check if this might be a theme-related click
+    if (target.closest('button') || target.closest('[role="button"]') || 
+        target.closest('[class*="theme"]') || target.closest('[class*="card"]')) {
+      
+      console.log('Potential theme selection click in Control Centre');
+      
+      // Reapply themes with delays
+      setTimeout(applyInitialTheme, 100);
+      setTimeout(applyInitialTheme, 300);
+      setTimeout(applyInitialTheme, 500);
+      
+      // Also check for NFD theme selection
+      setTimeout(() => {
+        if (localStorage.getItem('app-active-theme') === 'NFD' || 
+            localStorage.getItem('app-active-theme') === 'NFD Theme') {
+          
+          const nfdColor = '#ec193a';
+          console.log('NFD theme detected after click, forcing application');
+          
+          // Force NFD theme application
+          document.documentElement.classList.remove(
+            'theme-forest-green', 
+            'theme-ocean-blue', 
+            'theme-sunset-orange', 
+            'theme-berry-purple', 
+            'theme-dark-mode',
+            'theme-purple-700'
+          );
+          document.documentElement.classList.add('theme-nfd-theme');
+          
+          // Force sidebar color
+          const sidebarElements = document.querySelectorAll('.sidebar');
+          if (sidebarElements.length > 0) {
+            sidebarElements.forEach(sidebar => {
+              (sidebar as HTMLElement).style.setProperty('background-color', nfdColor, 'important');
+            });
+          }
+        }
+      }, 200);
+    }
+  });
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
