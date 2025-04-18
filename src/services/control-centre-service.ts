@@ -50,14 +50,15 @@ export const getControlCentreData = async () => {
   localStorage.setItem('company-name', companyName);
   console.log('Stored company name in localStorage:', companyName);
   
-  // Find if there's an active "Hi" theme that needs to be replaced
+  // Check for problematic themes that need to be fixed
   const hiThemeIsActive = themesData?.some(theme => theme.name === 'Hi' && theme.is_active) || false;
+  const tavernBlueThemeIsActive = themesData?.some(theme => theme.name === 'Tavern Blue' && theme.is_active) || false;
   
   // Find the Berry Purple theme
   const berryPurpleTheme = themesData?.find(theme => theme.name === 'Berry Purple');
   
-  // If Hi theme is active, we need to fix that in the database
-  if (hiThemeIsActive && berryPurpleTheme) {
+  // If problematic theme is active, we need to fix that in the database
+  if ((hiThemeIsActive || tavernBlueThemeIsActive) && berryPurpleTheme) {
     try {
       // Set all themes to inactive first
       await supabase
@@ -71,7 +72,7 @@ export const getControlCentreData = async () => {
         .update({ is_active: true })
         .eq('id', berryPurpleTheme.id);
       
-      console.log('Switched active theme from Hi to Berry Purple in database');
+      console.log('Switched active theme from problematic theme to Berry Purple in database');
     } catch (err) {
       console.error('Error updating theme activity:', err);
     }
@@ -79,12 +80,12 @@ export const getControlCentreData = async () => {
   
   // Transform database column names to match ThemeSettings interface
   const themes = themesData?.map(themeData => {
-    // Replace any "Hi" theme with "Berry Purple"
-    const isHiTheme = themeData.name === 'Hi';
+    // Replace any "Hi" or "Tavern Blue" theme with "Berry Purple"
+    const isProblematicTheme = themeData.name === 'Hi' || themeData.name === 'Tavern Blue';
     
     return {
       id: themeData.id,
-      name: isHiTheme ? 'Berry Purple' : themeData.name,
+      name: isProblematicTheme ? 'Berry Purple' : themeData.name,
       primaryColor: themeData.primary_color,
       secondaryColor: themeData.secondary_color,
       accentColor: themeData.accent_color,
@@ -94,7 +95,7 @@ export const getControlCentreData = async () => {
       logoUrl: themeData.logo_url,
       customFont: themeData.custom_font,
       isDefault: false,
-      isActive: isHiTheme ? false : themeData.is_active,
+      isActive: isProblematicTheme ? false : themeData.is_active,
       companyName: companyName
     };
   }) || [];
@@ -163,11 +164,12 @@ export const getControlCentreData = async () => {
       } else if (currentTheme.name === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
       } else {
-        // For custom themes like 'NFD Theme' or other custom themes
+        // For custom themes or non-default themes
         html.classList.add('theme-purple-700');
+        console.log('Applied custom theme class for:', currentTheme.name);
       }
       
-      // Dispatch an event to apply the theme immediately
+      // Dispatch an event to apply the theme immediately with full theme details
       const themeEvent = new CustomEvent('app-theme-updated', {
         detail: {
           theme: currentTheme

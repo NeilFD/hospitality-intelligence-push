@@ -14,7 +14,8 @@ export function fixHiTheme() {
     'theme-hi-purple',
     'hi',
     'theme-hi-theme',
-    'theme-tavern-blue' // Remove Tavern Blue
+    'theme-tavern-blue', // Remove Tavern Blue
+    'theme-purple-700'   // Reset any custom theme class
   ];
   
   // Remove all Hi-related theme classes

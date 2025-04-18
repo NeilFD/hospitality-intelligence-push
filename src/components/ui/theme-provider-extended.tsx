@@ -20,7 +20,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         if (savedThemeName) {
           // Convert any 'Hi' theme to 'Berry Purple'
-          const normalizedThemeName = savedThemeName === 'Hi' 
+          const normalizedThemeName = savedThemeName === 'Hi' || savedThemeName === 'Tavern Blue'
             ? 'Berry Purple' 
             : savedThemeName;
           
@@ -47,7 +47,9 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         
         if (data) {
           // Check for Hi theme and replace with Berry Purple
-          const themeName = data.name === 'Hi' ? 'Berry Purple' : data.name;
+          const themeName = data.name === 'Hi' || data.name === 'Tavern Blue' 
+            ? 'Berry Purple' 
+            : data.name;
           
           // Apply theme class to the html element
           applyThemeClass(themeName);
@@ -98,7 +100,7 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         'theme-berry-purple', 
         'theme-dark-mode', 
         'theme-hi-purple',
-        'theme-purple-700', // Remove any old theme classes
+        'theme-purple-700', // Custom theme class
         'theme-tavern-blue' // Explicitly remove Tavern Blue
       ];
       
@@ -117,6 +119,8 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         localStorage.setItem('company-name', 'Hospitality Intelligence');
       }
       
+      console.log('Applying theme:', themeName);
+      
       // Update theme class mapping
       if (themeName === 'Forest Green') {
         html.classList.add('theme-forest-green');
@@ -128,9 +132,11 @@ export function ThemeProviderExtended({ children }: { children: React.ReactNode 
         html.classList.add('theme-berry-purple');
       } else if (themeName === 'Dark Mode') {
         html.classList.add('theme-dark-mode');
-      } else if (themeName === 'NFD Theme') {
+      } else if (themeName === 'NFD Theme' || 
+                (!['Forest Green', 'Ocean Blue', 'Sunset Orange', 'Berry Purple', 'Dark Mode', 'Hi'].includes(themeName))) {
         // Handle custom theme if not one of the defaults
         html.classList.add('theme-purple-700'); // Use this class for custom themes
+        console.log('Applied custom theme class for:', themeName);
       } else {
         // Fallback to Berry Purple for any unknown theme
         html.classList.add('theme-berry-purple');

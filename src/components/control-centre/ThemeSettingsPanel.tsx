@@ -536,6 +536,12 @@ export function ThemeSettingsPanel({
       });
       window.dispatchEvent(companyNameEvent);
       
+      // Deactivate all themes first
+      await supabase
+        .from('themes')
+        .update({ is_active: false })
+        .neq('id', 0);
+      
       const newTheme = {
         id: activeTheme.id,
         name: activeTheme.name,
@@ -551,11 +557,6 @@ export function ThemeSettingsPanel({
         companyName: activeTheme.companyName
       };
       
-      await supabase
-        .from('themes')
-        .update({ is_active: false })
-        .neq('id', 0);
-      
       const saveResult = await saveThemeSettings(newTheme);
       
       if ('error' in saveResult) {
@@ -564,13 +565,26 @@ export function ThemeSettingsPanel({
         return;
       }
       
+      // Force immediate theme application with detailed theme information
       const themeEvent = new CustomEvent('app-theme-updated', {
         detail: {
-          theme: newTheme
+          theme: {
+            name: newTheme.name,
+            primaryColor: newTheme.primaryColor,
+            secondaryColor: newTheme.secondaryColor,
+            accentColor: newTheme.accentColor,
+            sidebarColor: newTheme.sidebarColor,
+            buttonColor: newTheme.buttonColor,
+            textColor: newTheme.textColor,
+            customFont: newTheme.customFont,
+            companyName: newTheme.companyName,
+            logoUrl: newTheme.logoUrl
+          }
         }
       });
       window.dispatchEvent(themeEvent);
       
+      // Apply theme directly to ensure immediate visual feedback
       applyThemeDirectly(newTheme.name);
       
       fetchThemes();
@@ -633,6 +647,7 @@ export function ThemeSettingsPanel({
       html.classList.add('theme-berry-purple');
     } else {
       html.classList.add('theme-purple-700');
+      console.log('Applied custom theme class for:', themeName);
     }
     
     document.dispatchEvent(new Event('themeClassChanged'));
