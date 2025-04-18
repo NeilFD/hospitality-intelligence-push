@@ -18,6 +18,11 @@ const Index = () => {
     console.log('[Index] User profile:', profile);
   }, [currentModule, isAuthenticated, isLoading, profile]);
   
+  // If at root path, redirect to login
+  if (location.pathname === '/') {
+    return <Navigate to="/login" replace />;
+  }
+  
   // If not authenticated, redirect to login
   if (!isAuthenticated && !isLoading) {
     console.log('[Index] User not authenticated, redirecting to login');
