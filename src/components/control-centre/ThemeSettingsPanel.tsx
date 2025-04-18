@@ -1194,7 +1194,7 @@ export function ThemeSettingsPanel({
                   <SelectContent>
                     {availableFonts.map((font) => (
                       <SelectItem key={font.value} value={font.value}>
-                        {font.label}
+                        {font.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
