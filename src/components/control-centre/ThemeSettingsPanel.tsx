@@ -409,7 +409,7 @@ export function ThemeSettingsPanel({
           throw error;
         }
         
-        // If this is the active theme, dispatch the update events
+        // Only dispatch events if this is the active theme
         if (theme.isActive) {
           // Dispatch theme update event
           const themeEvent = new CustomEvent('app-theme-updated', {
@@ -437,7 +437,7 @@ export function ThemeSettingsPanel({
         };
       }
       
-      // Create new theme
+      // Create new theme - but do NOT set it as active
       const { data, error } = await supabase.from('themes').insert({
         name: theme.name,
         primary_color: theme.primaryColor,
@@ -448,7 +448,7 @@ export function ThemeSettingsPanel({
         text_color: theme.textColor,
         logo_url: theme.logoUrl,
         custom_font: theme.customFont,
-        is_active: theme.isActive,
+        is_active: false, // Important: Always set new themes to inactive
         company_name: theme.companyName
       }).select().single();
       
@@ -457,31 +457,9 @@ export function ThemeSettingsPanel({
         throw error;
       }
       
-      // If active, dispatch theme update event
-      if (theme.isActive) {
-        // Dispatch theme update event
-        const themeEvent = new CustomEvent('app-theme-updated', {
-          detail: {
-            theme: data
-          }
-        });
-        window.dispatchEvent(themeEvent);
-        
-        // Dispatch company name update event
-        const companyNameEvent = new CustomEvent('company-name-updated', {
-          detail: {
-            companyName: theme.companyName
-          }
-        });
-        window.dispatchEvent(companyNameEvent);
-        
-        // Also update localStorage directly as a backup
-        localStorage.setItem('company-name', theme.companyName);
-        console.log("Set company name in localStorage:", theme.companyName);
-      }
-      
       return {
-        success: true
+        success: true,
+        data
       };
     } catch (error) {
       console.error('Error saving theme settings:', error);
@@ -515,7 +493,9 @@ export function ThemeSettingsPanel({
       });
       window.dispatchEvent(companyNameEvent);
       
-      const saveResult = await saveThemeSettings({
+      // When saving from the "Create Theme" tab, we want to create a new theme
+      // without activating it
+      const newTheme = {
         id: activeTheme.id,
         name: activeTheme.name,
         primaryColor: activeTheme.primaryColor,
@@ -526,22 +506,30 @@ export function ThemeSettingsPanel({
         textColor: activeTheme.textColor,
         logoUrl: activeTheme.logoUrl,
         customFont: activeTheme.customFont,
-        isActive: activeTheme.isActive,
+        isActive: false, // Always set to false for new themes
         companyName: activeTheme.companyName
-      });
+      };
+      
+      const saveResult = await saveThemeSettings(newTheme);
       
       if ('error' in saveResult) {
-        console.error('Error updating theme:', saveResult.error);
+        console.error('Error saving theme:', saveResult.error);
         toast.error('Failed to save theme settings');
         return;
       }
       
+      // Reset the form and switch to the presets tab to show the new theme
+      if (activeTab === 'custom' && !activeTheme.id) {
+        // Only switch tabs if we're creating a new theme
+        setActiveTab('presets');
+        toast.success('Theme saved! You can now select it from the presets.');
+      } else {
+        toast.success('Theme updated successfully');
+      }
+      
+      // If we've modified the font, we still want to load it
       if (activeTheme.customFont) {
-        document.documentElement.style.setProperty('--app-font-family', activeTheme.customFont);
-        document.documentElement.style.fontFamily = activeTheme.customFont;
-        document.body.style.fontFamily = activeTheme.customFont;
-        
-        const fontName = activeTheme.customFont.split(',')[0].trim().replace(/["']/g, '');
+        const fontName = activeTheme.customFont.split(',')[0].trim().replace(/[\"']/g, '');
         if (!document.querySelector(`link[href*="${fontName}"]`)) {
           const formattedFontName = fontName.replace(/\s+/g, '+');
           const link = document.createElement('link');
@@ -551,19 +539,6 @@ export function ThemeSettingsPanel({
           console.log(`Added Google Font link for: ${fontName}`);
         }
       }
-      
-      localStorage.setItem('app-active-theme', activeTheme.name);
-      console.log('Saved theme to localStorage:', activeTheme.name);
-      
-      const themeEvent = new CustomEvent('app-theme-updated', {
-        detail: { theme: activeTheme }
-      });
-      console.log("Dispatching theme event with data:", activeTheme);
-      window.dispatchEvent(themeEvent);
-      
-      applyThemeDirectly(activeTheme.name);
-      
-      toast.success('Theme and company name saved successfully');
     } catch (error) {
       console.error('Error saving theme settings:', error);
       toast.error('An unexpected error occurred');
@@ -592,6 +567,8 @@ export function ThemeSettingsPanel({
       html.classList.add('theme-dark-mode');
     } else if (themeName === 'Hi Purple') {
       html.classList.add('theme-hi-purple');
+    } else {
+      html.classList.add('theme-purple-700');
     }
     
     document.dispatchEvent(new Event('themeClassChanged'));
