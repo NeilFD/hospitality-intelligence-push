@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -189,24 +188,45 @@ export function ThemeSettingsPanel({
   }, [currentTheme]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
+    const { name, value } = e.target;
 
     if (name === 'primaryColor') {
       setPrimaryRgb(hexToRgb(value));
+      setActiveTheme(prev => ({
+        ...prev,
+        primaryColor: value
+      }));
     } else if (name === 'secondaryColor') {
       setSecondaryRgb(hexToRgb(value));
+      setActiveTheme(prev => ({
+        ...prev,
+        secondaryColor: value
+      }));
     } else if (name === 'accentColor') {
       setAccentRgb(hexToRgb(value));
+      setActiveTheme(prev => ({
+        ...prev,
+        accentColor: value
+      }));
     } else if (name === 'sidebarColor') {
       setSidebarRgb(hexToRgb(value));
+      setActiveTheme(prev => ({
+        ...prev,
+        sidebarColor: value
+      }));
     } else if (name === 'buttonColor') {
       setButtonRgb(hexToRgb(value));
+      setActiveTheme(prev => ({
+        ...prev,
+        buttonColor: value
+      }));
     } else if (name === 'textColor') {
       setTextRgb(hexToRgb(value));
-    } else if (name === 'companyName') {
+      setActiveTheme(prev => ({
+        ...prev,
+        textColor: value
+      }));
+    } else if (name === 'name' || name === 'companyName') {
       setActiveTheme(prev => ({
         ...prev,
         [name]: value
