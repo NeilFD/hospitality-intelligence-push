@@ -1,17 +1,14 @@
-
 import React from 'react';
 import { ChromePicker } from 'react-color';
 import { Pipette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
 interface ColorPickerProps {
   color: string;
   onChange: (color: string) => void;
   label?: string;
   className?: string;
 }
-
 export function ColorPicker({
   color,
   onChange,
@@ -23,24 +20,11 @@ export function ColorPicker({
   }) => {
     onChange(newColor.hex);
   };
-
-  return (
-    <div className={`flex items-center gap-2 ${className}`}>
+  return <div className={`flex items-center gap-2 ${className}`}>
       {label && <span className="text-sm text-gray-600">{label}</span>}
       <Popover>
         <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-9 w-9 p-0 border border-input"
-          >
-            <div 
-              className="w-full h-full rounded-sm" 
-              style={{ backgroundColor: color }}
-              aria-hidden="true"
-            />
-            <span className="sr-only">Open color picker</span>
-          </Button>
+          
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
           <ChromePicker color={color} onChange={handleColorChange} disableAlpha />
@@ -56,24 +40,11 @@ export function ColorPicker({
           <ChromePicker color={color} onChange={handleColorChange} disableAlpha />
         </PopoverContent>
       </Popover>
-      <div 
-        className="w-8 h-8 rounded-md cursor-pointer border border-gray-300"
-        style={{ backgroundColor: color }}
-        onClick={() => {}} // Placeholder to ensure it's still interactive
-      />
-      <input 
-        type="color" 
-        value={color} 
-        onChange={e => onChange(e.target.value)} 
-        className="w-8 h-8 border-0 p-0 cursor-pointer rounded-md" 
-      />
-      <input 
-        type="text" 
-        value={color} 
-        onChange={e => onChange(e.target.value)} 
-        className="flex-1 h-9 px-3 py-1 rounded-md border border-gray-300 text-sm" 
-        placeholder="#000000" 
-      />
-    </div>
-  );
+      <div className="w-8 h-8 rounded-md cursor-pointer border border-gray-300" style={{
+      backgroundColor: color
+    }} onClick={() => {}} // Placeholder to ensure it's still interactive
+    />
+      <input type="color" value={color} onChange={e => onChange(e.target.value)} className="w-8 h-8 border-0 p-0 cursor-pointer rounded-md" />
+      <input type="text" value={color} onChange={e => onChange(e.target.value)} className="flex-1 h-9 px-3 py-1 rounded-md border border-gray-300 text-sm" placeholder="#000000" />
+    </div>;
 }
