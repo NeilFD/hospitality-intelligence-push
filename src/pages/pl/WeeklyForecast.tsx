@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { RevenueTagManager } from './components/revenue-tags/RevenueTagManager';
 
 export default function WeeklyForecast() {
   const { 
@@ -111,6 +111,19 @@ export default function WeeklyForecast() {
         </Card>
       </div>
       
+      <RevenueTagManager
+        tags={[]} // TODO: Pass actual tags
+        taggedDates={[]} // TODO: Pass actual tagged dates
+        onAddTag={(tag) => {
+          // TODO: Implement tag creation
+          console.log('Adding tag:', tag);
+        }}
+        onTagDate={(date, tagId, impacts) => {
+          // TODO: Implement date tagging
+          console.log('Tagging date:', { date, tagId, impacts });
+        }}
+      />
+      
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Daily Forecast Breakdown</CardTitle>
@@ -200,7 +213,6 @@ export default function WeeklyForecast() {
   );
 }
 
-// Helper components
 const WeatherIcon: React.FC<{ description: string }> = ({ description }) => {
   const desc = description.toLowerCase();
   

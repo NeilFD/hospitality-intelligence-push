@@ -1,7 +1,7 @@
-
 import { format, addDays, startOfWeek, endOfWeek, getDay } from 'date-fns';
 import { RevenueForecast, WeatherForecast } from '@/types/master-record-types';
 import { fetchMasterMonthlyRecords } from '@/services/master-record-service';
+import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
 
 // Fetch real weather forecast using Open-Meteo API
 // This uses the same API as the WeatherFetcher component
@@ -418,6 +418,35 @@ export const generateFutureWeeksForecast = async (
   return { currentWeek, futureWeeks };
 };
 
+// Add new fetch functions for tags
+const fetchRevenueTags = async (): Promise<RevenueTag[]> => {
+  // TODO: Replace with actual DB call when Supabase is connected
+  return [
+    {
+      id: '1',
+      name: 'Easter Weekend',
+      historicalFoodRevenueImpact: 35, // 35% increase
+      historicalBeverageRevenueImpact: 40,
+      occurrenceCount: 3,
+      description: 'Annual Easter Weekend impact'
+    },
+    {
+      id: '2',
+      name: 'Bank Holiday',
+      historicalFoodRevenueImpact: 25,
+      historicalBeverageRevenueImpact: 30,
+      occurrenceCount: 12,
+      description: 'Standard Bank Holiday impact'
+    }
+  ];
+};
+
+const fetchTaggedDates = async (startDate: string, endDate: string): Promise<TaggedDate[]> => {
+  // TODO: Replace with actual DB call when Supabase is connected
+  return [];
+};
+
+// Modify the generateRevenueForecast function
 export const generateRevenueForecast = async (
   startDate: string,
   endDate: string,
@@ -425,30 +454,13 @@ export const generateRevenueForecast = async (
 ): Promise<RevenueForecast[]> => {
   console.log(`Generating revenue forecast from ${startDate} to ${endDate}`);
   
-  let weatherForecast: WeatherForecast[] = [];
-  try {
-    weatherForecast = await fetchWeatherForecast(startDate, endDate);
-  } catch (error) {
-    console.warn('Unable to fetch weather forecast, using default values');
-    // Generate default placeholders if weather fetch fails
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    weatherForecast = [];
-    for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-      weatherForecast.push({
-        date: format(day, 'yyyy-MM-dd'),
-        description: 'N/A',
-        temperature: 15,
-        precipitation: 0,
-        windSpeed: 0
-      });
-    }
-  }
+  const [weatherForecast, dayOfWeekBaselines, taggedDates, revenueTags] = await Promise.all([
+    fetchWeatherForecast(startDate, endDate),
+    fetchHistoricalDayOfWeekAverages(),
+    fetchTaggedDates(startDate, endDate),
+    fetchRevenueTags()
+  ]);
   
-  // Fetch historical day-of-week revenue averages
-  const dayOfWeekBaselines = await fetchHistoricalDayOfWeekAverages();
-  
-  // Only fetch weather impact if we're not using averages only
   const weatherImpact = useAveragesOnly ? null : await analyzeWeatherImpact(
     new Date().getFullYear(),
     new Date().getMonth() + 1,
@@ -467,8 +479,8 @@ export const generateRevenueForecast = async (
     let confidence = baseline.count >= 10 ? 85 : 
                    baseline.count >= 5 ? 75 : 
                    baseline.count > 0 ? 65 : 50;
-    
-    // Only apply weather impacts if we're not using averages only and weather data is available
+
+    // Apply weather impacts if available
     if (!useAveragesOnly && weatherImpact && forecast.description !== 'N/A') {
       const weatherCondition = mapToGeneralWeatherCondition(forecast.description);
       
@@ -489,18 +501,24 @@ export const generateRevenueForecast = async (
         }
       }
     }
-    
-    // For future weeks with N/A weather, still use historical data but with lower confidence
-    if (forecast.description === 'N/A') {
-      // Apply small random variation based on historical patterns (±5%) to simulate real data patterns
-      // but maintain the underlying historical trends
-      const dateSeed = parseInt(date.replace(/[^0-9]/g, '')) % 100;
-      const variation = 0.95 + ((dateSeed / 100) * 0.1); // 0.95 to 1.05 range, deterministic based on date
-      foodRevenue *= variation;
-      bevRevenue *= variation;
-      
-      // Reduce confidence for N/A weather data
-      confidence = Math.max(confidence - 20, 30);
+
+    // Apply revenue tag impacts
+    const taggedDate = taggedDates.find(td => td.date === date);
+    if (taggedDate) {
+      const tag = revenueTags.find(t => t.id === taggedDate.tagId);
+      if (tag) {
+        // Use manual override if provided, otherwise use historical impact
+        const foodImpact = taggedDate.manualFoodRevenueImpact ?? tag.historicalFoodRevenueImpact;
+        const bevImpact = taggedDate.manualBeverageRevenueImpact ?? tag.historicalBeverageRevenueImpact;
+        
+        foodRevenue *= (1 + foodImpact / 100);
+        bevRevenue *= (1 + bevImpact / 100);
+        
+        // Increase confidence if we have good historical data for this tag
+        if (tag.occurrenceCount >= 3) {
+          confidence = Math.min(confidence + 5, 95);
+        }
+      }
     }
     
     revenueForecast.push({
