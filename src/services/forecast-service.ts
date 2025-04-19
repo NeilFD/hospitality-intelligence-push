@@ -63,7 +63,7 @@ const calculateDayOfWeekBaselines = async (date: Date) => {
 };
 
 // Analyze how weather impacts revenue
-const analyzeWeatherImpact = async (year: number, month: number, months: number) => {
+export const analyzeWeatherImpact = async (year: number, month: number, months: number) => {
   // This would typically analyze historical data to find correlations
   // between weather and revenue
   const weatherImpact: any = {
