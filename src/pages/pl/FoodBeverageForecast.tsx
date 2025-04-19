@@ -280,8 +280,16 @@ export default function FoodBeverageForecast() {
                                 <TooltipContent className="p-2 max-w-xs bg-white">
                                   <div className="space-y-1">
                                     <p className="font-medium text-sm">{tag.name}</p>
-                                    <p className="text-xs">Food Revenue Impact: {formatPercentage(tag.historicalFoodRevenueImpact / 100)}</p>
-                                    <p className="text-xs">Beverage Revenue Impact: {formatPercentage(tag.historicalBeverageRevenueImpact / 100)}</p>
+                                    <p className="text-xs">
+                                      Food Revenue Impact: {tag.historicalFoodRevenueImpact !== undefined 
+                                        ? formatPercentage(tag.historicalFoodRevenueImpact / 100) 
+                                        : '0%'}
+                                    </p>
+                                    <p className="text-xs">
+                                      Beverage Revenue Impact: {tag.historicalBeverageRevenueImpact !== undefined 
+                                        ? formatPercentage(tag.historicalBeverageRevenueImpact / 100) 
+                                        : '0%'}
+                                    </p>
                                   </div>
                                 </TooltipContent>
                               </TooltipComponent>
