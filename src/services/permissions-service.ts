@@ -25,6 +25,9 @@ export const getHasAccessToModule = async (
     
     // Check if the user has access to the specified module
     const module = userRole.modulePermissions.find((m: any) => m.moduleType === moduleType);
+    
+    console.log(`[permissions-service] Checking if ${role} has access to ${moduleType}:`, module?.hasAccess || false);
+    
     return module ? module.hasAccess : false;
   } catch (err) {
     console.error('Error checking module access:', err);
@@ -53,9 +56,13 @@ export const getUserAccessibleModules = async (role: string): Promise<ModuleType
     if (!userRole) return [];
     
     // Filter modules that the user has access to
-    return userRole.modulePermissions
+    const accessibleModules = userRole.modulePermissions
       .filter((m: any) => m.hasAccess)
       .map((m: any) => m.moduleType as ModuleType);
+      
+    console.log(`[permissions-service] Accessible modules for ${role}:`, accessibleModules);
+    
+    return accessibleModules;
   } catch (err) {
     console.error('Error fetching accessible modules:', err);
     return [];

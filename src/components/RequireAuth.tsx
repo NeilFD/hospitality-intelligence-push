@@ -114,8 +114,8 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     console.log('[RequireAuth] User does not have permission, redirecting to accessible module');
     toast.error("You don't have permission to access this page");
     
-    // Redirect to team dashboard as a safe default - this should be a module everyone has access to
-    return <Navigate to="/team/dashboard" replace />;
+    // Redirect to home dashboard instead of team dashboard - this should be accessible for all including Team Members
+    return <Navigate to="/home/dashboard" replace />;
   }
   
   // If a specific role is required, check if the user has it
@@ -130,7 +130,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
     if (userRoleValue < requiredRoleValue) {
       console.log(`[RequireAuth] User does not have required role ${requiredRole}, redirecting to home`);
       toast.error(`You need ${requiredRole} permissions to access this page`);
-      return <Navigate to="/team/dashboard" replace />;
+      return <Navigate to="/home/dashboard" replace />;
     }
   }
   

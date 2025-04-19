@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -136,19 +135,6 @@ const Layout = ({
           return;
         }
 
-        if (profile.role === 'Team Member') {
-          console.log('User has Team Member role - restricting to team module only');
-          const teamMemberModules = modules.map(m => ({
-            moduleId: m.type,
-            hasAccess: m.type === 'team'
-          }));
-          setModulePermissions(teamMemberModules);
-          setPermissionsLoaded(true);
-          
-          console.log('Team Member restricted permissions:', teamMemberModules);
-          return;
-        }
-
         const { data: moduleAccess, error: moduleError } = await supabase
           .from('permission_access')
           .select('module_id, has_access')
@@ -216,10 +202,6 @@ const Layout = ({
       return true;
     }
     
-    if (profile.role === 'Team Member') {
-      return moduleId === 'team';
-    }
-
     const modulePermission = modulePermissions.find(p => p.moduleId === moduleId);
     const hasAccess = modulePermission ? modulePermission.hasAccess : false;
     
@@ -560,12 +542,6 @@ const Layout = ({
     if (!permissionsLoaded) {
       console.log('Permissions not loaded yet');
       return [];
-    }
-    
-    if (profile?.role === 'Team Member') {
-      const teamOnly = moduleNavItems.filter(item => item.type === 'team');
-      console.log('Team Member strict filtering - showing only team module:', teamOnly);
-      return teamOnly;
     }
     
     const filtered = moduleNavItems.filter(item => {
