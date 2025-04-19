@@ -1,6 +1,15 @@
 
 import React from 'react';
-import { Cloud, CloudRain, CloudSun, Thermometer as ThermometerIcon, Droplets as DropletsIcon, Wind as WindIcon, Check, AlertTriangle } from 'lucide-react';
+import { 
+  Cloud, 
+  CloudRain, 
+  CloudSun, 
+  Thermometer as ThermometerIcon, 
+  Droplets as DropletsIcon, 
+  Wind as WindIcon, 
+  Check, 
+  AlertTriangle 
+} from 'lucide-react';
 
 export const WeatherIcon = ({ description }: { description: string }) => {
   const desc = description.toLowerCase();

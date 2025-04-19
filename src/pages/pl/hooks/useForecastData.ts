@@ -18,9 +18,15 @@ export const useForecastData = () => {
       // Generate forecast for the next 7 days
       const today = new Date();
       const startDate = format(today, 'yyyy-MM-dd');
-      const endDate = format(addDays(today, 7), 'yyyy-MM-dd');
+      const endDate = format(addDays(today, 6), 'yyyy-MM-dd'); // 7 days total (today + 6)
       
       const forecast = await generateRevenueForecast(startDate, endDate);
+      
+      // Ensure we have 7 days of data
+      if (forecast.length < 7) {
+        console.warn(`Expected 7 days of forecast data but got ${forecast.length}`);
+      }
+      
       setForecastData(forecast);
       
       // Optionally save the forecast

@@ -1,8 +1,8 @@
-
 import { supabase } from '@/lib/supabase';
 import { MasterDailyRecord, WeatherForecast, RevenueForecast } from '@/types/master-record-types';
 import { fetchMasterMonthlyRecords } from './master-record-service';
 import { getDayName } from '@/lib/date-utils';
+import { format, addDays, parseISO } from 'date-fns';
 
 // Use actual weather API for forecast instead of mock data
 export const fetchWeatherForecast = async (startDate: string, endDate: string): Promise<WeatherForecast[]> => {
@@ -21,13 +21,39 @@ export const fetchWeatherForecast = async (startDate: string, endDate: string): 
     throw error;
   }
   
-  return data.map(record => ({
+  // If we don't have enough data (7 days), generate placeholder data for missing days
+  let forecast = data.map(record => ({
     date: record.date,
     description: record.weather_description || 'Unknown',
     temperature: record.temperature || 15,
     precipitation: record.precipitation || 0,
     windSpeed: record.wind_speed || 0
   }));
+  
+  // If we have less than 7 days, generate placeholder data
+  if (forecast.length < 7) {
+    const start = parseISO(startDate);
+    for (let i = 0; i < 7; i++) {
+      const currentDate = format(addDays(start, i), 'yyyy-MM-dd');
+      if (!forecast.find(f => f.date === currentDate)) {
+        forecast.push({
+          date: currentDate,
+          description: 'Partly cloudy',
+          temperature: 15,
+          precipitation: 0,
+          windSpeed: 5
+        });
+      }
+    }
+    
+    // Sort by date
+    forecast = forecast.sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Keep only 7 days
+    forecast = forecast.slice(0, 7);
+  }
+  
+  return forecast;
 };
 
 // Analyze historical data to understand weather impact on sales
@@ -133,15 +159,21 @@ export const generateRevenueForecast = async (
   startDate: string, 
   endDate: string
 ): Promise<RevenueForecast[]> => {
+  console.log(`Generating revenue forecast from ${startDate} to ${endDate}`);
+  
   const weatherForecast = await fetchWeatherForecast(startDate, endDate);
   
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   
+  // Analyze historical trends
   const weatherImpact = await analyzeWeatherImpact(currentYear, currentMonth, 3);
   
-  const revenueForecast: RevenueForecast[] = weatherForecast.map(forecast => {
+  // Ensure we have historical data for each day of the week
+  const revenueForecast: RevenueForecast[] = [];
+  
+  for (const forecast of weatherForecast) {
     const date = forecast.date;
     const dayOfWeek = getDayName(date);
     const weatherCondition = mapToGeneralWeatherCondition(forecast.description);
@@ -150,6 +182,7 @@ export const generateRevenueForecast = async (
     let bevRevenue = 0;
     let confidence = 70;
     
+    // Base forecast on historical day-of-week patterns
     if (weatherImpact[dayOfWeek] && weatherImpact[dayOfWeek][weatherCondition]) {
       const impact = weatherImpact[dayOfWeek][weatherCondition];
       
@@ -158,7 +191,22 @@ export const generateRevenueForecast = async (
         bevRevenue = impact.averageBevRevenue;
         
         confidence = impact.count >= 10 ? 90 : impact.count >= 5 ? 80 : 60;
+      } else {
+        // Fallback if we don't have data for this specific weather condition
+        // Find any weather condition data for this day of week
+        const anyWeatherData = Object.values(weatherImpact[dayOfWeek]).find(data => data.count > 0);
+        if (anyWeatherData) {
+          foodRevenue = anyWeatherData.averageFoodRevenue;
+          bevRevenue = anyWeatherData.averageBevRevenue;
+          confidence = 50; // Lower confidence when using alternative weather condition
+        }
       }
+    } else {
+      // Last resort fallback - use average across all days if available
+      const defaultRevenue = await fetchAverageDailyRevenue();
+      foodRevenue = defaultRevenue.foodRevenue;
+      bevRevenue = defaultRevenue.beverageRevenue;
+      confidence = 40; // Low confidence for fallback data
     }
     
     // Apply temperature and precipitation adjustments using actual data
@@ -176,7 +224,7 @@ export const generateRevenueForecast = async (
       confidence = Math.max(confidence - 10, 30);
     }
     
-    return {
+    revenueForecast.push({
       date,
       dayOfWeek,
       foodRevenue,
@@ -184,14 +232,37 @@ export const generateRevenueForecast = async (
       totalRevenue: foodRevenue + bevRevenue,
       weatherDescription: forecast.description,
       temperature: forecast.temperature,
-      precipitation: forecast.precipitation, // Include precipitation in the forecast
-      windSpeed: forecast.windSpeed,         // Include windSpeed in the forecast
+      precipitation: forecast.precipitation,
+      windSpeed: forecast.windSpeed,
       confidence
-    };
-  });
+    });
+  }
   
   return revenueForecast;
 };
+
+// Helper function to get average daily revenue when no historical data is available
+async function fetchAverageDailyRevenue(): Promise<{ foodRevenue: number, beverageRevenue: number }> {
+  const { data, error } = await supabase
+    .from('master_daily_records')
+    .select('food_revenue, beverage_revenue')
+    .order('date', { ascending: false })
+    .limit(30);
+  
+  if (error) {
+    console.error('Error fetching average revenue:', error);
+    return { foodRevenue: 3000, beverageRevenue: 2000 }; // Default fallback values
+  }
+  
+  if (data.length === 0) {
+    return { foodRevenue: 3000, beverageRevenue: 2000 }; // Default fallback values
+  }
+  
+  const foodRevenue = data.reduce((sum, record) => sum + (record.food_revenue || 0), 0) / data.length;
+  const beverageRevenue = data.reduce((sum, record) => sum + (record.beverage_revenue || 0), 0) / data.length;
+  
+  return { foodRevenue, beverageRevenue };
+}
 
 // Save the forecast for future reference
 export const saveForecast = async (forecast: RevenueForecast[]): Promise<void> => {
