@@ -113,6 +113,10 @@ export function RevenueTagManager({
         
       if (error) throw error;
       
+      const updatedTags = tags.map(t => 
+        t.id === tag.id ? tag : t
+      );
+      
       setEditingTag(null);
       toast.success('Tag updated successfully');
     } catch (error) {
