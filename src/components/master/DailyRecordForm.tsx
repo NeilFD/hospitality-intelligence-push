@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils';
+import { formatCurrency, formatPercentage } from '@/lib/utils';
+import { formatDate } from '@/lib/date-utils';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
