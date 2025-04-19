@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -118,13 +119,16 @@ export function TrackerLineItem({
   }
 
   const shouldShowCalendar = () => {
+    // Only show calendar for Discrete items that aren't revenue, COS, wages or summary items
     return (
       item.tracking_type === 'Discrete' && 
       !isRevenue && 
       !isCOS && 
       !isWages && 
       !isGrossProfit && 
-      !item.isHeader
+      !isOperatingProfit &&
+      !item.isHeader && 
+      !item.isHighlighted
     );
   };
 

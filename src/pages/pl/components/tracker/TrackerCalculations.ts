@@ -51,7 +51,7 @@ export function calculateSummaryProRatedBudget(
     return trackedBudgetData
       .filter(i => (i.name.toLowerCase().includes('cost of sales') || 
                    i.name.toLowerCase().includes('cos') ||
-                   i.category.toLowerCase().includes('cost of sales')) &&
+                   i.category?.toLowerCase().includes('cost of sales')) &&
                    i.name !== item.name)
       .reduce((sum, i) => sum + calculateProRatedBudget(i, daysInMonth, dayOfMonth), 0);
   }
@@ -119,13 +119,14 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
       item.name.toLowerCase().includes('wages') ||
       item.name.toLowerCase().includes('salary') ||
       item.isGrossProfit ||
-      item.isOperatingProfit) {
+      item.isOperatingProfit ||
+      item.isHighlighted) {
     return Number(item.actual_amount) || 0;
   }
 
   // Handle Pro-Rated items - calculate based on today's date
   if (item.tracking_type === 'Pro-Rated') {
-    const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
+    const proRatedActual = calculateProRatedActual(item, daysInMonth, dayOfMonth);
     console.log(`Pro-rated actual for ${item.name}:`, {
       budget: item.budget_amount,
       daysInMonth,
