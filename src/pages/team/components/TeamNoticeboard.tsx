@@ -566,10 +566,10 @@ const TeamNoticeboard: React.FC = () => {
     <ScrollArea className="h-[calc(100vh-200px)] w-full pr-4">
       <div className="container mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">Team Noticeboard</h2>
-              <TabsList className="mt-2 bg-gray-100 p-1">
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">Team Noticeboard</h2>
+              <TabsList className="mt-1 bg-gray-100 p-1">
                 <TabsTrigger 
                   value="notes" 
                   className="text-gray-700 data-[state=active]:bg-tavern-blue data-[state=active]:text-white"
