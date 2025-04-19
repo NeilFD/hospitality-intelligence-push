@@ -139,8 +139,9 @@ export function TrackerLineItem({
               variant="outline"
               size="icon"
               onClick={handleOpenDailyInput}
-              className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100 pointer-events-auto"
+              className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100 pointer-events-auto z-10"
               type="button"
+              tabIndex={0}
             >
               <CalendarDays className="h-5 w-5" />
             </Button>
@@ -167,16 +168,18 @@ export function TrackerLineItem({
         {formatCurrency(variance)}
       </TableCell>
       
-      <DailyInputDrawer
-        isOpen={isDailyInputOpen}
-        onClose={handleCloseDailyInput}
-        onSave={handleSaveDailyValues}
-        initialValues={item.daily_values || []}
-        itemName={item.name}
-        monthName={currentMonthName}
-        year={currentYear}
-        budgetItemId={item.id}
-      />
+      {isDailyInputOpen && (
+        <DailyInputDrawer
+          isOpen={isDailyInputOpen}
+          onClose={handleCloseDailyInput}
+          onSave={handleSaveDailyValues}
+          initialValues={item.daily_values || []}
+          itemName={item.name}
+          monthName={currentMonthName}
+          year={currentYear}
+          budgetItemId={item.id}
+        />
+      )}
     </TableRow>
   );
 }

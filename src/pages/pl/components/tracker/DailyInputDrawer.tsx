@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format, addDays, startOfMonth } from 'date-fns';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
@@ -36,10 +36,11 @@ export function DailyInputDrawer({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const initialLoadRef = useRef(false);
   
-  // Load data only when the drawer opens
+  // Load data only once when the drawer opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !initialLoadRef.current) {
       const loadData = async () => {
         setIsLoading(true);
         
@@ -95,9 +96,15 @@ export function DailyInputDrawer({
         setTotal(calculatedTotal);
         
         setIsLoading(false);
+        initialLoadRef.current = true;
       };
 
       loadData();
+    }
+    
+    // Reset the flag when drawer is closed
+    if (!isOpen) {
+      initialLoadRef.current = false;
     }
   }, [isOpen, monthName, year, initialValues, budgetItemId]);
 
@@ -163,10 +170,9 @@ export function DailyInputDrawer({
     
     // Also update in-memory state via callback
     onSave(dailyInputs);
-    onClose();
   };
 
-  // Early return for closed drawer
+  // Early return for closed drawer to prevent unnecessary renders
   if (!isOpen) {
     return null;
   }
@@ -174,14 +180,14 @@ export function DailyInputDrawer({
   return (
     <Drawer 
       open={isOpen} 
-      modal={false}
+      modal={true}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
       <DrawerContent 
         className="max-h-[90vh] pointer-events-auto"
-        onClick={(e) => e.stopPropagation()} // This alone is enough to stop accidental closure
+        onClick={(e) => e.stopPropagation()}
       >
         <DrawerHeader>
           <div className="flex items-center">
