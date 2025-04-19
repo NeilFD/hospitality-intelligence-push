@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
@@ -24,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader';
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -43,14 +43,11 @@ const ProfilePage = () => {
     birthDate: ''
   });
   
-  // References for canvas and image
   const canvasRef = useRef<fabric.Canvas | null>(null);
   const canvasElRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [yPosition, setYPosition] = useState(0);
   const [canvasInitialized, setCanvasInitialized] = useState(false);
-
-  // Track if component is mounted
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -60,7 +57,6 @@ const ProfilePage = () => {
         let profileToLoad;
         
         if (id) {
-          // Load another user's profile
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
@@ -70,20 +66,17 @@ const ProfilePage = () => {
           if (error) throw error;
           profileToLoad = data;
         } else {
-          // Load current user's profile
           profileToLoad = currentUserProfile;
         }
         
         console.log("Loaded profile:", profileToLoad);
         
-        // Initialize banner position from profile data
         if (profileToLoad?.banner_position_y !== undefined && profileToLoad?.banner_position_y !== null) {
           setYPosition(profileToLoad.banner_position_y);
         }
         
         setProfile(profileToLoad);
         
-        // Initialize edit form with current values
         if (profileToLoad) {
           setEditForm({
             firstName: profileToLoad.first_name || '',
@@ -107,58 +100,47 @@ const ProfilePage = () => {
     
     loadProfile();
 
-    // Cleanup function for component unmount
     return () => {
       isMountedRef.current = false;
     };
   }, [id, currentUserProfile]);
 
-  // Separate cleanup effect for component unmount - always run this
   useEffect(() => {
     return () => {
       if (canvasRef.current) {
         try {
-          // Remove all event listeners and objects before disposing
-          const canvas = canvasRef.current;
-          canvas.clear();
-          canvas.dispose();
+          canvasRef.current.clear();
+          canvasRef.current.dispose();
+          canvasRef.current = null;
         } catch (e) {
           console.error('Error disposing canvas on unmount:', e);
         }
-        canvasRef.current = null;
       }
     };
   }, []);
 
-  // Use a separate state for tracking active objects
   const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
 
-  // Initialize canvas for image repositioning
   useEffect(() => {
     if (isRepositioningBanner && canvasElRef.current && containerRef.current && profile?.banner_url && !canvasInitialized) {
       const initCanvas = async () => {
         try {
-          // Clean up previous canvas if it exists
           if (canvasRef.current) {
-            // Clear all objects and event handlers before disposing
             canvasRef.current.clear();
             canvasRef.current.dispose();
             canvasRef.current = null;
           }
           
-          // Set canvas dimensions to match container
           const container = containerRef.current;
           if (!container) return;
           
           const containerWidth = container.clientWidth;
           const containerHeight = container.clientHeight;
           
-          // Wait for React to finish its render cycle
           await new Promise(resolve => setTimeout(resolve, 0));
           
           if (!canvasElRef.current || !isMountedRef.current) return;
           
-          // Create new canvas
           const canvas = new fabric.Canvas(canvasElRef.current, {
             width: containerWidth,
             height: containerHeight,
@@ -169,38 +151,31 @@ const ProfilePage = () => {
           canvasRef.current = canvas;
           setCanvasInitialized(true);
           
-          // Load the banner image
           fabric.Image.fromURL(profile.banner_url, (img) => {
             if (!isMountedRef.current || !canvas) return;
             
-            // Scale image to fit width
             const scale = containerWidth / img.width!;
             img.scaleX = scale;
             img.scaleY = scale;
             
-            // Allow only vertical movement
             img.lockMovementX = true;
             img.lockRotation = true;
             img.lockScalingX = true;
             img.lockScalingY = true;
             
-            // Set initial position
             img.left = 0;
             img.top = yPosition || 0;
             
-            // Add image to canvas
             canvas.add(img);
             canvas.setActiveObject(img);
             setActiveObject(img);
             
-            // Update position state when image is moved
             img.on('moved', function() {
               if (isMountedRef.current) {
                 setYPosition(img.top || 0);
               }
             });
             
-            // Render canvas
             canvas.renderAll();
           });
         } catch (e) {
@@ -213,14 +188,11 @@ const ProfilePage = () => {
     }
   }, [isRepositioningBanner, profile?.banner_url, canvasInitialized, yPosition]);
 
-  // Handle exiting reposition mode
   useEffect(() => {
     if (!isRepositioningBanner && canvasInitialized) {
-      // When we exit repositioning mode, clean up canvas properly
       const cleanupCanvas = () => {
         try {
           if (canvasRef.current) {
-            // First remove all objects to clean up event listeners
             if (activeObject) {
               canvasRef.current.remove(activeObject);
               setActiveObject(null);
@@ -237,7 +209,6 @@ const ProfilePage = () => {
         }
       };
       
-      // Give React a chance to update the DOM first
       setTimeout(cleanupCanvas, 0);
     }
   }, [isRepositioningBanner, canvasInitialized, activeObject]);
@@ -253,11 +224,9 @@ const ProfilePage = () => {
       setUploadingBanner(true);
       console.log("Uploading banner image:", file.name);
       
-      // Upload the file to Supabase storage
       const fileExt = file.name.split('.').pop();
       const fileName = `banner-${profile.id}-${Date.now()}.${fileExt}`;
       
-      // Ensure the file is uploaded to the correct path in the 'profiles' bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(`${profile.id}/${fileName}`, file, {
@@ -273,14 +242,12 @@ const ProfilePage = () => {
       
       console.log("File uploaded successfully:", uploadData);
       
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
         .getPublicUrl(`${profile.id}/${fileName}`);
       
       console.log("Public URL:", publicUrl);
         
-      // Update the profile with the banner URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ banner_url: publicUrl })
@@ -294,7 +261,6 @@ const ProfilePage = () => {
       
       console.log("Profile updated with new banner URL");
       
-      // Update the local profile state
       setProfile(prevProfile => {
         if (!prevProfile) return null;
         return {
@@ -309,7 +275,6 @@ const ProfilePage = () => {
       toast.error('Failed to upload banner image');
     } finally {
       setUploadingBanner(false);
-      // Clear the input value to allow uploading the same file again
       if (event.target) {
         event.target.value = '';
       }
@@ -326,11 +291,10 @@ const ProfilePage = () => {
     try {
       console.log("Saving banner position:", yPosition, "for profile ID:", profile.id);
       
-      // Save the position in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          banner_position_y: yPosition // Store the Y position
+          banner_position_y: yPosition
         })
         .eq('id', profile.id);
         
@@ -340,7 +304,6 @@ const ProfilePage = () => {
         return;
       }
       
-      // Update local profile state with new position
       setProfile(prevProfile => {
         if (!prevProfile) return null;
         return {
@@ -358,7 +321,6 @@ const ProfilePage = () => {
   };
 
   const handleCancelRepositioning = () => {
-    // Reset to original position before exiting
     if (profile?.banner_position_y !== undefined && profile.banner_position_y !== null) {
       setYPosition(profile.banner_position_y);
     }
@@ -370,7 +332,6 @@ const ProfilePage = () => {
   };
 
   const handleCancelEdit = () => {
-    // Reset form to current profile values
     if (profile) {
       setEditForm({
         firstName: profile.first_name || '',
@@ -404,7 +365,6 @@ const ProfilePage = () => {
         
       if (error) throw error;
       
-      // Update local profile state
       setProfile({
         ...profile,
         first_name: editForm.firstName,
@@ -419,7 +379,6 @@ const ProfilePage = () => {
       setIsEditing(false);
       toast.success('Profile updated successfully');
       
-      // Update the auth store if this is the current user's profile
       if (!id && currentUserProfile) {
         useAuthStore.setState({
           profile: {
@@ -437,6 +396,15 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
+    }
+  };
+
+  const handleUpdateAvatar = (newAvatarUrl: string) => {
+    if (profile) {
+      setProfile({
+        ...profile,
+        avatar_url: newAvatarUrl
+      });
     }
   };
 
@@ -469,7 +437,6 @@ const ProfilePage = () => {
               <div className="h-full w-full">
                 <canvas ref={canvasElRef} className="w-full h-full"></canvas>
                 
-                {/* Improved repositioning controls - floating toolbar */}
                 <div className="absolute top-0 left-0 w-full bg-gradient-to-b from-black/50 to-transparent px-4 py-2 flex items-center justify-between">
                   <div className="text-white text-sm font-medium">
                     Drag image up or down to reposition
@@ -557,15 +524,19 @@ const ProfilePage = () => {
           
           <div className="relative px-6">
             <div className="-mt-16">
-              <Avatar className="h-32 w-32 border-4 border-white shadow-md">
-                {profile.avatar_url ? (
-                  <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
-                ) : (
-                  <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple text-4xl">
-                    {profile.first_name?.[0] || ''}{profile.last_name?.[0] || ''}
-                  </AvatarFallback>
-                )}
-              </Avatar>
+              {isCurrentUser ? (
+                <ProfilePictureUploader profile={profile} onAvatarUpdate={handleUpdateAvatar} />
+              ) : (
+                <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+                  {profile.avatar_url ? (
+                    <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
+                  ) : (
+                    <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple text-4xl">
+                      {profile.first_name?.[0] || ''}{profile.last_name?.[0] || ''}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+              )}
             </div>
             
             <div className="mt-4">
