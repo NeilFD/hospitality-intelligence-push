@@ -181,9 +181,7 @@ const WeeklyInput = () => {
   const getForecastVariance = (actual: number, forecast: number) => {
     if (forecast === 0) return { variance: 0, percentage: 0 };
     const variance = actual - forecast;
-    // Calculate the percentage as (actual - forecast) / forecast * 100
-    // When actual is less than forecast, this will correctly show the negative percentage
-    const percentage = forecast !== 0 ? (variance / forecast) * 100 : 0;
+    const percentage = forecast !== 0 ? (variance / forecast) : 0;
     return { variance, percentage };
   };
 
