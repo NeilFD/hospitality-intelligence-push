@@ -1,63 +1,139 @@
 import { format, addDays, startOfWeek, endOfWeek, getDay } from 'date-fns';
 import { RevenueForecast, WeatherForecast } from '@/types/master-record-types';
 
-// Mock function to fetch weather forecast
-// In a real application, this would call a weather API
+// Fetch real weather forecast using Open-Meteo API
+// This uses the same API as the WeatherFetcher component
 const fetchWeatherForecast = async (startDate: string, endDate: string): Promise<WeatherForecast[]> => {
   console.log(`Fetching weather forecast from ${startDate} to ${endDate}`);
   
-  // Simulated API response
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const forecast: WeatherForecast[] = [];
-  
-  // Generate a forecast for each day in the date range
-  for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-    // For dates more than 7 days in the future, return N/A
-    const isMoreThanWeekAway = new Date(day).getTime() - new Date().getTime() > 7 * 24 * 60 * 60 * 1000;
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const forecast: WeatherForecast[] = [];
     
-    if (isMoreThanWeekAway) {
-      forecast.push({
-        date: format(day, 'yyyy-MM-dd'),
-        description: 'N/A',
-        temperature: 0,
-        precipitation: 0,
-        windSpeed: 0
-      });
-      continue;
+    // Coordinates for GL50 3DN: 51.9002, -2.0731 (same as in WeatherFetcher component)
+    const latitude = 51.9002;
+    const longitude = -2.0731;
+    
+    // For future forecasts, use the forecast API
+    const forecastUrl = `https://api.open-meteo.com/v1/forecast?` +
+      `latitude=${latitude}&longitude=${longitude}` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max` +
+      `&timezone=Europe/London` +
+      `&start_date=${startDate}&end_date=${endDate}`;
+      
+    const response = await fetch(forecastUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Weather API error: ${response.status}`);
     }
     
-    // Use deterministic weather generation based on the date
-    // This ensures the same date always gets the same weather forecast
-    const dateStr = format(day, 'yyyyMMdd');
-    const dateSeed = Array.from(dateStr).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const data = await response.json();
     
-    // Use the date seed to select conditions deterministically
-    const conditions = ['Sunny', 'Partly cloudy', 'Cloudy', 'Light rain', 'Heavy rain'];
-    const conditionIndex = dateSeed % conditions.length;
-    const randomCondition = conditions[conditionIndex];
+    // Generate a forecast for each day in the date range
+    for (let i = 0; i < data.daily.time.length; i++) {
+      const day = new Date(data.daily.time[i]);
+      
+      // For dates more than 7 days in the future beyond what the API provides, return N/A
+      const isMoreThanWeekAway = i >= data.daily.time.length || new Date(day).getTime() - new Date().getTime() > 7 * 24 * 60 * 60 * 1000;
+      
+      if (isMoreThanWeekAway) {
+        forecast.push({
+          date: format(day, 'yyyy-MM-dd'),
+          description: 'N/A',
+          temperature: 0,
+          precipitation: 0,
+          windSpeed: 0
+        });
+        continue;
+      }
+      
+      // Process real weather data
+      const avgTemp = Math.round((data.daily.temperature_2m_max[i] + data.daily.temperature_2m_min[i]) / 2);
+      const precipitation = data.daily.precipitation_sum[i] || 0;
+      const windSpeed = data.daily.wind_speed_10m_max[i] || 0;
+      
+      // Determine weather description based on conditions (similar to WeatherFetcher)
+      let description = "Clear";
+      if (precipitation > 5) {
+        description = "Heavy rain";
+      } else if (precipitation > 1) {
+        description = "Light rain";
+      } else if (precipitation > 0) {
+        description = "Drizzle";
+      } else if (windSpeed > 30) {
+        description = "Windy";
+      } else if (avgTemp > 25) {
+        description = "Hot";
+      } else if (avgTemp < 5) {
+        description = "Cold";
+      } else {
+        description = "Sunny";
+      }
+      
+      forecast.push({
+        date: format(day, 'yyyy-MM-dd'),
+        description: description,
+        temperature: avgTemp,
+        precipitation: precipitation,
+        windSpeed: windSpeed
+      });
+    }
     
-    // Generate other weather parameters deterministically
-    const dayOfYear = day.getDate() + day.getMonth() * 30;
-    const seasonalTemp = Math.sin((dayOfYear / 365) * Math.PI * 2) * 10 + 15; // 5-25°C range with seasonal variation
-    const randomOffset = (dateSeed % 5) - 2; // -2 to +2 range for daily variation
-    const randomTemp = Math.floor(seasonalTemp + randomOffset);
+    return forecast;
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
     
-    const randomPrecipitation = randomCondition.includes('rain') ? 
-      (randomCondition.includes('Heavy') ? 5 + (dateSeed % 5) : (dateSeed % 5)) : 0;
+    // Fall back to deterministic generation if the API fails
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const forecast: WeatherForecast[] = [];
     
-    const randomWind = 5 + (dateSeed % 15); // 5-20 mph range
+    // Generate a forecast for each day in the date range
+    for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+      // For dates more than 7 days in the future, return N/A
+      const isMoreThanWeekAway = new Date(day).getTime() - new Date().getTime() > 7 * 24 * 60 * 60 * 1000;
+      
+      if (isMoreThanWeekAway) {
+        forecast.push({
+          date: format(day, 'yyyy-MM-dd'),
+          description: 'N/A',
+          temperature: 0,
+          precipitation: 0,
+          windSpeed: 0
+        });
+        continue;
+      }
+      
+      // Use deterministic weather generation as fallback
+      const dateStr = format(day, 'yyyyMMdd');
+      const dateSeed = Array.from(dateStr).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      
+      const conditions = ['Sunny', 'Partly cloudy', 'Cloudy', 'Light rain', 'Heavy rain'];
+      const conditionIndex = dateSeed % conditions.length;
+      const description = conditions[conditionIndex];
+      
+      const dayOfYear = day.getDate() + day.getMonth() * 30;
+      const seasonalTemp = Math.sin((dayOfYear / 365) * Math.PI * 2) * 10 + 15;
+      const randomOffset = (dateSeed % 5) - 2;
+      const temperature = Math.floor(seasonalTemp + randomOffset);
+      
+      const precipitation = description.includes('rain') ? 
+        (description.includes('Heavy') ? 5 + (dateSeed % 5) : (dateSeed % 5)) : 0;
+      
+      const windSpeed = 5 + (dateSeed % 15);
+      
+      forecast.push({
+        date: format(day, 'yyyy-MM-dd'),
+        description: description,
+        temperature: temperature,
+        precipitation: precipitation,
+        windSpeed: windSpeed
+      });
+    }
     
-    forecast.push({
-      date: format(day, 'yyyy-MM-dd'),
-      description: randomCondition,
-      temperature: randomTemp,
-      precipitation: randomPrecipitation, 
-      windSpeed: randomWind
-    });
+    return forecast;
   }
-  
-  return forecast;
 };
 
 // Calculate average revenue by day of week for baseline forecasting
