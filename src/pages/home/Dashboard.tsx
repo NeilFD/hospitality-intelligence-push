@@ -249,10 +249,20 @@ const HomeDashboard: React.FC = () => {
                     <p className="text-xl font-bold text-blue-700">{formatCurrency(yesterdayData.totalRevenue)}</p>
                     {forecasts[yesterdayFormatted] && (
                       <>
-                        <p className="text-sm text-gray-500">Forecast: {formatCurrency(forecasts[yesterdayFormatted].foodRevenue + forecasts[yesterdayFormatted].beverageRevenue)}</p>
-                        <p className={`text-sm ${yesterdayData.totalRevenue > (forecasts[yesterdayFormatted].foodRevenue + forecasts[yesterdayFormatted].beverageRevenue) ? 'text-green-600' : 'text-red-600'}`}>
-                          Variance: {formatCurrency(yesterdayData.totalRevenue - (forecasts[yesterdayFormatted].foodRevenue + forecasts[yesterdayFormatted].beverageRevenue))}
-                        </p>
+                        <p className="text-sm text-gray-500">Forecast: {formatCurrency(forecasts[yesterdayFormatted].totalRevenue)}</p>
+                        <div className="flex items-center">
+                          <p className={`text-sm flex items-center ${yesterdayData.totalRevenue >= forecasts[yesterdayFormatted].totalRevenue ? 'text-green-600' : 'text-red-600'}`}>
+                            {yesterdayData.totalRevenue >= forecasts[yesterdayFormatted].totalRevenue ? (
+                              <ArrowUp className="h-3 w-3 mr-1" />
+                            ) : (
+                              <ArrowDown className="h-3 w-3 mr-1" />
+                            )}
+                            {formatCurrency(Math.abs(yesterdayData.totalRevenue - forecasts[yesterdayFormatted].totalRevenue))}
+                          </p>
+                          <p className="text-xs text-gray-500 ml-1">
+                            ({Math.round((yesterdayData.totalRevenue - forecasts[yesterdayFormatted].totalRevenue) / forecasts[yesterdayFormatted].totalRevenue * 100)}%)
+                          </p>
+                        </div>
                       </>
                     )}
                   </div>
@@ -264,9 +274,19 @@ const HomeDashboard: React.FC = () => {
                     {forecasts[yesterdayFormatted] && (
                       <>
                         <p className="text-sm text-gray-500">Forecast: {formatCurrency(forecasts[yesterdayFormatted].foodRevenue)}</p>
-                        <p className={`text-sm ${yesterdayData.foodRevenue > forecasts[yesterdayFormatted].foodRevenue ? 'text-green-600' : 'text-red-600'}`}>
-                          Variance: {formatCurrency(yesterdayData.foodRevenue - forecasts[yesterdayFormatted].foodRevenue)}
-                        </p>
+                        <div className="flex items-center">
+                          <p className={`text-sm flex items-center ${yesterdayData.foodRevenue >= forecasts[yesterdayFormatted].foodRevenue ? 'text-green-600' : 'text-red-600'}`}>
+                            {yesterdayData.foodRevenue >= forecasts[yesterdayFormatted].foodRevenue ? (
+                              <ArrowUp className="h-3 w-3 mr-1" />
+                            ) : (
+                              <ArrowDown className="h-3 w-3 mr-1" />
+                            )}
+                            {formatCurrency(Math.abs(yesterdayData.foodRevenue - forecasts[yesterdayFormatted].foodRevenue))}
+                          </p>
+                          <p className="text-xs text-gray-500 ml-1">
+                            ({Math.round((yesterdayData.foodRevenue - forecasts[yesterdayFormatted].foodRevenue) / forecasts[yesterdayFormatted].foodRevenue * 100)}%)
+                          </p>
+                        </div>
                       </>
                     )}
                   </div>
@@ -278,9 +298,19 @@ const HomeDashboard: React.FC = () => {
                     {forecasts[yesterdayFormatted] && (
                       <>
                         <p className="text-sm text-gray-500">Forecast: {formatCurrency(forecasts[yesterdayFormatted].beverageRevenue)}</p>
-                        <p className={`text-sm ${yesterdayData.beverageRevenue > forecasts[yesterdayFormatted].beverageRevenue ? 'text-green-600' : 'text-red-600'}`}>
-                          Variance: {formatCurrency(yesterdayData.beverageRevenue - forecasts[yesterdayFormatted].beverageRevenue)}
-                        </p>
+                        <div className="flex items-center">
+                          <p className={`text-sm flex items-center ${yesterdayData.beverageRevenue >= forecasts[yesterdayFormatted].beverageRevenue ? 'text-green-600' : 'text-red-600'}`}>
+                            {yesterdayData.beverageRevenue >= forecasts[yesterdayFormatted].beverageRevenue ? (
+                              <ArrowUp className="h-3 w-3 mr-1" />
+                            ) : (
+                              <ArrowDown className="h-3 w-3 mr-1" />
+                            )}
+                            {formatCurrency(Math.abs(yesterdayData.beverageRevenue - forecasts[yesterdayFormatted].beverageRevenue))}
+                          </p>
+                          <p className="text-xs text-gray-500 ml-1">
+                            ({Math.round((yesterdayData.beverageRevenue - forecasts[yesterdayFormatted].beverageRevenue) / forecasts[yesterdayFormatted].beverageRevenue * 100)}%)
+                          </p>
+                        </div>
                       </>
                     )}
                   </div>
