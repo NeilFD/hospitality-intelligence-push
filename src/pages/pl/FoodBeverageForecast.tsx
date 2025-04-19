@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Table, TableHeader, TableRow, TableBody, TableCell } from '@/components/ui/table';
+import { WeatherIcon, Thermometer, Droplets, Wind, ConfidenceBadge } from '@/components/ui/icons';
 
 export default function FoodBeverageForecast() {
   const [activeTab, setActiveTab] = useState<string>('combined');
@@ -120,6 +121,70 @@ export default function FoodBeverageForecast() {
       </div>
       
       <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Daily Forecast Breakdown</CardTitle>
+          <CardDescription>7-day forecast with weather impacts</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-80 w-full" />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Day</TableHead>
+                  <TableHead className="min-w-[200px]">Weather Forecast</TableHead>
+                  <TableHead className="text-right">Food Revenue</TableHead>
+                  <TableHead className="text-right">Beverage Revenue</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Confidence</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {forecastData.map(day => (
+                  <TableRow key={day.date}>
+                    <TableCell>{format(parseISO(day.date), 'dd MMM')}</TableCell>
+                    <TableCell>{day.dayOfWeek}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <WeatherIcon description={day.weatherDescription} />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{day.weatherDescription}</span>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center">
+                              <Thermometer size={12} className="mr-1" />
+                              {day.temperature}°C
+                            </span>
+                            {day.precipitation > 0 && (
+                              <span className="flex items-center">
+                                <Droplets size={12} className="mr-1" />
+                                {day.precipitation}mm
+                              </span>
+                            )}
+                            <span className="flex items-center">
+                              <Wind size={12} className="mr-1" />
+                              {day.windSpeed} mph
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency(day.foodRevenue)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(day.beverageRevenue)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(day.totalRevenue)}</TableCell>
+                    <TableCell className="text-right">
+                      <ConfidenceBadge confidence={day.confidence} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
         <CardHeader>
           <CardTitle>Weekly Revenue Breakdown</CardTitle>
           <CardDescription>Visualizing food and beverage forecasts</CardDescription>
