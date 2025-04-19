@@ -184,7 +184,7 @@ export function RevenueTagManager({
                         type="number" 
                         value={foodImpact} 
                         onChange={(e) => setFoodImpact(e.target.value)}
-                        placeholder={selectedTagData?.historicalFoodRevenueImpact.toString() || "0"}
+                        placeholder={selectedTagData?.historicalFoodRevenueImpact?.toString() || "0"}
                       />
                     </div>
                     
@@ -195,7 +195,7 @@ export function RevenueTagManager({
                         type="number" 
                         value={beverageImpact} 
                         onChange={(e) => setBeverageImpact(e.target.value)}
-                        placeholder={selectedTagData?.historicalBeverageRevenueImpact.toString() || "0"}
+                        placeholder={selectedTagData?.historicalBeverageRevenueImpact?.toString() || "0"}
                       />
                     </div>
                     
