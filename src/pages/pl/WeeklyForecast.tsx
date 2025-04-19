@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,13 +102,17 @@ export default function WeeklyForecast() {
   
   const handleAddTag = async (tag: Partial<RevenueTag>) => {
     try {
+      // Make sure we have numeric values for the impact percentages
+      const foodImpact = parseFloat(tag.historicalFoodRevenueImpact?.toString() || '0');
+      const bevImpact = parseFloat(tag.historicalBeverageRevenueImpact?.toString() || '0');
+      
       const { data, error } = await supabase
         .from('revenue_tags')
         .insert([
           { 
             name: tag.name,
-            historical_food_revenue_impact: tag.historicalFoodRevenueImpact || 0,
-            historical_beverage_revenue_impact: tag.historicalBeverageRevenueImpact || 0,
+            historical_food_revenue_impact: foodImpact,
+            historical_beverage_revenue_impact: bevImpact,
             occurrence_count: tag.occurrenceCount || 0,
             description: tag.description
           }
@@ -196,7 +201,7 @@ export default function WeeklyForecast() {
         }
       }
       
-      // Update the tag occurrence count directly rather than using the RPC
+      // Update the tag occurrence count directly
       const tagToUpdate = tags.find(t => t.id === tagId);
       if (tagToUpdate) {
         const newCount = (tagToUpdate.occurrenceCount || 0) + 1;
