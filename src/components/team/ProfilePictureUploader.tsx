@@ -35,6 +35,10 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
       const fileExt = file.name.split('.').pop();
       const fileName = `avatar-${profile.id}-${Date.now()}.${fileExt}`;
       
+      // Check if bucket exists first and log detailed information
+      const { data: buckets } = await supabase.storage.listBuckets();
+      console.log("Available buckets:", buckets?.map(b => b.name));
+      
       // Ensure the file is uploaded to the correct path
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profiles')
@@ -44,7 +48,7 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
         });
         
       if (uploadError) {
-        console.error("Upload error:", uploadError);
+        console.error("Upload error details:", uploadError);
         toast.error('Failed to upload profile picture');
         return;
       }

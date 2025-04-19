@@ -11,6 +11,36 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Export the Supabase URL so it can be used in other parts of the application
 export { SUPABASE_URL };
 
+// Helper function to ensure storage buckets exist
+export const ensureStorageBuckets = async () => {
+  try {
+    // Check if the profiles bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const profilesBucketExists = buckets?.some(bucket => bucket.name === 'profiles');
+    
+    if (!profilesBucketExists) {
+      console.log('Creating profiles storage bucket...');
+      // Create the profiles bucket
+      const { error } = await supabase.storage.createBucket('profiles', {
+        public: true,
+        fileSizeLimit: 5242880 // 5MB
+      });
+      
+      if (error) {
+        console.error('Error creating profiles bucket:', error);
+      } else {
+        console.log('Profiles bucket created successfully');
+      }
+    }
+  } catch (error) {
+    console.error('Error checking/creating storage buckets:', error);
+  }
+};
+
+// Call this function on app initialization
+// This should be called in a useEffect in the root component or during app initialization
+ensureStorageBuckets();
+
 // Get the current user
 export const getCurrentUser = async () => {
   const { data } = await supabase.auth.getUser();

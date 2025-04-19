@@ -76,6 +76,11 @@ function App() {
     return () => clearTimeout(timer);
   }, [loadUser]);
 
+  useEffect(() => {
+    // Ensure storage buckets exist when the app initializes
+    ensureStorageBuckets();
+  }, []);
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">
       <span className="loading loading-ring loading-lg"></span>
