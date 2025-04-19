@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,7 @@ import { UserProfile } from '@/types/supabase-types';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/services/auth-service';
+import { WelcomeMessage } from '@/components/team/WelcomeMessage';
 
 const canSeeRole = (currentUserRole: string | null | undefined, roleToSee: string): boolean => {
   const roleHierarchy = {
