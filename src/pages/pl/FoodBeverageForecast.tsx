@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Table, TableHeader, TableRow, TableBody, TableCell, TableHead } from '@/components/ui/table';
 import { WeatherIcon, Thermometer, Droplets, Wind, ConfidenceBadge } from '@/components/ui/icons';
 import { Tag } from 'lucide-react';
+import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import {
   HoverCard,
   HoverCardContent,
@@ -34,6 +38,85 @@ export default function FoodBeverageForecast() {
     taggedDates,
     tags
   } = useForecastData();
+  
+  const handleAddTag = async (tag: Partial<RevenueTag>) => {
+    try {
+      const { data, error } = await supabase
+        .from('revenue_tags')
+        .insert({
+          name: tag.name || 'New Event',
+          historical_food_revenue_impact: tag.historicalFoodRevenueImpact || 0,
+          historical_beverage_revenue_impact: tag.historicalBeverageRevenueImpact || 0,
+          occurrence_count: tag.occurrenceCount || 0,
+          description: tag.description || null
+        })
+        .select();
+        
+      if (error) throw error;
+      toast.success('Tag created successfully');
+      refreshForecast(); // Refresh to get the new tag
+    } catch (error) {
+      console.error('Error adding tag:', error);
+      toast.error('Failed to create tag');
+    }
+  };
+  
+  const handleTagDate = async (date: Date, tagId: string, impacts?: { food?: number; beverage?: number }) => {
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const existingTag = taggedDates?.find(td => td.date === dateStr);
+      
+      if (existingTag) {
+        // Update existing tagged date
+        const { error } = await supabase
+          .from('tagged_dates')
+          .update({
+            tag_id: tagId,
+            manual_food_revenue_impact: impacts?.food !== undefined ? impacts.food : null,
+            manual_beverage_revenue_impact: impacts?.beverage !== undefined ? impacts.beverage : null
+          })
+          .eq('id', existingTag.id);
+          
+        if (error) throw error;
+      } else {
+        // Create new tagged date
+        const { error } = await supabase
+          .from('tagged_dates')
+          .insert({
+            date: dateStr,
+            tag_id: tagId,
+            manual_food_revenue_impact: impacts?.food !== undefined ? impacts.food : null,
+            manual_beverage_revenue_impact: impacts?.beverage !== undefined ? impacts.beverage : null
+          });
+          
+        if (error) throw error;
+      }
+      
+      toast.success('Date tagged successfully');
+      refreshForecast(); // Refresh data to show the tagged date
+    } catch (error) {
+      console.error('Error tagging date:', error);
+      toast.error('Failed to tag date');
+    }
+  };
+  
+  const handleRemoveTag = async (date: Date) => {
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const { error } = await supabase
+        .from('tagged_dates')
+        .delete()
+        .eq('date', dateStr);
+        
+      if (error) throw error;
+      
+      toast.success('Tag removed successfully');
+      refreshForecast(); // Refresh data to show the changes
+    } catch (error) {
+      console.error('Error removing tag:', error);
+      toast.error('Failed to remove tag');
+    }
+  };
   
   const chartData = forecastData.map(day => ({
     name: format(parseISO(day.date), 'EEE'),

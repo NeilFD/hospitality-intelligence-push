@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react';
 import { generateFutureWeeksForecast, analyzeWeatherImpact } from '@/services/forecast-service';
 import { RevenueForecast } from '@/types/master-record-types';
+import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 export const useForecastData = () => {
   const [forecastData, setForecastData] = useState<RevenueForecast[]>([]);
@@ -21,6 +23,55 @@ export const useForecastData = () => {
     rainyDays: [],
     sunnyDays: []
   });
+  const [taggedDates, setTaggedDates] = useState<TaggedDate[]>([]);
+  const [tags, setTags] = useState<RevenueTag[]>([]);
+  
+  // Fetch revenue tags
+  const fetchRevenueTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('revenue_tags')
+        .select('*')
+        .order('name');
+        
+      if (error) {
+        console.error('Error fetching revenue tags:', error);
+        return [];
+      }
+      
+      return data as RevenueTag[];
+    } catch (error) {
+      console.error('Error in fetchRevenueTags:', error);
+      return [];
+    }
+  };
+
+  // Fetch tagged dates for a date range
+  const fetchTaggedDates = async (startDate: string, endDate: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('tagged_dates')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate);
+        
+      if (error) {
+        console.error('Error fetching tagged dates:', error);
+        return [];
+      }
+      
+      return data.map((item: any) => ({
+        id: item.id,
+        date: item.date,
+        tagId: item.tag_id,
+        manualFoodRevenueImpact: item.manual_food_revenue_impact,
+        manualBeverageRevenueImpact: item.manual_beverage_revenue_impact
+      })) as TaggedDate[];
+    } catch (error) {
+      console.error('Error in fetchTaggedDates:', error);
+      return [];
+    }
+  };
   
   const generateForecast = async () => {
     setIsLoading(true);
@@ -41,6 +92,18 @@ export const useForecastData = () => {
       
       const weatherInsights = processWeatherImpact(weatherAnalysis);
       setWeatherImpactData(weatherInsights);
+      
+      // Fetch revenue tags and tagged dates
+      const fetchedTags = await fetchRevenueTags();
+      setTags(fetchedTags);
+      
+      // Get date range for the forecast data
+      if (currentWeek.length > 0) {
+        const startDate = currentWeek[0].date;
+        const endDate = currentWeek[currentWeek.length - 1].date;
+        const fetchedTaggedDates = await fetchTaggedDates(startDate, endDate);
+        setTaggedDates(fetchedTaggedDates);
+      }
       
     } catch (err) {
       console.error('Error generating forecast:', err);
@@ -197,6 +260,15 @@ export const useForecastData = () => {
       }
     }
     setSelectedWeekIndex(index);
+    
+    // When changing weeks, update tagged dates for the new date range
+    if (futureWeeks[index - 1] && futureWeeks[index - 1].length > 0) {
+      const startDate = futureWeeks[index - 1][0].date;
+      const endDate = futureWeeks[index - 1][futureWeeks[index - 1].length - 1].date;
+      fetchTaggedDates(startDate, endDate).then(fetchedTaggedDates => {
+        setTaggedDates(fetchedTaggedDates);
+      });
+    }
   };
   
   const totalForecastedRevenue = forecastData.reduce((sum, day) => sum + day.totalRevenue, 0);
@@ -214,6 +286,8 @@ export const useForecastData = () => {
     totalForecastedFoodRevenue,
     totalForecastedBevRevenue,
     weatherImpactData,
+    taggedDates,
+    tags,
     error
   };
 };
