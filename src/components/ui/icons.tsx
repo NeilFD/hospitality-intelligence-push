@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Cloud, 
@@ -8,8 +7,10 @@ import {
   Droplets as DropletsIcon, 
   Wind as WindIcon, 
   Check, 
-  AlertTriangle 
+  AlertTriangle,
+  Info 
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
 export const WeatherIcon = ({ description }: { description: string }) => {
   const desc = description.toLowerCase();
@@ -41,9 +42,25 @@ export const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
   }
   
   return (
-    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-      {icon}
-      {confidence}%
-    </span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+            {icon}
+            {confidence}%
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-[250px] text-sm">
+          <div className="flex items-center gap-2">
+            <Info size={16} />
+            <p>
+              Confidence is based on historical data availability and weather conditions. 
+              More historical data and stable weather increase confidence. 
+              Unpredictable factors like heavy precipitation can reduce forecast reliability.
+            </p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
