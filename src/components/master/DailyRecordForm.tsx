@@ -8,18 +8,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import WeatherFetcher from './WeatherFetcher';
 import { toast } from 'sonner';
-import { CheckCircle2, Mail } from 'lucide-react';
+import { CheckCircle2, Mail, TrendingUp, TrendingDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { TavernLogo } from '@/components/TavernLogo';
+import { formatCurrency, formatPercentage } from '@/lib/date-utils';
+
+interface ForecastDataItem {
+  foodRevenue: number;
+  beverageRevenue: number;
+  totalRevenue: number;
+}
 
 interface DailyRecordFormProps {
   date: string;
   dayOfWeek: string;
   initialData?: Partial<MasterDailyRecord>;
+  forecastData?: ForecastDataItem;
   onSave: (data: Partial<MasterDailyRecord>) => Promise<void>;
 }
 
@@ -289,6 +297,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   date,
   dayOfWeek,
   initialData = {},
+  forecastData = { foodRevenue: 0, beverageRevenue: 0, totalRevenue: 0 },
   onSave
 }) => {
   const [isSaving, setIsSaving] = useState(false);
@@ -297,6 +306,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+  
   const defaultValues = useMemo(() => ({
     date,
     dayOfWeek,
@@ -339,6 +349,25 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   const averageCoverSpend = useMemo(() => {
     return totalCovers > 0 ? totalRevenue / totalCovers : 0;
   }, [totalRevenue, totalCovers]);
+  
+  const getForecastVariance = (actual: number, forecast: number) => {
+    if (forecast === 0) return { variance: 0, percentage: 0 };
+    const variance = actual - forecast;
+    const percentage = (variance / forecast) * 100;
+    return { variance, percentage };
+  };
+  
+  const foodVariance = useMemo(() => 
+    getForecastVariance(form.watch('foodRevenue') || 0, forecastData.foodRevenue)
+  , [form.watch('foodRevenue'), forecastData.foodRevenue]);
+  
+  const bevVariance = useMemo(() => 
+    getForecastVariance(form.watch('beverageRevenue') || 0, forecastData.beverageRevenue)
+  , [form.watch('beverageRevenue'), forecastData.beverageRevenue]);
+  
+  const totalVariance = useMemo(() => 
+    getForecastVariance(totalRevenue, forecastData.totalRevenue)
+  , [totalRevenue, forecastData.totalRevenue]);
   
   const handleWeatherFetched = useCallback((weatherData: {
     description: string;
@@ -462,6 +491,70 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                     </FormItem>} />
               </div>
 
+              <div className="grid grid-cols-1 gap-3 bg-gray-50 p-3 rounded-md">
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <span className="text-xs font-medium block text-gray-600">Food Revenue</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-base font-semibold">{formatCurrency(form.watch('foodRevenue') || 0)}</span>
+                      {forecastData.foodRevenue > 0 && (
+                        <div className="flex items-center">
+                          <span className={`text-xs ${foodVariance.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {foodVariance.variance >= 0 ? (
+                              <TrendingUp className="inline h-3 w-3 mr-0.5" />
+                            ) : (
+                              <TrendingDown className="inline h-3 w-3 mr-0.5" />
+                            )}
+                            {formatPercentage(foodVariance.percentage)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">Forecast: {formatCurrency(forecastData.foodRevenue)}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-xs font-medium block text-gray-600">Beverage Revenue</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-base font-semibold">{formatCurrency(form.watch('beverageRevenue') || 0)}</span>
+                      {forecastData.beverageRevenue > 0 && (
+                        <div className="flex items-center">
+                          <span className={`text-xs ${bevVariance.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {bevVariance.variance >= 0 ? (
+                              <TrendingUp className="inline h-3 w-3 mr-0.5" />
+                            ) : (
+                              <TrendingDown className="inline h-3 w-3 mr-0.5" />
+                            )}
+                            {formatPercentage(bevVariance.percentage)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">Forecast: {formatCurrency(forecastData.beverageRevenue)}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-xs font-medium block text-gray-600">Total Revenue</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-base font-semibold">{formatCurrency(totalRevenue)}</span>
+                      {forecastData.totalRevenue > 0 && (
+                        <div className="flex items-center">
+                          <span className={`text-xs ${totalVariance.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {totalVariance.variance >= 0 ? (
+                              <TrendingUp className="inline h-3 w-3 mr-0.5" />
+                            ) : (
+                              <TrendingDown className="inline h-3 w-3 mr-0.5" />
+                            )}
+                            {formatPercentage(totalVariance.percentage)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">Forecast: {formatCurrency(forecastData.totalRevenue)}</span>
+                  </div>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded-md">
                 <div>
                   <span className="text-xs font-medium block text-gray-600">Total Revenue (£)</span>
