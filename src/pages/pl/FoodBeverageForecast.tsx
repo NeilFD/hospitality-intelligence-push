@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -281,15 +282,37 @@ export default function FoodBeverageForecast() {
                                   <div className="space-y-1">
                                     <p className="font-medium text-sm">{tag.name}</p>
                                     <p className="text-xs">
-                                      Food Revenue Impact: {tag.historicalFoodRevenueImpact !== undefined 
+                                      <span className="font-medium">Historical Impact:</span>
+                                    </p>
+                                    <p className="text-xs pl-2">
+                                      Food: {tag.historicalFoodRevenueImpact !== undefined 
                                         ? formatPercentage(tag.historicalFoodRevenueImpact / 100) 
                                         : '0%'}
                                     </p>
-                                    <p className="text-xs">
-                                      Beverage Revenue Impact: {tag.historicalBeverageRevenueImpact !== undefined 
+                                    <p className="text-xs pl-2">
+                                      Beverage: {tag.historicalBeverageRevenueImpact !== undefined 
                                         ? formatPercentage(tag.historicalBeverageRevenueImpact / 100) 
                                         : '0%'}
                                     </p>
+                                    
+                                    {(taggedDate?.manualFoodRevenueImpact !== undefined || 
+                                      taggedDate?.manualBeverageRevenueImpact !== undefined) && (
+                                      <>
+                                        <p className="text-xs mt-1">
+                                          <span className="font-medium">Manual Impact:</span>
+                                        </p>
+                                        {taggedDate.manualFoodRevenueImpact !== undefined && (
+                                          <p className="text-xs pl-2">
+                                            Food: {formatPercentage(taggedDate.manualFoodRevenueImpact / 100)}
+                                          </p>
+                                        )}
+                                        {taggedDate.manualBeverageRevenueImpact !== undefined && (
+                                          <p className="text-xs pl-2">
+                                            Beverage: {formatPercentage(taggedDate.manualBeverageRevenueImpact / 100)}
+                                          </p>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </TooltipContent>
                               </TooltipComponent>
