@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -183,6 +182,7 @@ const WeeklyInput = () => {
     if (forecast === 0) return { variance: 0, percentage: 0 };
     const variance = actual - forecast;
     // Calculate the percentage as (actual - forecast) / forecast * 100
+    // When actual is less than forecast, this will correctly show the negative percentage
     const percentage = forecast !== 0 ? (variance / forecast) * 100 : 0;
     return { variance, percentage };
   };

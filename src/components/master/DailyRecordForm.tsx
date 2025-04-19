@@ -353,7 +353,7 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
   const getForecastVariance = (actual: number, forecast: number) => {
     if (forecast === 0) return { variance: 0, percentage: 0 };
     const variance = actual - forecast;
-    const percentage = (variance / forecast) * 100;
+    const percentage = forecast !== 0 ? (variance / forecast) * 100 : 0;
     return { variance, percentage };
   };
   

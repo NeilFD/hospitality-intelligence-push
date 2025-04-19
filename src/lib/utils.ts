@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -24,5 +23,5 @@ export function formatPercentage(value: number | undefined): string {
     style: 'percent',
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
-  }).format(value);
+  }).format(value / 100);
 }
