@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import RecipeCard from "@/components/recipes/RecipeCard";
@@ -31,7 +30,7 @@ const FoodBible: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | undefined>(undefined);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed to false to make sidebar closed by default
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarMaximized, setSidebarMaximized] = useState(false);
   const isMobile = useIsMobile();
 
@@ -88,7 +87,7 @@ const FoodBible: React.FC = () => {
           category: recipe.category,
           allergens: recipe.allergens || [],
           isVegan: Boolean(recipe.is_vegan),
-          isVegetarian: Boolean(recipe.is_vegetarian),
+          isVegetarian: Boolean(recipe.is_vevegetarian),
           isGlutenFree: Boolean(recipe.is_gluten_free),
           recommendedUpsell: recipe.recommended_upsell || '',
           timeToTableMinutes: recipe.time_to_table_minutes || 0,
@@ -460,7 +459,7 @@ const FoodBible: React.FC = () => {
     
     <div className="flex-1 relative">
       <div className="container px-4 py-6 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pt-8">
           <div>
             <h1 className="text-3xl font-bold">Food Bible</h1>
             <p className="text-muted-foreground">Manage and explore food recipes</p>
