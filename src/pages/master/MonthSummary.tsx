@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -8,13 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarIcon, Edit } from 'lucide-react';
 import { fetchMasterMonthlyRecords } from '@/services/master-record-service';
-import { MasterDailyRecord } from '@/types/master-record-types';
+import { RevenueForecast, MasterDailyRecord } from '@/types/master-record-types';
+import { getForecastForDateRange } from '@/services/forecast-service';
 
 const MasterMonthSummary = () => {
   const params = useParams<{ year: string; month: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
+  const [forecasts, setForecasts] = useState<Record<string, RevenueForecast>>({});
   
   const year = params.year ? parseInt(params.year, 10) : new Date().getFullYear();
   const month = params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1;
@@ -25,6 +26,17 @@ const MasterMonthSummary = () => {
       try {
         const fetchedRecords = await fetchMasterMonthlyRecords(year, month);
         setRecords(fetchedRecords);
+        
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
+        const forecastData = await getForecastForDateRange(startDate, endDate);
+        
+        const forecastMap: Record<string, RevenueForecast> = {};
+        forecastData.forEach(forecast => {
+          forecastMap[forecast.date] = forecast;
+        });
+        setForecasts(forecastMap);
+        
       } catch (error) {
         console.error('Error loading monthly records:', error);
       } finally {
@@ -35,7 +47,6 @@ const MasterMonthSummary = () => {
     loadRecords();
   }, [year, month]);
   
-  // Group by week
   const recordsByWeek: Record<number, MasterDailyRecord[]> = {};
   records.forEach(record => {
     if (!recordsByWeek[record.weekNumber]) {
@@ -44,13 +55,39 @@ const MasterMonthSummary = () => {
     recordsByWeek[record.weekNumber].push(record);
   });
   
-  // Calculate totals
   const totalFoodRevenue = records.reduce((sum, record) => sum + record.foodRevenue, 0);
   const totalBeverageRevenue = records.reduce((sum, record) => sum + record.beverageRevenue, 0);
   const totalRevenue = totalFoodRevenue + totalBeverageRevenue;
   const totalLunchCovers = records.reduce((sum, record) => sum + record.lunchCovers, 0);
   const totalDinnerCovers = records.reduce((sum, record) => sum + record.dinnerCovers, 0);
   const totalCovers = totalLunchCovers + totalDinnerCovers;
+  
+  const weeklyForecasts: Record<number, { 
+    forecastRevenue: number, 
+    actualRevenue: number,
+    variance: number,
+    variancePercentage: number 
+  }> = {};
+  
+  Object.entries(recordsByWeek).forEach(([weekNum, weekRecords]) => {
+    const weekForecast = weekRecords.reduce((sum, record) => {
+      const forecast = forecasts[record.date];
+      return sum + (forecast ? forecast.foodRevenue + forecast.beverageRevenue : 0);
+    }, 0);
+    
+    const actualRevenue = weekRecords.reduce((sum, record) => 
+      sum + record.foodRevenue + record.beverageRevenue, 0);
+      
+    const variance = actualRevenue - weekForecast;
+    const variancePercentage = weekForecast > 0 ? (variance / weekForecast) * 100 : 0;
+    
+    weeklyForecasts[parseInt(weekNum)] = {
+      forecastRevenue: weekForecast,
+      actualRevenue,
+      variance,
+      variancePercentage
+    };
+  });
   
   const navigateToWeek = (weekNumber: number) => {
     navigate(`/master/week/${year}/${month}/${weekNumber}`);
@@ -115,6 +152,7 @@ const MasterMonthSummary = () => {
             const weekNumber = parseInt(weekNum);
             const weekTotal = weekRecords.reduce((sum, record) => sum + record.foodRevenue + record.beverageRevenue, 0);
             const weekCovers = weekRecords.reduce((sum, record) => sum + record.lunchCovers + record.dinnerCovers, 0);
+            const weekForecast = weeklyForecasts[weekNumber];
             
             return (
               <Card key={`week-${weekNumber}`} className="mb-6">
@@ -139,8 +177,22 @@ const MasterMonthSummary = () => {
                 <CardContent>
                   <div className="flex flex-wrap gap-4 mb-4">
                     <div>
-                      <p className="text-sm font-medium">Revenue:</p>
+                      <p className="text-sm font-medium">Actual Revenue:</p>
                       <p className="text-lg font-bold">£{weekTotal.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Forecast Revenue:</p>
+                      <p className="text-lg font-bold">£{weekForecast.forecastRevenue.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Variance:</p>
+                      <p className={`text-lg font-bold ${weekForecast.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {weekForecast.variance >= 0 ? '+' : ''}£{weekForecast.variance.toFixed(2)}
+                        <span className="text-sm ml-1">
+                          ({weekForecast.variancePercentage >= 0 ? '+' : ''}
+                          {weekForecast.variancePercentage.toFixed(1)}%)
+                        </span>
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium">Covers:</p>
