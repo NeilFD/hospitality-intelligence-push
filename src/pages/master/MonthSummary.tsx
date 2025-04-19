@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarIcon, Edit } from 'lucide-react';
 import { fetchMasterMonthlyRecords } from '@/services/master-record-service';
 import { RevenueForecast, MasterDailyRecord } from '@/types/master-record-types';
-import { getForecastForDateRange } from '@/services/forecast-service';
+import { generateRevenueForecast } from '@/services/forecast-service';
 
 const MasterMonthSummary = () => {
   const params = useParams<{ year: string; month: string }>();
@@ -29,7 +29,11 @@ const MasterMonthSummary = () => {
         
         const startDate = new Date(year, month - 1, 1);
         const endDate = new Date(year, month, 0);
-        const forecastData = await getForecastForDateRange(startDate, endDate);
+        
+        const forecastData = await generateRevenueForecast(
+          format(startDate, 'yyyy-MM-dd'),
+          format(endDate, 'yyyy-MM-dd')
+        );
         
         const forecastMap: Record<string, RevenueForecast> = {};
         forecastData.forEach(forecast => {
