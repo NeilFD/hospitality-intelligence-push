@@ -906,6 +906,77 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_tag_history: {
+        Row: {
+          actual_beverage_revenue_impact: number | null
+          actual_food_revenue_impact: number | null
+          created_at: string | null
+          date: string
+          id: string
+          tag_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_beverage_revenue_impact?: number | null
+          actual_food_revenue_impact?: number | null
+          created_at?: string | null
+          date: string
+          id?: string
+          tag_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_beverage_revenue_impact?: number | null
+          actual_food_revenue_impact?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          tag_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_tag_history_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_tags: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          historical_beverage_revenue_impact: number | null
+          historical_food_revenue_impact: number | null
+          id: string
+          name: string
+          occurrence_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          historical_beverage_revenue_impact?: number | null
+          historical_food_revenue_impact?: number | null
+          id?: string
+          name: string
+          occurrence_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          historical_beverage_revenue_impact?: number | null
+          historical_food_revenue_impact?: number | null
+          id?: string
+          name?: string
+          occurrence_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           contact_name: string | null
@@ -941,6 +1012,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tagged_dates: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          manual_beverage_revenue_impact: number | null
+          manual_food_revenue_impact: number | null
+          tag_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          manual_beverage_revenue_impact?: number | null
+          manual_food_revenue_impact?: number | null
+          tag_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          manual_beverage_revenue_impact?: number | null
+          manual_food_revenue_impact?: number | null
+          tag_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tagged_dates_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_chat_rooms: {
         Row: {
@@ -1846,6 +1955,7 @@ export type Database = {
       message_type: "text" | "image" | "voice" | "gif" | "file"
       module_type: "food" | "beverage" | "pl" | "wages" | "performance" | "home"
       poll_option_type: "text" | "image"
+      revenue_tag_scope: "food" | "beverage" | "both"
       user_role: "Owner" | "Manager" | "Team Member" | "GOD" | "Super User"
     }
     CompositeTypes: {
@@ -1965,6 +2075,7 @@ export const Constants = {
       message_type: ["text", "image", "voice", "gif", "file"],
       module_type: ["food", "beverage", "pl", "wages", "performance", "home"],
       poll_option_type: ["text", "image"],
+      revenue_tag_scope: ["food", "beverage", "both"],
       user_role: ["Owner", "Manager", "Team Member", "GOD", "Super User"],
     },
   },
