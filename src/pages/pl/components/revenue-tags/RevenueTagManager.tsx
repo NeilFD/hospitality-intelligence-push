@@ -17,13 +17,15 @@ interface RevenueTagManagerProps {
   taggedDates: TaggedDate[];
   onAddTag: (tag: Partial<RevenueTag>) => void;
   onTagDate: (date: Date, tagId: string, impacts?: { food?: number; beverage?: number }) => void;
+  onRemoveTag: (date: Date) => void;
 }
 
 export function RevenueTagManager({ 
   tags, 
   taggedDates, 
   onAddTag, 
-  onTagDate 
+  onTagDate,
+  onRemoveTag 
 }: RevenueTagManagerProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
   const [selectedTag, setSelectedTag] = React.useState<string>('');
@@ -287,6 +289,26 @@ export function RevenueTagManager({
             
             {selectedDate && (
               <div className="mt-4 space-y-4">
+                {taggedDate ? (
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-muted-foreground">
+                      Currently tagged: {tags.find(t => t.id === taggedDate.tagId)?.name}
+                    </p>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        onRemoveTag(selectedDate);
+                        setSelectedTag('');
+                        setFoodImpact('');
+                        setBeverageImpact('');
+                      }}
+                    >
+                      Remove Tag
+                    </Button>
+                  </div>
+                ) : null}
+
                 <div>
                   <Label htmlFor="tag-select">Select Tag</Label>
                   <Select 

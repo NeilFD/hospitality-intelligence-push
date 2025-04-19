@@ -224,6 +224,31 @@ export default function WeeklyForecast() {
     }
   };
 
+  const handleRemoveTag = async (date: Date) => {
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const existingTaggedDate = taggedDates.find(td => td.date === dateStr);
+      
+      if (existingTaggedDate) {
+        const { error } = await supabase
+          .from('tagged_dates')
+          .delete()
+          .eq('id', existingTaggedDate.id);
+          
+        if (error) throw error;
+        
+        setTaggedDates(prev => prev.filter(td => td.id !== existingTaggedDate.id));
+        await fetchRevenueTags();
+        await fetchTaggedDates();
+        refreshForecast();
+        toast.success('Tag removed successfully');
+      }
+    } catch (error) {
+      console.error('Error removing tag:', error);
+      toast.error('Failed to remove tag');
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-4">Revenue Forecast</h1>
@@ -311,6 +336,7 @@ export default function WeeklyForecast() {
             taggedDates={taggedDates}
             onAddTag={handleAddTag}
             onTagDate={handleTagDate}
+            onRemoveTag={handleRemoveTag}
           />
         </div>
         
