@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { format, addDays, parseISO } from 'date-fns';
 import { generateRevenueForecast, saveForecast, analyzeWeatherImpact } from '@/services/forecast-service';
@@ -139,23 +138,25 @@ export const useForecastData = () => {
     return insights;
   };
   
-  // Helper function to find weather impact by condition
-  const findWeatherImpactForCondition = (weatherImpact: any, ...conditions: string[]) => {
+  const findWeatherImpactForCondition = (
+    weatherImpact: any, 
+    dayOfWeek: string,
+    ...conditions: string[]
+  ) => {
     let foodTotal = 0;
     let bevTotal = 0;
     let count = 0;
+    
+    // Calculate baseline for this specific day
+    const dayData = weatherImpact[dayOfWeek] || {};
     let baseline = { food: 0, bev: 0, count: 0 };
     
-    // First establish baseline
-    Object.keys(weatherImpact).forEach(day => {
-      Object.keys(weatherImpact[day]).forEach(condition => {
-        const data = weatherImpact[day][condition];
-        if (data.count > 0) {
-          baseline.food += data.averageFoodRevenue * data.count;
-          baseline.bev += data.averageBevRevenue * data.count;
-          baseline.count += data.count;
-        }
-      });
+    Object.values(dayData).forEach((data: any) => {
+      if (data.count > 0) {
+        baseline.food += data.averageFoodRevenue * data.count;
+        baseline.bev += data.averageBevRevenue * data.count;
+        baseline.count += data.count;
+      }
     });
     
     if (baseline.count === 0) return { foodImpact: 0, bevImpact: 0, totalImpact: 0 };
@@ -163,15 +164,14 @@ export const useForecastData = () => {
     const baselineFood = baseline.food / baseline.count;
     const baselineBev = baseline.bev / baseline.count;
     
-    // Calculate impact for specified conditions
-    Object.keys(weatherImpact).forEach(day => {
-      conditions.forEach(condition => {
-        if (weatherImpact[day][condition] && weatherImpact[day][condition].count > 0) {
-          foodTotal += weatherImpact[day][condition].averageFoodRevenue;
-          bevTotal += weatherImpact[day][condition].averageBevRevenue;
-          count += 1;
-        }
-      });
+    // Calculate impact for specific conditions
+    conditions.forEach(condition => {
+      const data = dayData[condition];
+      if (data?.count > 0) {
+        foodTotal += data.averageFoodRevenue * data.count;
+        bevTotal += data.averageBevRevenue * data.count;
+        count += data.count;
+      }
     });
     
     if (count === 0) return { foodImpact: 0, bevImpact: 0, totalImpact: 0 };
@@ -179,12 +179,11 @@ export const useForecastData = () => {
     const avgFood = foodTotal / count;
     const avgBev = bevTotal / count;
     
-    // Calculate percentage impact
-    const foodImpact = ((avgFood - baselineFood) / baselineFood) * 100;
-    const bevImpact = ((avgBev - baselineBev) / baselineBev) * 100;
-    const totalImpact = ((avgFood + avgBev - baselineFood - baselineBev) / (baselineFood + baselineBev)) * 100;
-    
-    return { foodImpact, bevImpact, totalImpact };
+    return {
+      foodImpact: ((avgFood - baselineFood) / baselineFood) * 100,
+      bevImpact: ((avgBev - baselineBev) / baselineBev) * 100,
+      totalImpact: ((avgFood + avgBev - baselineFood - baselineBev) / (baselineFood + baselineBev)) * 100
+    };
   };
   
   useEffect(() => {
