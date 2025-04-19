@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Cloud, CloudRain, CloudSun, Thermometer, Droplets, Wind, Check, AlertTriangle } from 'lucide-react';
+import { Cloud, CloudRain, CloudSun, Thermometer as ThermometerIcon, Droplets as DropletsIcon, Wind as WindIcon, Check, AlertTriangle } from 'lucide-react';
 
 export const WeatherIcon = ({ description }: { description: string }) => {
   const desc = description.toLowerCase();
@@ -14,9 +14,10 @@ export const WeatherIcon = ({ description }: { description: string }) => {
   }
 };
 
-export const Thermometer = Thermometer;
-export const Droplets = Droplets;
-export const Wind = Wind;
+// Re-export the icons with their original names
+export const Thermometer = ThermometerIcon;
+export const Droplets = DropletsIcon;
+export const Wind = WindIcon;
 
 export const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
   let color = "bg-red-100 text-red-800";
