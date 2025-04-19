@@ -11,6 +11,12 @@ import { format } from 'date-fns';
 import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { Tag } from 'lucide-react';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 export default function WeeklyForecast() {
   const { 
@@ -294,22 +300,46 @@ export default function WeeklyForecast() {
                           </tr>
                         </thead>
                         <tbody>
-                          {forecastData.map((day, index) => (
-                            <tr key={index} className="border-b hover:bg-muted/50">
-                              <td className="py-2">
-                                {format(new Date(day.date), 'EEE, MMM d')}
-                              </td>
-                              <td className="text-right py-2">
-                                {formatCurrency(day.foodRevenue)}
-                              </td>
-                              <td className="text-right py-2">
-                                {formatCurrency(day.beverageRevenue)}
-                              </td>
-                              <td className="text-right py-2 font-medium">
-                                {formatCurrency(day.totalRevenue)}
-                              </td>
-                            </tr>
-                          ))}
+                          {forecastData.map((day, index) => {
+                            const dateStr = format(new Date(day.date), 'yyyy-MM-dd');
+                            const taggedDate = taggedDates.find(td => td.date === dateStr);
+                            const tag = taggedDate ? tags.find(t => t.id === taggedDate.tagId) : null;
+                            
+                            return (
+                              <tr key={index} className="border-b hover:bg-muted/50">
+                                <td className="py-2">
+                                  <div className="flex items-center gap-2">
+                                    {format(new Date(day.date), 'EEE, MMM d')}
+                                    {tag && (
+                                      <HoverCard>
+                                        <HoverCardTrigger>
+                                          <Tag className="h-4 w-4 text-blue-500" />
+                                        </HoverCardTrigger>
+                                        <HoverCardContent className="w-80">
+                                          <div className="space-y-2">
+                                            <h4 className="text-sm font-semibold">{tag.name}</h4>
+                                            <div className="text-sm">
+                                              <p>Food Revenue Impact: {tag.historicalFoodRevenueImpact}%</p>
+                                              <p>Beverage Revenue Impact: {tag.historicalBeverageRevenueImpact}%</p>
+                                            </div>
+                                          </div>
+                                        </HoverCardContent>
+                                      </HoverCard>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="text-right py-2">
+                                  {formatCurrency(day.foodRevenue)}
+                                </td>
+                                <td className="text-right py-2">
+                                  {formatCurrency(day.beverageRevenue)}
+                                </td>
+                                <td className="text-right py-2 font-medium">
+                                  {formatCurrency(day.totalRevenue)}
+                                </td>
+                              </tr>
+                            );
+                          })}
                           <tr className="bg-muted/20 font-semibold">
                             <td className="py-2">Weekly Total</td>
                             <td className="text-right py-2">
