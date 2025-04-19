@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -704,8 +705,14 @@ const Layout = ({
       </div>
     </div>;
 
-  return <div className="flex h-screen bg-background overflow-hidden">
-      {isMobile ? <>
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="flex h-screen bg-background overflow-hidden">
+      {isMobile ? (
+        <>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="fixed left-4 top-4 z-40 md:hidden text-zinc-800">
@@ -729,7 +736,8 @@ const Layout = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
-                    {isAuthenticated && profile ? <>
+                    {isAuthenticated && profile ? (
+                      <>
                         <div className="flex items-center justify-start gap-2 p-2">
                           <div className="flex flex-col space-y-0.5 leading-none">
                             <p className="text-sm font-medium">
@@ -747,11 +755,14 @@ const Layout = ({
                             <span>Profile</span>
                           </Link>
                         </DropdownMenuItem>
-                      </> : <div className="flex items-center justify-start gap-2 p-2">
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-start gap-2 p-2">
                         <div className="flex flex-col space-y-0.5 leading-none">
                           <p className="text-sm font-medium">Not logged in</p>
                         </div>
-                      </div>}
+                      </div>
+                    )}
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
@@ -762,7 +773,9 @@ const Layout = ({
             </div>
             {children}
           </div>
-        </> : <>
+        </>
+      ) : (
+        <>
           <div className={cn("flex-shrink-0 transition-all duration-300", sidebarCollapsed ? "w-20" : "w-64")}>
             {Sidebar}
           </div>
@@ -782,7 +795,8 @@ const Layout = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end">
-                    {isAuthenticated && profile ? <>
+                    {isAuthenticated && profile ? (
+                      <>
                         <div className="flex items-center justify-start gap-2 p-2">
                           <div className="flex flex-col space-y-0.5 leading-none">
                             <p className="text-sm font-medium">
@@ -795,4 +809,33 @@ const Layout = ({
                         </div>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                          <Link to="/profile" className="cursor-pointer
+                          <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-start gap-2 p-2">
+                        <div className="flex flex-col space-y-0.5 leading-none">
+                          <p className="text-sm font-medium">Not logged in</p>
+                        </div>
+                      </div>
+                    )}
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+            {children}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Layout;
