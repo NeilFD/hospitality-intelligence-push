@@ -184,18 +184,30 @@ const mapToGeneralWeatherCondition = (description: string): string => {
   return 'Sunny';
 };
 
+const getNextMondayDate = (date: Date): Date => {
+  const day = date.getDay();
+  // If today is Sunday (0), we want next Monday (+1)
+  // If today is Monday (1), we want today (+0)
+  // If today is Tuesday (2), we want next Monday (+6)
+  const daysUntilMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
+  const nextMonday = new Date(date);
+  nextMonday.setDate(date.getDate() + daysUntilMonday);
+  return nextMonday;
+};
+
 export const generateRevenueForecast = async (
-  startDate: string, 
-  endDate: string
+  startDate: string,
+  endDate: string,
+  useAveragesOnly: boolean = false
 ): Promise<RevenueForecast[]> => {
   console.log(`Generating revenue forecast from ${startDate} to ${endDate}`);
   
-  const weatherForecast = await fetchWeatherForecast(startDate, endDate);
+  let weatherForecast = await fetchWeatherForecast(startDate, endDate);
   const currentDate = new Date();
-  
   const dayOfWeekBaselines = await calculateDayOfWeekBaselines(currentDate);
   
-  const weatherImpact = await analyzeWeatherImpact(
+  // Only fetch weather impact if we're not using averages only
+  const weatherImpact = useAveragesOnly ? null : await analyzeWeatherImpact(
     currentDate.getFullYear(),
     currentDate.getMonth() + 1,
     3
@@ -206,45 +218,48 @@ export const generateRevenueForecast = async (
   for (const forecast of weatherForecast) {
     const date = forecast.date;
     const dayOfWeek = getDayName(date);
-    const weatherCondition = mapToGeneralWeatherCondition(forecast.description);
-    
     const baseline = dayOfWeekBaselines[dayOfWeek];
+    
     let foodRevenue = baseline.avgFoodRevenue;
     let bevRevenue = baseline.avgBevRevenue;
-    
     let confidence = baseline.count >= 10 ? 85 : 
                     baseline.count >= 5 ? 75 : 
                     baseline.count > 0 ? 65 : 50;
     
-    if (weatherImpact[dayOfWeek]?.[weatherCondition]?.count > 0) {
-      const impact = weatherImpact[dayOfWeek][weatherCondition];
-      const foodImpactMultiplier = impact.averageFoodRevenue / baseline.avgFoodRevenue;
-      const bevImpactMultiplier = impact.averageBevRevenue / baseline.avgBevRevenue;
+    // Only apply weather impacts if we're not using averages only
+    if (!useAveragesOnly && weatherImpact) {
+      const weatherCondition = mapToGeneralWeatherCondition(forecast.description);
       
-      if (!isNaN(foodImpactMultiplier) && isFinite(foodImpactMultiplier)) {
-        foodRevenue *= foodImpactMultiplier;
-      }
-      if (!isNaN(bevImpactMultiplier) && isFinite(bevImpactMultiplier)) {
-        bevRevenue *= bevImpactMultiplier;
+      if (weatherImpact[dayOfWeek]?.[weatherCondition]?.count > 0) {
+        const impact = weatherImpact[dayOfWeek][weatherCondition];
+        const foodImpactMultiplier = impact.averageFoodRevenue / baseline.avgFoodRevenue;
+        const bevImpactMultiplier = impact.averageBevRevenue / baseline.avgBevRevenue;
+        
+        if (!isNaN(foodImpactMultiplier) && isFinite(foodImpactMultiplier)) {
+          foodRevenue *= foodImpactMultiplier;
+        }
+        if (!isNaN(bevImpactMultiplier) && isFinite(bevImpactMultiplier)) {
+          bevRevenue *= bevImpactMultiplier;
+        }
+        
+        if (impact.count >= 5) {
+          confidence = Math.min(confidence + 10, 95);
+        }
       }
       
-      if (impact.count >= 5) {
-        confidence = Math.min(confidence + 10, 95);
+      if (forecast.temperature > 25) {
+        bevRevenue *= 1.1;
+        foodRevenue *= 0.95;
+      } else if (forecast.temperature < 10) {
+        foodRevenue *= 1.05;
+        bevRevenue *= 0.9;
       }
-    }
-    
-    if (forecast.temperature > 25) {
-      bevRevenue *= 1.1;
-      foodRevenue *= 0.95;
-    } else if (forecast.temperature < 10) {
-      foodRevenue *= 1.05;
-      bevRevenue *= 0.9;
-    }
-    
-    if (forecast.precipitation > 5) {
-      foodRevenue *= 0.9;
-      bevRevenue *= 0.85;
-      confidence = Math.max(confidence - 10, 30);
+      
+      if (forecast.precipitation > 5) {
+        foodRevenue *= 0.9;
+        bevRevenue *= 0.85;
+        confidence = Math.max(confidence - 10, 30);
+      }
     }
     
     revenueForecast.push({
@@ -257,11 +272,42 @@ export const generateRevenueForecast = async (
       temperature: forecast.temperature,
       precipitation: forecast.precipitation,
       windSpeed: forecast.windSpeed,
-      confidence
+      confidence: useAveragesOnly ? 60 : confidence // Lower confidence for future weeks
     });
   }
   
   return revenueForecast;
+};
+
+export const generateFutureWeeksForecast = async (numWeeks: number = 4): Promise<{
+  currentWeek: RevenueForecast[];
+  futureWeeks: RevenueForecast[][];
+}> => {
+  const today = new Date();
+  const nextMonday = getNextMondayDate(today);
+  
+  // Generate forecasts for all weeks
+  const weekForecasts: RevenueForecast[][] = [];
+  
+  for (let i = 0; i < numWeeks; i++) {
+    const weekStart = new Date(nextMonday);
+    weekStart.setDate(weekStart.getDate() + (i * 7));
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    const forecast = await generateRevenueForecast(
+      format(weekStart, 'yyyy-MM-dd'),
+      format(weekEnd, 'yyyy-MM-dd'),
+      i > 0 // Use averages only for future weeks
+    );
+    
+    weekForecasts.push(forecast);
+  }
+  
+  return {
+    currentWeek: weekForecasts[0],
+    futureWeeks: weekForecasts.slice(1)
+  };
 };
 
 async function fetchAverageDailyRevenue(): Promise<{ foodRevenue: number, beverageRevenue: number }> {

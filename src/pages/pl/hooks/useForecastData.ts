@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from 'react';
-import { format, addDays, parseISO } from 'date-fns';
-import { generateRevenueForecast, saveForecast, analyzeWeatherImpact } from '@/services/forecast-service';
+import { generateFutureWeeksForecast, analyzeWeatherImpact } from '@/services/forecast-service';
 import { RevenueForecast } from '@/types/master-record-types';
 import { toast } from 'sonner';
 
 export const useForecastData = () => {
   const [forecastData, setForecastData] = useState<RevenueForecast[]>([]);
+  const [futureWeeks, setFutureWeeks] = useState<RevenueForecast[][]>([]);
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [weatherImpactData, setWeatherImpactData] = useState<{
     hotWeather: string[];
     coldWeather: string[];
@@ -22,38 +23,25 @@ export const useForecastData = () => {
   
   const generateForecast = async () => {
     setIsLoading(true);
-    setError(null);
     
     try {
-      // Generate forecast for the next 7 days
-      const today = new Date();
-      const startDate = format(today, 'yyyy-MM-dd');
-      const endDate = format(addDays(today, 6), 'yyyy-MM-dd'); // 7 days total (today + 6)
-      
-      const forecast = await generateRevenueForecast(startDate, endDate);
-      
-      // Ensure we have 7 days of data
-      if (forecast.length < 7) {
-        console.warn(`Expected 7 days of forecast data but got ${forecast.length}`);
-      }
-      
-      setForecastData(forecast);
+      const { currentWeek, futureWeeks } = await generateFutureWeeksForecast(4);
+      setForecastData(currentWeek);
+      setFutureWeeks(futureWeeks);
       
       // Fetch weather impact analysis
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth() + 1;
-      const weatherAnalysis = await analyzeWeatherImpact(currentYear, currentMonth, 6); // Analyze 6 months of data
+      const today = new Date();
+      const weatherAnalysis = await analyzeWeatherImpact(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        6
+      );
       
-      // Process the weather impact data to get insights
       const weatherInsights = processWeatherImpact(weatherAnalysis);
       setWeatherImpactData(weatherInsights);
       
-      // Optionally save the forecast
-      await saveForecast(forecast);
-      
     } catch (err) {
       console.error('Error generating forecast:', err);
-      setError('Failed to generate forecast. Please try again.');
       toast.error('Failed to generate forecast');
     } finally {
       setIsLoading(false);
@@ -194,6 +182,18 @@ export const useForecastData = () => {
     generateForecast();
     toast.success('Forecast refreshed with latest data');
   };
+
+  const selectWeek = (index: number) => {
+    if (index === 0) {
+      setForecastData(forecastData);
+    } else {
+      const weekData = futureWeeks[index - 1];
+      if (weekData) {
+        setForecastData(weekData);
+      }
+    }
+    setSelectedWeekIndex(index);
+  };
   
   const totalForecastedRevenue = forecastData.reduce((sum, day) => sum + day.totalRevenue, 0);
   const totalForecastedFoodRevenue = forecastData.reduce((sum, day) => sum + day.foodRevenue, 0);
@@ -201,8 +201,10 @@ export const useForecastData = () => {
   
   return {
     forecastData,
+    futureWeeks,
+    selectedWeekIndex,
+    selectWeek,
     isLoading,
-    error,
     refreshForecast,
     totalForecastedRevenue,
     totalForecastedFoodRevenue,

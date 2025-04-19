@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectLabel, SelectItem } from '@/components/ui/select';
 import { useForecastData } from './hooks/useForecastData';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
@@ -15,6 +16,9 @@ export default function FoodBeverageForecast() {
   
   const { 
     forecastData, 
+    futureWeeks,
+    selectedWeekIndex,
+    selectWeek,
     isLoading, 
     refreshForecast,
     totalForecastedRevenue,
@@ -37,9 +41,25 @@ export default function FoodBeverageForecast() {
     <div className="container py-8 text-[#48495e]">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-[#342640]">Food & Beverage Forecast</h1>
-        <Button onClick={refreshForecast} variant="outline">
-          Refresh Data
-        </Button>
+        <div className="flex items-center gap-4">
+          <Select value={String(selectedWeekIndex)} onValueChange={(value) => selectWeek(Number(value))}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select week" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Forecast Weeks</SelectLabel>
+                <SelectItem value="0">Current Week</SelectItem>
+                <SelectItem value="1">Next Week</SelectItem>
+                <SelectItem value="2">Week After Next</SelectItem>
+                <SelectItem value="3">Three Weeks Ahead</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Button onClick={refreshForecast} variant="outline">
+            Refresh Data
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
