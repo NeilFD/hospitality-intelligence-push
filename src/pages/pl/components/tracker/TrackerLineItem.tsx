@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -118,6 +117,17 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
+  const shouldShowCalendar = () => {
+    return (
+      item.tracking_type === 'Discrete' && 
+      !isRevenue && 
+      !isCOS && 
+      !isWages && 
+      !isGrossProfit && 
+      !item.isHeader
+    );
+  };
+
   return (
     <TableRow className={rowClassName}>
       <TableCell className={fontClass}>
@@ -132,9 +142,10 @@ export function TrackerLineItem({
       <TableCell className={`text-right ${fontClass}`}>
         {formatCurrency(proRatedBudget)}
       </TableCell>
+      
       <TableCell className={`text-right ${fontClass}`}>
         <div className="flex items-center justify-end gap-2">
-          {item.tracking_type === 'Discrete' && !isRevenue && !isCOS && !isWages && !isGrossProfit ? (
+          {shouldShowCalendar() ? (
             <Button 
               variant="outline"
               size="icon"
@@ -151,6 +162,7 @@ export function TrackerLineItem({
           </span>
         </div>
       </TableCell>
+      
       <TableCell className="text-right">
         <input
           type="number"
@@ -168,7 +180,7 @@ export function TrackerLineItem({
         {formatCurrency(variance)}
       </TableCell>
       
-      {isDailyInputOpen && (
+      {isDailyInputOpen && shouldShowCalendar() && (
         <DailyInputDrawer
           isOpen={isDailyInputOpen}
           onClose={handleCloseDailyInput}
