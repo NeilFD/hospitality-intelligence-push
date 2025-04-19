@@ -10,6 +10,12 @@ import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Table, TableHeader, TableRow, TableBody, TableCell, TableHead } from '@/components/ui/table';
 import { WeatherIcon, Thermometer, Droplets, Wind, ConfidenceBadge } from '@/components/ui/icons';
+import { Tag } from 'lucide-react';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 export default function FoodBeverageForecast() {
   const [activeTab, setActiveTab] = useState<string>('combined');
@@ -24,7 +30,9 @@ export default function FoodBeverageForecast() {
     totalForecastedRevenue,
     totalForecastedFoodRevenue,
     totalForecastedBevRevenue,
-    weatherImpactData
+    weatherImpactData,
+    taggedDates,
+    tags
   } = useForecastData();
   
   const chartData = forecastData.map(day => ({
@@ -38,7 +46,7 @@ export default function FoodBeverageForecast() {
   }));
   
   return (
-    <div className="container py-8 text-[#48495e]">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-[#342640]">Food & Beverage Forecast</h1>
         <div className="flex items-center gap-4">
@@ -162,42 +170,68 @@ export default function FoodBeverageForecast() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {forecastData.map(day => (
-                  <TableRow key={day.date}>
-                    <TableCell>{format(parseISO(day.date), 'dd MMM')}</TableCell>
-                    <TableCell>{day.dayOfWeek}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <WeatherIcon description={day.weatherDescription} />
-                        <div className="flex flex-col">
-                          <span className="font-medium">{day.weatherDescription}</span>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span className="flex items-center">
-                              <Thermometer size={12} className="mr-1" />
-                              {day.temperature}°C
-                            </span>
-                            {day.precipitation > 0 && (
+                {forecastData.map(day => {
+                  const dateStr = format(parseISO(day.date), 'yyyy-MM-dd');
+                  const taggedDate = taggedDates?.find(td => td.date === dateStr);
+                  const tag = taggedDate ? tags?.find(t => t.id === taggedDate.tagId) : null;
+                  
+                  return (
+                    <TableRow key={day.date}>
+                      <TableCell>{format(parseISO(day.date), 'dd MMM')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {day.dayOfWeek}
+                          {tag && (
+                            <HoverCard>
+                              <HoverCardTrigger>
+                                <Tag className="h-4 w-4 text-blue-500" />
+                              </HoverCardTrigger>
+                              <HoverCardContent className="w-80">
+                                <div className="space-y-2">
+                                  <h4 className="text-sm font-semibold">{tag.name}</h4>
+                                  <div className="text-sm">
+                                    <p>Food Revenue Impact: {tag.historicalFoodRevenueImpact}%</p>
+                                    <p>Beverage Revenue Impact: {tag.historicalBeverageRevenueImpact}%</p>
+                                  </div>
+                                </div>
+                              </HoverCardContent>
+                            </HoverCard>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <WeatherIcon description={day.weatherDescription} />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{day.weatherDescription}</span>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
                               <span className="flex items-center">
-                                <Droplets size={12} className="mr-1" />
-                                {day.precipitation}mm
+                                <Thermometer size={12} className="mr-1" />
+                                {day.temperature}°C
                               </span>
-                            )}
-                            <span className="flex items-center">
-                              <Wind size={12} className="mr-1" />
-                              {day.windSpeed} mph
-                            </span>
+                              {day.precipitation > 0 && (
+                                <span className="flex items-center">
+                                  <Droplets size={12} className="mr-1" />
+                                  {day.precipitation}mm
+                                </span>
+                              )}
+                              <span className="flex items-center">
+                                <Wind size={12} className="mr-1" />
+                                {day.windSpeed} mph
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(day.foodRevenue)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(day.beverageRevenue)}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(day.totalRevenue)}</TableCell>
-                    <TableCell className="text-right">
-                      <ConfidenceBadge confidence={day.confidence} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(day.foodRevenue)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(day.beverageRevenue)}</TableCell>
+                      <TableCell className="text-right font-medium">{formatCurrency(day.totalRevenue)}</TableCell>
+                      <TableCell className="text-right">
+                        <ConfidenceBadge confidence={day.confidence} />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
