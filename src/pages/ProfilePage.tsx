@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
@@ -402,10 +401,20 @@ const ProfilePage = () => {
 
   const handleUpdateAvatar = (newAvatarUrl: string) => {
     if (profile) {
+      console.log("Updating profile avatar to:", newAvatarUrl);
       setProfile({
         ...profile,
         avatar_url: newAvatarUrl
       });
+      
+      if (isCurrentUser && currentUserProfile) {
+        useAuthStore.setState({
+          profile: {
+            ...currentUserProfile,
+            avatar_url: newAvatarUrl
+          }
+        });
+      }
     }
   };
 

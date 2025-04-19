@@ -35,9 +35,9 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
       const fileExt = file.name.split('.').pop();
       const fileName = `avatar-${profile.id}-${Date.now()}.${fileExt}`;
       
-      // Ensure the file is uploaded to the correct path in the 'avatars' bucket
+      // Ensure the file is uploaded to the correct path
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('profiles')
         .upload(`${profile.id}/${fileName}`, file, {
           cacheControl: '3600',
           upsert: true
@@ -53,7 +53,7 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
       
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from('profiles')
         .getPublicUrl(`${profile.id}/${fileName}`);
       
       console.log("Public URL:", publicUrl);
