@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
@@ -523,20 +524,22 @@ const ProfilePage = () => {
           </div>
           
           <div className="relative px-6">
-            <div className="-mt-16 flex items-end space-x-4">
-              {isCurrentUser ? (
-                <ProfilePictureUploader profile={profile} onAvatarUpdate={handleUpdateAvatar} />
-              ) : (
-                <Avatar className="h-32 w-32 border-4 border-white shadow-md">
-                  {profile.avatar_url ? (
-                    <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
-                  ) : (
-                    <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple text-4xl">
-                      {profile.first_name?.[0] || ''}{profile.last_name?.[0] || ''}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-              )}
+            <div className="-mt-16 flex items-end gap-4">
+              <div className="relative">
+                {isCurrentUser ? (
+                  <ProfilePictureUploader profile={profile} onAvatarUpdate={handleUpdateAvatar} />
+                ) : (
+                  <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+                    {profile.avatar_url ? (
+                      <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
+                    ) : (
+                      <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple text-4xl">
+                        {profile.first_name?.[0] || ''}{profile.last_name?.[0] || ''}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                )}
+              </div>
             </div>
             
             <div className="mt-4">
