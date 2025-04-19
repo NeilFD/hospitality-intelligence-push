@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -203,6 +202,10 @@ export default function WeeklyForecast() {
 // Helper components
 const WeatherIcon: React.FC<{ description: string }> = ({ description }) => {
   const desc = description.toLowerCase();
+  
+  if (desc === 'no weather data') {
+    return <div className="text-gray-400 text-xs">N/A</div>;
+  }
   
   if (desc.includes('rain') || desc.includes('shower') || desc.includes('drizzle')) {
     return <Droplets size={18} className="text-blue-500" />;
