@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -250,15 +249,16 @@ export default function WeeklyForecast() {
         </Card>
       </div>
       
-      {/* Revenue Tags Manager Section - Making sure it's visible in the UI */}
-      <RevenueTagManager
-        tags={tags}
-        taggedDates={taggedDates}
-        onAddTag={handleAddTag}
-        onTagDate={handleTagDate}
-      />
+      <div className="my-6">
+        <RevenueTagManager
+          tags={tags}
+          taggedDates={taggedDates}
+          onAddTag={handleAddTag}
+          onTagDate={handleTagDate}
+        />
+      </div>
       
-      <Card className="mb-6 mt-6">
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle>Daily Forecast Breakdown</CardTitle>
           <CardDescription>7-day forecast with weather impacts</CardDescription>
