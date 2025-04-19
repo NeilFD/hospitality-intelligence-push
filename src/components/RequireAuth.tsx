@@ -4,6 +4,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, AuthServiceRole } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { getHasAccessToModule } from '@/services/permissions-service';
 
 interface RequireAuthProps {
   children: React.ReactNode;
@@ -15,25 +16,35 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   const location = useLocation();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [permissionLoading, setPermissionLoading] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
   
-  // Load user authentication state on component mount
+  // Load user authentication state on component mount or route changes
   useEffect(() => {
-    // If we're not authenticated and not already loading, try to load the user
-    if (!isAuthenticated && !isLoading) {
-      loadUser();
-    }
-  }, [isAuthenticated, isLoading, loadUser]);
+    console.log('[RequireAuth] Component mounted or route changed, auth state:', 
+      { isAuthenticated, isLoading, hasProfile: !!profile });
+    
+    const loadAuthState = async () => {
+      if (!isAuthenticated && !isLoading) {
+        console.log('[RequireAuth] Not authenticated and not loading, attempting to load user');
+        await loadUser();
+      } else if (isAuthenticated && profile) {
+        console.log('[RequireAuth] User authenticated with profile, ready to check permissions');
+        setPageReady(true);
+      }
+    };
+    
+    loadAuthState();
+  }, [isAuthenticated, isLoading, loadUser, profile, location.pathname]);
 
   // Check permission based on the current path and user role
-  // This useEffect will run on every location change
   useEffect(() => {
-    const checkPermission = async () => {
-      // Skip permission check if user is not authenticated yet or is currently loading
-      if (!isAuthenticated || isLoading || !profile || !profile.role) {
-        console.log(`[RequireAuth] Skipping permission check - Auth state: ${isAuthenticated ? 'Authenticated' : 'Not authenticated'}, Loading: ${isLoading}, Profile exists: ${!!profile}`);
-        return;
-      }
+    // Skip permission check if user is not authenticated yet or is currently loading
+    if (!isAuthenticated || isLoading || !profile || !profile.role) {
+      console.log(`[RequireAuth] Skipping permission check - Auth state: ${isAuthenticated ? 'Authenticated' : 'Not authenticated'}, Loading: ${isLoading}, Profile exists: ${!!profile}`);
+      return;
+    }
 
+    const checkPermission = async () => {
       // Extract the module from the current path
       const pathParts = location.pathname.split('/').filter(part => part !== '');
       const moduleId = pathParts[0] || '';
@@ -56,27 +67,20 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
         return;
       }
       
+      // Special case for profile page - users should always be able to access their own profile
+      if (location.pathname === '/profile') {
+        console.log('[RequireAuth] Own profile page detected - granting access');
+        setHasPermission(true);
+        return;
+      }
+      
       try {
         setPermissionLoading(true);
         
-        // Check if the user's role has access to this module
-        const { data: moduleAccess, error: moduleError } = await supabase
-          .from('permission_access')
-          .select('has_access')
-          .eq('role_id', profile.role)
-          .eq('module_id', moduleId)
-          .maybeSingle();
+        // Check if the user's role has access to this module using permissions service
+        const hasAccess = await getHasAccessToModule(profile.role, moduleId as any);
         
-        if (moduleError) {
-          console.error(`[RequireAuth] Permission check error for role "${profile.role}" and module "${moduleId}":`, moduleError);
-          setHasPermission(false);
-          return;
-        }
-        
-        console.log(`[RequireAuth] Module access result for "${moduleId}":`, moduleAccess);
-        
-        // If no module access record or has_access is false, deny access
-        if (!moduleAccess || !moduleAccess.has_access) {
+        if (!hasAccess) {
           console.log(`[RequireAuth] User with role ${profile.role} does not have access to module: ${moduleId}`);
           setHasPermission(false);
           return;
@@ -99,7 +103,7 @@ const RequireAuth = ({ children, requiredRole }: RequireAuthProps) => {
   }, [isAuthenticated, isLoading, profile, location.pathname]);
   
   // Show loading state while we check authentication
-  if (isLoading || permissionLoading) {
+  if (isLoading || permissionLoading || (!pageReady && isAuthenticated)) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -27,7 +27,8 @@ import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader
 
 const ProfilePage = () => {
   const { id } = useParams();
-  const { profile: currentUserProfile } = useAuthStore();
+  const navigate = useNavigate();
+  const { profile: currentUserProfile, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -51,9 +52,23 @@ const ProfilePage = () => {
   const isMountedRef = useRef(true);
 
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log("User not authenticated in ProfilePage. Redirecting to login.");
+      toast.error("Please log in to view profiles");
+      navigate("/login");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  useEffect(() => {
     const loadProfile = async () => {
+      if (authLoading || !isAuthenticated) {
+        console.log("Skipping profile load while authentication is loading or user not authenticated");
+        return;
+      }
+
       setLoading(true);
       try {
+        console.log("Loading profile data...", id ? `for ID: ${id}` : "for current user");
         let profileToLoad;
         
         if (id) {
@@ -61,11 +76,22 @@ const ProfilePage = () => {
             .from('profiles')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();
             
           if (error) throw error;
+          
+          if (!data) {
+            toast.error("Profile not found");
+            navigate('/home/dashboard');
+            return;
+          }
+          
           profileToLoad = data;
         } else {
+          if (!currentUserProfile) {
+            console.log("Current user profile not available yet");
+            return; // Will try again when currentUserProfile becomes available
+          }
           profileToLoad = currentUserProfile;
         }
         
@@ -103,7 +129,7 @@ const ProfilePage = () => {
     return () => {
       isMountedRef.current = false;
     };
-  }, [id, currentUserProfile]);
+  }, [id, currentUserProfile, isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
     return () => {
@@ -418,7 +444,7 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[70vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-hi-purple"></div>
