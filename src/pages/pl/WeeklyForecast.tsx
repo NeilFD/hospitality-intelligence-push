@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ArrowUpRight, Droplets, Thermometer, Wind } from 'lucide-react';
@@ -9,6 +9,9 @@ import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { RevenueTagManager } from './components/revenue-tags/RevenueTagManager';
+import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 export default function WeeklyForecast() {
   const { 
@@ -20,6 +23,141 @@ export default function WeeklyForecast() {
     totalForecastedFoodRevenue,
     totalForecastedBevRevenue
   } = useForecastData();
+  
+  const [tags, setTags] = useState<RevenueTag[]>([]);
+  const [taggedDates, setTaggedDates] = useState<TaggedDate[]>([]);
+  const [isLoadingTags, setIsLoadingTags] = useState(true);
+  
+  useEffect(() => {
+    async function fetchTags() {
+      setIsLoadingTags(true);
+      try {
+        const { data: tagsData, error: tagsError } = await supabase
+          .from('revenue_tags')
+          .select('*')
+          .order('name');
+          
+        if (tagsError) throw tagsError;
+        
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 28);
+        
+        const { data: datesData, error: datesError } = await supabase
+          .from('tagged_dates')
+          .select('*')
+          .gte('date', format(startDate, 'yyyy-MM-dd'))
+          .lte('date', format(endDate, 'yyyy-MM-dd'));
+          
+        if (datesError) throw datesError;
+        
+        setTags(tagsData as RevenueTag[]);
+        setTaggedDates(datesData as TaggedDate[]);
+      } catch (error) {
+        console.error('Error fetching revenue tags:', error);
+        toast.error('Failed to load revenue tags');
+      } finally {
+        setIsLoadingTags(false);
+      }
+    }
+    
+    fetchTags();
+  }, []);
+  
+  const handleAddTag = async (tag: Partial<RevenueTag>) => {
+    try {
+      const { data, error } = await supabase
+        .from('revenue_tags')
+        .insert({
+          name: tag.name,
+          historical_food_revenue_impact: tag.historicalFoodRevenueImpact || 0,
+          historical_beverage_revenue_impact: tag.historicalBeverageRevenueImpact || 0,
+          occurrence_count: 0,
+          description: tag.description || ''
+        })
+        .select();
+        
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        setTags(prev => [...prev, data[0] as RevenueTag]);
+        toast.success('Tag created successfully');
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error);
+      toast.error('Failed to create tag');
+    }
+  };
+  
+  const handleTagDate = async (date: Date, tagId: string, impacts?: { food?: number; beverage?: number }) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const existingTaggedDate = taggedDates.find(td => td.date === dateStr);
+    
+    try {
+      if (existingTaggedDate) {
+        const { error } = await supabase
+          .from('tagged_dates')
+          .update({
+            tag_id: tagId,
+            manual_food_revenue_impact: impacts?.food,
+            manual_beverage_revenue_impact: impacts?.beverage
+          })
+          .eq('id', existingTaggedDate.id);
+          
+        if (error) throw error;
+        
+        setTaggedDates(prev => prev.map(td => 
+          td.id === existingTaggedDate.id 
+            ? { 
+                ...td, 
+                tagId: tagId,
+                manualFoodRevenueImpact: impacts?.food,
+                manualBeverageRevenueImpact: impacts?.beverage
+              } 
+            : td
+        ));
+      } else {
+        const { data, error } = await supabase
+          .from('tagged_dates')
+          .insert({
+            date: dateStr,
+            tag_id: tagId,
+            manual_food_revenue_impact: impacts?.food,
+            manual_beverage_revenue_impact: impacts?.beverage
+          })
+          .select();
+          
+        if (error) throw error;
+        
+        if (data && data[0]) {
+          const newTaggedDate: TaggedDate = {
+            id: data[0].id,
+            date: data[0].date,
+            tagId: data[0].tag_id,
+            manualFoodRevenueImpact: data[0].manual_food_revenue_impact,
+            manualBeverageRevenueImpact: data[0].manual_beverage_revenue_impact
+          };
+          
+          setTaggedDates(prev => [...prev, newTaggedDate]);
+        }
+      }
+      
+      const { error: tagUpdateError } = await supabase
+        .from('revenue_tags')
+        .update({ 
+          occurrence_count: supabase.rpc('increment', { x: 1 })
+        })
+        .eq('id', tagId);
+        
+      if (tagUpdateError) throw tagUpdateError;
+      
+      refreshForecast();
+      toast.success('Date tagged successfully');
+    } catch (error) {
+      console.error('Error tagging date:', error);
+      toast.error('Failed to tag date');
+    }
+  };
   
   if (error) {
     return (
@@ -112,19 +250,13 @@ export default function WeeklyForecast() {
       </div>
       
       <RevenueTagManager
-        tags={[]} // TODO: Pass actual tags
-        taggedDates={[]} // TODO: Pass actual tagged dates
-        onAddTag={(tag) => {
-          // TODO: Implement tag creation
-          console.log('Adding tag:', tag);
-        }}
-        onTagDate={(date, tagId, impacts) => {
-          // TODO: Implement date tagging
-          console.log('Tagging date:', { date, tagId, impacts });
-        }}
+        tags={tags}
+        taggedDates={taggedDates}
+        onAddTag={handleAddTag}
+        onTagDate={handleTagDate}
       />
       
-      <Card className="mb-6">
+      <Card className="mb-6 mt-6">
         <CardHeader>
           <CardTitle>Daily Forecast Breakdown</CardTitle>
           <CardDescription>7-day forecast with weather impacts</CardDescription>
@@ -247,7 +379,6 @@ const WeatherIcon: React.FC<{ description: string }> = ({ description }) => {
     </svg>;
   }
   
-  // Default icon
   return <Thermometer size={18} className="text-gray-500" />;
 };
 

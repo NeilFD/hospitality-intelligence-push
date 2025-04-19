@@ -1,13 +1,17 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Tag } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Tag, Calendar as CalendarIcon, SaveAll, Check } from 'lucide-react';
 import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { supabase } from '@/lib/supabase';
 
 interface RevenueTagManagerProps {
   tags: RevenueTag[];
@@ -24,6 +28,63 @@ export function RevenueTagManager({
 }: RevenueTagManagerProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
   const [selectedTag, setSelectedTag] = React.useState<string>('');
+  const [foodImpact, setFoodImpact] = React.useState<string>('');
+  const [beverageImpact, setBeverageImpact] = React.useState<string>('');
+  const [isTagging, setIsTagging] = React.useState<boolean>(false);
+  
+  // Get tag for this date if it exists
+  const findTagForDate = (date: Date | undefined): TaggedDate | undefined => {
+    if (!date) return undefined;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return taggedDates.find(td => td.date === dateStr);
+  };
+  
+  const taggedDate = findTagForDate(selectedDate);
+  const selectedTagData = tags.find(t => t.id === selectedTag);
+  
+  // When date changes, check if it has a tag
+  useEffect(() => {
+    if (taggedDate) {
+      setSelectedTag(taggedDate.tagId);
+      setFoodImpact(taggedDate.manualFoodRevenueImpact?.toString() || '');
+      setBeverageImpact(taggedDate.manualBeverageRevenueImpact?.toString() || '');
+    } else {
+      setSelectedTag('');
+      setFoodImpact('');
+      setBeverageImpact('');
+    }
+  }, [taggedDate, selectedDate]);
+  
+  // When tag changes, update impact values if not manually set
+  useEffect(() => {
+    if (selectedTagData && !foodImpact) {
+      setFoodImpact(selectedTagData.historicalFoodRevenueImpact.toString());
+    }
+    if (selectedTagData && !beverageImpact) {
+      setBeverageImpact(selectedTagData.historicalBeverageRevenueImpact.toString());
+    }
+  }, [selectedTagData, foodImpact, beverageImpact]);
+  
+  const handleApplyTag = () => {
+    if (!selectedDate || !selectedTag) {
+      toast.error('Please select both a date and a tag');
+      return;
+    }
+    
+    setIsTagging(true);
+    
+    onTagDate(
+      selectedDate, 
+      selectedTag, 
+      {
+        food: foodImpact ? parseFloat(foodImpact) : undefined,
+        beverage: beverageImpact ? parseFloat(beverageImpact) : undefined
+      }
+    );
+    
+    toast.success(`Applied tag to ${format(selectedDate, 'MMMM d, yyyy')}`);
+    setIsTagging(false);
+  };
   
   return (
     <Card className="mt-4">
@@ -41,20 +102,33 @@ export function RevenueTagManager({
           <div>
             <h3 className="font-semibold mb-2">Available Tags</h3>
             <div className="space-y-2">
-              {tags.map(tag => (
-                <div key={tag.id} className="flex items-center justify-between p-2 border rounded">
-                  <div>
-                    <p className="font-medium">{tag.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Food: {tag.historicalFoodRevenueImpact}% | 
-                      Bev: {tag.historicalBeverageRevenueImpact}%
-                    </p>
+              {tags.length > 0 ? (
+                tags.map(tag => (
+                  <div 
+                    key={tag.id} 
+                    className={`flex items-center justify-between p-2 border rounded cursor-pointer ${selectedTag === tag.id ? 'bg-primary/10 border-primary' : ''}`}
+                    onClick={() => setSelectedTag(tag.id)}
+                  >
+                    <div>
+                      <p className="font-medium">{tag.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Food: {tag.historicalFoodRevenueImpact}% | 
+                        Bev: {tag.historicalBeverageRevenueImpact}%
+                      </p>
+                      {tag.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{tag.description}</p>
+                      )}
+                    </div>
+                    <Badge variant="secondary">
+                      {tag.occurrenceCount} uses
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">
-                    {tag.occurrenceCount} uses
-                  </Badge>
+                ))
+              ) : (
+                <div className="text-center p-4 border border-dashed rounded">
+                  <p className="text-sm text-muted-foreground">No tags yet</p>
                 </div>
-              ))}
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -80,8 +154,74 @@ export function RevenueTagManager({
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className="rounded-md border"
+              className="rounded-md border mb-4"
             />
+            
+            {selectedDate && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <Label htmlFor="tag-select">Select Tag</Label>
+                  <Select value={selectedTag} onValueChange={setSelectedTag}>
+                    <SelectTrigger id="tag-select">
+                      <SelectValue placeholder="Select a tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tags.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id}>
+                          {tag.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {selectedTag && (
+                  <>
+                    <div>
+                      <Label htmlFor="food-impact">Food Revenue Impact (%)</Label>
+                      <Input 
+                        id="food-impact" 
+                        type="number" 
+                        value={foodImpact} 
+                        onChange={(e) => setFoodImpact(e.target.value)}
+                        placeholder={selectedTagData?.historicalFoodRevenueImpact.toString() || "0"}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="beverage-impact">Beverage Revenue Impact (%)</Label>
+                      <Input 
+                        id="beverage-impact" 
+                        type="number" 
+                        value={beverageImpact} 
+                        onChange={(e) => setBeverageImpact(e.target.value)}
+                        placeholder={selectedTagData?.historicalBeverageRevenueImpact.toString() || "0"}
+                      />
+                    </div>
+                    
+                    <Button 
+                      className="w-full" 
+                      onClick={handleApplyTag}
+                      disabled={isTagging}
+                    >
+                      {isTagging ? (
+                        <>Applying Tag...</>
+                      ) : taggedDate ? (
+                        <>
+                          <SaveAll className="mr-2 h-4 w-4" />
+                          Update Tag for {format(selectedDate, 'MMM d')}
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Apply Tag to {format(selectedDate, 'MMM d')}
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

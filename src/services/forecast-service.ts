@@ -420,30 +420,49 @@ export const generateFutureWeeksForecast = async (
 
 // Add new fetch functions for tags
 const fetchRevenueTags = async (): Promise<RevenueTag[]> => {
-  // TODO: Replace with actual DB call when Supabase is connected
-  return [
-    {
-      id: '1',
-      name: 'Easter Weekend',
-      historicalFoodRevenueImpact: 35, // 35% increase
-      historicalBeverageRevenueImpact: 40,
-      occurrenceCount: 3,
-      description: 'Annual Easter Weekend impact'
-    },
-    {
-      id: '2',
-      name: 'Bank Holiday',
-      historicalFoodRevenueImpact: 25,
-      historicalBeverageRevenueImpact: 30,
-      occurrenceCount: 12,
-      description: 'Standard Bank Holiday impact'
+  try {
+    const { data, error } = await supabase
+      .from('revenue_tags')
+      .select('*')
+      .order('name');
+      
+    if (error) {
+      console.error('Error fetching revenue tags:', error);
+      return [];
     }
-  ];
+    
+    return data as RevenueTag[];
+  } catch (error) {
+    console.error('Error in fetchRevenueTags:', error);
+    return [];
+  }
 };
 
 const fetchTaggedDates = async (startDate: string, endDate: string): Promise<TaggedDate[]> => {
-  // TODO: Replace with actual DB call when Supabase is connected
-  return [];
+  try {
+    const { data, error } = await supabase
+      .from('tagged_dates')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+      
+    if (error) {
+      console.error('Error fetching tagged dates:', error);
+      return [];
+    }
+    
+    // Convert from database format to our type format
+    return data.map(item => ({
+      id: item.id,
+      date: item.date,
+      tagId: item.tag_id,
+      manualFoodRevenueImpact: item.manual_food_revenue_impact,
+      manualBeverageRevenueImpact: item.manual_beverage_revenue_impact
+    }));
+  } catch (error) {
+    console.error('Error in fetchTaggedDates:', error);
+    return [];
+  }
 };
 
 // Modify the generateRevenueForecast function
