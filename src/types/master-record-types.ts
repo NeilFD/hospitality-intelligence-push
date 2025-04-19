@@ -75,5 +75,7 @@ export interface RevenueForecast {
   totalRevenue: number;
   weatherDescription: string;
   temperature: number;
-  confidence: number; // Percentage confidence in the forecast
+  precipitation: number;  // Add this property
+  windSpeed: number;      // Add this property
+  confidence: number;     // Percentage confidence in the forecast
 }

@@ -184,6 +184,8 @@ export const generateRevenueForecast = async (
       totalRevenue: foodRevenue + bevRevenue,
       weatherDescription: forecast.description,
       temperature: forecast.temperature,
+      precipitation: forecast.precipitation, // Include precipitation in the forecast
+      windSpeed: forecast.windSpeed,         // Include windSpeed in the forecast
       confidence
     };
   });

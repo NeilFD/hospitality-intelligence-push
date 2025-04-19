@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Table, TableHeader, TableRow, TableBody, TableCell } from '@/components/ui/table';
+import { Table, TableHeader, TableRow, TableBody, TableCell, TableHead } from '@/components/ui/table';
 import { WeatherIcon, Thermometer, Droplets, Wind, ConfidenceBadge } from '@/components/ui/icons';
 
 export default function FoodBeverageForecast() {
