@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,13 +59,27 @@ export function RevenueTagManager({
   }, [taggedDate, selectedDate]);
   
   useEffect(() => {
-    if (selectedTagData && !foodImpact) {
-      setFoodImpact(selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
-    }
-    if (selectedTagData && !beverageImpact) {
-      setBeverageImpact(selectedTagData.historicalBeverageRevenueImpact?.toString() || '0');
+    if (selectedTagData) {
+      if (!foodImpact) {
+        setFoodImpact(selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
+      }
+      if (!beverageImpact) {
+        setBeverageImpact(selectedTagData.historicalBeverageRevenueImpact?.toString() || '0');
+      }
     }
   }, [selectedTagData, foodImpact, beverageImpact]);
+  
+  useEffect(() => {
+    if (selectedTag && selectedTagData) {
+      if (taggedDate && taggedDate.tagId === selectedTag) {
+        setFoodImpact(taggedDate.manualFoodRevenueImpact?.toString() || selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
+        setBeverageImpact(taggedDate.manualBeverageRevenueImpact?.toString() || selectedTagData.historicalBeverageRevenueImpact?.toString() || '0');
+      } else {
+        setFoodImpact(selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
+        setBeverageImpact(selectedTagData.historicalBeverageRevenueImpact?.toString() || '0');
+      }
+    }
+  }, [selectedTag, selectedTagData, taggedDate]);
   
   const handleApplyTag = () => {
     if (!selectedDate || !selectedTag) {
@@ -131,6 +144,11 @@ export function RevenueTagManager({
           historicalBeverageRevenueImpact: bevImpact
         } : t
       ));
+      
+      if (selectedTag === tag.id) {
+        setFoodImpact(foodImpact.toString());
+        setBeverageImpact(bevImpact.toString());
+      }
       
       setEditingTag(null);
       toast.success('Tag updated successfully');

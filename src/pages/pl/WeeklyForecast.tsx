@@ -49,6 +49,8 @@ export default function WeeklyForecast() {
   
   const fetchRevenueTags = async () => {
     try {
+      setIsLoadingTags(true);
+      
       const { data, error } = await supabase
         .from('revenue_tags')
         .select('*')
@@ -66,11 +68,12 @@ export default function WeeklyForecast() {
         description: tag.description
       }));
       
+      console.log('Fetched tags:', mappedTags);
       setTags(mappedTags);
-      setIsLoadingTags(false);
     } catch (error) {
       console.error('Error fetching revenue tags:', error);
       toast.error('Failed to load revenue tags');
+    } finally {
       setIsLoadingTags(false);
     }
   };
@@ -222,6 +225,9 @@ export default function WeeklyForecast() {
             : t
         ));
       }
+      
+      // Refresh tag data to ensure we have the latest values
+      fetchRevenueTags();
       
       refreshForecast();
       toast.success('Date tagged successfully');
