@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -51,12 +52,48 @@ const MasterMonthSummary = () => {
     loadRecords();
   }, [year, month]);
   
+  // Group records by week number, only including records that have at least some data
   const recordsByWeek: Record<number, MasterDailyRecord[]> = {};
   records.forEach(record => {
+    // Check if this is a record with valid data (some revenue or covers)
+    const hasData = record.foodRevenue > 0 || record.beverageRevenue > 0 || 
+                   record.lunchCovers > 0 || record.dinnerCovers > 0;
+    
+    // Only include the week if we have at least one record with data
+    // or if the date is today or in the past (to show current week)
+    const recordDate = new Date(record.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to start of day for comparison
+    const isPastOrToday = recordDate <= today;
+    
     if (!recordsByWeek[record.weekNumber]) {
       recordsByWeek[record.weekNumber] = [];
     }
     recordsByWeek[record.weekNumber].push(record);
+  });
+  
+  // Now filter out weeks that have no data records yet
+  const filteredWeeks: Record<number, MasterDailyRecord[]> = {};
+  Object.entries(recordsByWeek).forEach(([weekNum, weekRecords]) => {
+    const weekNumber = parseInt(weekNum);
+    
+    // Check if any record in the week has data
+    const weekHasData = weekRecords.some(record => 
+      record.foodRevenue > 0 || record.beverageRevenue > 0 || 
+      record.lunchCovers > 0 || record.dinnerCovers > 0);
+    
+    // Check if the week contains today or past dates
+    const weekContainsPastOrToday = weekRecords.some(record => {
+      const recordDate = new Date(record.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return recordDate <= today;
+    });
+    
+    // Only include weeks with data or that contain today/past dates
+    if (weekHasData || weekContainsPastOrToday) {
+      filteredWeeks[weekNumber] = weekRecords;
+    }
   });
   
   const totalFoodRevenue = records.reduce((sum, record) => sum + record.foodRevenue, 0);
@@ -152,7 +189,7 @@ const MasterMonthSummary = () => {
           
           <h3 className="text-lg font-medium my-4">Weekly Breakdown</h3>
           
-          {Object.entries(recordsByWeek).map(([weekNum, weekRecords]) => {
+          {Object.entries(filteredWeeks).map(([weekNum, weekRecords]) => {
             const weekNumber = parseInt(weekNum);
             const weekTotal = weekRecords.reduce((sum, record) => sum + record.foodRevenue + record.beverageRevenue, 0);
             const weekCovers = weekRecords.reduce((sum, record) => sum + record.lunchCovers + record.dinnerCovers, 0);
