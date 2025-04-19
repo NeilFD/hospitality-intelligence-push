@@ -59,17 +59,6 @@ export function RevenueTagManager({
   }, [taggedDate, selectedDate]);
   
   useEffect(() => {
-    if (selectedTagData) {
-      if (!foodImpact) {
-        setFoodImpact(selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
-      }
-      if (!beverageImpact) {
-        setBeverageImpact(selectedTagData.historicalBeverageRevenueImpact?.toString() || '0');
-      }
-    }
-  }, [selectedTagData, foodImpact, beverageImpact]);
-  
-  useEffect(() => {
     if (selectedTag && selectedTagData) {
       if (taggedDate && taggedDate.tagId === selectedTag) {
         setFoodImpact(taggedDate.manualFoodRevenueImpact?.toString() || selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
@@ -300,7 +289,17 @@ export function RevenueTagManager({
               <div className="mt-4 space-y-4">
                 <div>
                   <Label htmlFor="tag-select">Select Tag</Label>
-                  <Select value={selectedTag} onValueChange={setSelectedTag}>
+                  <Select 
+                    value={selectedTag} 
+                    onValueChange={(value) => {
+                      setSelectedTag(value);
+                      const tag = localTags.find(t => t.id === value);
+                      if (tag) {
+                        setFoodImpact(tag.historicalFoodRevenueImpact?.toString() || '0');
+                        setBeverageImpact(tag.historicalBeverageRevenueImpact?.toString() || '0');
+                      }
+                    }}
+                  >
                     <SelectTrigger id="tag-select">
                       <SelectValue placeholder="Select a tag" />
                     </SelectTrigger>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ export default function WeeklyForecast() {
   const [taggedDates, setTaggedDates] = useState<TaggedDate[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   
-  // Format currency values
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
@@ -41,7 +39,6 @@ export default function WeeklyForecast() {
     }).format(value);
   };
   
-  // Fetch revenue tags on component mount
   useEffect(() => {
     fetchRevenueTags();
     fetchTaggedDates();
@@ -58,7 +55,6 @@ export default function WeeklyForecast() {
         
       if (error) throw error;
       
-      // Map the DB fields to our client-side types
       const mappedTags: RevenueTag[] = data.map(tag => ({
         id: tag.id,
         name: tag.name,
@@ -87,7 +83,6 @@ export default function WeeklyForecast() {
         
       if (error) throw error;
       
-      // Map the DB fields to our client-side types
       const mappedTaggedDates: TaggedDate[] = data.map(td => ({
         id: td.id,
         date: td.date,
@@ -105,7 +100,6 @@ export default function WeeklyForecast() {
   
   const handleAddTag = async (tag: Partial<RevenueTag>) => {
     try {
-      // Make sure we have numeric values for the impact percentages
       const foodImpact = parseFloat(tag.historicalFoodRevenueImpact?.toString() || '0');
       const bevImpact = parseFloat(tag.historicalBeverageRevenueImpact?.toString() || '0');
       
@@ -147,11 +141,9 @@ export default function WeeklyForecast() {
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
       
-      // Check if this date is already tagged
       const existingTaggedDate = taggedDates.find(td => td.date === dateStr);
       
       if (existingTaggedDate) {
-        // Update the existing tagged date
         const { error: updateError } = await supabase
           .from('tagged_dates')
           .update({
@@ -163,7 +155,6 @@ export default function WeeklyForecast() {
           
         if (updateError) throw updateError;
         
-        // Update local state
         setTaggedDates(prev => prev.map(td => 
           td.id === existingTaggedDate.id 
             ? {
@@ -175,7 +166,6 @@ export default function WeeklyForecast() {
             : td
         ));
       } else {
-        // Create a new tagged date
         const { data, error } = await supabase
           .from('tagged_dates')
           .insert([
@@ -191,7 +181,6 @@ export default function WeeklyForecast() {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          // Add to local state
           const newTaggedDate: TaggedDate = {
             id: data[0].id,
             date: data[0].date,
@@ -204,7 +193,6 @@ export default function WeeklyForecast() {
         }
       }
       
-      // Update the tag occurrence count directly
       const tagToUpdate = tags.find(t => t.id === tagId);
       if (tagToUpdate) {
         const newCount = (tagToUpdate.occurrenceCount || 0) + 1;
@@ -218,7 +206,6 @@ export default function WeeklyForecast() {
           
         if (tagUpdateError) throw tagUpdateError;
         
-        // Update the local state for tags
         setTags(prev => prev.map(t => 
           t.id === tagId 
             ? { ...t, occurrenceCount: newCount } 
@@ -226,8 +213,8 @@ export default function WeeklyForecast() {
         ));
       }
       
-      // Refresh tag data to ensure we have the latest values
-      fetchRevenueTags();
+      await fetchRevenueTags();
+      await fetchTaggedDates();
       
       refreshForecast();
       toast.success('Date tagged successfully');
