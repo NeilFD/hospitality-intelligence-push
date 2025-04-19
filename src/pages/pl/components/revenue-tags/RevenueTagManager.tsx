@@ -58,10 +58,10 @@ export function RevenueTagManager({
   // When tag changes, update impact values if not manually set
   useEffect(() => {
     if (selectedTagData && !foodImpact) {
-      setFoodImpact(selectedTagData.historicalFoodRevenueImpact.toString());
+      setFoodImpact(selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
     }
     if (selectedTagData && !beverageImpact) {
-      setBeverageImpact(selectedTagData.historicalBeverageRevenueImpact.toString());
+      setBeverageImpact(selectedTagData.historicalBeverageRevenueImpact?.toString() || '0');
     }
   }, [selectedTagData, foodImpact, beverageImpact]);
   
