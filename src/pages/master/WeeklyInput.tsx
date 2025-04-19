@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -6,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchMasterWeeklyRecords, upsertMasterDailyRecord } from '@/services/master-record-service';
+import { generateRevenueForecast } from '@/services/forecast-service';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import DailyRecordForm from '@/components/master/DailyRecordForm';
-import { generateWeekDates, formatDate } from '@/lib/date-utils';
+import { generateWeekDates, formatDate, formatCurrency, formatPercentage } from '@/lib/date-utils';
 import { toast } from 'sonner';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 const WeeklyInput = () => {
   const params = useParams<{
@@ -25,9 +26,8 @@ const WeeklyInput = () => {
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
   
-  // Calculate current week if not provided in params
   const weekDates = useMemo(() => generateWeekDates(year, month), [year, month]);
-  const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
   
   const currentWeekIndex = useMemo(() => {
     return weekDates.findIndex(week => today >= week.startDate && today <= week.endDate);
@@ -37,22 +37,18 @@ const WeeklyInput = () => {
     if (params.week) {
       return parseInt(params.week, 10);
     }
-    // If no week is specified, use the current week
     return currentWeekIndex >= 0 ? currentWeekIndex + 1 : 1;
   }, [params.week, currentWeekIndex]);
   
-  // Create a storage key specific to this week/month/year
   const selectedDateStorageKey = useMemo(() => 
     `master-input-selected-date-${year}-${month}-${weekNumber}`, 
   [year, month, weekNumber]);
   
-  // Get active day from localStorage or use empty string as initial state
   const [activeDay, setActiveDay] = useState<string>(() => {
     const savedDate = localStorage.getItem(selectedDateStorageKey);
     return savedDate || '';
   });
   
-  // Save the selected date to localStorage whenever it changes
   useEffect(() => {
     if (activeDay) {
       localStorage.setItem(selectedDateStorageKey, activeDay);
@@ -65,7 +61,36 @@ const WeeklyInput = () => {
     }
     return { startDate: '', endDate: '' };
   }, [weekDates, weekNumber]);
-
+  
+  const [forecastData, setForecastData] = useState<{[key: string]: {
+    foodRevenue: number;
+    beverageRevenue: number;
+    totalRevenue: number;
+  }>}({});
+  
+  const loadForecastData = useCallback(async () => {
+    if (weekNumber > 0 && weekNumber <= weekDates.length) {
+      try {
+        const { startDate, endDate } = weekDates[weekNumber - 1];
+        const forecast = await generateRevenueForecast(startDate, endDate, false);
+        
+        const forecastObj = forecast.reduce((acc, day) => {
+          acc[day.date] = {
+            foodRevenue: day.foodRevenue,
+            beverageRevenue: day.beverageRevenue,
+            totalRevenue: day.totalRevenue
+          };
+          return acc;
+        }, {} as {[key: string]: any});
+        
+        setForecastData(forecastObj);
+      } catch (error) {
+        console.error('Error loading forecast data:', error);
+        toast.error('Failed to load forecast data');
+      }
+    }
+  }, [weekNumber, weekDates]);
+  
   const loadRecords = useCallback(async () => {
     setLoading(true);
     try {
@@ -76,7 +101,6 @@ const WeeklyInput = () => {
       if (weekNumber > 0 && weekNumber <= weekDates.length) {
         const { startDate, endDate } = weekDates[weekNumber - 1];
         
-        // Create UTC dates to avoid timezone issues
         const start = new Date(`${startDate}T12:00:00Z`);
         const end = new Date(`${endDate}T12:00:00Z`);
         
@@ -84,7 +108,6 @@ const WeeklyInput = () => {
         
         const days = [];
         
-        // Loop through each day of the week
         const currentDay = new Date(start);
         while (currentDay <= end) {
           const dateStr = formatDate(currentDay);
@@ -110,7 +133,6 @@ const WeeklyInput = () => {
             });
           }
           
-          // Move to next day
           currentDay.setUTCDate(currentDay.getUTCDate() + 1);
         }
         
@@ -118,29 +140,29 @@ const WeeklyInput = () => {
         
         if (days.length > 0) {
           const savedDate = localStorage.getItem(selectedDateStorageKey);
-          // Check if saved date exists in the current week
           const dateExists = savedDate && days.some(day => day.date === savedDate);
           
           if (dateExists) {
             setActiveDay(savedDate);
           } else if (!activeDay || !days.some(day => day.date === activeDay)) {
-            // If no valid saved date or current activeDay, default to first day
             setActiveDay(days[0].date);
           }
         }
       }
+      
+      await loadForecastData();
     } catch (error) {
       console.error('Error loading weekly records:', error);
       toast.error('Failed to load weekly records');
     } finally {
       setLoading(false);
     }
-  }, [year, month, weekNumber, weekDates, activeDay, selectedDateStorageKey]);
-
+  }, [year, month, weekNumber, weekDates, activeDay, selectedDateStorageKey, loadForecastData]);
+  
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
-
+  
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
       const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & {
@@ -153,14 +175,20 @@ const WeeklyInput = () => {
       toast.error('Failed to save daily record');
     }
   }, []);
+  
+  const getForecastVariance = (actual: number, forecast: number) => {
+    const variance = actual - forecast;
+    const percentage = forecast > 0 ? (variance / forecast) * 100 : 0;
+    return { variance, percentage };
+  };
 
   if (loading) {
     return <div className="p-4">
-        <Skeleton className="h-8 w-3/4 mb-2" />
-        <Skeleton className="h-48 w-full" />
-      </div>;
+      <Skeleton className="h-8 w-3/4 mb-2" />
+      <Skeleton className="h-48 w-full" />
+    </div>;
   }
-
+  
   return (
     <div className="p-2 md:p-4">
       <Card className="border shadow-sm">
@@ -172,34 +200,46 @@ const WeeklyInput = () => {
           <Tabs value={activeDay} onValueChange={setActiveDay} className="w-full">
             <div className="border-b bg-gray-50">
               <TabsList className="grid grid-cols-7 h-auto bg-transparent">
-                {records.map(day => (
-                  <TabsTrigger 
-                    key={day.date} 
-                    value={day.date} 
-                    className="flex flex-col py-1 
-                      data-[state=active]:bg-tavern-blue/10 
-                      rounded-none 
-                      text-gray-700
-                      data-[state=active]:text-tavern-blue-dark
-                      hover:bg-gray-100
-                      relative
-                      after:absolute
-                      after:bottom-0
-                      after:left-1/2
-                      after:-translate-x-1/2
-                      after:w-4/5
-                      after:h-0.5
-                      after:bg-[#78E08F]
-                      after:scale-x-0
-                      after:transition-transform
-                      after:duration-300
-                      data-[state=active]:after:scale-x-100
-                      data-[state=active]:border-b-0"
-                  >
-                    <span className="text-xs opacity-80">{format(new Date(day.date), 'EEE')}</span>
-                    <span className="text-base font-semibold">{format(new Date(day.date), 'd')}</span>
-                  </TabsTrigger>
-                ))}
+                {records.map(day => {
+                  const forecast = forecastData[day.date] || { foodRevenue: 0, beverageRevenue: 0, totalRevenue: 0 };
+                  const foodVariance = getForecastVariance(day.foodRevenue || 0, forecast.foodRevenue);
+                  const bevVariance = getForecastVariance(day.beverageRevenue || 0, forecast.beverageRevenue);
+                  const totalVariance = getForecastVariance((day.foodRevenue || 0) + (day.beverageRevenue || 0), forecast.totalRevenue);
+                  
+                  return (
+                    <TabsTrigger 
+                      key={day.date} 
+                      value={day.date}
+                      className="flex flex-col py-1 
+                        data-[state=active]:bg-tavern-blue/10 
+                        rounded-none 
+                        text-gray-700
+                        data-[state=active]:text-tavern-blue-dark
+                        hover:bg-gray-100
+                        relative
+                        after:absolute
+                        after:bottom-0
+                        after:left-1/2
+                        after:-translate-x-1/2
+                        after:w-4/5
+                        after:h-0.5
+                        after:bg-[#78E08F]
+                        after:scale-x-0
+                        after:transition-transform
+                        after:duration-300
+                        data-[state=active]:after:scale-x-100
+                        data-[state=active]:border-b-0"
+                    >
+                      <span className="text-xs opacity-80">{format(new Date(day.date), 'EEE')}</span>
+                      <span className="text-base font-semibold">{format(new Date(day.date), 'd')}</span>
+                      {totalVariance.variance !== 0 && (
+                        <span className={`text-xs ${totalVariance.variance > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {totalVariance.variance > 0 ? '+' : ''}{formatPercentage(totalVariance.percentage)}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
             </div>
             
@@ -213,7 +253,8 @@ const WeeklyInput = () => {
                   key={day.date} 
                   date={day.date} 
                   dayOfWeek={day.dayOfWeek} 
-                  initialData={day} 
+                  initialData={day}
+                  forecastData={forecastData[day.date]}
                   onSave={handleSaveDailyRecord} 
                 />
               </TabsContent>
