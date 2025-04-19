@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,8 @@ export default function FoodBeverageForecast() {
     refreshForecast,
     totalForecastedRevenue,
     totalForecastedFoodRevenue,
-    totalForecastedBevRevenue
+    totalForecastedBevRevenue,
+    weatherImpactData
   } = useForecastData();
   
   // Prepare chart data
@@ -309,46 +309,57 @@ export default function FoodBeverageForecast() {
             <p>Based on historical data analysis, here are the key weather impacts on your business:</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">Hot Weather (&gt;25°C)</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Beverage sales increase by approximately 10%</li>
-                  <li>Food sales typically decrease by 5%</li>
-                  <li>Higher demand for outdoor seating</li>
-                </ul>
-              </div>
-              
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">Cold Weather (&lt;10°C)</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Food sales increase by approximately 5%</li>
-                  <li>Beverage sales decrease by 10%</li>
-                  <li>Hot beverages and comfort foods are most popular</li>
-                </ul>
-              </div>
-              
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">Rainy Days</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Overall foot traffic decreases by 15-20%</li>
-                  <li>Food delivery orders increase</li>
-                  <li>Longer average dining times</li>
-                </ul>
-              </div>
-              
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-2">Clear, Sunny Days</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Higher overall revenue</li>
-                  <li>More even distribution between food and beverage</li>
-                  <li>Higher turnover rate with shorter dining times</li>
-                </ul>
-              </div>
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                </>
+              ) : (
+                <>
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium mb-2">Hot Weather (&gt;25°C)</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {weatherImpactData.hotWeather.map((item, index) => (
+                        <li key={`hot-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium mb-2">Cold Weather (&lt;10°C)</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {weatherImpactData.coldWeather.map((item, index) => (
+                        <li key={`cold-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium mb-2">Rainy Days</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {weatherImpactData.rainyDays.map((item, index) => (
+                        <li key={`rainy-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium mb-2">Clear, Sunny Days</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {weatherImpactData.sunnyDays.map((item, index) => (
+                        <li key={`sunny-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
             
             <p className="mt-4">
-              This forecast uses a sophisticated algorithm that analyzes historical sales data in relation 
-              to recorded weather conditions to predict future revenue with high accuracy.
+              This forecast uses historical sales data in relation to recorded weather 
+              conditions to predict future revenue based on actual trends in your business.
             </p>
           </div>
         </CardContent>
