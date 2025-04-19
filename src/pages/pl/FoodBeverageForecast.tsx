@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -281,8 +280,8 @@ export default function FoodBeverageForecast() {
                                 <TooltipContent className="p-2 max-w-xs bg-white">
                                   <div className="space-y-1">
                                     <p className="font-medium text-sm">{tag.name}</p>
-                                    <p className="text-xs">Food Revenue Impact: {formatPercentage(tag.historicalFoodRevenueImpact/100)}</p>
-                                    <p className="text-xs">Beverage Revenue Impact: {formatPercentage(tag.historicalBeverageRevenueImpact/100)}</p>
+                                    <p className="text-xs">Food Revenue Impact: {formatPercentage(tag.historicalFoodRevenueImpact / 100)}</p>
+                                    <p className="text-xs">Beverage Revenue Impact: {formatPercentage(tag.historicalBeverageRevenueImpact / 100)}</p>
                                   </div>
                                 </TooltipContent>
                               </TooltipComponent>
