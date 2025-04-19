@@ -492,6 +492,10 @@ const Layout = ({
           name: "Food & Beverage Forecast",
           path: "/pl/food-beverage-forecast",
           icon: <TrendingUp className="mr-2 h-4 w-4" />
+        }, {
+          name: "Weekly Forecast",
+          path: "/pl/weekly-forecast",
+          icon: <Calendar className="mr-2 h-4 w-4" />
         }];
       case 'wages':
         return [{

@@ -27,6 +27,7 @@ import HomeDashboard from '@/pages/home/Dashboard';
 
 // Import PL dashboard component
 import PLDashboard from '@/pages/pl/Dashboard';
+import WeeklyForecast from '@/pages/pl/WeeklyForecast';
 
 // Import Performance and Team components
 import PerformanceDashboard from '@/pages/performance/Dashboard';
@@ -137,6 +138,7 @@ function App() {
                 {/* P&L Module Routes */}
                 <Route path="/pl/dashboard" element={<Layout><PLDashboard /></Layout>} />
                 <Route path="/pl/food-beverage-forecast" element={<Layout><FoodBeverageForecast /></Layout>} />
+                <Route path="/pl/weekly-forecast" element={<Layout><WeeklyForecast /></Layout>} />
                 
                 {/* Wages Module Routes */}
                 <Route path="/wages/dashboard" element={<Layout><WagesDashboard /></Layout>} />
