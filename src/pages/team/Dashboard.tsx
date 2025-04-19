@@ -92,6 +92,7 @@ const TeamDashboard: React.FC = () => {
         <p className="text-gray-600">
           Connect with your team, share updates, and stay informed.
         </p>
+        <WelcomeMessage />
       </div>
       
       <div className="mb-8 bg-white rounded-lg border border-gray-100 shadow p-4">

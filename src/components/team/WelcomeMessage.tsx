@@ -23,6 +23,7 @@ export const WelcomeMessage: React.FC<WelcomeMessageProps> = () => {
   const [newSubject, setNewSubject] = useState('');
   const { profile } = useAuthStore();
 
+  // Fix the role check to properly identify users who can edit
   const canEdit = profile?.role && ['GOD', 'Super User', 'Manager'].includes(profile.role);
 
   useEffect(() => {
@@ -314,3 +315,4 @@ export const WelcomeMessage: React.FC<WelcomeMessageProps> = () => {
     </div>
   );
 };
+
