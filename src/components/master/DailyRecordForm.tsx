@@ -499,8 +499,8 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                       <span className="text-base font-semibold">{formatCurrency(form.watch('foodRevenue') || 0)}</span>
                       {forecastData.foodRevenue > 0 && (
                         <div className="flex items-center">
-                          <span className={`text-xs ${foodVariance.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {foodVariance.variance >= 0 ? (
+                          <span className={`text-xs ${foodVariance.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {foodVariance.percentage >= 0 ? (
                               <TrendingUp className="inline h-3 w-3 mr-0.5" />
                             ) : (
                               <TrendingDown className="inline h-3 w-3 mr-0.5" />
@@ -519,8 +519,8 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                       <span className="text-base font-semibold">{formatCurrency(form.watch('beverageRevenue') || 0)}</span>
                       {forecastData.beverageRevenue > 0 && (
                         <div className="flex items-center">
-                          <span className={`text-xs ${bevVariance.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {bevVariance.variance >= 0 ? (
+                          <span className={`text-xs ${bevVariance.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {bevVariance.percentage >= 0 ? (
                               <TrendingUp className="inline h-3 w-3 mr-0.5" />
                             ) : (
                               <TrendingDown className="inline h-3 w-3 mr-0.5" />
@@ -539,8 +539,8 @@ const DailyRecordForm: React.FC<DailyRecordFormProps> = React.memo(({
                       <span className="text-base font-semibold">{formatCurrency(totalRevenue)}</span>
                       {forecastData.totalRevenue > 0 && (
                         <div className="flex items-center">
-                          <span className={`text-xs ${totalVariance.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {totalVariance.variance >= 0 ? (
+                          <span className={`text-xs ${totalVariance.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {totalVariance.percentage >= 0 ? (
                               <TrendingUp className="inline h-3 w-3 mr-0.5" />
                             ) : (
                               <TrendingDown className="inline h-3 w-3 mr-0.5" />

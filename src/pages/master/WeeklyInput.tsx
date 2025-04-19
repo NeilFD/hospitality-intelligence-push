@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -179,8 +180,10 @@ const WeeklyInput = () => {
   }, []);
   
   const getForecastVariance = (actual: number, forecast: number) => {
+    if (forecast === 0) return { variance: 0, percentage: 0 };
     const variance = actual - forecast;
-    const percentage = forecast > 0 ? (variance / forecast) * 100 : 0;
+    // Calculate the percentage as (actual - forecast) / forecast * 100
+    const percentage = forecast !== 0 ? (variance / forecast) * 100 : 0;
     return { variance, percentage };
   };
 
@@ -234,9 +237,9 @@ const WeeklyInput = () => {
                     >
                       <span className="text-xs opacity-80">{format(new Date(day.date), 'EEE')}</span>
                       <span className="text-base font-semibold">{format(new Date(day.date), 'd')}</span>
-                      {totalVariance.variance !== 0 && (
-                        <span className={`text-xs ${totalVariance.variance > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {totalVariance.variance > 0 ? '+' : ''}{formatPercentage(totalVariance.percentage)}
+                      {totalVariance.variance !== 0 && forecast.totalRevenue > 0 && (
+                        <span className={`text-xs ${totalVariance.percentage >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {totalVariance.percentage >= 0 ? '+' : ''}{formatPercentage(totalVariance.percentage)}
                         </span>
                       )}
                     </TabsTrigger>
