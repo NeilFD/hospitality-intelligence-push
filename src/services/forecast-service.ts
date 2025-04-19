@@ -1,4 +1,3 @@
-
 import { format, addDays, startOfWeek, endOfWeek, getDay } from 'date-fns';
 import { RevenueForecast, WeatherForecast } from '@/types/master-record-types';
 
@@ -28,12 +27,26 @@ const fetchWeatherForecast = async (startDate: string, endDate: string): Promise
       continue;
     }
     
-    // Random weather conditions for the next 7 days
+    // Use deterministic weather generation based on the date
+    // This ensures the same date always gets the same weather forecast
+    const dateStr = format(day, 'yyyyMMdd');
+    const dateSeed = Array.from(dateStr).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    
+    // Use the date seed to select conditions deterministically
     const conditions = ['Sunny', 'Partly cloudy', 'Cloudy', 'Light rain', 'Heavy rain'];
-    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-    const randomTemp = Math.floor(Math.random() * 20) + 5; // 5-25°C
-    const randomPrecipitation = randomCondition.includes('rain') ? Math.floor(Math.random() * 10) : 0;
-    const randomWind = Math.floor(Math.random() * 20);
+    const conditionIndex = dateSeed % conditions.length;
+    const randomCondition = conditions[conditionIndex];
+    
+    // Generate other weather parameters deterministically
+    const dayOfYear = day.getDate() + day.getMonth() * 30;
+    const seasonalTemp = Math.sin((dayOfYear / 365) * Math.PI * 2) * 10 + 15; // 5-25°C range with seasonal variation
+    const randomOffset = (dateSeed % 5) - 2; // -2 to +2 range for daily variation
+    const randomTemp = Math.floor(seasonalTemp + randomOffset);
+    
+    const randomPrecipitation = randomCondition.includes('rain') ? 
+      (randomCondition.includes('Heavy') ? 5 + (dateSeed % 5) : (dateSeed % 5)) : 0;
+    
+    const randomWind = 5 + (dateSeed % 15); // 5-20 mph range
     
     forecast.push({
       date: format(day, 'yyyy-MM-dd'),
@@ -237,7 +250,8 @@ export const generateRevenueForecast = async (
     if (forecast.description === 'N/A') {
       // Apply random variation based on historical patterns (±10%) to simulate real data patterns
       // but maintain the underlying historical trends
-      const variation = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1 range
+      const dateSeed = parseInt(date.replace(/[^0-9]/g, '')) % 100;
+      const variation = 0.9 + ((dateSeed / 100) * 0.2); // 0.9 to 1.1 range, deterministic based on date
       foodRevenue *= variation;
       bevRevenue *= variation;
       
