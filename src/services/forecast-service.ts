@@ -2,6 +2,7 @@ import { format, addDays, startOfWeek, endOfWeek, getDay } from 'date-fns';
 import { RevenueForecast, WeatherForecast } from '@/types/master-record-types';
 import { fetchMasterMonthlyRecords } from '@/services/master-record-service';
 import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
+import { supabase } from '@/lib/supabase';
 
 // Fetch real weather forecast using Open-Meteo API
 // This uses the same API as the WeatherFetcher component

@@ -10,6 +10,7 @@ export interface RevenueTag {
 }
 
 export interface TaggedDate {
+  id: string;
   date: string;
   tagId: string;
   // Optional manual overrides
