@@ -361,10 +361,10 @@ const Message: React.FC<MessageProps> = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-32">
                 <DropdownMenuItem 
-                  className="text-red-600 focus:text-red-600 cursor-pointer flex items-center gap-2" 
+                  className="text-red-600 focus:text-red-600 cursor-pointer flex items-center gap-2 hover:bg-red-50" 
                   onClick={() => onDeleteMessage(message.id)}
                 >
-                  <Trash2 className="h-4 w-4 text-white" />
+                  <Trash2 className="h-5 w-5 text-white mr-2" strokeWidth={2.5} />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
