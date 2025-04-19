@@ -240,7 +240,7 @@ const Layout = ({
 
     for (const page of pagePermissions) {
       if (page.pageUrl.includes('{')) {
-        const pageUrlPattern = page.pageUrl.replace(/\{[^}]+\}/g, '[^/]+');
+        const pageUrlPattern = page.pageUrl.replace(/\{[^}]+\}/g, '[^/]+]');
         const pageRegex = new RegExp(`^${pageUrlPattern}$`);
         
         if (pageRegex.test(pageUrl) && page.hasAccess) {
@@ -583,9 +583,16 @@ const Layout = ({
 
   const handleModuleSelect = (moduleType: ModuleType) => {
     setCurrentModule(moduleType);
+    handleMobileNavigation();
   };
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  const handleMobileNavigation = () => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
 
   if (isAuthPage) {
     return <>{children}</>;
@@ -651,7 +658,7 @@ const Layout = ({
           {filteredModuleNav.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
+                    <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={handleMobileNavigation}>
                       <div className="mx-auto">
                         {item.icon}
                       </div>
@@ -661,7 +668,7 @@ const Layout = ({
                     <p>{item.name}</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider> : <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
+              </TooltipProvider> : <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={handleMobileNavigation}>
                 <div className="flex items-center">
                   {item.icon}
                   <span className="ml-2">{item.name}</span>
@@ -788,28 +795,4 @@ const Layout = ({
                         </div>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                          <Link to="/profile" className="cursor-pointer flex w-full items-center">
-                            <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      </> : <div className="flex items-center justify-start gap-2 p-2">
-                        <div className="flex flex-col space-y-0.5 leading-none">
-                          <p className="text-sm font-medium">Not logged in</p>
-                        </div>
-                      </div>}
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            {children}
-          </div>
-        </>}
-    </div>;
-};
-
-export default Layout;
+                          <Link to="/profile" className="cursor-pointer
