@@ -188,8 +188,9 @@ export const useForecastData = () => {
 
   const selectWeek = (index: number) => {
     if (index === 0) {
-      setForecastData(forecastData);
+      setForecastData(futureWeeks[0] || []); // Select current week
     } else {
+      // Adjust index because futureWeeks is 0-indexed but our UI is 1-indexed
       const weekData = futureWeeks[index - 1];
       if (weekData) {
         setForecastData(weekData);

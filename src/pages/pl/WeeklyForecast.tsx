@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -203,7 +204,7 @@ export default function WeeklyForecast() {
 const WeatherIcon: React.FC<{ description: string }> = ({ description }) => {
   const desc = description.toLowerCase();
   
-  if (desc === 'no weather data') {
+  if (desc === 'no weather data' || desc === 'n/a') {
     return <div className="text-gray-400 text-xs">N/A</div>;
   }
   
