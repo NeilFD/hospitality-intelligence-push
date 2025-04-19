@@ -1,2 +1,7 @@
 
-<!-- This file will be automatically replaced with the uploaded image -->
+<!-- The provided image will be automatically processed and saved as a 1024x1024 PNG with:
+- Background color: #6a1b9a
+- White 'Hi' text and lightbulb icon
+- No rounded corners (iOS will handle this)
+- Transparent background where needed
+-->
