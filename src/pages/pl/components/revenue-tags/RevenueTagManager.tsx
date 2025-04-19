@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +33,6 @@ export function RevenueTagManager({
   const [editingTag, setEditingTag] = useState<RevenueTag | null>(null);
   const [localTags, setLocalTags] = useState<RevenueTag[]>(tags);
   
-  // Update local tags when the props change
   useEffect(() => {
     setLocalTags(tags);
   }, [tags]);
@@ -99,7 +97,6 @@ export function RevenueTagManager({
         
       if (error) throw error;
       
-      // Update the local state to remove the deleted tag
       setLocalTags(prev => prev.filter(tag => tag.id !== tagId));
       
       toast.success('Tag deleted successfully');
@@ -111,7 +108,6 @@ export function RevenueTagManager({
   
   const handleUpdateTag = async (tag: RevenueTag) => {
     try {
-      // Ensure numeric values are properly parsed
       const foodImpact = parseFloat(tag.historicalFoodRevenueImpact?.toString() || '0');
       const bevImpact = parseFloat(tag.historicalBeverageRevenueImpact?.toString() || '0');
       
@@ -127,7 +123,6 @@ export function RevenueTagManager({
         
       if (error) throw error;
       
-      // Update the local state with the edited tag
       setLocalTags(prev => prev.map(t => 
         t.id === tag.id ? {
           ...tag,
