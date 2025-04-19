@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -11,6 +12,12 @@ import DailyRecordForm from '@/components/master/DailyRecordForm';
 import { generateWeekDates, formatDate, formatCurrency, formatPercentage } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+
+interface ForecastDataItem {
+  foodRevenue: number;
+  beverageRevenue: number;
+  totalRevenue: number;
+}
 
 const WeeklyInput = () => {
   const params = useParams<{
@@ -62,11 +69,7 @@ const WeeklyInput = () => {
     return { startDate: '', endDate: '' };
   }, [weekDates, weekNumber]);
   
-  const [forecastData, setForecastData] = useState<{[key: string]: {
-    foodRevenue: number;
-    beverageRevenue: number;
-    totalRevenue: number;
-  }>}({});
+  const [forecastData, setForecastData] = useState<Record<string, ForecastDataItem>>({});
   
   const loadForecastData = useCallback(async () => {
     if (weekNumber > 0 && weekNumber <= weekDates.length) {
@@ -81,7 +84,7 @@ const WeeklyInput = () => {
             totalRevenue: day.totalRevenue
           };
           return acc;
-        }, {} as {[key: string]: any});
+        }, {} as Record<string, ForecastDataItem>);
         
         setForecastData(forecastObj);
       } catch (error) {
