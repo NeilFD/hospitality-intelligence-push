@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -33,6 +34,7 @@ import { getChatRooms } from '@/services/team-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { WelcomeMessage } from '@/components/team/WelcomeMessage';
+import { getRevenueForecastForDate } from '@/services/forecast-service';
 
 const HomeDashboard: React.FC = () => {
   const [yesterdayData, setYesterdayData] = useState<any>(null);
@@ -69,6 +71,29 @@ const HomeDashboard: React.FC = () => {
     
     fetchSelectedDateData();
   }, [selectedDate]);
+
+  // Add a new effect to fetch forecast data when the selected date changes
+  useEffect(() => {
+    const fetchForecastData = async () => {
+      try {
+        const forecastData = await getRevenueForecastForDate(yesterdayFormatted);
+        if (forecastData) {
+          console.log('Fetched forecast data:', forecastData);
+          // Store forecast data in state with date as key
+          setForecasts(prev => ({
+            ...prev,
+            [yesterdayFormatted]: forecastData
+          }));
+        } else {
+          console.log('No forecast data available for:', yesterdayFormatted);
+        }
+      } catch (err) {
+        console.error('Error fetching forecast data:', err);
+      }
+    };
+    
+    fetchForecastData();
+  }, [yesterdayFormatted]);
   
   useEffect(() => {
     const checkModuleAccess = async () => {

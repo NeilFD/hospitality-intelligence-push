@@ -1,8 +1,5 @@
-import { format, addDays, startOfWeek, endOfWeek, getDay } from 'date-fns';
-import { RevenueForecast, WeatherForecast } from '@/types/master-record-types';
-import { fetchMasterMonthlyRecords } from '@/services/master-record-service';
-import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
 import { supabase } from '@/lib/supabase';
+import { RevenueForecast } from '@/types/master-record-types';
 
 // Fetch real weather forecast using Open-Meteo API
 // This uses the same API as the WeatherFetcher component
@@ -556,4 +553,51 @@ export const generateRevenueForecast = async (
   }
   
   return revenueForecast;
+};
+
+/**
+ * Get revenue forecast for a specific date
+ */
+export const getRevenueForecastForDate = async (date: string): Promise<RevenueForecast | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('revenue_forecasts')
+      .select('*')
+      .eq('date', date)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching forecast for date:', error);
+      return null;
+    }
+    
+    return data as RevenueForecast;
+  } catch (error) {
+    console.error('Exception when fetching forecast:', error);
+    return null;
+  }
+};
+
+/**
+ * Get revenue forecasts for a date range
+ */
+export const getRevenueForecastsForRange = async (startDate: string, endDate: string): Promise<RevenueForecast[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('revenue_forecasts')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching forecasts for range:', error);
+      return [];
+    }
+    
+    return data as RevenueForecast[];
+  } catch (error) {
+    console.error('Exception when fetching forecasts for range:', error);
+    return [];
+  }
 };
