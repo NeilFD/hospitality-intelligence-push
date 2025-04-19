@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -72,14 +71,12 @@ const HomeDashboard: React.FC = () => {
     fetchSelectedDateData();
   }, [selectedDate]);
 
-  // Add a new effect to fetch forecast data when the selected date changes
   useEffect(() => {
     const fetchForecastData = async () => {
       try {
         const forecastData = await getRevenueForecastForDate(yesterdayFormatted);
         if (forecastData) {
           console.log('Fetched forecast data:', forecastData);
-          // Store forecast data in state with date as key
           setForecasts(prev => ({
             ...prev,
             [yesterdayFormatted]: forecastData
