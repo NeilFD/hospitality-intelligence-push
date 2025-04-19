@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -52,18 +51,14 @@ const MasterMonthSummary = () => {
     loadRecords();
   }, [year, month]);
   
-  // Group records by week number, only including records that have at least some data
   const recordsByWeek: Record<number, MasterDailyRecord[]> = {};
   records.forEach(record => {
-    // Check if this is a record with valid data (some revenue or covers)
     const hasData = record.foodRevenue > 0 || record.beverageRevenue > 0 || 
                    record.lunchCovers > 0 || record.dinnerCovers > 0;
     
-    // Only include the week if we have at least one record with data
-    // or if the date is today or in the past (to show current week)
     const recordDate = new Date(record.date);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize today to start of day for comparison
+    today.setHours(0, 0, 0, 0);
     const isPastOrToday = recordDate <= today;
     
     if (!recordsByWeek[record.weekNumber]) {
@@ -72,17 +67,14 @@ const MasterMonthSummary = () => {
     recordsByWeek[record.weekNumber].push(record);
   });
   
-  // Now filter out weeks that have no data records yet
   const filteredWeeks: Record<number, MasterDailyRecord[]> = {};
   Object.entries(recordsByWeek).forEach(([weekNum, weekRecords]) => {
     const weekNumber = parseInt(weekNum);
     
-    // Check if any record in the week has data
     const weekHasData = weekRecords.some(record => 
       record.foodRevenue > 0 || record.beverageRevenue > 0 || 
       record.lunchCovers > 0 || record.dinnerCovers > 0);
     
-    // Check if the week contains today or past dates
     const weekContainsPastOrToday = weekRecords.some(record => {
       const recordDate = new Date(record.date);
       const today = new Date();
@@ -90,7 +82,6 @@ const MasterMonthSummary = () => {
       return recordDate <= today;
     });
     
-    // Only include weeks with data or that contain today/past dates
     if (weekHasData || weekContainsPastOrToday) {
       filteredWeeks[weekNumber] = weekRecords;
     }
@@ -246,23 +237,64 @@ const MasterMonthSummary = () => {
                       <TableRow>
                         <TableHead>Date</TableHead>
                         <TableHead>Food Revenue</TableHead>
+                        <TableHead>Food Forecast</TableHead>
+                        <TableHead>Food Variance</TableHead>
                         <TableHead>Bev Revenue</TableHead>
+                        <TableHead>Bev Forecast</TableHead>
+                        <TableHead>Bev Variance</TableHead>
+                        <TableHead>Total Revenue</TableHead>
+                        <TableHead>Total Forecast</TableHead>
+                        <TableHead>Total Variance</TableHead>
                         <TableHead>Covers</TableHead>
                         <TableHead>Weather</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {weekRecords.map(record => (
-                        <TableRow key={record.date}>
-                          <TableCell>
-                            {format(new Date(record.date), 'EEE, MMM d')}
-                          </TableCell>
-                          <TableCell>£{record.foodRevenue.toFixed(2)}</TableCell>
-                          <TableCell>£{record.beverageRevenue.toFixed(2)}</TableCell>
-                          <TableCell>{record.lunchCovers + record.dinnerCovers}</TableCell>
-                          <TableCell>{record.weatherDescription || '—'}</TableCell>
-                        </TableRow>
-                      ))}
+                      {weekRecords.map(record => {
+                        const forecast = forecasts[record.date] || { foodRevenue: 0, beverageRevenue: 0 };
+                        const foodVariance = record.foodRevenue - forecast.foodRevenue;
+                        const bevVariance = record.beverageRevenue - forecast.beverageRevenue;
+                        const totalVariance = foodVariance + bevVariance;
+                        
+                        return (
+                          <TableRow key={record.date}>
+                            <TableCell>
+                              {format(new Date(record.date), 'EEE, MMM d')}
+                            </TableCell>
+                            <TableCell>£{record.foodRevenue.toFixed(2)}</TableCell>
+                            <TableCell>£{forecast.foodRevenue.toFixed(2)}</TableCell>
+                            <TableCell className={foodVariance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {foodVariance >= 0 ? '+' : ''}£{foodVariance.toFixed(2)}
+                            </TableCell>
+                            <TableCell>£{record.beverageRevenue.toFixed(2)}</TableCell>
+                            <TableCell>£{forecast.beverageRevenue.toFixed(2)}</TableCell>
+                            <TableCell className={bevVariance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {bevVariance >= 0 ? '+' : ''}£{bevVariance.toFixed(2)}
+                            </TableCell>
+                            <TableCell>£{(record.foodRevenue + record.beverageRevenue).toFixed(2)}</TableCell>
+                            <TableCell>£{(forecast.foodRevenue + forecast.beverageRevenue).toFixed(2)}</TableCell>
+                            <TableCell className={totalVariance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {totalVariance >= 0 ? '+' : ''}£{totalVariance.toFixed(2)}
+                            </TableCell>
+                            <TableCell>{record.lunchCovers + record.dinnerCovers}</TableCell>
+                            <TableCell>{record.weatherDescription || '—'}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      <TableRow className="font-medium">
+                        <TableCell>Week Total</TableCell>
+                        <TableCell>£{weekRecords.reduce((sum, r) => sum + r.foodRevenue, 0).toFixed(2)}</TableCell>
+                        <TableCell>£{weekRecords.reduce((sum, r) => sum + (forecasts[r.date]?.foodRevenue || 0), 0).toFixed(2)}</TableCell>
+                        <TableCell>£{weekRecords.reduce((sum, r) => sum + (r.foodRevenue - (forecasts[r.date]?.foodRevenue || 0)), 0).toFixed(2)}</TableCell>
+                        <TableCell>£{weekRecords.reduce((sum, r) => sum + r.beverageRevenue, 0).toFixed(2)}</TableCell>
+                        <TableCell>£{weekRecords.reduce((sum, r) => sum + (forecasts[r.date]?.beverageRevenue || 0), 0).toFixed(2)}</TableCell>
+                        <TableCell>£{weekRecords.reduce((sum, r) => sum + (r.beverageRevenue - (forecasts[r.date]?.beverageRevenue || 0)), 0).toFixed(2)}</TableCell>
+                        <TableCell>£{weekTotal.toFixed(2)}</TableCell>
+                        <TableCell>£{weekForecast.forecastRevenue.toFixed(2)}</TableCell>
+                        <TableCell>£{weekForecast.variance.toFixed(2)}</TableCell>
+                        <TableCell>{weekCovers}</TableCell>
+                        <TableCell>—</TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </CardContent>
