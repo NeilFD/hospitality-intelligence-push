@@ -9,6 +9,7 @@ export const useForecastData = () => {
   const [futureWeeks, setFutureWeeks] = useState<RevenueForecast[][]>([]);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [weatherImpactData, setWeatherImpactData] = useState<{
     hotWeather: string[];
     coldWeather: string[];
@@ -23,6 +24,7 @@ export const useForecastData = () => {
   
   const generateForecast = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       const { currentWeek, futureWeeks } = await generateFutureWeeksForecast(4);
@@ -43,6 +45,7 @@ export const useForecastData = () => {
     } catch (err) {
       console.error('Error generating forecast:', err);
       toast.error('Failed to generate forecast');
+      setError('Failed to load forecast data. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -209,6 +212,7 @@ export const useForecastData = () => {
     totalForecastedRevenue,
     totalForecastedFoodRevenue,
     totalForecastedBevRevenue,
-    weatherImpactData
+    weatherImpactData,
+    error
   };
 };
