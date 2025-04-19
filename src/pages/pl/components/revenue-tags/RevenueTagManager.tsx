@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Tag, Calendar as CalendarIcon, SaveAll, Check } from 'lucide-react';
+import { Plus, Tag, Calendar as CalendarIcon, SaveAll, Check, Pencil, Trash2 } from 'lucide-react';
 import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -31,8 +30,8 @@ export function RevenueTagManager({
   const [foodImpact, setFoodImpact] = React.useState<string>('');
   const [beverageImpact, setBeverageImpact] = React.useState<string>('');
   const [isTagging, setIsTagging] = React.useState<boolean>(false);
+  const [editingTag, setEditingTag] = useState<RevenueTag | null>(null);
   
-  // Get tag for this date if it exists
   const findTagForDate = (date: Date | undefined): TaggedDate | undefined => {
     if (!date) return undefined;
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -42,7 +41,6 @@ export function RevenueTagManager({
   const taggedDate = findTagForDate(selectedDate);
   const selectedTagData = tags.find(t => t.id === selectedTag);
   
-  // When date changes, check if it has a tag
   useEffect(() => {
     if (taggedDate) {
       setSelectedTag(taggedDate.tagId);
@@ -55,7 +53,6 @@ export function RevenueTagManager({
     }
   }, [taggedDate, selectedDate]);
   
-  // When tag changes, update impact values if not manually set
   useEffect(() => {
     if (selectedTagData && !foodImpact) {
       setFoodImpact(selectedTagData.historicalFoodRevenueImpact?.toString() || '0');
@@ -86,6 +83,44 @@ export function RevenueTagManager({
     setIsTagging(false);
   };
   
+  const handleDeleteTag = async (tagId: string) => {
+    try {
+      const { error } = await supabase
+        .from('revenue_tags')
+        .delete()
+        .eq('id', tagId);
+        
+      if (error) throw error;
+      
+      toast.success('Tag deleted successfully');
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+      toast.error('Failed to delete tag');
+    }
+  };
+  
+  const handleUpdateTag = async (tag: RevenueTag) => {
+    try {
+      const { error } = await supabase
+        .from('revenue_tags')
+        .update({
+          name: tag.name,
+          historical_food_revenue_impact: parseFloat(tag.historicalFoodRevenueImpact?.toString() || '0'),
+          historical_beverage_revenue_impact: parseFloat(tag.historicalBeverageRevenueImpact?.toString() || '0'),
+          description: tag.description
+        })
+        .eq('id', tag.id);
+        
+      if (error) throw error;
+      
+      setEditingTag(null);
+      toast.success('Tag updated successfully');
+    } catch (error) {
+      console.error('Error updating tag:', error);
+      toast.error('Failed to update tag');
+    }
+  };
+
   return (
     <Card className="mt-4">
       <CardHeader>
@@ -106,22 +141,89 @@ export function RevenueTagManager({
                 tags.map(tag => (
                   <div 
                     key={tag.id} 
-                    className={`flex items-center justify-between p-2 border rounded cursor-pointer ${selectedTag === tag.id ? 'bg-primary/10 border-primary' : ''}`}
-                    onClick={() => setSelectedTag(tag.id)}
+                    className={`flex items-center justify-between p-2 border rounded ${selectedTag === tag.id ? 'bg-primary/10 border-primary' : ''}`}
                   >
-                    <div>
-                      <p className="font-medium">{tag.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Food: {tag.historicalFoodRevenueImpact}% | 
-                        Bev: {tag.historicalBeverageRevenueImpact}%
-                      </p>
-                      {tag.description && (
-                        <p className="text-xs text-muted-foreground mt-1">{tag.description}</p>
-                      )}
-                    </div>
-                    <Badge variant="secondary">
-                      {tag.occurrenceCount} uses
-                    </Badge>
+                    {editingTag?.id === tag.id ? (
+                      <div className="w-full space-y-2">
+                        <Input
+                          value={editingTag.name}
+                          onChange={(e) => setEditingTag({ ...editingTag, name: e.target.value })}
+                          placeholder="Tag name"
+                          className="mb-2"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label>Food Impact %</Label>
+                            <Input
+                              type="number"
+                              value={editingTag.historicalFoodRevenueImpact}
+                              onChange={(e) => setEditingTag({ 
+                                ...editingTag, 
+                                historicalFoodRevenueImpact: parseFloat(e.target.value) 
+                              })}
+                            />
+                          </div>
+                          <div>
+                            <Label>Beverage Impact %</Label>
+                            <Input
+                              type="number"
+                              value={editingTag.historicalBeverageRevenueImpact}
+                              onChange={(e) => setEditingTag({ 
+                                ...editingTag, 
+                                historicalBeverageRevenueImpact: parseFloat(e.target.value)
+                              })}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-2">
+                          <Button 
+                            variant="ghost" 
+                            onClick={() => setEditingTag(null)}
+                            size="sm"
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={() => handleUpdateTag(editingTag)}
+                            size="sm"
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-1" onClick={() => setSelectedTag(tag.id)}>
+                          <p className="font-medium">{tag.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Food: {tag.historicalFoodRevenueImpact}% | 
+                            Bev: {tag.historicalBeverageRevenueImpact}%
+                          </p>
+                          {tag.description && (
+                            <p className="text-xs text-muted-foreground mt-1">{tag.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">
+                            {tag.occurrenceCount} uses
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingTag(tag)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteTag(tag.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))
               ) : (
