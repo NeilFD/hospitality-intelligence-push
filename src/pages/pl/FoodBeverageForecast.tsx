@@ -23,7 +23,6 @@ export default function FoodBeverageForecast() {
     weatherImpactData
   } = useForecastData();
   
-  // Prepare chart data
   const chartData = forecastData.map(day => ({
     name: format(parseISO(day.date), 'EEE'),
     Food: Math.round(day.foodRevenue),
@@ -205,7 +204,7 @@ export default function FoodBeverageForecast() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 90 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
@@ -226,7 +225,11 @@ export default function FoodBeverageForecast() {
                         return label;
                       }}
                     />
-                    <Legend />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={50}
+                      wrapperStyle={{ paddingTop: '20px' }}
+                    />
                     <Bar dataKey="Food" fill="#8884d8" name="Food Revenue" />
                     <Bar dataKey="Beverage" fill="#82ca9d" name="Beverage Revenue" />
                   </BarChart>
@@ -237,7 +240,7 @@ export default function FoodBeverageForecast() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 90 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
@@ -258,7 +261,11 @@ export default function FoodBeverageForecast() {
                         return label;
                       }}
                     />
-                    <Legend />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={50}
+                      wrapperStyle={{ paddingTop: '20px' }}
+                    />
                     <Bar dataKey="Food" fill="#8884d8" name="Food Revenue" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -268,7 +275,7 @@ export default function FoodBeverageForecast() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 90 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
@@ -289,7 +296,11 @@ export default function FoodBeverageForecast() {
                         return label;
                       }}
                     />
-                    <Legend />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={50}
+                      wrapperStyle={{ paddingTop: '20px' }}
+                    />
                     <Bar dataKey="Beverage" fill="#82ca9d" name="Beverage Revenue" />
                   </BarChart>
                 </ResponsiveContainer>
