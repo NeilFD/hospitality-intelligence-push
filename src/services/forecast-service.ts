@@ -1,5 +1,7 @@
+
 import { format, addDays, startOfWeek, endOfWeek, getDay } from 'date-fns';
 import { RevenueForecast, WeatherForecast } from '@/types/master-record-types';
+import { fetchMasterMonthlyRecords } from '@/services/master-record-service';
 
 // Fetch real weather forecast using Open-Meteo API
 // This uses the same API as the WeatherFetcher component
@@ -136,41 +138,207 @@ const fetchWeatherForecast = async (startDate: string, endDate: string): Promise
   }
 };
 
-// Calculate average revenue by day of week for baseline forecasting
-const calculateDayOfWeekBaselines = async (date: Date) => {
-  // This would typically fetch data from your database to calculate averages
-  // Here we're using dummy data for demonstration
-  return {
-    'Monday': { avgFoodRevenue: 2100, avgBevRevenue: 1200, count: 8 },
-    'Tuesday': { avgFoodRevenue: 1800, avgBevRevenue: 900, count: 8 },
-    'Wednesday': { avgFoodRevenue: 2000, avgBevRevenue: 1100, count: 8 },
-    'Thursday': { avgFoodRevenue: 2400, avgBevRevenue: 1500, count: 8 },
-    'Friday': { avgFoodRevenue: 3200, avgBevRevenue: 2200, count: 8 },
-    'Saturday': { avgFoodRevenue: 3800, avgBevRevenue: 2800, count: 8 },
-    'Sunday': { avgFoodRevenue: 3000, avgBevRevenue: 1800, count: 8 }
-  };
+// Fetch real historical daily averages from master_daily_records table
+const fetchHistoricalDayOfWeekAverages = async () => {
+  try {
+    // Get data for the last 3 months to calculate reliable averages
+    const today = new Date();
+    const historicalData = [];
+    
+    // Fetch data for the last 3 months
+    for (let i = 0; i < 3; i++) {
+      const monthToFetch = today.getMonth() - i;
+      const yearToFetch = today.getFullYear() - (monthToFetch < 0 ? 1 : 0);
+      const adjustedMonth = monthToFetch < 0 ? 12 + monthToFetch : monthToFetch + 1;
+      
+      try {
+        const monthData = await fetchMasterMonthlyRecords(yearToFetch, adjustedMonth);
+        historicalData.push(...monthData);
+      } catch (error) {
+        console.warn(`Failed to fetch historical data for ${yearToFetch}-${adjustedMonth}`);
+      }
+    }
+    
+    console.log(`Fetched ${historicalData.length} historical daily records for averages`);
+    
+    if (historicalData.length === 0) {
+      // If no historical data is available, fall back to sample data
+      return {
+        'Monday': { avgFoodRevenue: 1100, avgBevRevenue: 750, count: 4 },
+        'Tuesday': { avgFoodRevenue: 980, avgBevRevenue: 650, count: 4 },
+        'Wednesday': { avgFoodRevenue: 1050, avgBevRevenue: 700, count: 4 },
+        'Thursday': { avgFoodRevenue: 1200, avgBevRevenue: 850, count: 4 },
+        'Friday': { avgFoodRevenue: 1750, avgBevRevenue: 1200, count: 4 },
+        'Saturday': { avgFoodRevenue: 2100, avgBevRevenue: 1500, count: 4 },
+        'Sunday': { avgFoodRevenue: 1650, avgBevRevenue: 950, count: 4 }
+      };
+    }
+    
+    // Calculate averages by day of week
+    const dayAverages: Record<string, {avgFoodRevenue: number, avgBevRevenue: number, count: number}> = {
+      'Monday': { avgFoodRevenue: 0, avgBevRevenue: 0, count: 0 },
+      'Tuesday': { avgFoodRevenue: 0, avgBevRevenue: 0, count: 0 },
+      'Wednesday': { avgFoodRevenue: 0, avgBevRevenue: 0, count: 0 },
+      'Thursday': { avgFoodRevenue: 0, avgBevRevenue: 0, count: 0 },
+      'Friday': { avgFoodRevenue: 0, avgBevRevenue: 0, count: 0 },
+      'Saturday': { avgFoodRevenue: 0, avgBevRevenue: 0, count: 0 },
+      'Sunday': { avgFoodRevenue: 0, avgBevRevenue: 0, count: 0 }
+    };
+    
+    // Accumulate totals for each day
+    historicalData.forEach(record => {
+      if (record.foodRevenue > 0 || record.beverageRevenue > 0) {
+        const day = record.dayOfWeek;
+        dayAverages[day].avgFoodRevenue += record.foodRevenue || 0;
+        dayAverages[day].avgBevRevenue += record.beverageRevenue || 0;
+        dayAverages[day].count += 1;
+      }
+    });
+    
+    // Calculate the averages
+    Object.keys(dayAverages).forEach(day => {
+      if (dayAverages[day].count > 0) {
+        dayAverages[day].avgFoodRevenue = dayAverages[day].avgFoodRevenue / dayAverages[day].count;
+        dayAverages[day].avgBevRevenue = dayAverages[day].avgBevRevenue / dayAverages[day].count;
+      } else {
+        // Use conservative defaults if no data for a particular day
+        dayAverages[day].avgFoodRevenue = 1000; // Conservative default
+        dayAverages[day].avgBevRevenue = 700;  // Conservative default
+        dayAverages[day].count = 1;
+      }
+    });
+    
+    console.log('Calculated day-of-week averages:', dayAverages);
+    return dayAverages;
+  } catch (error) {
+    console.error('Error calculating historical averages:', error);
+    
+    // Fall back to more conservative baseline values
+    return {
+      'Monday': { avgFoodRevenue: 1100, avgBevRevenue: 750, count: 4 },
+      'Tuesday': { avgFoodRevenue: 980, avgBevRevenue: 650, count: 4 },
+      'Wednesday': { avgFoodRevenue: 1050, avgBevRevenue: 700, count: 4 },
+      'Thursday': { avgFoodRevenue: 1200, avgBevRevenue: 850, count: 4 },
+      'Friday': { avgFoodRevenue: 1750, avgBevRevenue: 1200, count: 4 },
+      'Saturday': { avgFoodRevenue: 2100, avgBevRevenue: 1500, count: 4 },
+      'Sunday': { avgFoodRevenue: 1650, avgBevRevenue: 950, count: 4 }
+    };
+  }
 };
 
 // Analyze how weather impacts revenue
 export const analyzeWeatherImpact = async (year: number, month: number, months: number) => {
-  // This would typically analyze historical data to find correlations
-  // between weather and revenue
-  const weatherImpact: any = {
-    'Monday': {
-      'Sunny': { averageFoodRevenue: 2300, averageBevRevenue: 1400, count: 4 },
-      'Partly cloudy': { averageFoodRevenue: 2100, averageBevRevenue: 1200, count: 2 },
-      'Cloudy': { averageFoodRevenue: 1900, averageBevRevenue: 1100, count: 1 },
-      'Light rain': { averageFoodRevenue: 1700, averageBevRevenue: 900, count: 1 }
-    },
-    'Friday': {
-      'Sunny': { averageFoodRevenue: 3500, averageBevRevenue: 2500, count: 3 },
-      'Partly cloudy': { averageFoodRevenue: 3200, averageBevRevenue: 2200, count: 3 },
-      'Light rain': { averageFoodRevenue: 2800, averageBevRevenue: 1800, count: 2 }
-    },
-    // Add more days as needed
-  };
-  
-  return weatherImpact;
+  try {
+    // Fetch historical data
+    const today = new Date();
+    const historicalData = [];
+    
+    // Fetch data for the specified period
+    for (let i = 0; i < months; i++) {
+      const monthToFetch = month - i;
+      const yearToFetch = year - (monthToFetch <= 0 ? 1 : 0);
+      const adjustedMonth = monthToFetch <= 0 ? 12 + monthToFetch : monthToFetch;
+      
+      try {
+        const monthData = await fetchMasterMonthlyRecords(yearToFetch, adjustedMonth);
+        historicalData.push(...monthData);
+      } catch (error) {
+        console.warn(`Failed to fetch historical weather impact data for ${yearToFetch}-${adjustedMonth}`);
+      }
+    }
+    
+    if (historicalData.length === 0) {
+      // If no data is available, return a simplified model
+      return {
+        'Monday': {
+          'Sunny': { averageFoodRevenue: 1200, averageBevRevenue: 800, count: 2 },
+          'Partly cloudy': { averageFoodRevenue: 1100, averageBevRevenue: 750, count: 1 },
+          'Cloudy': { averageFoodRevenue: 1000, averageBevRevenue: 700, count: 1 },
+          'Light rain': { averageFoodRevenue: 900, averageBevRevenue: 600, count: 1 }
+        },
+        'Friday': {
+          'Sunny': { averageFoodRevenue: 1900, averageBevRevenue: 1300, count: 2 },
+          'Partly cloudy': { averageFoodRevenue: 1750, averageBevRevenue: 1200, count: 1 },
+          'Light rain': { averageFoodRevenue: 1600, averageBevRevenue: 1050, count: 1 }
+        },
+        // Add more days as needed
+      };
+    }
+    
+    // Group data by day of week and weather condition
+    const weatherImpact: Record<string, Record<string, {
+      totalFoodRevenue: number,
+      totalBevRevenue: number, 
+      count: number,
+      averageFoodRevenue?: number,
+      averageBevRevenue?: number
+    }>> = {};
+    
+    historicalData.forEach(record => {
+      if (!record.weatherDescription || !record.dayOfWeek) return;
+      
+      const day = record.dayOfWeek;
+      const weather = mapToGeneralWeatherCondition(record.weatherDescription);
+      
+      if (!weatherImpact[day]) weatherImpact[day] = {};
+      if (!weatherImpact[day][weather]) {
+        weatherImpact[day][weather] = {
+          totalFoodRevenue: 0,
+          totalBevRevenue: 0,
+          count: 0
+        };
+      }
+      
+      weatherImpact[day][weather].totalFoodRevenue += record.foodRevenue || 0;
+      weatherImpact[day][weather].totalBevRevenue += record.beverageRevenue || 0;
+      weatherImpact[day][weather].count += 1;
+    });
+    
+    // Calculate averages for each day/weather combination
+    Object.keys(weatherImpact).forEach(day => {
+      Object.keys(weatherImpact[day]).forEach(weather => {
+        const data = weatherImpact[day][weather];
+        if (data.count > 0) {
+          data.averageFoodRevenue = data.totalFoodRevenue / data.count;
+          data.averageBevRevenue = data.totalBevRevenue / data.count;
+        }
+      });
+    });
+    
+    // Clean up the data structure to match the expected format
+    const formattedResult: any = {};
+    
+    Object.keys(weatherImpact).forEach(day => {
+      formattedResult[day] = {};
+      
+      Object.keys(weatherImpact[day]).forEach(weather => {
+        const data = weatherImpact[day][weather];
+        if (data.count > 0) {
+          formattedResult[day][weather] = {
+            averageFoodRevenue: data.averageFoodRevenue,
+            averageBevRevenue: data.averageBevRevenue,
+            count: data.count
+          };
+        }
+      });
+    });
+    
+    return formattedResult;
+  } catch (error) {
+    console.error("Error analyzing weather impact:", error);
+    
+    // Fall back to a simplified model
+    return {
+      'Monday': {
+        'Sunny': { averageFoodRevenue: 1200, averageBevRevenue: 800, count: 2 },
+        'Partly cloudy': { averageFoodRevenue: 1100, averageBevRevenue: 750, count: 1 }
+      },
+      'Friday': {
+        'Sunny': { averageFoodRevenue: 1900, averageBevRevenue: 1300, count: 2 },
+        'Partly cloudy': { averageFoodRevenue: 1750, averageBevRevenue: 1200, count: 1 }
+      }
+    };
+  }
 };
 
 // Map specific weather descriptions to general categories
@@ -277,13 +445,13 @@ export const generateRevenueForecast = async (
     }
   }
   
-  const currentDate = new Date();
-  const dayOfWeekBaselines = await calculateDayOfWeekBaselines(currentDate);
+  // Fetch historical day-of-week revenue averages
+  const dayOfWeekBaselines = await fetchHistoricalDayOfWeekAverages();
   
   // Only fetch weather impact if we're not using averages only
   const weatherImpact = useAveragesOnly ? null : await analyzeWeatherImpact(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
+    new Date().getFullYear(),
+    new Date().getMonth() + 1,
     3
   );
   
@@ -324,10 +492,10 @@ export const generateRevenueForecast = async (
     
     // For future weeks with N/A weather, still use historical data but with lower confidence
     if (forecast.description === 'N/A') {
-      // Apply random variation based on historical patterns (±10%) to simulate real data patterns
+      // Apply small random variation based on historical patterns (±5%) to simulate real data patterns
       // but maintain the underlying historical trends
       const dateSeed = parseInt(date.replace(/[^0-9]/g, '')) % 100;
-      const variation = 0.9 + ((dateSeed / 100) * 0.2); // 0.9 to 1.1 range, deterministic based on date
+      const variation = 0.95 + ((dateSeed / 100) * 0.1); // 0.95 to 1.05 range, deterministic based on date
       foodRevenue *= variation;
       bevRevenue *= variation;
       
