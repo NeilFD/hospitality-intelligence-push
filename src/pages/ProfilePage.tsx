@@ -523,7 +523,7 @@ const ProfilePage = () => {
           </div>
           
           <div className="relative px-6">
-            <div className="-mt-16">
+            <div className="-mt-16 flex items-end space-x-4">
               {isCurrentUser ? (
                 <ProfilePictureUploader profile={profile} onAvatarUpdate={handleUpdateAvatar} />
               ) : (
