@@ -285,13 +285,37 @@ const MasterMonthSummary = () => {
                         <TableCell>Week Total</TableCell>
                         <TableCell>£{weekRecords.reduce((sum, r) => sum + r.foodRevenue, 0).toFixed(2)}</TableCell>
                         <TableCell>£{weekRecords.reduce((sum, r) => sum + (forecasts[r.date]?.foodRevenue || 0), 0).toFixed(2)}</TableCell>
-                        <TableCell>£{weekRecords.reduce((sum, r) => sum + (r.foodRevenue - (forecasts[r.date]?.foodRevenue || 0)), 0).toFixed(2)}</TableCell>
+                        <TableCell 
+                          className={
+                            weekRecords.reduce((sum, r) => sum + (r.foodRevenue - (forecasts[r.date]?.foodRevenue || 0)), 0) >= 0 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }
+                        >
+                          £{weekRecords.reduce((sum, r) => sum + (r.foodRevenue - (forecasts[r.date]?.foodRevenue || 0)), 0).toFixed(2)}
+                        </TableCell>
                         <TableCell>£{weekRecords.reduce((sum, r) => sum + r.beverageRevenue, 0).toFixed(2)}</TableCell>
                         <TableCell>£{weekRecords.reduce((sum, r) => sum + (forecasts[r.date]?.beverageRevenue || 0), 0).toFixed(2)}</TableCell>
-                        <TableCell>£{weekRecords.reduce((sum, r) => sum + (r.beverageRevenue - (forecasts[r.date]?.beverageRevenue || 0)), 0).toFixed(2)}</TableCell>
+                        <TableCell 
+                          className={
+                            weekRecords.reduce((sum, r) => sum + (r.beverageRevenue - (forecasts[r.date]?.beverageRevenue || 0)), 0) >= 0 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }
+                        >
+                          £{weekRecords.reduce((sum, r) => sum + (r.beverageRevenue - (forecasts[r.date]?.beverageRevenue || 0)), 0).toFixed(2)}
+                        </TableCell>
                         <TableCell>£{weekTotal.toFixed(2)}</TableCell>
                         <TableCell>£{weekForecast.forecastRevenue.toFixed(2)}</TableCell>
-                        <TableCell>£{weekForecast.variance.toFixed(2)}</TableCell>
+                        <TableCell 
+                          className={
+                            weekForecast.variance >= 0 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }
+                        >
+                          £{weekForecast.variance.toFixed(2)}
+                        </TableCell>
                         <TableCell>{weekCovers}</TableCell>
                         <TableCell>—</TableCell>
                       </TableRow>
