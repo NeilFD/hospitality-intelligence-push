@@ -41,6 +41,7 @@ const HomeDashboard: React.FC = () => {
   const [availableModules, setAvailableModules] = useState<{type: ModuleType, name: string}[]>([]);
   const [generalRoomId, setGeneralRoomId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(subDays(new Date(), 1));
+  const [forecasts, setForecasts] = useState<any>({});
   const { profile } = useAuthStore();
   
   const yesterdayFormatted = format(selectedDate, 'yyyy-MM-dd');
@@ -220,19 +221,49 @@ const HomeDashboard: React.FC = () => {
           ) : (
             <div className="divide-y divide-gray-100">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
-                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                <div className="bg-blue-50 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Total Revenue</p>
-                  <p className="text-xl font-bold text-blue-700">{formatCurrency(yesterdayData.totalRevenue)}</p>
+                  <div className="flex flex-col">
+                    <p className="text-xl font-bold text-blue-700">{formatCurrency(yesterdayData.totalRevenue)}</p>
+                    {forecasts[yesterdayFormatted] && (
+                      <>
+                        <p className="text-sm text-gray-500">Forecast: {formatCurrency(forecasts[yesterdayFormatted].foodRevenue + forecasts[yesterdayFormatted].beverageRevenue)}</p>
+                        <p className={`text-sm ${yesterdayData.totalRevenue > (forecasts[yesterdayFormatted].foodRevenue + forecasts[yesterdayFormatted].beverageRevenue) ? 'text-green-600' : 'text-red-600'}`}>
+                          Variance: {formatCurrency(yesterdayData.totalRevenue - (forecasts[yesterdayFormatted].foodRevenue + forecasts[yesterdayFormatted].beverageRevenue))}
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="bg-green-50 rounded-lg p-3 text-center">
+                <div className="bg-green-50 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Food Revenue</p>
-                  <p className="text-xl font-bold text-green-700">{formatCurrency(yesterdayData.foodRevenue)}</p>
+                  <div className="flex flex-col">
+                    <p className="text-xl font-bold text-green-700">{formatCurrency(yesterdayData.foodRevenue)}</p>
+                    {forecasts[yesterdayFormatted] && (
+                      <>
+                        <p className="text-sm text-gray-500">Forecast: {formatCurrency(forecasts[yesterdayFormatted].foodRevenue)}</p>
+                        <p className={`text-sm ${yesterdayData.foodRevenue > forecasts[yesterdayFormatted].foodRevenue ? 'text-green-600' : 'text-red-600'}`}>
+                          Variance: {formatCurrency(yesterdayData.foodRevenue - forecasts[yesterdayFormatted].foodRevenue)}
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-3 text-center">
+                <div className="bg-purple-50 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Beverage Revenue</p>
-                  <p className="text-xl font-bold text-purple-700">{formatCurrency(yesterdayData.beverageRevenue)}</p>
+                  <div className="flex flex-col">
+                    <p className="text-xl font-bold text-purple-700">{formatCurrency(yesterdayData.beverageRevenue)}</p>
+                    {forecasts[yesterdayFormatted] && (
+                      <>
+                        <p className="text-sm text-gray-500">Forecast: {formatCurrency(forecasts[yesterdayFormatted].beverageRevenue)}</p>
+                        <p className={`text-sm ${yesterdayData.beverageRevenue > forecasts[yesterdayFormatted].beverageRevenue ? 'text-green-600' : 'text-red-600'}`}>
+                          Variance: {formatCurrency(yesterdayData.beverageRevenue - forecasts[yesterdayFormatted].beverageRevenue)}
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="bg-amber-50 rounded-lg p-3 text-center">
+                <div className="bg-amber-50 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Total Covers</p>
                   <p className="text-xl font-bold text-amber-700">{yesterdayData.totalCovers || '0'}</p>
                 </div>
