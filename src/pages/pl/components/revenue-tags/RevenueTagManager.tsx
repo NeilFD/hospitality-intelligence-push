@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +32,12 @@ export function RevenueTagManager({
   const [beverageImpact, setBeverageImpact] = React.useState<string>('');
   const [isTagging, setIsTagging] = React.useState<boolean>(false);
   const [editingTag, setEditingTag] = useState<RevenueTag | null>(null);
+  const [localTags, setLocalTags] = useState<RevenueTag[]>(tags);
+  
+  // Update local tags when the props change
+  useEffect(() => {
+    setLocalTags(tags);
+  }, [tags]);
   
   const findTagForDate = (date: Date | undefined): TaggedDate | undefined => {
     if (!date) return undefined;
@@ -39,7 +46,7 @@ export function RevenueTagManager({
   };
   
   const taggedDate = findTagForDate(selectedDate);
-  const selectedTagData = tags.find(t => t.id === selectedTag);
+  const selectedTagData = localTags.find(t => t.id === selectedTag);
   
   useEffect(() => {
     if (taggedDate) {
@@ -92,6 +99,9 @@ export function RevenueTagManager({
         
       if (error) throw error;
       
+      // Update the local state to remove the deleted tag
+      setLocalTags(prev => prev.filter(tag => tag.id !== tagId));
+      
       toast.success('Tag deleted successfully');
     } catch (error) {
       console.error('Error deleting tag:', error);
@@ -101,21 +111,30 @@ export function RevenueTagManager({
   
   const handleUpdateTag = async (tag: RevenueTag) => {
     try {
+      // Ensure numeric values are properly parsed
+      const foodImpact = parseFloat(tag.historicalFoodRevenueImpact?.toString() || '0');
+      const bevImpact = parseFloat(tag.historicalBeverageRevenueImpact?.toString() || '0');
+      
       const { error } = await supabase
         .from('revenue_tags')
         .update({
           name: tag.name,
-          historical_food_revenue_impact: parseFloat(tag.historicalFoodRevenueImpact?.toString() || '0'),
-          historical_beverage_revenue_impact: parseFloat(tag.historicalBeverageRevenueImpact?.toString() || '0'),
-          description: tag.description
+          historical_food_revenue_impact: foodImpact,
+          historical_beverage_revenue_impact: bevImpact,
+          description: tag.description || null
         })
         .eq('id', tag.id);
         
       if (error) throw error;
       
-      const updatedTags = tags.map(t => 
-        t.id === tag.id ? tag : t
-      );
+      // Update the local state with the edited tag
+      setLocalTags(prev => prev.map(t => 
+        t.id === tag.id ? {
+          ...tag,
+          historicalFoodRevenueImpact: foodImpact,
+          historicalBeverageRevenueImpact: bevImpact
+        } : t
+      ));
       
       setEditingTag(null);
       toast.success('Tag updated successfully');
@@ -141,8 +160,8 @@ export function RevenueTagManager({
           <div>
             <h3 className="font-semibold mb-2">Available Tags</h3>
             <div className="space-y-2">
-              {tags.length > 0 ? (
-                tags.map(tag => (
+              {localTags.length > 0 ? (
+                localTags.map(tag => (
                   <div 
                     key={tag.id} 
                     className={`flex items-center justify-between p-2 border rounded ${selectedTag === tag.id ? 'bg-primary/10 border-primary' : ''}`}
@@ -272,7 +291,7 @@ export function RevenueTagManager({
                       <SelectValue placeholder="Select a tag" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tags.map((tag) => (
+                      {localTags.map((tag) => (
                         <SelectItem key={tag.id} value={tag.id}>
                           {tag.name}
                         </SelectItem>
