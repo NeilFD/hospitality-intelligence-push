@@ -1,15 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ArrowUpRight, Droplets, Thermometer, Wind } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForecastData } from './hooks/useForecastData';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { RevenueTagManager } from './components/revenue-tags/RevenueTagManager';
+import { Calendar, CloudRain, Cloud, Sun, Thermometer } from 'lucide-react';
+import { format } from 'date-fns';
 import { RevenueTag, TaggedDate } from '@/types/revenue-tag-types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -17,86 +15,136 @@ import { supabase } from '@/lib/supabase';
 export default function WeeklyForecast() {
   const { 
     forecastData, 
-    isLoading, 
-    error,
+    futureWeeks,
+    selectedWeekIndex,
+    selectWeek, 
+    isLoading,
     refreshForecast,
     totalForecastedRevenue,
     totalForecastedFoodRevenue,
-    totalForecastedBevRevenue
+    totalForecastedBevRevenue,
+    weatherImpactData
   } = useForecastData();
   
   const [tags, setTags] = useState<RevenueTag[]>([]);
   const [taggedDates, setTaggedDates] = useState<TaggedDate[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   
+  // Format currency values
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+  
+  // Fetch revenue tags on component mount
   useEffect(() => {
-    async function fetchTags() {
-      setIsLoadingTags(true);
-      try {
-        const { data: tagsData, error: tagsError } = await supabase
-          .from('revenue_tags')
-          .select('*')
-          .order('name');
-          
-        if (tagsError) throw tagsError;
-        
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + 28);
-        
-        const { data: datesData, error: datesError } = await supabase
-          .from('tagged_dates')
-          .select('*')
-          .gte('date', format(startDate, 'yyyy-MM-dd'))
-          .lte('date', format(endDate, 'yyyy-MM-dd'));
-          
-        if (datesError) throw datesError;
-        
-        setTags(tagsData as RevenueTag[]);
-        setTaggedDates(datesData as TaggedDate[]);
-      } catch (error) {
-        console.error('Error fetching revenue tags:', error);
-        toast.error('Failed to load revenue tags');
-      } finally {
-        setIsLoadingTags(false);
-      }
-    }
-    
-    fetchTags();
+    fetchRevenueTags();
+    fetchTaggedDates();
   }, []);
+  
+  const fetchRevenueTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('revenue_tags')
+        .select('*')
+        .order('name');
+        
+      if (error) throw error;
+      
+      // Map the DB fields to our client-side types
+      const mappedTags: RevenueTag[] = data.map(tag => ({
+        id: tag.id,
+        name: tag.name,
+        historicalFoodRevenueImpact: tag.historical_food_revenue_impact,
+        historicalBeverageRevenueImpact: tag.historical_beverage_revenue_impact,
+        occurrenceCount: tag.occurrence_count,
+        description: tag.description
+      }));
+      
+      setTags(mappedTags);
+      setIsLoadingTags(false);
+    } catch (error) {
+      console.error('Error fetching revenue tags:', error);
+      toast.error('Failed to load revenue tags');
+      setIsLoadingTags(false);
+    }
+  };
+  
+  const fetchTaggedDates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tagged_dates')
+        .select('*')
+        .order('date');
+        
+      if (error) throw error;
+      
+      // Map the DB fields to our client-side types
+      const mappedTaggedDates: TaggedDate[] = data.map(td => ({
+        id: td.id,
+        date: td.date,
+        tagId: td.tag_id,
+        manualFoodRevenueImpact: td.manual_food_revenue_impact,
+        manualBeverageRevenueImpact: td.manual_beverage_revenue_impact
+      }));
+      
+      setTaggedDates(mappedTaggedDates);
+    } catch (error) {
+      console.error('Error fetching tagged dates:', error);
+      toast.error('Failed to load tagged dates');
+    }
+  };
   
   const handleAddTag = async (tag: Partial<RevenueTag>) => {
     try {
       const { data, error } = await supabase
         .from('revenue_tags')
-        .insert({
-          name: tag.name,
-          historical_food_revenue_impact: tag.historicalFoodRevenueImpact || 0,
-          historical_beverage_revenue_impact: tag.historicalBeverageRevenueImpact || 0,
-          occurrence_count: 0,
-          description: tag.description || ''
-        })
+        .insert([
+          { 
+            name: tag.name,
+            historical_food_revenue_impact: tag.historicalFoodRevenueImpact || 0,
+            historical_beverage_revenue_impact: tag.historicalBeverageRevenueImpact || 0,
+            occurrence_count: tag.occurrenceCount || 0,
+            description: tag.description
+          }
+        ])
         .select();
         
       if (error) throw error;
       
-      if (data && data[0]) {
-        setTags(prev => [...prev, data[0] as RevenueTag]);
-        toast.success('Tag created successfully');
+      if (data && data.length > 0) {
+        const newTag: RevenueTag = {
+          id: data[0].id,
+          name: data[0].name,
+          historicalFoodRevenueImpact: data[0].historical_food_revenue_impact,
+          historicalBeverageRevenueImpact: data[0].historical_beverage_revenue_impact,
+          occurrenceCount: data[0].occurrence_count,
+          description: data[0].description
+        };
+        
+        setTags(prev => [...prev, newTag]);
+        toast.success('Tag added successfully');
       }
     } catch (error) {
-      console.error('Error creating tag:', error);
-      toast.error('Failed to create tag');
+      console.error('Error adding tag:', error);
+      toast.error('Failed to add tag');
     }
   };
   
   const handleTagDate = async (date: Date, tagId: string, impacts?: { food?: number; beverage?: number }) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const existingTaggedDate = taggedDates.find(td => td.date === dateStr);
-    
     try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      
+      // Check if this date is already tagged
+      const existingTaggedDate = taggedDates.find(td => td.date === dateStr);
+      
       if (existingTaggedDate) {
-        const { error } = await supabase
+        // Update the existing tagged date
+        const { error: updateError } = await supabase
           .from('tagged_dates')
           .update({
             tag_id: tagId,
@@ -105,32 +153,37 @@ export default function WeeklyForecast() {
           })
           .eq('id', existingTaggedDate.id);
           
-        if (error) throw error;
+        if (updateError) throw updateError;
         
+        // Update local state
         setTaggedDates(prev => prev.map(td => 
           td.id === existingTaggedDate.id 
-            ? { 
-                ...td, 
-                tagId: tagId,
+            ? {
+                ...td,
+                tagId,
                 manualFoodRevenueImpact: impacts?.food,
                 manualBeverageRevenueImpact: impacts?.beverage
               } 
             : td
         ));
       } else {
+        // Create a new tagged date
         const { data, error } = await supabase
           .from('tagged_dates')
-          .insert({
-            date: dateStr,
-            tag_id: tagId,
-            manual_food_revenue_impact: impacts?.food,
-            manual_beverage_revenue_impact: impacts?.beverage
-          })
+          .insert([
+            {
+              date: dateStr,
+              tag_id: tagId,
+              manual_food_revenue_impact: impacts?.food,
+              manual_beverage_revenue_impact: impacts?.beverage
+            }
+          ])
           .select();
           
         if (error) throw error;
         
-        if (data && data[0]) {
+        if (data && data.length > 0) {
+          // Add to local state
           const newTaggedDate: TaggedDate = {
             id: data[0].id,
             date: data[0].date,
@@ -172,247 +225,160 @@ export default function WeeklyForecast() {
       toast.error('Failed to tag date');
     }
   };
-  
-  if (error) {
-    return (
-      <div className="container py-8 text-[#48495e]">
-        <Card className="mb-6 border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-600">Error Loading Forecast</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{error}</p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={refreshForecast} variant="outline" className="flex items-center gap-2">
-              <RefreshCw size={16} />
-              Retry
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="container py-8 text-[#48495e]">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-[#342640]">Weekly Revenue Forecast</h1>
-        <Button onClick={refreshForecast} variant="outline" className="flex items-center gap-2">
-          <RefreshCw size={16} />
-          Refresh Forecast
-        </Button>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-4">Revenue Forecast</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">Total Forecast</CardTitle>
-            <CardDescription>Expected revenue for the next 7 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-16 w-full" />
-            ) : (
-              <div className="flex flex-col">
-                <span className="text-3xl font-bold">{formatCurrency(totalForecastedRevenue)}</span>
-                <div className="text-sm text-muted-foreground mt-2">
-                  Based on weather forecast and historical patterns
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Weekly Forecast</span>
+                <Button onClick={refreshForecast} disabled={isLoading}>
+                  Refresh Data
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                {isLoading ? 'Loading forecast data...' : 'Projected revenue for the current and upcoming weeks'}
+              </CardDescription>
+              
+              {!isLoading && (
+                <Tabs 
+                  defaultValue="0" 
+                  className="mt-4"
+                  value={selectedWeekIndex.toString()}
+                  onValueChange={(value) => selectWeek(parseInt(value))}
+                >
+                  <TabsList className="grid grid-cols-5 mb-4">
+                    <TabsTrigger value="0">Current Week</TabsTrigger>
+                    <TabsTrigger value="1">Next Week</TabsTrigger>
+                    <TabsTrigger value="2">Week 2</TabsTrigger>
+                    <TabsTrigger value="3">Week 3</TabsTrigger>
+                    <TabsTrigger value="4">Week 4</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value={selectedWeekIndex.toString()}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Day</th>
+                            <th className="text-right py-2">Food</th>
+                            <th className="text-right py-2">Beverage</th>
+                            <th className="text-right py-2">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {forecastData.map((day, index) => (
+                            <tr key={index} className="border-b hover:bg-muted/50">
+                              <td className="py-2">
+                                {format(new Date(day.date), 'EEE, MMM d')}
+                              </td>
+                              <td className="text-right py-2">
+                                {formatCurrency(day.foodRevenue)}
+                              </td>
+                              <td className="text-right py-2">
+                                {formatCurrency(day.beverageRevenue)}
+                              </td>
+                              <td className="text-right py-2 font-medium">
+                                {formatCurrency(day.totalRevenue)}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="bg-muted/20 font-semibold">
+                            <td className="py-2">Weekly Total</td>
+                            <td className="text-right py-2">
+                              {formatCurrency(totalForecastedFoodRevenue)}
+                            </td>
+                            <td className="text-right py-2">
+                              {formatCurrency(totalForecastedBevRevenue)}
+                            </td>
+                            <td className="text-right py-2">
+                              {formatCurrency(totalForecastedRevenue)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </CardHeader>
+          </Card>
+          
+          <RevenueTagManager 
+            tags={tags}
+            taggedDates={taggedDates}
+            onAddTag={handleAddTag}
+            onTagDate={handleTagDate}
+          />
+        </div>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">Food Revenue</CardTitle>
-            <CardDescription>Expected food sales</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-16 w-full" />
-            ) : (
-              <div className="flex flex-col">
-                <span className="text-3xl font-bold">{formatCurrency(totalForecastedFoodRevenue)}</span>
-                <div className="text-sm text-muted-foreground mt-2">
-                  {formatPercentage(totalForecastedFoodRevenue / totalForecastedRevenue)} of total forecast
+        <div>
+          <Card className="shadow-md mb-8">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2">
+                <Sun className="h-5 w-5 text-yellow-500" />
+                Weather Impact Analysis
+              </CardTitle>
+              <CardDescription>How weather affects your business revenue</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="flex items-center gap-2 font-semibold mb-2">
+                    <Thermometer className="h-4 w-4 text-red-500" />
+                    Hot Weather Impact
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {weatherImpactData.hotWeather.map((insight, i) => (
+                      <li key={i}>{insight}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div>
+                  <h4 className="flex items-center gap-2 font-semibold mb-2">
+                    <Cloud className="h-4 w-4 text-gray-500" />
+                    Cold Weather Impact
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {weatherImpactData.coldWeather.map((insight, i) => (
+                      <li key={i}>{insight}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div>
+                  <h4 className="flex items-center gap-2 font-semibold mb-2">
+                    <CloudRain className="h-4 w-4 text-blue-500" />
+                    Rainy Days Impact
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {weatherImpactData.rainyDays.map((insight, i) => (
+                      <li key={i}>{insight}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div>
+                  <h4 className="flex items-center gap-2 font-semibold mb-2">
+                    <Sun className="h-4 w-4 text-yellow-500" />
+                    Sunny Days Impact
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {weatherImpactData.sunnyDays.map((insight, i) => (
+                      <li key={i}>{insight}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">Beverage Revenue</CardTitle>
-            <CardDescription>Expected beverage sales</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-16 w-full" />
-            ) : (
-              <div className="flex flex-col">
-                <span className="text-3xl font-bold">{formatCurrency(totalForecastedBevRevenue)}</span>
-                <div className="text-sm text-muted-foreground mt-2">
-                  {formatPercentage(totalForecastedBevRevenue / totalForecastedRevenue)} of total forecast
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-      
-      <div className="my-6">
-        <RevenueTagManager
-          tags={tags}
-          taggedDates={taggedDates}
-          onAddTag={handleAddTag}
-          onTagDate={handleTagDate}
-        />
-      </div>
-      
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Daily Forecast Breakdown</CardTitle>
-          <CardDescription>7-day forecast with weather impacts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Day</TableHead>
-                  <TableHead>Weather</TableHead>
-                  <TableHead className="text-right">Food Revenue</TableHead>
-                  <TableHead className="text-right">Beverage Revenue</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Confidence</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {forecastData.map(day => (
-                  <TableRow key={day.date}>
-                    <TableCell>{format(parseISO(day.date), 'dd MMM')}</TableCell>
-                    <TableCell>{day.dayOfWeek}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <WeatherIcon description={day.weatherDescription} />
-                        <span>{day.weatherDescription}</span>
-                        <div className="flex items-center text-xs text-gray-500 ml-1">
-                          <Thermometer size={12} className="mr-1" />
-                          {day.temperature}°C
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(day.foodRevenue)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(day.beverageRevenue)}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(day.totalRevenue)}</TableCell>
-                    <TableCell className="text-right">
-                      <ConfidenceBadge confidence={day.confidence} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-        <CardFooter className="text-sm text-muted-foreground">
-          Forecast calculated based on historical data and weather pattern analysis.
-        </CardFooter>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Forecast Methodology</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm space-y-4">
-            <p>
-              This forecast is generated using a combination of historical sales data and weather forecasts. 
-              The system analyzes how different weather conditions have affected sales on specific days of the week
-              over the past three months to create predictions.
-            </p>
-            <p>
-              The confidence score indicates how reliable each prediction is based on the amount of historical data available
-              and the consistency of patterns observed. Higher confidence means more reliable forecasts.
-            </p>
-            <p>
-              Additional factors that influence the forecast:
-            </p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Temperature effects on food vs. beverage sales</li>
-              <li>Precipitation impact on overall footfall</li>
-              <li>Day of week patterns and seasonal trends</li>
-              <li>Recent sales performance</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
-
-const WeatherIcon: React.FC<{ description: string }> = ({ description }) => {
-  const desc = description.toLowerCase();
-  
-  if (desc === 'no weather data' || desc === 'n/a') {
-    return <div className="text-gray-400 text-xs">N/A</div>;
-  }
-  
-  if (desc.includes('rain') || desc.includes('shower') || desc.includes('drizzle')) {
-    return <Droplets size={18} className="text-blue-500" />;
-  } else if (desc.includes('cloud')) {
-    return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-      <path d="M17.5 17H9C6.79086 17 5 15.2091 5 13C5 10.7909 6.79086 9 9 9C9.12581 9 9.25033 9.00461 9.37308 9.01379C10.0483 7.21021 11.8742 6 14 6C16.7614 6 19 8.23858 19 11C19 12.1394 18.5889 13.1869 17.9008 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>;
-  } else if (desc.includes('sun') || desc.includes('clear')) {
-    return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-yellow-500">
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 5V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 21V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M16.9498 7.05025L18.364 5.63604" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M5.63608 18.364L7.05029 16.9498" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M19 12L21 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M3 12L5 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M16.9498 16.9498L18.364 18.364" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M5.63608 5.63602L7.05029 7.05023" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>;
-  } else if (desc.includes('fog') || desc.includes('mist')) {
-    return <Wind size={18} className="text-gray-400" />;
-  } else if (desc.includes('thunder') || desc.includes('storm')) {
-    return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-yellow-600">
-      <path d="M13 9L10 15H14L11 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M16 3L17 7H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>;
-  }
-  
-  return <Thermometer size={18} className="text-gray-500" />;
-};
-
-const ConfidenceBadge: React.FC<{ confidence: number }> = ({ confidence }) => {
-  let variant = "outline";
-  let label = "Low";
-  
-  if (confidence >= 80) {
-    variant = "default";
-    label = "High";
-  } else if (confidence >= 60) {
-    variant = "secondary";
-    label = "Medium";
-  }
-  
-  return (
-    <Badge variant={variant as any} className="whitespace-nowrap">
-      {label} ({confidence}%)
-    </Badge>
-  );
-};

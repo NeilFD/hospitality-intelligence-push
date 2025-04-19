@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -215,8 +214,8 @@ export function RevenueTagManager({
                         <div className="flex-1" onClick={() => setSelectedTag(tag.id)}>
                           <p className="font-medium">{tag.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            Food: {tag.historicalFoodRevenueImpact}% | 
-                            Bev: {tag.historicalBeverageRevenueImpact}%
+                            Food: {tag.historicalFoodRevenueImpact !== undefined ? tag.historicalFoodRevenueImpact : 0}% | 
+                            Bev: {tag.historicalBeverageRevenueImpact !== undefined ? tag.historicalBeverageRevenueImpact : 0}%
                           </p>
                           {tag.description && (
                             <p className="text-xs text-muted-foreground mt-1">{tag.description}</p>
