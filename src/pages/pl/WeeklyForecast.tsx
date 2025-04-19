@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -142,14 +143,27 @@ export default function WeeklyForecast() {
         }
       }
       
-      const { error: tagUpdateError } = await supabase
-        .from('revenue_tags')
-        .update({ 
-          occurrence_count: supabase.rpc('increment', { x: 1 })
-        })
-        .eq('id', tagId);
+      // Update the tag occurrence count directly rather than using the RPC
+      const tagToUpdate = tags.find(t => t.id === tagId);
+      if (tagToUpdate) {
+        const newCount = (tagToUpdate.occurrenceCount || 0) + 1;
         
-      if (tagUpdateError) throw tagUpdateError;
+        const { error: tagUpdateError } = await supabase
+          .from('revenue_tags')
+          .update({ 
+            occurrence_count: newCount
+          })
+          .eq('id', tagId);
+          
+        if (tagUpdateError) throw tagUpdateError;
+        
+        // Update the local state for tags
+        setTags(prev => prev.map(t => 
+          t.id === tagId 
+            ? { ...t, occurrenceCount: newCount } 
+            : t
+        ));
+      }
       
       refreshForecast();
       toast.success('Date tagged successfully');
