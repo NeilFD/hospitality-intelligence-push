@@ -20,6 +20,12 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import {
+  Tooltip as TooltipComponent,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default function FoodBeverageForecast() {
   const [activeTab, setActiveTab] = useState<string>('combined');
@@ -265,20 +271,22 @@ export default function FoodBeverageForecast() {
                         <div className="flex items-center gap-2">
                           {day.dayOfWeek}
                           {tag && (
-                            <HoverCard>
-                              <HoverCardTrigger>
-                                <Tag className="h-4 w-4 text-blue-500" />
-                              </HoverCardTrigger>
-                              <HoverCardContent className="w-80">
-                                <div className="space-y-2">
-                                  <h4 className="text-sm font-semibold">{tag.name}</h4>
-                                  <div className="text-sm">
-                                    <p>Food Revenue Impact: {tag.historicalFoodRevenueImpact}%</p>
-                                    <p>Beverage Revenue Impact: {tag.historicalBeverageRevenueImpact}%</p>
+                            <TooltipProvider>
+                              <TooltipComponent>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Tag className="h-4 w-4 text-blue-500 cursor-pointer" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="p-2 max-w-xs bg-white">
+                                  <div className="space-y-1">
+                                    <p className="font-medium text-sm">{tag.name}</p>
+                                    <p className="text-xs">Food Revenue Impact: {tag.historicalFoodRevenueImpact}%</p>
+                                    <p className="text-xs">Beverage Revenue Impact: {tag.historicalBeverageRevenueImpact}%</p>
                                   </div>
-                                </div>
-                              </HoverCardContent>
-                            </HoverCard>
+                                </TooltipContent>
+                              </TooltipComponent>
+                            </TooltipProvider>
                           )}
                         </div>
                       </TableCell>
