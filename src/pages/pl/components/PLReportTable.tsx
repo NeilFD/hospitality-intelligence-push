@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -34,6 +33,18 @@ export function PLReportTable({
     
     processItems();
   }, [processedBudgetData, refreshTrigger]);
+  
+  useEffect(() => {
+    const handleForecastUpdate = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('forecast-updated', handleForecastUpdate);
+    
+    return () => {
+      window.removeEventListener('forecast-updated', handleForecastUpdate);
+    };
+  }, []);
   
   const getDaysInMonth = () => {
     const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
@@ -309,7 +320,6 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      // Get the forecast amount using the updated function which takes into account the forecast settings
       const forecastAmount = getForecastAmount(item, currentYear, getMonthNumber(currentMonthName));
       
       const shouldHighlight = 

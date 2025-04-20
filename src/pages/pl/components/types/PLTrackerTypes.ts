@@ -23,5 +23,5 @@ export interface DayInput {
   day: number;
   value: number;
   id?: string;
-  date?: Date; // Add optional date property to support existing code
+  date?: Date; // Optional date property to support existing code
 }

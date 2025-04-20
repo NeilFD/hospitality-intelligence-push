@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -91,7 +90,6 @@ export function calculateSummaryProRatedBudget(
   return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
 }
 
-// Changed from async to sync function to fix type issues
 export function getActualAmount(item: PLTrackerBudgetItem): number {
   if (item.isHeader) {
     return 0;
@@ -136,30 +134,74 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   return 0;
 }
 
-// Now making this function sync by using the forecast settings directly from the item
 export function getForecastAmount(
   item: PLTrackerBudgetItem,
   year: number,
   month: number
 ): number {
-  // Default to budget amount if no forecast settings available
-  if (!item.forecast_settings) {
-    return item.budget_amount || 0;
+  if (item.forecast_settings) {
+    const method = item.forecast_settings.method;
+    const discreteValues = item.forecast_settings.discrete_values || {};
+    
+    switch (method) {
+      case 'fixed':
+        return item.budget_amount || 0;
+      
+      case 'discrete': {
+        let total = 0;
+        if (discreteValues && typeof discreteValues === 'object') {
+          const values = Object.values(discreteValues);
+          for (const value of values) {
+            if (typeof value === 'number') {
+              total += value;
+            } else if (typeof value === 'string') {
+              const parsed = parseFloat(value);
+              if (!isNaN(parsed)) {
+                total += parsed;
+              }
+            }
+          }
+        }
+        return total;
+      }
+      
+      case 'fixed_plus': {
+        let dailyTotal = 0;
+        if (discreteValues && typeof discreteValues === 'object') {
+          const values = Object.values(discreteValues);
+          for (const value of values) {
+            if (typeof value === 'number') {
+              dailyTotal += value;
+            } else if (typeof value === 'string') {
+              const parsed = parseFloat(value);
+              if (!isNaN(parsed)) {
+                dailyTotal += parsed;
+              }
+            }
+          }
+        }
+        return (item.budget_amount || 0) + dailyTotal;
+      }
+      
+      default:
+        return item.budget_amount || 0;
+    }
   }
   
-  const method = item.forecast_settings.method;
-  const discreteValues = item.forecast_settings.discrete_values || {};
+  let forecastAmount = item.budget_amount || 0;
   
-  switch (method) {
-    case 'fixed':
-      return item.budget_amount || 0;
-    
-    case 'discrete': {
-      let total = 0;
-      // Properly cast and handle the discrete values
-      if (discreteValues && typeof discreteValues === 'object') {
-        const values = Object.values(discreteValues);
-        for (const value of values) {
+  const cacheKey = `forecast_${item.name}_${year}_${month}`;
+  const cachedSettings = localStorage.getItem(cacheKey);
+  
+  if (cachedSettings) {
+    try {
+      const settings = JSON.parse(cachedSettings);
+      if (settings.method === 'fixed') {
+        return item.budget_amount || 0;
+      } else if (settings.method === 'discrete') {
+        let total = 0;
+        const discreteValues = settings.discrete_values || {};
+        Object.values(discreteValues).forEach((value: any) => {
           if (typeof value === 'number') {
             total += value;
           } else if (typeof value === 'string') {
@@ -168,17 +210,12 @@ export function getForecastAmount(
               total += parsed;
             }
           }
-        }
-      }
-      return total;
-    }
-    
-    case 'fixed_plus': {
-      let dailyTotal = 0;
-      // Properly cast and handle the discrete values
-      if (discreteValues && typeof discreteValues === 'object') {
-        const values = Object.values(discreteValues);
-        for (const value of values) {
+        });
+        return total;
+      } else if (settings.method === 'fixed_plus') {
+        let dailyTotal = 0;
+        const discreteValues = settings.discrete_values || {};
+        Object.values(discreteValues).forEach((value: any) => {
           if (typeof value === 'number') {
             dailyTotal += value;
           } else if (typeof value === 'string') {
@@ -187,14 +224,15 @@ export function getForecastAmount(
               dailyTotal += parsed;
             }
           }
-        }
+        });
+        return (item.budget_amount || 0) + dailyTotal;
       }
-      return (item.budget_amount || 0) + dailyTotal;
+    } catch (e) {
+      console.error('Error parsing cached forecast settings:', e);
     }
-    
-    default:
-      return item.budget_amount || 0;
   }
+  
+  return forecastAmount;
 }
 
 export function calculateProRatedActual(

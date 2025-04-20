@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -103,8 +102,19 @@ export function ForecastSettingsControl({
         discrete_values: dailyValues
       });
 
+    const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
+    localStorage.setItem(cacheKey, JSON.stringify({
+      method: selectedMethod,
+      discrete_values: dailyValues
+    }));
+
     setIsEditing(false);
     onMethodChange(selectedMethod);
+
+    const event = new CustomEvent('forecast-updated', {
+      detail: { itemName, method: selectedMethod, values: dailyValues }
+    });
+    window.dispatchEvent(event);
   };
 
   const renderDailyInputs = () => {
