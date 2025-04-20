@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -65,6 +64,25 @@ export function TrackerSummaryRows({
   // Calculate the variance between forecast and budget for admin expenses
   const adminBudgetVariance = adminForecast - adminTotalBudget;
 
+  // Find Turnover item for percentage calculations
+  const turnoverItem = trackedBudgetData.find(item => 
+    item.name.toLowerCase() === 'turnover' || 
+    item.name.toLowerCase() === 'total revenue'
+  );
+  
+  const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
+  const turnoverForecast = turnoverItem?.forecast_amount || 0;
+
+  // Calculate percentages
+  const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
+  const adminForecastPercentage = turnoverForecast ? (adminForecast / turnoverForecast) * 100 : 0;
+  
+  const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
+  const opForecastPercentage = turnoverForecast ? (opForecast / turnoverForecast) * 100 : 0;
+
+  console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
+  console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
+
   // Find Gross Profit item
   const grossProfitItem = trackedBudgetData.find(item => 
     (item.name.toLowerCase() === 'gross profit' || 
@@ -129,7 +147,7 @@ export function TrackerSummaryRows({
           {formatCurrency(adminTotalBudget)}
         </TableCell>
         <TableCell className="text-right">
-          {/* Percentage can be added here if needed */}
+          {adminActualPercentage.toFixed(1)}%
         </TableCell>
         <TableCell className="text-right font-bold">
           {formatCurrency(adminExpenses)}
@@ -143,7 +161,7 @@ export function TrackerSummaryRows({
         <TableCell className={`text-right font-bold ${
           adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
         }`}>
-          {formatCurrency(adminBudgetVariance)}
+          {formatCurrency(adminBudgetVariance)} ({adminForecastPercentage.toFixed(1)}%)
         </TableCell>
       </TableRow>
       
@@ -156,7 +174,7 @@ export function TrackerSummaryRows({
           {formatCurrency(operatingProfitBudget)}
         </TableCell>
         <TableCell className="text-right">
-          {/* Percentage can be added here if needed */}
+          {opActualPercentage.toFixed(1)}%
         </TableCell>
         <TableCell className="text-right font-bold">
           {formatCurrency(operatingProfit)}
@@ -170,7 +188,7 @@ export function TrackerSummaryRows({
         <TableCell className={`text-right font-bold ${
           opForecastVariance > 0 ? 'text-green-200' : 'text-red-300'
         }`}>
-          {formatCurrency(opForecastVariance)}
+          {formatCurrency(opForecastVariance)} ({opForecastPercentage.toFixed(1)}%)
         </TableCell>
       </TableRow>
     </>
