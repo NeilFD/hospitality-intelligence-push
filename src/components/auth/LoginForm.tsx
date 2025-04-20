@@ -1,17 +1,15 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/services/auth-service';
-import { Checkbox } from '@/components/ui/checkbox';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isDevLogin, setIsDevLogin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     login,
@@ -21,49 +19,19 @@ export default function LoginForm() {
   } = useAuthStore();
   const navigate = useNavigate();
   
-  // Reset loading state when component loads
-  useEffect(() => {
-    setIsSubmitting(false);
-  }, []);
-  
-  // Reset isSubmitting when error changes or login completes
-  useEffect(() => {
-    if (error || !isLoading) {
-      setIsSubmitting(false);
-    }
-  }, [error, isLoading]);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     setIsSubmitting(true);
     
     try {
-      console.log(`Attempting to login with email: ${isDevLogin ? 'dev@example.com' : email}`);
-      
-      // If dev login is checked, set the email to dev email
-      if (isDevLogin) {
-        await login('dev@example.com', password);
-      } else {
-        await login(email, password);
-      }
+      await login(email, password);
       
       // Navigate to dashboard on successful login
-      // The navigation will happen after loadUser completes in the login function
       navigate('/');
     } catch (err) {
-      // Error is handled by the login function in the store
       console.error('Login form error:', err);
       setIsSubmitting(false);
-    }
-  };
-  
-  const toggleDevLogin = () => {
-    setIsDevLogin(!isDevLogin);
-    if (!isDevLogin) {
-      setEmail('dev@example.com');
-    } else {
-      setEmail('');
     }
   };
 
@@ -94,9 +62,8 @@ export default function LoginForm() {
               id="email" 
               type="email" 
               placeholder="Enter your email" 
-              value={isDevLogin ? 'dev@example.com' : email} 
-              onChange={e => !isDevLogin && setEmail(e.target.value)} 
-              disabled={isDevLogin}
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
               required 
               className="bg-white/10 border-white/20 text-gray-800 placeholder:text-gray-500 focus:bg-white/15 transition-all duration-300" 
             />
@@ -119,20 +86,6 @@ export default function LoginForm() {
             />
           </motion.div>
         </motion.div>
-        <div className="text-sm text-gray-500">
-          {isDevLogin ? "Default dev password is 'password123' (unless changed)" : ""}
-        </div>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Checkbox 
-          id="devMode" 
-          checked={isDevLogin} 
-          onCheckedChange={toggleDevLogin} 
-        />
-        <Label htmlFor="devMode" className="text-gray-700 text-sm cursor-pointer">
-          Login as Developer GOD
-        </Label>
       </div>
       
       <motion.div whileHover={{
