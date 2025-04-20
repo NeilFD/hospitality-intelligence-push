@@ -74,6 +74,23 @@ export function TrackerSummaryRows({
   const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
   const turnoverBudget = turnoverItem ? turnoverItem.budget_amount || 0 : 0;
   const turnoverForecast = turnoverItem?.forecast_amount || 0;
+  
+  console.log(`Turnover forecast amount: ${turnoverForecast}`);
+  
+  // If turnoverForecast is 0 or undefined, try to calculate it
+  let effectiveTurnoverForecast = turnoverForecast;
+  if (!effectiveTurnoverForecast && turnoverItem && dayOfMonth > 0) {
+    // Try to calculate from actual turnover
+    const turnoverActualAmount = getActualAmount(turnoverItem);
+    if (turnoverActualAmount > 0) {
+      effectiveTurnoverForecast = (turnoverActualAmount / dayOfMonth) * daysInMonth;
+      console.log(`Calculated effective turnover forecast: ${effectiveTurnoverForecast}`);
+    } else {
+      // Fallback to budget
+      effectiveTurnoverForecast = turnoverBudget;
+      console.log(`Using turnover budget as fallback for forecast: ${effectiveTurnoverForecast}`);
+    }
+  }
 
   // Find Gross Profit item
   const grossProfitItem = trackedBudgetData.find(item => 
@@ -108,14 +125,14 @@ export function TrackerSummaryRows({
   // Calculate percentages - MOVED AFTER the variables are declared
   const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
   const adminBudgetPercentage = turnoverBudget ? (adminTotalBudget / turnoverBudget) * 100 : 0;
-  const adminForecastPercentage = turnoverForecast ? (adminForecast / turnoverForecast) * 100 : 0;
+  const adminForecastPercentage = effectiveTurnoverForecast ? (adminForecast / effectiveTurnoverForecast) * 100 : 0;
   
   const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
   const opBudgetPercentage = turnoverBudget ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
-  const opForecastPercentage = turnoverForecast ? (opForecast / turnoverForecast) * 100 : 0;
+  const opForecastPercentage = effectiveTurnoverForecast ? (opForecast / effectiveTurnoverForecast) * 100 : 0;
 
-  console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
-  console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
+  console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${effectiveTurnoverForecast}`);
+  console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${effectiveTurnoverForecast}`);
   
   console.log(`Admin budget: ${adminTotalBudget}, Admin forecast: ${adminForecast}, Admin variance: ${adminBudgetVariance}`);
   console.log(`Operating profit budget: ${operatingProfitBudget}, Actual OP: ${actualOperatingProfit}, Forecast OP: ${opForecast}, OP variance: ${opForecastVariance}`);
