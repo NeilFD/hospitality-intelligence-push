@@ -182,9 +182,18 @@ export async function fetchForecastSettings(itemName: string, year: number, mont
 
 export function calculateForecastFromSettings(
   settings: any,
-  budgetAmount: number
+  budgetAmount: number,
+  actualAmount?: number,
+  daysInMonth?: number,
+  dayOfMonth?: number
 ): number {
-  if (!settings) return budgetAmount || 0;
+  if (!settings) {
+    // If there are no settings but we have actuals and days, use them for projection
+    if (actualAmount && actualAmount !== 0 && dayOfMonth && dayOfMonth > 0) {
+      return (actualAmount / dayOfMonth) * (daysInMonth || 30);
+    }
+    return budgetAmount || 0;
+  }
   
   const method = settings.method;
   const discreteValues = settings.discrete_values || {};
@@ -235,9 +244,29 @@ export function calculateForecastFromSettings(
 export function getForecastAmount(
   item: PLTrackerBudgetItem | any,
   year: number,
-  month: number
+  month: number,
+  daysInMonth: number = 30,
+  dayOfMonth: number = 19
 ): number {
-  // If the forecast_amount is already set and not zero, use it
+  const itemName = item.name.toLowerCase();
+  const actualAmount = getActualAmount(item);
+  
+  // For revenue/sales, COS, GP, and wages, use MTD projection
+  if (itemName.includes('revenue') || 
+      itemName.includes('sales') || 
+      itemName === 'turnover' ||
+      itemName.includes('cost of sales') ||
+      itemName.includes('cos') ||
+      itemName.includes('gross profit') ||
+      itemName.includes('wages') ||
+      itemName.includes('salaries')) {
+    
+    if (actualAmount && actualAmount !== 0 && dayOfMonth > 0) {
+      return (actualAmount / dayOfMonth) * daysInMonth;
+    }
+  }
+
+  // If forecast_amount is already set and not zero, use it
   if (item.forecast_amount !== undefined && 
       item.forecast_amount !== null && 
       item.forecast_amount !== 0) {
@@ -268,7 +297,7 @@ export function getForecastAmount(
   
   // Calculate the forecast amount based on the settings
   if (forecastSettings) {
-    return calculateForecastFromSettings(forecastSettings, item.budget_amount);
+    return calculateForecastFromSettings(forecastSettings, item.budget_amount, actualAmount, daysInMonth, dayOfMonth);
   }
   
   // If no settings found, use the budget amount
