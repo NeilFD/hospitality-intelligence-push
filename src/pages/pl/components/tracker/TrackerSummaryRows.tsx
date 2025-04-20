@@ -21,58 +21,55 @@ export function TrackerSummaryRows({
   calculateProRatedBudget,
   updateForecastAmount
 }: TrackerSummaryRowsProps) {
-  // Admin Expenses Summary Row
-  const adminExpenses = trackedBudgetData
-    .filter(item => 
-      !item.isHeader && 
-      (item.name.toLowerCase().includes('wages') || 
-      item.name.toLowerCase().includes('salary') || 
-      item.name.toLowerCase().includes('admin') ||
-      item.name.toLowerCase().includes('marketing') ||
-      item.name.toLowerCase().includes('hotel'))
-    )
-    .reduce((sum, item) => sum + (
-      calculateProRatedBudget(item)
-    ), 0);
+  // Filter items that should be included in admin expenses
+  const adminItems = trackedBudgetData.filter(item => 
+    !item.isHeader && 
+    !item.name.toLowerCase().includes('turnover') &&
+    !item.name.toLowerCase().includes('revenue') &&
+    !item.name.toLowerCase().includes('sales') &&
+    !item.name.toLowerCase().includes('cost of sales') &&
+    !item.name.toLowerCase().includes('cos') &&
+    !item.name.toLowerCase().includes('gross profit') &&
+    !item.name.toLowerCase().includes('operating profit')
+  );
+
+  // Calculate prorated and actual admin expenses
+  const adminExpenses = adminItems.reduce((sum, item) => 
+    sum + calculateProRatedBudget(item), 0);
     
-  const adminActualAmount = trackedBudgetData
-    .filter(item => 
-      !item.isHeader && 
-      (item.name.toLowerCase().includes('wages') || 
-      item.name.toLowerCase().includes('salary') || 
-      item.name.toLowerCase().includes('admin') ||
-      item.name.toLowerCase().includes('marketing') ||
-      item.name.toLowerCase().includes('hotel'))
-    )
-    .reduce((sum, item) => sum + getActualAmount(item), 0);
+  const adminActualAmount = adminItems.reduce((sum, item) => 
+    sum + getActualAmount(item), 0);
     
   const adminVariance = adminActualAmount - adminExpenses;
   
   console.log(`Admin expenses: ${adminExpenses}, Admin actual: ${adminActualAmount}, Variance: ${adminVariance}`);
+  console.log('Admin items count:', adminItems.length);
   
   // Calculate admin forecast
   const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
     ? (adminActualAmount / dayOfMonth) * daysInMonth
     : adminExpenses;
 
-  // Operating Profit Summary Row
+  // Find Gross Profit item
   const grossProfitItem = trackedBudgetData.find(item => 
-    item.isHighlighted && item.name.toLowerCase().includes('gross profit'));
+    (item.name.toLowerCase() === 'gross profit' || 
+     item.name.toLowerCase() === 'gross profit/(loss)') &&
+    item.isHighlighted);
     
   const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
+  const grossProfitBudget = grossProfitItem ? calculateProRatedBudget(grossProfitItem) : 0;
   
-  console.log(`Gross profit item: ${grossProfitItem?.name}, actual: ${grossProfitActual}`);
+  console.log(`Gross profit item found: ${grossProfitItem?.name}, budget: ${grossProfitBudget}, actual: ${grossProfitActual}`);
   
-  const operatingProfit = grossProfitItem ? 
-    calculateProRatedBudget(grossProfitItem) - adminExpenses : 0;
-  
+  // Calculate Operating Profit
+  const operatingProfit = grossProfitBudget - adminExpenses;
   const actualOperatingProfit = grossProfitActual - adminActualAmount;
   const opVariance = actualOperatingProfit - operatingProfit;
   
-  console.log(`Gross profit actual: ${grossProfitActual}, Operating profit: ${operatingProfit}, Actual OP: ${actualOperatingProfit}`);
+  console.log(`Operating profit: ${operatingProfit}, Actual OP: ${actualOperatingProfit}, Variance: ${opVariance}`);
   
   // Calculate operating profit forecast
-  const opForecast = actualOperatingProfit > 0 && dayOfMonth > 0
+  const opForecast = actualOperatingProfit !== 0 && dayOfMonth > 0
     ? (actualOperatingProfit / dayOfMonth) * daysInMonth
     : operatingProfit;
     

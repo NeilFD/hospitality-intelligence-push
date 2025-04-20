@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -105,13 +106,13 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   }
 
   // For any item with actual_amount directly set (from revenue sources, COS, or wages)
-  if (item.actual_amount !== undefined && item.actual_amount !== null) {
+  if (typeof item.actual_amount === 'number') {
     console.log(`Item ${item.name} has direct actual_amount: ${item.actual_amount}`);
     return Number(item.actual_amount);
   }
   
   // For items with manually entered actuals
-  if (item.manually_entered_actual !== undefined && item.manually_entered_actual !== null) {
+  if (typeof item.manually_entered_actual === 'number') {
     console.log(`Item ${item.name} has manually_entered_actual: ${item.manually_entered_actual}`);
     return Number(item.manually_entered_actual);
   }
@@ -124,7 +125,7 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   }
   
   // Default return 0 if no actual amount found
-  console.log(`Item ${item.name} has no actual amount, returning 0`);
+  console.log(`Item ${item.name} has no actual amount source, returning 0`);
   return 0;
 }
 

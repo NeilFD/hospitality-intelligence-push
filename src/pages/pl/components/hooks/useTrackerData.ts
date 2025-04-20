@@ -32,7 +32,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         
         // Fetch daily values if the item has an ID and is a discrete tracking item
         let dailyValues: DayInput[] = [];
-        let actualAmount = item.actual_amount || 0;
+        let actualAmount = item.actual_amount !== undefined ? item.actual_amount : 0;
         
         if (item.id && trackingType === 'Discrete') {
           try {
@@ -53,7 +53,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
               // Calculate the total value from daily values
               const totalValue = dailyValues.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
               
-              // For non-special items, update the actual amount
+              // For non-special items, update the actual amount from daily values
               if (!item.name.toLowerCase().includes('revenue') &&
                   !item.name.toLowerCase().includes('turnover') &&
                   !item.name.toLowerCase().includes('cost of sales') &&
@@ -62,7 +62,8 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
                   !item.name.toLowerCase().includes('operating profit') &&
                   !item.name.toLowerCase().includes('wages') &&
                   !item.name.toLowerCase().includes('salary') &&
-                  trackingType === 'Discrete') {
+                  trackingType === 'Discrete' &&
+                  actualAmount === 0) {
                 actualAmount = totalValue;
               }
             }
@@ -79,8 +80,8 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         };
       }));
       
-      // Log the actual amounts for debugging
-      trackedData.forEach(item => {
+      // Log the actual amounts for debugging - include first few items
+      trackedData.slice(0, 5).forEach(item => {
         console.log(`${item.name} actual amount: ${item.actual_amount}, type: ${item.tracking_type}`);
       });
       
@@ -93,7 +94,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
   }, [processedBudgetData]);
   
   // Update forecast amount
-  const updateForecastAmount = (index: number, value: string) => {
+  const updateForecastAmount = useCallback((index: number, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
     
     setTrackedBudgetData(prev => {
@@ -108,10 +109,10 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     });
     
     setHasUnsavedChanges(true);
-  };
+  }, []);
   
   // Update manually entered actual amount
-  const updateManualActualAmount = (index: number, value: string) => {
+  const updateManualActualAmount = useCallback((index: number, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
     
     setTrackedBudgetData(prev => {
@@ -127,10 +128,10 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     });
     
     setHasUnsavedChanges(true);
-  };
+  }, []);
   
   // Update daily values
-  const updateDailyValues = (index: number, dailyValues: DayInput[]) => {
+  const updateDailyValues = useCallback((index: number, dailyValues: DayInput[]) => {
     setTrackedBudgetData(prev => {
       const updated = [...prev];
       
@@ -147,11 +148,15 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       // Calculate total from daily values
       const total = dailyValues.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
       
-      // Update actual_amount for discrete items
+      // Update actual_amount for discrete items if not already set by master data
       if (updated[index].tracking_type === 'Discrete' &&
           !updated[index].isHeader &&
           !updated[index].isGrossProfit &&
-          !updated[index].isOperatingProfit) {
+          !updated[index].isOperatingProfit &&
+          !updated[index].name.toLowerCase().includes('revenue') &&
+          !updated[index].name.toLowerCase().includes('turnover') &&
+          !updated[index].name.toLowerCase().includes('cost of sales') &&
+          !updated[index].name.toLowerCase().includes('cos')) {
         updated[index].actual_amount = total;
       }
       
@@ -159,7 +164,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     });
     
     setHasUnsavedChanges(true);
-  };
+  }, []);
   
   // Save forecast amounts to database
   const saveForecastAmounts = useCallback(async () => {

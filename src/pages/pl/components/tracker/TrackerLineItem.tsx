@@ -131,9 +131,6 @@ export function TrackerLineItem({
     }
   }, [forecastAmount, index, updateForecastAmount, item.name]);
 
-  // Debug log for this item
-  console.log(`Item ${item.name} - actual: ${actualAmount}, forecast: ${forecastAmount}, variance: ${variance}`);
-
   return (
     <TableRow className={rowClassName}>
       <TableCell className={fontClass}>
