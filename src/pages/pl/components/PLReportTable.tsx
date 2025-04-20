@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -377,56 +376,52 @@ export function PLReportTable({
     return allAdminCosts.some(category => lowercaseName.includes(category));
   };
 
-  const calculatePercentageOfTurnover = (amount: number, turnover: number) => {
-    return turnover > 0 ? (amount / turnover) * 100 : 0;
-  };
-
-  const calculatePercentageOfRevenue = (amount: number, revenue: number) => {
-    return revenue > 0 ? (amount / revenue) * 100 : 0;
-  };
-
   const getForecastPercentage = (item: any) => {
     if (!item || !item.name) return '0.0%';
     
+    const name = item.name.toLowerCase();
     const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
+    
     if (forecastAmount === 0) return '0.0%';
     
-    const name = item.name.toLowerCase();
-    
-    const turnoverItem = filteredBudgetData.find(i => 
-      i && i.name && (
-        i.name.toLowerCase() === 'turnover' || 
-        i.name.toLowerCase() === 'total revenue'
+    const turnoverItem = filteredBudgetData.find(item => 
+      item && item.name && (
+        item.name.toLowerCase() === 'turnover' || 
+        item.name.toLowerCase() === 'total revenue'
       )
     );
     
-    const foodRevenueItem = filteredBudgetData.find(i => 
-      i && i.name && (
-        i.name.toLowerCase().includes('food') && 
-        (i.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
+    const foodRevenueItem = filteredBudgetData.find(item => 
+      item && item.name && (
+        item.name.toLowerCase().includes('food') && 
+        (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
     
-    const beverageRevenueItem = filteredBudgetData.find(i => 
-      i && i.name && (
-        (i.name.toLowerCase().includes('beverage') || 
-         i.name.toLowerCase().includes('drink')) && 
-        (i.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
+    const beverageRevenueItem = filteredBudgetData.find(item => 
+      item && item.name && (
+        (item.name.toLowerCase().includes('beverage') || 
+         item.name.toLowerCase().includes('drink')) && 
+        (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
 
     const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
     const foodRevenueForecast = foodRevenueItem?.forecast_amount || 0;
     const beverageRevenueForecast = beverageRevenueItem?.forecast_amount || 0;
-
-    if (name.includes('food') && (name.includes('sales') || name.includes('revenue'))) {
+    
+    if (name === 'turnover' || name === 'total revenue') {
+      return '100.0%';
+    }
+    
+    if (name.includes('food') && (name.includes('revenue') || name.includes('sales'))) {
       return totalTurnoverForecast > 0 
         ? formatPercentage(forecastAmount / totalTurnoverForecast) 
         : '0.0%';
     }
     
     if ((name.includes('beverage') || name.includes('drink') || name.includes('bev')) && 
-        (name.includes('sales') || name.includes('revenue'))) {
+        (name.includes('revenue') || name.includes('sales'))) {
       return totalTurnoverForecast > 0 
         ? formatPercentage(forecastAmount / totalTurnoverForecast) 
         : '0.0%';
@@ -467,10 +462,6 @@ export function PLReportTable({
       return totalTurnoverForecast > 0 
         ? formatPercentage(forecastAmount / totalTurnoverForecast) 
         : '0.0%';
-    }
-    
-    if (name === 'turnover' || name === 'total revenue') {
-      return '100.0%';
     }
     
     if (name.includes('wages') || 
