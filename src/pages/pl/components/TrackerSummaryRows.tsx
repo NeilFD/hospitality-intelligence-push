@@ -157,12 +157,12 @@ export function TrackerSummaryRows({
           {formatCurrency(adminActualAmount)}
         </TableCell>
         <TableCell className="text-right font-bold">
-          {formatCurrency(adminForecast)}
+          {formatCurrency(adminForecast)} ({adminForecastPercentage.toFixed(1)}%)
         </TableCell>
         <TableCell className={`text-right font-bold ${
           adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
         }`}>
-          {formatCurrency(adminBudgetVariance)} ({adminForecastPercentage.toFixed(1)}%)
+          {formatCurrency(adminBudgetVariance)}
         </TableCell>
       </TableRow>
       
@@ -184,12 +184,12 @@ export function TrackerSummaryRows({
           {formatCurrency(actualOperatingProfit)}
         </TableCell>
         <TableCell className="text-right font-bold">
-          {formatCurrency(opForecast)}
+          {formatCurrency(opForecast)} ({opForecastPercentage.toFixed(1)}%)
         </TableCell>
         <TableCell className={`text-right font-bold ${
           opForecastVariance > 0 ? 'text-green-200' : 'text-red-300'
         }`}>
-          {formatCurrency(opForecastVariance)} ({opForecastPercentage.toFixed(1)}%)
+          {formatCurrency(opForecastVariance)}
         </TableCell>
       </TableRow>
     </>
