@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -241,26 +242,35 @@ export function PLReportTable({
 
   const isCostEditableRow = (name: string) => {
     const lowercaseName = name.toLowerCase();
-    const editableCategories = [
+    
+    // All editable cost categories
+    const allAdminCosts = [
       'marketing',
       'training',
-      'subscriptions',
       'printing',
       'stationery',
       'telephone',
-      'computer costs',
+      'computer',
+      'it costs',
       'bank charges',
       'accountancy',
-      'legal & professional',
+      'legal',
+      'professional',
       'recruitment',
       'sundry expenses',
+      'sundry',
       'hotel',
-      'travel'
+      'travel',
+      'administration',
+      'advertising',
+      'cleaning',
+      'office expenses',
+      'postage',
+      'subscriptions'
     ];
     
-    return editableCategories.some(category => 
-      lowercaseName.includes(category)
-    );
+    // Match if any of the words appear in the item name
+    return allAdminCosts.some(category => lowercaseName.includes(category));
   };
 
   const renderTableContent = () => {
