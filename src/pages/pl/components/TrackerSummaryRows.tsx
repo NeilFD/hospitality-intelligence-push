@@ -2,7 +2,7 @@
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
-import { PLTrackerBudgetItem } from '../types/PLTrackerTypes';
+import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
 
 interface TrackerSummaryRowsProps {
   trackedBudgetData: PLTrackerBudgetItem[];
