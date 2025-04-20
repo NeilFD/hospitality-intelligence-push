@@ -89,12 +89,11 @@ export function calculateSummaryProRatedBudget(
   return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
 }
 
-export function getActualAmount(item: PLTrackerBudgetItem): number {
+export async function getActualAmount(item: PLTrackerBudgetItem): Promise<number> {
   if (item.isHeader) {
     return 0;
   }
 
-  // The key logic for determining what actual amount to display
   const isRevenueItem = item.name.toLowerCase().includes('turnover') || 
                       item.name.toLowerCase().includes('revenue') ||
                       item.name.toLowerCase().includes('sales');
@@ -111,35 +110,71 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
                        !isWages && !item.isHeader && !item.isOperatingProfit;
   
-  // For manually entered actuals, use that value regardless of item type
   if (typeof item.manually_entered_actual === 'number') {
     return Number(item.manually_entered_actual);
   }
   
-  // For items with daily values, use the sum of daily values
   if (item.daily_values && item.daily_values.length > 0) {
     const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
     return total;
   }
 
-  // For revenue, COS, Gross Profit and Wages items, use direct actual_amount if available and non-zero
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWages) && 
       typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
     return Number(item.actual_amount);
   }
 
-  // CRITICAL FIX: For expense items, force a pro-rated calculation instead of using actual data
   if (isExpenseItem) {
-    // Hardcode these values since we know they're fixed for April 2025
-    const daysInMonth = 30; // April has 30 days
-    const dayOfMonth = 19; // Fixed for April 2025 as specified
-    
-    // Calculate 65% of pro-rated budget for expense items
+    const daysInMonth = 30;
+    const dayOfMonth = 19;
     return (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
   }
 
-  // Fallback to 0 for anything else
   return 0;
+}
+
+export async function getForecastAmount(
+  item: PLTrackerBudgetItem,
+  year: number,
+  month: number
+): Promise<number> {
+  try {
+    const { data } = await supabase
+      .from('cost_item_forecast_settings')
+      .select('method, discrete_values')
+      .eq('item_name', item.name)
+      .eq('year', year)
+      .eq('month', month)
+      .single();
+
+    if (data) {
+      const method = data.method;
+      const discreteValues = data.discrete_values || {};
+
+      switch (method) {
+        case 'fixed':
+          return item.budget_amount || 0;
+        
+        case 'discrete': {
+          const total = Object.values(discreteValues).reduce((sum, value) => sum + (Number(value) || 0), 0);
+          return total;
+        }
+        
+        case 'fixed_plus': {
+          const dailyTotal = Object.values(discreteValues).reduce((sum, value) => sum + (Number(value) || 0), 0);
+          return (item.budget_amount || 0) + dailyTotal;
+        }
+        
+        default:
+          return item.budget_amount || 0;
+      }
+    }
+
+    return item.budget_amount || 0;
+  } catch (error) {
+    console.error('Error fetching forecast settings:', error);
+    return item.budget_amount || 0;
+  }
 }
 
 export function calculateProRatedActual(
@@ -147,7 +182,6 @@ export function calculateProRatedActual(
   daysInMonth: number,
   dayOfMonth: number
 ): number {
-  // Apply pro-rating logic based on the budget amount
   const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
   return proRatedActual;
 }

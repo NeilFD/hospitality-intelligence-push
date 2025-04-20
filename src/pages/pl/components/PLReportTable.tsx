@@ -334,27 +334,25 @@ export function PLReportTable({
           <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(item.budget_amount)}
           </TableCell>
-          <TableCell className={`text-right ${fontClass} ${boldValueClass} ${isOperatingProfit ? getValueColor(actualAmount || 0) : ''}`}>
-            <div className="flex items-center justify-end">
-              {formatCurrency(actualAmount)}
-              {isCostEditableRow(item.name) && (
-                <ForecastSettingsControl
-                  itemName={item.name}
-                  budgetAmount={item.budget_amount || 0}
-                  currentYear={currentYear}
-                  currentMonth={getMonthNumber(currentMonthName)}
-                  onMethodChange={() => {
-                    window.location.reload();
-                  }}
-                />
-              )}
-            </div>
-          </TableCell>
-          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+          <TableCell className="text-right">
             {percentageDisplay ? percentageDisplay : ""}
           </TableCell>
-          <TableCell className={`text-right ${fontClass} ${boldValueClass} ${isOperatingProfit ? getValueColor(forecastAmount) : ''}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+            {formatCurrency(actualAmount)}
+          </TableCell>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(forecastAmount)}
+            {isCostEditableRow(item.name) && (
+              <ForecastSettingsControl
+                itemName={item.name}
+                budgetAmount={item.budget_amount || 0}
+                currentYear={currentYear}
+                currentMonth={getMonthNumber(currentMonthName)}
+                onMethodChange={() => {
+                  window.location.reload();
+                }}
+              />
+            )}
           </TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
             {formatCurrency(varianceAmount)}
@@ -378,8 +376,8 @@ export function PLReportTable({
             <TableRow className="bg-gray-50">
               <TableHead className="w-[240px] font-bold">Item</TableHead>
               <TableHead className="text-right font-bold">Budget</TableHead>
-              <TableHead className="text-right font-bold">Actual MTD</TableHead>
               <TableHead className="text-right font-bold">%</TableHead>
+              <TableHead className="text-right font-bold">Actual MTD</TableHead>
               <TableHead className="text-right font-bold">Forecast</TableHead>
               <TableHead className="text-right font-bold">Variance</TableHead>
             </TableRow>
@@ -397,10 +395,10 @@ export function PLReportTable({
                       <Skeleton className="h-4 w-[80px] ml-auto" />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
+                      <Skeleton className="h-4 w-[40px] ml-auto" />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[40px] ml-auto" />
+                      <Skeleton className="h-4 w-[80px] ml-auto" />
                     </TableCell>
                     <TableCell className="text-right">
                       <Skeleton className="h-4 w-[80px] ml-auto" />
