@@ -119,7 +119,8 @@ export function TrackerLineItem({
   }
 
   const shouldShowCalendar = () => {
-    // Only show calendar for Discrete items that aren't revenue, COS, wages or summary items
+    // Strict condition to show calendar ONLY for Discrete items
+    // that aren't special categories or summary items
     return (
       item.tracking_type === 'Discrete' && 
       !isRevenue && 
@@ -128,9 +129,12 @@ export function TrackerLineItem({
       !isGrossProfit && 
       !isOperatingProfit &&
       !item.isHeader && 
-      !item.isHighlighted
+      !item.isHighlighted &&
+      !item.name.toLowerCase().includes('total')
     );
   };
+
+  console.log(`Item: ${item.name}, tracking_type: ${item.tracking_type}, shouldShowCalendar: ${shouldShowCalendar()}`);
 
   return (
     <TableRow className={rowClassName}>

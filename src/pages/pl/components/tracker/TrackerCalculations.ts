@@ -108,19 +108,21 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   });
   
   // Check if item is a summary or special item with preloaded actual_amount
-  if (item.name.toLowerCase().includes('turnover') || 
-      item.name.toLowerCase().includes('revenue') ||
-      item.name.toLowerCase().includes('sales') ||
-      item.name.toLowerCase().includes('cost of sales') ||
-      item.name.toLowerCase().includes('cos') ||
-      item.name.toLowerCase().includes('gross profit') ||
-      item.name.toLowerCase().includes('gross profit/(loss)') ||
-      item.name.toLowerCase().includes('operating profit') ||
-      item.name.toLowerCase().includes('wages') ||
-      item.name.toLowerCase().includes('salary') ||
-      item.isGrossProfit ||
-      item.isOperatingProfit ||
-      item.isHighlighted) {
+  const isSpecialItem = item.name.toLowerCase().includes('turnover') || 
+    item.name.toLowerCase().includes('revenue') ||
+    item.name.toLowerCase().includes('sales') ||
+    item.name.toLowerCase().includes('cost of sales') ||
+    item.name.toLowerCase().includes('cos') ||
+    item.name.toLowerCase().includes('gross profit') ||
+    item.name.toLowerCase().includes('gross profit/(loss)') ||
+    item.name.toLowerCase().includes('operating profit') ||
+    item.name.toLowerCase().includes('wages') ||
+    item.name.toLowerCase().includes('salary') ||
+    item.isGrossProfit ||
+    item.isOperatingProfit ||
+    item.isHighlighted;
+    
+  if (isSpecialItem) {
     return Number(item.actual_amount) || 0;
   }
 

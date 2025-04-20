@@ -45,8 +45,14 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithTrackingType);
   
+  // Ensure all items have a valid tracking_type
+  const enhancedTrackedBudgetData = trackedBudgetData.map(item => ({
+    ...item,
+    tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined
+  }));
+  
   // Filter out header items with null budget values
-  const filteredBudgetData = trackedBudgetData.filter(item => 
+  const filteredBudgetData = enhancedTrackedBudgetData.filter(item => 
     !(item.isHeader && item.budget_amount === 0)
   );
   
@@ -88,7 +94,7 @@ export function PLTracker({
           <PLTrackerContent
             isLoading={isLoading}
             filteredBudgetData={filteredBudgetData}
-            trackedBudgetData={trackedBudgetData}
+            trackedBudgetData={enhancedTrackedBudgetData}
             dayOfMonth={dayOfMonth}
             daysInMonth={daysInMonth}
             updateManualActualAmount={updateManualActualAmount}
@@ -100,7 +106,7 @@ export function PLTracker({
               if (item.isGrossProfit || item.isOperatingProfit || 
                   item.name.toLowerCase().includes('total') ||
                   item.name.toLowerCase() === 'turnover') {
-                return calculateSummaryProRatedBudget(item, daysInMonth, dayOfMonth, trackedBudgetData);
+                return calculateSummaryProRatedBudget(item, daysInMonth, dayOfMonth, enhancedTrackedBudgetData);
               }
               // For regular items, use the standard calculation
               return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
