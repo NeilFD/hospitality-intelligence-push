@@ -58,7 +58,26 @@ export function ForecastSettingsControl({
 
       if (data) {
         setSelectedMethod(data.method as ForecastMethod);
-        setDailyValues(data.discrete_values || {});
+        
+        // Properly handle the discrete_values
+        if (data.discrete_values) {
+          // Ensure we're working with a proper Record<string, number>
+          const parsedValues: Record<string, number> = {};
+          const values = data.discrete_values as Record<string, any>;
+          
+          // Convert all values to numbers
+          Object.keys(values).forEach(key => {
+            const numValue = Number(values[key]);
+            if (!isNaN(numValue)) {
+              parsedValues[key] = numValue;
+            }
+          });
+          
+          setDailyValues(parsedValues);
+        } else {
+          setDailyValues({});
+        }
+        
         setIsEditing(false);
       }
     };
