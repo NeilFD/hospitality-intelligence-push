@@ -1,10 +1,9 @@
+
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { DailyInputDrawer } from './DailyInputDrawer';
-import { Button } from '@/components/ui/button';
-import { CalendarDays } from 'lucide-react';
 
 interface TrackerLineItemProps {
   item: PLTrackerBudgetItem;
@@ -93,20 +92,9 @@ export function TrackerLineItem({
   if (isOperatingProfit && !item.isHighlighted) {
     return null;
   }
-  
-  const handleOpenDailyInput = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDailyInputOpen(true);
-  };
-  
+
   const handleCloseDailyInput = () => {
     setIsDailyInputOpen(false);
-  };
-  
-  const handleSaveDailyValues = (dailyValues: DayInput[]) => {
-    updateDailyValues(index, dailyValues);
-    handleCloseDailyInput();
   };
 
   let percentageDisplay = '';
@@ -122,25 +110,17 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  const isCostItem = !isRevenue && 
-                    !isTurnover && 
-                    !item.isHeader && 
-                    !isGrossProfit && 
-                    !isOperatingProfit && 
-                    !isHighlightedItem && 
-                    !isTotalItem && 
-                    !isWages && 
-                    !isCOS;
-
+  // Calculate forecast amount based on actual amount
   const forecastAmount = actualAmount > 0 && dayOfMonth > 0
     ? (actualAmount / dayOfMonth) * daysInMonth
     : item.budget_amount || 0;
     
+  // Update forecast amount in state when actual amount changes
   React.useEffect(() => {
     if (!isNaN(forecastAmount) && forecastAmount !== 0) {
       updateForecastAmount(index, forecastAmount.toString());
     }
-  }, [actualAmount, dayOfMonth, daysInMonth, index, updateForecastAmount]);
+  }, [forecastAmount, index, updateForecastAmount]);
 
   return (
     <TableRow className={rowClassName}>
@@ -171,7 +151,7 @@ export function TrackerLineItem({
       {isDailyInputOpen && (
         <DailyInputDrawer
           isOpen={isDailyInputOpen}
-          onClose={() => setIsDailyInputOpen(false)}
+          onClose={handleCloseDailyInput}
           onSave={(dailyValues) => {
             updateDailyValues(index, dailyValues);
             setIsDailyInputOpen(false);

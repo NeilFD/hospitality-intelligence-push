@@ -100,10 +100,7 @@ export function calculateSummaryProRatedBudget(
 }
 
 export function getActualAmount(item: PLTrackerBudgetItem): number {
-  // We no longer need to recalculate these values here since the dayOfMonth is now passed
-  // directly from useDateCalculations to all components that need it
-  
-  // Check if item is a summary or special item with preloaded actual_amount
+  // Check if item is a special item with preloaded actual_amount
   const isSpecialItem = item.name.toLowerCase().includes('turnover') || 
     item.name.toLowerCase().includes('revenue') ||
     item.name.toLowerCase().includes('sales') ||
@@ -119,10 +116,11 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     item.isHighlighted;
     
   if (isSpecialItem) {
+    // For revenue, COS, wages, etc. use the actual_amount that's loaded from the respective sources
     return Number(item.actual_amount) || 0;
   }
 
-  // For Pro-Rated items - do not recalculate day values here
+  // For regular Pro-Rated items
   if (item.tracking_type === 'Pro-Rated') {
     return Number(item.actual_amount) || 0;
   }

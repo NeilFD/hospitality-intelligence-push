@@ -51,7 +51,7 @@ export function TrackerSummaryRows({
   // Calculate admin forecast
   const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
     ? (adminActualAmount / dayOfMonth) * daysInMonth
-    : adminExpenses * daysInMonth / dayOfMonth;
+    : adminExpenses;
 
   // Operating Profit Summary Row
   const grossProfitItem = trackedBudgetData.find(item => 
@@ -67,14 +67,14 @@ export function TrackerSummaryRows({
   // Calculate operating profit forecast
   const opForecast = actualOperatingProfit > 0 && dayOfMonth > 0
     ? (actualOperatingProfit / dayOfMonth) * daysInMonth
-    : operatingProfit * daysInMonth / dayOfMonth;
+    : operatingProfit;
     
   // Update forecast value for operating profit in state
   React.useEffect(() => {
     const opIndex = trackedBudgetData.findIndex(i => 
       i.name.toLowerCase().includes('operating profit') && i.isHighlighted);
     
-    if (opIndex >= 0 && !isNaN(opForecast) && opForecast !== 0) {
+    if (opIndex >= 0 && !isNaN(opForecast)) {
       updateForecastAmount(opIndex, opForecast.toString());
     }
   }, [opForecast, trackedBudgetData, updateForecastAmount]);
