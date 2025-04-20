@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -57,6 +57,32 @@ export default function PLDashboard() {
   } = useBudgetData(currentYear, currentMonth);
   
   const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
+  
+  // Load forecast settings for all items
+  useEffect(() => {
+    console.log("Loading forecast settings for all items");
+    const loadForecastSettings = async () => {
+      if (!processedBudgetData || processedBudgetData.length === 0) return;
+      
+      // Pre-load forecast settings for all cost line items
+      processedBudgetData.forEach(item => {
+        const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
+        const cachedSettings = localStorage.getItem(cacheKey);
+        
+        if (cachedSettings) {
+          console.log(`Found cached forecast settings for ${item.name}:`, cachedSettings);
+          try {
+            // Update the item directly with the forecast settings
+            item.forecast_settings = JSON.parse(cachedSettings);
+          } catch (e) {
+            console.error(`Error parsing cached forecast settings for ${item.name}:`, e);
+          }
+        }
+      });
+    };
+    
+    loadForecastSettings();
+  }, [processedBudgetData, currentYear, currentMonth]);
   
   const updatedBudgetData = processedBudgetData.map(item => {
     if (masterRevenueData && !isLoading) {
@@ -143,11 +169,13 @@ export default function PLDashboard() {
     
     const result = { ...item };
     
+    // Load forecast settings from localStorage if not already set
     if (!result.forecast_settings) {
       const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
       const cachedSettings = localStorage.getItem(cacheKey);
       if (cachedSettings) {
         try {
+          console.log(`Loading cached forecast settings for ${item.name}:`, cachedSettings);
           result.forecast_settings = JSON.parse(cachedSettings);
         } catch (e) {
           console.error('Error parsing cached forecast settings:', e);

@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -135,14 +136,13 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
 }
 
 export function getForecastAmount(
-  item: PLTrackerBudgetItem,
+  item: PLTrackerBudgetItem | any,
   year: number,
   month: number
 ): number {
-  const cacheKey = `forecast_${item.name}_${year}_${month}`;
-  const cachedSettings = localStorage.getItem(cacheKey);
-  
+  // First, check if the item itself has forecast_settings
   if (item.forecast_settings) {
+    console.log(`Using direct forecast_settings for ${item.name}:`, item.forecast_settings);
     const method = item.forecast_settings.method;
     const discreteValues = item.forecast_settings.discrete_values || {};
     
@@ -153,8 +153,7 @@ export function getForecastAmount(
       case 'discrete': {
         let total = 0;
         if (discreteValues && typeof discreteValues === 'object') {
-          const values = Object.values(discreteValues);
-          for (const value of values) {
+          Object.values(discreteValues).forEach((value: any) => {
             if (typeof value === 'number') {
               total += value;
             } else if (typeof value === 'string') {
@@ -163,16 +162,16 @@ export function getForecastAmount(
                 total += parsed;
               }
             }
-          }
+          });
         }
+        console.log(`Calculated discrete total for ${item.name}: ${total}`);
         return total;
       }
       
       case 'fixed_plus': {
         let dailyTotal = 0;
         if (discreteValues && typeof discreteValues === 'object') {
-          const values = Object.values(discreteValues);
-          for (const value of values) {
+          Object.values(discreteValues).forEach((value: any) => {
             if (typeof value === 'number') {
               dailyTotal += value;
             } else if (typeof value === 'string') {
@@ -181,9 +180,11 @@ export function getForecastAmount(
                 dailyTotal += parsed;
               }
             }
-          }
+          });
         }
-        return (item.budget_amount || 0) + dailyTotal;
+        const result = (item.budget_amount || 0) + dailyTotal;
+        console.log(`Calculated fixed_plus total for ${item.name}: ${result} (${item.budget_amount} + ${dailyTotal})`);
+        return result;
       }
       
       default:
@@ -191,8 +192,13 @@ export function getForecastAmount(
     }
   }
   
+  // Second, try to get settings from localStorage
+  const cacheKey = `forecast_${item.name}_${year}_${month}`;
+  const cachedSettings = localStorage.getItem(cacheKey);
+  
   if (cachedSettings) {
     try {
+      console.log(`Using cached forecast settings for ${item.name}:`, cachedSettings);
       const settings = JSON.parse(cachedSettings);
       
       if (settings.method === 'fixed') {
@@ -210,6 +216,7 @@ export function getForecastAmount(
             }
           }
         });
+        console.log(`Calculated discrete total from localStorage for ${item.name}: ${total}`);
         return total;
       } else if (settings.method === 'fixed_plus') {
         let dailyTotal = 0;
@@ -224,13 +231,16 @@ export function getForecastAmount(
             }
           }
         });
-        return (item.budget_amount || 0) + dailyTotal;
+        const result = (item.budget_amount || 0) + dailyTotal;
+        console.log(`Calculated fixed_plus total from localStorage for ${item.name}: ${result} (${item.budget_amount} + ${dailyTotal})`);
+        return result;
       }
     } catch (e) {
       console.error('Error parsing cached forecast settings:', e);
     }
   }
   
+  // Fall back to budget amount
   return item.budget_amount || 0;
 }
 

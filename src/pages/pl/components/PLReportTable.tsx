@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -20,6 +19,7 @@ export function PLReportTable({
   currentYear,
 }: PLReportTableProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [renderedData, setRenderedData] = useState<any[]>([]);
   
   const getMonthNumber = (monthName: string) => {
     const months = ["January", "February", "March", "April", "May", "June", 
@@ -31,7 +31,7 @@ export function PLReportTable({
   
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
-      console.log("Forecast updated event received, refreshing PLReportTable...", event.detail);
+      console.log("PLReportTable: Forecast updated event received", event.detail);
       setRefreshTrigger(prev => prev + 1);
     };
 
@@ -41,6 +41,24 @@ export function PLReportTable({
       window.removeEventListener('forecast-updated', handleForecastUpdate);
     };
   }, []);
+  
+  useEffect(() => {
+    console.log("PLReportTable: Processing data with current forecast settings");
+    
+    if (processedBudgetData && processedBudgetData.length > 0) {
+      const processedData = JSON.parse(JSON.stringify(processedBudgetData));
+      
+      const updatedData = processedData.map((item: any) => {
+        const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
+        return { 
+          ...item,
+          forecast_amount: forecastAmount
+        };
+      });
+      
+      setRenderedData(updatedData);
+    }
+  }, [processedBudgetData, refreshTrigger, currentYear, currentMonth]);
   
   const getDaysInMonth = () => {
     const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
@@ -153,11 +171,11 @@ export function PLReportTable({
   };
 
   const filteredBudgetData = React.useMemo(() => {
-    if (!processedBudgetData || processedBudgetData.length === 0) {
+    if (!renderedData || renderedData.length === 0) {
       return [];
     }
     
-    const data = JSON.parse(JSON.stringify(processedBudgetData));
+    const data = JSON.parse(JSON.stringify(renderedData));
     
     const grossProfitRows = data
       .map((item: any, index: number) => {
@@ -210,7 +228,7 @@ export function PLReportTable({
       const name = item.name.trim().toLowerCase();
       return name !== "total";
     });
-  }, [processedBudgetData]);
+  }, [renderedData]);
 
   const getValueColor = (value: number, isCostLine: boolean = false) => {
     if (isCostLine) {
@@ -251,7 +269,6 @@ export function PLReportTable({
   const isCostEditableRow = (name: string) => {
     const lowercaseName = name.toLowerCase();
     
-    // All editable cost categories
     const allAdminCosts = [
       'marketing',
       'training',
@@ -292,7 +309,6 @@ export function PLReportTable({
       'other staff'
     ];
     
-    // Match if any of the words appear in the item name
     return allAdminCosts.some(category => lowercaseName.includes(category));
   };
 
@@ -307,12 +323,10 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      // Recalculate the forecast amount on every render and when refreshTrigger changes
-      const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
-      console.log(`Item ${item.name} - Forecast amount calculated: ${forecastAmount}`);
+      const forecastAmount = item.forecast_amount !== undefined ? item.forecast_amount : 
+                            getForecastAmount(item, currentYear, currentMonth);
       
-      // Update the item's forecast amount for variance calculations
-      item.forecast_amount = forecastAmount;
+      console.log(`Rendering ${item.name}: forecast_amount=${forecastAmount}, budget=${item.budget_amount}`);
       
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 
@@ -363,6 +377,7 @@ export function PLReportTable({
                 currentYear={currentYear}
                 currentMonth={currentMonth}
                 onMethodChange={() => {
+                  console.log(`ForecastSettingsControl onMethodChange triggered for ${item.name}`);
                   setRefreshTrigger(prev => prev + 1);
                 }}
               />

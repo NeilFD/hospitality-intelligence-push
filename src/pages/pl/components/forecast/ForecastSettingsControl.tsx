@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Edit2, Save } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { formatCurrency } from '@/lib/utils';
 
 type ForecastMethod = 'fixed' | 'discrete' | 'fixed_plus';
@@ -54,6 +54,7 @@ export function ForecastSettingsControl({
       
       if (cachedSettings) {
         try {
+          console.log(`ForecastSettingsControl: Loading cached settings for ${itemName}:`, cachedSettings);
           const settings = JSON.parse(cachedSettings);
           setSelectedMethod(settings.method as ForecastMethod);
           setDailyValues(settings.discrete_values || {});
@@ -74,6 +75,7 @@ export function ForecastSettingsControl({
         .single();
 
       if (data) {
+        console.log(`ForecastSettingsControl: Loaded database settings for ${itemName}:`, data);
         setSelectedMethod(data.method as ForecastMethod);
         
         // Properly handle the discrete_values
@@ -110,6 +112,11 @@ export function ForecastSettingsControl({
   };
 
   const handleSave = async () => {
+    console.log(`ForecastSettingsControl: Saving settings for ${itemName}:`, {
+      method: selectedMethod,
+      discreteValues: dailyValues
+    });
+    
     // Save to Supabase
     await supabase
       .from('cost_item_forecast_settings')
@@ -145,6 +152,9 @@ export function ForecastSettingsControl({
     
     console.log("Dispatching forecast-updated event", event.detail);
     window.dispatchEvent(event);
+    
+    // Close the dialog when save is complete
+    setOpen(false);
   };
 
   const renderDailyInputs = () => {
