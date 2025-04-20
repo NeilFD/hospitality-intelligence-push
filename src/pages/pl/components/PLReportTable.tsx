@@ -379,10 +379,11 @@ export function PLReportTable({
   const getForecastPercentage = (item: any) => {
     if (!item || !item.name) return '0.0%';
     
-    const name = item.name.toLowerCase();
     const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
     
-    if (forecastAmount === 0) return '0.0%';
+    if (!forecastAmount || forecastAmount === 0) return '0.0%';
+    
+    const name = item.name.toLowerCase();
     
     const turnoverItem = filteredBudgetData.find(item => 
       item && item.name && (
@@ -390,6 +391,7 @@ export function PLReportTable({
         item.name.toLowerCase() === 'total revenue'
       )
     );
+    const totalTurnoverForecast = turnoverItem ? (turnoverItem.forecast_amount || 0) : 0;
     
     const foodRevenueItem = filteredBudgetData.find(item => 
       item && item.name && (
@@ -397,6 +399,7 @@ export function PLReportTable({
         (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
+    const foodRevenueForecast = foodRevenueItem ? (foodRevenueItem.forecast_amount || 0) : 0;
     
     const beverageRevenueItem = filteredBudgetData.find(item => 
       item && item.name && (
@@ -405,10 +408,7 @@ export function PLReportTable({
         (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
-
-    const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
-    const foodRevenueForecast = foodRevenueItem?.forecast_amount || 0;
-    const beverageRevenueForecast = beverageRevenueItem?.forecast_amount || 0;
+    const beverageRevenueForecast = beverageRevenueItem ? (beverageRevenueItem.forecast_amount || 0) : 0;
     
     if (name === 'turnover' || name === 'total revenue') {
       return '100.0%';
@@ -446,7 +446,9 @@ export function PLReportTable({
         : '0.0%';
     }
     
-    if (name === 'beverage gross profit' || name.includes('beverage gross profit') || name.includes('drink gross profit')) {
+    if (name === 'beverage gross profit' || 
+        name.includes('beverage gross profit') || 
+        name.includes('drink gross profit')) {
       return beverageRevenueForecast > 0 
         ? formatPercentage(forecastAmount / beverageRevenueForecast) 
         : '0.0%';
