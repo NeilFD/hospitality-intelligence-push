@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -308,6 +309,7 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
+      // Get the forecast amount using the updated function which takes into account the forecast settings
       const forecastAmount = getForecastAmount(item, currentYear, getMonthNumber(currentMonthName));
       
       const shouldHighlight = 
