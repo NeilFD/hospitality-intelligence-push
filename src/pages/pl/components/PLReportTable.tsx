@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { formatCurrency, formatPercentage } from '@/lib/date-utils';
-import { PLTrackerBudgetItem } from '../types/PLTrackerTypes';
+import { PLTrackerBudgetItem } from '@/pages/pl/components/types/PLTrackerTypes';
 import { TrackerLineItem } from './tracker/TrackerLineItem';
 import { TrackerSummaryRows } from './tracker/TrackerSummaryRows';
 
@@ -33,7 +33,6 @@ export function PLReportTable({
     if (showAllItems) {
       setFilteredBudgetData(budgetData);
     } else {
-      // Filter to show only headers and highlighted items
       setFilteredBudgetData(
         budgetData.filter(item => item.isHeader || item.isHighlighted)
       );
@@ -52,7 +51,6 @@ export function PLReportTable({
     return item.actual_amount || 0;
   };
 
-  // Calculate admin expenses
   const adminExpenses = useMemo(() => {
     return budgetData
       .filter(item => 
@@ -68,17 +66,14 @@ export function PLReportTable({
       .reduce((sum, item) => sum + getActualAmount(item), 0);
   }, [budgetData]);
 
-  // Find gross profit
   const grossProfit = useMemo(() => {
     const grossProfitItem = budgetData.find(item => 
       item.name.toLowerCase().includes('gross profit') && item.isHighlighted);
     return grossProfitItem ? getActualAmount(grossProfitItem) : 0;
   }, [budgetData]);
 
-  // Calculate operating profit
   const operatingProfitActual = grossProfit - adminExpenses;
 
-  // Find budget values
   const grossProfitBudget = useMemo(() => {
     const grossProfitItem = budgetData.find(item => 
       item.name.toLowerCase().includes('gross profit') && item.isHighlighted);
@@ -102,7 +97,6 @@ export function PLReportTable({
 
   const operatingProfitBudget = grossProfitBudget - adminExpensesBudget;
 
-  // Find turnover for percentage calculations
   const turnoverActual = useMemo(() => {
     const turnoverItem = budgetData.find(item => 
       item.name.toLowerCase() === 'turnover' || 
@@ -117,10 +111,8 @@ export function PLReportTable({
     return turnoverItem ? turnoverItem.budget_amount || 0 : 0;
   }, [budgetData]);
 
-  // Calculate percentages
   const operatingProfitActualPercentage = turnoverActual ? (operatingProfitActual / turnoverActual) * 100 : 0;
   
-  // Calculate forecast values
   const operatingProfitForecast = useMemo(() => {
     if (operatingProfitActual && dayOfMonth > 0) {
       return (operatingProfitActual / dayOfMonth) * daysInMonth;
@@ -146,7 +138,6 @@ export function PLReportTable({
 
   const operatingProfitForecastPercentage = turnoverForecast ? (operatingProfitForecast / turnoverForecast) * 100 : 0;
   
-  // Calculate variance
   const operatingProfitVariance = operatingProfitForecast - operatingProfitBudget;
 
   const getValueColor = (value: number) => {
@@ -182,7 +173,6 @@ export function PLReportTable({
           );
         })}
 
-        {/* Updated Operating Profit row styling */}
         <TableRow className="bg-[#D6BCFA] text-[#1A1F2C] hover:bg-[#E5DEFF] transition-colors">
           <TableCell className="font-bold">
             Operating profit

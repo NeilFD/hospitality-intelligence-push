@@ -288,6 +288,39 @@ export default function PLDashboard() {
   
   console.log("Chart data:", chartData);
   
+  const getDaysInMonth = () => {
+    const date = new Date(currentYear, currentMonth, 0);
+    return date.getDate();
+  };
+  
+  const getCurrentDay = () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    if (yesterday.getFullYear() === currentYear && yesterday.getMonth() === currentMonth - 1) {
+      return yesterday.getDate();
+    }
+    
+    const daysInMonth = getDaysInMonth();
+    return Math.min(yesterday.getDate(), daysInMonth);
+  };
+  
+  const daysInMonth = getDaysInMonth();
+  const dayOfMonth = getCurrentDay();
+  
+  const updateManualActualAmount = (index: number, value: string) => {
+    console.log(`Updating manual actual amount for index ${index} to ${value}`);
+  };
+  
+  const updateForecastAmount = (index: number, value: string) => {
+    console.log(`Updating forecast amount for index ${index} to ${value}`);
+  };
+  
+  const updateDailyValues = (index: number, dailyValues: any[]) => {
+    console.log(`Updating daily values for index ${index}`);
+  };
+  
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold mb-6 text-center text-[#342640]">P&L Tracker Dashboard</h1>
       
@@ -308,10 +341,14 @@ export default function PLDashboard() {
       
       <div className="grid grid-cols-1 gap-6">
         <PLReportTable 
-          isLoading={isLoading} 
-          processedBudgetData={updatedBudgetData} 
+          budgetData={updatedBudgetData} 
           currentMonthName={currentMonthName} 
           currentYear={currentYear} 
+          dayOfMonth={dayOfMonth}
+          daysInMonth={daysInMonth}
+          updateManualActualAmount={updateManualActualAmount}
+          updateForecastAmount={updateForecastAmount}
+          updateDailyValues={updateDailyValues}
         />
       </div>
     </div>;
