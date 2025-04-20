@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { fetchBudgetItemTracking, upsertBudgetItemTracking } from '@/services/kitchen-service';
 import { ProcessedBudgetItem } from '../hooks/useBudgetData';
+import { preventOverlap } from '@/lib/utils';
 
 interface PLTrackerBudgetItem extends ProcessedBudgetItem {
   tracking_type: 'Discrete' | 'Pro-Rated';
@@ -226,7 +227,7 @@ export function PLTrackerSettings({
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
-        <CardTitle>P&L Tracker Settings - {currentMonthName} {currentYear}</CardTitle>
+        <CardTitle>{preventOverlap('P&L Tracker Settings - ' + currentMonthName + ' ' + currentYear)}</CardTitle>
         <div className="flex items-center gap-2">
           <Button 
             onClick={saveTrackingSettings} 
@@ -261,10 +262,10 @@ export function PLTrackerSettings({
             <Table>
               <TableHeader>
                 <TableRow className="bg-purple-50">
-                  <TableHead className="w-[250px]">Line Item</TableHead>
-                  <TableHead>Tracking Type</TableHead>
-                  <TableHead className="text-right">Budget Amount</TableHead>
-                  <TableHead className="text-right">Category</TableHead>
+                  <TableHead className="w-[250px]">{preventOverlap('Line Item')}</TableHead>
+                  <TableHead>{preventOverlap('Tracking Type')}</TableHead>
+                  <TableHead className="text-right">{preventOverlap('Budget Amount')}</TableHead>
+                  <TableHead className="text-right">{preventOverlap('Category')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -276,7 +277,7 @@ export function PLTrackerSettings({
                           colSpan={4} 
                           className="font-bold text-sm tracking-wider py-2"
                         >
-                          {item.name}
+                          {preventOverlap(item.name)}
                         </TableCell>
                       </TableRow>
                     );
@@ -294,7 +295,7 @@ export function PLTrackerSettings({
                   return (
                     <TableRow key={i}>
                       <TableCell className={fontClass}>
-                        {item.name}
+                        {preventOverlap(item.name)}
                       </TableCell>
                       <TableCell>
                         {shouldShowTrackingType(item) ? (
@@ -318,7 +319,7 @@ export function PLTrackerSettings({
                         {item.budget_amount.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.category}
+                        {preventOverlap(item.category || '')}
                       </TableCell>
                     </TableRow>
                   );
