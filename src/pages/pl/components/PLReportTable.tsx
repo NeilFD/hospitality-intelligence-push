@@ -202,9 +202,14 @@ export function PLReportTable({
     });
   }, [processedBudgetData]);
 
+  const getValueColor = (value: number) => {
+    if (value > 0) return "text-green-600";
+    if (value < 0) return "text-red-600";
+    return "";
+  };
+
   const renderTableContent = () => {
     return filteredBudgetData.map((item, index) => {
-      // Skip rendering if this is a header item with zero budget amount
       if (item.category === "header" && item.budget_amount === 0) {
         return null;
       }
@@ -212,7 +217,6 @@ export function PLReportTable({
       const fontClass = getFontClass(item.name);
       const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
       
-      // Get the actual amount using the pro-rated calculation logic
       const actualAmount = getActualAmount(item);
       
       const forecastAmount = calculateForecast(actualAmount || 0);
@@ -241,25 +245,26 @@ export function PLReportTable({
         ? "font-bold" 
         : "";
       
+      const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
+      const varianceAmount = forecastAmount - (item.budget_amount || 0);
+      
       return (
         <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
           <TableCell className={`${fontClass} ${boldTitleClass}`}>{item.name}</TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {formatCurrency(item.budget_amount)}
           </TableCell>
-          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass} ${isOperatingProfit ? getValueColor(actualAmount || 0) : ''}`}>
             {formatCurrency(actualAmount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
             {percentageDisplay ? percentageDisplay : ""}
           </TableCell>
-          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass} ${isOperatingProfit ? getValueColor(forecastAmount) : ''}`}>
             {formatCurrency(forecastAmount)}
           </TableCell>
-          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
-            {formatCurrency(
-              forecastAmount - (item.budget_amount || 0)
-            )}
+          <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount)}`}>
+            {formatCurrency(varianceAmount)}
           </TableCell>
         </TableRow>
       );
