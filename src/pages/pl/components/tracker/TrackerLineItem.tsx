@@ -33,7 +33,6 @@ export function TrackerLineItem({
 }: TrackerLineItemProps) {
   const [isDailyInputOpen, setIsDailyInputOpen] = useState(false);
   
-  // Handle header items
   if (item.isHeader) {
     return (
       <TableRow className='bg-[#48495e]/90 text-white'>
@@ -47,7 +46,6 @@ export function TrackerLineItem({
     );
   }
   
-  // Define item types for styling and display logic
   const isGrossProfit = item.isGrossProfit || 
                       item.name.toLowerCase().includes('gross profit') || 
                       item.name.toLowerCase().includes('profit/(loss)');
@@ -73,7 +71,6 @@ export function TrackerLineItem({
                  
   const isHighlightedItem = item.isHighlighted;
   
-  // Determine styling
   let rowClassName = '';
   let fontClass = '';
   
@@ -89,12 +86,10 @@ export function TrackerLineItem({
               item.name.toLowerCase().includes('cost of sales') || 
               isGrossProfit ? 'font-bold' : '';
   
-  // Skip operating profit items that aren't highlighted
   if (isOperatingProfit && !item.isHighlighted) {
     return null;
   }
   
-  // Handle daily input functionality
   const handleOpenDailyInput = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -110,15 +105,12 @@ export function TrackerLineItem({
     handleCloseDailyInput();
   };
 
-  // Calculate percentage for gross profit items
   let percentageDisplay = '';
   if (isGrossProfit && item.name.toLowerCase().includes('food')) {
-    // Get the food sales item
     const foodRevenue = actualAmount > 0 && typeof actualAmount === 'number' ? 
       ((actualAmount / (item.actual_amount || 1)) * 100).toFixed(2) : '0.00';
     percentageDisplay = `${foodRevenue}%`;
   } else if (isGrossProfit && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink'))) {
-    // Get the beverage sales item
     const beverageRevenue = actualAmount > 0 && typeof actualAmount === 'number' ? 
       ((actualAmount / (item.actual_amount || 1)) * 100).toFixed(2) : '0.00';
     percentageDisplay = `${beverageRevenue}%`;
@@ -126,20 +118,16 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  // Determine if this is a regular cost item (not revenue or special item)
-  // Make sure we're correctly identifying regular cost items
   const isCostItem = !isRevenue && 
-                   !isTurnover && 
-                   !item.isHeader && 
-                   !isGrossProfit && 
-                   !isOperatingProfit && 
-                   !isHighlightedItem && 
-                   !isTotalItem && 
-                   !isWages && 
-                   !isCOS;
+                    !isTurnover && 
+                    !item.isHeader && 
+                    !isGrossProfit && 
+                    !isOperatingProfit && 
+                    !isHighlightedItem && 
+                    !isTotalItem && 
+                    !isWages && 
+                    !isCOS;
 
-  // Show calendar ONLY for DISCRETE cost items
-  // This is the critical check - only show if it's a cost item AND tracking type is Discrete
   const showCalendarIcon = isCostItem && item.tracking_type === 'Discrete';
 
   return (
@@ -157,8 +145,18 @@ export function TrackerLineItem({
         {formatCurrency(proRatedBudget)}
       </TableCell>
       
-      <TableCell className={`text-right ${fontClass}`}>
+      <TableCell className={`text-right ${fontClass} relative`}>
         {formatCurrency(actualAmount)}
+        {showCalendarIcon && (
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2"
+            onClick={() => setIsDailyInputOpen(true)}
+          >
+            <CalendarDays className="h-4 w-4 text-purple-600" />
+          </Button>
+        )}
       </TableCell>
       
       <TableCell className="text-right">
@@ -177,6 +175,22 @@ export function TrackerLineItem({
       }`}>
         {formatCurrency(variance)}
       </TableCell>
+
+      {isDailyInputOpen && (
+        <DailyInputDrawer
+          isOpen={isDailyInputOpen}
+          onClose={() => setIsDailyInputOpen(false)}
+          onSave={(dailyValues) => {
+            updateDailyValues(index, dailyValues);
+            setIsDailyInputOpen(false);
+          }}
+          initialValues={item.daily_values || []}
+          itemName={item.name}
+          monthName={currentMonthName}
+          year={currentYear}
+          budgetItemId={item.id}
+        />
+      )}
     </TableRow>
   );
 }
