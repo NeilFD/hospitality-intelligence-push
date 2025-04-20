@@ -33,6 +33,12 @@ export function TrackerSummaryRows({
     !item.name.toLowerCase().includes('operating profit')
   );
 
+  // Logging for debugging
+  console.log('Admin items count for summary:', adminItems.length);
+  adminItems.forEach(item => {
+    console.log(`Admin item: ${item.name}, budget: ${item.budget_amount}, actual: ${getActualAmount(item)}`);
+  });
+
   // Calculate admin expenses - both pro-rated budget and actual amounts
   const adminExpenses = adminItems.reduce((sum, item) => 
     sum + calculateProRatedBudget(item), 0);
@@ -43,7 +49,6 @@ export function TrackerSummaryRows({
   const adminVariance = adminActualAmount - adminExpenses;
   
   console.log(`Admin expenses: ${adminExpenses}, Admin actual: ${adminActualAmount}, Variance: ${adminVariance}`);
-  console.log('Admin items count:', adminItems.length);
   
   // Calculate admin forecast based on actual amounts so far
   const adminForecast = adminActualAmount > 0 && dayOfMonth > 0

@@ -116,6 +116,7 @@ export function TrackerLineItem({
   // Calculate forecast amount based on actual amount - prorating by days
   let forecastAmount = 0;
   
+  // Recalculate the forecast amount based on actual data
   if (actualAmount > 0 && dayOfMonth > 0) {
     // If there's an actual amount, calculate the forecast based on the actual / day ratio
     forecastAmount = (actualAmount / dayOfMonth) * daysInMonth;
@@ -128,7 +129,7 @@ export function TrackerLineItem({
     
   // Update forecast amount in state when actual amount changes
   useEffect(() => {
-    if (!isNaN(forecastAmount)) {
+    if (!isNaN(forecastAmount) && index >= 0) {
       console.log(`Setting forecast for ${item.name}: ${forecastAmount}`);
       updateForecastAmount(index, forecastAmount.toString());
     }
