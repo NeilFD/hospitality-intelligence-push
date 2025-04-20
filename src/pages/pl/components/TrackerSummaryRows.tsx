@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -76,51 +75,52 @@ export function TrackerSummaryRows({
   
   const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
   const turnoverBudget = turnoverItem ? turnoverItem.budget_amount || 0 : 0;
+  
+  // IMPORTANT FIX: Direct access to forecast_amount and ensure it's used
   const turnoverForecast = turnoverItem?.forecast_amount || 0;
+  console.log(`Direct turnover forecast from item: ${turnoverForecast}`);
   
-  console.log(`Turnover actual: ${turnoverActual}, Turnover budget: ${turnoverBudget}, Turnover forecast (initially): ${turnoverForecast}`);
-  
-  // If turnoverForecast is 0 or undefined, try to calculate it
+  // Make sure we have a valid turnover forecast value to use for percentages
+  // If turnover has a forecast_amount, use it directly
   let effectiveTurnoverForecast = turnoverForecast;
-  if (!effectiveTurnoverForecast && turnoverItem && dayOfMonth > 0) {
-    // Try to calculate from actual turnover
+  
+  // If the direct forecast is zero or undefined, calculate from actuals
+  if ((!effectiveTurnoverForecast || effectiveTurnoverForecast === 0) && turnoverItem && dayOfMonth > 0) {
     const turnoverActualAmount = getActualAmount(turnoverItem);
-    console.log(`Trying to calculate effective forecast from actual: ${turnoverActualAmount}`);
+    console.log(`No forecast found, calculating from actual: ${turnoverActualAmount}`);
     
     if (turnoverActualAmount > 0) {
       effectiveTurnoverForecast = (turnoverActualAmount / dayOfMonth) * daysInMonth;
-      console.log(`Calculated effective turnover forecast from actual: ${effectiveTurnoverForecast}`);
+      console.log(`Calculated turnover forecast from actual: ${effectiveTurnoverForecast}`);
     } else {
       // Fallback to budget
       effectiveTurnoverForecast = turnoverBudget;
-      console.log(`Using turnover budget as fallback for forecast: ${effectiveTurnoverForecast}`);
+      console.log(`Using budget as turnover forecast: ${effectiveTurnoverForecast}`);
     }
   }
   
-  // Additional fallback if effectiveTurnoverForecast is still 0
-  if (!effectiveTurnoverForecast) {
-    // Find all revenue items
+  // Final fallback if we still don't have a value
+  if (!effectiveTurnoverForecast || effectiveTurnoverForecast === 0) {
+    // Find revenue items
     const revenueItems = trackedBudgetData.filter(item =>
       item.name.toLowerCase().includes('revenue') ||
       item.name.toLowerCase().includes('sales')
     );
     
-    console.log(`Found ${revenueItems.length} revenue items for forecast calculation`);
+    console.log(`Looking at ${revenueItems.length} revenue items for forecast`);
     
-    // Calculate forecast sum from all revenue items
+    // Sum up revenue forecasts
     let revenueForecastSum = 0;
     for (const item of revenueItems) {
-      const itemForecast = item.forecast_amount || 0;
-      const itemActual = getActualAmount(item);
-      
-      if (itemForecast > 0) {
-        revenueForecastSum += itemForecast;
-      } else if (itemActual > 0 && dayOfMonth > 0) {
-        // Project from actual
-        revenueForecastSum += (itemActual / dayOfMonth) * daysInMonth;
+      if (item.forecast_amount && item.forecast_amount > 0) {
+        revenueForecastSum += item.forecast_amount;
       } else {
-        // Fallback to budget
-        revenueForecastSum += item.budget_amount || 0;
+        const itemActual = getActualAmount(item);
+        if (itemActual > 0 && dayOfMonth > 0) {
+          revenueForecastSum += (itemActual / dayOfMonth) * daysInMonth;
+        } else {
+          revenueForecastSum += item.budget_amount || 0;
+        }
       }
     }
     
@@ -128,14 +128,14 @@ export function TrackerSummaryRows({
       effectiveTurnoverForecast = revenueForecastSum;
       console.log(`Calculated turnover forecast from revenue items: ${effectiveTurnoverForecast}`);
     } else {
-      // Ultimate fallback
+      // Last resort
       effectiveTurnoverForecast = turnoverBudget;
-      console.log(`Final fallback to budget for forecast: ${effectiveTurnoverForecast}`);
+      console.log(`Using budget as final fallback for forecast: ${effectiveTurnoverForecast}`);
     }
   }
   
-  console.log(`Final effective turnover forecast to use: ${effectiveTurnoverForecast}`);
-
+  console.log(`FINAL turnover forecast value for percentages: ${effectiveTurnoverForecast}`);
+  
   // Find Gross Profit item
   const grossProfitItem = trackedBudgetData.find(item => 
     (item.name.toLowerCase() === 'gross profit' || 
@@ -167,21 +167,27 @@ export function TrackerSummaryRows({
   const opForecastVariance = opForecast - operatingProfitBudget;
   
   // Calculate percentages - using turnover values
-  const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
-  const adminBudgetPercentage = turnoverBudget ? (adminTotalBudget / turnoverBudget) * 100 : 0;
+  const adminActualPercentage = turnoverActual > 0 ? (adminActualAmount / turnoverActual) * 100 : 0;
+  const adminBudgetPercentage = turnoverBudget > 0 ? (adminTotalBudget / turnoverBudget) * 100 : 0;
   
-  // Use effectiveTurnoverForecast for percentage calculations
-  const adminForecastPercentage = effectiveTurnoverForecast ? (adminForecast / effectiveTurnoverForecast) * 100 : 0;
+  // FIXED: Make sure we're using the effective turnover forecast for percentages
+  // Ensure we don't divide by zero
+  const adminForecastPercentage = effectiveTurnoverForecast > 0 
+    ? (adminForecast / effectiveTurnoverForecast) * 100 
+    : 0;
   
-  const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
-  const opBudgetPercentage = turnoverBudget ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
-  const opForecastPercentage = effectiveTurnoverForecast ? (opForecast / effectiveTurnoverForecast) * 100 : 0;
+  const opActualPercentage = turnoverActual > 0 ? (actualOperatingProfit / turnoverActual) * 100 : 0;
+  const opBudgetPercentage = turnoverBudget > 0 ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
+  
+  // FIXED: Make sure we're using the effective turnover forecast for operating profit percentage
+  const opForecastPercentage = effectiveTurnoverForecast > 0 
+    ? (opForecast / effectiveTurnoverForecast) * 100 
+    : 0;
 
-  console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${effectiveTurnoverForecast}`);
-  console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${effectiveTurnoverForecast}`);
-  
-  console.log(`Admin budget: ${adminTotalBudget}, Admin forecast: ${adminForecast}, Admin variance: ${adminBudgetVariance}`);
-  console.log(`Operating profit budget: ${operatingProfitBudget}, Actual OP: ${actualOperatingProfit}, Forecast OP: ${opForecast}, OP variance: ${opForecastVariance}`);
+  console.log(`Admin Forecast: ${adminForecast}, Turnover Forecast: ${effectiveTurnoverForecast}`);
+  console.log(`Admin Forecast %: ${adminForecastPercentage.toFixed(1)}%`);
+  console.log(`OP Forecast: ${opForecast}, Turnover Forecast: ${effectiveTurnoverForecast}`);
+  console.log(`OP Forecast %: ${opForecastPercentage.toFixed(1)}%`);
   
   // Update forecast value for operating profit in state
   React.useEffect(() => {
