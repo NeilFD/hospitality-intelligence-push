@@ -27,14 +27,11 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       
       // Create a copy of the budget data with tracking information
       const trackedData: PLTrackerBudgetItem[] = await Promise.all(processedBudgetData.map(async (item) => {
-        // Ensure tracking_type is defined
-        const trackingType = item.tracking_type || 'Discrete';
-        
-        // Fetch daily values if the item has an ID and is a discrete tracking item
+        // Fetch daily values if the item has an ID
         let dailyValues: DayInput[] = [];
         let actualAmount = item.actual_amount !== undefined ? item.actual_amount : 0;
         
-        if (item.id && trackingType === 'Discrete') {
+        if (item.id) {
           try {
             // Fetch daily values from Supabase
             const dbValues = await fetchDailyValues(item.id, month, year);
@@ -62,7 +59,6 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
                   !item.name.toLowerCase().includes('operating profit') &&
                   !item.name.toLowerCase().includes('wages') &&
                   !item.name.toLowerCase().includes('salary') &&
-                  trackingType === 'Discrete' &&
                   actualAmount === 0) {
                 actualAmount = totalValue;
               }
@@ -74,7 +70,6 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         
         return {
           ...item,
-          tracking_type: trackingType,
           daily_values: dailyValues,
           actual_amount: actualAmount
         };
@@ -82,7 +77,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       
       // Log the actual amounts for debugging - include first few items
       trackedData.slice(0, 5).forEach(item => {
-        console.log(`${item.name} actual amount: ${item.actual_amount}, type: ${item.tracking_type}`);
+        console.log(`${item.name} actual amount: ${item.actual_amount}`);
       });
       
       setTrackedBudgetData(trackedData);
@@ -148,9 +143,8 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       // Calculate total from daily values
       const total = dailyValues.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
       
-      // Update actual_amount for discrete items if not already set by master data
-      if (updated[index].tracking_type === 'Discrete' &&
-          !updated[index].isHeader &&
+      // Update actual_amount for normal items if not already set by master data
+      if (!updated[index].isHeader &&
           !updated[index].isGrossProfit &&
           !updated[index].isOperatingProfit &&
           !updated[index].name.toLowerCase().includes('revenue') &&

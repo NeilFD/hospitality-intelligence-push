@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -67,7 +68,8 @@ export function calculateSummaryProRatedBudget(
       i.name.toLowerCase() === 'total gross profit' || 
       (i.name.toLowerCase() === 'gross profit' && 
        !i.name.toLowerCase().includes('food') && 
-       !i.name.toLowerCase().includes('beverage'))
+       !i.name.toLowerCase().includes('beverage') && 
+       !i.name.toLowerCase().includes('drink'))
     );
     
     const totalAdminItem = trackedBudgetData.find(i => 
@@ -93,32 +95,58 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return 0;
   }
 
-  // For any item with actual_amount directly set
-  if (typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
-    console.log(`Item ${item.name} has direct actual_amount: ${item.actual_amount}`);
+  // Revenue, COS, Gross Profit items use their direct actual_amount 
+  const isRevenueItem = item.name.toLowerCase().includes('turnover') || 
+                      item.name.toLowerCase().includes('revenue') ||
+                      item.name.toLowerCase().includes('sales');
+                      
+  const isCOSItem = item.name.toLowerCase().includes('cost of sales') || 
+                    item.name.toLowerCase().includes('cos');
+                    
+  const isGrossProfitItem = item.name.toLowerCase().includes('gross profit') ||
+                          item.isGrossProfit;
+  
+  // For revenue, COS, and Gross Profit items, use the direct actual_amount if available
+  if ((isRevenueItem || isCOSItem || isGrossProfitItem) && 
+      typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
+    console.log(`Item ${item.name} using direct actual_amount: ${item.actual_amount}`);
     return Number(item.actual_amount);
   }
   
-  // For items with manually entered actuals
+  // For manually entered actuals, use that value regardless of item type
   if (typeof item.manually_entered_actual === 'number') {
     console.log(`Item ${item.name} has manually_entered_actual: ${item.manually_entered_actual}`);
     return Number(item.manually_entered_actual);
   }
   
-  // For items with daily values
+  // For items with daily values, use the sum of daily values
   if (item.daily_values && item.daily_values.length > 0) {
     const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
     console.log(`Item ${item.name} has daily values total: ${total}`);
     return total;
   }
 
-  // For all items that don't have actual amounts set, calculate a pro-rated actual
+  // For expense items that don't have a specific amount set, use pro-rated calculation (65% of budget)
+  // This ensures expense items always display as pro-rated in the UI
   const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
   const dayOfMonth = 19; // Fixed for April 2025 as specified
   
-  // Use 65% of budget as the default for test data
+  // For expense items, use pro-rated amount
+  if (!isRevenueItem && !isCOSItem && !isGrossProfitItem && !item.isOperatingProfit) {
+    // Use 65% of budget as the default for test data (this simulates actual performance being different from budget)
+    const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
+    console.log(`Expense item ${item.name} using pro-rated actual: ${proRatedActual}`);
+    return proRatedActual;
+  }
+  
+  // For other items, use the actual amount if available, otherwise calculate a fallback
+  if (typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
+    return Number(item.actual_amount);
+  }
+  
+  // Fallback calculation (65% of pro-rated budget)
   const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
-  console.log(`Item ${item.name} using pro-rated actual: ${proRatedActual}`);
+  console.log(`Item ${item.name} using fallback pro-rated actual: ${proRatedActual}`);
   return proRatedActual;
 }
 

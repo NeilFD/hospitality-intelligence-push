@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -80,8 +81,7 @@ export function PLTracker({
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
     name: item.name,
     actual_amount: item.actual_amount,
-    budget_amount: item.budget_amount,
-    tracking_type: item.tracking_type
+    budget_amount: item.budget_amount
   })));
   
   const filteredBudgetData = trackedBudgetData.filter(item => 

@@ -1,3 +1,4 @@
+
 import { ProcessedBudgetItem } from '../../hooks/useBudgetData';
 
 export interface DayInput {
