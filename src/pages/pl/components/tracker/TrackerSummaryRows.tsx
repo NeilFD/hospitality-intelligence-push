@@ -72,6 +72,7 @@ export function TrackerSummaryRows({
   );
   
   const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
+  const turnoverBudget = turnoverItem ? turnoverItem.budget_amount || 0 : 0;
   const turnoverForecast = turnoverItem?.forecast_amount || 0;
 
   // Find Gross Profit item
@@ -106,9 +107,11 @@ export function TrackerSummaryRows({
   
   // Calculate percentages - MOVED AFTER the variables are declared
   const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
+  const adminBudgetPercentage = turnoverBudget ? (adminTotalBudget / turnoverBudget) * 100 : 0;
   const adminForecastPercentage = turnoverForecast ? (adminForecast / turnoverForecast) * 100 : 0;
   
   const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
+  const opBudgetPercentage = turnoverBudget ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
   const opForecastPercentage = turnoverForecast ? (opForecast / turnoverForecast) * 100 : 0;
 
   console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
