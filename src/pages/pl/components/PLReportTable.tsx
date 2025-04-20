@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -360,7 +359,7 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      // Use getForecastAmount directly here, so it picks up the latest settings
+      // Force a refresh of the forecast amount directly here
       const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
       
       console.log(`Rendering ${item.name}: forecast_amount=${forecastAmount}, budget=${item.budget_amount}`);

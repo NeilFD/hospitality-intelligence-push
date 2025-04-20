@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,7 +52,6 @@ export function ForecastSettingsControl({
 
   React.useEffect(() => {
     const fetchCurrentSetting = async () => {
-      // Try to get from localStorage first
       const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
       const cachedSettings = localStorage.getItem(cacheKey);
       
@@ -70,7 +68,6 @@ export function ForecastSettingsControl({
         }
       }
 
-      // If no cached settings, try to get from database
       const { data } = await supabase
         .from('cost_item_forecast_settings')
         .select('method, discrete_values')
@@ -83,13 +80,10 @@ export function ForecastSettingsControl({
         console.log(`ForecastSettingsControl: Loaded database settings for ${itemName}:`, data);
         setSelectedMethod(data.method as ForecastMethod);
         
-        // Properly handle the discrete_values
         if (data.discrete_values) {
-          // Ensure we're working with a proper Record<string, number>
           const parsedValues: Record<string, number> = {};
           const values = data.discrete_values as Record<string, any>;
           
-          // Convert all values to numbers
           Object.keys(values).forEach(key => {
             const numValue = Number(values[key]);
             if (!isNaN(numValue)) {
@@ -125,7 +119,6 @@ export function ForecastSettingsControl({
       finalTotal
     });
     
-    // Save to Supabase
     await supabase
       .from('cost_item_forecast_settings')
       .upsert({
@@ -136,7 +129,6 @@ export function ForecastSettingsControl({
         discrete_values: dailyValues
       });
 
-    // Also save to localStorage for faster access
     const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
     const settingsToCache = {
       method: selectedMethod,
@@ -147,7 +139,6 @@ export function ForecastSettingsControl({
     setIsEditing(false);
     onMethodChange(selectedMethod);
 
-    // Dispatch a custom event that PLReportTable can listen for
     const event = new CustomEvent('forecast-updated', {
       detail: { 
         itemName, 
@@ -156,7 +147,6 @@ export function ForecastSettingsControl({
         year: currentYear,
         month: currentMonth,
         finalTotal,
-        // Include important additional information
         forecastAmount: finalTotal,
         budgetAmount
       }
@@ -165,7 +155,6 @@ export function ForecastSettingsControl({
     console.log("Dispatching forecast-updated event", event.detail);
     window.dispatchEvent(event);
     
-    // Close the dialog when save is complete
     setOpen(false);
   };
 
