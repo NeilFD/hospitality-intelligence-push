@@ -383,7 +383,12 @@ export function PLReportTable({
     });
     
     console.log('Admin expense items for total calculation:', adminItems.length);
-    console.log('Admin items:', adminItems.map(item => item.name));
+    console.log('Admin items:', adminItems.map(item => ({
+      name: item.name,
+      budget_amount: item.budget_amount,
+      actual_amount: getActualAmount(item),
+      forecast_amount: item.forecast_amount || getForecastAmount(item, currentYear, currentMonth)
+    })));
     
     const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
     const adminTotalActual = adminItems.reduce((sum, item) => sum + getActualAmount(item), 0);
