@@ -1,17 +1,14 @@
-
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight } from "lucide-react";
+import { getActualAmount } from '../components/tracker/TrackerCalculations';
 
 type PLReportTableProps = {
   isLoading: boolean;
   processedBudgetData: any[];
   currentMonthName: string;
   currentYear: number;
-  onOpenTracker: () => void;
 };
 
 export function PLReportTable({
@@ -19,7 +16,6 @@ export function PLReportTable({
   processedBudgetData,
   currentMonthName,
   currentYear,
-  onOpenTracker,
 }: PLReportTableProps) {
   const getDaysInMonth = () => {
     const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
@@ -216,7 +212,10 @@ export function PLReportTable({
       const fontClass = getFontClass(item.name);
       const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
       
-      const forecastAmount = calculateForecast(item.actual_amount || 0);
+      // Get the actual amount using the pro-rated calculation logic
+      const actualAmount = getActualAmount(item);
+      
+      const forecastAmount = calculateForecast(actualAmount || 0);
       
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 
@@ -249,7 +248,7 @@ export function PLReportTable({
             {formatCurrency(item.budget_amount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
-            {formatCurrency(item.actual_amount)}
+            {formatCurrency(actualAmount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
             {percentageDisplay ? percentageDisplay : ""}
@@ -273,9 +272,6 @@ export function PLReportTable({
         <h2 className="text-xl font-semibold text-gray-800">
           P&L Report - {currentMonthName} {currentYear}
         </h2>
-        <Button variant="outline" size="sm" onClick={onOpenTracker}>
-          Open Tracker <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
       </div>
       
       <div className="overflow-x-auto">

@@ -4,7 +4,6 @@ import { FileUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MonthYearSelector } from './components/MonthYearSelector';
 import { PerformanceChart } from './components/PerformanceChart';
-import { PLTracker } from './components/PLTracker';
 import { PLReportTable } from './components/PLReportTable';
 import { useBudgetData } from './hooks/useBudgetData';
 import { useQuery } from '@tanstack/react-query';
@@ -181,23 +180,13 @@ export default function PLDashboard() {
         <PerformanceChart chartData={chartData} currentMonthName={currentMonthName} currentYear={currentYear} isLoading={isLoading} />
       </div>
       
-      <div className="grid grid-cols-1 gap-6 mb-6">
+      <div className="grid grid-cols-1 gap-6">
         <PLReportTable 
           isLoading={isLoading} 
           processedBudgetData={updatedBudgetData} 
           currentMonthName={currentMonthName} 
           currentYear={currentYear} 
           onOpenTracker={() => {}} 
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        <PLTracker 
-          isLoading={isLoading} 
-          processedBudgetData={updatedBudgetData} 
-          currentMonthName={currentMonthName} 
-          currentYear={currentYear} 
-          onClose={() => {}} 
         />
       </div>
     </div>;
