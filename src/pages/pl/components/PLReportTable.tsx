@@ -337,13 +337,13 @@ export function PLReportTable({
     }, 0);
     const adminBudgetVariance = adminTotalForecast - adminTotalBudget;
     console.log(`Admin totals: Budget=${adminTotalBudget}, Actual=${adminTotalActual}, Forecast=${adminTotalForecast}, Variance=${adminBudgetVariance}`);
-    const grossProfitItem = filteredBudgetData.find(item => item && item.name && (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
+    const grossProfitItem = filteredBudgetData.find(item => item && item.name && (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase().includes('gross profit/(loss)') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage')));
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
     const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
     const grossProfitForecast = grossProfitItem && grossProfitItem.forecast_amount ? grossProfitItem.forecast_amount : grossProfitActual > 0 && getCurrentDay() > 0 ? grossProfitActual / getCurrentDay() * getDaysInMonth() : grossProfitBudget;
     const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
     const operatingProfitActual = grossProfitActual - adminTotalActual;
-    const operatingProfitForecast = grossProfitForecast - adminTotalForecast;
+    const operatingProfitForecast = operatingProfitForecast - adminTotalForecast;
     const operatingProfitVariance = operatingProfitForecast - operatingProfitBudget;
     const totalTurnoverForecast = turnoverItem?.forecast_amount || (turnoverItem ? getForecastAmount(turnoverItem, currentYear, currentMonth) : 0);
     const totalTurnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
@@ -438,26 +438,56 @@ export function PLReportTable({
           </TableCell>
         </TableRow>
         
-        <TableRow className="bg-purple-300 text-black">
-          <TableCell className="font-bold bg-purple-300 text-black">
+        <TableRow className="bg-purple-300">
+          <TableCell className="font-bold text-black">
             Operating profit
           </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
+          <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitBudget)}
           </TableCell>
-          <TableCell className="text-right">
-            {formatPercentage(operatingProfitActualPercentage / 100)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${
+            operatingProfitActual > 0
+              ? 'text-[#00FF00]'
+              : operatingProfitActual < 0
+                ? 'text-[#ea384c]'
+                : ''
+          }`}>
             {formatCurrency(operatingProfitActual)}
           </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${
+            operatingProfitActualPercentage > 0
+              ? 'text-[#00FF00]'
+              : operatingProfitActualPercentage < 0
+                ? 'text-[#ea384c]'
+                : ''
+          }`}>
+            {formatPercentage(operatingProfitActualPercentage / 100)}
+          </TableCell>
+          <TableCell className={`text-right font-bold ${
+            operatingProfitForecast > 0
+              ? 'text-[#00FF00]'
+              : operatingProfitForecast < 0
+                ? 'text-[#ea384c]'
+                : ''
+          }`}>
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${
+            operatingProfitForecastPercentage > 0
+              ? 'text-[#00FF00]'
+              : operatingProfitForecastPercentage < 0
+                ? 'text-[#ea384c]'
+                : ''
+          }`}>
             {formatPercentage(operatingProfitForecastPercentage / 100)}
           </TableCell>
-          <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <TableCell className={`text-right font-bold ${
+            operatingProfitVariance > 0
+              ? 'text-[#00FF00]'
+              : operatingProfitVariance < 0
+                ? 'text-[#ea384c]'
+                : ''
+          }`}>
             {formatCurrency(operatingProfitVariance)}
           </TableCell>
         </TableRow>
