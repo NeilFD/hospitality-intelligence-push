@@ -60,6 +60,9 @@ export function TrackerSummaryRows({
     item.isHighlighted && item.name.toLowerCase().includes('gross profit'));
     
   const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
+  
+  console.log(`Gross profit item: ${grossProfitItem?.name}, actual: ${grossProfitActual}`);
+  
   const operatingProfit = grossProfitItem ? 
     calculateProRatedBudget(grossProfitItem) - adminExpenses : 0;
   

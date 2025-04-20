@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
@@ -110,18 +110,29 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  // Calculate forecast amount based on actual amount - if actual is available, otherwise use budget
-  const forecastAmount = actualAmount > 0 && dayOfMonth > 0
-    ? (actualAmount / dayOfMonth) * daysInMonth
-    : item.budget_amount || 0;
+  // Calculate forecast amount based on actual amount - prorating by days
+  let forecastAmount = 0;
+  
+  if (actualAmount > 0 && dayOfMonth > 0) {
+    // If there's an actual amount, calculate the forecast based on the actual / day ratio
+    forecastAmount = (actualAmount / dayOfMonth) * daysInMonth;
+    console.log(`${item.name} forecast: ${actualAmount} / ${dayOfMonth} * ${daysInMonth} = ${forecastAmount}`);
+  } else {
+    // If there's no actual amount yet, use the budget amount for the forecast
+    forecastAmount = item.budget_amount || 0;
+    console.log(`${item.name} no actual, using budget: ${forecastAmount}`);
+  }
     
   // Update forecast amount in state when actual amount changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isNaN(forecastAmount)) {
       console.log(`Setting forecast for ${item.name}: ${forecastAmount}`);
       updateForecastAmount(index, forecastAmount.toString());
     }
   }, [forecastAmount, index, updateForecastAmount, item.name]);
+
+  // Debug log for this item
+  console.log(`Item ${item.name} - actual: ${actualAmount}, forecast: ${forecastAmount}, variance: ${variance}`);
 
   return (
     <TableRow className={rowClassName}>

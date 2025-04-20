@@ -31,6 +31,13 @@ export function PLTracker({
   
   console.log(`Using day of month: ${actualDayOfMonth} for ${currentMonthName} ${currentYear}`);
   
+  // Debug log for all processed budget data
+  console.log("Processed budget data:", processedBudgetData.map(item => ({
+    name: item.name,
+    actual_amount: item.actual_amount,
+    budget_amount: item.budget_amount
+  })));
+  
   const processedDataWithDefaultTracking = processedBudgetData.map(item => {
     const isSpecialItem = 
       item.name.toLowerCase().includes('turnover') || 
@@ -68,6 +75,14 @@ export function PLTracker({
     updateDailyValues,
     saveForecastAmounts
   } = useTrackerData(processedDataWithDefaultTracking);
+  
+  // Debug log for tracked budget data
+  console.log("Tracked budget data:", trackedBudgetData.map(item => ({
+    name: item.name,
+    actual_amount: item.actual_amount,
+    budget_amount: item.budget_amount,
+    tracking_type: item.tracking_type
+  })));
   
   const filteredBudgetData = trackedBudgetData.filter(item => 
     !(item.isHeader && item.budget_amount === 0)

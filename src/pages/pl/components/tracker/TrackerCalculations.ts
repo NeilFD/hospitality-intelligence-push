@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -101,50 +100,32 @@ export function calculateSummaryProRatedBudget(
 }
 
 export function getActualAmount(item: PLTrackerBudgetItem): number {
-  // Check if item is a special item with preloaded actual_amount from revenue sources, COS, or wages
-  const isSpecialItem = item.name.toLowerCase().includes('turnover') || 
-    item.name.toLowerCase().includes('revenue') ||
-    item.name.toLowerCase().includes('sales') ||
-    item.name.toLowerCase().includes('cost of sales') ||
-    item.name.toLowerCase().includes('cos') ||
-    item.name.toLowerCase().includes('gross profit') ||
-    item.name.toLowerCase().includes('gross profit/(loss)') ||
-    item.name.toLowerCase().includes('operating profit') ||
-    item.name.toLowerCase().includes('wages') ||
-    item.name.toLowerCase().includes('salary') ||
-    item.isGrossProfit ||
-    item.isOperatingProfit ||
-    item.isHighlighted;
-    
-  if (isSpecialItem) {
-    // For revenue, COS, wages, etc. use the actual_amount loaded from respective sources
-    const actualValue = Number(item.actual_amount);
-    console.log(`Special item ${item.name} actual value: ${actualValue}`);
-    return actualValue || 0;
+  if (item.isHeader) {
+    return 0;
   }
 
-  // For regular Pro-Rated items, ensure we're getting the actual amount
-  if (item.tracking_type === 'Pro-Rated') {
-    const actualValue = Number(item.actual_amount);
-    console.log(`Pro-rated item ${item.name} actual value: ${actualValue}`);
-    return actualValue || 0;
+  // For any item with actual_amount directly set (from revenue sources, COS, or wages)
+  if (item.actual_amount !== undefined && item.actual_amount !== null) {
+    console.log(`Item ${item.name} has direct actual_amount: ${item.actual_amount}`);
+    return Number(item.actual_amount);
   }
   
-  // Handle Discrete items
-  if (item.tracking_type === 'Discrete') {
-    if (item.daily_values && item.daily_values.length > 0) {
-      // Sum up all the daily values
-      const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
-      console.log(`Discrete item ${item.name} with daily values, total: ${total}`);
-      return total;
-    }
-    // Use manually entered actual or actual_amount
-    const manualValue = Number(item.manually_entered_actual) || Number(item.actual_amount);
-    console.log(`Discrete item ${item.name} manual value: ${manualValue}`);
-    return manualValue || 0;
+  // For items with manually entered actuals
+  if (item.manually_entered_actual !== undefined && item.manually_entered_actual !== null) {
+    console.log(`Item ${item.name} has manually_entered_actual: ${item.manually_entered_actual}`);
+    return Number(item.manually_entered_actual);
   }
   
-  return Number(item.actual_amount) || 0;
+  // For items with daily values
+  if (item.daily_values && item.daily_values.length > 0) {
+    const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
+    console.log(`Item ${item.name} has daily values total: ${total}`);
+    return total;
+  }
+  
+  // Default return 0 if no actual amount found
+  console.log(`Item ${item.name} has no actual amount, returning 0`);
+  return 0;
 }
 
 export function calculateProRatedActual(
