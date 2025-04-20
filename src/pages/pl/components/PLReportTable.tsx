@@ -362,6 +362,14 @@ export function PLReportTable({
     return allAdminCosts.some(category => lowercaseName.includes(category));
   };
 
+  const calculatePercentageOfTurnover = (amount: number, turnover: number) => {
+    return turnover > 0 ? (amount / turnover) * 100 : 0;
+  };
+
+  const calculatePercentageOfRevenue = (amount: number, revenue: number) => {
+    return revenue > 0 ? (amount / revenue) * 100 : 0;
+  };
+
   const renderTableContent = () => {
     const adminExpenseItems = [
       "Wages and Salaries", 
@@ -432,6 +440,69 @@ export function PLReportTable({
     const operatingProfitVariance = operatingProfitForecast - operatingProfitBudget;
     
     console.log(`Operating profit: Budget=${operatingProfitBudget}, Actual=${operatingProfitActual}, Forecast=${operatingProfitForecast}, Variance=${operatingProfitVariance}`);
+
+    const turnoverItem = filteredBudgetData.find(item => 
+      item.name.toLowerCase() === 'turnover'
+    );
+    const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
+
+    // Get food and beverage revenue items for percentage calculations
+    const foodRevenueItem = filteredBudgetData.find(item => 
+      item.name.toLowerCase().includes('food') && 
+      item.name.toLowerCase().includes('revenue')
+    );
+    const beverageRevenueItem = filteredBudgetData.find(item => 
+      (item.name.toLowerCase().includes('beverage') || 
+       item.name.toLowerCase().includes('drink')) && 
+      item.name.toLowerCase().includes('revenue')
+    );
+
+    const foodRevenueForecast = foodRevenueItem?.forecast_amount || 0;
+    const beverageRevenueForecast = beverageRevenueItem?.forecast_amount || 0;
+
+    const getForecastPercentage = (item: any) => {
+      const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
+      const name = item.name.toLowerCase();
+
+      // Revenue items as % of total turnover
+      if (name.includes('revenue') || name === 'turnover') {
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
+      }
+      
+      // COS items as % of their respective revenues
+      if (name.includes('food') && name.includes('cost of sales')) {
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast));
+      }
+      if ((name.includes('beverage') || name.includes('drink')) && name.includes('cost of sales')) {
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast));
+      }
+      
+      // Food and Beverage GP as % of their respective revenues
+      if (name === 'food gross profit') {
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast));
+      }
+      if (name === 'beverage gross profit') {
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast));
+      }
+      
+      // Total COS and GP as % of total turnover
+      if (name === 'cost of sales') {
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
+      }
+      if (name === 'gross profit') {
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
+      }
+      
+      // Admin expenses as % of total turnover
+      if (!name.includes('revenue') && 
+          !name.includes('cost of sales') && 
+          !name.includes('gross profit') && 
+          !item.isHeader) {
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
+      }
+      
+      return '';
+    };
 
     return (
       <>
@@ -514,6 +585,9 @@ export function PLReportTable({
                   />
                 )}
               </TableCell>
+              <TableCell className="text-right">
+                {getForecastPercentage(item)}
+              </TableCell>
               <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
                 {formatCurrency(varianceAmount)}
               </TableCell>
@@ -521,6 +595,7 @@ export function PLReportTable({
           );
         })}
         
+        {/* Admin Total row */}
         <TableRow className="bg-purple-100/50 text-[#48495e]">
           <TableCell className="font-bold">
             TOTAL ADMIN EXPENSES
@@ -537,6 +612,9 @@ export function PLReportTable({
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalForecast)}
           </TableCell>
+          <TableCell className="text-right">
+            {formatPercentage(calculatePercentageOfTurnover(adminTotalForecast, turnoverItem?.forecast_amount || 0))}
+          </TableCell>
           <TableCell className={`text-right font-bold ${
             adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
           }`}>
@@ -544,6 +622,7 @@ export function PLReportTable({
           </TableCell>
         </TableRow>
         
+        {/* Operating Profit row */}
         <TableRow className="bg-[#8B5CF6]/90 text-white">
           <TableCell className="font-bold">
             Operating profit
@@ -559,6 +638,9 @@ export function PLReportTable({
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitForecast)}
+          </TableCell>
+          <TableCell className="text-right font-bold">
+            {formatPercentage(calculatePercentageOfTurnover(operatingProfitForecast, turnoverItem?.forecast_amount || 0))}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
@@ -587,6 +669,7 @@ export function PLReportTable({
               <TableHead className="text-right font-bold">Actual MTD</TableHead>
               <TableHead className="text-right font-bold">%</TableHead>
               <TableHead className="text-right font-bold">Forecast</TableHead>
+              <TableHead className="text-right font-bold">F%</TableHead>
               <TableHead className="text-right font-bold">Variance</TableHead>
             </TableRow>
           </TableHeader>
@@ -604,6 +687,9 @@ export function PLReportTable({
                     </TableCell>
                     <TableCell className="text-right">
                       <Skeleton className="h-4 w-[40px] ml-auto" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-4 w-[80px] ml-auto" />
                     </TableCell>
                     <TableCell className="text-right">
                       <Skeleton className="h-4 w-[80px] ml-auto" />
