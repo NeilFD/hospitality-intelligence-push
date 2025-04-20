@@ -675,13 +675,17 @@ export function PLReportTable({
     const operatingProfitVariance = operatingProfitForecast - operatingProfitBudget;
     
     const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
+    const totalTurnoverActual = turnoverItem?.actual_amount || 0;
     
-    const adminActualPercentage = turnoverItem && turnoverItem.actual_amount ? adminTotalActual / turnoverItem.actual_amount : 0;
+    const adminActualPercentage = totalTurnoverActual > 0 ? adminTotalActual / totalTurnoverActual : 0;
     const adminForecastPercentage = totalTurnoverForecast > 0 ? adminTotalForecast / totalTurnoverForecast : 0;
+    
+    console.log(`Admin % calculations - Actual: ${adminTotalActual}/${totalTurnoverActual} = ${adminActualPercentage}, Forecast: ${adminTotalForecast}/${totalTurnoverForecast} = ${adminForecastPercentage}`);
+    
+    const operatingProfitActualPercentage = totalTurnoverActual > 0 ? operatingProfitActual / totalTurnoverActual : 0;
     const operatingProfitForecastPercentage = totalTurnoverForecast > 0 ? operatingProfitForecast / totalTurnoverForecast : 0;
     
-    console.log(`Percentages - Admin: ${adminForecastPercentage * 100}%, OP: ${operatingProfitForecastPercentage * 100}%`);
-    console.log(`turnoverItem.forecast_amount: ${turnoverItem?.forecast_amount}, totalTurnoverForecast: ${totalTurnoverForecast}`);
+    console.log(`OP % calculations - Actual: ${operatingProfitActual}/${totalTurnoverActual} = ${operatingProfitActualPercentage}, Forecast: ${operatingProfitForecast}/${totalTurnoverForecast} = ${operatingProfitForecastPercentage}`);
 
     return (
       <>
@@ -818,9 +822,7 @@ export function PLReportTable({
             {formatCurrency(operatingProfitActual)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {turnoverItem && turnoverItem.actual_amount 
-              ? formatPercentage(operatingProfitActual / turnoverItem.actual_amount)
-              : '0.0%'}
+            {formatPercentage(operatingProfitActualPercentage)}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitForecast)}
