@@ -363,15 +363,27 @@ export function PLReportTable({
   };
 
   const renderTableContent = () => {
-    const adminItems = filteredBudgetData.filter(item => 
-      isCostLine(item.name) && 
-      !item.name.toLowerCase().includes('cost of sales') &&
-      !item.name.toLowerCase().includes('cos') &&
-      !item.name.toLowerCase().includes('total admin') &&
-      !item.name.toLowerCase().includes('operating profit')
-    );
+    const adminItems = filteredBudgetData.filter(item => {
+      const lowercaseName = item.name.toLowerCase();
+      
+      const isExpense = isCostLine(item.name) && 
+                     !lowercaseName.includes('cost of sales') &&
+                     !lowercaseName.includes('cos');
+      
+      const isNotHeaderOrSummary = !item.isHeader && 
+                                !lowercaseName.includes('total admin') &&
+                                !lowercaseName.includes('operating profit');
+      
+      const isNotGrossProfit = !lowercaseName.includes('gross profit');
+      const isNotRevenue = !lowercaseName.includes('revenue') && 
+                        !lowercaseName.includes('sales') &&
+                        !lowercaseName.includes('turnover');
+      
+      return isExpense && isNotHeaderOrSummary && isNotGrossProfit && isNotRevenue;
+    });
     
     console.log('Admin expense items for total calculation:', adminItems.length);
+    console.log('Admin items:', adminItems.map(item => item.name));
     
     const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
     const adminTotalActual = adminItems.reduce((sum, item) => sum + getActualAmount(item), 0);
