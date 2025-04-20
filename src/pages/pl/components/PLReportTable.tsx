@@ -493,11 +493,11 @@ export function PLReportTable({
               <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
                 {formatCurrency(item.budget_amount)}
               </TableCell>
-              <TableCell className="text-right">
-                {percentageDisplay ? percentageDisplay : ""}
-              </TableCell>
               <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
                 {formatCurrency(actualAmount)}
+              </TableCell>
+              <TableCell className="text-right">
+                {percentageDisplay ? percentageDisplay : ""}
               </TableCell>
               <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
                 {formatCurrency(forecastAmount)}
@@ -584,8 +584,8 @@ export function PLReportTable({
             <TableRow className="bg-gray-50">
               <TableHead className="w-[240px] font-bold">Item</TableHead>
               <TableHead className="text-right font-bold">Budget</TableHead>
-              <TableHead className="text-right font-bold">%</TableHead>
               <TableHead className="text-right font-bold">Actual MTD</TableHead>
+              <TableHead className="text-right font-bold">%</TableHead>
               <TableHead className="text-right font-bold">Forecast</TableHead>
               <TableHead className="text-right font-bold">Variance</TableHead>
             </TableRow>
