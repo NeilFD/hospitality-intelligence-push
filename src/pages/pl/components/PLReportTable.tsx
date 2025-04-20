@@ -435,7 +435,7 @@ export function PLReportTable({
         console.log(`- Food revenue %: ${percentage}`);
         return formatPercentage(percentage);
       }
-      return '0.0%';
+      return formatPercentage(0);
     }
     
     if ((name.includes('beverage') || name.includes('drink') || name.includes('bev')) && 
@@ -445,7 +445,7 @@ export function PLReportTable({
         console.log(`- Beverage revenue %: ${percentage}`);
         return formatPercentage(percentage);
       }
-      return '0.0%';
+      return formatPercentage(0);
     }
     
     if (name.includes('food') && (name.includes('cost of sales') || name.includes('cos'))) {
@@ -834,7 +834,7 @@ export function PLReportTable({
             {formatPercentage(operatingProfitForecastPercentage)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
-            operatingProfitForecast > 0 ? 'text-green-200' : 'text-red-300'
+            operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
           }`}>
             {formatCurrency(operatingProfitVariance)}
           </TableCell>

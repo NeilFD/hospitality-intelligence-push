@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -178,14 +177,14 @@ export function TrackerSummaryRows({
   const adminBudgetPercentage = turnoverBudget && turnoverBudget !== 0 ? (adminTotalBudget / turnoverBudget) * 100 : 0;
   
   // Make sure effectiveTurnoverForecast is never 0 to prevent division by zero
-  const safeEffectiveTurnoverForecast = effectiveTurnoverForecast || 1;
+  const safeEffectiveTurnoverForecast = effectiveTurnoverForecast > 0 ? effectiveTurnoverForecast : 1;
   
   // Calculate percentages properly using the safe turnover value
-  const adminForecastPercentage = safeEffectiveTurnoverForecast > 0 ? (adminForecast / safeEffectiveTurnoverForecast) * 100 : 0;
+  const adminForecastPercentage = (adminForecast / safeEffectiveTurnoverForecast) * 100;
   
   const opActualPercentage = turnoverActual && turnoverActual !== 0 ? (actualOperatingProfit / turnoverActual) * 100 : 0;
   const opBudgetPercentage = turnoverBudget && turnoverBudget !== 0 ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
-  const opForecastPercentage = safeEffectiveTurnoverForecast > 0 ? (opForecast / safeEffectiveTurnoverForecast) * 100 : 0;
+  const opForecastPercentage = (opForecast / safeEffectiveTurnoverForecast) * 100;
 
   console.log(`Admin Forecast %: ${adminForecastPercentage.toFixed(1)}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);
   console.log(`OP Forecast %: ${opForecastPercentage.toFixed(1)}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);
@@ -273,7 +272,7 @@ export function TrackerSummaryRows({
           {formatCurrency(opForecast)} ({opForecastPercentage.toFixed(1)}%)
         </TableCell>
         <TableCell className={`text-right font-bold ${
-          opForecast > 0 ? 'text-green-200' : 'text-red-300'
+          opForecastVariance > 0 ? 'text-green-200' : 'text-red-300'
         }`}>
           {formatCurrency(opForecastVariance)}
         </TableCell>
