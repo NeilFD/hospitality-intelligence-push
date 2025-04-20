@@ -51,9 +51,14 @@ export function TrackerSummaryRows({
   console.log(`Admin total budget: ${adminTotalBudget}`);
   
   // Calculate admin forecast based on actual amounts so far - scale the actuals to full month
-  const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
-    ? (adminActualAmount / dayOfMonth) * daysInMonth
-    : adminTotalBudget;
+  let adminForecast = 0;
+  if (adminActualAmount > 0 && dayOfMonth > 0) {
+    // Project the actual admin expenses to the full month
+    adminForecast = (adminActualAmount / dayOfMonth) * daysInMonth;
+  } else {
+    // Fallback to budget if no actuals
+    adminForecast = adminTotalBudget;
+  }
 
   console.log(`Admin forecast (projected from actuals): ${adminForecast}`);
 
