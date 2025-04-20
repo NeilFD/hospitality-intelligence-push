@@ -202,10 +202,27 @@ export function PLReportTable({
     });
   }, [processedBudgetData]);
 
-  const getValueColor = (value: number) => {
-    if (value > 0) return "text-green-600";
-    if (value < 0) return "text-red-600";
+  const getValueColor = (value: number, isCostLine: boolean = false) => {
+    if (isCostLine) {
+      if (value < 0) return "text-green-600";
+      if (value > 0) return "text-red-600";
+    } else {
+      if (value > 0) return "text-green-600";
+      if (value < 0) return "text-red-600";
+    }
     return "";
+  };
+
+  const isCostLine = (name: string) => {
+    const lowercaseName = name.toLowerCase();
+    return (
+      lowercaseName.includes('cost') ||
+      lowercaseName.includes('expense') ||
+      lowercaseName.includes('wages') ||
+      lowercaseName.includes('salaries') ||
+      lowercaseName === 'repairs and maintenance' ||
+      lowercaseName === 'utilities'
+    );
   };
 
   const renderTableContent = () => {
@@ -247,6 +264,7 @@ export function PLReportTable({
       
       const isOperatingProfit = item.name.toLowerCase().includes('operating profit');
       const varianceAmount = forecastAmount - (item.budget_amount || 0);
+      const itemIsCostLine = isCostLine(item.name);
       
       return (
         <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
@@ -263,7 +281,7 @@ export function PLReportTable({
           <TableCell className={`text-right ${fontClass} ${boldValueClass} ${isOperatingProfit ? getValueColor(forecastAmount) : ''}`}>
             {formatCurrency(forecastAmount)}
           </TableCell>
-          <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount)}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
             {formatCurrency(varianceAmount)}
           </TableCell>
         </TableRow>
