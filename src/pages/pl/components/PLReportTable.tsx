@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -562,7 +563,7 @@ export function PLReportTable({
     const foodRevenueItem = filteredBudgetData.find(item => 
       item && item.name && (
         item.name.toLowerCase().includes('food') && 
-        (item.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
+        (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
     
@@ -570,7 +571,7 @@ export function PLReportTable({
       item && item.name && (
         (item.name.toLowerCase().includes('beverage') || 
          item.name.toLowerCase().includes('drink')) && 
-        (item.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
+        (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
     
