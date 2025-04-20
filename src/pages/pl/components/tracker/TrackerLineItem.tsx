@@ -110,7 +110,7 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  // Calculate forecast amount based on actual amount
+  // Calculate forecast amount based on actual amount - if actual is available, otherwise use budget
   const forecastAmount = actualAmount > 0 && dayOfMonth > 0
     ? (actualAmount / dayOfMonth) * daysInMonth
     : item.budget_amount || 0;
@@ -118,9 +118,10 @@ export function TrackerLineItem({
   // Update forecast amount in state when actual amount changes
   React.useEffect(() => {
     if (!isNaN(forecastAmount)) {
+      console.log(`Setting forecast for ${item.name}: ${forecastAmount}`);
       updateForecastAmount(index, forecastAmount.toString());
     }
-  }, [forecastAmount, index, updateForecastAmount]);
+  }, [forecastAmount, index, updateForecastAmount, item.name]);
 
   return (
     <TableRow className={rowClassName}>

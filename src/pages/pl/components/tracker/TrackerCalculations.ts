@@ -118,22 +118,30 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     
   if (isSpecialItem) {
     // For revenue, COS, wages, etc. use the actual_amount loaded from respective sources
-    return Number(item.actual_amount) || 0;
+    const actualValue = Number(item.actual_amount);
+    console.log(`Special item ${item.name} actual value: ${actualValue}`);
+    return actualValue || 0;
   }
 
   // For regular Pro-Rated items, ensure we're getting the actual amount
   if (item.tracking_type === 'Pro-Rated') {
-    return Number(item.actual_amount) || 0;
+    const actualValue = Number(item.actual_amount);
+    console.log(`Pro-rated item ${item.name} actual value: ${actualValue}`);
+    return actualValue || 0;
   }
   
   // Handle Discrete items
   if (item.tracking_type === 'Discrete') {
     if (item.daily_values && item.daily_values.length > 0) {
       // Sum up all the daily values
-      return item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
+      const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
+      console.log(`Discrete item ${item.name} with daily values, total: ${total}`);
+      return total;
     }
     // Use manually entered actual or actual_amount
-    return Number(item.manually_entered_actual) || Number(item.actual_amount) || 0;
+    const manualValue = Number(item.manually_entered_actual) || Number(item.actual_amount);
+    console.log(`Discrete item ${item.name} manual value: ${manualValue}`);
+    return manualValue || 0;
   }
   
   return Number(item.actual_amount) || 0;

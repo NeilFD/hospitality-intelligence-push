@@ -48,6 +48,8 @@ export function TrackerSummaryRows({
     
   const adminVariance = adminActualAmount - adminExpenses;
   
+  console.log(`Admin expenses: ${adminExpenses}, Admin actual: ${adminActualAmount}, Variance: ${adminVariance}`);
+  
   // Calculate admin forecast
   const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
     ? (adminActualAmount / dayOfMonth) * daysInMonth
@@ -64,6 +66,8 @@ export function TrackerSummaryRows({
   const actualOperatingProfit = grossProfitActual - adminActualAmount;
   const opVariance = actualOperatingProfit - operatingProfit;
   
+  console.log(`Gross profit actual: ${grossProfitActual}, Operating profit: ${operatingProfit}, Actual OP: ${actualOperatingProfit}`);
+  
   // Calculate operating profit forecast
   const opForecast = actualOperatingProfit > 0 && dayOfMonth > 0
     ? (actualOperatingProfit / dayOfMonth) * daysInMonth
@@ -75,6 +79,7 @@ export function TrackerSummaryRows({
       i.name.toLowerCase().includes('operating profit') && i.isHighlighted);
     
     if (opIndex >= 0 && !isNaN(opForecast)) {
+      console.log(`Setting OP forecast: ${opForecast}`);
       updateForecastAmount(opIndex, opForecast.toString());
     }
   }, [opForecast, trackedBudgetData, updateForecastAmount]);

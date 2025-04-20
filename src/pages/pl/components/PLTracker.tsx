@@ -29,6 +29,8 @@ export function PLTracker({
   // Make sure we're using 19 for April 2025 if that's the current date
   const actualDayOfMonth = currentMonthName === 'April' && currentYear === 2025 ? 19 : dayOfMonth;
   
+  console.log(`Using day of month: ${actualDayOfMonth} for ${currentMonthName} ${currentYear}`);
+  
   const processedDataWithDefaultTracking = processedBudgetData.map(item => {
     const isSpecialItem = 
       item.name.toLowerCase().includes('turnover') || 
@@ -46,6 +48,9 @@ export function PLTracker({
       item.isHighlighted;
       
     const trackingType = isSpecialItem ? 'Discrete' : 'Pro-Rated';
+    
+    // Log the actual_amount for debugging
+    console.log(`${item.name} from Dashboard: actual_amount=${item.actual_amount}`);
     
     return {
       ...item,

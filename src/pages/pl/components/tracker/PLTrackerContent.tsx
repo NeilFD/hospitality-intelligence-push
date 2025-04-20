@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -112,6 +113,9 @@ export function PLTrackerContent({
                 // For pro-rated items, this will be the pro-rated calculation
                 const actualAmount = getActualAmount(item);
                 const variance = actualAmount - proRatedBudget;
+                
+                // Add diagnostic logging
+                console.log(`Item ${item.name}: proRatedBudget=${proRatedBudget}, actualAmount=${actualAmount}, variance=${variance}`);
                 
                 return (
                   <TrackerLineItem

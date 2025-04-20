@@ -51,7 +51,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
               });
               
               // Calculate the total value from daily values
-              const totalValue = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
+              const totalValue = dailyValues.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
               
               // For non-special items, update the actual amount
               if (!item.name.toLowerCase().includes('revenue') &&
@@ -79,6 +79,11 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         };
       }));
       
+      // Log the actual amounts for debugging
+      trackedData.forEach(item => {
+        console.log(`${item.name} actual amount: ${item.actual_amount}, type: ${item.tracking_type}`);
+      });
+      
       setTrackedBudgetData(trackedData);
     };
     
@@ -93,10 +98,12 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     
     setTrackedBudgetData(prev => {
       const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        forecast_amount: numValue
-      };
+      if (updated[index]) {
+        updated[index] = {
+          ...updated[index],
+          forecast_amount: numValue
+        };
+      }
       return updated;
     });
     
@@ -109,11 +116,13 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     
     setTrackedBudgetData(prev => {
       const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        manually_entered_actual: numValue,
-        actual_amount: numValue // Also update actual_amount for discrete items
-      };
+      if (updated[index]) {
+        updated[index] = {
+          ...updated[index],
+          manually_entered_actual: numValue,
+          actual_amount: numValue // Also update actual_amount for discrete items
+        };
+      }
       return updated;
     });
     
@@ -125,6 +134,10 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     setTrackedBudgetData(prev => {
       const updated = [...prev];
       
+      if (!updated[index]) {
+        return prev;
+      }
+      
       // Update daily values
       updated[index] = {
         ...updated[index],
@@ -132,7 +145,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       };
       
       // Calculate total from daily values
-      const total = dailyValues.reduce((sum, day) => sum + (day.value || 0), 0);
+      const total = dailyValues.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
       
       // Update actual_amount for discrete items
       if (updated[index].tracking_type === 'Discrete' &&
@@ -177,6 +190,8 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
         setIsSaving(false);
         return;
       }
+      
+      console.log("Saving forecast amounts:", updatesArray);
       
       // Update the database
       const { error } = await supabase
