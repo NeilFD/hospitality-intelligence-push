@@ -161,8 +161,8 @@ export function PLReportTable({
     
     if (lowercaseName.includes("food gross profit")) {
       const foodRevenueItems = processedBudgetData.filter(
-        i => i.name.toLowerCase().includes("food") && 
-             (i.name.toLowerCase().includes("revenue") || i.name.toLowerCase().includes("sales"))
+        i => i.name.toLowerCase().includes('food') && 
+             (i.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
       );
       
       const foodRevenue = foodRevenueItems.reduce(
@@ -177,10 +177,10 @@ export function PLReportTable({
     else if (lowercaseName.includes("beverage gross profit") || 
              lowercaseName.includes("drink gross profit")) {
       const beverageRevenueItems = processedBudgetData.filter(
-        i => (i.name.toLowerCase().includes("beverage") || 
-              i.name.toLowerCase().includes("drink") || 
-              i.name.toLowerCase().includes("bar")) && 
-             (i.name.toLowerCase().includes("revenue") || i.name.toLowerCase().includes("sales"))
+        i => (i.name.toLowerCase().includes('beverage') || 
+              i.name.toLowerCase().includes('drink') || 
+              i.name.toLowerCase().includes('bar')) && 
+             (i.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
       );
       
       const beverageRevenue = beverageRevenueItems.reduce(
@@ -442,19 +442,19 @@ export function PLReportTable({
     console.log(`Operating profit: Budget=${operatingProfitBudget}, Actual=${operatingProfitActual}, Forecast=${operatingProfitForecast}, Variance=${operatingProfitVariance}`);
 
     const turnoverItem = filteredBudgetData.find(item => 
-      item.name.toLowerCase() === 'turnover'
+      item.name.toLowerCase() === 'turnover' || 
+      item.name.toLowerCase() === 'total revenue'
     );
     const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
 
-    // Get food and beverage revenue items for percentage calculations
     const foodRevenueItem = filteredBudgetData.find(item => 
       item.name.toLowerCase().includes('food') && 
-      item.name.toLowerCase().includes('revenue')
+      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
     );
     const beverageRevenueItem = filteredBudgetData.find(item => 
       (item.name.toLowerCase().includes('beverage') || 
        item.name.toLowerCase().includes('drink')) && 
-      item.name.toLowerCase().includes('revenue')
+      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
     );
 
     const foodRevenueForecast = foodRevenueItem?.forecast_amount || 0;
@@ -464,41 +464,36 @@ export function PLReportTable({
       const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
       const name = item.name.toLowerCase();
 
-      // Revenue items as % of total turnover
-      if (name.includes('revenue') || name === 'turnover') {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
+      if (name.includes('revenue') || name === 'turnover' || name === 'total revenue') {
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
       }
       
-      // COS items as % of their respective revenues
       if (name.includes('food') && name.includes('cost of sales')) {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast));
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast) / 100);
       }
       if ((name.includes('beverage') || name.includes('drink')) && name.includes('cost of sales')) {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast));
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast) / 100);
       }
       
-      // Food and Beverage GP as % of their respective revenues
-      if (name === 'food gross profit') {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast));
+      if (name === 'food gross profit' || name.includes('food gross profit')) {
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast) / 100);
       }
-      if (name === 'beverage gross profit') {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast));
-      }
-      
-      // Total COS and GP as % of total turnover
-      if (name === 'cost of sales') {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
-      }
-      if (name === 'gross profit') {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
+      if (name === 'beverage gross profit' || name.includes('beverage gross profit') || name.includes('drink gross profit')) {
+        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast) / 100);
       }
       
-      // Admin expenses as % of total turnover
+      if (name === 'cost of sales' || name.includes('cost of sales') && !name.includes('food') && !name.includes('beverage') && !name.includes('drink')) {
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
+      }
+      if (name === 'gross profit' || name === 'gross profit/(loss)') {
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
+      }
+      
       if (!name.includes('revenue') && 
           !name.includes('cost of sales') && 
           !name.includes('gross profit') && 
           !item.isHeader) {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast));
+        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
       }
       
       return '';
@@ -558,6 +553,8 @@ export function PLReportTable({
             return null;
           }
           
+          const forecastPercentage = getForecastPercentage(item);
+          
           return (
             <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
               <TableCell className={`${fontClass} ${boldTitleClass}`}>{item.name}</TableCell>
@@ -586,7 +583,7 @@ export function PLReportTable({
                 )}
               </TableCell>
               <TableCell className="text-right">
-                {getForecastPercentage(item)}
+                {forecastPercentage}
               </TableCell>
               <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
                 {formatCurrency(varianceAmount)}
@@ -595,7 +592,6 @@ export function PLReportTable({
           );
         })}
         
-        {/* Admin Total row */}
         <TableRow className="bg-purple-100/50 text-[#48495e]">
           <TableCell className="font-bold">
             TOTAL ADMIN EXPENSES
@@ -603,17 +599,17 @@ export function PLReportTable({
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalBudget)}
           </TableCell>
-          <TableCell className="text-right">
-            {/* Percentage can be added here if needed */}
-          </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalActual)}
+          </TableCell>
+          <TableCell className="text-right">
+            {/* Percentage can be added here if needed */}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalForecast)}
           </TableCell>
           <TableCell className="text-right">
-            {formatPercentage(calculatePercentageOfTurnover(adminTotalForecast, turnoverItem?.forecast_amount || 0))}
+            {formatPercentage(calculatePercentageOfTurnover(adminTotalForecast, turnoverItem?.forecast_amount || 0) / 100)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
@@ -622,7 +618,6 @@ export function PLReportTable({
           </TableCell>
         </TableRow>
         
-        {/* Operating Profit row */}
         <TableRow className="bg-[#8B5CF6]/90 text-white">
           <TableCell className="font-bold">
             Operating profit
@@ -630,17 +625,17 @@ export function PLReportTable({
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitBudget)}
           </TableCell>
-          <TableCell className="text-right">
-            {/* Percentage can be added here if needed */}
-          </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitActual)}
+          </TableCell>
+          <TableCell className="text-right">
+            {/* Percentage can be added here if needed */}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(calculatePercentageOfTurnover(operatingProfitForecast, turnoverItem?.forecast_amount || 0))}
+            {formatPercentage(calculatePercentageOfTurnover(operatingProfitForecast, turnoverItem?.forecast_amount || 0) / 100)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
