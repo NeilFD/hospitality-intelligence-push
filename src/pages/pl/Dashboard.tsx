@@ -186,7 +186,6 @@ export default function PLDashboard() {
           processedBudgetData={updatedBudgetData} 
           currentMonthName={currentMonthName} 
           currentYear={currentYear} 
-          onOpenTracker={() => {}} 
         />
       </div>
     </div>;
