@@ -50,6 +50,7 @@ export function PLReportTable({
       
       const updatedData = processedData.map((item: any) => {
         const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
+        console.log(`PLReportTable: Calculated forecast for ${item.name}: ${forecastAmount}`);
         return { 
           ...item,
           forecast_amount: forecastAmount
@@ -323,8 +324,9 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      const forecastAmount = item.forecast_amount !== undefined ? item.forecast_amount : 
-                            getForecastAmount(item, currentYear, currentMonth);
+      const forecastAmount = item.forecast_amount !== undefined ? 
+                             item.forecast_amount : 
+                             getForecastAmount(item, currentYear, currentMonth);
       
       console.log(`Rendering ${item.name}: forecast_amount=${forecastAmount}, budget=${item.budget_amount}`);
       

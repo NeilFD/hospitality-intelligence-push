@@ -65,24 +65,43 @@ export default function PLDashboard() {
       if (!processedBudgetData || processedBudgetData.length === 0) return;
       
       // Pre-load forecast settings for all cost line items
-      processedBudgetData.forEach(item => {
+      const updatedItems = processedBudgetData.map(item => {
         const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
         const cachedSettings = localStorage.getItem(cacheKey);
         
         if (cachedSettings) {
-          console.log(`Found cached forecast settings for ${item.name}:`, cachedSettings);
           try {
+            console.log(`Found cached forecast settings for ${item.name}:`, cachedSettings);
+            // Create a deep copy of the item to avoid reference issues
+            const updatedItem = { ...item };
             // Update the item directly with the forecast settings
-            item.forecast_settings = JSON.parse(cachedSettings);
+            updatedItem.forecast_settings = JSON.parse(cachedSettings);
+            return updatedItem;
           } catch (e) {
             console.error(`Error parsing cached forecast settings for ${item.name}:`, e);
+            return item;
           }
         }
+        return item;
       });
     };
     
     loadForecastSettings();
   }, [processedBudgetData, currentYear, currentMonth]);
+  
+  // Add a dedicated event listener for forecast-updated events
+  useEffect(() => {
+    const handleForecastUpdate = (event: any) => {
+      console.log("Dashboard: Forecast updated event received", event.detail);
+      // We'll let the PLReportTable handle the actual update
+    };
+
+    window.addEventListener('forecast-updated', handleForecastUpdate);
+    
+    return () => {
+      window.removeEventListener('forecast-updated', handleForecastUpdate);
+    };
+  }, []);
   
   const updatedBudgetData = processedBudgetData.map(item => {
     if (masterRevenueData && !isLoading) {

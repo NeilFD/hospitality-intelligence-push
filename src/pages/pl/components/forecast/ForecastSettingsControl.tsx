@@ -43,7 +43,12 @@ export function ForecastSettingsControl({
     if (selectedMethod === 'fixed_plus') {
       return budgetAmount + totalDailyValues;
     }
-    return totalDailyValues;
+    
+    if (selectedMethod === 'discrete') {
+      return totalDailyValues;
+    }
+    
+    return budgetAmount;
   };
 
   React.useEffect(() => {
@@ -114,7 +119,8 @@ export function ForecastSettingsControl({
   const handleSave = async () => {
     console.log(`ForecastSettingsControl: Saving settings for ${itemName}:`, {
       method: selectedMethod,
-      discreteValues: dailyValues
+      discreteValues: dailyValues,
+      finalTotal: getFinalTotal()
     });
     
     // Save to Supabase
@@ -146,7 +152,8 @@ export function ForecastSettingsControl({
         method: selectedMethod, 
         values: dailyValues,
         year: currentYear,
-        month: currentMonth
+        month: currentMonth,
+        finalTotal: getFinalTotal()
       }
     });
     
