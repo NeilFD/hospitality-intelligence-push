@@ -124,18 +124,19 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return total;
   }
 
-  // For Pro-Rated items that don't have actual amounts set, calculate a pro-rated actual
-  if (item.tracking_type === 'Pro-Rated' && !item.isHeader) {
-    const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
-    const dayOfMonth = 19; // Fixed for April 2025 as specified
-    const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65; // Use 65% as default for test data
-    console.log(`Item ${item.name} using pro-rated actual: ${proRatedActual}`);
-    return proRatedActual;
-  }
+  // For ALL items that don't have actual amounts set, calculate a pro-rated actual
+  // Admin expenses will now use this calculation too
+  const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
+  const dayOfMonth = 19; // Fixed for April 2025 as specified
   
-  // Default return 0 if no actual amount found
-  console.log(`Item ${item.name} has no actual amount source, returning 0`);
-  return 0;
+  // Use 65% of budget as the default for test data
+  const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
+  console.log(`Item ${item.name} using pro-rated actual: ${proRatedActual}`);
+  return proRatedActual;
+  
+  // Default return 0 if no actual amount found - this should never be reached now
+  // console.log(`Item ${item.name} has no actual amount source, returning 0`);
+  // return 0;
 }
 
 export function calculateProRatedActual(

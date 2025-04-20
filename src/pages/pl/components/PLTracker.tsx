@@ -63,7 +63,7 @@ export function PLTracker({
       !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
       !isOperatingProfitItem && !item.isHeader && !isWagesItem;
       
-    // Set tracking type based on item type
+    // Set tracking type based on item type - ensure ALL admin expenses are Pro-Rated
     const trackingType = isAdminExpense ? 'Pro-Rated' : 'Discrete';
       
     // Add actual/budget debug log for each item
