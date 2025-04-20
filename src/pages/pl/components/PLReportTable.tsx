@@ -109,7 +109,7 @@ export function PLReportTable({
     
     loadData();
   }, [processedBudgetData, refreshTrigger, currentYear, currentMonth]);
-  
+
   const getDaysInMonth = () => {
     const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
     return date.getDate();
@@ -370,6 +370,81 @@ export function PLReportTable({
     return revenue > 0 ? (amount / revenue) * 100 : 0;
   };
 
+  const getForecastPercentage = (item: any) => {
+    const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
+    const name = item.name.toLowerCase();
+
+    const turnoverItem = filteredBudgetData.find(item => 
+      item.name.toLowerCase() === 'turnover' || 
+      item.name.toLowerCase() === 'total revenue'
+    );
+    
+    const foodRevenueItem = filteredBudgetData.find(item => 
+      item.name.toLowerCase().includes('food') && 
+      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+    );
+    
+    const beverageRevenueItem = filteredBudgetData.find(item => 
+      (item.name.toLowerCase().includes('beverage') || 
+       item.name.toLowerCase().includes('drink')) && 
+      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+    );
+
+    const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
+    const foodRevenueForecast = foodRevenueItem?.forecast_amount || 0;
+    const beverageRevenueForecast = beverageRevenueItem?.forecast_amount || 0;
+
+    if (name.includes('food') && name.includes('sales') || name.includes('food') && name.includes('revenue')) {
+      return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
+    }
+    
+    if ((name.includes('beverage') || name.includes('drink')) && 
+        (name.includes('sales') || name.includes('revenue'))) {
+      return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
+    }
+    
+    if (name.includes('food') && name.includes('cost of sales')) {
+      return foodRevenueForecast > 0 ? formatPercentage(forecastAmount / foodRevenueForecast) : '0.0%';
+    }
+    
+    if ((name.includes('beverage') || name.includes('drink')) && name.includes('cost of sales')) {
+      return beverageRevenueForecast > 0 ? formatPercentage(forecastAmount / beverageRevenueForecast) : '0.0%';
+    }
+    
+    if (name === 'food gross profit' || name.includes('food gross profit')) {
+      return foodRevenueForecast > 0 ? formatPercentage(forecastAmount / foodRevenueForecast) : '0.0%';
+    }
+    
+    if (name === 'beverage gross profit' || name.includes('beverage gross profit') || name.includes('drink gross profit')) {
+      return beverageRevenueForecast > 0 ? formatPercentage(forecastAmount / beverageRevenueForecast) : '0.0%';
+    }
+    
+    if (name === 'cost of sales' || (name.includes('cost of sales') && !name.includes('food') && !name.includes('beverage') && !name.includes('drink'))) {
+      return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
+    }
+    
+    if (name === 'gross profit' || name === 'gross profit/(loss)') {
+      return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
+    }
+    
+    if (name === 'turnover' || name === 'total revenue') {
+      return '100.0%';
+    }
+    
+    if (name.includes('wages') || name.includes('salaries')) {
+      return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
+    }
+    
+    if (!name.includes('revenue') && 
+        !name.includes('cost of sales') && 
+        !name.includes('gross profit') && 
+        !item.isHeader) {
+      return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
+    }
+    
+    return '0.0%';
+  };
+
   const renderTableContent = () => {
     const adminExpenseItems = [
       "Wages and Salaries", 
@@ -446,61 +521,6 @@ export function PLReportTable({
       item.name.toLowerCase() === 'total revenue'
     );
     const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
-
-    const foodRevenueItem = filteredBudgetData.find(item => 
-      item.name.toLowerCase().includes('food') && 
-      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
-    );
-    const beverageRevenueItem = filteredBudgetData.find(item => 
-      (item.name.toLowerCase().includes('beverage') || 
-       item.name.toLowerCase().includes('drink')) && 
-      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
-    );
-
-    const foodRevenueForecast = foodRevenueItem?.forecast_amount || 0;
-    const beverageRevenueForecast = beverageRevenueItem?.forecast_amount || 0;
-
-    const getForecastPercentage = (item: any) => {
-      const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
-      const name = item.name.toLowerCase();
-
-      if (name.includes('revenue') || name === 'turnover' || name === 'total revenue') {
-        return formatPercentage(forecastAmount / totalTurnoverForecast);
-      }
-      
-      if (name.includes('food') && name.includes('cost of sales')) {
-        return formatPercentage(forecastAmount / foodRevenueForecast);
-      }
-      
-      if ((name.includes('beverage') || name.includes('drink')) && name.includes('cost of sales')) {
-        return formatPercentage(forecastAmount / beverageRevenueForecast);
-      }
-      
-      if (name === 'food gross profit' || name.includes('food gross profit')) {
-        return formatPercentage(forecastAmount / foodRevenueForecast);
-      }
-      
-      if (name === 'beverage gross profit' || name.includes('beverage gross profit') || name.includes('drink gross profit')) {
-        return formatPercentage(forecastAmount / beverageRevenueForecast);
-      }
-      
-      if (name === 'cost of sales' || (name.includes('cost of sales') && !name.includes('food') && !name.includes('beverage') && !name.includes('drink'))) {
-        return formatPercentage(forecastAmount / totalTurnoverForecast);
-      }
-      
-      if (name === 'gross profit' || name === 'gross profit/(loss)') {
-        return formatPercentage(forecastAmount / totalTurnoverForecast);
-      }
-      
-      if (!name.includes('revenue') && 
-          !name.includes('cost of sales') && 
-          !name.includes('gross profit') && 
-          !item.isHeader) {
-        return formatPercentage(forecastAmount / totalTurnoverForecast);
-      }
-      
-      return '';
-    };
 
     return (
       <>
@@ -612,7 +632,9 @@ export function PLReportTable({
             {formatCurrency(adminTotalForecast)}
           </TableCell>
           <TableCell className="text-right">
-            {formatPercentage(adminTotalForecast / totalTurnoverForecast)}
+            {totalTurnoverForecast > 0 
+              ? formatPercentage(adminTotalForecast / totalTurnoverForecast)
+              : '0.0%'}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
@@ -638,7 +660,9 @@ export function PLReportTable({
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(operatingProfitForecast / totalTurnoverForecast)}
+            {totalTurnoverForecast > 0 
+              ? formatPercentage(operatingProfitForecast / totalTurnoverForecast)
+              : '0.0%'}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
