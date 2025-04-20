@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,7 +39,7 @@ export function TrackerHeader({
           className="flex items-center gap-2"
         >
           <Cog size={16} />
-          Line Item Settings
+          P&L Cost Management
         </Button>
         <Button 
           onClick={onSaveChanges} 
