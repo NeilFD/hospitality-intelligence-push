@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -133,10 +132,6 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
   console.log(`Item ${item.name} using pro-rated actual: ${proRatedActual}`);
   return proRatedActual;
-  
-  // Default return 0 if no actual amount found - this should never be reached now
-  // console.log(`Item ${item.name} has no actual amount source, returning 0`);
-  // return 0;
 }
 
 export function calculateProRatedActual(

@@ -58,45 +58,21 @@ export function PLTracker({
       item.name.toLowerCase().includes('wage') ||
       item.name.toLowerCase().includes('salary');
       
-    // Most admin expenses should be Pro-Rated
+    // Define admin expense items - including all generic expense items
     const isAdminExpense = 
       !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
       !isOperatingProfitItem && !item.isHeader && !isWagesItem;
       
-    // Set tracking type based on item type - ensure ALL admin expenses are Pro-Rated
+    // CRITICAL: Set tracking type for all admin expenses to Pro-Rated
     const trackingType = isAdminExpense ? 'Pro-Rated' : 'Discrete';
-      
+    
     // Add actual/budget debug log for each item
     console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}, type=${trackingType}`);
-    
-    // For April 2025, make sure we have sample actual amounts for demo purposes
-    let actualAmount = item.actual_amount;
-    
-    if (currentMonthName === 'April' && currentYear === 2025) {
-      if (!item.actual_amount && !item.isHeader) {
-        // If no actual amount is set, create one based on budget
-        const proRatedBudget = (item.budget_amount / daysInMonth) * actualDayOfMonth;
-        
-        if (isRevenueItem) {
-          // Revenue at 70% of pro-rated budget
-          actualAmount = Math.round(proRatedBudget * 0.7);
-        } else if (isCOSItem) {
-          // COS at 75% of pro-rated budget
-          actualAmount = Math.round(proRatedBudget * 0.75);
-        } else if (isAdminExpense) {
-          // Admin expenses at 65% of pro-rated budget
-          actualAmount = Math.round(proRatedBudget * 0.65);
-        } else if (!item.isHeader && !item.isGrossProfit && !item.isOperatingProfit) {
-          // Other expenses at 65% of pro-rated budget
-          actualAmount = Math.round(proRatedBudget * 0.65);
-        }
-      }
-    }
     
     return {
       ...item,
       tracking_type: item.tracking_type || trackingType,
-      actual_amount: actualAmount
+      actual_amount: item.actual_amount // Keep the actual_amount as is - will be calculated later if needed
     };
   }) as PLTrackerBudgetItem[];
   
