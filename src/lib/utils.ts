@@ -27,7 +27,7 @@ export function formatPercentage(value: number | undefined): string {
   }).format(value);
 }
 
-// New utility function for preventing text overlap
+// Utility function for preventing text overlap - returns the className string
 export function preventOverlap(baseClasses: string = ''): string {
   return cn(
     baseClasses, 

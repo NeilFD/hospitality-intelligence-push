@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -227,7 +226,7 @@ export function PLTrackerSettings({
   return (
     <Card className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="bg-white/40 border-b flex flex-row items-center justify-between">
-        <CardTitle>{preventOverlap('P&L Tracker Settings - ' + currentMonthName + ' ' + currentYear)}</CardTitle>
+        <CardTitle className={preventOverlap()}>P&L Tracker Settings - {currentMonthName} {currentYear}</CardTitle>
         <div className="flex items-center gap-2">
           <Button 
             onClick={saveTrackingSettings} 
@@ -262,10 +261,10 @@ export function PLTrackerSettings({
             <Table>
               <TableHeader>
                 <TableRow className="bg-purple-50">
-                  <TableHead className="w-[250px]">{preventOverlap('Line Item')}</TableHead>
-                  <TableHead>{preventOverlap('Tracking Type')}</TableHead>
-                  <TableHead className="text-right">{preventOverlap('Budget Amount')}</TableHead>
-                  <TableHead className="text-right">{preventOverlap('Category')}</TableHead>
+                  <TableHead className="w-[250px] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">Line Item</TableHead>
+                  <TableHead className="whitespace-nowrap overflow-hidden text-ellipsis max-w-full">Tracking Type</TableHead>
+                  <TableHead className="text-right whitespace-nowrap overflow-hidden text-ellipsis max-w-full">Budget Amount</TableHead>
+                  <TableHead className="text-right whitespace-nowrap overflow-hidden text-ellipsis max-w-full">Category</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -275,9 +274,9 @@ export function PLTrackerSettings({
                       <TableRow key={i} className={'bg-[#48495e]/90 text-white'}>
                         <TableCell 
                           colSpan={4} 
-                          className="font-bold text-sm tracking-wider py-2"
+                          className="font-bold text-sm tracking-wider py-2 whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
                         >
-                          {preventOverlap(item.name)}
+                          {item.name}
                         </TableCell>
                       </TableRow>
                     );
@@ -294,8 +293,8 @@ export function PLTrackerSettings({
                   
                   return (
                     <TableRow key={i}>
-                      <TableCell className={fontClass}>
-                        {preventOverlap(item.name)}
+                      <TableCell className={`${fontClass} whitespace-nowrap overflow-hidden text-ellipsis max-w-full`}>
+                        {item.name}
                       </TableCell>
                       <TableCell>
                         {shouldShowTrackingType(item) ? (
@@ -318,8 +317,8 @@ export function PLTrackerSettings({
                       <TableCell className={`text-right ${fontClass}`}>
                         {item.budget_amount.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right">
-                        {preventOverlap(item.category || '')}
+                      <TableCell className="text-right whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+                        {item.category || ''}
                       </TableCell>
                     </TableRow>
                   );
