@@ -67,6 +67,10 @@ export function TrackerLineItem({
   const isWages = item.name.toLowerCase().includes('wages and salaries') ||
                  item.name.toLowerCase() === 'wages' ||
                  item.name.toLowerCase() === 'salaries';
+                 
+  const isTotalItem = item.name.toLowerCase().includes('total');
+                 
+  const isHighlightedItem = item.isHighlighted;
   
   let rowClassName = '';
   let fontClass = '';
@@ -118,23 +122,35 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
+  // Stricter condition to determine when to show calendar
   const shouldShowCalendar = () => {
-    // Strict condition to show calendar ONLY for Discrete items
-    // that aren't special categories or summary items
-    return (
-      item.tracking_type === 'Discrete' && 
-      !isRevenue && 
-      !isCOS && 
-      !isWages && 
-      !isGrossProfit && 
-      !isOperatingProfit &&
-      !item.isHeader && 
-      !item.isHighlighted &&
-      !item.name.toLowerCase().includes('total')
-    );
+    // Check tracking type first - must be Discrete
+    const hasDiscreteTracking = item.tracking_type === 'Discrete';
+    if (!hasDiscreteTracking) return false;
+    
+    // Exclude all special categories
+    if (isRevenue || isCOS || isWages || isGrossProfit || 
+        isOperatingProfit || item.isHeader || isHighlightedItem || 
+        isTotalItem) {
+      return false;
+    }
+    
+    // Exclude items with special words in the name
+    const specialTerms = [
+      'total', 'summary', 'turnover', 'revenue', 
+      'sales', 'cost of', 'cos', 'wages', 'salary',
+      'operating', 'profit', 'gross'
+    ];
+    
+    for (const term of specialTerms) {
+      if (item.name.toLowerCase().includes(term)) {
+        return false;
+      }
+    }
+    
+    // Safe to show calendar
+    return true;
   };
-
-  console.log(`Item: ${item.name}, tracking_type: ${item.tracking_type}, shouldShowCalendar: ${shouldShowCalendar()}`);
 
   return (
     <TableRow className={rowClassName}>
@@ -153,7 +169,7 @@ export function TrackerLineItem({
       
       <TableCell className={`text-right ${fontClass}`}>
         <div className="flex items-center justify-end gap-2">
-          {shouldShowCalendar() ? (
+          {shouldShowCalendar() && (
             <Button 
               variant="outline"
               size="icon"
@@ -164,7 +180,7 @@ export function TrackerLineItem({
             >
               <CalendarDays className="h-5 w-5" />
             </Button>
-          ) : null}
+          )}
           <span className="text-right">
             {formatCurrency(actualAmount)}
           </span>
