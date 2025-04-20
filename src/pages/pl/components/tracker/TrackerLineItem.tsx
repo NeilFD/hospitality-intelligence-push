@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { DailyInputDrawer } from './DailyInputDrawer';
-import { CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CalendarDays } from 'lucide-react';
 
 interface TrackerLineItemProps {
   item: PLTrackerBudgetItem;
@@ -159,23 +158,7 @@ export function TrackerLineItem({
       </TableCell>
       
       <TableCell className={`text-right ${fontClass}`}>
-        <div className="flex items-center justify-end gap-2">
-          {showCalendarIcon && (
-            <Button 
-              variant="outline"
-              size="icon"
-              onClick={handleOpenDailyInput}
-              className="h-9 w-9 rounded-full border border-purple-500 bg-purple-50 text-purple-700 hover:bg-purple-100 pointer-events-auto z-10"
-              type="button"
-              tabIndex={0}
-            >
-              <CalendarDays className="h-5 w-5" />
-            </Button>
-          )}
-          <span className="text-right">
-            {formatCurrency(actualAmount)}
-          </span>
-        </div>
+        {formatCurrency(actualAmount)}
       </TableCell>
       
       <TableCell className="text-right">
@@ -194,19 +177,6 @@ export function TrackerLineItem({
       }`}>
         {formatCurrency(variance)}
       </TableCell>
-      
-      {isDailyInputOpen && showCalendarIcon && (
-        <DailyInputDrawer
-          isOpen={isDailyInputOpen}
-          onClose={handleCloseDailyInput}
-          onSave={handleSaveDailyValues}
-          initialValues={item.daily_values || []}
-          itemName={item.name}
-          monthName={currentMonthName}
-          year={currentYear}
-          budgetItemId={item.id}
-        />
-      )}
     </TableRow>
   );
 }
