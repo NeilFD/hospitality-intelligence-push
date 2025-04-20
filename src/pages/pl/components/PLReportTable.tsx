@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getActualAmount } from '../components/tracker/TrackerCalculations';
+import { getActualAmount, getForecastAmount } from './tracker/TrackerCalculations';
 import { ForecastSettingsControl } from "./forecast/ForecastSettingsControl";
 
 type PLReportTableProps = {
@@ -18,6 +18,22 @@ export function PLReportTable({
   currentMonthName,
   currentYear,
 }: PLReportTableProps) {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  const [budgetDataWithSettings, setBudgetDataWithSettings] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const processItems = async () => {
+      setBudgetDataWithSettings(processedBudgetData.map(item => {
+        return {
+          ...item,
+        };
+      }));
+    };
+    
+    processItems();
+  }, [processedBudgetData, refreshTrigger]);
+  
   const getDaysInMonth = () => {
     const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
     return date.getDate();
@@ -45,12 +61,6 @@ export function PLReportTable({
   const daysInMonth = getDaysInMonth();
   const currentDay = getCurrentDay();
   
-  const calculateForecast = (actualAmount: number) => {
-    if (currentDay <= 0) return actualAmount;
-    const dailyAverage = actualAmount / currentDay;
-    return dailyAverage * daysInMonth;
-  };
-
   const getFontClass = (name: string) => {
     const lowercaseName = name.toLowerCase();
     if (
@@ -298,7 +308,7 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      const forecastAmount = calculateForecast(actualAmount || 0);
+      const forecastAmount = getForecastAmount(item, currentYear, getMonthNumber(currentMonthName));
       
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 
@@ -349,7 +359,7 @@ export function PLReportTable({
                 currentYear={currentYear}
                 currentMonth={getMonthNumber(currentMonthName)}
                 onMethodChange={() => {
-                  window.location.reload();
+                  setRefreshTrigger(prev => prev + 1);
                 }}
               />
             )}

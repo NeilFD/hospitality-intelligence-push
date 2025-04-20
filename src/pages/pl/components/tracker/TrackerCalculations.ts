@@ -1,4 +1,6 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 export function calculateProRatedBudget(
   item: PLTrackerBudgetItem,
@@ -89,7 +91,8 @@ export function calculateSummaryProRatedBudget(
   return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
 }
 
-export async function getActualAmount(item: PLTrackerBudgetItem): Promise<number> {
+// Changed from async to sync function to fix type issues
+export function getActualAmount(item: PLTrackerBudgetItem): number {
   if (item.isHeader) {
     return 0;
   }
@@ -133,47 +136,64 @@ export async function getActualAmount(item: PLTrackerBudgetItem): Promise<number
   return 0;
 }
 
-export async function getForecastAmount(
+// Now making this function sync by using the forecast settings directly from the item
+export function getForecastAmount(
   item: PLTrackerBudgetItem,
   year: number,
   month: number
-): Promise<number> {
-  try {
-    const { data } = await supabase
-      .from('cost_item_forecast_settings')
-      .select('method, discrete_values')
-      .eq('item_name', item.name)
-      .eq('year', year)
-      .eq('month', month)
-      .single();
-
-    if (data) {
-      const method = data.method;
-      const discreteValues = data.discrete_values || {};
-
-      switch (method) {
-        case 'fixed':
-          return item.budget_amount || 0;
-        
-        case 'discrete': {
-          const total = Object.values(discreteValues).reduce((sum, value) => sum + (Number(value) || 0), 0);
-          return total;
+): number {
+  // Default to budget amount if no forecast settings available
+  if (!item.forecast_settings) {
+    return item.budget_amount || 0;
+  }
+  
+  const method = item.forecast_settings.method;
+  const discreteValues = item.forecast_settings.discrete_values || {};
+  
+  switch (method) {
+    case 'fixed':
+      return item.budget_amount || 0;
+    
+    case 'discrete': {
+      let total = 0;
+      // Properly cast and handle the discrete values
+      if (discreteValues && typeof discreteValues === 'object') {
+        const values = Object.values(discreteValues);
+        for (const value of values) {
+          if (typeof value === 'number') {
+            total += value;
+          } else if (typeof value === 'string') {
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+              total += parsed;
+            }
+          }
         }
-        
-        case 'fixed_plus': {
-          const dailyTotal = Object.values(discreteValues).reduce((sum, value) => sum + (Number(value) || 0), 0);
-          return (item.budget_amount || 0) + dailyTotal;
-        }
-        
-        default:
-          return item.budget_amount || 0;
       }
+      return total;
     }
-
-    return item.budget_amount || 0;
-  } catch (error) {
-    console.error('Error fetching forecast settings:', error);
-    return item.budget_amount || 0;
+    
+    case 'fixed_plus': {
+      let dailyTotal = 0;
+      // Properly cast and handle the discrete values
+      if (discreteValues && typeof discreteValues === 'object') {
+        const values = Object.values(discreteValues);
+        for (const value of values) {
+          if (typeof value === 'number') {
+            dailyTotal += value;
+          } else if (typeof value === 'string') {
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+              dailyTotal += parsed;
+            }
+          }
+        }
+      }
+      return (item.budget_amount || 0) + dailyTotal;
+    }
+    
+    default:
+      return item.budget_amount || 0;
   }
 }
 
