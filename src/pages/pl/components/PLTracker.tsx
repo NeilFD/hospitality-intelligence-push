@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -34,27 +35,39 @@ export function PLTracker({
   // Debug log for all processed budget data
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // Initialize some sample actual amounts for test data when in April 2025
+  // Initialize sample actual amounts for all items for test data in April 2025
   const processedDataWithDefaultTracking = processedBudgetData.map(item => {
-    const isSpecialItem = 
+    const isRevenueItem = 
       item.name.toLowerCase().includes('turnover') || 
       item.name.toLowerCase().includes('revenue') ||
-      item.name.toLowerCase().includes('sales') ||
-      item.name.toLowerCase().includes('cost of sales') ||
-      item.name.toLowerCase().includes('cos') ||
-      item.name.toLowerCase().includes('gross profit') ||
-      item.name.toLowerCase().includes('operating profit') ||
-      item.name.toLowerCase().includes('wage') ||
-      item.name.toLowerCase().includes('salary') ||
-      item.isHeader ||
-      item.isGrossProfit ||
-      item.isOperatingProfit ||
-      item.isHighlighted;
+      item.name.toLowerCase().includes('sales');
       
-    const trackingType = isSpecialItem ? 'Discrete' : 'Pro-Rated';
+    const isCOSItem = 
+      item.name.toLowerCase().includes('cost of sales') ||
+      item.name.toLowerCase().includes('cos');
+      
+    const isGrossProfitItem = 
+      item.name.toLowerCase().includes('gross profit') ||
+      item.isGrossProfit;
+      
+    const isOperatingProfitItem = 
+      item.name.toLowerCase().includes('operating profit') ||
+      item.isOperatingProfit;
+      
+    const isWagesItem = 
+      item.name.toLowerCase().includes('wage') ||
+      item.name.toLowerCase().includes('salary');
+      
+    // Most admin expenses should be Pro-Rated
+    const isAdminExpense = 
+      !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
+      !isOperatingProfitItem && !item.isHeader && !isWagesItem;
+      
+    // Set tracking type based on item type
+    const trackingType = isAdminExpense ? 'Pro-Rated' : 'Discrete';
       
     // Add actual/budget debug log for each item
-    console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
+    console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}, type=${trackingType}`);
     
     // For April 2025, make sure we have sample actual amounts for demo purposes
     let actualAmount = item.actual_amount;
@@ -62,18 +75,17 @@ export function PLTracker({
     if (currentMonthName === 'April' && currentYear === 2025) {
       if (!item.actual_amount && !item.isHeader) {
         // If no actual amount is set, create one based on budget
-        // For most items use 65% of pro-rated budget
         const proRatedBudget = (item.budget_amount / daysInMonth) * actualDayOfMonth;
         
-        if (item.name.toLowerCase().includes('turnover') || 
-            item.name.toLowerCase().includes('revenue') || 
-            item.name.toLowerCase().includes('sales')) {
+        if (isRevenueItem) {
           // Revenue at 70% of pro-rated budget
           actualAmount = Math.round(proRatedBudget * 0.7);
-        } else if (item.name.toLowerCase().includes('cost of sales') || 
-                  item.name.toLowerCase().includes('cos')) {
+        } else if (isCOSItem) {
           // COS at 75% of pro-rated budget
           actualAmount = Math.round(proRatedBudget * 0.75);
+        } else if (isAdminExpense) {
+          // Admin expenses at 65% of pro-rated budget
+          actualAmount = Math.round(proRatedBudget * 0.65);
         } else if (!item.isHeader && !item.isGrossProfit && !item.isOperatingProfit) {
           // Other expenses at 65% of pro-rated budget
           actualAmount = Math.round(proRatedBudget * 0.65);

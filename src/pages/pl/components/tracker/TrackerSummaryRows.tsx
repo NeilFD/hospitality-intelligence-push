@@ -21,7 +21,7 @@ export function TrackerSummaryRows({
   calculateProRatedBudget,
   updateForecastAmount
 }: TrackerSummaryRowsProps) {
-  // Filter items that should be included in admin expenses
+  // Filter items that should be included in admin expenses - exclude revenue, COS, gross profit, etc.
   const adminItems = trackedBudgetData.filter(item => 
     !item.isHeader && 
     !item.name.toLowerCase().includes('turnover') &&
@@ -33,7 +33,7 @@ export function TrackerSummaryRows({
     !item.name.toLowerCase().includes('operating profit')
   );
 
-  // Calculate prorated and actual admin expenses
+  // Calculate admin expenses - both pro-rated budget and actual amounts
   const adminExpenses = adminItems.reduce((sum, item) => 
     sum + calculateProRatedBudget(item), 0);
     
@@ -45,7 +45,7 @@ export function TrackerSummaryRows({
   console.log(`Admin expenses: ${adminExpenses}, Admin actual: ${adminActualAmount}, Variance: ${adminVariance}`);
   console.log('Admin items count:', adminItems.length);
   
-  // Calculate admin forecast
+  // Calculate admin forecast based on actual amounts so far
   const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
     ? (adminActualAmount / dayOfMonth) * daysInMonth
     : adminExpenses;
@@ -68,7 +68,7 @@ export function TrackerSummaryRows({
   
   console.log(`Operating profit: ${operatingProfit}, Actual OP: ${actualOperatingProfit}, Variance: ${opVariance}`);
   
-  // Calculate operating profit forecast
+  // Calculate operating profit forecast based on actuals so far
   const opForecast = actualOperatingProfit !== 0 && dayOfMonth > 0
     ? (actualOperatingProfit / dayOfMonth) * daysInMonth
     : operatingProfit;

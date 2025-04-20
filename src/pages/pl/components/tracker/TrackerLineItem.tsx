@@ -71,6 +71,9 @@ export function TrackerLineItem({
                  item.name.toLowerCase() === 'salaries';
                  
   const isTotalItem = item.name.toLowerCase().includes('total');
+  
+  const isAdminExpense = !isRevenue && !isCOS && !isGrossProfit && !isOperatingProfit && 
+                        !isWages && !item.isHeader && !isTotalItem;
                  
   const isHighlightedItem = item.isHighlighted;
   
