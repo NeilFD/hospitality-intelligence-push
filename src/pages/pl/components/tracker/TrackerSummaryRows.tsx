@@ -35,14 +35,10 @@ export function TrackerSummaryRows({
 
   // Logging for debugging
   console.log('Admin items count for summary:', adminItems.length);
-  adminItems.forEach(item => {
-    console.log(`Admin item: ${item.name}, budget: ${item.budget_amount}, actual: ${getActualAmount(item)}`);
-  });
-
+  
   // Calculate admin expenses - both pro-rated budget and actual amounts
-  const adminTotalBudget = adminItems.reduce((sum, item) => 
-    sum + (item.budget_amount || 0), 0);
-    
+  const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
+  
   const adminExpenses = adminItems.reduce((sum, item) => 
     sum + calculateProRatedBudget(item), 0);
     
@@ -52,6 +48,7 @@ export function TrackerSummaryRows({
   const adminVariance = adminActualAmount - adminExpenses;
   
   console.log(`Admin expenses: ${adminExpenses}, Admin actual: ${adminActualAmount}, Variance: ${adminVariance}`);
+  console.log(`Admin total budget: ${adminTotalBudget}`);
   
   // Calculate admin forecast based on actual amounts so far
   const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
@@ -68,7 +65,14 @@ export function TrackerSummaryRows({
   const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
   const grossProfitProRated = grossProfitItem ? calculateProRatedBudget(grossProfitItem) : 0;
   
-  console.log(`Gross profit item found: ${grossProfitItem?.name}, budget: ${grossProfitBudget}, actual: ${grossProfitActual}`);
+  // Find the gross profit forecast amount
+  const grossProfitForecast = grossProfitItem && grossProfitItem.forecast_amount 
+    ? grossProfitItem.forecast_amount 
+    : (grossProfitActual > 0 && dayOfMonth > 0) 
+      ? (grossProfitActual / dayOfMonth) * daysInMonth 
+      : grossProfitBudget;
+  
+  console.log(`Gross profit item found: ${grossProfitItem?.name}, budget: ${grossProfitBudget}, actual: ${grossProfitActual}, forecast: ${grossProfitForecast}`);
   
   // Calculate Operating Profit
   const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
@@ -76,13 +80,12 @@ export function TrackerSummaryRows({
   const actualOperatingProfit = grossProfitActual - adminActualAmount;
   const opVariance = actualOperatingProfit - operatingProfit;
   
-  console.log(`Operating profit: ${operatingProfit}, Actual OP: ${actualOperatingProfit}, Variance: ${opVariance}`);
+  // Calculate operating profit forecast
+  const opForecast = grossProfitForecast - adminForecast;
   
-  // Calculate operating profit forecast based on actuals so far
-  const opForecast = grossProfitItem?.forecast_amount 
-    ? grossProfitItem.forecast_amount - adminForecast
-    : operatingProfitBudget;
-    
+  console.log(`Operating profit: ${operatingProfit}, Actual OP: ${actualOperatingProfit}, Forecast OP: ${opForecast}, Variance: ${opVariance}`);
+  console.log(`OP Budget: ${operatingProfitBudget}`);
+  
   // Update forecast value for operating profit in state
   React.useEffect(() => {
     const opIndex = trackedBudgetData.findIndex(i => 
