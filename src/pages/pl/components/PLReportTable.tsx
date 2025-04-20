@@ -1,8 +1,9 @@
+
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getActualAmount } from '../components/tracker/TrackerCalculations";
+import { getActualAmount } from '../components/tracker/TrackerCalculations';
 
 type PLReportTableProps = {
   isLoading: boolean;
