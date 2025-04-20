@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -76,13 +75,14 @@ export function TrackerSummaryRows({
   
   const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
   const turnoverBudget = turnoverItem ? turnoverItem.budget_amount || 0 : 0;
-  const turnoverForecast = turnoverItem?.forecast_amount || 0;
   
-  console.log(`Turnover actual: ${turnoverActual}, Turnover budget: ${turnoverBudget}, Turnover forecast (initially): ${turnoverForecast}`);
+  // Get the turnover forecast, making sure to get a valid value
+  let turnoverForecast = turnoverItem?.forecast_amount || 0;
+  console.log(`Initial turnover forecast from item: ${turnoverForecast}`);
   
   // If turnoverForecast is 0 or undefined, try to calculate it
   let effectiveTurnoverForecast = turnoverForecast;
-  if (!effectiveTurnoverForecast && turnoverItem && dayOfMonth > 0) {
+  if ((!effectiveTurnoverForecast || effectiveTurnoverForecast === 0) && turnoverItem && dayOfMonth > 0) {
     // Try to calculate from actual turnover
     const turnoverActualAmount = getActualAmount(turnoverItem);
     console.log(`Trying to calculate effective forecast from actual: ${turnoverActualAmount}`);
@@ -98,7 +98,7 @@ export function TrackerSummaryRows({
   }
   
   // Additional fallback if effectiveTurnoverForecast is still 0
-  if (!effectiveTurnoverForecast) {
+  if (!effectiveTurnoverForecast || effectiveTurnoverForecast === 0) {
     // Find all revenue items
     const revenueItems = trackedBudgetData.filter(item =>
       item.name.toLowerCase().includes('revenue') ||
@@ -132,6 +132,12 @@ export function TrackerSummaryRows({
       effectiveTurnoverForecast = turnoverBudget;
       console.log(`Final fallback to budget for forecast: ${effectiveTurnoverForecast}`);
     }
+  }
+  
+  // Final fallback to a minimum value to avoid division by zero
+  if (!effectiveTurnoverForecast || effectiveTurnoverForecast === 0) {
+    effectiveTurnoverForecast = 1; // Prevent division by zero
+    console.log(`Using minimum fallback value to prevent division by zero`);
   }
   
   console.log(`Final effective turnover forecast to use: ${effectiveTurnoverForecast}`);
@@ -170,7 +176,7 @@ export function TrackerSummaryRows({
   const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
   const adminBudgetPercentage = turnoverBudget ? (adminTotalBudget / turnoverBudget) * 100 : 0;
   
-  // Use effectiveTurnoverForecast for percentage calculations
+  // Use effectiveTurnoverForecast for percentage calculations, making sure it's not zero
   const adminForecastPercentage = effectiveTurnoverForecast ? (adminForecast / effectiveTurnoverForecast) * 100 : 0;
   
   const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
