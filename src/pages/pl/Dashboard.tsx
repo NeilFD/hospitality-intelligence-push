@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -103,6 +102,10 @@ export default function PLDashboard() {
     };
   }, []);
   
+  const generateTempId = (name: string) => {
+    return `temp-id-${name.toLowerCase().replace(/\s+/g, '-')}`;
+  };
+
   const updatedBudgetData = processedBudgetData.map(item => {
     if (!item || !item.name) {
       console.warn("Warning: Found item without name in updatedBudgetData");
@@ -233,11 +236,6 @@ export default function PLDashboard() {
     )
   );
 
-  const generateTempId = (name: string) => {
-    return `temp-id-${name.toLowerCase().replace(/\s+/g, '-')}`;
-  };
-
-  // Make sure we have valid items to work with
   const turnoverForecast = turnoverItem?.forecast_amount || 
                          (turnoverItem ? getForecastAmount({
                            ...(turnoverItem || {}), 

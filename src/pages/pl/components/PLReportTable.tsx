@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -76,10 +75,9 @@ export function PLReportTable({
         const processedData = JSON.parse(JSON.stringify(processedBudgetData));
         
         const updatedData = await Promise.all(processedData.map(async (item: any) => {
-          // Ensure item has a name property
           if (!item || !item.name) {
             console.warn("Warning: Item without name found in processedBudgetData", item);
-            return item; // Return the item unchanged
+            return item;
           }
           
           const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
@@ -136,7 +134,7 @@ export function PLReportTable({
   };
   
   const getFontClass = (name: string) => {
-    if (!name) return ""; // Guard against undefined names
+    if (!name) return "";
     
     const lowercaseName = name.toLowerCase();
     if (
@@ -156,7 +154,7 @@ export function PLReportTable({
   };
 
   const shouldShowPercentage = (item: any) => {
-    if (!item || !item.name) return false; // Guard against undefined items or names
+    if (!item || !item.name) return false;
     
     const lowercaseName = item.name.toLowerCase();
     return (
@@ -168,7 +166,7 @@ export function PLReportTable({
   };
 
   const getPercentageDisplay = (item: any) => {
-    if (!item || !item.name) return null; // Guard against undefined items or names
+    if (!item || !item.name) return null;
     
     const lowercaseName = item.name.toLowerCase();
     
@@ -305,7 +303,7 @@ export function PLReportTable({
   };
 
   const isCostLine = (name: string) => {
-    if (!name) return false; // Guard against undefined names
+    if (!name) return false;
     
     const lowercaseName = name.toLowerCase();
     return (
@@ -332,7 +330,7 @@ export function PLReportTable({
   };
 
   const isCostEditableRow = (name: string) => {
-    if (!name) return false; // Guard against undefined names
+    if (!name) return false;
     
     const lowercaseName = name.toLowerCase();
     
@@ -388,7 +386,7 @@ export function PLReportTable({
   };
 
   const getForecastPercentage = (item: any) => {
-    if (!item || !item.name) return '0.0%'; // Guard against undefined items or names
+    if (!item || !item.name) return '0.0%';
     
     const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
     const name = item.name.toLowerCase();
@@ -419,7 +417,7 @@ export function PLReportTable({
     const foodRevenueForecast = foodRevenueItem?.forecast_amount || 0;
     const beverageRevenueForecast = beverageRevenueItem?.forecast_amount || 0;
 
-    if (name.includes('food') && name.includes('sales') || name.includes('food') && name.includes('revenue')) {
+    if (name.includes('food') && (name.includes('sales') || name.includes('revenue'))) {
       return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
     }
     
@@ -444,7 +442,7 @@ export function PLReportTable({
       return beverageRevenueForecast > 0 ? formatPercentage(forecastAmount / beverageRevenueForecast) : '0.0%';
     }
     
-    if (name === 'cost of sales' || (name.includes('cost of sales') && !name.includes('food') && !name.includes('beverage') && !name.includes('drink'))) {
+    if (name === 'cost of sales' || name === 'cos') {
       return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
     }
     
@@ -456,13 +454,38 @@ export function PLReportTable({
       return '100.0%';
     }
     
-    if (name.includes('wages') || name.includes('salaries')) {
+    if (name.includes('wages') || 
+        name.includes('salaries') || 
+        name.includes('marketing') ||
+        name.includes('professional') ||
+        name.includes('bank charges') ||
+        name.includes('cleaning') ||
+        name.includes('entertainment') ||
+        name.includes('printing') ||
+        name.includes('postage') ||
+        name.includes('stationery') ||
+        name.includes('sundry') ||
+        name.includes('motor') ||
+        name.includes('insurance') ||
+        name.includes('heat and power') ||
+        name.includes('utilities') ||
+        name.includes('repairs') ||
+        name.includes('maintenance') ||
+        name.includes('premises') ||
+        name.includes('telephone') ||
+        name.includes('internet') ||
+        name.includes('rates') ||
+        name.includes('rent') ||
+        name.includes('staff costs') ||
+        name.includes('subscriptions') ||
+        name.includes('hotel') ||
+        name.includes('travel')) {
       return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
     }
     
     if (!name.includes('revenue') && 
-        !name.includes('cost of sales') && 
-        !name.includes('gross profit') && 
+        !name.includes('sales') && 
+        !name.includes('turnover') &&
         !item.isHeader) {
       return totalTurnoverForecast > 0 ? formatPercentage(forecastAmount / totalTurnoverForecast) : '0.0%';
     }
@@ -559,7 +582,6 @@ export function PLReportTable({
             return null;
           }
           
-          // Skip items without a name property
           if (!item.name) {
             console.warn("Warning: Item without name found in filteredBudgetData", item);
             return null;
