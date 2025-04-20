@@ -82,7 +82,13 @@ export const saveDailyValues = async (
         continue;
       }
       
-      const day = dayInput.date.getDate();
+      // Get day from either day property or date property
+      const day = dayInput.day || (dayInput.date ? dayInput.date.getDate() : null);
+      
+      if (day === null) {
+        console.error('Could not determine day value for input:', dayInput);
+        continue;
+      }
       
       // Upsert each daily value
       await upsertDailyValue(budgetItemId, year, month, day, dayInput.value);

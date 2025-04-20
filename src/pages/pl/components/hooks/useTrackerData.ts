@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { useToast } from '@/hooks/use-toast';
@@ -40,8 +41,9 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
               dailyValues = dbValues.map(dbValue => {
                 const date = new Date(year, month - 1, dbValue.day);
                 return {
-                  date,
-                  value: dbValue.value
+                  day: dbValue.day,
+                  value: dbValue.value,
+                  date // Include date property for backward compatibility
                 };
               });
             }

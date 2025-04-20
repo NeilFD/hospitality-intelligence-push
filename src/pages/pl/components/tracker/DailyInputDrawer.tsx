@@ -76,6 +76,7 @@ export function DailyInputDrawer({
               const value = storedValue !== undefined ? storedValue.value : (savedDay ? savedDay.value : null);
               
               days.push({
+                day: dayOfMonth,
                 date: currentDate,
                 value: value
               });
@@ -112,12 +113,14 @@ export function DailyInputDrawer({
     const days: DayInput[] = [];
     for (let i = 0; i < daysInMonth; i++) {
       const currentDate = addDays(firstDayOfMonth, i);
+      const dayOfMonth = currentDate.getDate();
       const savedDay = initialValues.find(day => 
         day.date instanceof Date && 
         day.date.getDate() === currentDate.getDate() && 
         day.date.getMonth() === currentDate.getMonth()
       );
       days.push({
+        day: dayOfMonth,
         date: currentDate,
         value: savedDay ? savedDay.value : null
       });

@@ -1,6 +1,6 @@
 
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export function calculateProRatedBudget(
   item: PLTrackerBudgetItem,

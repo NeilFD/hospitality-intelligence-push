@@ -1,3 +1,4 @@
+
 export interface PLTrackerBudgetItem {
   id: string;
   name: string;
@@ -22,4 +23,5 @@ export interface DayInput {
   day: number;
   value: number;
   id?: string;
+  date?: Date; // Add optional date property to support existing code
 }
