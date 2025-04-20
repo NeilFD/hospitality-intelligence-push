@@ -674,21 +674,31 @@ export function PLReportTable({
     const operatingProfitForecast = grossProfitForecast - adminTotalForecast;
     const operatingProfitVariance = operatingProfitForecast - operatingProfitBudget;
     
-    const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
-    const totalTurnoverActual = turnoverItem?.actual_amount || 0;
+    const totalTurnoverForecast = turnoverItem?.forecast_amount || 
+                               (turnoverItem ? getForecastAmount(turnoverItem, currentYear, currentMonth) : 0);
+    const totalTurnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
     
-    const adminActualPercentage = totalTurnoverActual > 0 ? adminTotalActual / totalTurnoverActual : 0;
+    console.log(`Turnover values - Actual: ${totalTurnoverActual}, Forecast: ${totalTurnoverForecast}`);
     
-    const safeTurnoverForecast = totalTurnoverForecast > 0 ? totalTurnoverForecast : 1;
-    const adminForecastPercentage = adminTotalForecast / safeTurnoverForecast;
+    const adminActualPercentage = totalTurnoverActual && totalTurnoverActual !== 0 
+      ? (adminTotalActual / totalTurnoverActual) * 100 
+      : 0;
     
-    console.log(`Admin % calculations - Actual: ${adminTotalActual}/${totalTurnoverActual} = ${adminActualPercentage}, Forecast: ${adminTotalForecast}/${safeTurnoverForecast} = ${adminForecastPercentage}`);
+    const safeTurnoverForecast = totalTurnoverForecast && totalTurnoverForecast !== 0 
+      ? totalTurnoverForecast 
+      : 1;
     
-    const operatingProfitActualPercentage = totalTurnoverActual > 0 ? operatingProfitActual / totalTurnoverActual : 0;
+    const adminForecastPercentage = (adminTotalForecast / safeTurnoverForecast) * 100;
     
-    const operatingProfitForecastPercentage = operatingProfitForecast / safeTurnoverForecast;
+    console.log(`Admin % calculations - Actual: ${adminTotalActual}/${totalTurnoverActual} = ${adminActualPercentage}%, Forecast: ${adminTotalForecast}/${safeTurnoverForecast} = ${adminForecastPercentage}%`);
     
-    console.log(`OP % calculations - Actual: ${operatingProfitActual}/${totalTurnoverActual} = ${operatingProfitActualPercentage}, Forecast: ${operatingProfitForecast}/${safeTurnoverForecast} = ${operatingProfitForecastPercentage}`);
+    const operatingProfitActualPercentage = totalTurnoverActual && totalTurnoverActual !== 0 
+      ? (operatingProfitActual / totalTurnoverActual) * 100 
+      : 0;
+    
+    const operatingProfitForecastPercentage = (operatingProfitForecast / safeTurnoverForecast) * 100;
+    
+    console.log(`OP % calculations - Actual: ${operatingProfitActual}/${totalTurnoverActual} = ${operatingProfitActualPercentage}%, Forecast: ${operatingProfitForecast}/${safeTurnoverForecast} = ${operatingProfitForecastPercentage}%`);
 
     return (
       <>
@@ -799,13 +809,13 @@ export function PLReportTable({
             {formatCurrency(adminTotalActual)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(adminActualPercentage)}
+            {formatPercentage(adminActualPercentage/100)}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(adminForecastPercentage)}
+            {formatPercentage(adminForecastPercentage/100)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
@@ -825,13 +835,13 @@ export function PLReportTable({
             {formatCurrency(operatingProfitActual)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(operatingProfitActualPercentage)}
+            {formatPercentage(operatingProfitActualPercentage/100)}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(operatingProfitForecastPercentage)}
+            {formatPercentage(operatingProfitForecastPercentage/100)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
