@@ -381,7 +381,7 @@ export function PLReportTable({
     
     const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
     
-    if (!forecastAmount || forecastAmount === 0) return '0.0%';
+    if (forecastAmount === undefined || forecastAmount === null || forecastAmount === 0) return '0.0%';
     
     const name = item.name.toLowerCase();
     
@@ -391,7 +391,10 @@ export function PLReportTable({
         item.name.toLowerCase() === 'total revenue'
       )
     );
-    const totalTurnoverForecast = turnoverItem ? (turnoverItem.forecast_amount || 0) : 0;
+    
+    const totalTurnoverForecast = turnoverItem && turnoverItem.forecast_amount 
+      ? turnoverItem.forecast_amount 
+      : (turnoverItem ? getForecastAmount(turnoverItem, currentYear, currentMonth) : 0);
     
     const foodRevenueItem = filteredBudgetData.find(item => 
       item && item.name && (
@@ -399,7 +402,10 @@ export function PLReportTable({
         (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
-    const foodRevenueForecast = foodRevenueItem ? (foodRevenueItem.forecast_amount || 0) : 0;
+    
+    const foodRevenueForecast = foodRevenueItem && foodRevenueItem.forecast_amount 
+      ? foodRevenueItem.forecast_amount 
+      : (foodRevenueItem ? getForecastAmount(foodRevenueItem, currentYear, currentMonth) : 0);
     
     const beverageRevenueItem = filteredBudgetData.find(item => 
       item && item.name && (
@@ -408,62 +414,95 @@ export function PLReportTable({
         (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
       )
     );
-    const beverageRevenueForecast = beverageRevenueItem ? (beverageRevenueItem.forecast_amount || 0) : 0;
+    
+    const beverageRevenueForecast = beverageRevenueItem && beverageRevenueItem.forecast_amount 
+      ? beverageRevenueItem.forecast_amount 
+      : (beverageRevenueItem ? getForecastAmount(beverageRevenueItem, currentYear, currentMonth) : 0);
+    
+    console.log(`Calculating F% for ${item.name}:`);
+    console.log(`- Item forecast amount: ${forecastAmount}`);
+    console.log(`- Total turnover forecast: ${totalTurnoverForecast}`);
+    console.log(`- Food revenue forecast: ${foodRevenueForecast}`);
+    console.log(`- Beverage revenue forecast: ${beverageRevenueForecast}`);
     
     if (name === 'turnover' || name === 'total revenue') {
       return '100.0%';
     }
     
     if (name.includes('food') && (name.includes('revenue') || name.includes('sales'))) {
-      return totalTurnoverForecast > 0 
-        ? formatPercentage(forecastAmount / totalTurnoverForecast) 
-        : '0.0%';
+      if (totalTurnoverForecast > 0) {
+        const percentage = forecastAmount / totalTurnoverForecast;
+        console.log(`- Food revenue %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if ((name.includes('beverage') || name.includes('drink') || name.includes('bev')) && 
         (name.includes('revenue') || name.includes('sales'))) {
-      return totalTurnoverForecast > 0 
-        ? formatPercentage(forecastAmount / totalTurnoverForecast) 
-        : '0.0%';
+      if (totalTurnoverForecast > 0) {
+        const percentage = forecastAmount / totalTurnoverForecast;
+        console.log(`- Beverage revenue %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if (name.includes('food') && (name.includes('cost of sales') || name.includes('cos'))) {
-      return foodRevenueForecast > 0 
-        ? formatPercentage(forecastAmount / foodRevenueForecast) 
-        : '0.0%';
+      if (foodRevenueForecast > 0) {
+        const percentage = forecastAmount / foodRevenueForecast;
+        console.log(`- Food COS %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if ((name.includes('beverage') || name.includes('drink') || name.includes('bev')) && 
         (name.includes('cost of sales') || name.includes('cos'))) {
-      return beverageRevenueForecast > 0 
-        ? formatPercentage(forecastAmount / beverageRevenueForecast) 
-        : '0.0%';
+      if (beverageRevenueForecast > 0) {
+        const percentage = forecastAmount / beverageRevenueForecast;
+        console.log(`- Beverage COS %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if (name === 'food gross profit' || name.includes('food gross profit')) {
-      return foodRevenueForecast > 0 
-        ? formatPercentage(forecastAmount / foodRevenueForecast) 
-        : '0.0%';
+      if (foodRevenueForecast > 0) {
+        const percentage = forecastAmount / foodRevenueForecast;
+        console.log(`- Food GP %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if (name === 'beverage gross profit' || 
         name.includes('beverage gross profit') || 
         name.includes('drink gross profit')) {
-      return beverageRevenueForecast > 0 
-        ? formatPercentage(forecastAmount / beverageRevenueForecast) 
-        : '0.0%';
+      if (beverageRevenueForecast > 0) {
+        const percentage = forecastAmount / beverageRevenueForecast;
+        console.log(`- Beverage GP %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if (name === 'cost of sales' || name === 'cos') {
-      return totalTurnoverForecast > 0 
-        ? formatPercentage(forecastAmount / totalTurnoverForecast) 
-        : '0.0%';
+      if (totalTurnoverForecast > 0) {
+        const percentage = forecastAmount / totalTurnoverForecast;
+        console.log(`- Total COS %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if (name === 'gross profit' || name === 'gross profit/(loss)') {
-      return totalTurnoverForecast > 0 
-        ? formatPercentage(forecastAmount / totalTurnoverForecast) 
-        : '0.0%';
+      if (totalTurnoverForecast > 0) {
+        const percentage = forecastAmount / totalTurnoverForecast;
+        console.log(`- Total GP %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if (name.includes('wages') || 
@@ -492,18 +531,24 @@ export function PLReportTable({
         name.includes('subscriptions') ||
         name.includes('hotel') ||
         name.includes('travel')) {
-      return totalTurnoverForecast > 0 
-        ? formatPercentage(forecastAmount / totalTurnoverForecast) 
-        : '0.0%';
+      if (totalTurnoverForecast > 0) {
+        const percentage = forecastAmount / totalTurnoverForecast;
+        console.log(`- Expense item ${name} %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     if (!name.includes('revenue') && 
         !name.includes('sales') && 
         !name.includes('turnover') &&
         !item.isHeader) {
-      return totalTurnoverForecast > 0 
-        ? formatPercentage(forecastAmount / totalTurnoverForecast) 
-        : '0.0%';
+      if (totalTurnoverForecast > 0) {
+        const percentage = forecastAmount / totalTurnoverForecast;
+        console.log(`- Expense item ${name} %: ${percentage}`);
+        return formatPercentage(percentage);
+      }
+      return '0.0%';
     }
     
     return '0.0%';
