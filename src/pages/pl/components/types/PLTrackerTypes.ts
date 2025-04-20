@@ -1,4 +1,3 @@
-
 import { ProcessedBudgetItem } from '../../hooks/useBudgetData';
 
 export interface DayInput {
@@ -7,7 +6,6 @@ export interface DayInput {
 }
 
 export interface PLTrackerBudgetItem extends ProcessedBudgetItem {
-  tracking_type: 'Discrete' | 'Pro-Rated';
   manually_entered_actual?: number;
   daily_values?: DayInput[];
 }

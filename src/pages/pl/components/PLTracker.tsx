@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -35,8 +34,7 @@ export function PLTracker({
   // Debug log for all processed budget data
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // Initialize sample actual amounts for all items for test data in April 2025
-  const processedDataWithDefaultTracking = processedBudgetData.map(item => {
+  const processedDataWithActuals = processedBudgetData.map(item => {
     const isRevenueItem = 
       item.name.toLowerCase().includes('turnover') || 
       item.name.toLowerCase().includes('revenue') ||
@@ -58,20 +56,11 @@ export function PLTracker({
       item.name.toLowerCase().includes('wage') ||
       item.name.toLowerCase().includes('salary');
       
-    // Define admin expense items - including all generic expense items
-    const isAdminExpense = 
-      !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
-      !isOperatingProfitItem && !item.isHeader && !isWagesItem;
-      
-    // CRITICAL: Set tracking type for all admin expenses to Pro-Rated
-    const trackingType = isAdminExpense ? 'Pro-Rated' : 'Discrete';
-    
     // Add actual/budget debug log for each item
-    console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}, type=${trackingType}`);
+    console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
     
     return {
       ...item,
-      tracking_type: item.tracking_type || trackingType,
       actual_amount: item.actual_amount // Keep the actual_amount as is - will be calculated later if needed
     };
   }) as PLTrackerBudgetItem[];
@@ -85,7 +74,7 @@ export function PLTracker({
     updateManualActualAmount,
     updateDailyValues,
     saveForecastAmounts
-  } = useTrackerData(processedDataWithDefaultTracking);
+  } = useTrackerData(processedDataWithActuals);
   
   // Debug log for top few actual amounts
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
