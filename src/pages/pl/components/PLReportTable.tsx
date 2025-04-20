@@ -785,12 +785,14 @@ export function PLReportTable({
             {formatCurrency(adminTotalActual)}
           </TableCell>
           <TableCell className="text-right">
-            {/* Percentage can be added here if needed */}
+            {totalTurnoverForecast > 0 
+              ? formatPercentage(adminTotalForecast / totalTurnoverForecast)
+              : '0.0%'}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalForecast)}
           </TableCell>
-          <TableCell className="text-right">
+          <TableCell className="text-right font-bold">
             {totalTurnoverForecast > 0 
               ? formatPercentage(adminTotalForecast / totalTurnoverForecast)
               : '0.0%'}
