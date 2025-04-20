@@ -173,6 +173,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cost_item_forecast_settings: {
+        Row: {
+          created_at: string
+          discrete_values: Json | null
+          id: string
+          item_name: string
+          method: Database["public"]["Enums"]["forecast_method"]
+          month: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          discrete_values?: Json | null
+          id?: string
+          item_name: string
+          method: Database["public"]["Enums"]["forecast_method"]
+          month: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          discrete_values?: Json | null
+          id?: string
+          item_name?: string
+          method?: Database["public"]["Enums"]["forecast_method"]
+          month?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       credit_notes: {
         Row: {
           amount: number | null
@@ -1920,6 +1953,7 @@ export type Database = {
       }
     }
     Enums: {
+      forecast_method: "fixed" | "discrete" | "fixed_plus"
       message_type: "text" | "image" | "voice" | "gif" | "file"
       module_type: "food" | "beverage" | "pl" | "wages" | "performance" | "home"
       poll_option_type: "text" | "image"
@@ -2040,6 +2074,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      forecast_method: ["fixed", "discrete", "fixed_plus"],
       message_type: ["text", "image", "voice", "gif", "file"],
       module_type: ["food", "beverage", "pl", "wages", "performance", "home"],
       poll_option_type: ["text", "image"],

@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getActualAmount } from '../components/tracker/TrackerCalculations';
+import { ForecastSettingsControl } from "./forecast/ForecastSettingsControl";
 
 type PLReportTableProps = {
   isLoading: boolean;
@@ -239,6 +239,28 @@ export function PLReportTable({
     );
   };
 
+  const isCostEditableRow = (name: string) => {
+    const lowercaseName = name.toLowerCase();
+    const editableCategories = [
+      'marketing',
+      'training',
+      'subscriptions',
+      'printing',
+      'stationery',
+      'telephone',
+      'computer costs',
+      'bank charges',
+      'accountancy',
+      'legal & professional',
+      'recruitment',
+      'sundry expenses',
+      'hotel',
+      'travel'
+    ];
+    
+    return editableCategories.includes(lowercaseName);
+  };
+
   const renderTableContent = () => {
     return filteredBudgetData.map((item, index) => {
       if (item.category === "header" && item.budget_amount === 0) {
@@ -287,7 +309,20 @@ export function PLReportTable({
             {formatCurrency(item.budget_amount)}
           </TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass} ${isOperatingProfit ? getValueColor(actualAmount || 0) : ''}`}>
-            {formatCurrency(actualAmount)}
+            <div className="flex items-center justify-end">
+              {formatCurrency(actualAmount)}
+              {isCostEditableRow(item.name) && (
+                <ForecastSettingsControl
+                  itemName={item.name}
+                  budgetAmount={item.budget_amount || 0}
+                  currentYear={currentYear}
+                  currentMonth={getMonthNumber(currentMonthName)}
+                  onMethodChange={() => {
+                    window.location.reload();
+                  }}
+                />
+              )}
+            </div>
           </TableCell>
           <TableCell className={`text-right ${fontClass}`}>
             {percentageDisplay ? percentageDisplay : ""}
