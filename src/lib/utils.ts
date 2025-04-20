@@ -26,3 +26,14 @@ export function formatPercentage(value: number | undefined): string {
     maximumFractionDigits: 1,
   }).format(value);
 }
+
+// New utility function for preventing text overlap
+export function preventOverlap(baseClasses: string = ''): string {
+  return cn(
+    baseClasses, 
+    'whitespace-nowrap', 
+    'overflow-hidden', 
+    'text-ellipsis', 
+    'max-w-full'
+  );
+}
