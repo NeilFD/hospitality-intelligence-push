@@ -117,7 +117,7 @@ export function TrackerLineItem({
     
   // Update forecast amount in state when actual amount changes
   React.useEffect(() => {
-    if (!isNaN(forecastAmount) && forecastAmount !== 0) {
+    if (!isNaN(forecastAmount)) {
       updateForecastAmount(index, forecastAmount.toString());
     }
   }, [forecastAmount, index, updateForecastAmount]);

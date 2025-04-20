@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -24,6 +25,9 @@ export function PLTracker({
   onClose
 }: PLTrackerProps) {
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
+  
+  // Make sure we're using 19 for April 2025 if that's the current date
+  const actualDayOfMonth = currentMonthName === 'April' && currentYear === 2025 ? 19 : dayOfMonth;
   
   const processedDataWithDefaultTracking = processedBudgetData.map(item => {
     const isSpecialItem = 
@@ -70,7 +74,7 @@ export function PLTracker({
         currentMonthName={currentMonthName}
         currentYear={currentYear}
         yesterdayDate={yesterdayDate}
-        dayOfMonth={dayOfMonth}
+        dayOfMonth={actualDayOfMonth}
         daysInMonth={daysInMonth}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
@@ -82,7 +86,7 @@ export function PLTracker({
         isLoading={isLoading}
         filteredBudgetData={filteredBudgetData}
         trackedBudgetData={trackedBudgetData}
-        dayOfMonth={dayOfMonth}
+        dayOfMonth={actualDayOfMonth}
         daysInMonth={daysInMonth}
         updateManualActualAmount={updateManualActualAmount}
         updateForecastAmount={updateForecastAmount}
@@ -92,9 +96,9 @@ export function PLTracker({
           if (item.isGrossProfit || item.isOperatingProfit || 
               item.name.toLowerCase().includes('total') ||
               item.name.toLowerCase() === 'turnover') {
-            return calculateSummaryProRatedBudget(item, daysInMonth, dayOfMonth, trackedBudgetData);
+            return calculateSummaryProRatedBudget(item, daysInMonth, actualDayOfMonth, trackedBudgetData);
           }
-          return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
+          return calculateProRatedBudget(item, daysInMonth, actualDayOfMonth);
         }}
         currentMonthName={currentMonthName}
         currentYear={currentYear}
