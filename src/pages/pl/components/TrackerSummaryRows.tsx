@@ -179,18 +179,17 @@ export function TrackerSummaryRows({
   // Make sure effectiveTurnoverForecast is never 0 to prevent division by zero
   const safeEffectiveTurnoverForecast = effectiveTurnoverForecast || 1;
   
-  // Force these to use effectiveTurnoverForecast directly to ensure we have % values
+  // Fix the forecast percentage calculations to ensure they're using the safe turnover value
   const adminForecastPercentage = (adminForecast / safeEffectiveTurnoverForecast) * 100;
   
   const opActualPercentage = turnoverActual && turnoverActual !== 0 ? (actualOperatingProfit / turnoverActual) * 100 : 0;
   const opBudgetPercentage = turnoverBudget && turnoverBudget !== 0 ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
   const opForecastPercentage = (opForecast / safeEffectiveTurnoverForecast) * 100;
 
-  console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);
-  console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);
-  
-  console.log(`Admin budget: ${adminTotalBudget}, Admin forecast: ${adminForecast}, Admin variance: ${adminBudgetVariance}`);
-  console.log(`Operating profit budget: ${operatingProfitBudget}, Actual OP: ${actualOperatingProfit}, Forecast OP: ${opForecast}, OP variance: ${opForecastVariance}`);
+  console.log(`Admin Forecast %: ${adminForecastPercentage.toFixed(1)}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);
+  console.log(`OP Forecast %: ${opForecastPercentage.toFixed(1)}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);
+  console.log(`Admin forecast: ${adminForecast}`);
+  console.log(`Turnover forecast: ${safeEffectiveTurnoverForecast}`);
   
   // Update forecast value for operating profit in state
   React.useEffect(() => {
@@ -273,7 +272,7 @@ export function TrackerSummaryRows({
           {formatCurrency(opForecast)} ({opForecastPercentage.toFixed(1)}%)
         </TableCell>
         <TableCell className={`text-right font-bold ${
-          opForecastVariance > 0 ? 'text-green-200' : 'text-red-300'
+          opForecast > 0 ? 'text-green-200' : 'text-red-300'
         }`}>
           {formatCurrency(opForecastVariance)}
         </TableCell>
