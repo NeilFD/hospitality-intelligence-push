@@ -228,7 +228,6 @@ export function getForecastAmount(
             }
           });
         }
-        console.log(`Calculated discrete total for ${item.name}: ${total}`);
         return total;
       }
       
@@ -246,9 +245,7 @@ export function getForecastAmount(
             }
           });
         }
-        const result = (item.budget_amount || 0) + dailyTotal;
-        console.log(`Calculated fixed_plus total for ${item.name}: ${result} (${item.budget_amount} + ${dailyTotal})`);
-        return result;
+        return (item.budget_amount || 0) + dailyTotal;
       }
       
       default:

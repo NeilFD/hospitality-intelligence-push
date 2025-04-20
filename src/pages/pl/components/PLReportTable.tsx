@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -69,6 +70,7 @@ export function PLReportTable({
       const processedData = JSON.parse(JSON.stringify(processedBudgetData));
       
       const updatedData = processedData.map((item: any) => {
+        // Load forecast settings from localStorage
         const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
         const cachedSettings = localStorage.getItem(cacheKey);
         
@@ -81,6 +83,7 @@ export function PLReportTable({
           }
         }
         
+        // Calculate forecast amount using the settings
         const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
         console.log(`PLReportTable: Calculated forecast for ${item.name}: ${forecastAmount}`);
         
@@ -357,6 +360,7 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
+      // Use getForecastAmount directly here, so it picks up the latest settings
       const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
       
       console.log(`Rendering ${item.name}: forecast_amount=${forecastAmount}, budget=${item.budget_amount}`);
