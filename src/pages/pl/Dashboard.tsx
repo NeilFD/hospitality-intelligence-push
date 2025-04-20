@@ -1,11 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MonthYearSelector } from './components/MonthYearSelector';
 import { PerformanceChart } from './components/PerformanceChart';
-import { PLReportTable } from './components/PLReportTable';
 import { PLTracker } from './components/PLTracker';
 import { useBudgetData } from './hooks/useBudgetData';
 import { useQuery } from '@tanstack/react-query';
@@ -19,7 +17,6 @@ export default function PLDashboard() {
     month: 'long'
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
-  const [showTracker, setShowTracker] = useState<boolean>(false);
   
   const handleMonthChange = (value: string) => {
     const month = parseInt(value);
@@ -33,13 +30,11 @@ export default function PLDashboard() {
     setCurrentYear(parseInt(value));
   };
   
-  // Fetch master record revenue data
   const { data: masterRevenueData, isLoading: isMasterDataLoading } = useQuery({
     queryKey: ['master-revenue-data', currentYear, currentMonth],
     queryFn: () => fetchMonthlyRevenueData(currentYear, currentMonth)
   });
 
-  // Fetch Food and Beverage COS data
   const { data: foodCOSData, isLoading: isFoodCOSLoading } = useQuery({
     queryKey: ['food-cos-data', currentYear, currentMonth],
     queryFn: () => fetchFoodCOSForMonth(currentYear, currentMonth)
@@ -50,7 +45,6 @@ export default function PLDashboard() {
     queryFn: () => fetchBeverageCOSForMonth(currentYear, currentMonth)
   });
 
-  // Fetch Wages data
   const { data: wagesData, isLoading: isWagesLoading } = useQuery({
     queryKey: ['wages-data', currentYear, currentMonth],
     queryFn: () => fetchTotalWagesForMonth(currentYear, currentMonth)
@@ -63,21 +57,14 @@ export default function PLDashboard() {
   
   const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
   
-  console.log("Dashboard - Food COS:", foodCOSData);
-  console.log("Dashboard - Beverage COS:", beverageCOSData);
-  console.log("Dashboard - Revenue Data:", masterRevenueData);
-  
-  // Update the processedBudgetData with master record revenue data, COS, and wages data
   const updatedBudgetData = processedBudgetData.map(item => {
     if (masterRevenueData && !isLoading) {
-      // Update food revenue item
       if (item.name.toLowerCase().includes('food sales') || 
           item.name.toLowerCase().includes('food revenue')) {
         const foodRevenue = masterRevenueData.foodRevenue || 0;
         return { ...item, actual_amount: foodRevenue };
       }
       
-      // Update beverage revenue item
       if (item.name.toLowerCase().includes('beverage sales') || 
           item.name.toLowerCase().includes('beverage revenue') || 
           item.name.toLowerCase().includes('drink sales') ||
@@ -86,14 +73,12 @@ export default function PLDashboard() {
         return { ...item, actual_amount: beverageRevenue };
       }
       
-      // Update total revenue/turnover
       if (item.name.toLowerCase().includes('turnover') || 
           item.name.toLowerCase().includes('total revenue')) {
         const totalRevenue = masterRevenueData.totalRevenue || 0;
         return { ...item, actual_amount: totalRevenue };
       }
 
-      // Update food COS
       if (item.name.toLowerCase().includes('food cost of sales') || 
           item.name.toLowerCase().includes('food cos') ||
           (item.name.toLowerCase().includes('food') && 
@@ -101,20 +86,18 @@ export default function PLDashboard() {
         return { ...item, actual_amount: foodCOSData || 0 };
       }
       
-      // Update beverage COS
       if (item.name.toLowerCase().includes('beverage cost of sales') || 
           item.name.toLowerCase().includes('beverage cos') ||
           item.name.toLowerCase().includes('drinks cost of sales') ||
           item.name.toLowerCase().includes('drinks cos') ||
-          item.name.toLowerCase().includes('bev cos') || // Added this match
+          item.name.toLowerCase().includes('bev cos') ||
           ((item.name.toLowerCase().includes('beverage') || 
             item.name.toLowerCase().includes('drink') || 
-            item.name.toLowerCase().includes('bev')) && // Added this match
+            item.name.toLowerCase().includes('bev')) && 
            item.category.toLowerCase().includes('cost of sales'))) {
         return { ...item, actual_amount: beverageCOSData || 0 };
       }
       
-      // Update total COS
       if ((item.name.toLowerCase() === 'cost of sales' || 
           item.name.toLowerCase() === 'cos') && 
           !item.name.toLowerCase().includes('food') &&
@@ -124,7 +107,6 @@ export default function PLDashboard() {
         return { ...item, actual_amount: (foodCOSData || 0) + (beverageCOSData || 0) };
       }
       
-      // Update Food Gross Profit
       if (item.name.toLowerCase().includes('food gross profit')) {
         const foodRevenue = masterRevenueData.foodRevenue || 0;
         const foodCOS = foodCOSData || 0;
@@ -132,7 +114,6 @@ export default function PLDashboard() {
         return { ...item, actual_amount: foodGP };
       }
       
-      // Update Beverage Gross Profit
       if (item.name.toLowerCase().includes('beverage gross profit') || 
           item.name.toLowerCase().includes('drinks gross profit')) {
         const beverageRevenue = masterRevenueData.beverageRevenue || 0;
@@ -141,7 +122,6 @@ export default function PLDashboard() {
         return { ...item, actual_amount: beverageGP };
       }
       
-      // Update Total Gross Profit
       if ((item.name.toLowerCase() === 'gross profit' || 
            item.name.toLowerCase() === 'gross profit/(loss)') && 
           !item.name.toLowerCase().includes('food') &&
@@ -153,7 +133,6 @@ export default function PLDashboard() {
         return { ...item, actual_amount: totalGP };
       }
 
-      // Update wages
       if (item.name.toLowerCase().includes('wages and salaries') || 
           item.name.toLowerCase() === 'wages' ||
           item.name.toLowerCase() === 'salaries') {
@@ -163,12 +142,6 @@ export default function PLDashboard() {
     return item;
   });
   
-  console.log("Dashboard - processed budget data:", updatedBudgetData.map(item => ({
-    name: item.name,
-    actualAmount: item.actual_amount
-  })));
-
-  // Calculate chart data from processed budget data
   const turnoverItem = updatedBudgetData.find(item => item.name.toLowerCase() === 'turnover' || item.name.toLowerCase() === 'revenue');
   const costOfSalesItem = updatedBudgetData.find(item => item.name.toLowerCase() === 'cost of sales' || item.name.toLowerCase() === 'cos');
   const operatingProfitItem = updatedBudgetData.find(item => item.name.toLowerCase().includes('operating profit') || item.name.toLowerCase().includes('ebitda'));
@@ -207,10 +180,14 @@ export default function PLDashboard() {
         <PerformanceChart chartData={chartData} currentMonthName={currentMonthName} currentYear={currentYear} isLoading={isLoading} />
       </div>
       
-      {showTracker ? <div className="grid grid-cols-1 gap-6 mb-6">
-          <PLTracker isLoading={isLoading} processedBudgetData={updatedBudgetData} currentMonthName={currentMonthName} currentYear={currentYear} onClose={() => setShowTracker(false)} />
-        </div> : <div className="grid grid-cols-1 gap-6 mb-6">
-          <PLReportTable isLoading={isLoading} processedBudgetData={updatedBudgetData} currentMonthName={currentMonthName} currentYear={currentYear} onOpenTracker={() => setShowTracker(true)} />
-        </div>}
+      <div className="grid grid-cols-1 gap-6 mb-6">
+        <PLTracker 
+          isLoading={isLoading} 
+          processedBudgetData={updatedBudgetData} 
+          currentMonthName={currentMonthName} 
+          currentYear={currentYear} 
+          onClose={() => {}} 
+        />
+      </div>
     </div>;
 }
