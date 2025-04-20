@@ -438,24 +438,24 @@ export function PLReportTable({
           </TableCell>
         </TableRow>
         
-        <TableRow className="bg-[#8B5CF6]/90 text-white">
-          <TableCell className="font-bold bg-purple-300">
+        <TableRow className="bg-purple-300 text-black">
+          <TableCell className="font-bold bg-purple-300 text-black">
             Operating profit
           </TableCell>
           <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
             {formatCurrency(operatingProfitBudget)}
           </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
-            {formatCurrency(operatingProfitActual)}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActualPercentage)}`}>
+          <TableCell className="text-right">
             {formatPercentage(operatingProfitActualPercentage / 100)}
           </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
-            {formatCurrency(operatingProfitForecast)}
+          <TableCell className="text-right font-bold">
+            {formatCurrency(operatingProfit)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(operatingProfitForecastPercentage / 100)}
+            {formatCurrency(actualOperatingProfit)}
+          </TableCell>
+          <TableCell className="text-right font-bold">
+            {formatCurrency(opForecast)} ({opForecastPercentage.toFixed(1)}%)
           </TableCell>
           <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(operatingProfitVariance)}
