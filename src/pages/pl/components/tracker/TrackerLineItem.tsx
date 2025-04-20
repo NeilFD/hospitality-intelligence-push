@@ -128,6 +128,7 @@ export function TrackerLineItem({
   }
 
   // Determine if this is a regular cost item (not revenue or special item)
+  // Make sure we're correctly identifying regular cost items
   const isCostItem = !isRevenue && 
                    !isTurnover && 
                    !item.isHeader && 
@@ -139,6 +140,7 @@ export function TrackerLineItem({
                    !isCOS;
 
   // Show calendar ONLY for DISCRETE cost items
+  // This is the critical check - only show if it's a cost item AND tracking type is Discrete
   const showCalendarIcon = isCostItem && item.tracking_type === 'Discrete';
 
   return (
