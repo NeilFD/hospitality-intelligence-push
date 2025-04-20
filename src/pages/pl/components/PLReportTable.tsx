@@ -258,7 +258,9 @@ export function PLReportTable({
       'travel'
     ];
     
-    return editableCategories.includes(lowercaseName);
+    return editableCategories.some(category => 
+      lowercaseName.includes(category)
+    );
   };
 
   const renderTableContent = () => {
@@ -324,7 +326,7 @@ export function PLReportTable({
               )}
             </div>
           </TableCell>
-          <TableCell className={`text-right ${fontClass}`}>
+          <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
             {percentageDisplay ? percentageDisplay : ""}
           </TableCell>
           <TableCell className={`text-right ${fontClass} ${boldValueClass} ${isOperatingProfit ? getValueColor(forecastAmount) : ''}`}>
