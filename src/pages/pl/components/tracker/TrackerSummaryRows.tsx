@@ -61,6 +61,9 @@ export function TrackerSummaryRows({
   }
 
   console.log(`Admin forecast (projected from actuals): ${adminForecast}`);
+  
+  // Calculate the variance between forecast and budget for admin expenses
+  const adminBudgetVariance = adminForecast - adminTotalBudget;
 
   // Find Gross Profit item
   const grossProfitItem = trackedBudgetData.find(item => 
@@ -90,7 +93,6 @@ export function TrackerSummaryRows({
   const opForecast = grossProfitForecast - adminForecast;
   
   // Correctly calculate the variances - compare forecast to budget
-  const adminBudgetVariance = adminForecast - adminTotalBudget;
   const opForecastVariance = opForecast - operatingProfitBudget;
   
   console.log(`Admin budget: ${adminTotalBudget}, Admin forecast: ${adminForecast}, Admin variance: ${adminBudgetVariance}`);
@@ -105,7 +107,16 @@ export function TrackerSummaryRows({
       console.log(`Setting OP forecast: ${opForecast}`);
       updateForecastAmount(opIndex, opForecast.toString());
     }
-  }, [opForecast, trackedBudgetData, updateForecastAmount]);
+    
+    // Also update the admin expenses forecast
+    const adminIndex = trackedBudgetData.findIndex(i => 
+      i.name.toLowerCase().includes('total admin'));
+      
+    if (adminIndex >= 0 && !isNaN(adminForecast)) {
+      console.log(`Setting Admin forecast: ${adminForecast}`);
+      updateForecastAmount(adminIndex, adminForecast.toString());
+    }
+  }, [adminForecast, opForecast, trackedBudgetData, updateForecastAmount]);
 
   return (
     <>
