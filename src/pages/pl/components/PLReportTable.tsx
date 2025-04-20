@@ -363,24 +363,33 @@ export function PLReportTable({
   };
 
   const renderTableContent = () => {
-    const adminItems = filteredBudgetData.filter(item => {
-      const lowercaseName = item.name.toLowerCase();
-      
-      const isExpense = isCostLine(item.name) && 
-                     !lowercaseName.includes('cost of sales') &&
-                     !lowercaseName.includes('cos');
-      
-      const isNotHeaderOrSummary = !item.isHeader && 
-                                !lowercaseName.includes('total admin') &&
-                                !lowercaseName.includes('operating profit');
-      
-      const isNotGrossProfit = !lowercaseName.includes('gross profit');
-      const isNotRevenue = !lowercaseName.includes('revenue') && 
-                        !lowercaseName.includes('sales') &&
-                        !lowercaseName.includes('turnover');
-      
-      return isExpense && isNotHeaderOrSummary && isNotGrossProfit && isNotRevenue;
-    });
+    const adminExpenseItems = [
+      "Wages and Salaries", 
+      "Marketing", 
+      "Professional Fees",
+      "Bank charges",
+      "Cleaning",
+      "Entertainment (Staff, customer or supplier)",
+      "Printing, postage and stationery",
+      "Sundry Expenses",
+      "Motor expenses",
+      "Insurance",
+      "Heat and power",
+      "Repairs, Maintenance, Premises",
+      "Telephone and internet",
+      "Rates",
+      "Rent",
+      "Other staff costs",
+      "Subscriptions",
+      "Hotel and travel"
+    ];
+    
+    const adminItems = filteredBudgetData.filter(item => 
+      adminExpenseItems.some(expName => 
+        item.name.trim() === expName || 
+        item.name.trim().toLowerCase() === expName.toLowerCase()
+      )
+    );
     
     console.log('Admin expense items for total calculation:', adminItems.length);
     console.log('Admin items:', adminItems.map(item => ({
@@ -395,7 +404,7 @@ export function PLReportTable({
     
     const adminTotalForecast = adminItems.reduce((sum, item) => {
       const forecast = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
-      return sum + (forecast || item.budget_amount || 0);
+      return sum + (forecast || 0);
     }, 0);
     
     const adminBudgetVariance = adminTotalForecast - adminTotalBudget;
