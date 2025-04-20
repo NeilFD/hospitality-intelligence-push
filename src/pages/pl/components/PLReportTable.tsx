@@ -449,13 +449,13 @@ export function PLReportTable({
             {formatPercentage(operatingProfitActualPercentage / 100)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatCurrency(operatingProfit)}
+            {formatCurrency(operatingProfitActual)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatCurrency(actualOperatingProfit)}
+            {formatCurrency(operatingProfitForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatCurrency(opForecast)} ({opForecastPercentage.toFixed(1)}%)
+            {formatPercentage(operatingProfitForecastPercentage / 100)}
           </TableCell>
           <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(operatingProfitVariance)}
