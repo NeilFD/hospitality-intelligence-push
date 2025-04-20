@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -36,7 +37,7 @@ export function PLReportTable({
       if (event.detail && event.detail.itemName) {
         setRenderedData(prevData => {
           return prevData.map(item => {
-            if (item.name === event.detail.itemName) {
+            if (item && item.name === event.detail.itemName) {
               console.log(`Updating forecast for ${item.name} to ${event.detail.forecastAmount || event.detail.finalTotal}`);
               const forecastAmount = event.detail.forecastAmount || event.detail.finalTotal;
               
@@ -75,6 +76,12 @@ export function PLReportTable({
         const processedData = JSON.parse(JSON.stringify(processedBudgetData));
         
         const updatedData = await Promise.all(processedData.map(async (item: any) => {
+          // Ensure item has a name property
+          if (!item || !item.name) {
+            console.warn("Warning: Item without name found in processedBudgetData", item);
+            return item; // Return the item unchanged
+          }
+          
           const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
           const cachedSettings = localStorage.getItem(cacheKey);
           
@@ -129,6 +136,8 @@ export function PLReportTable({
   };
   
   const getFontClass = (name: string) => {
+    if (!name) return ""; // Guard against undefined names
+    
     const lowercaseName = name.toLowerCase();
     if (
       lowercaseName === "turnover" ||
@@ -147,6 +156,8 @@ export function PLReportTable({
   };
 
   const shouldShowPercentage = (item: any) => {
+    if (!item || !item.name) return false; // Guard against undefined items or names
+    
     const lowercaseName = item.name.toLowerCase();
     return (
       lowercaseName.includes("gross profit") || 
@@ -157,11 +168,13 @@ export function PLReportTable({
   };
 
   const getPercentageDisplay = (item: any) => {
+    if (!item || !item.name) return null; // Guard against undefined items or names
+    
     const lowercaseName = item.name.toLowerCase();
     
     if (lowercaseName.includes("food gross profit")) {
       const foodRevenueItems = processedBudgetData.filter(
-        i => i.name.toLowerCase().includes('food') && 
+        i => i && i.name && i.name.toLowerCase().includes('food') && 
              (i.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
       );
       
@@ -177,7 +190,7 @@ export function PLReportTable({
     else if (lowercaseName.includes("beverage gross profit") || 
              lowercaseName.includes("drink gross profit")) {
       const beverageRevenueItems = processedBudgetData.filter(
-        i => (i.name.toLowerCase().includes('beverage') || 
+        i => i && i.name && (i.name.toLowerCase().includes('beverage') || 
               i.name.toLowerCase().includes('drink') || 
               i.name.toLowerCase().includes('bar')) && 
              (i.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
@@ -195,7 +208,7 @@ export function PLReportTable({
     else if (lowercaseName === "gross profit" || 
              lowercaseName === "gross profit/(loss)") {
       const turnover = processedBudgetData.find(
-        i => i.name.toLowerCase() === "turnover" || i.name.toLowerCase() === "total revenue"
+        i => i && i.name && (i.name.toLowerCase() === "turnover" || i.name.toLowerCase() === "total revenue")
       )?.actual_amount || 0;
       
       if (turnover > 0) {
@@ -209,7 +222,7 @@ export function PLReportTable({
       lowercaseName === "salaries"
     ) {
       const turnover = processedBudgetData.find(
-        i => i.name.toLowerCase() === "turnover" || i.name.toLowerCase() === "total revenue"
+        i => i && i.name && (i.name.toLowerCase() === "turnover" || i.name.toLowerCase() === "total revenue")
       )?.actual_amount || 0;
       
       if (turnover > 0) {
@@ -292,6 +305,8 @@ export function PLReportTable({
   };
 
   const isCostLine = (name: string) => {
+    if (!name) return false; // Guard against undefined names
+    
     const lowercaseName = name.toLowerCase();
     return (
       lowercaseName.includes('cost') ||
@@ -317,6 +332,8 @@ export function PLReportTable({
   };
 
   const isCostEditableRow = (name: string) => {
+    if (!name) return false; // Guard against undefined names
+    
     const lowercaseName = name.toLowerCase();
     
     const allAdminCosts = [
@@ -371,23 +388,31 @@ export function PLReportTable({
   };
 
   const getForecastPercentage = (item: any) => {
+    if (!item || !item.name) return '0.0%'; // Guard against undefined items or names
+    
     const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
     const name = item.name.toLowerCase();
 
     const turnoverItem = filteredBudgetData.find(item => 
-      item.name.toLowerCase() === 'turnover' || 
-      item.name.toLowerCase() === 'total revenue'
+      item && item.name && (
+        item.name.toLowerCase() === 'turnover' || 
+        item.name.toLowerCase() === 'total revenue'
+      )
     );
     
     const foodRevenueItem = filteredBudgetData.find(item => 
-      item.name.toLowerCase().includes('food') && 
-      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+      item && item.name && (
+        item.name.toLowerCase().includes('food') && 
+        (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+      )
     );
     
     const beverageRevenueItem = filteredBudgetData.find(item => 
-      (item.name.toLowerCase().includes('beverage') || 
-       item.name.toLowerCase().includes('drink')) && 
-      (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+      item && item.name && (
+        (item.name.toLowerCase().includes('beverage') || 
+         item.name.toLowerCase().includes('drink')) && 
+        (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales'))
+      )
     );
 
     const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
@@ -468,7 +493,7 @@ export function PLReportTable({
     ];
     
     const adminItems = filteredBudgetData.filter(item => 
-      adminExpenseItems.some(expName => 
+      item && item.name && adminExpenseItems.some(expName => 
         item.name.trim() === expName || 
         item.name.trim().toLowerCase() === expName.toLowerCase()
       )
@@ -495,10 +520,13 @@ export function PLReportTable({
     console.log(`Admin totals: Budget=${adminTotalBudget}, Actual=${adminTotalActual}, Forecast=${adminTotalForecast}, Variance=${adminBudgetVariance}`);
     
     const grossProfitItem = filteredBudgetData.find(item => 
-      (item.name.toLowerCase() === 'gross profit' || 
-       item.name.toLowerCase() === 'gross profit/(loss)') &&
-      !item.name.toLowerCase().includes('food') && 
-      !item.name.toLowerCase().includes('beverage'));
+      item && item.name && (
+        (item.name.toLowerCase() === 'gross profit' || 
+         item.name.toLowerCase() === 'gross profit/(loss)') &&
+        !item.name.toLowerCase().includes('food') && 
+        !item.name.toLowerCase().includes('beverage')
+      )
+    );
     
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
     const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
@@ -517,15 +545,23 @@ export function PLReportTable({
     console.log(`Operating profit: Budget=${operatingProfitBudget}, Actual=${operatingProfitActual}, Forecast=${operatingProfitForecast}, Variance=${operatingProfitVariance}`);
 
     const turnoverItem = filteredBudgetData.find(item => 
-      item.name.toLowerCase() === 'turnover' || 
-      item.name.toLowerCase() === 'total revenue'
+      item && item.name && (
+        item.name.toLowerCase() === 'turnover' || 
+        item.name.toLowerCase() === 'total revenue'
+      )
     );
     const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
 
     return (
       <>
         {filteredBudgetData.map((item, index) => {
-          if (item.category === "header" && item.budget_amount === 0) {
+          if (!item || (item.category === "header" && item.budget_amount === 0)) {
+            return null;
+          }
+          
+          // Skip items without a name property
+          if (!item.name) {
+            console.warn("Warning: Item without name found in filteredBudgetData", item);
             return null;
           }
           

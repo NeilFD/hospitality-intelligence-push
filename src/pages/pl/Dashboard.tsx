@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -64,6 +65,11 @@ export default function PLDashboard() {
       if (!processedBudgetData || processedBudgetData.length === 0) return;
       
       const updatedItems = processedBudgetData.map(item => {
+        if (!item || !item.name) {
+          console.warn("Warning: Found item without name in processedBudgetData", item);
+          return item;
+        }
+        
         const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
         const cachedSettings = localStorage.getItem(cacheKey);
         
@@ -98,6 +104,11 @@ export default function PLDashboard() {
   }, []);
   
   const updatedBudgetData = processedBudgetData.map(item => {
+    if (!item || !item.name) {
+      console.warn("Warning: Found item without name in updatedBudgetData");
+      return item;
+    }
+    
     if (masterRevenueData && !isLoading) {
       if (item.name.toLowerCase().includes('food sales') || 
           item.name.toLowerCase().includes('food revenue')) {
@@ -122,7 +133,7 @@ export default function PLDashboard() {
       if (item.name.toLowerCase().includes('food cost of sales') || 
           item.name.toLowerCase().includes('food cos') ||
           (item.name.toLowerCase().includes('food') && 
-           item.category.toLowerCase().includes('cost of sales'))) {
+           item.category && item.category.toLowerCase().includes('cost of sales'))) {
         return { ...item, actual_amount: foodCOSData || 0 };
       }
       
@@ -134,7 +145,7 @@ export default function PLDashboard() {
           ((item.name.toLowerCase().includes('beverage') || 
             item.name.toLowerCase().includes('drink') || 
             item.name.toLowerCase().includes('bev')) && 
-           item.category.toLowerCase().includes('cost of sales'))) {
+           item.category && item.category.toLowerCase().includes('cost of sales'))) {
         return { ...item, actual_amount: beverageCOSData || 0 };
       }
       
@@ -199,39 +210,66 @@ export default function PLDashboard() {
   });
   
   const turnoverItem = updatedBudgetData.find(item => 
-    item.name.toLowerCase() === 'turnover' || 
-    item.name.toLowerCase() === 'total revenue'
+    item && item.name && (
+      item.name.toLowerCase() === 'turnover' || 
+      item.name.toLowerCase() === 'total revenue'
+    )
   );
   
   const costOfSalesItem = updatedBudgetData.find(item => 
-    (item.name.toLowerCase() === 'cost of sales' || 
-     item.name.toLowerCase() === 'cos') && 
-    !item.name.toLowerCase().includes('food') && 
-    !item.name.toLowerCase().includes('beverage') && 
-    !item.name.toLowerCase().includes('drink')
+    item && item.name && (
+      (item.name.toLowerCase() === 'cost of sales' || 
+       item.name.toLowerCase() === 'cos') && 
+      !item.name.toLowerCase().includes('food') && 
+      !item.name.toLowerCase().includes('beverage') && 
+      !item.name.toLowerCase().includes('drink')
+    )
   );
   
   const operatingProfitItem = updatedBudgetData.find(item => 
-    item.name.toLowerCase().includes('operating profit') || 
-    item.name.toLowerCase().includes('ebitda')
+    item && item.name && (
+      item.name.toLowerCase().includes('operating profit') || 
+      item.name.toLowerCase().includes('ebitda')
+    )
   );
 
   const generateTempId = (name: string) => {
     return `temp-id-${name.toLowerCase().replace(/\s+/g, '-')}`;
   };
 
+  // Make sure we have valid items to work with
   const turnoverForecast = turnoverItem?.forecast_amount || 
-                         getForecastAmount({...(turnoverItem || {}), id: turnoverItem?.id || generateTempId('turnover')}, currentYear, currentMonth);
+                         (turnoverItem ? getForecastAmount({
+                           ...(turnoverItem || {}), 
+                           id: turnoverItem?.id || generateTempId('turnover')
+                         }, currentYear, currentMonth) : 0);
                          
   const costOfSalesForecast = costOfSalesItem?.forecast_amount || 
-                            getForecastAmount({...(costOfSalesItem || {}), id: costOfSalesItem?.id || generateTempId('cost-of-sales')}, currentYear, currentMonth);
+                            (costOfSalesItem ? getForecastAmount({
+                              ...(costOfSalesItem || {}), 
+                              id: costOfSalesItem?.id || generateTempId('cost-of-sales')
+                            }, currentYear, currentMonth) : 0);
                             
   const operatingProfitForecast = operatingProfitItem?.forecast_amount || 
-                                getForecastAmount({...(operatingProfitItem || {}), id: operatingProfitItem?.id || generateTempId('operating-profit')}, currentYear, currentMonth);
+                                (operatingProfitItem ? getForecastAmount({
+                                  ...(operatingProfitItem || {}), 
+                                  id: operatingProfitItem?.id || generateTempId('operating-profit')
+                                }, currentYear, currentMonth) : 0);
 
-  const turnoverActual = turnoverItem ? getActualAmount({...turnoverItem, id: turnoverItem.id || generateTempId('turnover')}) : 0;
-  const costOfSalesActual = costOfSalesItem ? getActualAmount({...costOfSalesItem, id: costOfSalesItem.id || generateTempId('cost-of-sales')}) : 0;
-  const operatingProfitActual = operatingProfitItem ? getActualAmount({...operatingProfitItem, id: operatingProfitItem.id || generateTempId('operating-profit')}) : 0;
+  const turnoverActual = turnoverItem ? getActualAmount({
+    ...turnoverItem, 
+    id: turnoverItem.id || generateTempId('turnover')
+  }) : 0;
+  
+  const costOfSalesActual = costOfSalesItem ? getActualAmount({
+    ...costOfSalesItem, 
+    id: costOfSalesItem.id || generateTempId('cost-of-sales')
+  }) : 0;
+  
+  const operatingProfitActual = operatingProfitItem ? getActualAmount({
+    ...operatingProfitItem, 
+    id: operatingProfitItem.id || generateTempId('operating-profit')
+  }) : 0;
   
   const chartData = [{
     name: 'Budget',
