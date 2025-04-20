@@ -84,7 +84,7 @@ export function TrackerSummaryRows({
   // Calculate operating profit forecast - use the forecasted values
   const opForecast = grossProfitForecast - adminForecast;
   
-  // Correctly calculate the variances
+  // Correctly calculate the variances - compare forecast to budget
   const adminBudgetVariance = adminForecast - adminTotalBudget;
   const opForecastVariance = opForecast - operatingProfitBudget;
   
