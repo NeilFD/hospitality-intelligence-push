@@ -216,18 +216,22 @@ export default function PLDashboard() {
     item.name.toLowerCase().includes('ebitda')
   );
 
+  const generateTempId = (name: string) => {
+    return `temp-id-${name.toLowerCase().replace(/\s+/g, '-')}`;
+  };
+
   const turnoverForecast = turnoverItem?.forecast_amount || 
-                         getForecastAmount(turnoverItem || {}, currentYear, currentMonth);
+                         getForecastAmount({...(turnoverItem || {}), id: turnoverItem?.id || generateTempId('turnover')}, currentYear, currentMonth);
                          
   const costOfSalesForecast = costOfSalesItem?.forecast_amount || 
-                            getForecastAmount(costOfSalesItem || {}, currentYear, currentMonth);
+                            getForecastAmount({...(costOfSalesItem || {}), id: costOfSalesItem?.id || generateTempId('cost-of-sales')}, currentYear, currentMonth);
                             
   const operatingProfitForecast = operatingProfitItem?.forecast_amount || 
-                                getForecastAmount(operatingProfitItem || {}, currentYear, currentMonth);
+                                getForecastAmount({...(operatingProfitItem || {}), id: operatingProfitItem?.id || generateTempId('operating-profit')}, currentYear, currentMonth);
 
-  const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
-  const costOfSalesActual = costOfSalesItem ? getActualAmount(costOfSalesItem) : 0;
-  const operatingProfitActual = operatingProfitItem ? getActualAmount(operatingProfitItem) : 0;
+  const turnoverActual = turnoverItem ? getActualAmount({...turnoverItem, id: turnoverItem.id || generateTempId('turnover')}) : 0;
+  const costOfSalesActual = costOfSalesItem ? getActualAmount({...costOfSalesItem, id: costOfSalesItem.id || generateTempId('cost-of-sales')}) : 0;
+  const operatingProfitActual = operatingProfitItem ? getActualAmount({...operatingProfitItem, id: operatingProfitItem.id || generateTempId('operating-profit')}) : 0;
   
   const chartData = [{
     name: 'Budget',
