@@ -36,37 +36,10 @@ export function PLTracker({
   console.log("Processed budget data count:", processedBudgetData.length);
   
   const processedDataWithActuals = processedBudgetData.map(item => {
-    const isRevenueItem = 
-      item.name.toLowerCase().includes('turnover') || 
-      item.name.toLowerCase().includes('revenue') ||
-      item.name.toLowerCase().includes('sales');
-      
-    const isCOSItem = 
-      item.name.toLowerCase().includes('cost of sales') ||
-      item.name.toLowerCase().includes('cos');
-      
-    const isGrossProfitItem = 
-      item.name.toLowerCase().includes('gross profit') ||
-      item.isGrossProfit;
-      
-    const isOperatingProfitItem = 
-      item.name.toLowerCase().includes('operating profit') ||
-      item.isOperatingProfit;
-      
-    const isWagesItem = 
-      item.name.toLowerCase().includes('wage') ||
-      item.name.toLowerCase().includes('salary');
-    
-    // Add actual/budget debug log for each item
-    console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
-    
-    // Identify expense items for special processing
-    const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
-                         !isOperatingProfitItem && !isWagesItem && !item.isHeader;
-    
-    // Return the item with original actual_amount - will be calculated in getActualAmount
+    // Return the item with original actual_amount - processing will happen in getActualAmount
     return {
       ...item,
+      // Don't change actual_amount here as it's needed for revenue and costs
       actual_amount: item.actual_amount
     };
   }) as PLTrackerBudgetItem[];

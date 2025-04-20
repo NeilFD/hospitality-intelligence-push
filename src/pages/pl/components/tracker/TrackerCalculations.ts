@@ -134,6 +134,7 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
 
   // For expense items, ALWAYS calculate the pro-rated value
   if (isExpenseItem) {
+    // Get today's date to calculate pro-rated values
     const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
     const dayOfMonth = 19; // Fixed for April 2025 as specified
     

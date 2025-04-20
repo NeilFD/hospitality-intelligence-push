@@ -50,7 +50,7 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
           }
         }
         
-        // For non-special items (expenses), use pro-rated calculation instead of setting to 0
+        // For non-special items (expenses), determine type for proper display
         const isRevenueItem = item.name.toLowerCase().includes('turnover') || 
                            item.name.toLowerCase().includes('revenue') ||
                            item.name.toLowerCase().includes('sales');
@@ -63,11 +63,8 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
                                 
         const isWagesItem = item.name.toLowerCase().includes('wages') ||
                           item.name.toLowerCase().includes('salaries');
-                          
-        const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
-                            !isWagesItem && !item.isHeader && !item.isOperatingProfit;
-        
-        // Keep actual_amount as is - it will be calculated by getActualAmount at display time
+
+        // Expense items need special handling - but keep actual_amount for revenue/COS/wages
         return {
           ...item,
           daily_values: dailyValues
