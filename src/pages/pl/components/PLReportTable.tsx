@@ -675,6 +675,13 @@ export function PLReportTable({
     const operatingProfitVariance = operatingProfitForecast - operatingProfitBudget;
     
     const totalTurnoverForecast = turnoverItem?.forecast_amount || 0;
+    
+    const adminActualPercentage = turnoverItem && turnoverItem.actual_amount ? adminTotalActual / turnoverItem.actual_amount : 0;
+    const adminForecastPercentage = totalTurnoverForecast > 0 ? adminTotalForecast / totalTurnoverForecast : 0;
+    const operatingProfitForecastPercentage = totalTurnoverForecast > 0 ? operatingProfitForecast / totalTurnoverForecast : 0;
+    
+    console.log(`Percentages - Admin: ${adminForecastPercentage * 100}%, OP: ${operatingProfitForecastPercentage * 100}%`);
+    console.log(`turnoverItem.forecast_amount: ${turnoverItem?.forecast_amount}, totalTurnoverForecast: ${totalTurnoverForecast}`);
 
     return (
       <>
@@ -784,18 +791,14 @@ export function PLReportTable({
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalActual)}
           </TableCell>
-          <TableCell className="text-right">
-            {totalTurnoverForecast > 0 
-              ? formatPercentage(adminTotalForecast / totalTurnoverForecast)
-              : '0.0%'}
+          <TableCell className="text-right font-bold">
+            {formatPercentage(adminActualPercentage)}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {totalTurnoverForecast > 0 
-              ? formatPercentage(adminTotalForecast / totalTurnoverForecast)
-              : '0.0%'}
+            {formatPercentage(adminForecastPercentage)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
@@ -814,16 +817,16 @@ export function PLReportTable({
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitActual)}
           </TableCell>
-          <TableCell className="text-right">
-            {/* Percentage can be added here if needed */}
+          <TableCell className="text-right font-bold">
+            {turnoverItem && turnoverItem.actual_amount 
+              ? formatPercentage(operatingProfitActual / turnoverItem.actual_amount)
+              : '0.0%'}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {totalTurnoverForecast > 0 
-              ? formatPercentage(operatingProfitForecast / totalTurnoverForecast)
-              : '0.0%'}
+            {formatPercentage(operatingProfitForecastPercentage)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
