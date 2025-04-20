@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Save, Cog } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 
 interface TrackerHeaderProps {
   currentMonthName: string;
@@ -11,7 +12,6 @@ interface TrackerHeaderProps {
   daysInMonth: number;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
-  onOpenSettings: () => void;
   onSaveChanges: () => void;
   onClose: () => void;
 }
@@ -24,7 +24,6 @@ export function TrackerHeader({
   daysInMonth,
   hasUnsavedChanges,
   isSaving,
-  onOpenSettings,
   onSaveChanges,
   onClose
 }: TrackerHeaderProps) {
@@ -33,14 +32,6 @@ export function TrackerHeader({
       <CardTitle>P&L Tracker - {currentMonthName} {currentYear}</CardTitle>
       <div className="flex items-center gap-2">
         <div className="text-sm">Data through: {yesterdayDate.toLocaleDateString()} (Day {dayOfMonth} of {daysInMonth})</div>
-        <Button 
-          onClick={onOpenSettings} 
-          variant="outline" 
-          className="flex items-center gap-2"
-        >
-          <Cog size={16} />
-          P&L Cost Management
-        </Button>
         <Button 
           onClick={onSaveChanges} 
           variant="outline" 
