@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -33,7 +32,26 @@ export function PLReportTable({
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
       console.log("PLReportTable: Forecast updated event received", event.detail);
-      // Trigger a refresh to recalculate all forecast amounts
+      
+      if (event.detail && event.detail.itemName) {
+        setRenderedData(prevData => {
+          return prevData.map(item => {
+            if (item.name === event.detail.itemName) {
+              console.log(`Updating forecast for ${item.name} to ${event.detail.forecastAmount || event.detail.finalTotal}`);
+              return {
+                ...item,
+                forecast_amount: event.detail.forecastAmount || event.detail.finalTotal,
+                forecast_settings: {
+                  method: event.detail.method,
+                  discrete_values: event.detail.values || {}
+                }
+              };
+            }
+            return item;
+          });
+        });
+      }
+      
       setRefreshTrigger(prev => prev + 1);
     };
 
@@ -51,7 +69,18 @@ export function PLReportTable({
       const processedData = JSON.parse(JSON.stringify(processedBudgetData));
       
       const updatedData = processedData.map((item: any) => {
-        // Force recalculation of forecast amount using the latest settings
+        const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
+        const cachedSettings = localStorage.getItem(cacheKey);
+        
+        if (cachedSettings) {
+          try {
+            const settings = JSON.parse(cachedSettings);
+            item.forecast_settings = settings;
+          } catch (e) {
+            console.error(`Error parsing cached settings for ${item.name}:`, e);
+          }
+        }
+        
         const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
         console.log(`PLReportTable: Calculated forecast for ${item.name}: ${forecastAmount}`);
         
@@ -328,8 +357,6 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      // Always recalculate the forecast amount using getForecastAmount
-      // to ensure we have the latest value based on current settings
       const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
       
       console.log(`Rendering ${item.name}: forecast_amount=${forecastAmount}, budget=${item.budget_amount}`);
@@ -384,7 +411,6 @@ export function PLReportTable({
                 currentMonth={currentMonth}
                 onMethodChange={() => {
                   console.log(`ForecastSettingsControl onMethodChange triggered for ${item.name}`);
-                  // Force a refresh when method changes
                   setRefreshTrigger(prev => prev + 1);
                 }}
               />

@@ -155,7 +155,10 @@ export function ForecastSettingsControl({
         values: dailyValues,
         year: currentYear,
         month: currentMonth,
-        finalTotal
+        finalTotal,
+        // Include important additional information
+        forecastAmount: finalTotal,
+        budgetAmount
       }
     });
     

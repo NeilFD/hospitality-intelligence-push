@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -135,22 +134,81 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   return 0;
 }
 
+export async function fetchForecastSettings(itemName: string, year: number, month: number) {
+  const cacheKey = `forecast_${itemName}_${year}_${month}`;
+  const cachedSettings = localStorage.getItem(cacheKey);
+  
+  if (cachedSettings) {
+    try {
+      console.log(`Fetched cached forecast settings for ${itemName}:`, cachedSettings);
+      return JSON.parse(cachedSettings);
+    } catch (e) {
+      console.error('Error parsing cached settings:', e);
+    }
+  }
+
+  try {
+    const { data } = await supabase
+      .from('cost_item_forecast_settings')
+      .select('method, discrete_values')
+      .eq('item_name', itemName)
+      .eq('year', year)
+      .eq('month', month)
+      .single();
+
+    if (data) {
+      console.log(`Fetched database forecast settings for ${itemName}:`, data);
+      
+      localStorage.setItem(cacheKey, JSON.stringify({
+        method: data.method,
+        discrete_values: data.discrete_values || {}
+      }));
+      
+      return {
+        method: data.method,
+        discrete_values: data.discrete_values || {}
+      };
+    }
+  } catch (error) {
+    console.error(`Error fetching forecast settings for ${itemName}:`, error);
+  }
+  
+  return null;
+}
+
 export function getForecastAmount(
   item: PLTrackerBudgetItem | any,
   year: number,
   month: number
 ): number {
-  // First, check if the item has a forecast_amount directly set
-  if (item.forecast_amount !== undefined && item.forecast_amount !== null) {
-    // If forecast_amount is directly set on the item, return it
+  if (item.forecast_amount !== undefined && 
+      item.forecast_amount !== null && 
+      item.forecast_amount !== 0) {
     return item.forecast_amount;
   }
+
+  let forecastSettings = null;
   
-  // Next, check if the item itself has forecast_settings
   if (item.forecast_settings) {
     console.log(`Using direct forecast_settings for ${item.name}:`, item.forecast_settings);
-    const method = item.forecast_settings.method;
-    const discreteValues = item.forecast_settings.discrete_values || {};
+    forecastSettings = item.forecast_settings;
+  } else {
+    const cacheKey = `forecast_${item.name}_${year}_${month}`;
+    const cachedSettings = localStorage.getItem(cacheKey);
+    
+    if (cachedSettings) {
+      try {
+        console.log(`Using cached forecast settings for ${item.name}:`, cachedSettings);
+        forecastSettings = JSON.parse(cachedSettings);
+      } catch (e) {
+        console.error('Error parsing cached forecast settings:', e);
+      }
+    }
+  }
+  
+  if (forecastSettings) {
+    const method = forecastSettings.method;
+    const discreteValues = forecastSettings.discrete_values || {};
     
     switch (method) {
       case 'fixed':
@@ -198,55 +256,6 @@ export function getForecastAmount(
     }
   }
   
-  // Try to get settings from localStorage
-  const cacheKey = `forecast_${item.name}_${year}_${month}`;
-  const cachedSettings = localStorage.getItem(cacheKey);
-  
-  if (cachedSettings) {
-    try {
-      console.log(`Using cached forecast settings for ${item.name}:`, cachedSettings);
-      const settings = JSON.parse(cachedSettings);
-      
-      if (settings.method === 'fixed') {
-        return item.budget_amount || 0;
-      } else if (settings.method === 'discrete') {
-        let total = 0;
-        const discreteValues = settings.discrete_values || {};
-        Object.values(discreteValues).forEach((value: any) => {
-          if (typeof value === 'number') {
-            total += value;
-          } else if (typeof value === 'string') {
-            const parsed = parseFloat(value);
-            if (!isNaN(parsed)) {
-              total += parsed;
-            }
-          }
-        });
-        console.log(`Calculated discrete total from localStorage for ${item.name}: ${total}`);
-        return total;
-      } else if (settings.method === 'fixed_plus') {
-        let dailyTotal = 0;
-        const discreteValues = settings.discrete_values || {};
-        Object.values(discreteValues).forEach((value: any) => {
-          if (typeof value === 'number') {
-            dailyTotal += value;
-          } else if (typeof value === 'string') {
-            const parsed = parseFloat(value);
-            if (!isNaN(parsed)) {
-              dailyTotal += parsed;
-            }
-          }
-        });
-        const result = (item.budget_amount || 0) + dailyTotal;
-        console.log(`Calculated fixed_plus total from localStorage for ${item.name}: ${result} (${item.budget_amount} + ${dailyTotal})`);
-        return result;
-      }
-    } catch (e) {
-      console.error('Error parsing cached forecast settings:', e);
-    }
-  }
-  
-  // Fall back to budget amount
   return item.budget_amount || 0;
 }
 
