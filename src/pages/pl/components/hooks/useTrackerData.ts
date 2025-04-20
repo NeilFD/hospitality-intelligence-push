@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +28,6 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
       const trackedData: PLTrackerBudgetItem[] = await Promise.all(processedBudgetData.map(async (item) => {
         // Fetch daily values if the item has an ID
         let dailyValues: DayInput[] = [];
-        let actualAmount = item.actual_amount !== undefined ? item.actual_amount : 0;
         
         if (item.id) {
           try {
@@ -46,32 +44,33 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
                   value: dbValue.value
                 };
               });
-              
-              // Calculate the total value from daily values
-              const totalValue = dailyValues.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
-              
-              // For non-special items, update the actual amount from daily values
-              if (!item.name.toLowerCase().includes('revenue') &&
-                  !item.name.toLowerCase().includes('turnover') &&
-                  !item.name.toLowerCase().includes('cost of sales') &&
-                  !item.name.toLowerCase().includes('cos') &&
-                  !item.name.toLowerCase().includes('gross profit') &&
-                  !item.name.toLowerCase().includes('operating profit') &&
-                  !item.name.toLowerCase().includes('wages') &&
-                  !item.name.toLowerCase().includes('salary') &&
-                  actualAmount === 0) {
-                actualAmount = totalValue;
-              }
             }
           } catch (error) {
             console.error(`Error fetching daily values for item ${item.name}:`, error);
           }
         }
         
+        // For non-special items (expenses), use pro-rated calculation instead of setting to 0
+        const isRevenueItem = item.name.toLowerCase().includes('turnover') || 
+                           item.name.toLowerCase().includes('revenue') ||
+                           item.name.toLowerCase().includes('sales');
+                          
+        const isCOSItem = item.name.toLowerCase().includes('cost of sales') || 
+                        item.name.toLowerCase().includes('cos');
+                          
+        const isGrossProfitItem = item.name.toLowerCase().includes('gross profit') ||
+                                item.isGrossProfit;
+                                
+        const isWagesItem = item.name.toLowerCase().includes('wages') ||
+                          item.name.toLowerCase().includes('salaries');
+                          
+        const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
+                            !isWagesItem && !item.isHeader && !item.isOperatingProfit;
+        
+        // Keep actual_amount as is - it will be calculated by getActualAmount at display time
         return {
           ...item,
-          daily_values: dailyValues,
-          actual_amount: actualAmount
+          daily_values: dailyValues
         };
       }));
       

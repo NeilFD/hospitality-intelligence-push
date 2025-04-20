@@ -60,14 +60,14 @@ export function PLTracker({
     // Add actual/budget debug log for each item
     console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
     
-    // Initialize expense items with a calculated actual amount if not already set
+    // Identify expense items for special processing
     const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
-                          !isOperatingProfitItem && !isWagesItem && !item.isHeader;
+                         !isOperatingProfitItem && !isWagesItem && !item.isHeader;
     
-    // Return the item with appropriate actual amount setup
+    // Return the item with original actual_amount - will be calculated in getActualAmount
     return {
       ...item,
-      actual_amount: item.actual_amount // Keep the actual_amount as is - will be calculated later if needed
+      actual_amount: item.actual_amount
     };
   }) as PLTrackerBudgetItem[];
   

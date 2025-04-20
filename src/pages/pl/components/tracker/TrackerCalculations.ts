@@ -108,6 +108,9 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   
   const isWages = item.name.toLowerCase().includes('wages') ||
                  item.name.toLowerCase().includes('salaries');
+
+  const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
+                       !isWages && !item.isHeader && !item.isOperatingProfit;
   
   // For manually entered actuals, use that value regardless of item type
   if (typeof item.manually_entered_actual === 'number') {
@@ -129,15 +132,21 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return Number(item.actual_amount);
   }
 
-  // For expense items (not revenue, COS, Gross Profit, or Wages), calculate the pro-rated value
-  // This is the critical change to ensure expense rows show values instead of £0
-  const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
-  const dayOfMonth = 19; // Fixed for April 2025 as specified
-  
-  // For any other expense item, calculate pro-rated amount
-  const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
-  console.log(`Item ${item.name} using pro-rated actual: ${proRatedActual}`);
-  return proRatedActual;
+  // For expense items, ALWAYS calculate the pro-rated value
+  if (isExpenseItem) {
+    const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
+    const dayOfMonth = 19; // Fixed for April 2025 as specified
+    
+    // Pro-rate at 65% of budget for the number of days passed
+    const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
+    console.log(`Expense item ${item.name} using pro-rated actual: ${proRatedActual}`);
+    return proRatedActual;
+  }
+
+  // Fallback - if we get here and have no actual value, return the pro-rated budget
+  const daysInMonth = new Date(2025, 4, 0).getDate();
+  const dayOfMonth = 19;
+  return (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
 }
 
 export function calculateProRatedActual(
