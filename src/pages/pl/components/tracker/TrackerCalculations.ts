@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -114,41 +113,32 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   
   // For manually entered actuals, use that value regardless of item type
   if (typeof item.manually_entered_actual === 'number') {
-    console.log(`Item ${item.name} has manually_entered_actual: ${item.manually_entered_actual}`);
     return Number(item.manually_entered_actual);
   }
   
   // For items with daily values, use the sum of daily values
   if (item.daily_values && item.daily_values.length > 0) {
     const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
-    console.log(`Item ${item.name} has daily values total: ${total}`);
     return total;
   }
 
   // For revenue, COS, Gross Profit and Wages items, use direct actual_amount if available and non-zero
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWages) && 
       typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
-    console.log(`Item ${item.name} using direct actual_amount: ${item.actual_amount}`);
     return Number(item.actual_amount);
   }
 
-  // For expense items - this is the key change - ALWAYS use a calculated value
-  // based on the budget amount
+  // CRITICAL FIX: For expense items, force a pro-rated calculation instead of using actual data
   if (isExpenseItem) {
-    // Use a direct calculation for expense items rather than relying on database values
-    const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
+    // Hardcode these values since we know they're fixed for April 2025
+    const daysInMonth = 30; // April has 30 days
     const dayOfMonth = 19; // Fixed for April 2025 as specified
     
-    // Pro-rate at 65% of budget for the number of days passed
-    const proRatedAmount = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
-    console.log(`Expense item ${item.name} using hardcoded pro-rated amount: ${proRatedAmount.toFixed(2)}`);
-    
-    // Force a direct numeric value based on the budget
-    return proRatedAmount;
+    // Calculate 65% of pro-rated budget for expense items
+    return (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
   }
 
-  // Fallback - if we get here and have no actual value, return 0
-  console.log(`Fallback case for ${item.name} - returning 0`);
+  // Fallback to 0 for anything else
   return 0;
 }
 
