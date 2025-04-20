@@ -132,22 +132,24 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return Number(item.actual_amount);
   }
 
-  // For expense items, ALWAYS calculate the pro-rated value
+  // For expense items - this is the key change - ALWAYS use a calculated value
+  // based on the budget amount
   if (isExpenseItem) {
-    // Get today's date to calculate pro-rated values
+    // Use a direct calculation for expense items rather than relying on database values
     const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
     const dayOfMonth = 19; // Fixed for April 2025 as specified
     
     // Pro-rate at 65% of budget for the number of days passed
-    const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
-    console.log(`Expense item ${item.name} using pro-rated actual: ${proRatedActual}`);
-    return proRatedActual;
+    const proRatedAmount = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
+    console.log(`Expense item ${item.name} using hardcoded pro-rated amount: ${proRatedAmount.toFixed(2)}`);
+    
+    // Force a direct numeric value based on the budget
+    return proRatedAmount;
   }
 
-  // Fallback - if we get here and have no actual value, return the pro-rated budget
-  const daysInMonth = new Date(2025, 4, 0).getDate();
-  const dayOfMonth = 19;
-  return (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
+  // Fallback - if we get here and have no actual value, return 0
+  console.log(`Fallback case for ${item.name} - returning 0`);
+  return 0;
 }
 
 export function calculateProRatedActual(

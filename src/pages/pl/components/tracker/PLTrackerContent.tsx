@@ -109,13 +109,22 @@ export function PLTrackerContent({
                 const itemIndex = trackedBudgetData.findIndex(i => i.id === item.id);
                 const proRatedBudget = calculateProRatedBudget(item);
                 
-                // Make sure we're getting the actual amount correctly for all item types
-                // For pro-rated items, this will be the pro-rated calculation
-                const actualAmount = getActualAmount(item);
-                const variance = actualAmount - proRatedBudget;
+                // Extra logging to debug expense items
+                const isExpense = !isRevenueItem(item) && 
+                                !isCOSItem(item) && 
+                                !isGrossProfitItem(item) && 
+                                !isWagesItem(item) && 
+                                !item.isHeader;
+                                
+                if (isExpense) {
+                  console.log(`Expense item: ${item.name} - budget: ${item.budget_amount}`);
+                }
                 
-                // Add diagnostic logging
-                console.log(`Item ${item.name}: proRatedBudget=${proRatedBudget}, actualAmount=${actualAmount}, variance=${variance}`);
+                // Force the actual amount calculation for expense items
+                const actualAmount = getActualAmount(item);
+                console.log(`${item.name} - Calculated actual amount: ${actualAmount}`);
+                
+                const variance = actualAmount - proRatedBudget;
                 
                 return (
                   <TrackerLineItem

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -35,11 +34,14 @@ export function PLTracker({
   // Debug log for all processed budget data
   console.log("Processed budget data count:", processedBudgetData.length);
   
+  // Keep original actual_amount values intact for special items like revenue, COS, wages
+  // Let the getActualAmount function handle the logic for expense items
   const processedDataWithActuals = processedBudgetData.map(item => {
-    // Return the item with original actual_amount - processing will happen in getActualAmount
+    // Log each item's budget and actual amount for debugging
+    console.log(`Processing ${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
+    
     return {
       ...item,
-      // Don't change actual_amount here as it's needed for revenue and costs
       actual_amount: item.actual_amount
     };
   }) as PLTrackerBudgetItem[];
