@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -143,7 +142,6 @@ export function getForecastAmount(
   const cacheKey = `forecast_${item.name}_${year}_${month}`;
   const cachedSettings = localStorage.getItem(cacheKey);
   
-  // First check for item's own forecast_settings property
   if (item.forecast_settings) {
     const method = item.forecast_settings.method;
     const discreteValues = item.forecast_settings.discrete_values || {};
@@ -193,7 +191,6 @@ export function getForecastAmount(
     }
   }
   
-  // If no forecast_settings directly on item, check localStorage cache
   if (cachedSettings) {
     try {
       const settings = JSON.parse(cachedSettings);
@@ -234,7 +231,6 @@ export function getForecastAmount(
     }
   }
   
-  // Default fallback
   return item.budget_amount || 0;
 }
 

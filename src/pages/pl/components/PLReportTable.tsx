@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -29,8 +30,8 @@ export function PLReportTable({
   const currentMonth = getMonthNumber(currentMonthName);
   
   useEffect(() => {
-    const handleForecastUpdate = () => {
-      console.log("Forecast updated event received, refreshing PLReportTable...");
+    const handleForecastUpdate = (event: any) => {
+      console.log("Forecast updated event received, refreshing PLReportTable...", event.detail);
       setRefreshTrigger(prev => prev + 1);
     };
 
@@ -306,7 +307,12 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
+      // Recalculate the forecast amount on every render and when refreshTrigger changes
       const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
+      console.log(`Item ${item.name} - Forecast amount calculated: ${forecastAmount}`);
+      
+      // Update the item's forecast amount for variance calculations
+      item.forecast_amount = forecastAmount;
       
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 

@@ -139,7 +139,22 @@ export default function PLDashboard() {
         return { ...item, actual_amount: wagesData || 0 };
       }
     }
-    return item;
+    
+    const result = { ...item };
+    
+    if (!result.forecast_settings) {
+      const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
+      const cachedSettings = localStorage.getItem(cacheKey);
+      if (cachedSettings) {
+        try {
+          result.forecast_settings = JSON.parse(cachedSettings);
+        } catch (e) {
+          console.error('Error parsing cached forecast settings:', e);
+        }
+      }
+    }
+    
+    return result;
   });
   
   const turnoverItem = updatedBudgetData.find(item => item.name.toLowerCase() === 'turnover' || item.name.toLowerCase() === 'revenue');
