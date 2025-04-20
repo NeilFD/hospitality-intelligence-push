@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -173,15 +174,16 @@ export function TrackerSummaryRows({
   const opForecastVariance = opForecast - operatingProfitBudget;
   
   // Calculate percentages - using turnover values
-  const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
-  const adminBudgetPercentage = turnoverBudget ? (adminTotalBudget / turnoverBudget) * 100 : 0;
+  const adminActualPercentage = turnoverActual && turnoverActual !== 0 ? (adminActualAmount / turnoverActual) * 100 : 0;
+  const adminBudgetPercentage = turnoverBudget && turnoverBudget !== 0 ? (adminTotalBudget / turnoverBudget) * 100 : 0;
   
   // Use effectiveTurnoverForecast for percentage calculations, making sure it's not zero
-  const adminForecastPercentage = effectiveTurnoverForecast ? (adminForecast / effectiveTurnoverForecast) * 100 : 0;
+  // Force these to use effectiveTurnoverForecast directly to ensure we have % values
+  const adminForecastPercentage = (adminForecast / effectiveTurnoverForecast) * 100;
   
-  const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
-  const opBudgetPercentage = turnoverBudget ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
-  const opForecastPercentage = effectiveTurnoverForecast ? (opForecast / effectiveTurnoverForecast) * 100 : 0;
+  const opActualPercentage = turnoverActual && turnoverActual !== 0 ? (actualOperatingProfit / turnoverActual) * 100 : 0;
+  const opBudgetPercentage = turnoverBudget && turnoverBudget !== 0 ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
+  const opForecastPercentage = (opForecast / effectiveTurnoverForecast) * 100;
 
   console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${effectiveTurnoverForecast}`);
   console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${effectiveTurnoverForecast}`);
@@ -270,7 +272,7 @@ export function TrackerSummaryRows({
           {formatCurrency(opForecast)} ({opForecastPercentage.toFixed(1)}%)
         </TableCell>
         <TableCell className={`text-right font-bold ${
-          opForecastVariance > 0 ? 'text-green-200' : 'text-red-300'
+          opForecast > 0 ? 'text-green-200' : 'text-red-300'
         }`}>
           {formatCurrency(opForecastVariance)}
         </TableCell>
