@@ -50,10 +50,12 @@ export function TrackerSummaryRows({
   console.log(`Admin expenses: ${adminExpenses}, Admin actual: ${adminActualAmount}, Variance: ${adminVariance}`);
   console.log(`Admin total budget: ${adminTotalBudget}`);
   
-  // Calculate admin forecast based on actual amounts so far
+  // Calculate admin forecast based on actual amounts so far - scale the actuals to full month
   const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
     ? (adminActualAmount / dayOfMonth) * daysInMonth
     : adminTotalBudget;
+
+  console.log(`Admin forecast (projected from actuals): ${adminForecast}`);
 
   // Find Gross Profit item
   const grossProfitItem = trackedBudgetData.find(item => 
@@ -78,13 +80,16 @@ export function TrackerSummaryRows({
   const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
   const operatingProfit = grossProfitProRated - adminExpenses;
   const actualOperatingProfit = grossProfitActual - adminActualAmount;
-  const opVariance = actualOperatingProfit - operatingProfit;
   
-  // Calculate operating profit forecast
+  // Calculate operating profit forecast - use the forecasted values
   const opForecast = grossProfitForecast - adminForecast;
   
-  console.log(`Operating profit: ${operatingProfit}, Actual OP: ${actualOperatingProfit}, Forecast OP: ${opForecast}, Variance: ${opVariance}`);
-  console.log(`OP Budget: ${operatingProfitBudget}`);
+  // Correctly calculate the variances
+  const adminBudgetVariance = adminForecast - adminTotalBudget;
+  const opForecastVariance = opForecast - operatingProfitBudget;
+  
+  console.log(`Admin budget: ${adminTotalBudget}, Admin forecast: ${adminForecast}, Admin variance: ${adminBudgetVariance}`);
+  console.log(`Operating profit budget: ${operatingProfitBudget}, Actual OP: ${actualOperatingProfit}, Forecast OP: ${opForecast}, OP variance: ${opForecastVariance}`);
   
   // Update forecast value for operating profit in state
   React.useEffect(() => {
@@ -120,9 +125,9 @@ export function TrackerSummaryRows({
           {formatCurrency(adminForecast)}
         </TableCell>
         <TableCell className={`text-right font-bold ${
-          adminVariance > 0 ? 'text-green-600' : 'text-red-600'
+          adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
         }`}>
-          {formatCurrency(adminVariance)}
+          {formatCurrency(adminBudgetVariance)}
         </TableCell>
       </TableRow>
       
@@ -147,9 +152,9 @@ export function TrackerSummaryRows({
           {formatCurrency(opForecast)}
         </TableCell>
         <TableCell className={`text-right font-bold ${
-          opVariance > 0 ? 'text-green-200' : 'text-red-300'
+          opForecastVariance > 0 ? 'text-green-200' : 'text-red-300'
         }`}>
-          {formatCurrency(opVariance)}
+          {formatCurrency(opForecastVariance)}
         </TableCell>
       </TableRow>
     </>
