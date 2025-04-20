@@ -130,6 +130,25 @@ export function TrackerLineItem({
 
   const showCalendarIcon = isCostItem && item.tracking_type === 'Discrete';
 
+  // Calculate forecast based on actual amount
+  const calculateForecast = (actual: number, dayOfMonth: number, daysInMonth: number) => {
+    if (dayOfMonth === 0) return 0;
+    return (actual / dayOfMonth) * daysInMonth;
+  };
+
+  // Get the current date information
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+  // Auto-calculate forecast when actual amount changes
+  React.useEffect(() => {
+    const forecast = calculateForecast(actualAmount, dayOfMonth, daysInMonth);
+    if (!isNaN(forecast) && forecast !== 0) {
+      updateForecastAmount(index, forecast.toString());
+    }
+  }, [actualAmount, dayOfMonth, daysInMonth]);
+
   return (
     <TableRow className={rowClassName}>
       <TableCell className={fontClass}>
@@ -144,21 +163,9 @@ export function TrackerLineItem({
       <TableCell className={`text-right ${fontClass}`}>
         {formatCurrency(proRatedBudget)}
       </TableCell>
-      
-      <TableCell className={`text-right ${fontClass} relative`}>
+      <TableCell className={`text-right ${fontClass}`}>
         {formatCurrency(actualAmount)}
-        {showCalendarIcon && (
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2"
-            onClick={() => setIsDailyInputOpen(true)}
-          >
-            <CalendarDays className="h-4 w-4 text-purple-600" />
-          </Button>
-        )}
       </TableCell>
-      
       <TableCell className="text-right">
         <input
           type="number"

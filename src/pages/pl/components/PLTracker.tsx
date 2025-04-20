@@ -25,9 +25,7 @@ export function PLTracker({
 }: PLTrackerProps) {
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
-  // Assign proper tracking types based on item type
   const processedDataWithDefaultTracking = processedBudgetData.map(item => {
-    // Determine if this is a special item like revenue, summary, etc.
     const isSpecialItem = 
       item.name.toLowerCase().includes('turnover') || 
       item.name.toLowerCase().includes('revenue') ||
@@ -43,8 +41,7 @@ export function PLTracker({
       item.isOperatingProfit ||
       item.isHighlighted;
       
-    // Special items should be Pro-Rated, regular cost items should be Discrete
-    const trackingType = isSpecialItem ? 'Pro-Rated' : 'Discrete';
+    const trackingType = isSpecialItem ? 'Discrete' : 'Pro-Rated';
     
     return {
       ...item,
@@ -63,7 +60,6 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithDefaultTracking);
   
-  // Filter out header items with null budget values
   const filteredBudgetData = trackedBudgetData.filter(item => 
     !(item.isHeader && item.budget_amount === 0)
   );
@@ -93,13 +89,11 @@ export function PLTracker({
         updateDailyValues={updateDailyValues}
         getActualAmount={getActualAmount}
         calculateProRatedBudget={(item) => {
-          // For summary items, use calculateSummaryProRatedBudget
           if (item.isGrossProfit || item.isOperatingProfit || 
               item.name.toLowerCase().includes('total') ||
               item.name.toLowerCase() === 'turnover') {
             return calculateSummaryProRatedBudget(item, daysInMonth, dayOfMonth, trackedBudgetData);
           }
-          // For regular items, use the standard calculation
           return calculateProRatedBudget(item, daysInMonth, dayOfMonth);
         }}
         currentMonthName={currentMonthName}
