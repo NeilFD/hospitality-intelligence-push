@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -266,7 +265,22 @@ export function PLReportTable({
       'cleaning',
       'office expenses',
       'postage',
-      'subscriptions'
+      'subscriptions',
+      'entertainment',
+      'motor expenses',
+      'motor',
+      'insurance',
+      'heat and power',
+      'heat',
+      'power',
+      'utilities',
+      'repairs',
+      'maintenance',
+      'premises',
+      'rates',
+      'rent',
+      'staff costs',
+      'other staff'
     ];
     
     // Match if any of the words appear in the item name
