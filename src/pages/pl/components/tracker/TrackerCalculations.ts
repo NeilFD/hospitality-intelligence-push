@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export function calculateProRatedBudget(
@@ -11,14 +10,13 @@ export function calculateProRatedBudget(
     return (item.budget_amount / daysInMonth) * dayOfMonth;
   }
   
-  // For Discrete items with daily values, return the budget amount directly
-  // as the actual values will be from the daily inputs
+  // For Discrete items, return the full budget amount
   if (item.tracking_type === 'Discrete') {
     return item.budget_amount;
   }
   
-  // Default calculation (shouldn't reach here, but just in case)
-  return (item.budget_amount / daysInMonth) * dayOfMonth;
+  // Default calculation (shouldn't reach here)
+  return item.budget_amount;
 }
 
 export function calculateSummaryProRatedBudget(

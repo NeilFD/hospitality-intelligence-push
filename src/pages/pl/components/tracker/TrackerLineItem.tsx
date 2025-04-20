@@ -34,6 +34,7 @@ export function TrackerLineItem({
 }: TrackerLineItemProps) {
   const [isDailyInputOpen, setIsDailyInputOpen] = useState(false);
   
+  // Handle header items
   if (item.isHeader) {
     return (
       <TableRow className='bg-[#48495e]/90 text-white'>
@@ -47,6 +48,7 @@ export function TrackerLineItem({
     );
   }
   
+  // Define item types for styling and display logic
   const isGrossProfit = item.isGrossProfit || 
                       item.name.toLowerCase().includes('gross profit') || 
                       item.name.toLowerCase().includes('profit/(loss)');
@@ -72,6 +74,7 @@ export function TrackerLineItem({
                  
   const isHighlightedItem = item.isHighlighted;
   
+  // Determine styling
   let rowClassName = '';
   let fontClass = '';
   
@@ -87,10 +90,12 @@ export function TrackerLineItem({
               item.name.toLowerCase().includes('cost of sales') || 
               isGrossProfit ? 'font-bold' : '';
   
+  // Skip operating profit items that aren't highlighted
   if (isOperatingProfit && !item.isHighlighted) {
     return null;
   }
   
+  // Handle daily input functionality
   const handleOpenDailyInput = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -122,26 +127,19 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  // Determine if this is a COST item (not revenue, summary, or special item)
-  const isCostItem = () => {
-    // Exclude all revenue, header, and summary items
-    if (isRevenue || isTurnover || item.isHeader || 
-        isGrossProfit || isOperatingProfit || isHighlightedItem || 
-        isTotalItem || isWages) {
-      return false;
-    }
-    
-    // Exclude special cost categories that should be calculated differently
-    if (isCOS) {
-      return false;
-    }
-    
-    // This must be a regular cost item
-    return true;
-  };
+  // Determine if this is a regular cost item (not revenue or special item)
+  const isCostItem = !isRevenue && 
+                   !isTurnover && 
+                   !item.isHeader && 
+                   !isGrossProfit && 
+                   !isOperatingProfit && 
+                   !isHighlightedItem && 
+                   !isTotalItem && 
+                   !isWages && 
+                   !isCOS;
 
   // Show calendar ONLY for DISCRETE cost items
-  const showCalendarIcon = isCostItem() && item.tracking_type === 'Discrete';
+  const showCalendarIcon = isCostItem && item.tracking_type === 'Discrete';
 
   return (
     <TableRow className={rowClassName}>

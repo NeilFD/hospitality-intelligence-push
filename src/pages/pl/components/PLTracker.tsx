@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -28,9 +27,9 @@ export function PLTracker({
   const [showSettings, setShowSettings] = useState(false);
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
-  // Default all items to Pro-Rated unless specifically marked as Discrete
+  // Assign proper tracking types based on item type
   const processedDataWithDefaultTracking = processedBudgetData.map(item => {
-    // Revenue items, COS, and special items are treated differently
+    // Determine if this is a special item like revenue, summary, etc.
     const isSpecialItem = 
       item.name.toLowerCase().includes('turnover') || 
       item.name.toLowerCase().includes('revenue') ||
@@ -46,13 +45,8 @@ export function PLTracker({
       item.isOperatingProfit ||
       item.isHighlighted;
       
-    // Assign tracking type based on item type
-    // Cost items should default to Discrete if not already defined
-    let trackingType = 'Pro-Rated';
-    if (!isSpecialItem) {
-      // Regular cost items default to Discrete
-      trackingType = 'Discrete';
-    }
+    // Special items should be Pro-Rated, regular cost items should be Discrete
+    const trackingType = isSpecialItem ? 'Pro-Rated' : 'Discrete';
     
     return {
       ...item,
