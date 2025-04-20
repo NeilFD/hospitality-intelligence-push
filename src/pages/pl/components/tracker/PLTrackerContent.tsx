@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -127,6 +126,8 @@ export function PLTrackerContent({
                     updateDailyValues={updateDailyValues}
                     currentMonthName={currentMonthName}
                     currentYear={currentYear}
+                    dayOfMonth={dayOfMonth}
+                    daysInMonth={daysInMonth}
                   />
                 );
               })}
@@ -161,4 +162,3 @@ export function PLTrackerContent({
     </>
   );
 }
-

@@ -17,6 +17,8 @@ interface TrackerLineItemProps {
   updateDailyValues: (index: number, dailyValues: DayInput[]) => void;
   currentMonthName: string;
   currentYear: number;
+  dayOfMonth: number;
+  daysInMonth: number;
 }
 
 export function TrackerLineItem({
@@ -29,7 +31,9 @@ export function TrackerLineItem({
   updateForecastAmount,
   updateDailyValues,
   currentMonthName,
-  currentYear
+  currentYear,
+  dayOfMonth,
+  daysInMonth
 }: TrackerLineItemProps) {
   const [isDailyInputOpen, setIsDailyInputOpen] = useState(false);
   
@@ -128,26 +132,15 @@ export function TrackerLineItem({
                     !isWages && 
                     !isCOS;
 
-  const showCalendarIcon = isCostItem && item.tracking_type === 'Discrete';
-
-  // Calculate forecast based on actual amount
-  const calculateForecast = (actual: number, dayOfMonth: number, daysInMonth: number) => {
-    if (dayOfMonth === 0) return 0;
-    return (actual / dayOfMonth) * daysInMonth;
-  };
-
-  // Get the current date information
-  const today = new Date();
-  const dayOfMonth = today.getDate();
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-
-  // Auto-calculate forecast when actual amount changes
+  const forecastAmount = actualAmount > 0 && dayOfMonth > 0
+    ? (actualAmount / dayOfMonth) * daysInMonth
+    : item.budget_amount || 0;
+    
   React.useEffect(() => {
-    const forecast = calculateForecast(actualAmount, dayOfMonth, daysInMonth);
-    if (!isNaN(forecast) && forecast !== 0) {
-      updateForecastAmount(index, forecast.toString());
+    if (!isNaN(forecastAmount) && forecastAmount !== 0) {
+      updateForecastAmount(index, forecastAmount.toString());
     }
-  }, [actualAmount, dayOfMonth, daysInMonth]);
+  }, [actualAmount, dayOfMonth, daysInMonth, index, updateForecastAmount]);
 
   return (
     <TableRow className={rowClassName}>
@@ -166,16 +159,8 @@ export function TrackerLineItem({
       <TableCell className={`text-right ${fontClass}`}>
         {formatCurrency(actualAmount)}
       </TableCell>
-      <TableCell className="text-right">
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          value={item.forecast_amount !== undefined ? item.forecast_amount : ''}
-          onChange={(e) => updateForecastAmount(index, e.target.value)}
-          className="h-8 w-24 text-right ml-auto pointer-events-auto"
-          onClick={e => e.stopPropagation()}
-        />
+      <TableCell className={`text-right ${fontClass}`}>
+        {formatCurrency(forecastAmount)}
       </TableCell>
       <TableCell className={`text-right ${fontClass} ${
         variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : ''

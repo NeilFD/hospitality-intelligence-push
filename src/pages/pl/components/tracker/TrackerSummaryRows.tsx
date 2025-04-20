@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/date-utils';
 import { PLTrackerBudgetItem } from '../types/PLTrackerTypes';
 
@@ -48,6 +47,11 @@ export function TrackerSummaryRows({
     .reduce((sum, item) => sum + getActualAmount(item), 0);
     
   const adminVariance = adminActualAmount - adminExpenses;
+  
+  // Calculate admin forecast
+  const adminForecast = adminActualAmount > 0 && dayOfMonth > 0
+    ? (adminActualAmount / dayOfMonth) * daysInMonth
+    : adminExpenses * daysInMonth / dayOfMonth;
 
   // Operating Profit Summary Row
   const grossProfitItem = trackedBudgetData.find(item => 
@@ -59,6 +63,21 @@ export function TrackerSummaryRows({
   
   const actualOperatingProfit = grossProfitActual - adminActualAmount;
   const opVariance = actualOperatingProfit - operatingProfit;
+  
+  // Calculate operating profit forecast
+  const opForecast = actualOperatingProfit > 0 && dayOfMonth > 0
+    ? (actualOperatingProfit / dayOfMonth) * daysInMonth
+    : operatingProfit * daysInMonth / dayOfMonth;
+    
+  // Update forecast value for operating profit in state
+  React.useEffect(() => {
+    const opIndex = trackedBudgetData.findIndex(i => 
+      i.name.toLowerCase().includes('operating profit') && i.isHighlighted);
+    
+    if (opIndex >= 0 && !isNaN(opForecast) && opForecast !== 0) {
+      updateForecastAmount(opIndex, opForecast.toString());
+    }
+  }, [opForecast, trackedBudgetData, updateForecastAmount]);
 
   return (
     <>
@@ -79,8 +98,8 @@ export function TrackerSummaryRows({
         <TableCell className="text-right font-bold">
           {formatCurrency(adminActualAmount)}
         </TableCell>
-        <TableCell className="text-right">
-          {/* Forecast can be added here if needed */}
+        <TableCell className="text-right font-bold">
+          {formatCurrency(adminForecast)}
         </TableCell>
         <TableCell className={`text-right font-bold ${
           adminVariance > 0 ? 'text-green-600' : 'text-red-600'
@@ -106,22 +125,8 @@ export function TrackerSummaryRows({
         <TableCell className="text-right font-bold">
           {formatCurrency(actualOperatingProfit)}
         </TableCell>
-        <TableCell className="text-right">
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount !== undefined 
-              ? trackedBudgetData.find(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted)?.forecast_amount 
-              : ''}
-            onChange={(e) => {
-              const opIndex = trackedBudgetData.findIndex(i => i.name.toLowerCase().includes('operating profit') && i.isHighlighted);
-              if (opIndex >= 0) {
-                updateForecastAmount(opIndex, e.target.value);
-              }
-            }}
-            className="h-8 w-24 text-right ml-auto"
-          />
+        <TableCell className="text-right font-bold">
+          {formatCurrency(opForecast)}
         </TableCell>
         <TableCell className={`text-right font-bold ${
           opVariance > 0 ? 'text-green-200' : 'text-red-300'
