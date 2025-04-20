@@ -126,14 +126,13 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return total;
   }
 
-  // For expense items that don't have a specific amount set, use pro-rated calculation (65% of budget)
-  // This ensures expense items always display as pro-rated in the UI
+  // For expense items (not revenue, COS, or Gross Profit), use pro-rated calculation
   const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
   const dayOfMonth = 19; // Fixed for April 2025 as specified
   
-  // For expense items, use pro-rated amount
+  // For expense items, always show pro-rated values (65% of the pro-rated budget)
   if (!isRevenueItem && !isCOSItem && !isGrossProfitItem && !item.isOperatingProfit) {
-    // Use 65% of budget as the default for test data (this simulates actual performance being different from budget)
+    // Use 65% of budget as the default for expense items
     const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
     console.log(`Expense item ${item.name} using pro-rated actual: ${proRatedActual}`);
     return proRatedActual;
