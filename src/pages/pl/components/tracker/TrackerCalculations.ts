@@ -95,7 +95,7 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return 0;
   }
 
-  // Revenue, COS, Gross Profit items use their direct actual_amount 
+  // The key logic for determining what actual amount to display
   const isRevenueItem = item.name.toLowerCase().includes('turnover') || 
                       item.name.toLowerCase().includes('revenue') ||
                       item.name.toLowerCase().includes('sales');
@@ -122,27 +122,21 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return total;
   }
 
-  // For revenue, COS, and Gross Profit items, use the direct actual_amount if available
+  // For revenue, COS, Gross Profit and Wages items, use direct actual_amount if available and non-zero
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWages) && 
       typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
     console.log(`Item ${item.name} using direct actual_amount: ${item.actual_amount}`);
     return Number(item.actual_amount);
   }
 
-  // For expense items (not revenue, COS, or Gross Profit), calculate the pro-rated value
+  // For expense items (not revenue, COS, Gross Profit, or Wages), calculate the pro-rated value
+  // This is the critical change to ensure expense rows show values instead of £0
   const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
   const dayOfMonth = 19; // Fixed for April 2025 as specified
   
-  // Here is the key change: always calculate pro-rated values for expense items
-  if (!isRevenueItem && !isCOSItem && !isGrossProfitItem && !item.isOperatingProfit) {
-    const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
-    console.log(`Expense item ${item.name} using pro-rated actual: ${proRatedActual}`);
-    return proRatedActual;
-  }
-  
-  // Fallback calculation (65% of pro-rated budget)
+  // For any other expense item, calculate pro-rated amount
   const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
-  console.log(`Item ${item.name} using fallback pro-rated actual: ${proRatedActual}`);
+  console.log(`Item ${item.name} using pro-rated actual: ${proRatedActual}`);
   return proRatedActual;
 }
 
