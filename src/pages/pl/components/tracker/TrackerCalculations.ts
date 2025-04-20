@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -139,6 +140,10 @@ export function getForecastAmount(
   year: number,
   month: number
 ): number {
+  const cacheKey = `forecast_${item.name}_${year}_${month}`;
+  const cachedSettings = localStorage.getItem(cacheKey);
+  
+  // First check for item's own forecast_settings property
   if (item.forecast_settings) {
     const method = item.forecast_settings.method;
     const discreteValues = item.forecast_settings.discrete_values || {};
@@ -188,14 +193,11 @@ export function getForecastAmount(
     }
   }
   
-  let forecastAmount = item.budget_amount || 0;
-  
-  const cacheKey = `forecast_${item.name}_${year}_${month}`;
-  const cachedSettings = localStorage.getItem(cacheKey);
-  
+  // If no forecast_settings directly on item, check localStorage cache
   if (cachedSettings) {
     try {
       const settings = JSON.parse(cachedSettings);
+      
       if (settings.method === 'fixed') {
         return item.budget_amount || 0;
       } else if (settings.method === 'discrete') {
@@ -232,7 +234,8 @@ export function getForecastAmount(
     }
   }
   
-  return forecastAmount;
+  // Default fallback
+  return item.budget_amount || 0;
 }
 
 export function calculateProRatedActual(

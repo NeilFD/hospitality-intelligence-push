@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,23 @@ export function ForecastSettingsControl({
 
   React.useEffect(() => {
     const fetchCurrentSetting = async () => {
+      // Try to get from localStorage first
+      const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
+      const cachedSettings = localStorage.getItem(cacheKey);
+      
+      if (cachedSettings) {
+        try {
+          const settings = JSON.parse(cachedSettings);
+          setSelectedMethod(settings.method as ForecastMethod);
+          setDailyValues(settings.discrete_values || {});
+          setIsEditing(false);
+          return;
+        } catch (e) {
+          console.error('Error parsing cached settings:', e);
+        }
+      }
+
+      // If no cached settings, try to get from database
       const { data } = await supabase
         .from('cost_item_forecast_settings')
         .select('method, discrete_values')
@@ -92,6 +110,7 @@ export function ForecastSettingsControl({
   };
 
   const handleSave = async () => {
+    // Save to Supabase
     await supabase
       .from('cost_item_forecast_settings')
       .upsert({
@@ -102,18 +121,29 @@ export function ForecastSettingsControl({
         discrete_values: dailyValues
       });
 
+    // Also save to localStorage for faster access
     const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
-    localStorage.setItem(cacheKey, JSON.stringify({
+    const settingsToCache = {
       method: selectedMethod,
       discrete_values: dailyValues
-    }));
+    };
+    localStorage.setItem(cacheKey, JSON.stringify(settingsToCache));
 
     setIsEditing(false);
     onMethodChange(selectedMethod);
 
+    // Dispatch a custom event that PLReportTable can listen for
     const event = new CustomEvent('forecast-updated', {
-      detail: { itemName, method: selectedMethod, values: dailyValues }
+      detail: { 
+        itemName, 
+        method: selectedMethod, 
+        values: dailyValues,
+        year: currentYear,
+        month: currentMonth
+      }
     });
+    
+    console.log("Dispatching forecast-updated event", event.detail);
     window.dispatchEvent(event);
   };
 

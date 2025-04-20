@@ -20,22 +20,17 @@ export function PLReportTable({
 }: PLReportTableProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  const [budgetDataWithSettings, setBudgetDataWithSettings] = useState<any[]>([]);
+  const getMonthNumber = (monthName: string) => {
+    const months = ["January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"];
+    return months.indexOf(monthName) + 1;
+  };
   
-  useEffect(() => {
-    const processItems = async () => {
-      setBudgetDataWithSettings(processedBudgetData.map(item => {
-        return {
-          ...item,
-        };
-      }));
-    };
-    
-    processItems();
-  }, [processedBudgetData, refreshTrigger]);
+  const currentMonth = getMonthNumber(currentMonthName);
   
   useEffect(() => {
     const handleForecastUpdate = () => {
+      console.log("Forecast updated event received, refreshing PLReportTable...");
       setRefreshTrigger(prev => prev + 1);
     };
 
@@ -63,15 +58,6 @@ export function PLReportTable({
     const daysInMonth = getDaysInMonth();
     return Math.min(yesterday.getDate(), daysInMonth);
   };
-  
-  const getMonthNumber = (monthName: string) => {
-    const months = ["January", "February", "March", "April", "May", "June", 
-      "July", "August", "September", "October", "November", "December"];
-    return months.indexOf(monthName) + 1;
-  };
-  
-  const daysInMonth = getDaysInMonth();
-  const currentDay = getCurrentDay();
   
   const getFontClass = (name: string) => {
     const lowercaseName = name.toLowerCase();
@@ -320,7 +306,7 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      const forecastAmount = getForecastAmount(item, currentYear, getMonthNumber(currentMonthName));
+      const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
       
       const shouldHighlight = 
         item.name.toLowerCase() === "turnover" || 
@@ -369,7 +355,7 @@ export function PLReportTable({
                 itemName={item.name}
                 budgetAmount={item.budget_amount || 0}
                 currentYear={currentYear}
-                currentMonth={getMonthNumber(currentMonthName)}
+                currentMonth={currentMonth}
                 onMethodChange={() => {
                   setRefreshTrigger(prev => prev + 1);
                 }}
