@@ -6,12 +6,18 @@ export function calculateProRatedBudget(
   daysInMonth: number, 
   dayOfMonth: number
 ): number {
-  console.log(`Calculating pro-rated budget for ${item.name}:`, {
-    budget: item.budget_amount,
-    daysInMonth,
-    dayOfMonth,
-    result: (item.budget_amount / daysInMonth) * dayOfMonth
-  });
+  // For Pro-Rated items, calculate based on days completed
+  if (item.tracking_type === 'Pro-Rated') {
+    return (item.budget_amount / daysInMonth) * dayOfMonth;
+  }
+  
+  // For Discrete items with daily values, return the budget amount directly
+  // as the actual values will be from the daily inputs
+  if (item.tracking_type === 'Discrete') {
+    return item.budget_amount;
+  }
+  
+  // Default calculation (shouldn't reach here, but just in case)
   return (item.budget_amount / daysInMonth) * dayOfMonth;
 }
 
@@ -101,12 +107,6 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   const dayOfMonth = today.getDate();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   
-  console.log(`Getting actual amount for ${item.name}:`, {
-    tracking_type: item.tracking_type,
-    actual_amount: item.actual_amount,
-    budget_amount: item.budget_amount
-  });
-  
   // Check if item is a summary or special item with preloaded actual_amount
   const isSpecialItem = item.name.toLowerCase().includes('turnover') || 
     item.name.toLowerCase().includes('revenue') ||
@@ -129,15 +129,10 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   // Handle Pro-Rated items - calculate based on today's date
   if (item.tracking_type === 'Pro-Rated') {
     const proRatedActual = calculateProRatedActual(item, daysInMonth, dayOfMonth);
-    console.log(`Pro-rated actual for ${item.name}:`, {
-      budget: item.budget_amount,
-      daysInMonth,
-      dayOfMonth,
-      result: proRatedActual
-    });
     return proRatedActual;
   }
   
+  // Handle Discrete items
   if (item.tracking_type === 'Discrete') {
     if (item.daily_values && item.daily_values.length > 0) {
       // Sum up all the daily values
@@ -156,11 +151,5 @@ export function calculateProRatedActual(
   dayOfMonth: number
 ): number {
   const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
-  console.log(`Calculating pro-rated actual for ${item.name}:`, {
-    budget: item.budget_amount,
-    daysInMonth,
-    dayOfMonth,
-    result: proRatedActual
-  });
   return proRatedActual;
 }

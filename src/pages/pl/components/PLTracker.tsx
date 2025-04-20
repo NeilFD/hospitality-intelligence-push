@@ -28,11 +28,37 @@ export function PLTracker({
   const [showSettings, setShowSettings] = useState(false);
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
-  // Convert ProcessedBudgetItem to PLTrackerBudgetItem to ensure tracking_type is defined
-  const processedDataWithTrackingType = processedBudgetData.map(item => ({
-    ...item,
-    tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined
-  })) as PLTrackerBudgetItem[];
+  // Default all items to Pro-Rated unless specifically marked as Discrete
+  const processedDataWithDefaultTracking = processedBudgetData.map(item => {
+    // Revenue items, COS, and special items are treated differently
+    const isSpecialItem = 
+      item.name.toLowerCase().includes('turnover') || 
+      item.name.toLowerCase().includes('revenue') ||
+      item.name.toLowerCase().includes('sales') ||
+      item.name.toLowerCase().includes('cost of sales') ||
+      item.name.toLowerCase().includes('cos') ||
+      item.name.toLowerCase().includes('gross profit') ||
+      item.name.toLowerCase().includes('operating profit') ||
+      item.name.toLowerCase().includes('wage') ||
+      item.name.toLowerCase().includes('salary') ||
+      item.isHeader ||
+      item.isGrossProfit ||
+      item.isOperatingProfit ||
+      item.isHighlighted;
+      
+    // Assign tracking type based on item type
+    // Cost items should default to Discrete if not already defined
+    let trackingType = 'Pro-Rated';
+    if (!isSpecialItem) {
+      // Regular cost items default to Discrete
+      trackingType = 'Discrete';
+    }
+    
+    return {
+      ...item,
+      tracking_type: item.tracking_type || trackingType
+    };
+  }) as PLTrackerBudgetItem[];
   
   const {
     trackedBudgetData,
@@ -43,16 +69,10 @@ export function PLTracker({
     updateManualActualAmount,
     updateDailyValues,
     saveForecastAmounts
-  } = useTrackerData(processedDataWithTrackingType);
-  
-  // Ensure all items have a valid tracking_type
-  const enhancedTrackedBudgetData = trackedBudgetData.map(item => ({
-    ...item,
-    tracking_type: item.tracking_type || 'Discrete' // Default to Discrete if not defined
-  }));
+  } = useTrackerData(processedDataWithDefaultTracking);
   
   // Filter out header items with null budget values
-  const filteredBudgetData = enhancedTrackedBudgetData.filter(item => 
+  const filteredBudgetData = trackedBudgetData.filter(item => 
     !(item.isHeader && item.budget_amount === 0)
   );
   
@@ -94,7 +114,7 @@ export function PLTracker({
           <PLTrackerContent
             isLoading={isLoading}
             filteredBudgetData={filteredBudgetData}
-            trackedBudgetData={enhancedTrackedBudgetData}
+            trackedBudgetData={trackedBudgetData}
             dayOfMonth={dayOfMonth}
             daysInMonth={daysInMonth}
             updateManualActualAmount={updateManualActualAmount}
@@ -106,7 +126,7 @@ export function PLTracker({
               if (item.isGrossProfit || item.isOperatingProfit || 
                   item.name.toLowerCase().includes('total') ||
                   item.name.toLowerCase() === 'turnover') {
-                return calculateSummaryProRatedBudget(item, daysInMonth, dayOfMonth, enhancedTrackedBudgetData);
+                return calculateSummaryProRatedBudget(item, daysInMonth, dayOfMonth, trackedBudgetData);
               }
               // For regular items, use the standard calculation
               return calculateProRatedBudget(item, daysInMonth, dayOfMonth);

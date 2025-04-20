@@ -122,35 +122,26 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  // Stricter condition to determine when to show calendar
-  const shouldShowCalendar = () => {
-    // Check tracking type first - must be Discrete
-    const hasDiscreteTracking = item.tracking_type === 'Discrete';
-    if (!hasDiscreteTracking) return false;
-    
-    // Exclude all special categories
-    if (isRevenue || isCOS || isWages || isGrossProfit || 
-        isOperatingProfit || item.isHeader || isHighlightedItem || 
-        isTotalItem) {
+  // Determine if this is a COST item (not revenue, summary, or special item)
+  const isCostItem = () => {
+    // Exclude all revenue, header, and summary items
+    if (isRevenue || isTurnover || item.isHeader || 
+        isGrossProfit || isOperatingProfit || isHighlightedItem || 
+        isTotalItem || isWages) {
       return false;
     }
     
-    // Exclude items with special words in the name
-    const specialTerms = [
-      'total', 'summary', 'turnover', 'revenue', 
-      'sales', 'cost of', 'cos', 'wages', 'salary',
-      'operating', 'profit', 'gross'
-    ];
-    
-    for (const term of specialTerms) {
-      if (item.name.toLowerCase().includes(term)) {
-        return false;
-      }
+    // Exclude special cost categories that should be calculated differently
+    if (isCOS) {
+      return false;
     }
     
-    // Safe to show calendar
+    // This must be a regular cost item
     return true;
   };
+
+  // Show calendar ONLY for DISCRETE cost items
+  const showCalendarIcon = isCostItem() && item.tracking_type === 'Discrete';
 
   return (
     <TableRow className={rowClassName}>
@@ -169,7 +160,7 @@ export function TrackerLineItem({
       
       <TableCell className={`text-right ${fontClass}`}>
         <div className="flex items-center justify-end gap-2">
-          {shouldShowCalendar() && (
+          {showCalendarIcon && (
             <Button 
               variant="outline"
               size="icon"
@@ -204,7 +195,7 @@ export function TrackerLineItem({
         {formatCurrency(variance)}
       </TableCell>
       
-      {isDailyInputOpen && shouldShowCalendar() && (
+      {isDailyInputOpen && showCalendarIcon && (
         <DailyInputDrawer
           isOpen={isDailyInputOpen}
           onClose={handleCloseDailyInput}
