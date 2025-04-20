@@ -2,7 +2,7 @@ import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getActualAmount } from '../components/tracker/TrackerCalculations';
+import { getActualAmount } from '../components/tracker/TrackerCalculations";
 
 type PLReportTableProps = {
   isLoading: boolean;
@@ -220,8 +220,21 @@ export function PLReportTable({
       lowercaseName.includes('expense') ||
       lowercaseName.includes('wages') ||
       lowercaseName.includes('salaries') ||
+      lowercaseName.includes('insurance') ||
       lowercaseName === 'repairs and maintenance' ||
-      lowercaseName === 'utilities'
+      lowercaseName === 'utilities' ||
+      lowercaseName === 'rent' ||
+      lowercaseName === 'rates' ||
+      lowercaseName.includes('administration') ||
+      lowercaseName.includes('marketing') ||
+      lowercaseName.includes('service charge') ||
+      lowercaseName.includes('office') ||
+      lowercaseName.includes('cleaning') ||
+      lowercaseName.includes('maintenance') ||
+      !lowercaseName.includes('profit') && 
+      !lowercaseName.includes('revenue') && 
+      !lowercaseName.includes('sales') && 
+      !lowercaseName.includes('turnover')
     );
   };
 
