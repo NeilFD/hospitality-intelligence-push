@@ -10,6 +10,10 @@ export interface ProcessedBudgetItem extends Omit<BudgetItem, 'budget'> {
   forecast_amount?: number;
   isAdminHeader?: boolean; 
   tracking_type?: 'Discrete' | 'Pro-Rated'; // Fix the type to match what's expected
+  forecast_settings?: {
+    method: 'fixed' | 'discrete' | 'fixed_plus';
+    discrete_values?: Record<string, number>;
+  };
 }
 
 export const useBudgetData = (year: number, month: number) => {

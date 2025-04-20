@@ -16,4 +16,8 @@ export interface BudgetItem {
   isGrossProfit?: boolean;
   isOperatingProfit?: boolean;
   tracking_type?: 'Discrete' | 'Pro-Rated';
+  forecast_settings?: {
+    method: 'fixed' | 'discrete' | 'fixed_plus';
+    discrete_values?: Record<string, number>;
+  };
 }
