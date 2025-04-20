@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -179,12 +180,12 @@ export function TrackerSummaryRows({
   // Make sure effectiveTurnoverForecast is never 0 to prevent division by zero
   const safeEffectiveTurnoverForecast = effectiveTurnoverForecast || 1;
   
-  // Fix the forecast percentage calculations to ensure they're using the safe turnover value
-  const adminForecastPercentage = (adminForecast / safeEffectiveTurnoverForecast) * 100;
+  // Calculate percentages properly using the safe turnover value
+  const adminForecastPercentage = safeEffectiveTurnoverForecast > 0 ? (adminForecast / safeEffectiveTurnoverForecast) * 100 : 0;
   
   const opActualPercentage = turnoverActual && turnoverActual !== 0 ? (actualOperatingProfit / turnoverActual) * 100 : 0;
   const opBudgetPercentage = turnoverBudget && turnoverBudget !== 0 ? (operatingProfitBudget / turnoverBudget) * 100 : 0;
-  const opForecastPercentage = (opForecast / safeEffectiveTurnoverForecast) * 100;
+  const opForecastPercentage = safeEffectiveTurnoverForecast > 0 ? (opForecast / safeEffectiveTurnoverForecast) * 100 : 0;
 
   console.log(`Admin Forecast %: ${adminForecastPercentage.toFixed(1)}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);
   console.log(`OP Forecast %: ${opForecastPercentage.toFixed(1)}%, using forecast turnover: ${safeEffectiveTurnoverForecast}`);

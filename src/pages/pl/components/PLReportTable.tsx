@@ -678,14 +678,17 @@ export function PLReportTable({
     const totalTurnoverActual = turnoverItem?.actual_amount || 0;
     
     const adminActualPercentage = totalTurnoverActual > 0 ? adminTotalActual / totalTurnoverActual : 0;
-    const adminForecastPercentage = totalTurnoverForecast > 0 ? adminTotalForecast / totalTurnoverForecast : 0;
     
-    console.log(`Admin % calculations - Actual: ${adminTotalActual}/${totalTurnoverActual} = ${adminActualPercentage}, Forecast: ${adminTotalForecast}/${totalTurnoverForecast} = ${adminForecastPercentage}`);
+    const safeTurnoverForecast = totalTurnoverForecast > 0 ? totalTurnoverForecast : 1;
+    const adminForecastPercentage = adminTotalForecast / safeTurnoverForecast;
+    
+    console.log(`Admin % calculations - Actual: ${adminTotalActual}/${totalTurnoverActual} = ${adminActualPercentage}, Forecast: ${adminTotalForecast}/${safeTurnoverForecast} = ${adminForecastPercentage}`);
     
     const operatingProfitActualPercentage = totalTurnoverActual > 0 ? operatingProfitActual / totalTurnoverActual : 0;
-    const operatingProfitForecastPercentage = totalTurnoverForecast > 0 ? operatingProfitForecast / totalTurnoverForecast : 0;
     
-    console.log(`OP % calculations - Actual: ${operatingProfitActual}/${totalTurnoverActual} = ${operatingProfitActualPercentage}, Forecast: ${operatingProfitForecast}/${totalTurnoverForecast} = ${operatingProfitForecastPercentage}`);
+    const operatingProfitForecastPercentage = operatingProfitForecast / safeTurnoverForecast;
+    
+    console.log(`OP % calculations - Actual: ${operatingProfitActual}/${totalTurnoverActual} = ${operatingProfitActualPercentage}, Forecast: ${operatingProfitForecast}/${safeTurnoverForecast} = ${operatingProfitForecastPercentage}`);
 
     return (
       <>
@@ -831,7 +834,7 @@ export function PLReportTable({
             {formatPercentage(operatingProfitForecastPercentage)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
-            operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
+            operatingProfitForecast > 0 ? 'text-green-200' : 'text-red-300'
           }`}>
             {formatCurrency(operatingProfitVariance)}
           </TableCell>
