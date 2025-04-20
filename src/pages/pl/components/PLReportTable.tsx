@@ -828,87 +828,14 @@ export function PLReportTable({
           <TableCell className="font-bold">
             Operating profit
           </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
             {formatCurrency(operatingProfitBudget)}
           </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
             {formatCurrency(operatingProfitActual)}
           </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActualPercentage)}`}>
             {formatPercentage(operatingProfitActualPercentage/100)}
           </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
             {formatCurrency(operatingProfitForecast)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatPercentage(operatingProfitForecastPercentage/100)}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${
-            operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
-          }`}>
-            {formatCurrency(operatingProfitVariance)}
-          </TableCell>
-        </TableRow>
-      </>
-    );
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-      <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">
-          P&L Report - {currentMonthName} {currentYear}
-        </h2>
-      </div>
-      
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead className="w-[240px] font-bold">Item</TableHead>
-              <TableHead className="text-right font-bold">Budget</TableHead>
-              <TableHead className="text-right font-bold">Actual MTD</TableHead>
-              <TableHead className="text-right font-bold">%</TableHead>
-              <TableHead className="text-right font-bold">Forecast</TableHead>
-              <TableHead className="text-right font-bold">F%</TableHead>
-              <TableHead className="text-right font-bold">Variance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array(10)
-                .fill(0)
-                .map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-[200px]" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[40px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))
-            ) : (
-              renderTableContent()
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-}
