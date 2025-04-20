@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -55,7 +56,7 @@ export function PLTracker({
     const isWagesItem = 
       item.name.toLowerCase().includes('wage') ||
       item.name.toLowerCase().includes('salary');
-      
+    
     // Add actual/budget debug log for each item
     console.log(`${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
     

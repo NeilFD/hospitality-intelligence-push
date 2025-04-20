@@ -106,12 +106,8 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   const isGrossProfitItem = item.name.toLowerCase().includes('gross profit') ||
                           item.isGrossProfit;
   
-  // For revenue, COS, and Gross Profit items, use the direct actual_amount if available
-  if ((isRevenueItem || isCOSItem || isGrossProfitItem) && 
-      typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
-    console.log(`Item ${item.name} using direct actual_amount: ${item.actual_amount}`);
-    return Number(item.actual_amount);
-  }
+  const isWages = item.name.toLowerCase().includes('wages') ||
+                 item.name.toLowerCase().includes('salaries');
   
   // For manually entered actuals, use that value regardless of item type
   if (typeof item.manually_entered_actual === 'number') {
@@ -126,21 +122,22 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return total;
   }
 
-  // For expense items (not revenue, COS, or Gross Profit), use pro-rated calculation
+  // For revenue, COS, and Gross Profit items, use the direct actual_amount if available
+  if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWages) && 
+      typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
+    console.log(`Item ${item.name} using direct actual_amount: ${item.actual_amount}`);
+    return Number(item.actual_amount);
+  }
+
+  // For expense items (not revenue, COS, or Gross Profit), calculate the pro-rated value
   const daysInMonth = new Date(2025, 4, 0).getDate(); // April 2025
   const dayOfMonth = 19; // Fixed for April 2025 as specified
   
-  // For expense items, always show pro-rated values (65% of the pro-rated budget)
+  // Here is the key change: always calculate pro-rated values for expense items
   if (!isRevenueItem && !isCOSItem && !isGrossProfitItem && !item.isOperatingProfit) {
-    // Use 65% of budget as the default for expense items
     const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
     console.log(`Expense item ${item.name} using pro-rated actual: ${proRatedActual}`);
     return proRatedActual;
-  }
-  
-  // For other items, use the actual amount if available, otherwise calculate a fallback
-  if (typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
-    return Number(item.actual_amount);
   }
   
   // Fallback calculation (65% of pro-rated budget)
