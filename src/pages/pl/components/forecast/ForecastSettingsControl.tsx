@@ -117,10 +117,12 @@ export function ForecastSettingsControl({
   };
 
   const handleSave = async () => {
+    const finalTotal = getFinalTotal();
+    
     console.log(`ForecastSettingsControl: Saving settings for ${itemName}:`, {
       method: selectedMethod,
       discreteValues: dailyValues,
-      finalTotal: getFinalTotal()
+      finalTotal
     });
     
     // Save to Supabase
@@ -153,7 +155,7 @@ export function ForecastSettingsControl({
         values: dailyValues,
         year: currentYear,
         month: currentMonth,
-        finalTotal: getFinalTotal()
+        finalTotal
       }
     });
     
@@ -207,7 +209,7 @@ export function ForecastSettingsControl({
           <div className="font-semibold">
             {selectedMethod === 'fixed_plus' 
               ? `Total: ${formatCurrency(getFinalTotal())} (${formatCurrency(budgetAmount)} + ${formatCurrency(totalDailyValues)})`
-              : `Total: ${formatCurrency(totalDailyValues)}`
+              : `Total: ${formatCurrency(getFinalTotal())}`
             }
           </div>
         </div>

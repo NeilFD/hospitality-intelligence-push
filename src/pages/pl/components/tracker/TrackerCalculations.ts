@@ -140,7 +140,13 @@ export function getForecastAmount(
   year: number,
   month: number
 ): number {
-  // First, check if the item itself has forecast_settings
+  // First, check if the item has a forecast_amount directly set
+  if (item.forecast_amount !== undefined && item.forecast_amount !== null) {
+    // If forecast_amount is directly set on the item, return it
+    return item.forecast_amount;
+  }
+  
+  // Next, check if the item itself has forecast_settings
   if (item.forecast_settings) {
     console.log(`Using direct forecast_settings for ${item.name}:`, item.forecast_settings);
     const method = item.forecast_settings.method;
@@ -192,7 +198,7 @@ export function getForecastAmount(
     }
   }
   
-  // Second, try to get settings from localStorage
+  // Try to get settings from localStorage
   const cacheKey = `forecast_${item.name}_${year}_${month}`;
   const cachedSettings = localStorage.getItem(cacheKey);
   

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -32,6 +33,7 @@ export function PLReportTable({
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
       console.log("PLReportTable: Forecast updated event received", event.detail);
+      // Trigger a refresh to recalculate all forecast amounts
       setRefreshTrigger(prev => prev + 1);
     };
 
@@ -49,8 +51,10 @@ export function PLReportTable({
       const processedData = JSON.parse(JSON.stringify(processedBudgetData));
       
       const updatedData = processedData.map((item: any) => {
+        // Force recalculation of forecast amount using the latest settings
         const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
         console.log(`PLReportTable: Calculated forecast for ${item.name}: ${forecastAmount}`);
+        
         return { 
           ...item,
           forecast_amount: forecastAmount
@@ -324,9 +328,9 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      const forecastAmount = item.forecast_amount !== undefined ? 
-                             item.forecast_amount : 
-                             getForecastAmount(item, currentYear, currentMonth);
+      // Always recalculate the forecast amount using getForecastAmount
+      // to ensure we have the latest value based on current settings
+      const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
       
       console.log(`Rendering ${item.name}: forecast_amount=${forecastAmount}, budget=${item.budget_amount}`);
       
@@ -380,6 +384,7 @@ export function PLReportTable({
                 currentMonth={currentMonth}
                 onMethodChange={() => {
                   console.log(`ForecastSettingsControl onMethodChange triggered for ${item.name}`);
+                  // Force a refresh when method changes
                   setRefreshTrigger(prev => prev + 1);
                 }}
               />
