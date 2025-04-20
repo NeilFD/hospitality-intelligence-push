@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -364,7 +363,6 @@ export function PLReportTable({
   };
 
   const renderTableContent = () => {
-    // Calculate totals for admin expenses
     const adminItems = filteredBudgetData.filter(item => 
       isCostLine(item.name) && 
       !item.name.toLowerCase().includes('cost of sales') &&
@@ -378,27 +376,15 @@ export function PLReportTable({
     const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
     const adminTotalActual = adminItems.reduce((sum, item) => sum + getActualAmount(item), 0);
     
-    // Calculate admin forecast - project from actuals if available
-    let adminTotalForecast = 0;
-    const daysInMonth = getDaysInMonth();
-    const currentDay = getCurrentDay();
-    
-    if (adminTotalActual > 0 && currentDay > 0) {
-      // Project the actual admin expenses to the full month
-      adminTotalForecast = (adminTotalActual / currentDay) * daysInMonth;
-    } else {
-      // Fallback to sum of forecasts or budget
-      adminTotalForecast = adminItems.reduce((sum, item) => {
-        const forecast = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
-        return sum + (forecast || item.budget_amount || 0);
-      }, 0);
-    }
+    const adminTotalForecast = adminItems.reduce((sum, item) => {
+      const forecast = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
+      return sum + (forecast || item.budget_amount || 0);
+    }, 0);
     
     const adminBudgetVariance = adminTotalForecast - adminTotalBudget;
     
     console.log(`Admin totals: Budget=${adminTotalBudget}, Actual=${adminTotalActual}, Forecast=${adminTotalForecast}, Variance=${adminBudgetVariance}`);
     
-    // Find Gross Profit for Operating Profit calculation
     const grossProfitItem = filteredBudgetData.find(item => 
       (item.name.toLowerCase() === 'gross profit' || 
        item.name.toLowerCase() === 'gross profit/(loss)') &&
@@ -407,13 +393,13 @@ export function PLReportTable({
     
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
     const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
+    
     const grossProfitForecast = grossProfitItem && grossProfitItem.forecast_amount 
       ? grossProfitItem.forecast_amount 
-      : (grossProfitActual > 0 && currentDay > 0) 
-        ? (grossProfitActual / currentDay) * daysInMonth 
+      : (grossProfitActual > 0 && getCurrentDay() > 0) 
+        ? (grossProfitActual / getCurrentDay()) * getDaysInMonth() 
         : grossProfitBudget;
     
-    // Calculate Operating Profit
     const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
     const operatingProfitActual = grossProfitActual - adminTotalActual;
     const operatingProfitForecast = grossProfitForecast - adminTotalForecast;
@@ -421,7 +407,6 @@ export function PLReportTable({
     
     console.log(`Operating profit: Budget=${operatingProfitBudget}, Actual=${operatingProfitActual}, Forecast=${operatingProfitForecast}, Variance=${operatingProfitVariance}`);
 
-    // Render the regular table rows
     return (
       <>
         {filteredBudgetData.map((item, index) => {
@@ -468,12 +453,10 @@ export function PLReportTable({
           const varianceAmount = forecastAmount - (item.budget_amount || 0);
           const itemIsCostLine = isCostLine(item.name);
           
-          // Skip the Total Admin Expenses row since we're adding a custom one
           if (item.name.toLowerCase().includes('total admin')) {
             return null;
           }
           
-          // Skip the Operating Profit row since we're adding a custom one
           if (item.name.toLowerCase().includes('operating profit')) {
             return null;
           }
@@ -512,7 +495,6 @@ export function PLReportTable({
           );
         })}
         
-        {/* Custom Total Admin Expenses Row */}
         <TableRow className="bg-purple-100/50 text-[#48495e]">
           <TableCell className="font-bold">
             TOTAL ADMIN EXPENSES
@@ -536,7 +518,6 @@ export function PLReportTable({
           </TableCell>
         </TableRow>
         
-        {/* Custom Operating Profit Row */}
         <TableRow className="bg-[#8B5CF6]/90 text-white">
           <TableCell className="font-bold">
             Operating profit
