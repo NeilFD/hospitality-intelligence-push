@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -135,19 +136,8 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
 }
 
 export async function fetchForecastSettings(itemName: string, year: number, month: number) {
-  const cacheKey = `forecast_${itemName}_${year}_${month}`;
-  const cachedSettings = localStorage.getItem(cacheKey);
-  
-  if (cachedSettings) {
-    try {
-      console.log(`Fetched cached forecast settings for ${itemName}:`, cachedSettings);
-      return JSON.parse(cachedSettings);
-    } catch (e) {
-      console.error('Error parsing cached settings:', e);
-    }
-  }
-
   try {
+    // First check in Supabase
     const { data } = await supabase
       .from('cost_item_forecast_settings')
       .select('method, discrete_values')
@@ -159,6 +149,7 @@ export async function fetchForecastSettings(itemName: string, year: number, mont
     if (data) {
       console.log(`Fetched database forecast settings for ${itemName}:`, data);
       
+      const cacheKey = `forecast_${itemName}_${year}_${month}`;
       localStorage.setItem(cacheKey, JSON.stringify({
         method: data.method,
         discrete_values: data.discrete_values || {}
@@ -173,7 +164,72 @@ export async function fetchForecastSettings(itemName: string, year: number, mont
     console.error(`Error fetching forecast settings for ${itemName}:`, error);
   }
   
+  // If not in Supabase, try localStorage
+  try {
+    const cacheKey = `forecast_${itemName}_${year}_${month}`;
+    const cachedSettings = localStorage.getItem(cacheKey);
+    
+    if (cachedSettings) {
+      console.log(`Fetched cached forecast settings for ${itemName}:`, cachedSettings);
+      return JSON.parse(cachedSettings);
+    }
+  } catch (e) {
+    console.error('Error parsing cached settings:', e);
+  }
+  
   return null;
+}
+
+export function calculateForecastFromSettings(
+  settings: any,
+  budgetAmount: number
+): number {
+  if (!settings) return budgetAmount || 0;
+  
+  const method = settings.method;
+  const discreteValues = settings.discrete_values || {};
+  
+  switch (method) {
+    case 'fixed':
+      return budgetAmount || 0;
+    
+    case 'discrete': {
+      let total = 0;
+      if (discreteValues && typeof discreteValues === 'object') {
+        Object.values(discreteValues).forEach((value: any) => {
+          if (typeof value === 'number') {
+            total += value;
+          } else if (typeof value === 'string') {
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+              total += parsed;
+            }
+          }
+        });
+      }
+      return total;
+    }
+    
+    case 'fixed_plus': {
+      let dailyTotal = 0;
+      if (discreteValues && typeof discreteValues === 'object') {
+        Object.values(discreteValues).forEach((value: any) => {
+          if (typeof value === 'number') {
+            dailyTotal += value;
+          } else if (typeof value === 'string') {
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+              dailyTotal += parsed;
+            }
+          }
+        });
+      }
+      return (budgetAmount || 0) + dailyTotal;
+    }
+    
+    default:
+      return budgetAmount || 0;
+  }
 }
 
 export function getForecastAmount(
@@ -181,78 +237,41 @@ export function getForecastAmount(
   year: number,
   month: number
 ): number {
+  // If the forecast_amount is already set and not zero, use it
   if (item.forecast_amount !== undefined && 
       item.forecast_amount !== null && 
       item.forecast_amount !== 0) {
     return item.forecast_amount;
   }
 
+  // Try to get settings directly first
   let forecastSettings = null;
   
+  // Check if the item already has forecast settings attached
   if (item.forecast_settings) {
     console.log(`Using direct forecast_settings for ${item.name}:`, item.forecast_settings);
     forecastSettings = item.forecast_settings;
   } else {
+    // Try to get settings from localStorage
     const cacheKey = `forecast_${item.name}_${year}_${month}`;
     const cachedSettings = localStorage.getItem(cacheKey);
     
     if (cachedSettings) {
       try {
-        console.log(`Using cached forecast settings for ${item.name}:`, cachedSettings);
         forecastSettings = JSON.parse(cachedSettings);
+        console.log(`Using cached forecast settings for ${item.name}:`, forecastSettings);
       } catch (e) {
         console.error('Error parsing cached forecast settings:', e);
       }
     }
   }
   
+  // Calculate the forecast amount based on the settings
   if (forecastSettings) {
-    const method = forecastSettings.method;
-    const discreteValues = forecastSettings.discrete_values || {};
-    
-    switch (method) {
-      case 'fixed':
-        return item.budget_amount || 0;
-      
-      case 'discrete': {
-        let total = 0;
-        if (discreteValues && typeof discreteValues === 'object') {
-          Object.values(discreteValues).forEach((value: any) => {
-            if (typeof value === 'number') {
-              total += value;
-            } else if (typeof value === 'string') {
-              const parsed = parseFloat(value);
-              if (!isNaN(parsed)) {
-                total += parsed;
-              }
-            }
-          });
-        }
-        return total;
-      }
-      
-      case 'fixed_plus': {
-        let dailyTotal = 0;
-        if (discreteValues && typeof discreteValues === 'object') {
-          Object.values(discreteValues).forEach((value: any) => {
-            if (typeof value === 'number') {
-              dailyTotal += value;
-            } else if (typeof value === 'string') {
-              const parsed = parseFloat(value);
-              if (!isNaN(parsed)) {
-                dailyTotal += parsed;
-              }
-            }
-          });
-        }
-        return (item.budget_amount || 0) + dailyTotal;
-      }
-      
-      default:
-        return item.budget_amount || 0;
-    }
+    return calculateForecastFromSettings(forecastSettings, item.budget_amount);
   }
   
+  // If no settings found, use the budget amount
   return item.budget_amount || 0;
 }
 

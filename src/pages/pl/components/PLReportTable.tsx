@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getActualAmount, getForecastAmount } from './tracker/TrackerCalculations';
+import { getActualAmount, getForecastAmount, fetchForecastSettings, calculateForecastFromSettings } from './tracker/TrackerCalculations';
 import { ForecastSettingsControl } from "./forecast/ForecastSettingsControl";
 
 type PLReportTableProps = {
@@ -38,21 +38,26 @@ export function PLReportTable({
           return prevData.map(item => {
             if (item.name === event.detail.itemName) {
               console.log(`Updating forecast for ${item.name} to ${event.detail.forecastAmount || event.detail.finalTotal}`);
-              return {
+              const forecastAmount = event.detail.forecastAmount || event.detail.finalTotal;
+              
+              const updatedItem = {
                 ...item,
-                forecast_amount: event.detail.forecastAmount || event.detail.finalTotal,
+                forecast_amount: forecastAmount,
                 forecast_settings: {
                   method: event.detail.method,
                   discrete_values: event.detail.values || {}
                 }
               };
+              
+              console.log(`Updated item for ${item.name}:`, updatedItem);
+              return updatedItem;
             }
             return item;
           });
         });
+        
+        setRefreshTrigger(prev => prev + 1);
       }
-      
-      setRefreshTrigger(prev => prev + 1);
     };
 
     window.addEventListener('forecast-updated', handleForecastUpdate);
@@ -63,37 +68,46 @@ export function PLReportTable({
   }, []);
   
   useEffect(() => {
-    console.log("PLReportTable: Processing data with current forecast settings");
-    
-    if (processedBudgetData && processedBudgetData.length > 0) {
-      const processedData = JSON.parse(JSON.stringify(processedBudgetData));
+    const loadData = async () => {
+      console.log("PLReportTable: Processing data with current forecast settings");
       
-      const updatedData = processedData.map((item: any) => {
-        // Load forecast settings from localStorage
-        const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
-        const cachedSettings = localStorage.getItem(cacheKey);
+      if (processedBudgetData && processedBudgetData.length > 0) {
+        const processedData = JSON.parse(JSON.stringify(processedBudgetData));
         
-        if (cachedSettings) {
-          try {
-            const settings = JSON.parse(cachedSettings);
-            item.forecast_settings = settings;
-          } catch (e) {
-            console.error(`Error parsing cached settings for ${item.name}:`, e);
+        const updatedData = await Promise.all(processedData.map(async (item: any) => {
+          const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
+          const cachedSettings = localStorage.getItem(cacheKey);
+          
+          let settings = null;
+          
+          if (cachedSettings) {
+            try {
+              settings = JSON.parse(cachedSettings);
+              console.log(`Found cached forecast settings for ${item.name}:`, settings);
+            } catch (e) {
+              console.error(`Error parsing cached settings for ${item.name}:`, e);
+            }
           }
-        }
+          
+          if (!settings) {
+            settings = await fetchForecastSettings(item.name, currentYear, currentMonth);
+          }
+          
+          if (settings) {
+            item.forecast_settings = settings;
+            const forecastAmount = calculateForecastFromSettings(settings, item.budget_amount);
+            console.log(`Calculated forecast for ${item.name}: ${forecastAmount}`);
+            item.forecast_amount = forecastAmount;
+          }
+          
+          return item;
+        }));
         
-        // Calculate forecast amount using the settings
-        const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
-        console.log(`PLReportTable: Calculated forecast for ${item.name}: ${forecastAmount}`);
-        
-        return { 
-          ...item,
-          forecast_amount: forecastAmount
-        };
-      });
-      
-      setRenderedData(updatedData);
-    }
+        setRenderedData(updatedData);
+      }
+    };
+    
+    loadData();
   }, [processedBudgetData, refreshTrigger, currentYear, currentMonth]);
   
   const getDaysInMonth = () => {
@@ -359,8 +373,18 @@ export function PLReportTable({
       
       const actualAmount = getActualAmount(item);
       
-      // Force a refresh of the forecast amount directly here
-      const forecastAmount = getForecastAmount(item, currentYear, currentMonth);
+      let forecastAmount = item.forecast_amount;
+      
+      if (!forecastAmount && item.forecast_settings) {
+        forecastAmount = calculateForecastFromSettings(
+          item.forecast_settings, 
+          item.budget_amount
+        );
+      }
+      
+      if (!forecastAmount) {
+        forecastAmount = getForecastAmount(item, currentYear, currentMonth);
+      }
       
       console.log(`Rendering ${item.name}: forecast_amount=${forecastAmount}, budget=${item.budget_amount}`);
       
