@@ -11,6 +11,7 @@ import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
 import { fetchTotalWagesForMonth } from '@/services/wages-service';
 import { getActualAmount, getForecastAmount } from './components/tracker/TrackerCalculations';
+import { PLTrackerBudgetItem } from './components/types/PLTrackerTypes';
 
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
@@ -320,6 +321,17 @@ export default function PLDashboard() {
   const updateDailyValues = (index: number, dailyValues: any[]) => {
     console.log(`Updating daily values for index ${index}`);
   };
+
+  const updatedBudgetDataWithRequiredFields = updatedBudgetData.map(item => {
+    if (!item) return null;
+    
+    const id = item.id || generateTempId(item.name || 'unknown');
+    
+    return {
+      ...item,
+      id
+    } as PLTrackerBudgetItem;
+  }).filter(Boolean) as PLTrackerBudgetItem[];
   
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold mb-6 text-center text-[#342640]">P&L Tracker Dashboard</h1>
@@ -341,7 +353,7 @@ export default function PLDashboard() {
       
       <div className="grid grid-cols-1 gap-6">
         <PLReportTable 
-          budgetData={updatedBudgetData} 
+          budgetData={updatedBudgetDataWithRequiredFields} 
           currentMonthName={currentMonthName} 
           currentYear={currentYear} 
           dayOfMonth={dayOfMonth}

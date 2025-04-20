@@ -11,12 +11,13 @@ export interface PLTrackerBudgetItem {
   actual_amount?: number;
   budget_percentage?: number;
   forecast_amount?: number;
-  manually_entered_actual?: number;
+  manual_actual_amount?: number;
   daily_values?: DayInput[];
   forecast_settings?: {
     method: 'fixed' | 'discrete' | 'fixed_plus';
     discrete_values?: Record<string, number>;
   };
+  manually_entered_actual?: number;
 }
 
 export interface DayInput {
