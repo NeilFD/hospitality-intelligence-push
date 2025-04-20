@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -73,16 +74,6 @@ export function TrackerSummaryRows({
   const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
   const turnoverForecast = turnoverItem?.forecast_amount || 0;
 
-  // Calculate percentages
-  const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
-  const adminForecastPercentage = turnoverForecast ? (adminForecast / turnoverForecast) * 100 : 0;
-  
-  const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
-  const opForecastPercentage = turnoverForecast ? (opForecast / turnoverForecast) * 100 : 0;
-
-  console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
-  console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
-
   // Find Gross Profit item
   const grossProfitItem = trackedBudgetData.find(item => 
     (item.name.toLowerCase() === 'gross profit' || 
@@ -112,6 +103,16 @@ export function TrackerSummaryRows({
   
   // Correctly calculate the variances - compare forecast to budget
   const opForecastVariance = opForecast - operatingProfitBudget;
+  
+  // Calculate percentages - MOVED AFTER the variables are declared
+  const adminActualPercentage = turnoverActual ? (adminActualAmount / turnoverActual) * 100 : 0;
+  const adminForecastPercentage = turnoverForecast ? (adminForecast / turnoverForecast) * 100 : 0;
+  
+  const opActualPercentage = turnoverActual ? (actualOperatingProfit / turnoverActual) * 100 : 0;
+  const opForecastPercentage = turnoverForecast ? (opForecast / turnoverForecast) * 100 : 0;
+
+  console.log(`Admin Forecast %: ${adminForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
+  console.log(`OP Forecast %: ${opForecastPercentage}%, using forecast turnover: ${turnoverForecast}`);
   
   console.log(`Admin budget: ${adminTotalBudget}, Admin forecast: ${adminForecast}, Admin variance: ${adminBudgetVariance}`);
   console.log(`Operating profit budget: ${operatingProfitBudget}, Actual OP: ${actualOperatingProfit}, Forecast OP: ${opForecast}, OP variance: ${opForecastVariance}`);
