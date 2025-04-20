@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -11,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
 import { fetchTotalWagesForMonth } from '@/services/wages-service';
+import { getActualAmount, getForecastAmount } from './components/tracker/TrackerCalculations';
 
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
@@ -58,13 +58,11 @@ export default function PLDashboard() {
   
   const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
   
-  // Load forecast settings for all items
   useEffect(() => {
     console.log("Loading forecast settings for all items");
     const loadForecastSettings = async () => {
       if (!processedBudgetData || processedBudgetData.length === 0) return;
       
-      // Pre-load forecast settings for all cost line items
       const updatedItems = processedBudgetData.map(item => {
         const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
         const cachedSettings = localStorage.getItem(cacheKey);
@@ -72,9 +70,7 @@ export default function PLDashboard() {
         if (cachedSettings) {
           try {
             console.log(`Found cached forecast settings for ${item.name}:`, cachedSettings);
-            // Create a deep copy of the item to avoid reference issues
             const updatedItem = { ...item };
-            // Update the item directly with the forecast settings
             updatedItem.forecast_settings = JSON.parse(cachedSettings);
             return updatedItem;
           } catch (e) {
@@ -89,11 +85,9 @@ export default function PLDashboard() {
     loadForecastSettings();
   }, [processedBudgetData, currentYear, currentMonth]);
   
-  // Add a dedicated event listener for forecast-updated events
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
       console.log("Dashboard: Forecast updated event received", event.detail);
-      // We'll let the PLReportTable handle the actual update
     };
 
     window.addEventListener('forecast-updated', handleForecastUpdate);
@@ -188,7 +182,6 @@ export default function PLDashboard() {
     
     const result = { ...item };
     
-    // Load forecast settings from localStorage if not already set
     if (!result.forecast_settings) {
       const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
       const cachedSettings = localStorage.getItem(cacheKey);
@@ -205,9 +198,37 @@ export default function PLDashboard() {
     return result;
   });
   
-  const turnoverItem = updatedBudgetData.find(item => item.name.toLowerCase() === 'turnover' || item.name.toLowerCase() === 'revenue');
-  const costOfSalesItem = updatedBudgetData.find(item => item.name.toLowerCase() === 'cost of sales' || item.name.toLowerCase() === 'cos');
-  const operatingProfitItem = updatedBudgetData.find(item => item.name.toLowerCase().includes('operating profit') || item.name.toLowerCase().includes('ebitda'));
+  const turnoverItem = updatedBudgetData.find(item => 
+    item.name.toLowerCase() === 'turnover' || 
+    item.name.toLowerCase() === 'total revenue'
+  );
+  
+  const costOfSalesItem = updatedBudgetData.find(item => 
+    (item.name.toLowerCase() === 'cost of sales' || 
+     item.name.toLowerCase() === 'cos') && 
+    !item.name.toLowerCase().includes('food') && 
+    !item.name.toLowerCase().includes('beverage') && 
+    !item.name.toLowerCase().includes('drink')
+  );
+  
+  const operatingProfitItem = updatedBudgetData.find(item => 
+    item.name.toLowerCase().includes('operating profit') || 
+    item.name.toLowerCase().includes('ebitda')
+  );
+
+  const turnoverForecast = turnoverItem?.forecast_amount || 
+                         getForecastAmount(turnoverItem || {}, currentYear, currentMonth);
+                         
+  const costOfSalesForecast = costOfSalesItem?.forecast_amount || 
+                            getForecastAmount(costOfSalesItem || {}, currentYear, currentMonth);
+                            
+  const operatingProfitForecast = operatingProfitItem?.forecast_amount || 
+                                getForecastAmount(operatingProfitItem || {}, currentYear, currentMonth);
+
+  const turnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
+  const costOfSalesActual = costOfSalesItem ? getActualAmount(costOfSalesItem) : 0;
+  const operatingProfitActual = operatingProfitItem ? getActualAmount(operatingProfitItem) : 0;
+  
   const chartData = [{
     name: 'Budget',
     revenue: turnoverItem?.budget_amount || 0,
@@ -215,15 +236,17 @@ export default function PLDashboard() {
     ebitda: operatingProfitItem?.budget_amount || 0
   }, {
     name: 'MTD Actual',
-    revenue: turnoverItem?.actual_amount || 0,
-    costs: costOfSalesItem?.actual_amount || 0,
-    ebitda: operatingProfitItem?.actual_amount || 0
+    revenue: turnoverActual,
+    costs: costOfSalesActual,
+    ebitda: operatingProfitActual
   }, {
     name: 'Forecast',
-    revenue: turnoverItem?.forecast_amount || turnoverItem?.budget_amount || 0,
-    costs: costOfSalesItem?.forecast_amount || costOfSalesItem?.budget_amount || 0,
-    ebitda: operatingProfitItem?.forecast_amount || operatingProfitItem?.budget_amount || 0
+    revenue: turnoverForecast,
+    costs: costOfSalesForecast,
+    ebitda: operatingProfitForecast
   }];
+  
+  console.log("Chart data:", chartData);
   
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold mb-6 text-center text-[#342640]">P&L Tracker Dashboard</h1>

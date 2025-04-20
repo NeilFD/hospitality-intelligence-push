@@ -465,35 +465,38 @@ export function PLReportTable({
       const name = item.name.toLowerCase();
 
       if (name.includes('revenue') || name === 'turnover' || name === 'total revenue') {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
+        return formatPercentage(forecastAmount / totalTurnoverForecast);
       }
       
       if (name.includes('food') && name.includes('cost of sales')) {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast) / 100);
+        return formatPercentage(forecastAmount / foodRevenueForecast);
       }
+      
       if ((name.includes('beverage') || name.includes('drink')) && name.includes('cost of sales')) {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast) / 100);
+        return formatPercentage(forecastAmount / beverageRevenueForecast);
       }
       
       if (name === 'food gross profit' || name.includes('food gross profit')) {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, foodRevenueForecast) / 100);
-      }
-      if (name === 'beverage gross profit' || name.includes('beverage gross profit') || name.includes('drink gross profit')) {
-        return formatPercentage(calculatePercentageOfRevenue(forecastAmount, beverageRevenueForecast) / 100);
+        return formatPercentage(forecastAmount / foodRevenueForecast);
       }
       
-      if (name === 'cost of sales' || name.includes('cost of sales') && !name.includes('food') && !name.includes('beverage') && !name.includes('drink')) {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
+      if (name === 'beverage gross profit' || name.includes('beverage gross profit') || name.includes('drink gross profit')) {
+        return formatPercentage(forecastAmount / beverageRevenueForecast);
       }
+      
+      if (name === 'cost of sales' || (name.includes('cost of sales') && !name.includes('food') && !name.includes('beverage') && !name.includes('drink'))) {
+        return formatPercentage(forecastAmount / totalTurnoverForecast);
+      }
+      
       if (name === 'gross profit' || name === 'gross profit/(loss)') {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
+        return formatPercentage(forecastAmount / totalTurnoverForecast);
       }
       
       if (!name.includes('revenue') && 
           !name.includes('cost of sales') && 
           !name.includes('gross profit') && 
           !item.isHeader) {
-        return formatPercentage(calculatePercentageOfTurnover(forecastAmount, totalTurnoverForecast) / 100);
+        return formatPercentage(forecastAmount / totalTurnoverForecast);
       }
       
       return '';
@@ -609,7 +612,7 @@ export function PLReportTable({
             {formatCurrency(adminTotalForecast)}
           </TableCell>
           <TableCell className="text-right">
-            {formatPercentage(calculatePercentageOfTurnover(adminTotalForecast, turnoverItem?.forecast_amount || 0) / 100)}
+            {formatPercentage(adminTotalForecast / totalTurnoverForecast)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'
@@ -635,7 +638,7 @@ export function PLReportTable({
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatPercentage(calculatePercentageOfTurnover(operatingProfitForecast, turnoverItem?.forecast_amount || 0) / 100)}
+            {formatPercentage(operatingProfitForecast / totalTurnoverForecast)}
           </TableCell>
           <TableCell className={`text-right font-bold ${
             operatingProfitVariance > 0 ? 'text-green-200' : 'text-red-300'
