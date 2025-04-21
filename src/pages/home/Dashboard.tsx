@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -430,12 +429,7 @@ const HomeDashboard: React.FC = () => {
                 </div>
               ) : generalRoomId ? (
                 <div className="h-full w-full">
-                  <TeamChat 
-                    key={`dashboard-chat-${generalRoomId}`} 
-                    initialRoomId={generalRoomId} 
-                    compact={isMobile} 
-                    initialSidebarClosed={true} 
-                  />
+                  <TeamChat key={`dashboard-chat-${generalRoomId}`} initialRoomId={generalRoomId} compact={isMobile} />
                 </div>
               ) : (
                 <div className="flex justify-center items-center h-full text-gray-500">

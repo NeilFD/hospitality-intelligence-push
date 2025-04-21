@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -188,7 +187,7 @@ const Chat: React.FC = () => {
             <p className="text-gray-500">Preparing chat interface...</p>
           </div>
         ) : roomId ? (
-          <TeamChat key={`chat-${roomId}`} initialRoomId={roomId} initialSidebarClosed={false} />
+          <TeamChat key={`chat-${roomId}`} initialRoomId={roomId} />
         ) : (
           <div className="flex justify-center items-center h-full">
             <p className="text-gray-500">No chat rooms available</p>
