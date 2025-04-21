@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -109,6 +110,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           trackerByDate[tracker.date] = tracker;
         }
         
+        // Initialize weekMap with empty week objects for all potential weeks
         const weekMap: Record<number, WeekSummary> = {};
         for (let i = 1; i <= 5; i++) {
           weekMap[i] = {
@@ -121,6 +123,16 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         
         for (const record of masterRecords) {
           const weekNumber = record.week_number;
+          
+          if (!weekMap[weekNumber]) {
+            console.log(`Creating missing week ${weekNumber} in map`);
+            weekMap[weekNumber] = {
+              weekNumber,
+              revenue: 0,
+              costs: 0,
+              gp: 0
+            };
+          }
           
           const dayRevenue = moduleType === 'food' ? 
             Number(record.food_revenue) || 0 : 
@@ -213,12 +225,18 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
               weekCosts += dayCosts - creditNotes + day.staffFoodAllowance;
             });
             
-            weekMap[weekNumber] = {
-              weekNumber,
-              revenue: weekRevenue,
-              costs: weekCosts,
-              gp: calculateGP(weekRevenue, weekCosts)
-            };
+            if (!weekMap[weekNumber]) {
+              weekMap[weekNumber] = {
+                weekNumber,
+                revenue: 0,
+                costs: 0,
+                gp: 0
+              };
+            }
+            
+            weekMap[weekNumber].revenue += weekRevenue;
+            weekMap[weekNumber].costs += weekCosts;
+            weekMap[weekNumber].gp = calculateGP(weekMap[weekNumber].revenue, weekMap[weekNumber].costs);
           });
           
           const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
