@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -514,7 +513,6 @@ export function PLReportTable({
               </TableCell>
               <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
                 {formatCurrency(forecastAmount)}
-                {/* ForecastSettingsControl REMOVED from here */}
               </TableCell>
               <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
                 {forecastPercentage}
@@ -534,7 +532,7 @@ export function PLReportTable({
             {formatCurrency(adminTotalBudget)}
           </TableCell>
           <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
-            {formatPercentage(adminTotalBudget / (totalTurnoverForecast || 1))}
+            {formatPercentage(adminTotalBudget / (turnoverItem?.budget_amount || 1))}
           </TableCell>
           <TableCell className="text-right font-bold">
             {formatCurrency(adminTotalActual)}
@@ -625,4 +623,3 @@ export function PLReportTable({
     </div>
   </div>;
 }
-
