@@ -452,7 +452,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     },
     enabled: !!selectedRoomId,
     retry: 1,
-    staleTime: 10000, // 10 seconds
+    staleTime: 5000,
+    refetchInterval: 10000,
     meta: {
       onSettled: () => {
         setTimeout(() => {
@@ -488,19 +489,30 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   });
   
   const addReactionMutation = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       messageId,
-      emoji,
-      userId
+      emoji
     }: {
       messageId: string;
       emoji: string;
-      userId: string;
-    }) => addMessageReaction(messageId, emoji, userId),
+    }) => {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log(`Adding reaction ${emoji} to message ${messageId} by user ${user.id}`);
+      await addMessageReaction(messageId, user.id, emoji);
+      return { success: true };
+    },
     onSuccess: () => {
+      console.log('Successfully added reaction, invalidating queries');
       queryClient.invalidateQueries({
         queryKey: ['teamMessages', selectedRoomId]
       });
+    },
+    onError: (error) => {
+      console.error('Error adding reaction:', error);
+      toast.error('Failed to add reaction');
     }
   });
   
@@ -673,10 +685,12 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   
   const handleAddReaction = (messageId: string, emoji: string) => {
     if (!user) return;
+    
+    console.log(`Handling reaction: ${emoji} for message ${messageId}`);
+    
     addReactionMutation.mutate({
       messageId,
-      emoji,
-      userId: user.id
+      emoji
     });
   };
   

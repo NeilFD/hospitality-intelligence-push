@@ -81,6 +81,7 @@ const Chat: React.FC = () => {
     setIsReady(true);
   }, [rooms, roomSlug]);
   
+  // Setup Supabase realtime subscription for message mentions
   useEffect(() => {
     if (!user) return;
     
@@ -129,6 +130,36 @@ const Chat: React.FC = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
+  
+  // Setup Supabase realtime subscription for message reactions
+  useEffect(() => {
+    if (!roomId) return;
+
+    console.log(`Setting up realtime subscription for room: ${roomId}`);
+    
+    // Subscribe to all changes in the team_messages table for the current room
+    const channel = supabase
+      .channel('room-updates')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'team_messages',
+          filter: `room_id=eq.${roomId}`
+        },
+        (payload) => {
+          console.log('Message updated in realtime:', payload);
+          // The TeamChat component will automatically refetch due to this invalidation
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      console.log('Removing realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
   
   return (
     <div className={cn("container mx-auto overflow-hidden", isMobile ? "p-0 max-w-full" : "p-4")}>
