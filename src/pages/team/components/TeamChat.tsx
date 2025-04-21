@@ -444,6 +444,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMessageAreaReady, setIsMessageAreaReady] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
+  const pendingReactions = useRef(new Set<string>());
   
   const {
     data: rooms = [],
@@ -726,10 +727,25 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       return;
     }
     
-    addReactionMutation.mutate({
-      messageId,
-      emoji
-    });
+    const reactionKey = `${messageId}-${emoji}`;
+    if (pendingReactions.current.has(reactionKey)) {
+      console.log('Reaction already pending, ignoring');
+      return;
+    }
+    
+    pendingReactions.current.add(reactionKey);
+    
+    addReactionMutation.mutate(
+      {
+        messageId,
+        emoji
+      },
+      {
+        onSettled: () => {
+          pendingReactions.current.delete(reactionKey);
+        }
+      }
+    );
   };
   
   const handleDeleteMessage = (messageId: string) => {

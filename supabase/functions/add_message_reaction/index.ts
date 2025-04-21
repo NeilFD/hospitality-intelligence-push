@@ -16,21 +16,37 @@ serve(async (req) => {
   try {
     const { p_message_id, p_user_id, p_emoji } = await req.json()
     
-    // Validate inputs
-    if (!p_message_id || !p_user_id || !p_emoji) {
-      console.error('Missing required parameters:', { p_message_id, p_user_id, p_emoji });
-      return new Response(JSON.stringify({ error: 'Missing required parameters' }), { 
+    // Validate inputs with stronger error reporting
+    if (!p_message_id) {
+      console.error('Missing required parameter: message_id');
+      return new Response(JSON.stringify({ error: 'Missing message_id parameter' }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+    
+    if (!p_user_id) {
+      console.error('Missing required parameter: user_id');
+      return new Response(JSON.stringify({ error: 'Missing user_id parameter' }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+    
+    if (!p_emoji) {
+      console.error('Missing required parameter: emoji');
+      return new Response(JSON.stringify({ error: 'Missing emoji parameter' }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
 
-    console.log(`Processing reaction: ${p_emoji} for message ${p_message_id} by user ${p_user_id}`);
+    console.log(`[add_message_reaction] Processing: emoji=${p_emoji}, message=${p_message_id}, user=${p_user_id}`);
 
     // Create a Supabase client with the Auth context of the function
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // Use service role key for admin access
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
@@ -38,10 +54,10 @@ serve(async (req) => {
       }
     )
 
-    // Get the message with direct SQL for more reliable fetching
+    // Fetch the message first
     const { data: message, error: fetchError } = await supabaseClient
       .from('team_messages')
-      .select('reactions')
+      .select('reactions, author_id')
       .eq('id', p_message_id)
       .single()
     
@@ -52,38 +68,40 @@ serve(async (req) => {
         status: 400,
       })
     }
+    
+    console.log(`[add_message_reaction] Message found: author=${message.author_id}`);
+    console.log(`[add_message_reaction] Current reactions:`, message.reactions);
 
-    // Create a new reaction object from scratch
+    // Process reactions with careful parsing
     let reactions = [];
     
-    // If we have existing reactions, parse them carefully
     if (message.reactions) {
-      // Handle different data types safely
-      if (typeof message.reactions === 'string') {
-        try {
+      try {
+        if (typeof message.reactions === 'string') {
           reactions = JSON.parse(message.reactions);
-        } catch (e) {
-          console.error('Error parsing reactions string:', e);
-          reactions = [];
+        } else if (Array.isArray(message.reactions)) {
+          reactions = [...message.reactions];
+        } else if (typeof message.reactions === 'object') {
+          reactions = Object.values(message.reactions);
         }
-      } else if (Array.isArray(message.reactions)) {
-        reactions = message.reactions;
-      } else if (typeof message.reactions === 'object') {
-        // Handle case where reactions might be a JSON object not an array
+      } catch (e) {
+        console.error('Error parsing existing reactions:', e);
         reactions = [];
       }
     }
 
-    console.log('Current reactions:', reactions);
+    console.log(`[add_message_reaction] Parsed reactions:`, reactions);
 
-    // Find existing reaction or add new one
-    const existingIndex = reactions.findIndex((r) => r.emoji === p_emoji);
+    // Find existing reaction by emoji
+    const existingIndex = reactions.findIndex(r => r.emoji === p_emoji);
+    
+    // Variable to track if we're adding or removing
+    let actionType = 'none';
     
     if (existingIndex >= 0) {
       // This emoji already has reactions
       let userIds = [];
       
-      // Safely extract user_ids, ensuring it's an array
       if (reactions[existingIndex].user_ids) {
         if (Array.isArray(reactions[existingIndex].user_ids)) {
           userIds = [...reactions[existingIndex].user_ids];
@@ -96,12 +114,15 @@ serve(async (req) => {
           }
         }
       }
-        
+      
+      console.log(`[add_message_reaction] User IDs for emoji ${p_emoji}:`, userIds);
+      
       const userIndex = userIds.indexOf(p_user_id);
       
       if (userIndex >= 0) {
         // User already reacted, remove reaction (toggle behavior)
         userIds.splice(userIndex, 1);
+        actionType = 'removed';
         
         if (userIds.length === 0) {
           // No users left for this emoji, remove emoji
@@ -113,6 +134,7 @@ serve(async (req) => {
       } else {
         // User hasn't reacted with this emoji, add them
         reactions[existingIndex].user_ids = [...userIds, p_user_id];
+        actionType = 'added';
       }
     } else {
       // No reactions for this emoji, add new entry
@@ -120,15 +142,18 @@ serve(async (req) => {
         emoji: p_emoji,
         user_ids: [p_user_id]
       });
+      actionType = 'added';
     }
 
-    console.log('Updated reactions:', reactions);
+    console.log(`[add_message_reaction] Action: ${actionType}`);
+    console.log(`[add_message_reaction] Updated reactions:`, reactions);
 
-    // Use raw SQL update for maximum reliability
-    const { error: updateError } = await supabaseClient
+    // Update the message with the new reactions
+    const { data: updateData, error: updateError } = await supabaseClient
       .from('team_messages')
       .update({ reactions: reactions })
-      .eq('id', p_message_id);
+      .eq('id', p_message_id)
+      .select('reactions');
     
     if (updateError) {
       console.error('Error updating message:', updateError);
@@ -138,7 +163,14 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: true, reactions }), {
+    console.log(`[add_message_reaction] Update successful`);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      reactions,
+      action: actionType,
+      message_id: p_message_id
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

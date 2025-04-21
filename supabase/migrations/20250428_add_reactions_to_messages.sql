@@ -34,15 +34,3 @@ BEGIN
   END;
 END
 $$;
-
--- Make sure RPC function is enabled for authenticated users
-DO $$
-BEGIN
-  EXECUTE 'GRANT EXECUTE ON FUNCTION add_message_reaction TO authenticated';
-  EXECUTE 'GRANT EXECUTE ON FUNCTION add_message_reaction TO anon';
-EXCEPTION
-  WHEN undefined_function THEN
-    -- Function doesn't exist yet, that's fine
-    NULL;
-END
-$$;
