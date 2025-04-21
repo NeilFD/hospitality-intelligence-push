@@ -30,14 +30,32 @@ export function ForecastSettingsControl({
   const [open, setOpen] = React.useState(false);
   const [selectedMethod, setSelectedMethod] = React.useState<ForecastMethod>('fixed');
   const [isEditing, setIsEditing] = React.useState(true);
-  const [dailyValues, setDailyValues] = React.useState<Record<string, number>>({});
-  
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month, 0).getDate();
-  };
+
+  // Change structure: dailyValues[day] = { value, note }
+  const [dailyValues, setDailyValues] = React.useState<Record<string, { value: number, note: string }>>({});
+
+  // Helper: migrate loaded flat numbers to {value, note}
+  function toNotesFormat(incoming: Record<string, any>): Record<string, { value: number, note: string }> {
+    if (!incoming) return {};
+    const result: Record<string, { value: number, note: string }> = {};
+    Object.entries(incoming).forEach(([key, val]) => {
+      if (typeof val === "object" && val != null && "value" in val) {
+        result[key] = { value: Number(val.value) || 0, note: val.note || "" };
+      } else {
+        result[key] = { value: Number(val) || 0, note: "" };
+      }
+    });
+    return result;
+  }
+
+  // Helper: flatten notes format to plain numbers if needed for compatibility
+  function fromNotesFormat(outgoing: Record<string, { value: number, note: string }>): Record<string, any> {
+    // Always save as { value, note }
+    return outgoing; 
+  }
 
   const totalDailyValues = React.useMemo(() => {
-    return Object.values(dailyValues).reduce((sum, value) => sum + (value || 0), 0);
+    return Object.values(dailyValues).reduce((sum, obj) => sum + (obj && obj.value ? obj.value : 0), 0);
   }, [dailyValues]);
 
   const getFinalTotal = () => {
@@ -60,15 +78,15 @@ export function ForecastSettingsControl({
       const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
       const cachedSettings = localStorage.getItem(cacheKey);
       let method: ForecastMethod = 'fixed';
-      let dvals: Record<string, number> = {};
+      let dvals: Record<string, any> = {};
 
       if (cachedSettings) {
         try {
           const settings = JSON.parse(cachedSettings);
           setSelectedMethod(settings.method as ForecastMethod);
           setTooltipMethod(settings.method as ForecastMethod);
-          setDailyValues(settings.discrete_values || {});
-          dvals = settings.discrete_values || {};
+          setDailyValues(toNotesFormat(settings.discrete_values || {}));
+          dvals = toNotesFormat(settings.discrete_values || {});
           method = settings.method as ForecastMethod;
           setIsEditing(false);
         } catch (e) {}
@@ -86,16 +104,8 @@ export function ForecastSettingsControl({
           setTooltipMethod(data.method as ForecastMethod);
           method = data.method as ForecastMethod;
           if (data.discrete_values) {
-            const parsedValues: Record<string, number> = {};
-            const values = data.discrete_values as Record<string, any>;
-            Object.keys(values).forEach(key => {
-              const numValue = Number(values[key]);
-              if (!isNaN(numValue)) {
-                parsedValues[key] = numValue;
-              }
-            });
-            setDailyValues(parsedValues);
-            dvals = parsedValues;
+            setDailyValues(toNotesFormat(data.discrete_values));
+            dvals = toNotesFormat(data.discrete_values);
           } else {
             setDailyValues({});
             dvals = {};
@@ -105,7 +115,7 @@ export function ForecastSettingsControl({
       }
 
       // Always update tooltip preview
-      let dailySum = Object.values(dvals).reduce((sum, v) => sum + (v || 0), 0);
+      let dailySum = Object.values(dvals).reduce((sum: number, v: any) => sum + (v && v.value ? v.value : 0), 0);
       setTooltipDaily(dailySum);
       if (method === 'fixed') setTooltipTotal(budgetAmount);
       else if (method === 'discrete') setTooltipTotal(dailySum);
@@ -131,12 +141,12 @@ export function ForecastSettingsControl({
         method: selectedMethod,
         year: currentYear,
         month: currentMonth,
-        discrete_values: dailyValues
+        discrete_values: fromNotesFormat(dailyValues)
       });
     const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
     const settingsToCache = {
       method: selectedMethod,
-      discrete_values: dailyValues
+      discrete_values: fromNotesFormat(dailyValues)
     };
     localStorage.setItem(cacheKey, JSON.stringify(settingsToCache));
     setIsEditing(false);
@@ -145,7 +155,7 @@ export function ForecastSettingsControl({
       detail: { 
         itemName, 
         method: selectedMethod, 
-        values: dailyValues,
+        values: fromNotesFormat(dailyValues),
         year: currentYear,
         month: currentMonth,
         finalTotal,
@@ -157,7 +167,7 @@ export function ForecastSettingsControl({
     setOpen(false);
 
     // Also update tooltip state immediately after save
-    let dailySum = Object.values(dailyValues).reduce((sum, v) => sum + (v || 0), 0);
+    let dailySum = Object.values(dailyValues).reduce((sum, v) => sum + (v && v.value ? v.value : 0), 0);
     setTooltipMethod(selectedMethod);
     setTooltipDaily(dailySum);
     if (selectedMethod === 'fixed') setTooltipTotal(budgetAmount);
@@ -166,7 +176,7 @@ export function ForecastSettingsControl({
   };
 
   const renderDailyInputs = () => {
-    const days = getDaysInMonth(currentYear, currentMonth);
+    const days = new Date(currentYear, currentMonth, 0).getDate();
     const rows = [];
     for (let day = 1; day <= days; day++) {
       const date = new Date(currentYear, currentMonth - 1, day);
@@ -175,19 +185,32 @@ export function ForecastSettingsControl({
         day: 'numeric',
         month: 'short'
       });
+      const valObj = dailyValues[day.toString()] || { value: '', note: '' };
       rows.push(
-        <div key={day} className="grid grid-cols-2 gap-4 items-center mb-2">
+        <div key={day} className="grid grid-cols-3 gap-2 items-center mb-2">
           <Label className="text-sm">{formattedDate}</Label>
           <Input
             type="number"
-            value={dailyValues[day.toString()] || ''}
+            value={valObj.value ?? ''}
             onChange={(e) => {
               const newValues = { ...dailyValues };
-              newValues[day.toString()] = parseFloat(e.target.value) || 0;
+              newValues[day.toString()] = { ...valObj, value: parseFloat(e.target.value) || 0 };
               setDailyValues(newValues);
             }}
             disabled={!isEditing}
             placeholder="0.00"
+            className="w-full"
+          />
+          <Input
+            type="text"
+            value={valObj.note ?? ''}
+            onChange={(e) => {
+              const newValues = { ...dailyValues };
+              newValues[day.toString()] = { ...valObj, note: e.target.value };
+              setDailyValues(newValues);
+            }}
+            disabled={!isEditing}
+            placeholder="Note"
             className="w-full"
           />
         </div>
@@ -200,6 +223,12 @@ export function ForecastSettingsControl({
             <div className="font-semibold">Monthly Budget: {formatCurrency(budgetAmount)}</div>
           </div>
         )}
+        {/* Header for values/notes */}
+        <div className="grid grid-cols-3 gap-2 mb-1 text-xs font-semibold text-gray-700">
+          <div>Date</div>
+          <div>Amount</div>
+          <div>Note</div>
+        </div>
         {rows}
         <div className="mt-4 p-2 bg-slate-50 rounded-lg">
           <div className="font-semibold">
