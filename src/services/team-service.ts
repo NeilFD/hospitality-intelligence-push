@@ -257,8 +257,8 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
     
-    // Call the Edge Function to add/remove the reaction
-    const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
+    // Call the Edge Function directly
+    const { data, error } = await supabase.functions.invoke(
       'add_message_reaction',
       {
         method: 'POST',
@@ -270,23 +270,30 @@ export const addMessageReaction = async (
       }
     );
     
-    if (edgeFunctionError) {
-      console.error('Error calling edge function:', edgeFunctionError);
+    if (error) {
+      console.error('Error calling edge function:', error);
+      throw error;
+    }
+    
+    console.log('Reaction updated successfully:', data);
+    return;
+  } catch (error) {
+    console.error('Error adding reaction:', error);
+    
+    // If edge function fails, try direct database operation as fallback
+    try {
+      console.log('Attempting direct database operation as fallback...');
       
-      // Fallback to direct database update if the edge function fails
-      // Get the message first
+      // Get the message
       const { data: message, error: fetchError } = await supabase
         .from('team_messages')
         .select('reactions')
         .eq('id', messageId)
         .single();
         
-      if (fetchError) {
-        console.error('Error fetching message:', fetchError);
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
       
-      // Parse and update reactions
+      // Parse reactions
       let reactions = [];
       if (message.reactions) {
         try {
@@ -294,7 +301,6 @@ export const addMessageReaction = async (
             ? JSON.parse(message.reactions) 
             : (Array.isArray(message.reactions) ? message.reactions : []);
         } catch (e) {
-          console.error('Error parsing reactions:', e);
           reactions = [];
         }
       }
@@ -311,14 +317,12 @@ export const addMessageReaction = async (
         const userIndex = userIds.indexOf(userId);
         
         if (userIndex >= 0) {
-          // User already reacted, remove reaction (toggle behavior)
+          // User already reacted, remove reaction
           userIds.splice(userIndex, 1);
           
           if (userIds.length === 0) {
-            // No users left for this emoji, remove emoji
             reactions.splice(existingIndex, 1);
           } else {
-            // Update user IDs for this emoji
             reactions[existingIndex].user_ids = userIds;
           }
         } else {
@@ -336,20 +340,16 @@ export const addMessageReaction = async (
       // Update the message with new reactions
       const { error: updateError } = await supabase
         .from('team_messages')
-        .update({ reactions: reactions })
+        .update({ reactions })
         .eq('id', messageId);
         
-      if (updateError) {
-        console.error('Error updating message:', updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
+      
+      console.log('Fallback reaction update successful');
+    } catch (fallbackError) {
+      console.error('Fallback reaction update failed:', fallbackError);
+      throw fallbackError;
     }
-    
-    console.log('Reaction updated successfully:', edgeFunctionData);
-    return;
-  } catch (error) {
-    console.error('Error adding reaction:', error);
-    throw error;
   }
 };
 

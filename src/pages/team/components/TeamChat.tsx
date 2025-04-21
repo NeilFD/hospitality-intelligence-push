@@ -325,7 +325,14 @@ const Message: React.FC<MessageProps> = ({
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-white shadow-sm hover:bg-gray-50 opacity-70 hover:opacity-100">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-white shadow-sm hover:bg-gray-50 opacity-70 hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
                 <Smile className="h-3.5 w-3.5 text-gray-500" />
               </Button>
             </PopoverTrigger>
@@ -337,7 +344,13 @@ const Message: React.FC<MessageProps> = ({
               </div>
               
               <div className="grid grid-cols-8 gap-1.5 max-h-[150px] overflow-y-auto py-1">
-                {EMOJI_CATEGORIES[selectedCategory].emojis.map((emoji, index) => <Button key={index} variant="ghost" size="sm" className="h-7 w-7 p-0 text-lg" onClick={() => onAddReaction(message.id, emoji)}>
+                {EMOJI_CATEGORIES[selectedCategory].emojis.map((emoji, index) => <Button 
+                    key={index} 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0 text-lg" 
+                    onClick={() => onAddReaction(message.id, emoji)}
+                  >
                     {emoji}
                   </Button>)}
               </div>
@@ -345,7 +358,13 @@ const Message: React.FC<MessageProps> = ({
               <div className="mt-2 pt-2 border-t">
                 <p className="text-xs text-muted-foreground mb-1.5">Frequently Used</p>
                 <div className="flex gap-1 flex-wrap">
-                  {commonEmojis.map((item, index) => <Button key={index} variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onAddReaction(message.id, item.emoji)}>
+                  {commonEmojis.map((item, index) => <Button 
+                      key={index} 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 w-7 p-0" 
+                      onClick={() => onAddReaction(message.id, item.emoji)}
+                    >
                       {item.emoji}
                     </Button>)}
                 </div>
@@ -374,7 +393,10 @@ const Message: React.FC<MessageProps> = ({
         {message.reactions && message.reactions.length > 0 && <div className="flex mt-1 ml-1 flex-wrap gap-1">
             {message.reactions.map((reaction, index) => <HoverCard key={`${reaction.emoji}-${index}`}>
                 <HoverCardTrigger asChild>
-                  <button className={`flex items-center rounded-full px-2 text-xs ${reaction.user_ids.includes(currentUserId) ? 'bg-blue-100 border border-blue-300' : 'bg-gray-100 border border-gray-200'}`} onClick={() => onAddReaction(message.id, reaction.emoji)}>
+                  <button 
+                    className={`flex items-center rounded-full px-2 text-xs ${reaction.user_ids.includes(currentUserId) ? 'bg-blue-100 border border-blue-300' : 'bg-gray-100 border border-gray-200'}`} 
+                    onClick={() => onAddReaction(message.id, reaction.emoji)}
+                  >
                     <span className="mr-1">{reaction.emoji}</span>
                     <span>{reaction.user_ids.length}</span>
                   </button>

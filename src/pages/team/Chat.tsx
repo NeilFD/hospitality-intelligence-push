@@ -7,12 +7,13 @@ import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
 
 const Chat: React.FC = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const searchParams = new URLSearchParams(location.search);
   const roomSlug = searchParams.get('room') || 'general';
   const { user } = useAuthStore();
@@ -150,7 +151,10 @@ const Chat: React.FC = () => {
         },
         (payload) => {
           console.log('Message updated in realtime:', payload);
-          // The TeamChat component will automatically refetch due to this invalidation
+          // Invalidate the query to update the UI
+          queryClient.invalidateQueries({
+            queryKey: ['teamMessages', roomId]
+          });
         }
       )
       .subscribe((status) => {
@@ -161,7 +165,7 @@ const Chat: React.FC = () => {
       console.log('Removing realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [roomId]);
+  }, [roomId, queryClient]);
   
   return (
     <div className={cn("container mx-auto overflow-hidden", isMobile ? "p-0 max-w-full" : "p-4")}>
