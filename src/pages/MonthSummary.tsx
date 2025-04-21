@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +27,15 @@ interface WeekSummary {
   revenue: number;
   costs: number;
   gp: number;
+}
+
+interface ExtendedDailyRecord {
+  revenue?: number;
+  foodRevenue?: number;
+  beverageRevenue?: number;
+  purchases: Record<string, number>;
+  creditNotes: number[];
+  staffFoodAllowance: number;
 }
 
 export default function MonthSummary({ modulePrefix = "", moduleType = "food" }: MonthSummaryProps) {
@@ -114,7 +122,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         for (const record of masterRecords) {
           const weekNumber = record.week_number;
           
-          // Get the correct revenue field based on module type
           const dayRevenue = moduleType === 'food' ? 
             Number(record.food_revenue) || 0 : 
             Number(record.beverage_revenue) || 0;
@@ -186,10 +193,18 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             let weekCosts = 0;
             
             week.days.forEach(day => {
-              // Fix: Access correct revenue property based on whether it's legacy or new format
-              const dayRevenue = typeof day.revenue === 'number' ? 
-                day.revenue : // Legacy format
-                (moduleType === 'food' ? day.foodRevenue || 0 : day.beverageRevenue || 0); // New format
+              let dayRevenue = 0;
+              const dayRecord = day as unknown as ExtendedDailyRecord;
+              
+              if (typeof dayRecord.revenue === 'number') {
+                dayRevenue = dayRecord.revenue;
+              } else {
+                if (moduleType === 'food' && typeof dayRecord.foodRevenue === 'number') {
+                  dayRevenue = dayRecord.foodRevenue;
+                } else if (moduleType === 'beverage' && typeof dayRecord.beverageRevenue === 'number') {
+                  dayRevenue = dayRecord.beverageRevenue;
+                }
+              }
               
               weekRevenue += dayRevenue;
               
