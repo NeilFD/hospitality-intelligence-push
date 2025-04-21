@@ -272,77 +272,11 @@ export const addMessageReaction = async (
     
     if (edgeFunctionError) {
       console.error('Error calling edge function:', edgeFunctionError);
-      
-      // Fallback to direct database update
-      // Get the message first
-      const { data: message, error: fetchError } = await supabase
-        .from('team_messages')
-        .select('reactions')
-        .eq('id', messageId)
-        .single();
-        
-      if (fetchError) {
-        throw fetchError;
-      }
-      
-      // Parse and update reactions
-      let reactions = [];
-      if (message.reactions) {
-        try {
-          reactions = typeof message.reactions === 'string' 
-            ? JSON.parse(message.reactions) 
-            : (Array.isArray(message.reactions) ? message.reactions : []);
-        } catch (e) {
-          reactions = [];
-        }
-      }
-      
-      // Find existing reaction or add new one
-      const existingIndex = reactions.findIndex(r => r.emoji === emoji);
-      
-      if (existingIndex >= 0) {
-        // This emoji already has reactions
-        const userIds = Array.isArray(reactions[existingIndex].user_ids) 
-          ? reactions[existingIndex].user_ids 
-          : [];
-          
-        const userIndex = userIds.indexOf(userId);
-        
-        if (userIndex >= 0) {
-          // User already reacted, remove reaction (toggle behavior)
-          userIds.splice(userIndex, 1);
-          
-          if (userIds.length === 0) {
-            // No users left for this emoji, remove emoji
-            reactions.splice(existingIndex, 1);
-          } else {
-            // Update user IDs for this emoji
-            reactions[existingIndex].user_ids = userIds;
-          }
-        } else {
-          // User hasn't reacted with this emoji, add them
-          reactions[existingIndex].user_ids = [...userIds, userId];
-        }
-      } else {
-        // No reactions for this emoji, add new entry
-        reactions.push({
-          emoji,
-          user_ids: [userId]
-        });
-      }
-      
-      // Update the message with new reactions
-      const { error: updateError } = await supabase
-        .from('team_messages')
-        .update({ reactions: reactions })
-        .eq('id', messageId);
-        
-      if (updateError) {
-        throw updateError;
-      }
+      throw edgeFunctionError;
     }
     
-    console.log('Reaction updated successfully');
+    console.log('Reaction updated successfully:', edgeFunctionData);
+    return;
   } catch (error) {
     console.error('Error adding reaction:', error);
     throw error;
