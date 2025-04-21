@@ -52,6 +52,7 @@ const ProfilePage = () => {
   const [yPosition, setYPosition] = useState(0);
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   const isMountedRef = useRef(true);
+  const profileLoadAttemptedRef = useRef(false);
 
   const { 
     isSubscribed, 
@@ -75,8 +76,15 @@ const ProfilePage = () => {
         console.log("Skipping profile load while authentication is loading or user not authenticated");
         return;
       }
-
+      
+      if (!currentUserProfile && id === undefined && profileLoadAttemptedRef.current) {
+        console.log("Waiting for current user profile to be available");
+        return;
+      }
+      
+      profileLoadAttemptedRef.current = true;
       setLoading(true);
+      
       try {
         console.log("Loading profile data...", id ? `for ID: ${id}` : "for current user");
         let profileToLoad;
@@ -140,6 +148,29 @@ const ProfilePage = () => {
       isMountedRef.current = false;
     };
   }, [id, currentUserProfile, isAuthenticated, authLoading, navigate]);
+
+  useEffect(() => {
+    if (
+      !id && 
+      !loading && 
+      currentUserProfile && 
+      isAuthenticated && 
+      (!profile || profile.id !== currentUserProfile.id)
+    ) {
+      console.log("Updating profile from currentUserProfile change");
+      setProfile(currentUserProfile);
+      
+      setEditForm({
+        firstName: currentUserProfile.first_name || '',
+        lastName: currentUserProfile.last_name || '',
+        jobTitle: currentUserProfile.job_title || '',
+        favouriteDish: currentUserProfile.favourite_dish || '',
+        favouriteDrink: currentUserProfile.favourite_drink || '',
+        aboutMe: currentUserProfile.about_me || '',
+        birthDate: currentUserProfile.birth_date || ''
+      });
+    }
+  }, [currentUserProfile, id, loading, profile, isAuthenticated]);
 
   useEffect(() => {
     return () => {
