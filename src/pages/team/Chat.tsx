@@ -139,7 +139,7 @@ const Chat: React.FC = () => {
     
     // Subscribe to all changes in the team_messages table for the current room
     const channel = supabase
-      .channel('room-updates')
+      .channel(`room-updates-main-${roomId}`) // Use unique channel name
       .on(
         'postgres_changes',
         { 
@@ -149,7 +149,7 @@ const Chat: React.FC = () => {
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
-          console.log('Message updated in realtime:', payload);
+          console.log('Message updated in realtime (main):', payload);
           // Invalidate the query to update the UI
           queryClient.invalidateQueries({
             queryKey: ['teamMessages', roomId]
@@ -157,11 +157,11 @@ const Chat: React.FC = () => {
         }
       )
       .subscribe((status) => {
-        console.log(`Supabase channel status: ${status}`);
+        console.log(`Supabase channel status (main): ${status}`);
       });
       
     return () => {
-      console.log('Removing realtime subscription');
+      console.log('Removing realtime subscription (main)');
       supabase.removeChannel(channel);
     };
   }, [roomId, queryClient]);
