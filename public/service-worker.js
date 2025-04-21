@@ -1,12 +1,15 @@
 
 self.addEventListener('push', function(event) {
+  console.log('Push notification received:', event);
   if (event.data) {
     const notification = event.data.json();
+    console.log('Notification data:', notification);
     const options = {
       body: notification.body,
       icon: '/lovable-uploads/867c4809-f55f-4880-aa49-e12c12c65af6.png',
       badge: '/lovable-uploads/867c4809-f55f-4880-aa49-e12c12c65af6.png',
-      data: notification.data
+      data: notification.data,
+      requireInteraction: true
     };
 
     event.waitUntil(
@@ -16,6 +19,7 @@ self.addEventListener('push', function(event) {
 });
 
 self.addEventListener('notificationclick', function(event) {
+  console.log('Notification clicked:', event);
   event.notification.close();
   
   if (event.notification.data && event.notification.data.url) {
@@ -39,6 +43,7 @@ self.addEventListener('activate', function(event) {
 
 // Listen for messages from the main thread
 self.addEventListener('message', function(event) {
+  console.log('Service worker received message:', event.data);
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }

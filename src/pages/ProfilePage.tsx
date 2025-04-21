@@ -803,23 +803,76 @@ const ProfilePage = () => {
                   <div className="grid gap-4 py-4">
                     <h3 className="text-lg font-semibold mb-4">Push Notifications</h3>
                     {!isSupported ? (
-                      <p className="text-gray-500">
-                        Push notifications are not supported on this device.
-                      </p>
+                      <div className="bg-amber-50 p-4 rounded-md border border-amber-200">
+                        <p className="text-amber-800">
+                          Push notifications are not supported on this browser or device.
+                        </p>
+                        <p className="text-sm text-amber-700 mt-2">
+                          Try using Chrome, Edge, or Firefox on a desktop or Android device for the best notification experience.
+                        </p>
+                      </div>
                     ) : isPermissionBlocked ? (
-                      <p className="text-red-500">
-                        Notification permissions are blocked. Please enable them in your browser settings.
-                      </p>
+                      <div className="bg-red-50 p-4 rounded-md border border-red-200">
+                        <p className="text-red-800">
+                          Notification permissions are blocked in your browser settings.
+                        </p>
+                        <div className="text-sm text-red-700 mt-2 space-y-2">
+                          <p><strong>To enable notifications:</strong></p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>Look for the site settings icon in your browser's address bar</li>
+                            <li>Find "Notifications" in the permissions list</li>
+                            <li>Change the setting from "Block" to "Allow"</li>
+                            <li>Refresh this page after changing the setting</li>
+                          </ul>
+                        </div>
+                      </div>
                     ) : (
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="push-notifications"
-                          checked={isSubscribed}
-                          onCheckedChange={isSubscribed ? unsubscribeUser : subscribeUser}
-                        />
-                        <Label htmlFor="push-notifications">
-                          {isSubscribed ? 'Disable' : 'Enable'} Push Notifications
-                        </Label>
+                      <div>
+                        <div className="flex items-center space-x-2 mb-4">
+                          <Switch
+                            id="push-notifications"
+                            checked={isSubscribed}
+                            onCheckedChange={isSubscribed ? unsubscribeUser : subscribeUser}
+                          />
+                          <Label htmlFor="push-notifications">
+                            {isSubscribed ? 'Disable' : 'Enable'} Push Notifications
+                          </Label>
+                        </div>
+                        
+                        <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mt-2">
+                          <h4 className="font-medium text-blue-800">About Push Notifications</h4>
+                          <p className="text-sm text-blue-700 mt-1">
+                            When enabled, you'll receive notifications when:
+                          </p>
+                          <ul className="list-disc pl-5 text-sm text-blue-700 mt-2 space-y-1">
+                            <li>Someone mentions you in a chat message</li>
+                            <li>Important announcements are posted</li>
+                            <li>You're invited to team activities</li>
+                          </ul>
+                          
+                          <h4 className="font-medium text-blue-800 mt-4">Device-Specific Setup</h4>
+                          <div className="text-sm text-blue-700 mt-1 space-y-2">
+                            <p><strong>iOS (iPhone/iPad) Users:</strong></p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              <li>Add this website to your home screen for better notification support</li>
+                              <li>Go to your device Settings &gt; Safari &gt; Advanced &gt; Experimental Features</li>
+                              <li>Enable "Push API" and "Web Push" if available</li>
+                              <li>You may need to explicitly allow notifications in Settings &gt; Safari &gt; Notifications</li>
+                            </ul>
+                            
+                            <p className="mt-2"><strong>Android Users:</strong></p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              <li>Add to home screen for best experience</li>
+                              <li>Ensure notifications are enabled in your device settings for this browser</li>
+                            </ul>
+                            
+                            <p className="mt-2"><strong>Desktop Users:</strong></p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              <li>Simply click "Enable" above and accept the browser permission request</li>
+                              <li>Notifications will appear even when the app is closed</li>
+                            </ul>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

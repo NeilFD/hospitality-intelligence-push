@@ -44,7 +44,8 @@ const NotificationsDropdown = () => {
       return data as TeamMessage[];
     },
     enabled: !!user,
-    staleTime: 1000 * 30,
+    staleTime: 5000,
+    refetchInterval: 15000,
   });
   
   const { data: profiles = [] } = useQuery({
@@ -66,6 +67,8 @@ const NotificationsDropdown = () => {
   useEffect(() => {
     if (!user) return;
     
+    console.log('Setting up notification subscription for user:', user.id);
+    
     const channel = supabase
       .channel('public:team_messages:mentions')
       .on(
@@ -77,7 +80,19 @@ const NotificationsDropdown = () => {
           filter: `mentioned_users=cs.{${user.id}}`
         },
         (payload) => {
+          console.log('Received mention notification:', payload);
           if (payload.new && (payload.new as any).author_id !== user.id) {
+            const authorId = (payload.new as any).author_id;
+            const content = (payload.new as any).content;
+            toast.info('You have been mentioned in a message', {
+              duration: 6000,
+              action: {
+                label: 'View',
+                onClick: () => {
+                  navigate(`/team/chat?room=${(payload.new as any).room_id}`);
+                }
+              }
+            });
             refetchMentions();
           }
         }
@@ -90,23 +105,55 @@ const NotificationsDropdown = () => {
           table: 'team_messages',
           filter: `mentioned_users=cs.{${user.id}}`
         },
-        () => {
+        (payload) => {
+          console.log('Mention update detected:', payload);
           refetchMentions();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Mention notification subscription status:', status);
+      });
     
     return () => {
+      console.log('Cleaning up notification subscription');
       supabase.removeChannel(channel);
     };
+  }, [user, refetchMentions, navigate]);
+  
+  useEffect(() => {
+    if (!user) return;
+    
+    const pollInterval = setInterval(() => {
+      console.log('Polling for new notifications');
+      refetchMentions();
+    }, 30000);
+    
+    return () => clearInterval(pollInterval);
   }, [user, refetchMentions]);
   
   useEffect(() => {
     if (mentionedMessages && user) {
+      console.log('Updating notifications state with:', mentionedMessages);
       setNotifications(mentionedMessages);
       setHasUnread(mentionedMessages.length > 0);
+      
+      if (mentionedMessages.length > 0 && !isOpen) {
+        const latestMessage = mentionedMessages[0];
+        const isAlreadyRead = Array.isArray(latestMessage.read_by) && 
+          latestMessage.read_by.includes(user.id);
+          
+        if (!isAlreadyRead) {
+          toast.info('You have new notifications', {
+            duration: 3000,
+            action: {
+              label: 'View',
+              onClick: () => setIsOpen(true)
+            }
+          });
+        }
+      }
     }
-  }, [mentionedMessages, user]);
+  }, [mentionedMessages, user, isOpen]);
   
   const handleNotificationClick = async (message: TeamMessage) => {
     if (!user) return;
@@ -182,7 +229,10 @@ const NotificationsDropdown = () => {
       });
       
       await Promise.all(updatePromises);
-      queryClient.invalidateQueries({ queryKey: ['mentionedMessages', user.id] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['mentionedMessages', user.id],
+        exact: true
+      });
     } catch (error) {
       console.error('Error clearing notifications:', error);
       toast.error('Failed to clear notifications');
@@ -276,7 +326,7 @@ const NotificationsDropdown = () => {
         <Button variant="ghost" size="icon" className="relative p-0 h-auto bg-transparent hover:bg-transparent">
           <Bell className="h-5 w-5 text-tavern-blue" />
           {hasUnread && (
-            <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500" />
+            <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
           )}
         </Button>
       </PopoverTrigger>

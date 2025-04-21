@@ -77,6 +77,8 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
+    console.log('Setting up mention notifications in Chat component for user:', user.id);
+    
     const channel = supabase
       .channel('public:team_messages:mentions')
       .on(
@@ -88,12 +90,15 @@ const Chat: React.FC = () => {
           filter: `mentioned_users=cs.{${user.id}}`
         },
         (payload) => {
+          console.log('Mention notification received in Chat component:', payload);
           if (payload.new) {
             const message = payload.new as any;
             if (message.author_id !== user.id) {
               const readBy = Array.isArray(message.read_by) ? message.read_by : [];
               
+              // Immediately show in-app notification
               toast.info('You have been mentioned in a message', {
+                duration: 6000,
                 action: {
                   label: 'View',
                   onClick: () => {
@@ -109,13 +114,39 @@ const Chat: React.FC = () => {
                   }
                 }
               });
+              
+              // Trigger push notification via edge function
+              try {
+                console.log('Triggering push notification for mention');
+                supabase.functions.invoke('send-push-notification', {
+                  body: {
+                    notification: {
+                      title: 'New mention',
+                      body: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
+                      data: {
+                        url: `/team/chat?room=${message.room_id}`
+                      }
+                    },
+                    userIds: [user.id]
+                  }
+                }).then(response => {
+                  console.log('Push notification response:', response);
+                }).catch(error => {
+                  console.error('Error sending push notification:', error);
+                });
+              } catch (error) {
+                console.error('Error triggering push notification:', error);
+              }
             }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Mention notification channel status in Chat.tsx:', status);
+      });
       
     return () => {
+      console.log('Removing mention notification channel in Chat.tsx');
       supabase.removeChannel(channel);
     };
   }, [user]);
