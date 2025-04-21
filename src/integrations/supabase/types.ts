@@ -1918,6 +1918,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_message_reaction: {
+        Args: { p_message_id: string; p_user_id: string; p_emoji: string }
+        Returns: Json
+      }
       update_permission_matrix: {
         Args: { matrix: Json }
         Returns: undefined

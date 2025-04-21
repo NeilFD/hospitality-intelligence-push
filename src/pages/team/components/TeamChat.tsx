@@ -532,6 +532,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       
       try {
         try {
+          console.log('Attempting direct RPC call for reaction');
           const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
             p_message_id: messageId,
             p_user_id: user.id,
@@ -544,7 +545,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
           }
           
           console.error('RPC failed details:', rpcError);
-          console.log('Falling back to edge function');
         } catch (rpcError) {
           console.error('RPC error caught:', rpcError);
         }
@@ -562,7 +562,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
           throw error;
         }
         
-        console.log('Successfully added reaction, response:', data);
+        console.log('Successfully added reaction via edge function, response:', data);
         return data;
       } catch (error) {
         console.error('Error processing reaction:', error);
@@ -572,7 +572,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     onSuccess: (data) => {
       console.log('Reaction mutation succeeded:', data);
       queryClient.invalidateQueries({
-        queryKey: ['teamMessages', selectedRoomId]
+        queryKey: ['teamMessages', selectedRoomId],
+        exact: true
       });
     },
     onError: (error) => {
