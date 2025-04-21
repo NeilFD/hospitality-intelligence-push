@@ -141,8 +141,12 @@ const Chat: React.FC = () => {
           console.log(`Realtime change detected in Chat.tsx:`, payload);
           
           if (payload.new && payload.old) {
-            const oldReactions = payload.old.reactions;
-            const newReactions = payload.new.reactions;
+            // Type assertion to ensure TypeScript knows these properties exist
+            const oldPayload = payload.old as { reactions?: any };
+            const newPayload = payload.new as { reactions?: any };
+            
+            const oldReactions = oldPayload.reactions;
+            const newReactions = newPayload.reactions;
             
             // Stringify to compare the actual data structures
             if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
