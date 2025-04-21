@@ -6,6 +6,13 @@ import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip, CartesianGrid, ReferenceL
 import { Info, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 
+const SERIES_COLORS: Record<string, string> = {
+  revenue: '#7E69AB',
+  cosCosts: '#A5C0E2',
+  adminCosts: '#FF9F76',
+  ebitda: '#6C7787',
+};
+
 interface ChartDataItem {
   name: string;
   revenue: number;
@@ -26,6 +33,7 @@ interface CustomTooltipProps {
   payload?: Array<{
     value: number;
     name: string;
+    dataKey: string;
   }>;
   label?: string;
 }
@@ -39,17 +47,31 @@ interface VisibleSeries {
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (active && payload && payload.length) {
-    return <div className="bg-white border rounded-md p-2 shadow-lg">
-      <p className="font-bold">{label}</p>
-      {payload.map((entry, index) => (
-        <p key={index}>
-          {entry.name}: £{entry.value.toLocaleString('en-GB', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-          })}
-        </p>
-      ))}
-    </div>;
+    return (
+      <div className="bg-white border rounded-md p-2 shadow-lg">
+        <p className="font-bold mb-2">{label}</p>
+        <div className="flex flex-col gap-1">
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <span
+                className="inline-block w-3 h-3 rounded-sm border"
+                style={{
+                  backgroundColor: SERIES_COLORS[entry.dataKey] || '#e5e5e5',
+                  borderColor: SERIES_COLORS[entry.dataKey] || '#e5e5e5'
+                }}
+              />
+              <span>
+                {entry.name}: £
+                {entry.value.toLocaleString('en-GB', {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0
+                })}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
   return null;
 }
@@ -72,12 +94,10 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     
     const toggleItem = (dataKey: keyof VisibleSeries) => {
       const visibleCount = Object.values(visibleSeries).filter(Boolean).length;
-      
       if (visibleSeries[dataKey] && visibleCount <= 1) {
         toast.info("At least one series must remain visible");
         return;
       }
-      
       setVisibleSeries(prev => ({
         ...prev,
         [dataKey]: !prev[dataKey]
