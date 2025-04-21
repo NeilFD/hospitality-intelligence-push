@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -34,7 +33,7 @@ import { getChatRooms } from '@/services/team-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { WelcomeMessage } from '@/components/team/WelcomeMessage';
-import { getRevenueForecastForDate } from '@/services/forecast-service';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const HomeDashboard: React.FC = () => {
   const [yesterdayData, setYesterdayData] = useState<any>(null);
@@ -45,15 +44,16 @@ const HomeDashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(subDays(new Date(), 1));
   const [forecasts, setForecasts] = useState<any>({});
   const { profile } = useAuthStore();
-  
+  const isMobile = useIsMobile();
+
   const yesterdayFormatted = format(selectedDate, 'yyyy-MM-dd');
-  
+
   const { data: chatRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ['chatRooms'],
     queryFn: getChatRooms,
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
-  
+
   useEffect(() => {
     const fetchSelectedDateData = async () => {
       try {
@@ -68,7 +68,7 @@ const HomeDashboard: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchSelectedDateData();
   }, [selectedDate]);
 
@@ -89,14 +89,14 @@ const HomeDashboard: React.FC = () => {
         console.error('Error fetching forecast data:', err);
       }
     };
-    
+
     fetchForecastData();
   }, [yesterdayFormatted]);
-  
+
   useEffect(() => {
     const checkModuleAccess = async () => {
       if (!profile) return;
-      
+
       const moduleTypes: ModuleType[] = ['food', 'beverage', 'pl', 'wages', 'performance', 'team', 'master'];
       const moduleNames = {
         food: 'Food Hub',
@@ -107,9 +107,9 @@ const HomeDashboard: React.FC = () => {
         team: 'Team',
         master: 'Master Records'
       };
-      
+
       const accessible = [];
-      
+
       for (const type of moduleTypes) {
         const hasAccess = await getHasAccessToModule(profile.role || 'Team Member', type);
         if (hasAccess) {
@@ -119,10 +119,10 @@ const HomeDashboard: React.FC = () => {
           });
         }
       }
-      
+
       setAvailableModules(accessible);
     };
-    
+
     checkModuleAccess();
   }, [profile]);
 
@@ -190,11 +190,10 @@ const HomeDashboard: React.FC = () => {
           <TeamNoticeboardCompact pinnedOnly={true} compact={true} />
         </div>
       </div>
-      
+
       <Card className="shadow-md rounded-lg overflow-hidden bg-white border border-gray-100 mb-6">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-3">
-          {/* Adjust flex layout for mobile to prevent overlap and overflow */}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0">
             <div>
               <CardTitle className="flex items-center text-xl font-bold text-gray-800">
                 <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
@@ -206,7 +205,7 @@ const HomeDashboard: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-3 md:mt-0 overflow-visible">
+            <div className="flex flex-wrap items-center gap-2 justify-between md:justify-end">
               <Button
                 variant="outline"
                 size="icon"
@@ -215,7 +214,7 @@ const HomeDashboard: React.FC = () => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              
+
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="min-w-[140px] max-w-[140px] truncate shrink-0">
@@ -233,7 +232,7 @@ const HomeDashboard: React.FC = () => {
                   />
                 </PopoverContent>
               </Popover>
-              
+
               <Button
                 variant="outline"
                 size="icon"
@@ -412,7 +411,7 @@ const HomeDashboard: React.FC = () => {
           )}
         </CardContent>
       </Card>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="shadow-md rounded-lg overflow-hidden border border-gray-100">
@@ -429,8 +428,7 @@ const HomeDashboard: React.FC = () => {
                 </div>
               ) : generalRoomId ? (
                 <div className="h-full w-full">
-                  {/* Pass compact and initialSidebarOpen false to minimize sidebar on mobile */}
-                  <TeamChat key={`dashboard-chat-${generalRoomId}`} initialRoomId={generalRoomId} compact initialSidebarOpen={false} />
+                  <TeamChat key={`dashboard-chat-${generalRoomId}`} initialRoomId={generalRoomId} compact={isMobile} />
                 </div>
               ) : (
                 <div className="flex justify-center items-center h-full text-gray-500">
@@ -440,7 +438,7 @@ const HomeDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="lg:col-span-1">
           <Card className="shadow-md rounded-lg overflow-hidden h-full border border-gray-100">
             <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 pb-3">
@@ -450,82 +448,80 @@ const HomeDashboard: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="grid grid-cols-2 gap-3">
-                {availableModules.map((module) => {
-                  let bgGradient, iconBg, hoverBg, borderColor, shadowColor;
-                  
-                  switch(module.type) {
-                    case 'food':
-                      bgGradient = "from-emerald-50 to-green-50";
-                      iconBg = "bg-emerald-100";
-                      hoverBg = "group-hover:bg-emerald-200";
-                      borderColor = "border-emerald-200";
-                      shadowColor = "shadow-emerald-200/40";
-                      break;
-                    case 'beverage':
-                      bgGradient = "from-purple-50 to-indigo-50";
-                      iconBg = "bg-purple-100";
-                      hoverBg = "group-hover:bg-purple-200";
-                      borderColor = "border-purple-200";
-                      shadowColor = "shadow-purple-200/40";
-                      break;
-                    case 'pl':
-                      bgGradient = "from-amber-50 to-yellow-50";
-                      iconBg = "bg-amber-100";
-                      hoverBg = "group-hover:bg-amber-200";
-                      borderColor = "border-amber-200";
-                      shadowColor = "shadow-amber-200/40";
-                      break;
-                    case 'wages':
-                      bgGradient = "from-blue-50 to-sky-50";
-                      iconBg = "bg-blue-100";
-                      hoverBg = "group-hover:bg-blue-200";
-                      borderColor = "border-blue-200";
-                      shadowColor = "shadow-blue-200/40";
-                      break;
-                    case 'performance':
-                      bgGradient = "from-rose-50 to-red-50";
-                      iconBg = "bg-rose-100";
-                      hoverBg = "group-hover:bg-rose-200";
-                      borderColor = "border-rose-200";
-                      shadowColor = "shadow-rose-200/40";
-                      break;
-                    case 'team':
-                      bgGradient = "from-teal-50 to-cyan-50";
-                      iconBg = "bg-teal-100";
-                      hoverBg = "group-hover:bg-teal-200";
-                      borderColor = "border-teal-200";
-                      shadowColor = "shadow-teal-200/40";
-                      break;
-                    default:
-                      bgGradient = "from-gray-50 to-slate-50";
-                      iconBg = "bg-gray-100";
-                      hoverBg = "group-hover:bg-gray-200";
-                      borderColor = "border-gray-200";
-                      shadowColor = "shadow-gray-200/40";
-                  }
-                  
-                  return (
-                    <Link
-                      key={module.type}
-                      to={`/${module.type}/dashboard`}
-                      className={`bg-gradient-to-br ${bgGradient} rounded-xl border ${borderColor} p-3 flex flex-col items-center justify-center h-28 shadow-sm ${shadowColor} transition-all duration-300 hover:shadow-md hover:-translate-y-1 group overflow-hidden relative`}
-                    >
-                      <div className="absolute -right-8 -top-8 w-16 h-16 rounded-full bg-white/30 opacity-0 group-hover:opacity-30 transition-opacity duration-700"></div>
-                      
-                      <div className={`${iconBg} ${hoverBg} rounded-full p-3 mb-2 transition-colors duration-300 relative z-10`}>
-                        <ModuleIcon type={module.type} className="h-5 w-5 text-gray-700" />
-                      </div>
-                      
-                      <span className="font-medium text-gray-800 relative z-10 text-center leading-tight">
-                        {module.name}
-                      </span>
-                      
-                      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out"></div>
-                    </Link>
-                  );
-                })}
-              </div>
+              {availableModules.map((module) => {
+                let bgGradient, iconBg, hoverBg, borderColor, shadowColor;
+                
+                switch(module.type) {
+                  case 'food':
+                    bgGradient = "from-emerald-50 to-green-50";
+                    iconBg = "bg-emerald-100";
+                    hoverBg = "group-hover:bg-emerald-200";
+                    borderColor = "border-emerald-200";
+                    shadowColor = "shadow-emerald-200/40";
+                    break;
+                  case 'beverage':
+                    bgGradient = "from-purple-50 to-indigo-50";
+                    iconBg = "bg-purple-100";
+                    hoverBg = "group-hover:bg-purple-200";
+                    borderColor = "border-purple-200";
+                    shadowColor = "shadow-purple-200/40";
+                    break;
+                  case 'pl':
+                    bgGradient = "from-amber-50 to-yellow-50";
+                    iconBg = "bg-amber-100";
+                    hoverBg = "group-hover:bg-amber-200";
+                    borderColor = "border-amber-200";
+                    shadowColor = "shadow-amber-200/40";
+                    break;
+                  case 'wages':
+                    bgGradient = "from-blue-50 to-sky-50";
+                    iconBg = "bg-blue-100";
+                    hoverBg = "group-hover:bg-blue-200";
+                    borderColor = "border-blue-200";
+                    shadowColor = "shadow-blue-200/40";
+                    break;
+                  case 'performance':
+                    bgGradient = "from-rose-50 to-red-50";
+                    iconBg = "bg-rose-100";
+                    hoverBg = "group-hover:bg-rose-200";
+                    borderColor = "border-rose-200";
+                    shadowColor = "shadow-rose-200/40";
+                    break;
+                  case 'team':
+                    bgGradient = "from-teal-50 to-cyan-50";
+                    iconBg = "bg-teal-100";
+                    hoverBg = "group-hover:bg-teal-200";
+                    borderColor = "border-teal-200";
+                    shadowColor = "shadow-teal-200/40";
+                    break;
+                  default:
+                    bgGradient = "from-gray-50 to-slate-50";
+                    iconBg = "bg-gray-100";
+                    hoverBg = "group-hover:bg-gray-200";
+                    borderColor = "border-gray-200";
+                    shadowColor = "shadow-gray-200/40";
+                }
+                
+                return (
+                  <Link
+                    key={module.type}
+                    to={`/${module.type}/dashboard`}
+                    className={`bg-gradient-to-br ${bgGradient} rounded-xl border ${borderColor} p-3 flex flex-col items-center justify-center h-28 shadow-sm ${shadowColor} transition-all duration-300 hover:shadow-md hover:-translate-y-1 group overflow-hidden relative`}
+                  >
+                    <div className="absolute -right-8 -top-8 w-16 h-16 rounded-full bg-white/30 opacity-0 group-hover:opacity-30 transition-opacity duration-700"></div>
+                    
+                    <div className={`${iconBg} ${hoverBg} rounded-full p-3 mb-2 transition-colors duration-300 relative z-10`}>
+                      <ModuleIcon type={module.type} className="h-5 w-5 text-gray-700" />
+                    </div>
+                    
+                    <span className="font-medium text-gray-800 relative z-10 text-center leading-tight">
+                      {module.name}
+                    </span>
+                    
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out"></div>
+                  </Link>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
