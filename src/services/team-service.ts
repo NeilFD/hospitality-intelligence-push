@@ -213,38 +213,16 @@ export const markMessageAsRead = async (messageId: string, userId: string): Prom
 
 export const uploadTeamFile = async (file: File, type: string): Promise<string> => {
   try {
-    // First check if the bucket exists by listing buckets
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    console.log(`Starting upload for file ${file.name} (${file.size} bytes) to team_files/${type}`);
     
-    if (bucketsError) {
-      console.error('Error checking buckets:', bucketsError);
-      throw bucketsError;
-    }
-    
-    // Check if team_files bucket exists
-    const bucketExists = buckets?.some(bucket => bucket.name === 'team_files');
-    
-    // If bucket doesn't exist, create it with public access
-    if (!bucketExists) {
-      console.log('Team files bucket does not exist, creating it...');
-      // Create bucket with public access
-      try {
-        const { data, error } = await supabase.storage.createBucket('team_files', {
-          public: true,
-          fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
-        });
-        
-        if (error) throw error;
-        console.log('Successfully created team_files bucket:', data);
-      } catch (bucketError) {
-        console.error('Error creating bucket:', bucketError);
-        throw new Error('Failed to create storage bucket. Please check your permissions.');
-      }
+    // Check if file is valid
+    if (!file || file.size === 0) {
+      throw new Error('Invalid or empty file');
     }
     
     // Prepare file path
-    const fileName = `${type}/${Date.now()}-${file.name}`;
-    console.log(`Uploading file ${fileName} to team_files bucket...`);
+    const fileName = `${type}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    console.log(`Uploading file to team_files/${fileName}`);
     
     // Upload file to bucket
     const { error: uploadError, data } = await supabase.storage

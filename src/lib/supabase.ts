@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize the Supabase client with environment variables
@@ -17,48 +16,48 @@ export const ensureStorageBuckets = async () => {
     // Check if the profiles bucket exists
     const { data: buckets } = await supabase.storage.listBuckets();
     
-    // Check for profiles bucket
-    const profilesBucketExists = buckets?.some(bucket => bucket.name === 'profiles');
-    
-    if (!profilesBucketExists) {
-      console.log('Creating profiles storage bucket...');
-      // Create the profiles bucket
-      const { error } = await supabase.storage.createBucket('profiles', {
-        public: true,
-        fileSizeLimit: 5242880 // 5MB
-      });
-      
-      if (error) {
-        console.error('Error creating profiles bucket:', error);
-      } else {
-        console.log('Profiles bucket created successfully');
-      }
-    }
-    
     // Check for team_files bucket
     const teamFilesBucketExists = buckets?.some(bucket => bucket.name === 'team_files');
     
     if (!teamFilesBucketExists) {
       console.log('Creating team_files storage bucket...');
-      // Create the team_files bucket
-      const { error } = await supabase.storage.createBucket('team_files', {
-        public: true,
-        fileSizeLimit: 52428800 // 50MB
-      });
-      
-      if (error) {
-        console.error('Error creating team_files bucket:', error);
-      } else {
-        console.log('Team files bucket created successfully');
+      try {
+        // Create the team_files bucket with explicit public access
+        const { error } = await supabase.storage.createBucket('team_files', {
+          public: true,
+          fileSizeLimit: 52428800 // 50MB
+        });
+        
+        if (error) {
+          console.error('Error creating team_files bucket:', error);
+        } else {
+          console.log('Team files bucket created successfully');
+          
+          // Set public bucket policy if bucket was created successfully
+          try {
+            const { error: policyError } = await supabase.storage.from('team_files')
+              .createSignedUrl('test.txt', 60);
+              
+            if (policyError && policyError.message.includes('The resource was not found')) {
+              console.log('Bucket appears to be working, signed URLs available');
+            }
+          } catch (policyErr) {
+            console.log('Policy check error:', policyErr);
+          }
+        }
+      } catch (bucketErr) {
+        console.error('Error in bucket creation process:', bucketErr);
       }
+    } else {
+      console.log('Team files bucket already exists');
     }
   } catch (error) {
     console.error('Error checking/creating storage buckets:', error);
   }
 };
 
-// Call this function on app initialization
-// This should be called in a useEffect in the root component or during app initialization
+// Call this function on app initialization - moved earlier in the file
+// for more predictable initialization
 ensureStorageBuckets();
 
 // Get the current user

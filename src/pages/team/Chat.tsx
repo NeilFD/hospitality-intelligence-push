@@ -174,7 +174,7 @@ const Chat: React.FC = () => {
   useEffect(() => {
     const ensureStorage = async () => {
       try {
-        console.log('Ensuring storage buckets exist...');
+        console.log('Ensuring storage buckets exist from Chat component...');
         
         // Check if the team_files bucket exists
         const { data: buckets, error } = await supabase.storage.listBuckets();
@@ -185,7 +185,9 @@ const Chat: React.FC = () => {
         }
         
         if (!buckets.some(bucket => bucket.name === 'team_files')) {
-          console.log('Creating team_files bucket...');
+          console.log('Creating team_files bucket from Chat component...');
+          
+          // Try creating the bucket with explicit public access
           const { error: createError } = await supabase.storage.createBucket('team_files', {
             public: true,
             fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
@@ -193,15 +195,27 @@ const Chat: React.FC = () => {
           
           if (createError) {
             console.error('Error creating team_files bucket:', createError);
-            return;
+            
+            // If we get a permissions error, we'll try to create a unique file to test access
+            if (createError.message.includes('permission')) {
+              console.log('Testing bucket access differently due to permission error...');
+              try {
+                // Try to upload a test file to see if bucket exists but we just can't create it
+                const testFile = new Blob(['test'], { type: 'text/plain' });
+                await supabase.storage.from('team_files').upload(`test-${Date.now()}.txt`, testFile);
+                console.log('Successfully uploaded test file, bucket exists and is accessible');
+              } catch (testError) {
+                console.error('Error testing bucket access:', testError);
+              }
+            }
+          } else {
+            console.log('team_files bucket created successfully from Chat component');
           }
-          
-          console.log('team_files bucket created successfully');
         } else {
-          console.log('team_files bucket already exists');
+          console.log('team_files bucket already exists (confirmed from Chat component)');
         }
       } catch (error) {
-        console.error('Error in ensureStorage:', error);
+        console.error('Error in ensureStorage from Chat component:', error);
       }
     };
     

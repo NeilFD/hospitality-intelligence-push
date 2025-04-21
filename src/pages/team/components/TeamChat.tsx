@@ -48,7 +48,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "���", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "��", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "���", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -850,7 +850,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
 
       recorder.ondataavailable = e => {
         if (e.data && e.data.size > 0) {
-          console.log('Voice data chunk received');
+          console.log('Voice data chunk received, size:', e.data.size);
           localChunks.push(e.data);
         }
       };
@@ -859,9 +859,21 @@ const TeamChat: React.FC<TeamChatProps> = ({
         console.log('Voice recording stopped, preparing file');
         setIsRecording(false);
 
+        if (localChunks.length === 0) {
+          console.error('No audio chunks captured during recording');
+          return;
+        }
+
         const audioBlob = new Blob(localChunks, { type: recorder.mimeType });
+        console.log('Created audio blob, size:', audioBlob.size);
+        
         localChunks = [];
         setAudioChunks([]);
+
+        if (audioBlob.size === 0) {
+          console.error('Created audio blob is empty');
+          return;
+        }
 
         const fileExtension = recorder.mimeType.includes('webm') ? 'webm' : 
                              recorder.mimeType.includes('mp4') ? 'mp4' : 'bin';
@@ -872,10 +884,30 @@ const TeamChat: React.FC<TeamChatProps> = ({
           { type: recorder.mimeType }
         );
 
+        console.log('Created audio file:', audioFile.name, 'size:', audioFile.size);
+
         if (user && selectedRoomId) {
           try {
             setIsSubmitting(true);
-            console.log('Uploading voice file:', audioFile);
+            
+            // Ensure team_files bucket exists first
+            try {
+              const { data: buckets } = await supabase.storage.listBuckets();
+              const bucketExists = buckets?.some(bucket => bucket.name === 'team_files');
+              
+              if (!bucketExists) {
+                console.log('Creating team_files storage bucket...');
+                await supabase.storage.createBucket('team_files', {
+                  public: true,
+                  fileSizeLimit: 52428800 // 50MB
+                });
+                console.log('team_files bucket created successfully');
+              }
+            } catch (bucketError) {
+              console.log('Bucket check/creation may have failed but continuing anyway:', bucketError);
+            }
+            
+            console.log('Uploading voice file:', audioFile.name);
             const attachmentUrl = await uploadTeamFile(audioFile, 'messages');
             console.log('Voice file uploaded, URL:', attachmentUrl);
 
@@ -889,8 +921,11 @@ const TeamChat: React.FC<TeamChatProps> = ({
               mentioned_users: []
             });
 
+            console.log('Voice message created successfully');
             setMessageText('');
-            setTimeout(() => scrollToBottom(), 70);
+            
+            // Ensure we scroll to bottom after sending the message
+            setTimeout(() => scrollToBottom(), 100);
           } catch (error) {
             console.error('Error uploading voice message:', error);
           } finally {
@@ -898,12 +933,18 @@ const TeamChat: React.FC<TeamChatProps> = ({
           }
         }
 
-        stream.getTracks().forEach(track => track.stop());
+        // Always clean up by stopping all tracks
+        stream.getTracks().forEach(track => {
+          console.log('Stopping track:', track.kind);
+          track.stop();
+        });
       };
 
+      recorder.start(1000);
       voiceRecorderRef.current = recorder;
-      recorder.start();
       setIsRecording(true);
+      
+      console.log('Voice recording started successfully');
     } catch (error) {
       console.error('Error accessing microphone:', error);
       setIsRecording(false);
