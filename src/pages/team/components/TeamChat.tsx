@@ -831,8 +831,20 @@ const TeamChat: React.FC<TeamChatProps> = ({
     try {
       console.log('Starting voice recording');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      
+      let recorder;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      } catch (e) {
+        try {
+          recorder = new MediaRecorder(stream, { mimeType: 'audio/mp4' });
+        } catch (e2) {
+          recorder = new MediaRecorder(stream);
+        }
+      }
 
+      console.log(`Recording with MIME type: ${recorder.mimeType}`);
+      
       let localChunks: Blob[] = [];
       setAudioChunks([]);
 
@@ -847,11 +859,18 @@ const TeamChat: React.FC<TeamChatProps> = ({
         console.log('Voice recording stopped, preparing file');
         setIsRecording(false);
 
-        const audioBlob = new Blob(localChunks, { type: 'audio/webm' });
+        const audioBlob = new Blob(localChunks, { type: recorder.mimeType });
         localChunks = [];
         setAudioChunks([]);
 
-        const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
+        const fileExtension = recorder.mimeType.includes('webm') ? 'webm' : 
+                             recorder.mimeType.includes('mp4') ? 'mp4' : 'bin';
+                             
+        const audioFile = new File(
+          [audioBlob], 
+          `voice-message-${Date.now()}.${fileExtension}`, 
+          { type: recorder.mimeType }
+        );
 
         if (user && selectedRoomId) {
           try {
@@ -1178,7 +1197,13 @@ const TeamChat: React.FC<TeamChatProps> = ({
                   <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
                     <Image className="h-5 w-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className={`flex-1 text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`flex-1 ${isRecording ? 'bg-red-100 text-red-500 animate-pulse' : 'text-gray-500 hover:text-gray-700'}`} 
+                    title={isRecording ? "Stop recording" : "Record voice"} 
+                    onClick={handleVoiceRecording}
+                  >
                     <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
                   </Button>
                   <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
