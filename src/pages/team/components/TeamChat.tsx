@@ -682,10 +682,11 @@ export default function TeamChat({
     );
     
     teamMembers.forEach(member => {
-      const mentionRegex = new RegExp(`@${member.name}`, 'g');
+      const fullName = `${member.first_name || ''} ${member.last_name || ''}`.trim();
+      const mentionRegex = new RegExp(`@${fullName}`, 'g');
       formattedContent = formattedContent.replace(
         mentionRegex,
-        `<span class="bg-blue-100 text-blue-800 px-1 rounded">@${member.name}</span>`
+        `<span class="bg-blue-100 text-blue-800 px-1 rounded">@${fullName}</span>`
       );
     });
     
@@ -696,9 +697,13 @@ export default function TeamChat({
     return messages.map(message => {
       const author = teamMembers.find(member => member.id === message.author_id);
       
+      const authorName = author 
+        ? `${author.first_name || ''} ${author.last_name || ''}`.trim() 
+        : 'Unknown User';
+      
       return {
         ...message,
-        author_name: author ? `${author.first_name || ''} ${author.last_name || ''}`.trim() : 'Unknown User',
+        author_name: authorName,
         author_avatar: author?.avatar_url,
         reactions: message.reactions?.map(reaction => ({
           emoji: reaction.emoji,

@@ -311,7 +311,7 @@ export const getTeamMembers = async () => {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, avatar_url, email, role')
+      .select('id, first_name, last_name, avatar_url, email, role, created_at, updated_at, job_title')
       .order('first_name', { ascending: true });
       
     if (error) throw error;
