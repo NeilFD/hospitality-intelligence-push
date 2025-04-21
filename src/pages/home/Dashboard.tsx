@@ -34,6 +34,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { WelcomeMessage } from '@/components/team/WelcomeMessage';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getRevenueForecastForDate } from '@/services/forecast-service';
 
 const HomeDashboard: React.FC = () => {
   const [yesterdayData, setYesterdayData] = useState<any>(null);
