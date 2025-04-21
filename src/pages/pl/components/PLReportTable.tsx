@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -28,9 +27,6 @@ export function PLReportTable({
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     return months.indexOf(monthName) + 1;
   };
-
-  // Use the currentMonth prop instead of calculating it again
-  // This fixes the duplicate variable issue
 
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
@@ -438,6 +434,18 @@ export function PLReportTable({
     const adminForecastPercentage = adminTotalForecast / safeTurnoverForecast * 100;
     const operatingProfitActualPercentage = totalTurnoverActual && totalTurnoverActual !== 0 ? operatingProfitActual / totalTurnoverActual * 100 : 0;
     const operatingProfitForecastPercentage = operatingProfitForecast / safeTurnoverForecast * 100;
+
+    useEffect(() => {
+      if (adminTotalForecast > 0 || operatingProfitForecast !== 0) {
+        const event = new CustomEvent('pl-forecasts-updated', {
+          detail: {
+            adminExpensesForecast: adminTotalForecast,
+            operatingProfitForecast: operatingProfitForecast
+          }
+        });
+        window.dispatchEvent(event);
+      }
+    }, [adminTotalForecast, operatingProfitForecast]);
 
     return (
       <>

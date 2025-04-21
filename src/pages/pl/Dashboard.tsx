@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -19,6 +20,10 @@ export default function PLDashboard() {
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
   
+  // State to store the forecast values from PLReportTable
+  const [adminExpensesForecast, setAdminExpensesForecast] = useState<number>(0);
+  const [operatingProfitForecast, setOperatingProfitForecast] = useState<number>(0);
+  
   const handleMonthChange = (value: string) => {
     const month = parseInt(value);
     setCurrentMonth(month);
@@ -30,6 +35,27 @@ export default function PLDashboard() {
   const handleYearChange = (value: string) => {
     setCurrentYear(parseInt(value));
   };
+  
+  // Event handler for forecast updates
+  const handleForecastsUpdated = (event: CustomEvent) => {
+    if (event.detail) {
+      if (event.detail.adminExpensesForecast !== undefined) {
+        setAdminExpensesForecast(event.detail.adminExpensesForecast);
+      }
+      if (event.detail.operatingProfitForecast !== undefined) {
+        setOperatingProfitForecast(event.detail.operatingProfitForecast);
+      }
+    }
+  };
+  
+  useEffect(() => {
+    // Add event listener for forecast updates from PLReportTable
+    window.addEventListener('pl-forecasts-updated', handleForecastsUpdated as EventListener);
+    
+    return () => {
+      window.removeEventListener('pl-forecasts-updated', handleForecastsUpdated as EventListener);
+    };
+  }, []);
   
   const { data: masterRevenueData, isLoading: isMasterDataLoading } = useQuery({
     queryKey: ['master-revenue-data', currentYear, currentMonth],
@@ -253,15 +279,17 @@ export default function PLDashboard() {
     id: costOfSalesItem?.id || generateTempId('cost-of-sales')
   }, currentYear, currentMonth) : 0;
   
-  const adminExpensesForecast = adminExpensesItem ? getForecastAmount({
+  // Use the state values if available, otherwise fall back to the previous calculation
+  const effectiveAdminExpensesForecast = adminExpensesForecast || (adminExpensesItem ? getForecastAmount({
     ...(adminExpensesItem || {}),
     id: adminExpensesItem?.id || generateTempId('admin-expenses')
-  }, currentYear, currentMonth) : 0;
+  }, currentYear, currentMonth) : 0);
                             
-  const operatingProfitForecast = operatingProfitItem ? getForecastAmount({
+  // Use the state values if available, otherwise fall back to the previous calculation
+  const effectiveOperatingProfitForecast = operatingProfitForecast || (operatingProfitItem ? getForecastAmount({
     ...(operatingProfitItem || {}), 
     id: operatingProfitItem?.id || generateTempId('operating-profit')
-  }, currentYear, currentMonth) : 0;
+  }, currentYear, currentMonth) : 0);
 
   const turnoverActual = turnoverItem ? getActualAmount({
     ...turnoverItem, 
@@ -299,8 +327,8 @@ export default function PLDashboard() {
     name: 'Forecast',
     revenue: turnoverForecast,
     cosCosts: costOfSalesForecast,
-    adminCosts: adminExpensesForecast,
-    ebitda: operatingProfitForecast
+    adminCosts: effectiveAdminExpensesForecast,
+    ebitda: effectiveOperatingProfitForecast
   }];
   
   console.log("Chart data:", chartData);
