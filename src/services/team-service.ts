@@ -156,14 +156,22 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
 
 export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
   try {
-    const { data, error } = await supabase
+    console.log(`Fetching messages for room: ${roomId}`);
+    
+    // First get the messages
+    const { data: messages, error } = await supabase
       .from('team_messages')
       .select('*')
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
       
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error('Error fetching messages:', error);
+      throw error;
+    }
+    
+    console.log(`Retrieved ${messages?.length || 0} messages`);
+    return messages || [];
   } catch (error) {
     console.error('Error fetching messages:', error);
     throw error;
@@ -303,7 +311,7 @@ export const getTeamMembers = async () => {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, first_name, last_name, avatar_url, email, role')
       .order('first_name', { ascending: true });
       
     if (error) throw error;

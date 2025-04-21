@@ -676,13 +676,11 @@ export default function TeamChat({
   };
   
   const renderMessageContent = (content: string) => {
-    // Replace URLs with clickable links
     let formattedContent = content.replace(
       /(https?:\/\/[^\s]+)/g, 
       '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">$1</a>'
     );
     
-    // Replace @mentions with styled spans
     teamMembers.forEach(member => {
       const mentionRegex = new RegExp(`@${member.name}`, 'g');
       formattedContent = formattedContent.replace(
@@ -693,6 +691,22 @@ export default function TeamChat({
     
     return { __html: formattedContent };
   };
+  
+  const processedMessages = React.useMemo(() => {
+    return messages.map(message => {
+      const author = teamMembers.find(member => member.id === message.author_id);
+      
+      return {
+        ...message,
+        author_name: author ? `${author.first_name || ''} ${author.last_name || ''}`.trim() : 'Unknown User',
+        author_avatar: author?.avatar_url,
+        reactions: message.reactions?.map(reaction => ({
+          emoji: reaction.emoji,
+          users: reaction.user_ids || []
+        })) || []
+      };
+    });
+  }, [messages, teamMembers]);
   
   return (
     <>
@@ -766,7 +780,7 @@ export default function TeamChat({
             <div className="flex justify-center items-center h-full text-red-500">
               Error loading messages
             </div>
-          ) : messages.length === 0 ? (
+          ) : processedMessages.length === 0 ? (
             <div className="flex flex-col justify-center items-center h-full text-gray-500">
               <MessageSquare className="h-12 w-12 mb-2 text-gray-300" />
               <p>No messages yet</p>
@@ -780,15 +794,15 @@ export default function TeamChat({
                 </div>
               )}
               
-              {!hasMoreMessages && messages.length > 10 && (
+              {!hasMoreMessages && processedMessages.length > 10 && (
                 <div className="text-center text-xs text-gray-500 py-2">
                   You've reached the beginning of this conversation
                 </div>
               )}
               
-              {messages.map((message, index) => {
-                const isLastMessage = index === messages.length - 1;
-                const showDate = index === 0 || new Date(messages[index - 1].created_at).toDateString() !== new Date(message.created_at).toDateString();
+              {processedMessages.map((message, index) => {
+                const isLastMessage = index === processedMessages.length - 1;
+                const showDate = index === 0 || new Date(processedMessages[index - 1].created_at).toDateString() !== new Date(message.created_at).toDateString();
                 
                 return (
                   <React.Fragment key={message.id}>
@@ -809,14 +823,14 @@ export default function TeamChat({
                           <AvatarImage src={message.author_avatar} alt={message.author_name} />
                         ) : (
                           <AvatarFallback className="bg-gray-200 text-gray-700">
-                            {message.author_name.charAt(0).toUpperCase()}
+                            {message.author_name && message.author_name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         )}
                       </Avatar>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900">{message.author_name}</span>
+                          <span className="font-medium text-gray-900">{message.author_name || 'Unknown User'}</span>
                           <span className="text-xs text-gray-500">{formatMessageDate(message.created_at)}</span>
                           
                           {message.is_pinned && (
