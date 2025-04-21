@@ -52,6 +52,28 @@ const formatDistance = (date: Date, baseDate: Date, options: { addSuffix: boolea
   return format(date, 'HH:mm') + (options.addSuffix ? ' ago' : '');
 };
 
+// Create an interface that extends the type from team-service
+interface ExtendedTeamMessage {
+  id: string;
+  content: string;
+  author_id: string;
+  room_id: string;
+  created_at: string;
+  type: string;
+  attachment_url?: string;
+  read_by: string[];
+  mentioned_users?: string[];
+  reactions?: any[];
+  poll_id?: string;
+  poll?: any;
+  author?: {
+    id?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+  };
+}
+
 const TeamChat: React.FC<TeamChatProps> = ({ 
   initialRoomId, 
   compact = false, 
@@ -91,7 +113,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
     retry: false,
   });
 
-  const { mutate: sendMessage } = useMutation({
+  const { mutate: sendMessage, isPending: isSendingMessage } = useMutation({
     mutationFn: (data: { roomId: string; text: string; mentionedUsers: string[] }) => {
       return createMessage({
         content: data.text,
@@ -114,7 +136,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
     }
   });
 
-  const { mutate: uploadAttachment } = useMutation({
+  const { mutate: uploadAttachment, isPending: isUploadingAttachment } = useMutation({
     mutationFn: async (formData: FormData) => {
       const file = formData.get('file') as File;
       const roomId = formData.get('roomId') as string;
@@ -141,7 +163,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
     }
   });
 
-  const { mutate: createChatPoll } = useMutation({
+  const { mutate: createChatPoll, isPending: isCreatingPoll } = useMutation({
     mutationFn: async (data: { roomId: string; question: string; options: string[] }) => {
       // First create a poll
       const poll = await createPoll(
@@ -164,10 +186,10 @@ const TeamChat: React.FC<TeamChatProps> = ({
         author_id: user?.id || '',
         room_id: data.roomId,
         type: 'poll',
-        poll_id: poll.id,
+        poll_id: poll.id,  // Custom field that will be added at the database level
         read_by: [user?.id || ''],
         mentioned_users: [],
-      });
+      } as any); // Using type assertion here to bypass the TS error
     },
     onSuccess: () => {
       setPollQuestion('');
@@ -321,7 +343,6 @@ const TeamChat: React.FC<TeamChatProps> = ({
               : "w-64"
         )}
       >
-        {/* Use props that exist in ChatRoomSidebar */}
         <ChatRoomSidebar
           chatRooms={rooms}
           selectedRoomId={selectedRoomId}
@@ -355,7 +376,8 @@ const TeamChat: React.FC<TeamChatProps> = ({
                 ) : messagesError ? (
                   <div className="text-center text-red-500">Error loading messages</div>
                 ) : (
-                  messages.map((message, index) => (
+                  // Cast messages to ExtendedTeamMessage[] to access the author property
+                  (messages as ExtendedTeamMessage[]).map((message, index) => (
                     <div key={message.id} className="flex items-start gap-2">
                       <Avatar className="h-8 w-8">
                         {message.author?.avatar_url ? (
@@ -376,6 +398,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
                         ) : (
                           <p className="break-words">{message.content}</p>
                         )}
+                        {/* Access poll safely */}
                         {message.poll && (
                           <TeamPoll 
                             poll={message.poll} 
@@ -489,7 +512,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
                   onClick={handleSendMessage}
                   disabled={!messageText.trim() && !attachment}
                 >
-                  {false ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-5 w-5" />}
+                  {isSendingMessage || isUploadingAttachment ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-5 w-5" />}
                 </Button>
               </div>
             </div>
@@ -594,8 +617,15 @@ const TeamChat: React.FC<TeamChatProps> = ({
               </Button>
             </div>
             
-            <Button onClick={handleCreatePoll} disabled={!pollQuestion.trim() || pollOptions.some(option => !option.trim())}>
-              Create Poll
+            <Button onClick={handleCreatePoll} disabled={!pollQuestion.trim() || pollOptions.some(option => !option.trim()) || isCreatingPoll}>
+              {isCreatingPoll ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Poll'
+              )}
             </Button>
           </div>
         </DialogContent>
