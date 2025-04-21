@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -458,6 +458,16 @@ const TeamChat: React.FC<TeamChatProps> = ({
   const pendingReactions = useRef(new Set<string>());
   const [minimizeSidebar, setMinimizeSidebar] = useState(initialMinimizeSidebar);
   
+  const scrollToBottom = React.useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    try {
+      const scrollContainer = scrollContainerRef.current;
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    } catch (error) {
+      console.error("Error scrolling to bottom:", error);
+    }
+  }, []);
+
   const {
     data: rooms = [],
     isLoading: isLoadingRooms
@@ -566,41 +576,28 @@ const TeamChat: React.FC<TeamChatProps> = ({
     }
   });
   
-  const scrollToBottom = () => {
-    if (!scrollContainerRef.current || !shouldScrollToBottom) return;
-    
-    try {
-      const scrollContainer = scrollContainerRef.current;
-      scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      setShouldScrollToBottom(false);
-    } catch (error) {
-      console.error("Error scrolling to bottom:", error);
-    }
-  };
-  
   useEffect(() => {
-    if (messages.length > 0 && isMessageAreaReady && shouldScrollToBottom) {
+    if (messages.length && isMessageAreaReady) {
       scrollToBottom();
-      
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 200);
-      
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => scrollToBottom(), 120);
+      return () => clearTimeout(t);
     }
-  }, [messages, isMessageAreaReady, shouldScrollToBottom]);
+  }, [messages, isMessageAreaReady, scrollToBottom]);
   
   useEffect(() => {
-    const handleResize = () => {
-      if (isMessageAreaReady) {
-        setShouldScrollToBottom(true);
+    const t = setTimeout(() => {
+      scrollToBottom();
+    }, 80);
+    return () => clearTimeout(t);
+  }, []);
+  
+  useEffect(() => {
+    if (selectedRoomId) {
+      setTimeout(() => {
         scrollToBottom();
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isMessageAreaReady]);
+      }, 100);
+    }
+  }, [selectedRoomId, scrollToBottom]);
   
   const findMessageAuthor = (authorId: string) => {
     return teamMembers.find(member => member.id === authorId);
@@ -710,7 +707,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
       
       setTimeout(() => {
         scrollToBottom();
-      }, 50);
+      }, 70);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -804,6 +801,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
             setMessageText('');
             toast.dismiss();
             toast.success('Image sent');
+            setTimeout(() => scrollToBottom(), 70);
           } catch (error) {
             console.error('Error uploading image:', error);
             toast.error('Failed to upload image');
@@ -864,6 +862,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
               setAudioChunks([]);
               toast.dismiss();
               toast.success('Voice message sent');
+              setTimeout(() => scrollToBottom(), 70);
             } catch (error) {
               console.error('Error uploading voice message:', error);
               toast.error('Failed to upload voice message');
@@ -908,6 +907,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
           setMessageText('');
           toast.dismiss();
           toast.success('File sent');
+          setTimeout(() => scrollToBottom(), 70);
         } catch (error) {
           console.error('Error uploading file:', error);
           toast.error('Failed to upload file');
@@ -1228,6 +1228,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
               setMessageText('');
               toast.dismiss();
               toast.success('Image sent');
+              setTimeout(() => scrollToBottom(), 70);
             } catch (error) {
               console.error('Error uploading image:', error);
               toast.error('Failed to upload image');
