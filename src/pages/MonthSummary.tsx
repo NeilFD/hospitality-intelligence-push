@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +88,114 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const trackerSummary = await getTrackerSummaryByMonth(currentYear, currentMonth, moduleType);
+        
+        if (trackerSummary && trackerSummary.totalCost > 0) {
+          console.log(`Using tracker summary for ${currentYear}-${currentMonth}: Revenue=${trackerSummary.revenue}, Cost=${trackerSummary.totalCost}, GP=${trackerSummary.gpPercentage}%`);
+          
+          const { data: masterRecords, error: masterError } = await supabase
+            .from('master_daily_records')
+            .select('*')
+            .eq('year', currentYear)
+            .eq('month', currentMonth)
+            .order('date');
+            
+          if (masterError) {
+            console.error('Error fetching master records:', masterError);
+            throw masterError;
+          }
+          
+          console.log(`Found ${masterRecords.length} master records for ${currentYear}-${currentMonth}`);
+          
+          const trackerData = await fetchTrackerDataByMonth(currentYear, currentMonth, moduleType);
+          
+          const trackerByDate: Record<string, any> = {};
+          for (const tracker of trackerData) {
+            trackerByDate[tracker.date] = tracker;
+          }
+          
+          const weekMap: Record<number, WeekSummary> = {};
+          for (let i = 1; i <= 5; i++) {
+            weekMap[i] = {
+              weekNumber: i,
+              revenue: 0,
+              costs: 0,
+              gp: 0
+            };
+          }
+          
+          let totalRevenueFromWeeks = 0;
+          let totalCostsFromTrackers = 0;
+          
+          for (const record of masterRecords) {
+            const weekNumber = record.week_number;
+            
+            if (!weekMap[weekNumber]) {
+              console.log(`Creating missing week ${weekNumber} in map`);
+              weekMap[weekNumber] = {
+                weekNumber,
+                revenue: 0,
+                costs: 0,
+                gp: 0
+              };
+            }
+            
+            const dayRevenue = moduleType === 'food' ? 
+              Number(record.food_revenue) || 0 : 
+              Number(record.beverage_revenue) || 0;
+              
+            weekMap[weekNumber].revenue += dayRevenue;
+            totalRevenueFromWeeks += dayRevenue;
+            
+            const trackerRecord = trackerByDate[record.date];
+            if (trackerRecord) {
+              const purchases = await fetchTrackerPurchases(trackerRecord.id);
+              const creditNotes = await fetchTrackerCreditNotes(trackerRecord.id);
+              
+              const purchasesTotal = purchases.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+              const creditNotesTotal = creditNotes.reduce((sum, cn) => sum + Number(cn.amount || 0), 0);
+              const staffFoodAllowance = Number(trackerRecord.staff_food_allowance) || 0;
+              
+              const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
+              weekMap[weekNumber].costs += dayCost;
+              totalCostsFromTrackers += dayCost;
+              
+              console.log(`${record.date} (Week ${weekNumber}): Revenue=${dayRevenue}, Cost=${dayCost}`);
+            }
+          }
+          
+          console.log(`Total costs calculated from trackers: ${totalCostsFromTrackers}`);
+          
+          if (totalRevenueFromWeeks > 0 && Math.abs(totalCostsFromTrackers - trackerSummary.totalCost) > 0.01) {
+            console.log(`Normalizing weekly costs to match tracker summary: ${totalCostsFromTrackers} -> ${trackerSummary.totalCost}`);
+            
+            Object.values(weekMap).forEach(week => {
+              if (totalRevenueFromWeeks > 0) {
+                const revenueRatio = week.revenue / totalRevenueFromWeeks;
+                week.costs = trackerSummary.totalCost * revenueRatio;
+              }
+              week.gp = calculateGP(week.revenue, week.costs);
+            });
+          } else {
+            Object.values(weekMap).forEach(week => {
+              week.gp = calculateGP(week.revenue, week.costs);
+            });
+          }
+          
+          const weeklyDataArray = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
+          
+          console.log('Weekly breakdown:', weeklyDataArray.map(w => 
+            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}`
+          ));
+          
+          setWeeklyData(weeklyDataArray);
+          setTotalRevenue(trackerSummary.revenue);
+          setTotalCosts(trackerSummary.totalCost);
+          setGpPercentage(trackerSummary.gpPercentage / 100);
+          
+          return;
+        }
+        
         const { data: masterRecords, error: masterError } = await supabase
           .from('master_daily_records')
           .select('*')
@@ -110,7 +217,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           trackerByDate[tracker.date] = tracker;
         }
         
-        // Initialize weekMap with empty week objects for all potential weeks
         const weekMap: Record<number, WeekSummary> = {};
         for (let i = 1; i <= 5; i++) {
           weekMap[i] = {
@@ -193,7 +299,6 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           variant: "destructive",
         });
         
-        // Only fallback to local store calculation if the primary method fails
         const calculateFromLocalStore = () => {
           const weekMap: Record<number, WeekSummary> = {};
           for (let i = 1; i <= 5; i++) {
