@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -123,28 +124,33 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (!roomId) return;
 
-    console.log(`Setting up high-priority reactions realtime subscription in Chat.tsx for room: ${roomId}`);
+    console.log(`Setting up reactions realtime subscription in Chat.tsx for room: ${roomId}`);
     
+    // This channel will listen for ANY updates to messages in the current room
     const channel = supabase
-      .channel(`chat-reactions-high-priority-${roomId}`)
+      .channel(`chat-reactions-${roomId}`)
       .on(
         'postgres_changes',
         { 
-          event: 'UPDATE', 
+          event: '*', 
           schema: 'public', 
           table: 'team_messages',
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
+          console.log(`Realtime change detected in Chat.tsx:`, payload);
+          
           if (payload.new && payload.old) {
             const oldReactions = payload.old.reactions;
             const newReactions = payload.new.reactions;
             
+            // Stringify to compare the actual data structures
             if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
               console.log('👉 REACTION CHANGE DETECTED in Chat.tsx, refreshing messages');
+              
+              // Force a refresh of the messages query
               queryClient.invalidateQueries({
                 queryKey: ['teamMessages', roomId],
-                refetchType: 'active',
                 exact: true
               });
             }
@@ -152,11 +158,11 @@ const Chat: React.FC = () => {
         }
       )
       .subscribe((status) => {
-        console.log(`High-priority reactions channel status in Chat.tsx: ${status}`);
+        console.log(`Reactions realtime channel status in Chat.tsx: ${status}`);
       });
       
     return () => {
-      console.log('Removing high-priority reactions realtime subscription in Chat.tsx');
+      console.log('Removing reactions realtime subscription in Chat.tsx');
       supabase.removeChannel(channel);
     };
   }, [roomId, queryClient]);
