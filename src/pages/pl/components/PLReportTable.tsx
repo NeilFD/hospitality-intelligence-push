@@ -423,24 +423,18 @@ export function PLReportTable({
           </TableCell>
         </TableRow>
         <TableRow 
-          className="text-black"
-          style={{ backgroundColor: '#D6BCFA', transition: 'none', borderRadius: '0 0.375rem 0.375rem 0' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#D6BCFA'; }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#D6BCFA'; }}
+          className="bg-[#D6BCFA] text-black"
         >
-          <TableCell className="font-bold bg-[#D6BCFA] text-black rounded-l-xl">
+          <TableCell className="font-bold rounded-l-xl">
             Operating profit
           </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
+          <TableCell className={`text-right font-bold ${operatingProfitBudget > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(operatingProfitBudget)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(operatingProfitActual)}
           </TableCell>
           <TableCell className="text-right font-bold w-14 min-w-[56px] max-w-[56px]">
             {formatPercentage(operatingProfitActualPercentage / 100)}
           </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
+          <TableCell className={`text-right font-bold ${operatingProfitForecast > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
           <TableCell className="text-right font-bold w-14 min-w-[56px] max-w-[56px]">
@@ -466,7 +460,6 @@ export function PLReportTable({
           <TableRow className="bg-gray-50">
             <TableHead className="w-[240px] font-bold">Item</TableHead>
             <TableHead className="text-right font-bold">Budget</TableHead>
-            <TableHead className="text-right font-bold">Actual MTD</TableHead>
             <TableHead className="text-right font-bold w-14 min-w-[56px] max-w-[56px]">% </TableHead>
             <TableHead className="text-right font-bold">Forecast</TableHead>
             <TableHead className="text-right font-bold w-14 min-w-[56px] max-w-[56px]">F%</TableHead>
@@ -478,7 +471,6 @@ export function PLReportTable({
             <TableRow key={index}>
               <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
               <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
               <TableCell className="text-right w-14 min-w-[56px] max-w-[56px]"><Skeleton className="h-4 w-[56px] ml-auto" /></TableCell>
               <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
               <TableCell className="text-right w-14 min-w-[56px] max-w-[56px]"><Skeleton className="h-4 w-[56px] ml-auto" /></TableCell>
