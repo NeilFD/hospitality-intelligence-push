@@ -821,46 +821,45 @@ const TeamChat: React.FC<TeamChatProps> = ({
   const handleVoiceRecording = async () => {
     if (isRecording) {
       console.log('Stopping voice recording');
-      if (voiceRecorderRef.current) {
+      if (voiceRecorderRef.current && voiceRecorderRef.current.state !== "inactive") {
         voiceRecorderRef.current.stop();
       }
       setIsRecording(false);
       return;
     }
-    
+
     try {
       console.log('Starting voice recording');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      
+
       let localChunks: Blob[] = [];
-      
+      setAudioChunks([]);
+
       recorder.ondataavailable = e => {
         if (e.data && e.data.size > 0) {
           console.log('Voice data chunk received');
           localChunks.push(e.data);
         }
       };
-      
+
       recorder.onstop = async () => {
         console.log('Voice recording stopped, preparing file');
         setIsRecording(false);
-        
+
         const audioBlob = new Blob(localChunks, { type: 'audio/webm' });
         localChunks = [];
         setAudioChunks([]);
-        
-        const audioFile = new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' });
-        
+
+        const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
+
         if (user && selectedRoomId) {
           try {
             setIsSubmitting(true);
-            toast.loading('Uploading voice message...');
-            
             console.log('Uploading voice file:', audioFile);
             const attachmentUrl = await uploadTeamFile(audioFile, 'messages');
             console.log('Voice file uploaded, URL:', attachmentUrl);
-            
+
             await createMessageMutation.mutateAsync({
               content: messageText || 'Voice message',
               author_id: user.id,
@@ -870,30 +869,24 @@ const TeamChat: React.FC<TeamChatProps> = ({
               read_by: [user.id],
               mentioned_users: []
             });
-            
+
             setMessageText('');
-            toast.dismiss();
-            toast.success('Voice message sent');
-            
             setTimeout(() => scrollToBottom(), 70);
           } catch (error) {
             console.error('Error uploading voice message:', error);
-            toast.error('Failed to upload voice message');
           } finally {
             setIsSubmitting(false);
           }
         }
-        
+
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       voiceRecorderRef.current = recorder;
       recorder.start();
       setIsRecording(true);
-      toast.info('Recording voice message... Click again to stop.');
     } catch (error) {
       console.error('Error accessing microphone:', error);
-      toast.error('Could not access microphone');
       setIsRecording(false);
     }
   };
