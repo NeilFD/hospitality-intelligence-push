@@ -146,6 +146,16 @@ const HomeDashboard: React.FC = () => {
   const goToPreviousDay = () => setSelectedDate(prev => subDays(prev, 1));
   const goToNextDay = () => setSelectedDate(prev => addDays(prev, 1));
 
+  let formattedDayDate = "";
+  if (yesterdayData && yesterdayData.dayOfWeek && yesterdayData.date) {
+    try {
+      const displayDate = format(new Date(yesterdayData.date), "dd MMM yyyy");
+      formattedDayDate = `${yesterdayData.dayOfWeek}, ${displayDate}`;
+    } catch (_) {
+      formattedDayDate = `${yesterdayData.dayOfWeek}, ${yesterdayData.date}`;
+    }
+  }
+
   return (
     <div className="container mx-auto p-4">
       <div className="bg-gradient-to-r from-hi-purple-light/20 to-hi-purple/10 rounded-lg p-6 mb-6 shadow-md border border-hi-purple/20">
@@ -183,10 +193,17 @@ const HomeDashboard: React.FC = () => {
       <Card className="shadow-md rounded-lg overflow-hidden bg-white border border-gray-100 mb-6">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-3">
           <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center text-xl font-bold text-gray-800">
-              <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
-              Performance
-            </CardTitle>
+            <div>
+              <CardTitle className="flex items-center text-xl font-bold text-gray-800">
+                <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
+                Performance
+              </CardTitle>
+              {formattedDayDate && (
+                <div className="text-xs text-gray-500 mt-1 ml-7">
+                  {formattedDayDate}
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
