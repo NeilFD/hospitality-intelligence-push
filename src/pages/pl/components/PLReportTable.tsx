@@ -462,11 +462,13 @@ export function PLReportTable({
         <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
           {formatCurrency(operatingProfitBudget)}
         </TableCell>
+        <TableCell className={`text-right font-bold ${
+          operatingProfitActual >= 0 ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {formatPercentage(operatingProfitActualPercentage / 100)}
+        </TableCell>
         <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
           {formatCurrency(operatingProfitActual)}
-        </TableCell>
-        <TableCell className="text-right font-bold">
-          {formatPercentage(operatingProfitActualPercentage / 100)}
         </TableCell>
         <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
           {formatCurrency(operatingProfitForecast)}
