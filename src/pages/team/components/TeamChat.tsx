@@ -823,63 +823,59 @@ const TeamChat: React.FC<TeamChatProps> = ({
       if (voiceRecorderRef.current) {
         voiceRecorderRef.current.stop();
       }
-    } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true
-        });
-        const recorder = new MediaRecorder(stream);
-        const chunks: Blob[] = [];
-        recorder.ondataavailable = e => {
-          if (e.data.size > 0) {
-            chunks.push(e.data);
-            setAudioChunks([...chunks]);
+      setIsRecording(false);
+      return;
+    }
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      let localChunks: Blob[] = [];
+      recorder.ondataavailable = e => {
+        if (e.data.size > 0) {
+          localChunks.push(e.data);
+        }
+      };
+      recorder.onstop = async () => {
+        setIsRecording(false);
+        const audioBlob = new Blob(localChunks, { type: 'audio/webm' });
+        setAudioChunks([]);
+        const audioFile = new File([audioBlob], 'voice-message.webm', { type: 'audio/webm' });
+        if (user && selectedRoomId) {
+          try {
+            setIsSubmitting(true);
+            toast.loading('Uploading voice message...');
+            const attachmentUrl = await uploadTeamFile(audioFile, 'messages');
+            await createMessageMutation.mutateAsync({
+              content: '',
+              author_id: user.id,
+              type: 'voice',
+              attachment_url: attachmentUrl,
+              room_id: selectedRoomId,
+              read_by: [user.id],
+              mentioned_users: []
+            });
+            setMessageText('');
+            toast.dismiss();
+            toast.success('Voice message sent');
+            setTimeout(() => scrollToBottom(), 70);
+          } catch (error) {
+            console.error('Error uploading voice message:', error);
+            toast.error('Failed to upload voice message');
+          } finally {
+            setIsSubmitting(false);
           }
-        };
-        recorder.onstop = async () => {
-          setIsRecording(false);
-          const audioBlob = new Blob(audioChunks, {
-            type: 'audio/webm'
-          });
-          const audioFile = new File([audioBlob], 'voice-message.webm', {
-            type: 'audio/webm'
-          });
-          if (user && selectedRoomId) {
-            try {
-              setIsSubmitting(true);
-              toast.loading('Uploading voice message...');
-              const attachmentUrl = await uploadTeamFile(audioFile, 'messages');
-              await createMessageMutation.mutateAsync({
-                content: messageText,
-                author_id: user.id,
-                type: 'voice',
-                attachment_url: attachmentUrl,
-                room_id: selectedRoomId,
-                read_by: [user.id],
-                mentioned_users: []
-              });
-              setMessageText('');
-              setAudioChunks([]);
-              toast.dismiss();
-              toast.success('Voice message sent');
-              setTimeout(() => scrollToBottom(), 70);
-            } catch (error) {
-              console.error('Error uploading voice message:', error);
-              toast.error('Failed to upload voice message');
-            } finally {
-              setIsSubmitting(false);
-            }
-          }
-          stream.getTracks().forEach(track => track.stop());
-        };
-        voiceRecorderRef.current = recorder;
-        recorder.start();
-        setIsRecording(true);
-        toast.info('Recording voice message... Click again to stop.');
-      } catch (error) {
-        console.error('Error accessing microphone:', error);
-        toast.error('Could not access microphone');
-      }
+        }
+        stream.getTracks().forEach(track => track.stop());
+      };
+      voiceRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+      toast.info('Recording voice message... Click again to stop.');
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast.error('Could not access microphone');
+      setIsRecording(false);
     }
   };
   
