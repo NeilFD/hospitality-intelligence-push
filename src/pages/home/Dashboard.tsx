@@ -193,6 +193,7 @@ const HomeDashboard: React.FC = () => {
       
       <Card className="shadow-md rounded-lg overflow-hidden bg-white border border-gray-100 mb-6">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-3">
+          {/* Adjust flex layout for mobile to prevent overlap and overflow */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-center">
             <div>
               <CardTitle className="flex items-center text-xl font-bold text-gray-800">
@@ -428,7 +429,8 @@ const HomeDashboard: React.FC = () => {
                 </div>
               ) : generalRoomId ? (
                 <div className="h-full w-full">
-                  <TeamChat key={`dashboard-chat-${generalRoomId}`} initialRoomId={generalRoomId} compact={true} />
+                  {/* Pass compact and initialSidebarOpen false to minimize sidebar on mobile */}
+                  <TeamChat key={`dashboard-chat-${generalRoomId}`} initialRoomId={generalRoomId} compact initialSidebarOpen={false} />
                 </div>
               ) : (
                 <div className="flex justify-center items-center h-full text-gray-500">
