@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 // Define all the types that are being referenced
@@ -213,7 +214,34 @@ export const markMessageAsRead = async (messageId: string, userId: string): Prom
 
 export const uploadTeamFile = async (file: File, type: string): Promise<string> => {
   try {
+    // First check if the bucket exists, and create it if it doesn't
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error checking buckets:', bucketsError);
+      throw bucketsError;
+    }
+    
+    const bucketExists = buckets.some(bucket => bucket.name === 'team_files');
+    
+    if (!bucketExists) {
+      console.log('Creating team_files bucket as it does not exist');
+      const { error: createBucketError } = await supabase.storage.createBucket('team_files', {
+        public: true,
+        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+      });
+      
+      if (createBucketError) {
+        console.error('Error creating bucket:', createBucketError);
+        throw createBucketError;
+      }
+      console.log('Successfully created team_files bucket');
+    }
+    
+    // Now proceed with the upload
     const fileName = `${type}/${Date.now()}-${file.name}`;
+    console.log(`Uploading file ${fileName} to team_files bucket...`);
+    
     const { error: uploadError, data } = await supabase.storage
       .from('team_files')
       .upload(fileName, file, {
