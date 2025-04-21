@@ -1,635 +1,1230 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PaperclipIcon, SendIcon, SmileIcon, UserPlusIcon, ImageIcon, ChevronLeftIcon, ChevronRightIcon, XIcon, AtSign, Loader2 } from 'lucide-react';
-import { useAuthStore } from '@/services/auth-service';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getChatRooms, getMessages, createMessage, createPoll, uploadTeamFile } from '@/services/team-service';
-import { useMediaQuery } from '@/hooks/use-media-query';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import ChatRoomSidebar from './ChatRoomSidebar';
-import TeamPoll from './TeamPoll';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Send, Image, Mic, Smile, Paperclip, AtSign, Heart, ThumbsUp, Laugh, Angry, Frown, PartyPopper, ThumbsDown, Bookmark, MoreVertical, Trash2 } from 'lucide-react';
+import { TeamMessage, getMessages, createMessage, markMessageAsRead, uploadTeamFile, getTeamMembers, getChatRooms, addMessageReaction, MessageReaction, deleteMessage } from '@/services/team-service';
+import { useAuthStore } from '@/services/auth-service';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserProfile } from '@/types/supabase-types';
-import { v4 as uuidv4 } from 'uuid';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import ChatRoomSidebar from './ChatRoomSidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { supabase } from '@/lib/supabase';
 
-// Create a simplified emoji picker component
-const EmojiPicker = ({ onEmojiSelect }: { onEmojiSelect: (emoji: string) => void }) => {
-  const emojis = ['😀', '😂', '😊', '❤️', '👍', '🎉', '🔥', '⭐', '🙌', '🤔'];
-  
-  return (
-    <div className="grid grid-cols-5 gap-2 p-2">
-      {emojis.map((emoji) => (
-        <button
-          key={emoji}
-          className="text-xl hover:bg-gray-100 p-2 rounded cursor-pointer"
-          onClick={() => onEmojiSelect(emoji)}
-        >
-          {emoji}
-        </button>
-      ))}
-    </div>
-  );
-};
+interface MessageProps {
+  message: TeamMessage;
+  isOwnMessage: boolean;
+  author: UserProfile | undefined;
+  onAddReaction: (messageId: string, emoji: string) => void;
+  onDeleteMessage: (messageId: string) => void;
+  teamMembers: UserProfile[];
+  currentUserId: string;
+}
 
 interface TeamChatProps {
-  initialRoomId?: string;
+  initialRoomId?: string | null;
   compact?: boolean;
-  className?: string;
-  initialSidebarMinimized?: boolean;
 }
 
-// Format distance helper function
-const formatDistance = (date: Date, baseDate: Date, options: { addSuffix: boolean }) => {
-  return format(date, 'HH:mm') + (options.addSuffix ? ' ago' : '');
+const EMOJI_CATEGORIES = [{
+  name: "Smileys",
+  emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "☺️", "😚", "😙", "🥲", "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "😮‍💨", "🤥", "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😵", "😵‍💫", "🤯", "🤠", "🥳", "🥸", "😎", "🤓", "🧐"]
+}, {
+  name: "Gestures",
+  emojis: ["👍", "👎", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👋", "🤚", "🖐️", "✋", "🖖", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪", "🦾", "🦿", "🦵", "🦶", "👂", "🦻", "👃", "🧠", "🫀", "🫁", "🦷", "🦴"]
+}, {
+  name: "Love",
+  emojis: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❤️‍🔥", "❤️‍🩹", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "♥️", "💌", "💋", "👨‍❤️‍💋‍👨", "👩‍❤️‍💋‍👩", "👨‍❤️‍👨", "👩‍❤️‍👩"]
+}, {
+  name: "Celebration",
+  emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
+}, {
+  name: "Activities",
+  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+}];
+
+const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
+  if (!content.includes('@')) return content;
+  
+  const userMap = new Map();
+  const userNameMap = new Map();
+  
+  teamMembers.forEach(member => {
+    const fullName = `${member.first_name} ${member.last_name}`.trim();
+    userMap.set(member.id, fullName);
+    
+    userNameMap.set(fullName.toLowerCase(), member.id);
+  });
+  
+  const parts = content.split('@');
+  const result: React.ReactNode[] = [parts[0]];
+  
+  const getThemeHighlightColor = () => {
+    const htmlElement = document.documentElement;
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return 'bg-forest-green/10 text-forest-green font-medium';
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return 'bg-[#1565c0]/10 text-[#1565c0] font-medium';
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return 'bg-[#e65100]/10 text-[#e65100] font-medium';
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return 'bg-[#6a1b9a]/10 text-[#6a1b9a] font-medium';
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return 'bg-[#333333]/10 text-[#333333] font-medium';
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return 'bg-[#7E69AB]/10 text-[#7E69AB] font-medium';
+    } else {
+      return 'bg-[#7E69AB]/10 text-[#7E69AB] font-medium';
+    }
+  };
+  
+  const mentionClass = getThemeHighlightColor();
+  
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i];
+    
+    if (part.startsWith('all ') || part.startsWith('all\n')) {
+      result.push(<span key={`mention-all-${i}`} className={`${mentionClass} rounded px-1`}>@all</span>);
+      result.push(part.substring(3));
+      continue;
+    }
+    
+    let found = false;
+    
+    for (const [userId, name] of userMap.entries()) {
+      if (part.startsWith(`${userId} `) || part.startsWith(`${userId}\n`)) {
+        result.push(<span key={`mention-${userId}-${i}`} className={`${mentionClass} rounded px-1`}>@{name}</span>);
+        result.push(part.substring(userId.length));
+        found = true;
+        break;
+      }
+    }
+    
+    if (!found) {
+      result.push('@' + part);
+    }
+  }
+  
+  return result;
 };
 
-// Create an interface that extends the type from team-service
-interface ExtendedTeamMessage {
-  id: string;
-  content: string;
-  author_id: string;
-  room_id: string;
-  created_at: string;
-  type: string;
-  attachment_url?: string;
-  read_by: string[];
-  mentioned_users?: string[];
-  reactions?: any[];
-  poll_id?: string;
-  poll?: any;
-  author?: {
-    id?: string;
-    first_name?: string;
-    last_name?: string;
-    avatar_url?: string;
-  };
-}
+const getUserNames = (userIds: string[]): string => {
+  if (!userIds || userIds.length === 0) return "No users";
+  return userIds.join(", ");
+};
 
-const TeamChat: React.FC<TeamChatProps> = ({ 
-  initialRoomId, 
-  compact = false, 
-  className,
-  initialSidebarMinimized = false
+const getUserNamesList = (userIds: string[], teamMembers: UserProfile[]): string => {
+  if (!userIds || userIds.length === 0) return "No users";
+  const names = userIds.map(id => {
+    const member = teamMembers.find(member => member.id === id);
+    return member ? `${member.first_name} ${member.last_name}`.trim() : "Unknown user";
+  }).filter(name => name !== "Unknown user");
+  return names.length > 0 ? names.join(", ") : "Unknown users";
+};
+
+const Message: React.FC<MessageProps> = ({
+  message,
+  isOwnMessage,
+  author,
+  onAddReaction,
+  onDeleteMessage,
+  teamMembers,
+  currentUserId
 }) => {
-  const [sidebarMinimized, setSidebarMinimized] = useState(initialSidebarMinimized);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(initialRoomId || null);
+  const messageContainerClass = isOwnMessage ? "flex justify-end mb-4" : "flex justify-start mb-4";
+  const [themeColors, setThemeColors] = useState(() => {
+    const htmlElement = document.documentElement;
+    if (htmlElement.classList.contains('theme-forest-green')) {
+      return {
+        ownMessageBg: 'bg-forest-green',
+        otherMessageBg: 'bg-white',
+        otherMessageBorder: 'border border-forest-green'
+      };
+    } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+      return {
+        ownMessageBg: 'bg-[#1565c0]',
+        otherMessageBg: 'bg-white',
+        otherMessageBorder: 'border border-[#1565c0]'
+      };
+    } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+      return {
+        ownMessageBg: 'bg-[#e65100]',
+        otherMessageBg: 'bg-white',
+        otherMessageBorder: 'border border-[#e65100]'
+      };
+    } else if (htmlElement.classList.contains('theme-berry-purple')) {
+      return {
+        ownMessageBg: 'bg-[#6a1b9a]',
+        otherMessageBg: 'bg-white',
+        otherMessageBorder: 'border border-[#6a1b9a]'
+      };
+    } else if (htmlElement.classList.contains('theme-dark-mode')) {
+      return {
+        ownMessageBg: 'bg-[#333333]',
+        otherMessageBg: 'bg-white',
+        otherMessageBorder: 'border border-[#333333]'
+      };
+    } else if (htmlElement.classList.contains('theme-hi-purple')) {
+      return {
+        ownMessageBg: 'bg-[#7E69AB]',
+        otherMessageBg: 'bg-white',
+        otherMessageBorder: 'border border-[#7E69AB]'
+      };
+    } else {
+      return {
+        ownMessageBg: 'bg-[#7E69AB]',
+        otherMessageBg: 'bg-white',
+        otherMessageBorder: 'border border-[#7E69AB]'
+      };
+    }
+  });
+  
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const htmlElement = document.documentElement;
+      if (htmlElement.classList.contains('theme-forest-green')) {
+        setThemeColors({
+          ownMessageBg: 'bg-forest-green',
+          otherMessageBg: 'bg-white',
+          otherMessageBorder: 'border border-forest-green'
+        });
+      } else if (htmlElement.classList.contains('theme-ocean-blue')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#1565c0]',
+          otherMessageBg: 'bg-white',
+          otherMessageBorder: 'border border-[#1565c0]'
+        });
+      } else if (htmlElement.classList.contains('theme-sunset-orange')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#e65100]',
+          otherMessageBg: 'bg-white',
+          otherMessageBorder: 'border border-[#e65100]'
+        });
+      } else if (htmlElement.classList.contains('theme-berry-purple')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#6a1b9a]',
+          otherMessageBg: 'bg-white',
+          otherMessageBorder: 'border border-[#6a1b9a]'
+        });
+      } else if (htmlElement.classList.contains('theme-dark-mode')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#333333]',
+          otherMessageBg: 'bg-white',
+          otherMessageBorder: 'border border-[#333333]'
+        });
+      } else if (htmlElement.classList.contains('theme-hi-purple')) {
+        setThemeColors({
+          ownMessageBg: 'bg-[#7E69AB]',
+          otherMessageBg: 'bg-white',
+          otherMessageBorder: 'border border-[#7E69AB]'
+        });
+      } else {
+        setThemeColors({
+          ownMessageBg: 'bg-[#7E69AB]',
+          otherMessageBg: 'bg-white',
+          otherMessageBorder: 'border border-[#7E69AB]'
+        });
+      }
+    };
+    
+    document.addEventListener('themeClassChanged', handleThemeChange);
+    return () => {
+      document.removeEventListener('themeClassChanged', handleThemeChange);
+    };
+  }, []);
+  
+  const messageBubbleClass = isOwnMessage 
+    ? `${themeColors.ownMessageBg} text-white rounded-3xl rounded-tr-sm p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10` 
+    : `${themeColors.otherMessageBg} ${themeColors.otherMessageBorder} text-gray-800 rounded-3xl rounded-tl-sm p-3 min-w-[120px] max-w-xs lg:max-w-md text-left pr-10`;
+  
+  const getInitials = () => {
+    if (!author) return '?';
+    return `${(author.first_name?.[0] || '').toUpperCase()}${(author.last_name?.[0] || '').toUpperCase()}`;
+  };
+  const [selectedCategory, setSelectedCategory] = useState(0);
+  const commonEmojis = [{
+    icon: <Heart className="h-4 w-4" />,
+    emoji: "❤️"
+  }, {
+    icon: <ThumbsUp className="h-4 w-4" />,
+    emoji: "👍"
+  }, {
+    icon: <Laugh className="h-4 w-4" />,
+    emoji: "😂"
+  }, {
+    icon: <PartyPopper className="h-4 w-4" />,
+    emoji: "🎉"
+  }, {
+    icon: <ThumbsDown className="h-4 w-4" />,
+    emoji: "👎"
+  }, {
+    icon: <Frown className="h-4 w-4" />,
+    emoji: "😢"
+  }, {
+    icon: <Angry className="h-4 w-4" />,
+    emoji: "😡"
+  }, {
+    icon: <Bookmark className="h-4 w-4" />,
+    emoji: "🔖"
+  }];
+  
+  const handleEmojiClick = (emoji: string) => {
+    console.log(`Emoji ${emoji} clicked for message ${message.id} by user ${currentUserId}`);
+    if (onAddReaction) {
+      onAddReaction(message.id, emoji);
+    } else {
+      console.error("onAddReaction handler is not defined");
+    }
+  };
+  
+  return <div className={messageContainerClass}>
+      {!isOwnMessage && <div className="flex-shrink-0 mr-2">
+          <Avatar className="h-8 w-8">
+            {author?.avatar_url ? <AvatarImage src={author.avatar_url} alt={`${author.first_name} ${author.last_name}`} /> : <AvatarFallback>{getInitials()}</AvatarFallback>}
+          </Avatar>
+        </div>}
+      
+      <div className="flex flex-col relative">
+        <div className={`${messageBubbleClass} shadow-sm hover:shadow-md transition-shadow duration-200`}>
+          {!isOwnMessage && author && <p className="font-semibold text-xs mb-1">
+              {author.first_name} {author.last_name}
+            </p>}
+          
+          {message.type === 'text' && <p className="whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
+          
+          {message.type === 'image' && <div>
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
+              <img src={message.attachment_url} alt="Image" className="rounded-md max-h-60 w-auto" loading="lazy" />
+            </div>}
+          
+          {message.type === 'gif' && <div>
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
+              <img src={message.attachment_url} alt="GIF" className="rounded-md max-h-60 w-auto" loading="lazy" />
+            </div>}
+          
+          {message.type === 'voice' && <div>
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
+              <audio controls className="w-full">
+                <source src={message.attachment_url} type="audio/webm" />
+                Your browser does not support the audio element.
+              </audio>
+            </div>}
+          
+          {message.type === 'file' && <div>
+              {message.content && <p className="mb-2 whitespace-pre-wrap">{highlightMentions(message.content, teamMembers)}</p>}
+              <div className="flex items-center space-x-2">
+                <Paperclip className="h-4 w-4" />
+                <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  Download File
+                </a>
+              </div>
+            </div>}
+          
+          <div className="text-xs mt-1 opacity-70">
+            {new Date(message.created_at).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+          </div>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-white shadow-sm hover:bg-gray-50 opacity-70 hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log("Reaction button clicked for message:", message.id);
+                }}
+              >
+                <Smile className="h-3.5 w-3.5 text-gray-500" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3" align={isOwnMessage ? "end" : "start"} side="top" sideOffset={5} alignOffset={isOwnMessage ? -40 : 40}>
+              <div className="flex mb-2 gap-1 justify-between border-b pb-2 overflow-x-auto scrollbar-hide">
+                {EMOJI_CATEGORIES.map((category, index) => <Button key={index} variant={selectedCategory === index ? "secondary" : "ghost"} className="h-7 px-2 text-xs min-w-max flex-shrink-0" onClick={() => setSelectedCategory(index)}>
+                    {category.name}
+                  </Button>)}
+              </div>
+              
+              <div className="grid grid-cols-8 gap-1.5 max-h-[150px] overflow-y-auto py-1">
+                {EMOJI_CATEGORIES[selectedCategory].emojis.map((emoji, index) => <Button 
+                    key={index} 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0 text-lg" 
+                    onClick={() => handleEmojiClick(emoji)}
+                  >
+                    {emoji}
+                  </Button>)}
+              </div>
+              
+              <div className="mt-2 pt-2 border-t">
+                <p className="text-xs text-muted-foreground mb-1.5">Frequently Used</p>
+                <div className="flex gap-1 flex-wrap">
+                  {commonEmojis.map((item, index) => <Button 
+                      key={index} 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 w-7 p-0" 
+                      onClick={() => handleEmojiClick(item.emoji)}
+                    >
+                      {item.emoji}
+                    </Button>)}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {isOwnMessage && <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full hover:bg-blue-600 opacity-70 hover:opacity-100 p-0">
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem 
+                  className="text-red-600 focus:text-red-600 cursor-pointer flex items-center gap-2 hover:bg-red-50" 
+                  onClick={() => onDeleteMessage(message.id)}
+                >
+                  <Trash2 className="h-5 w-5 text-white mr-2" strokeWidth={2.5} />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>}
+        </div>
+
+        {message.reactions && message.reactions.length > 0 && <div className="flex mt-1 ml-1 flex-wrap gap-1">
+            {message.reactions.map((reaction, index) => <HoverCard key={`${reaction.emoji}-${index}`}>
+                <HoverCardTrigger asChild>
+                  <button 
+                    className={`flex items-center rounded-full px-2 text-xs ${reaction.user_ids.includes(currentUserId) ? 'bg-blue-100 border border-blue-300' : 'bg-gray-100 border border-gray-200'}`} 
+                    onClick={() => handleEmojiClick(reaction.emoji)}
+                  >
+                    <span className="mr-1">{reaction.emoji}</span>
+                    <span>{reaction.user_ids.length}</span>
+                  </button>
+                </HoverCardTrigger>
+                <HoverCardContent className="p-2 w-48">
+                  <p className="text-xs font-medium">Reacted with {reaction.emoji}:</p>
+                  <p className="text-xs mt-1">
+                    {getUserNamesList(reaction.user_ids, teamMembers)}
+                  </p>
+                </HoverCardContent>
+              </HoverCard>)}
+          </div>}
+      </div>
+      
+      {isOwnMessage && <div className="flex-shrink-0 ml-2">
+          <Avatar className="h-8 w-8">
+            {author?.avatar_url ? <AvatarImage src={author.avatar_url} alt={`${author.first_name} ${author.last_name}`} /> : <AvatarFallback>{getInitials()}</AvatarFallback>}
+          </Avatar>
+        </div>}
+    </div>;
+};
+
+const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [messageText, setMessageText] = useState('');
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
-  const [isCreatePollDialogOpen, setIsCreatePollDialogOpen] = useState(false);
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState(['', '']);
-  const [mentions, setMentions] = useState<UserProfile[]>([]);
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [isMentionPopoverOpen, setIsMentionPopoverOpen] = useState(false);
-  const lastMessageRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const isSmall = useMediaQuery('(max-width: 640px)');
+  const isMobile = useIsMobile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const voiceRecorderRef = useRef<MediaRecorder | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [showMentionSelector, setShowMentionSelector] = useState(false);
+  const [mentionStart, setMentionStart] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isMessageAreaReady, setIsMessageAreaReady] = useState(false);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
+  const pendingReactions = useRef(new Set<string>());
 
-  const { data: rooms = [], isLoading: isLoadingRooms, error: roomsError } = useQuery({
+  const {
+    data: rooms = [],
+    isLoading: isLoadingRooms
+  } = useQuery({
     queryKey: ['chatRooms'],
-    queryFn: getChatRooms,
-    staleTime: 60000, // 1 minute
-    retry: false,
+    queryFn: getChatRooms
   });
-
-  const { data: messages = [], isLoading: isLoadingMessages, error: messagesError, refetch: refetchMessages } = useQuery({
+  
+  useEffect(() => {
+    if (initialRoomId && !selectedRoomId) {
+      console.log('Setting initial room ID:', initialRoomId);
+      setSelectedRoomId(initialRoomId);
+    } else if (!selectedRoomId && rooms.length > 0) {
+      console.log('No selected room, setting first room:', rooms[0].id);
+      setSelectedRoomId(rooms[0].id);
+    }
+  }, [rooms, initialRoomId, selectedRoomId]);
+  
+  const {
+    data: messages = [],
+    isLoading: isLoadingMessages,
+    refetch: refetchMessages,
+    error: messagesError
+  } = useQuery({
     queryKey: ['teamMessages', selectedRoomId],
-    queryFn: () => getMessages(selectedRoomId || ''),
+    queryFn: () => {
+      if (!selectedRoomId) {
+        console.log('No selected room ID, skipping message fetch');
+        return Promise.resolve([]);
+      }
+      console.log('Fetching messages for room ID:', selectedRoomId);
+      return getMessages(selectedRoomId);
+    },
     enabled: !!selectedRoomId,
-    staleTime: 10000, // 10 seconds
-    retry: false,
+    retry: 1,
+    staleTime: 5000,
+    refetchInterval: 10000,
+    meta: {
+      onSettled: () => {
+        setTimeout(() => {
+          setIsMessageAreaReady(true);
+          setShouldScrollToBottom(true);
+        }, 100);
+      }
+    }
   });
-
-  const { mutate: sendMessage, isPending: isSendingMessage } = useMutation({
-    mutationFn: (data: { roomId: string; text: string; mentionedUsers: string[] }) => {
-      return createMessage({
-        content: data.text,
-        author_id: user?.id || '',
-        room_id: data.roomId,
-        type: 'text',
-        read_by: [user?.id || ''],
-        mentioned_users: data.mentionedUsers,
+  
+  useEffect(() => {
+    if (selectedRoomId) {
+      setIsMessageAreaReady(false);
+      setShouldScrollToBottom(true);
+      refetchMessages();
+    }
+  }, [selectedRoomId, refetchMessages]);
+  
+  const {
+    data: teamMembers = []
+  } = useQuery({
+    queryKey: ['teamMembers'],
+    queryFn: getTeamMembers
+  });
+  
+  const createMessageMutation = useMutation({
+    mutationFn: createMessage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', selectedRoomId]
+      });
+    }
+  });
+  
+  const addReactionMutation = useMutation({
+    mutationFn: async ({ messageId, emoji }: { messageId: string, emoji: string }) => {
+      console.log(`Adding reaction ${emoji} to message ${messageId} by user ${user?.id}`);
+      
+      if (!user || !user.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      return await addMessageReaction(messageId, user.id, emoji);
+    },
+    onSuccess: (data) => {
+      console.log('Reaction mutation succeeded:', data);
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', selectedRoomId],
+        exact: true
       });
     },
+    onError: (error) => {
+      console.error('Reaction mutation error:', error);
+      toast.error('Failed to add reaction');
+    }
+  });
+  
+  const deleteMessageMutation = useMutation({
+    mutationFn: (messageId: string) => deleteMessage(messageId),
     onSuccess: () => {
-      setMessageText('');
-      setAttachment(null);
-      queryClient.invalidateQueries({ queryKey: ['teamMessages', selectedRoomId] });
-      refetchMessages();
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', selectedRoomId]
+      });
+      toast.success("Message deleted");
     },
-    onError: (error: any) => {
+    onError: error => {
+      console.error("Error deleting message:", error);
+      toast.error("Failed to delete message");
+    }
+  });
+  
+  const scrollToBottom = () => {
+    if (!scrollContainerRef.current || !shouldScrollToBottom) return;
+    
+    try {
+      const scrollContainer = scrollContainerRef.current;
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      setShouldScrollToBottom(false);
+    } catch (error) {
+      console.error("Error scrolling to bottom:", error);
+    }
+  };
+  
+  useEffect(() => {
+    if (messages.length > 0 && isMessageAreaReady && shouldScrollToBottom) {
+      scrollToBottom();
+      
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [messages, isMessageAreaReady, shouldScrollToBottom]);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      if (isMessageAreaReady) {
+        setShouldScrollToBottom(true);
+        scrollToBottom();
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isMessageAreaReady]);
+  
+  const findMessageAuthor = (authorId: string) => {
+    return teamMembers.find(member => member.id === authorId);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setMessageText(value);
+    const lastAtSymbol = value.lastIndexOf('@');
+    if (lastAtSymbol >= 0) {
+      const afterAt = value.substring(lastAtSymbol + 1);
+      if (lastAtSymbol === value.length - 1 || /^\s*$/.test(afterAt) || /^[a-zA-Z0-9\s]*$/.test(afterAt)) {
+        setMentionStart(lastAtSymbol);
+        setMentionQuery(afterAt.trim().toLowerCase());
+        setShowMentionSelector(true);
+        return;
+      }
+    }
+    setShowMentionSelector(false);
+  };
+  
+  const insertMention = (userId: string, displayName: string) => {
+    if (textareaRef.current) {
+      const before = messageText.substring(0, mentionStart);
+      const after = messageText.substring(mentionStart + mentionQuery.length + 1);
+      
+      const newText = `${before}@${displayName} ${after}`;
+      setMessageText(newText);
+      
+      textareaRef.current.focus();
+      setShowMentionSelector(false);
+      
+      const mentionsMap = new Map(Object.entries(textareaRef.current.dataset.mentions || '{}'));
+      mentionsMap.set(displayName, userId);
+      textareaRef.current.dataset.mentions = JSON.stringify(Object.fromEntries(mentionsMap));
+    }
+  };
+  
+  const insertAllMention = () => {
+    if (textareaRef.current) {
+      const before = messageText.substring(0, mentionStart);
+      const after = messageText.substring(mentionStart + mentionQuery.length + 1);
+      const newText = `${before}@all ${after}`;
+      setMessageText(newText);
+      textareaRef.current.focus();
+      setShowMentionSelector(false);
+    }
+  };
+  
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !user || !selectedRoomId) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      const mentionedUserIds: string[] = [];
+      const mentionAll = messageText.includes('@all');
+      
+      let mentionsMap = {};
+      if (textareaRef.current?.dataset.mentions) {
+        try {
+          mentionsMap = JSON.parse(textareaRef.current.dataset.mentions);
+        } catch (e) {
+          console.error('Error parsing mentions map:', e);
+        }
+      }
+      
+      teamMembers.forEach(member => {
+        const fullName = `${member.first_name} ${member.last_name}`.trim();
+        if (messageText.includes(`@${fullName}`)) {
+          mentionedUserIds.push(member.id);
+        }
+      });
+      
+      for (const [displayName, userId] of Object.entries(mentionsMap)) {
+        if (messageText.includes(`@${displayName}`) && !mentionedUserIds.includes(userId as string)) {
+          mentionedUserIds.push(userId as string);
+        }
+      }
+      
+      if (mentionAll) {
+        teamMembers.forEach(member => {
+          if (!mentionedUserIds.includes(member.id)) {
+            mentionedUserIds.push(member.id);
+          }
+        });
+      }
+      
+      await createMessageMutation.mutateAsync({
+        content: messageText,
+        author_id: user.id,
+        type: 'text',
+        room_id: selectedRoomId,
+        read_by: [user.id],
+        mentioned_users: mentionedUserIds.length > 0 ? mentionedUserIds : undefined
+      });
+      
+      setMessageText('');
+      
+      if (textareaRef.current) {
+        textareaRef.current.dataset.mentions = '{}';
+      }
+      
+      toast.success('Message sent');
+      
+      setShouldScrollToBottom(true);
+      
+      setTimeout(() => {
+        scrollToBottom();
+      }, 50);
+    } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
+    } finally {
+      setIsSubmitting(false);
     }
-  });
-
-  const { mutate: uploadAttachment, isPending: isUploadingAttachment } = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const file = formData.get('file') as File;
-      const roomId = formData.get('roomId') as string;
-      const attachmentUrl = await uploadTeamFile(file, 'chat');
-      
-      return createMessage({
-        content: 'Shared an attachment',
-        author_id: user?.id || '',
-        room_id: roomId,
-        type: 'attachment',
-        attachment_url: attachmentUrl,
-        read_by: [user?.id || ''],
-        mentioned_users: [],
+  };
+  
+  const handleAddReaction = async (messageId: string, emoji: string) => {
+    console.log(`[handleAddReaction] Processing reaction: ${emoji} for message ${messageId} from user ${user?.id}`);
+    
+    if (!user || !user.id) {
+      toast.error('You must be logged in to react to messages');
+      return;
+    }
+    
+    const pendingKey = `${messageId}-${emoji}`;
+    if (pendingReactions.current.has(pendingKey)) {
+      console.log(`Reaction ${emoji} to message ${messageId} is already being processed`);
+      return;
+    }
+    
+    pendingReactions.current.add(pendingKey);
+    
+    try {
+      const { data, error } = await supabase.rpc('update_message_reaction', {
+        p_message_id: messageId,
+        p_user_id: user.id,
+        p_emoji: emoji
       });
-    },
-    onSuccess: () => {
-      setAttachment(null);
-      queryClient.invalidateQueries({ queryKey: ['teamMessages', selectedRoomId] });
-      refetchMessages();
-    },
-    onError: (error: any) => {
-      console.error('Error uploading attachment:', error);
-      toast.error('Failed to upload attachment');
-    }
-  });
-
-  const { mutate: createChatPoll, isPending: isCreatingPoll } = useMutation({
-    mutationFn: async (data: { roomId: string; question: string; options: string[] }) => {
-      // First create a poll
-      const poll = await createPoll(
-        {
-          question: data.question,
-          author_id: user?.id || '',
-          active: true,
-          multiple_choice: false,
-        },
-        data.options.map((option, i) => ({
-          option_text: option,
-          option_type: 'text',
-          option_order: i
-        }))
-      );
       
-      // Then create a message with the poll reference
-      return createMessage({
-        content: `Created a poll: ${data.question}`,
-        author_id: user?.id || '',
-        room_id: data.roomId,
-        type: 'poll',
-        poll_id: poll.id,  // Custom field that will be added at the database level
-        read_by: [user?.id || ''],
-        mentioned_users: [],
-      } as any); // Using type assertion here to bypass the TS error
-    },
-    onSuccess: () => {
-      setPollQuestion('');
-      setPollOptions(['', '']);
-      setIsCreatePollDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['teamMessages', selectedRoomId] });
-      refetchMessages();
-    },
-    onError: (error: any) => {
-      console.error('Error creating poll:', error);
-      toast.error('Failed to create poll');
-    }
-  });
-
-  const handleRoomSelect = (roomId: string) => {
-    setSelectedRoomId(roomId);
-    if (compact) {
-      setSidebarMinimized(true);
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!selectedRoomId) {
-      toast.error('Please select a chat room');
-      return;
-    }
-
-    if (attachment) {
-      const attachmentId = uuidv4();
-      const formData = new FormData();
-      formData.append('file', attachment);
-      formData.append('roomId', selectedRoomId);
-      formData.append('attachmentId', attachmentId);
-
-      uploadAttachment(formData);
-    } else if (messageText.trim()) {
-      sendMessage({
-        roomId: selectedRoomId,
-        text: messageText,
-        mentionedUsers: mentions.map(m => m.id)
-      });
-      setMentions([]);
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setMessageText(prevText => prevText + emoji);
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files && event.target.files[0];
-    if (file) {
-      setAttachment(file);
-      setIsAttachmentDialogOpen(false);
-    }
-  };
-
-  const handleAddPollOption = () => {
-    setPollOptions([...pollOptions, '']);
-  };
-
-  const handlePollOptionChange = (index: number, value: string) => {
-    const newOptions = [...pollOptions];
-    newOptions[index] = value;
-    setPollOptions(newOptions);
-  };
-
-  const handleRemovePollOption = (index: number) => {
-    const newOptions = [...pollOptions];
-    newOptions.splice(index, 1);
-    setPollOptions(newOptions);
-  };
-
-  const handleCreatePoll = () => {
-    if (!selectedRoomId) {
-      toast.error('Please select a chat room');
-      return;
-    }
-
-    if (!pollQuestion.trim()) {
-      toast.error('Please enter a poll question');
-      return;
-    }
-
-    if (pollOptions.some(option => !option.trim())) {
-      toast.error('Please fill in all poll options');
-      return;
-    }
-
-    createChatPoll({
-      roomId: selectedRoomId,
-      question: pollQuestion,
-      options: pollOptions
-    });
-  };
-
-  const handleMentionSearch = async (query: string) => {
-    setMentionQuery(query);
-    if (query.length > 0) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .ilike('first_name', `%${query}%`)
-        .limit(5);
-
       if (error) {
-        console.error('Error fetching mentions:', error);
-        toast.error('Failed to load mentions');
-      } else {
-        setMentions(data || []);
+        console.error('Error adding reaction:', error);
+        toast.error('Failed to add reaction');
+        return;
+      }
+      
+      console.log('Reaction successfully processed:', data);
+      
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', selectedRoomId]
+      });
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      toast.error('Failed to add reaction');
+    } finally {
+      pendingReactions.current.delete(pendingKey);
+    }
+  };
+  
+  const handleDeleteMessage = (messageId: string) => {
+    if (!user) return;
+    deleteMessageMutation.mutate(messageId);
+  };
+  
+  const handleRoomSelect = (roomId: string) => {
+    console.log('Room clicked:', roomId, 'Previous selected:', selectedRoomId);
+    if (roomId !== selectedRoomId) {
+      console.log('Changing selected room from', selectedRoomId, 'to', roomId);
+      setSelectedRoomId(roomId);
+      setShouldScrollToBottom(true);
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', roomId]
+      });
+    }
+  };
+  
+  const handleImageUpload = () => {
+    if (!fileInputRef.current) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.display = 'none';
+      input.onchange = async (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        if (file && user && selectedRoomId) {
+          try {
+            setIsSubmitting(true);
+            toast.loading('Uploading image...');
+            const attachmentUrl = await uploadTeamFile(file, 'messages');
+            await createMessageMutation.mutateAsync({
+              content: messageText,
+              author_id: user.id,
+              type: 'image',
+              attachment_url: attachmentUrl,
+              room_id: selectedRoomId,
+              read_by: [user.id],
+              mentioned_users: []
+            });
+            setMessageText('');
+            toast.dismiss();
+            toast.success('Image sent');
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Failed to upload image');
+          } finally {
+            setIsSubmitting(false);
+          }
+        }
+      };
+      document.body.appendChild(input);
+      input.click();
+      document.body.removeChild(input);
+    } else {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleVoiceRecording = async () => {
+    if (isRecording) {
+      if (voiceRecorderRef.current) {
+        voiceRecorderRef.current.stop();
       }
     } else {
-      setMentions([]);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true
+        });
+        const recorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+        recorder.ondataavailable = e => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+            setAudioChunks([...chunks]);
+          }
+        };
+        recorder.onstop = async () => {
+          setIsRecording(false);
+          const audioBlob = new Blob(audioChunks, {
+            type: 'audio/webm'
+          });
+          const audioFile = new File([audioBlob], 'voice-message.webm', {
+            type: 'audio/webm'
+          });
+          if (user && selectedRoomId) {
+            try {
+              setIsSubmitting(true);
+              toast.loading('Uploading voice message...');
+              const attachmentUrl = await uploadTeamFile(audioFile, 'messages');
+              await createMessageMutation.mutateAsync({
+                content: messageText,
+                author_id: user.id,
+                type: 'voice',
+                attachment_url: attachmentUrl,
+                room_id: selectedRoomId,
+                read_by: [user.id],
+                mentioned_users: []
+              });
+              setMessageText('');
+              setAudioChunks([]);
+              toast.dismiss();
+              toast.success('Voice message sent');
+            } catch (error) {
+              console.error('Error uploading voice message:', error);
+              toast.error('Failed to upload voice message');
+            } finally {
+              setIsSubmitting(false);
+            }
+          }
+          stream.getTracks().forEach(track => track.stop());
+        };
+        voiceRecorderRef.current = recorder;
+        recorder.start();
+        setIsRecording(true);
+        toast.info('Recording voice message... Click again to stop.');
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        toast.error('Could not access microphone');
+      }
     }
   };
-
-  const handleMentionSelect = (user: UserProfile) => {
-    setMessageText(prevText => prevText + `@${user.first_name}`);
-    setMentions([]);
-    setIsMentionPopoverOpen(false);
+  
+  const handleFileUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.style.display = 'none';
+    input.onchange = async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (file && user && selectedRoomId) {
+        try {
+          setIsSubmitting(true);
+          toast.loading('Uploading file...');
+          const attachmentUrl = await uploadTeamFile(file, 'messages');
+          await createMessageMutation.mutateAsync({
+            content: messageText || `File: ${file.name}`,
+            author_id: user.id,
+            type: 'file',
+            attachment_url: attachmentUrl,
+            room_id: selectedRoomId,
+            read_by: [user.id],
+            mentioned_users: []
+          });
+          setMessageText('');
+          toast.dismiss();
+          toast.success('File sent');
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          toast.error('Failed to upload file');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    };
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
   };
-
-  useEffect(() => {
-    if (selectedRoomId && lastMessageRef.current) {
-      lastMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [messages, selectedRoomId]);
-
-  useEffect(() => {
-    if (initialRoomId) {
-      setSelectedRoomId(initialRoomId);
-    }
-  }, [initialRoomId]);
-
-  return (
-    <div className={cn("flex h-full border-t", className)}>
-      <div 
-        className={cn(
-          "border-r transition-all duration-300 bg-white",
-          sidebarMinimized 
-            ? "w-0 overflow-hidden" 
-            : compact 
-              ? "w-full absolute z-10 h-full left-0 top-0 shadow-lg" 
-              : "w-64"
-        )}
-      >
-        <ChatRoomSidebar
-          chatRooms={rooms}
-          selectedRoomId={selectedRoomId}
-          onRoomSelect={handleRoomSelect}
-          isLoading={isLoadingRooms}
-          hasError={!!roomsError}
-          compact={compact}
-          minimized={sidebarMinimized}
-          setMinimized={setSidebarMinimized}
-        />
-      </div>
-
-      <div className="flex-1 flex flex-col h-full">
-        {selectedRoomId ? (
-          <>
-            <div className="p-4 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
-              </h2>
-              {compact && (
-                <Button variant="ghost" size="icon" onClick={() => setSidebarMinimized(false)}>
-                  <ChevronLeftIcon className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {isLoadingMessages ? (
-                  <div className="text-center text-gray-500">Loading messages...</div>
-                ) : messagesError ? (
-                  <div className="text-center text-red-500">Error loading messages</div>
-                ) : (
-                  // Cast messages to ExtendedTeamMessage[] to access the author property
-                  (messages as ExtendedTeamMessage[]).map((message, index) => (
-                    <div key={message.id} className="flex items-start gap-2">
-                      <Avatar className="h-8 w-8">
-                        {message.author?.avatar_url ? (
-                          <AvatarImage src={message.author.avatar_url} alt={message.author.first_name || 'User'} />
-                        ) : (
-                          <AvatarFallback>{message.author?.first_name?.[0] || '?'}{message.author?.last_name?.[0] || ''}</AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div>
-                        <div className="flex items-baseline space-x-2">
-                          <span className="font-semibold">{message.author?.first_name || 'Unknown'}</span>
-                          <span className="text-xs text-gray-500">{formatDistance(new Date(message.created_at), new Date(), { addSuffix: true })}</span>
-                        </div>
-                        {message.attachment_url ? (
-                          <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                            View Attachment
-                          </a>
-                        ) : (
-                          <p className="break-words">{message.content}</p>
-                        )}
-                        {/* Access poll safely */}
-                        {message.poll && (
-                          <TeamPoll 
-                            poll={message.poll} 
-                            messageId={message.id} 
-                            userId={user?.id} 
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-                <div ref={lastMessageRef} />
-              </div>
-            </ScrollArea>
-
-            <div className="p-4 border-t">
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}>
-                        <SmileIcon className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Add Emoji
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => setIsAttachmentDialogOpen(true)}>
-                        <PaperclipIcon className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Add Attachment
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={() => setIsCreatePollDialogOpen(true)}>
-                        <UserPlusIcon className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Create Poll
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <Popover open={isMentionPopoverOpen} onOpenChange={setIsMentionPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <AtSign className="h-5 w-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Mention User
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64">
-                    <Input
-                      placeholder="Search users..."
-                      value={mentionQuery}
-                      onChange={(e) => handleMentionSearch(e.target.value)}
-                    />
-                    <ScrollArea className="max-h-40 mt-2">
-                      {mentions.length > 0 ? (
-                        mentions.map((user) => (
-                          <Button
-                            key={user.id}
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onClick={() => handleMentionSelect(user)}
-                          >
-                            {user.first_name} {user.last_name}
-                          </Button>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">No users found.</p>
-                      )}
-                    </ScrollArea>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="relative mt-2">
-                <Input
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your message..."
-                  className="pr-10"
-                  onFocus={() => setIsMentionPopoverOpen(false)}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 bottom-1"
-                  onClick={handleSendMessage}
-                  disabled={!messageText.trim() && !attachment}
-                >
-                  {isSendingMessage || isUploadingAttachment ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-5 w-5" />}
-                </Button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Select a chat room to start messaging
-          </div>
-        )}
-      </div>
-
-      <Popover open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="hidden">
-            <SmileIcon className="h-5 w-5" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80" align="end">
-          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
-        </PopoverContent>
-      </Popover>
-
-      <Dialog open={isAttachmentDialogOpen} onOpenChange={setIsAttachmentDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add Attachment</DialogTitle>
-          </DialogHeader>
-          <input
-            type="file"
-            accept="image/*, application/pdf, application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, text/plain"
-            onChange={handleFileSelect}
-            className="hidden"
-            ref={fileInputRef}
-            id="attachment-input"
-          />
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-            <ImageIcon className="mr-2 h-4 w-4" />
-            Select File
-          </Button>
-          {attachment && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">{attachment.name}</p>
-              <Button variant="ghost" size="icon" onClick={() => setAttachment(null)}>
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isCreatePollDialogOpen} onOpenChange={setIsCreatePollDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Create Poll</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="poll-question" className="block text-sm font-medium text-gray-700">
-                Question
-              </label>
-              <Input
-                id="poll-question"
-                value={pollQuestion}
-                onChange={(e) => setPollQuestion(e.target.value)}
-                placeholder="Enter your question"
-                className="mt-1"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Options
-              </label>
-              {pollOptions.map((option, index) => (
-                <div key={index} className="flex mt-1">
-                  <Input
-                    value={option}
-                    onChange={(e) => handlePollOptionChange(index, e.target.value)}
-                    placeholder={`Option ${index + 1}`}
-                    className="flex-1"
-                  />
-                  {pollOptions.length > 2 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemovePollOption(index)}
-                      className="ml-1"
-                    >
-                      <XIcon className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAddPollOption}
-                className="mt-2"
+  
+  const renderMentionSelector = () => {
+    if (!showMentionSelector) return null;
+    
+    const safeTeamMembers = Array.isArray(teamMembers) ? teamMembers : [];
+    const filteredMembers = safeTeamMembers.filter(member => {
+      if (!member || typeof member !== 'object') return false;
+      const firstName = member.first_name || '';
+      const lastName = member.last_name || '';
+      const fullName = `${firstName} ${lastName}`.toLowerCase().trim();
+      return mentionQuery === '' || fullName.includes(mentionQuery.toLowerCase());
+    });
+    
+    return (
+      <div className="absolute bottom-[calc(100%)] left-3 w-64 bg-white shadow-lg rounded-lg z-10 border overflow-hidden">
+        <Command className="rounded-lg border shadow-md">
+          <CommandInput placeholder="Search people..." value={mentionQuery} onValueChange={setMentionQuery} />
+          <CommandList>
+            <CommandEmpty className="text-gray-600">No users found</CommandEmpty>
+            <CommandGroup>
+              <CommandItem 
+                key="mention-all" 
+                className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100 text-gray-800" 
+                onSelect={insertAllMention}
               >
-                Add Option
-              </Button>
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800">
+                  <AtSign className="w-4 h-4" />
+                </div>
+                <span className="font-medium">everyone</span>
+              </CommandItem>
+              
+              {filteredMembers.map(member => (
+                <CommandItem 
+                  key={member.id}
+                  onSelect={() => insertMention(member.id, `${member.first_name || ''} ${member.last_name || ''}`.trim())}
+                  className="flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-100 text-gray-800"
+                >
+                  <Avatar className="h-8 w-8">
+                    {member.avatar_url ? (
+                      <AvatarImage src={member.avatar_url} alt={member.first_name || 'User'} />
+                    ) : (
+                      <AvatarFallback>
+                        {member.first_name?.[0] || ''}{member.last_name?.[0] || ''}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span>{member.first_name || ''} {member.last_name || ''}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </div>
+    );
+  };
+
+  const componentClasses = compact 
+    ? "flex h-full overflow-hidden" 
+    : "flex h-[calc(100vh-120px)] overflow-hidden";
+  
+  const mainChatClasses = compact
+    ? "flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden"
+    : "flex-1 flex flex-col bg-white/10 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden";
+  
+  const chatContentClasses = compact
+    ? "flex-1 p-2 overflow-y-auto"
+    : "flex-1 p-4 overflow-y-auto";
+  
+  const inputAreaClasses = compact
+    ? "p-2 border-t"
+    : "p-3 border-t";
+  
+  const renderMessages = () => {
+    if (isLoadingMessages) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-gray-500">Loading messages...</p>
+        </div>
+      );
+    }
+    
+    if (messagesError) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-red-500">Error loading messages. Please try again.</p>
+        </div>
+      );
+    }
+    
+    if (!messages || messages.length === 0) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-gray-500">No messages yet. Start the conversation!</p>
+        </div>
+      );
+    }
+    
+    try {
+      const safeMessages = Array.isArray(messages) 
+        ? messages.filter(msg => msg && typeof msg === 'object' && !msg.deleted)
+        : [];
+        
+      if (safeMessages.length === 0) {
+        return (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-gray-500">No messages to display.</p>
+          </div>
+        );
+      }
+      
+      return (
+        <>
+          {safeMessages.map(message => (
+            <Message 
+              key={message.id} 
+              message={message} 
+              isOwnMessage={message.author_id === user?.id} 
+              author={findMessageAuthor(message.author_id)} 
+              onAddReaction={(messageId, emoji) => handleAddReaction(messageId, emoji)} 
+              onDeleteMessage={handleDeleteMessage} 
+              teamMembers={teamMembers || []} 
+              currentUserId={user?.id || ''} 
+            />
+          ))}
+          <div ref={messagesEndRef} className="h-1 w-full" />
+        </>
+      );
+    } catch (error) {
+      console.error("Error rendering messages:", error);
+      return (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-red-500">Something went wrong displaying messages.</p>
+        </div>
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedRoomId) return;
+
+    console.log(`Setting up reaction-specific realtime subscription for room: ${selectedRoomId}`);
+    
+    const channel = supabase
+      .channel(`reaction-updates-${selectedRoomId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'team_messages',
+          filter: `room_id=eq.${selectedRoomId}`
+        },
+        (payload) => {
+          console.log('Message updated in realtime with reactions:', payload);
+          if (payload.new && payload.old) {
+            const oldReactions = payload.old.reactions;
+            const newReactions = payload.new.reactions;
+            
+            if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
+              console.log('Reactions have changed, refreshing messages');
+              queryClient.invalidateQueries({
+                queryKey: ['teamMessages', selectedRoomId],
+                refetchType: 'active'
+              });
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`Reaction-specific supabase channel status: ${status}`);
+      });
+      
+    return () => {
+      console.log('Removing reaction-specific realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [selectedRoomId, queryClient]);
+  
+  return (
+    <div className={componentClasses}>
+      <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
+      
+      <div className={mainChatClasses}>
+        <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
+          <CardContent className="p-0 flex flex-col h-full">
+            {!compact && (
+              <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
+                {selectedRoomId && rooms.length > 0 && (
+                  <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
+                    {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
+                  </h2>
+                )}
+              </div>
+            )}
+            
+            <div 
+              ref={scrollContainerRef}
+              className={chatContentClasses} 
+              style={{maxHeight: compact ? '320px' : undefined}}
+              onScroll={(e) => {
+                const element = e.target as HTMLDivElement;
+                const isScrolledToBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 10;
+                if (!isScrolledToBottom) {
+                  setShouldScrollToBottom(false);
+                }
+              }}
+            >
+              {renderMessages()}
             </div>
             
-            <Button onClick={handleCreatePoll} disabled={!pollQuestion.trim() || pollOptions.some(option => !option.trim()) || isCreatingPoll}>
-              {isCreatingPoll ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Poll'
+            <div className={`relative ${inputAreaClasses}`}>
+              {renderMentionSelector()}
+              
+              <div className="flex items-end gap-2">
+                <Textarea 
+                  placeholder="Type a message... Use @ to mention users or @all for everyone" 
+                  value={messageText} 
+                  onChange={handleInputChange} 
+                  ref={textareaRef} 
+                  className="min-h-[60px] max-h-[120px] resize-none" 
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    } else if (e.key === 'Escape' && showMentionSelector) {
+                      e.preventDefault();
+                      setShowMentionSelector(false);
+                    }
+                  }} 
+                />
+                <Button 
+                  onClick={handleSendMessage} 
+                  disabled={isSubmitting || !messageText.trim()} 
+                  size="icon" 
+                  className="h-10 w-10 rounded-full"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              {!compact && (
+                <div className="flex justify-between w-full gap-1 mt-2">
+                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Add image" onClick={handleImageUpload}>
+                    <Image className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className={`flex-1 text-gray-500 hover:text-gray-700 ${isRecording ? 'bg-red-100' : ''}`} title={isRecording ? "Stop recording" : "Record voice"} onClick={handleVoiceRecording}>
+                    <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Attach file" onClick={handleFileUpload}>
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="flex-1 text-gray-500 hover:text-gray-700" title="Mention" onClick={() => {
+                    if (textareaRef.current) {
+                      const cursorPosition = textareaRef.current.selectionStart;
+                      const textBefore = messageText.substring(0, cursorPosition);
+                      const textAfter = messageText.substring(cursorPosition);
+                      const newText = `${textBefore}@${textAfter}`;
+                      setMessageText(newText);
+                      setMentionStart(cursorPosition);
+                      setMentionQuery('');
+                      setShowMentionSelector(true);
+                      textareaRef.current.focus();
+                      setTimeout(() => {
+                        if (textareaRef.current) {
+                          textareaRef.current.selectionStart = cursorPosition + 1;
+                          textareaRef.current.selectionEnd = cursorPosition + 1;
+                        }
+                      }, 0);
+                    }
+                  }}>
+                    <AtSign className="h-5 w-5" />
+                  </Button>
+                </div>
               )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        accept="image/*" 
+        onChange={async e => {
+          const file = e.target.files?.[0];
+          if (file && user && selectedRoomId) {
+            try {
+              setIsSubmitting(true);
+              toast.loading('Uploading image...');
+              const attachmentUrl = await uploadTeamFile(file, 'messages');
+              await createMessageMutation.mutateAsync({
+                content: messageText,
+                author_id: user.id,
+                type: 'image',
+                attachment_url: attachmentUrl,
+                room_id: selectedRoomId,
+                read_by: [user.id],
+                mentioned_users: []
+              });
+              setMessageText('');
+              toast.dismiss();
+              toast.success('Image sent');
+            } catch (error) {
+              console.error('Error uploading image:', error);
+              toast.error('Failed to upload image');
+            } finally {
+              setIsSubmitting(false);
+            }
+          }
+        }} 
+      />
     </div>
   );
 };
