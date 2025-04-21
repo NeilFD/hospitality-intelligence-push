@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -10,13 +11,15 @@ type PLReportTableProps = {
   processedBudgetData: any[];
   currentMonthName: string;
   currentYear: number;
+  currentMonth: number;
 };
 
 export function PLReportTable({
   isLoading,
   processedBudgetData,
   currentMonthName,
-  currentYear
+  currentYear,
+  currentMonth
 }: PLReportTableProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [renderedData, setRenderedData] = useState<any[]>([]);
