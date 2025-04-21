@@ -430,7 +430,7 @@ export function PLReportTable({
               </TableCell>
             </TableRow>;
       })}
-      
+
       <TableRow className="bg-purple-100/50 text-[#48495e]">
         <TableCell className="font-bold">
           TOTAL ADMIN EXPENSES
@@ -454,7 +454,7 @@ export function PLReportTable({
           {formatCurrency(adminBudgetVariance)}
         </TableCell>
       </TableRow>
-      
+
       <TableRow className="bg-purple-300 text-black">
         <TableCell className="font-bold bg-purple-300 text-black">
           Operating profit
@@ -465,22 +465,26 @@ export function PLReportTable({
         <TableCell className={`text-right font-bold ${
           operatingProfitActual >= 0 ? 'text-green-600' : 'text-red-600'
         }`}>
-          {formatPercentage(operatingProfitActualPercentage / 100)}
-        </TableCell>
-        <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
           {formatCurrency(operatingProfitActual)}
+        </TableCell>
+        <TableCell className={`text-right font-bold ${
+          operatingProfitActualPercentage >= 0 ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {formatPercentage(operatingProfitActualPercentage / 100)}
         </TableCell>
         <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
           {formatCurrency(operatingProfitForecast)}
         </TableCell>
-        <TableCell className="text-right font-bold">
+        <TableCell className={`text-right font-bold ${
+          operatingProfitForecastPercentage >= 0 ? 'text-green-600' : 'text-red-600'
+        }`}>
           {formatPercentage(operatingProfitForecastPercentage / 100)}
         </TableCell>
         <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
           {formatCurrency(operatingProfitVariance)}
         </TableCell>
       </TableRow>
-    </>;
+    </>
   };
 
   return <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
