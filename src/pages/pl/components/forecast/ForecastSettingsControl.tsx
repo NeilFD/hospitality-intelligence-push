@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Edit2, Save } from 'lucide-react';
 import { supabase } from "@/lib/supabase";
 import { formatCurrency } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 type ForecastMethod = 'fixed' | 'discrete' | 'fixed_plus';
 
@@ -43,66 +44,76 @@ export function ForecastSettingsControl({
     if (selectedMethod === 'fixed_plus') {
       return budgetAmount + totalDailyValues;
     }
-    
     if (selectedMethod === 'discrete') {
       return totalDailyValues;
     }
-    
     return budgetAmount;
   };
+
+  // For tooltip display: resolve setting from cache or server
+  const [tooltipMethod, setTooltipMethod] = React.useState<ForecastMethod>('fixed');
+  const [tooltipTotal, setTooltipTotal] = React.useState<number>(budgetAmount);
+  const [tooltipDaily, setTooltipDaily] = React.useState<number>(0);
 
   React.useEffect(() => {
     const fetchCurrentSetting = async () => {
       const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
       const cachedSettings = localStorage.getItem(cacheKey);
-      
+      let method: ForecastMethod = 'fixed';
+      let dvals: Record<string, number> = {};
+
       if (cachedSettings) {
         try {
-          console.log(`ForecastSettingsControl: Loading cached settings for ${itemName}:`, cachedSettings);
           const settings = JSON.parse(cachedSettings);
           setSelectedMethod(settings.method as ForecastMethod);
+          setTooltipMethod(settings.method as ForecastMethod);
           setDailyValues(settings.discrete_values || {});
+          dvals = settings.discrete_values || {};
+          method = settings.method as ForecastMethod;
           setIsEditing(false);
-          return;
-        } catch (e) {
-          console.error('Error parsing cached settings:', e);
+        } catch (e) {}
+      } else {
+        const { data } = await supabase
+          .from('cost_item_forecast_settings')
+          .select('method, discrete_values')
+          .eq('item_name', itemName)
+          .eq('year', currentYear)
+          .eq('month', currentMonth)
+          .single();
+
+        if (data) {
+          setSelectedMethod(data.method as ForecastMethod);
+          setTooltipMethod(data.method as ForecastMethod);
+          method = data.method as ForecastMethod;
+          if (data.discrete_values) {
+            const parsedValues: Record<string, number> = {};
+            const values = data.discrete_values as Record<string, any>;
+            Object.keys(values).forEach(key => {
+              const numValue = Number(values[key]);
+              if (!isNaN(numValue)) {
+                parsedValues[key] = numValue;
+              }
+            });
+            setDailyValues(parsedValues);
+            dvals = parsedValues;
+          } else {
+            setDailyValues({});
+            dvals = {};
+          }
+          setIsEditing(false);
         }
       }
 
-      const { data } = await supabase
-        .from('cost_item_forecast_settings')
-        .select('method, discrete_values')
-        .eq('item_name', itemName)
-        .eq('year', currentYear)
-        .eq('month', currentMonth)
-        .single();
-
-      if (data) {
-        console.log(`ForecastSettingsControl: Loaded database settings for ${itemName}:`, data);
-        setSelectedMethod(data.method as ForecastMethod);
-        
-        if (data.discrete_values) {
-          const parsedValues: Record<string, number> = {};
-          const values = data.discrete_values as Record<string, any>;
-          
-          Object.keys(values).forEach(key => {
-            const numValue = Number(values[key]);
-            if (!isNaN(numValue)) {
-              parsedValues[key] = numValue;
-            }
-          });
-          
-          setDailyValues(parsedValues);
-        } else {
-          setDailyValues({});
-        }
-        
-        setIsEditing(false);
-      }
+      // Always update tooltip preview
+      let dailySum = Object.values(dvals).reduce((sum, v) => sum + (v || 0), 0);
+      setTooltipDaily(dailySum);
+      if (method === 'fixed') setTooltipTotal(budgetAmount);
+      else if (method === 'discrete') setTooltipTotal(dailySum);
+      else if (method === 'fixed_plus') setTooltipTotal(budgetAmount + dailySum);
     };
-
     fetchCurrentSetting();
-  }, [itemName, currentYear, currentMonth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemName, currentYear, currentMonth, budgetAmount]);
 
   const handleMethodChange = async (value: ForecastMethod) => {
     setSelectedMethod(value);
@@ -113,13 +124,6 @@ export function ForecastSettingsControl({
 
   const handleSave = async () => {
     const finalTotal = getFinalTotal();
-    
-    console.log(`ForecastSettingsControl: Saving settings for ${itemName}:`, {
-      method: selectedMethod,
-      discreteValues: dailyValues,
-      finalTotal
-    });
-    
     await supabase
       .from('cost_item_forecast_settings')
       .upsert({
@@ -129,17 +133,14 @@ export function ForecastSettingsControl({
         month: currentMonth,
         discrete_values: dailyValues
       });
-
     const cacheKey = `forecast_${itemName}_${currentYear}_${currentMonth}`;
     const settingsToCache = {
       method: selectedMethod,
       discrete_values: dailyValues
     };
     localStorage.setItem(cacheKey, JSON.stringify(settingsToCache));
-
     setIsEditing(false);
     onMethodChange(selectedMethod);
-
     const event = new CustomEvent('forecast-updated', {
       detail: { 
         itemName, 
@@ -152,17 +153,21 @@ export function ForecastSettingsControl({
         budgetAmount
       }
     });
-    
-    console.log("Dispatching forecast-updated event", event.detail);
     window.dispatchEvent(event);
-    
     setOpen(false);
+
+    // Also update tooltip state immediately after save
+    let dailySum = Object.values(dailyValues).reduce((sum, v) => sum + (v || 0), 0);
+    setTooltipMethod(selectedMethod);
+    setTooltipDaily(dailySum);
+    if (selectedMethod === 'fixed') setTooltipTotal(budgetAmount);
+    else if (selectedMethod === 'discrete') setTooltipTotal(dailySum);
+    else if (selectedMethod === 'fixed_plus') setTooltipTotal(budgetAmount + dailySum);
   };
 
   const renderDailyInputs = () => {
     const days = getDaysInMonth(currentYear, currentMonth);
     const rows = [];
-
     for (let day = 1; day <= days; day++) {
       const date = new Date(currentYear, currentMonth - 1, day);
       const formattedDate = date.toLocaleDateString('en-GB', { 
@@ -170,7 +175,6 @@ export function ForecastSettingsControl({
         day: 'numeric',
         month: 'short'
       });
-
       rows.push(
         <div key={day} className="grid grid-cols-2 gap-4 items-center mb-2">
           <Label className="text-sm">{formattedDate}</Label>
@@ -189,7 +193,6 @@ export function ForecastSettingsControl({
         </div>
       );
     }
-
     return (
       <div className="mt-4 max-h-[400px] overflow-y-auto">
         {selectedMethod === 'fixed_plus' && (
@@ -210,16 +213,52 @@ export function ForecastSettingsControl({
     );
   };
 
+  // Tooltip content builder
+  const getTooltipContent = () => {
+    if (tooltipMethod === 'fixed') {
+      return (
+        <div>
+          <div className="font-semibold">Method: Budget</div>
+          <div>Budget: {formatCurrency(budgetAmount)}</div>
+        </div>
+      );
+    }
+    if (tooltipMethod === 'discrete') {
+      return (
+        <div>
+          <div className="font-semibold">Method: Discrete</div>
+          <div>Discrete Total: {formatCurrency(tooltipDaily)}</div>
+        </div>
+      );
+    }
+    if (tooltipMethod === 'fixed_plus') {
+      return (
+        <div>
+          <div className="font-semibold">Method: Fixed+</div>
+          <div>Fixed+ Total ({formatCurrency(budgetAmount)} + {formatCurrency(tooltipDaily)})</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <>
-      <Button 
-        variant="ghost" 
-        size="sm"
-        className="h-6 w-6 p-0 ml-2"
-        onClick={() => setOpen(true)}
-      >
-        <Edit2 className="h-3 w-3" />
-      </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="h-6 w-6 p-0 ml-2"
+            onClick={() => setOpen(true)}
+          >
+            <Edit2 className="h-3 w-3" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          {getTooltipContent()}
+        </TooltipContent>
+      </Tooltip>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
@@ -268,6 +307,6 @@ export function ForecastSettingsControl({
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   );
 }
