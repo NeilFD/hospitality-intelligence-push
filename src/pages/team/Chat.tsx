@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -25,6 +24,15 @@ const Chat: React.FC = () => {
     queryFn: getChatRooms,
     staleTime: 60000, // 1 minute
     retry: 2,
+    meta: {
+      onSuccess: (data: any) => {
+        console.log('Successfully fetched chat rooms:', data);
+      },
+      onError: (error: Error) => {
+        console.error('Error fetching chat rooms:', error);
+        toast.error('Failed to load chat rooms');
+      }
+    }
   });
   
   useEffect(() => {
@@ -232,7 +240,7 @@ const Chat: React.FC = () => {
             <p className="text-gray-500">Preparing chat interface...</p>
           </div>
         ) : roomId ? (
-          <TeamChat initialRoomId={roomId} initialMinimizeSidebar={false} />
+          <TeamChat key={`chat-${roomId}`} initialRoomId={roomId} initialMinimizeSidebar={false} />
         ) : (
           <div className="flex justify-center items-center h-full">
             <p className="text-gray-500">No chat rooms available</p>
