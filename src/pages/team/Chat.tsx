@@ -115,6 +115,12 @@ const Chat: React.FC = () => {
                 }
               });
               
+              // Force refresh of notifications data
+              queryClient.invalidateQueries({ 
+                queryKey: ['mentionedMessages', user.id],
+                exact: true
+              });
+              
               // Trigger push notification via edge function
               try {
                 console.log('Triggering push notification for mention');
@@ -124,7 +130,8 @@ const Chat: React.FC = () => {
                       title: 'New mention',
                       body: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
                       data: {
-                        url: `/team/chat?room=${message.room_id}`
+                        url: `/team/chat?room=${message.room_id}`,
+                        messageId: message.id
                       }
                     },
                     userIds: [user.id]
@@ -149,7 +156,7 @@ const Chat: React.FC = () => {
       console.log('Removing mention notification channel in Chat.tsx');
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, queryClient]);
   
   useEffect(() => {
     if (!roomId) return;

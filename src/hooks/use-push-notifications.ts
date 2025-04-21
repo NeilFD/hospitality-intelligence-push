@@ -61,6 +61,14 @@ export function usePushNotifications() {
       
       try {
         console.log('Initializing push notifications service...');
+        
+        // Unregister any existing service worker to get a fresh one
+        const existingReg = await navigator.serviceWorker.getRegistration('/service-worker.js');
+        if (existingReg) {
+          console.log('Unregistering existing service worker for clean start');
+          await existingReg.unregister();
+        }
+        
         await registerServiceWorker();
         
         // Fetch the VAPID public key from Supabase
@@ -104,7 +112,9 @@ export function usePushNotifications() {
   async function registerServiceWorker() {
     try {
       // Use the top-level window to register the service worker
-      const swRegistration = await navigator.serviceWorker.register('/service-worker.js');
+      const swRegistration = await navigator.serviceWorker.register('/service-worker.js', {
+        scope: '/'
+      });
       console.log('Service Worker registered:', swRegistration);
       
       // Wait until the service worker is active
@@ -188,13 +198,25 @@ export function usePushNotifications() {
     if (!user) return;
     
     try {
+      // Get p256dh and auth keys
+      const p256dhKey = subscription.getKey('p256dh');
+      const authKey = subscription.getKey('auth');
+      
+      if (!p256dhKey || !authKey) {
+        console.error('Missing required subscription keys');
+        return;
+      }
+      
+      const p256dhBase64 = btoa(String.fromCharCode.apply(null, 
+        Array.from(new Uint8Array(p256dhKey))));
+      const authBase64 = btoa(String.fromCharCode.apply(null, 
+        Array.from(new Uint8Array(authKey))));
+      
       const { error } = await supabase.from('push_subscriptions').insert({
         user_id: user.id,
         endpoint: subscription.endpoint,
-        p256dh: btoa(String.fromCharCode.apply(null, 
-          new Uint8Array(subscription.getKey('p256dh')!))),
-        auth: btoa(String.fromCharCode.apply(null, 
-          new Uint8Array(subscription.getKey('auth')!)))
+        p256dh: p256dhBase64,
+        auth: authBase64
       });
 
       if (error) {
@@ -246,6 +268,12 @@ export function usePushNotifications() {
 
       console.log('Creating subscription with VAPID key...');
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+      
+      // Unsubscribe from any existing subscriptions
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        await existingSubscription.unsubscribe();
+      }
       
       // Create the subscription
       const subscription = await registration.pushManager.subscribe({

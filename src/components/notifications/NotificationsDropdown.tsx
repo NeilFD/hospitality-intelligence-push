@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -45,7 +46,7 @@ const NotificationsDropdown = () => {
     },
     enabled: !!user,
     staleTime: 5000,
-    refetchInterval: 15000,
+    refetchInterval: 10000, // Poll every 10 seconds
   });
   
   const { data: profiles = [] } = useQuery({
@@ -84,6 +85,8 @@ const NotificationsDropdown = () => {
           if (payload.new && (payload.new as any).author_id !== user.id) {
             const authorId = (payload.new as any).author_id;
             const content = (payload.new as any).content;
+            
+            // Show toast notification
             toast.info('You have been mentioned in a message', {
               duration: 6000,
               action: {
@@ -93,7 +96,12 @@ const NotificationsDropdown = () => {
                 }
               }
             });
+            
+            // Force immediate refresh of notifications
             refetchMentions();
+            
+            // Flash the icon
+            setHasUnread(true);
           }
         }
       )
@@ -126,7 +134,7 @@ const NotificationsDropdown = () => {
     const pollInterval = setInterval(() => {
       console.log('Polling for new notifications');
       refetchMentions();
-    }, 30000);
+    }, 15000); // Poll every 15 seconds as a backup
     
     return () => clearInterval(pollInterval);
   }, [user, refetchMentions]);
@@ -324,7 +332,7 @@ const NotificationsDropdown = () => {
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative p-0 h-auto bg-transparent hover:bg-transparent">
-          <Bell className="h-5 w-5 text-tavern-blue" />
+          <Bell className={`h-5 w-5 ${hasUnread ? 'text-red-500' : 'text-tavern-blue'}`} />
           {hasUnread && (
             <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
           )}

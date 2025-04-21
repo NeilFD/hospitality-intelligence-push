@@ -9,7 +9,8 @@ self.addEventListener('push', function(event) {
       icon: '/lovable-uploads/867c4809-f55f-4880-aa49-e12c12c65af6.png',
       badge: '/lovable-uploads/867c4809-f55f-4880-aa49-e12c12c65af6.png',
       data: notification.data,
-      requireInteraction: true
+      requireInteraction: true,
+      tag: notification.data?.messageId || 'general-notification' // Add tag for notification grouping
     };
 
     event.waitUntil(

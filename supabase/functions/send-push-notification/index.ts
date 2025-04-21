@@ -1,4 +1,5 @@
 
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import webpush from 'https://esm.sh/web-push@3.6.6'
 
@@ -14,6 +15,8 @@ Deno.serve(async (req) => {
 
   try {
     const { notification, userIds } = await req.json()
+    console.log('Sending push notification to users:', userIds)
+    console.log('Notification content:', notification)
 
     // Initialize web-push with VAPID details
     webpush.setVapidDetails(
@@ -44,9 +47,24 @@ Deno.serve(async (req) => {
       throw new Error(`Error fetching subscriptions: ${subscriptionError.message}`)
     }
 
+    console.log(`Found ${subscriptions.length} subscription(s) for the specified users`)
+
+    // If no subscriptions found, return early
+    if (!subscriptions || subscriptions.length === 0) {
+      return new Response(
+        JSON.stringify({ message: 'No active push subscriptions found for the users' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
+    }
+
     // Send push notifications to all subscriptions
     const pushPromises = subscriptions.map(async (subscription) => {
       try {
+        console.log(`Sending notification to subscription ID: ${subscription.id}`)
+        
         await webpush.sendNotification(
           {
             endpoint: subscription.endpoint,
@@ -57,29 +75,55 @@ Deno.serve(async (req) => {
           },
           JSON.stringify(notification)
         )
+        
         console.log(`Push notification sent to subscription: ${subscription.id}`)
+        return { status: 'success', subscriptionId: subscription.id }
       } catch (error) {
         console.error(`Error sending push notification: ${error}`)
-        // If subscription is invalid, remove it
+        
+        // If subscription is invalid (gone), remove it
         if (error.statusCode === 410) {
+          console.log(`Subscription ${subscription.id} gone, removing from database`)
+          
           await supabaseClient
             .from('push_subscriptions')
             .delete()
             .eq('id', subscription.id)
+          
+          return { 
+            status: 'error', 
+            subscriptionId: subscription.id, 
+            reason: 'subscription_gone',
+            removed: true 
+          }
+        }
+        
+        return { 
+          status: 'error', 
+          subscriptionId: subscription.id, 
+          reason: error.message 
         }
       }
     })
 
-    await Promise.all(pushPromises)
+    const results = await Promise.all(pushPromises)
+    
+    // Count successful notifications
+    const successCount = results.filter(r => r.status === 'success').length
 
     return new Response(
-      JSON.stringify({ message: 'Push notifications sent successfully' }),
+      JSON.stringify({ 
+        message: `Push notifications sent successfully to ${successCount} device(s)`,
+        results
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
     )
   } catch (error) {
+    console.error(`Fatal error in push notification service: ${error}`)
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {
@@ -89,3 +133,4 @@ Deno.serve(async (req) => {
     )
   }
 })
+
