@@ -1,5 +1,4 @@
 
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import webpush from 'https://esm.sh/web-push@3.6.6'
 
@@ -44,10 +43,11 @@ Deno.serve(async (req) => {
       .in('user_id', userIds)
 
     if (subscriptionError) {
+      console.error('Error fetching subscriptions:', subscriptionError)
       throw new Error(`Error fetching subscriptions: ${subscriptionError.message}`)
     }
 
-    console.log(`Found ${subscriptions.length} subscription(s) for the specified users`)
+    console.log(`Found ${subscriptions?.length || 0} subscription(s) for the specified users`)
 
     // If no subscriptions found, return early
     if (!subscriptions || subscriptions.length === 0) {
@@ -65,21 +65,29 @@ Deno.serve(async (req) => {
       try {
         console.log(`Sending notification to subscription ID: ${subscription.id}`)
         
-        await webpush.sendNotification(
-          {
-            endpoint: subscription.endpoint,
-            keys: {
-              p256dh: subscription.p256dh,
-              auth: subscription.auth,
-            },
+        // Ensure subscription data is properly formatted
+        const pushSubscription = {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.p256dh,
+            auth: subscription.auth,
           },
-          JSON.stringify(notification)
-        )
+        }
+        
+        // Log the full subscription object for debugging
+        console.log('Push subscription object:', JSON.stringify(pushSubscription))
+        console.log('Notification payload:', JSON.stringify(notification))
+        
+        // Send the notification with a timeout
+        const result = await Promise.race([
+          webpush.sendNotification(pushSubscription, JSON.stringify(notification)),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Push notification timeout')), 10000))
+        ])
         
         console.log(`Push notification sent to subscription: ${subscription.id}`)
         return { status: 'success', subscriptionId: subscription.id }
       } catch (error) {
-        console.error(`Error sending push notification: ${error}`)
+        console.error(`Error sending push notification:`, error)
         
         // If subscription is invalid (gone), remove it
         if (error.statusCode === 410) {
@@ -101,20 +109,23 @@ Deno.serve(async (req) => {
         return { 
           status: 'error', 
           subscriptionId: subscription.id, 
-          reason: error.message 
+          reason: error.message || 'Unknown error'
         }
       }
     })
 
-    const results = await Promise.all(pushPromises)
+    // Wait for all push notification attempts to complete
+    const results = await Promise.allSettled(pushPromises)
     
     // Count successful notifications
-    const successCount = results.filter(r => r.status === 'success').length
+    const successCount = results.filter(r => 
+      r.status === 'fulfilled' && r.value?.status === 'success'
+    ).length
 
     return new Response(
       JSON.stringify({ 
         message: `Push notifications sent successfully to ${successCount} device(s)`,
-        results
+        results: results.map(r => r.status === 'fulfilled' ? r.value : { status: 'error', reason: r.reason })
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -122,10 +133,10 @@ Deno.serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error(`Fatal error in push notification service: ${error}`)
+    console.error(`Fatal error in push notification service:`, error)
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Unknown error' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
@@ -133,4 +144,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-

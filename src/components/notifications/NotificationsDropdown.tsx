@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,26 +26,31 @@ const NotificationsDropdown = () => {
       
       console.log('Fetching mentioned messages for user:', user.id);
       
-      const { data, error } = await supabase
-        .from('team_messages')
-        .select('*')
-        .contains('mentioned_users', [user.id])
-        .eq('deleted', false)
-        .eq('notification_state', 'live')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      try {
+        const { data, error } = await supabase
+          .from('team_messages')
+          .select('*')
+          .contains('mentioned_users', [user.id])
+          .eq('deleted', false)
+          .eq('notification_state', 'live')
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        if (error) {
+          console.error('Error fetching mentioned messages:', error);
+          return [];
+        }
         
-      if (error) {
-        console.error('Error fetching mentioned messages:', error);
+        console.log('Fetched mentioned messages:', data);
+        return data as TeamMessage[];
+      } catch (err) {
+        console.error('Exception in fetching mentioned messages:', err);
         return [];
       }
-      
-      console.log('Fetched mentioned messages:', data);
-      return data as TeamMessage[];
     },
     enabled: !!user,
-    staleTime: 5000,
-    refetchInterval: 10000, // Poll every 10 seconds
+    staleTime: 3000,
+    refetchInterval: 5000,
   });
   
   const { data: profiles = [] } = useQuery({
@@ -81,12 +85,8 @@ const NotificationsDropdown = () => {
           filter: `mentioned_users=cs.{${user.id}}`
         },
         (payload) => {
-          console.log('Received mention notification:', payload);
+          console.log('Received mention notification in NotificationsDropdown:', payload);
           if (payload.new && (payload.new as any).author_id !== user.id) {
-            const authorId = (payload.new as any).author_id;
-            const content = (payload.new as any).content;
-            
-            // Show toast notification
             toast.info('You have been mentioned in a message', {
               duration: 6000,
               action: {
@@ -97,10 +97,8 @@ const NotificationsDropdown = () => {
               }
             });
             
-            // Force immediate refresh of notifications
             refetchMentions();
             
-            // Flash the icon
             setHasUnread(true);
           }
         }
@@ -114,16 +112,16 @@ const NotificationsDropdown = () => {
           filter: `mentioned_users=cs.{${user.id}}`
         },
         (payload) => {
-          console.log('Mention update detected:', payload);
+          console.log('Mention update detected in NotificationsDropdown:', payload);
           refetchMentions();
         }
       )
       .subscribe((status) => {
-        console.log('Mention notification subscription status:', status);
+        console.log('Mention notification subscription status in NotificationsDropdown:', status);
       });
     
     return () => {
-      console.log('Cleaning up notification subscription');
+      console.log('Cleaning up notification subscription in NotificationsDropdown');
       supabase.removeChannel(channel);
     };
   }, [user, refetchMentions, navigate]);
@@ -134,7 +132,7 @@ const NotificationsDropdown = () => {
     const pollInterval = setInterval(() => {
       console.log('Polling for new notifications');
       refetchMentions();
-    }, 15000); // Poll every 15 seconds as a backup
+    }, 8000);
     
     return () => clearInterval(pollInterval);
   }, [user, refetchMentions]);
@@ -143,7 +141,13 @@ const NotificationsDropdown = () => {
     if (mentionedMessages && user) {
       console.log('Updating notifications state with:', mentionedMessages);
       setNotifications(mentionedMessages);
-      setHasUnread(mentionedMessages.length > 0);
+      
+      const hasUnreadMessages = mentionedMessages.some(msg => {
+        const readBy = Array.isArray(msg.read_by) ? msg.read_by : [];
+        return !readBy.includes(user.id);
+      });
+      
+      setHasUnread(hasUnreadMessages);
       
       if (mentionedMessages.length > 0 && !isOpen) {
         const latestMessage = mentionedMessages[0];

@@ -96,7 +96,6 @@ const Chat: React.FC = () => {
             if (message.author_id !== user.id) {
               const readBy = Array.isArray(message.read_by) ? message.read_by : [];
               
-              // Immediately show in-app notification
               toast.info('You have been mentioned in a message', {
                 duration: 6000,
                 action: {
@@ -115,35 +114,44 @@ const Chat: React.FC = () => {
                 }
               });
               
-              // Force refresh of notifications data
               queryClient.invalidateQueries({ 
                 queryKey: ['mentionedMessages', user.id],
                 exact: true
               });
               
-              // Trigger push notification via edge function
-              try {
-                console.log('Triggering push notification for mention');
-                supabase.functions.invoke('send-push-notification', {
-                  body: {
-                    notification: {
-                      title: 'New mention',
-                      body: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
-                      data: {
-                        url: `/team/chat?room=${message.room_id}`,
-                        messageId: message.id
-                      }
-                    },
-                    userIds: [user.id]
-                  }
-                }).then(response => {
+              const sendPushNotification = async (retryCount = 0) => {
+                try {
+                  const response = await supabase.functions.invoke('send-push-notification', {
+                    body: {
+                      notification: {
+                        title: 'New mention',
+                        body: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
+                        data: {
+                          url: `/team/chat?room=${message.room_id}`,
+                          messageId: message.id
+                        }
+                      },
+                      userIds: [user.id]
+                    }
+                  });
+                  
                   console.log('Push notification response:', response);
-                }).catch(error => {
-                  console.error('Error sending push notification:', error);
-                });
-              } catch (error) {
-                console.error('Error triggering push notification:', error);
-              }
+                  return response;
+                } catch (error) {
+                  console.error(`Error sending push notification (attempt ${retryCount + 1}):`, error);
+                  if (retryCount < 2) {
+                    console.log(`Retrying push notification (attempt ${retryCount + 2})...`);
+                    return new Promise(resolve => {
+                      setTimeout(() => {
+                        resolve(sendPushNotification(retryCount + 1));
+                      }, 1000);
+                    });
+                  }
+                  throw error;
+                }
+              };
+              
+              sendPushNotification();
             }
           }
         }
@@ -163,7 +171,6 @@ const Chat: React.FC = () => {
 
     console.log(`Setting up reactions realtime subscription in Chat.tsx for room: ${roomId}`);
     
-    // This channel will listen for ANY updates to messages in the current room
     const channel = supabase
       .channel(`chat-reactions-${roomId}`)
       .on(
@@ -178,19 +185,15 @@ const Chat: React.FC = () => {
           console.log(`Realtime change detected in Chat.tsx:`, payload);
           
           if (payload.new && payload.old) {
-            // Type assertion to ensure TypeScript knows these properties exist
             const oldPayload = payload.old as Record<string, any>;
             const newPayload = payload.new as Record<string, any>;
             
-            // Extract reactions or default to empty arrays if undefined
             const oldReactions = oldPayload.reactions || [];
             const newReactions = newPayload.reactions || [];
             
-            // Stringify to compare the actual data structures
             if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
               console.log('👉 REACTION CHANGE DETECTED in Chat.tsx, refreshing messages');
               
-              // Force a refresh of the messages query
               queryClient.invalidateQueries({
                 queryKey: ['teamMessages', roomId],
                 exact: true
@@ -214,7 +217,6 @@ const Chat: React.FC = () => {
       try {
         console.log('Ensuring storage buckets exist from Chat component...');
         
-        // Check if the team_files bucket exists
         const { data: buckets, error } = await supabase.storage.listBuckets();
         
         if (error) {
@@ -225,20 +227,17 @@ const Chat: React.FC = () => {
         if (!buckets.some(bucket => bucket.name === 'team_files')) {
           console.log('Creating team_files bucket from Chat component...');
           
-          // Try creating the bucket with explicit public access
           const { error: createError } = await supabase.storage.createBucket('team_files', {
             public: true,
-            fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+            fileSizeLimit: 50 * 1024 * 1024,
           });
           
           if (createError) {
             console.error('Error creating team_files bucket:', createError);
             
-            // If we get a permissions error, we'll try to create a unique file to test access
             if (createError.message.includes('permission')) {
               console.log('Testing bucket access differently due to permission error...');
               try {
-                // Try to upload a test file to see if bucket exists but we just can't create it
                 const testFile = new Blob(['test'], { type: 'text/plain' });
                 await supabase.storage.from('team_files').upload(`test-${Date.now()}.txt`, testFile);
                 console.log('Successfully uploaded test file, bucket exists and is accessible');

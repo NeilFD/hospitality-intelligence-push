@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -32,7 +31,9 @@ export function usePushNotifications() {
 
   // Check if the browser supports push notifications
   const checkBrowserSupport = useCallback(() => {
-    return 'serviceWorker' in navigator && 'PushManager' in window;
+    const support = 'serviceWorker' in navigator && 'PushManager' in window;
+    console.log('Browser support for push notifications:', support);
+    return support;
   }, []);
 
   // Check if notifications are blocked
@@ -42,6 +43,7 @@ export function usePushNotifications() {
       setIsPermissionBlocked(true);
       return false;
     }
+    console.log('Current notification permission:', Notification.permission);
     return true;
   }, []);
 
@@ -62,14 +64,13 @@ export function usePushNotifications() {
       try {
         console.log('Initializing push notifications service...');
         
-        // Unregister any existing service worker to get a fresh one
-        const existingReg = await navigator.serviceWorker.getRegistration('/service-worker.js');
-        if (existingReg) {
-          console.log('Unregistering existing service worker for clean start');
-          await existingReg.unregister();
-        }
+        // Register the service worker first
+        const registration = await registerServiceWorker();
         
-        await registerServiceWorker();
+        if (!registration) {
+          console.error('Failed to register service worker');
+          return;
+        }
         
         // Fetch the VAPID public key from Supabase
         const { data, error } = await supabase.functions.invoke('get-vapid-public-key');
@@ -108,51 +109,74 @@ export function usePushNotifications() {
     }
   }, [user]);
 
-  // Register service worker
+  // Register service worker with retry mechanism
   async function registerServiceWorker() {
-    try {
-      // Use the top-level window to register the service worker
-      const swRegistration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/'
-      });
-      console.log('Service Worker registered:', swRegistration);
-      
-      // Wait until the service worker is active
-      if (swRegistration.installing) {
-        console.log('Service worker installing');
-        const worker = swRegistration.installing;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        console.log(`Registering service worker (attempt ${attempts + 1}/${maxAttempts})...`);
         
-        // Create a promise that resolves when the service worker is activated
-        await new Promise<void>((resolve) => {
-          worker.addEventListener('statechange', () => {
-            if (worker.state === 'activated') {
-              console.log('Service worker now activated');
-              resolve();
-            }
-          });
+        // Use the top-level window to register the service worker
+        const swRegistration = await navigator.serviceWorker.register('/service-worker.js', {
+          scope: '/'
         });
-      } else if (swRegistration.waiting) {
-        console.log('Service worker is waiting');
-        // Force activation if waiting
-        await swRegistration.waiting.postMessage({type: 'SKIP_WAITING'});
-      } else {
-        console.log('Service worker is already active');
+        console.log('Service Worker registered:', swRegistration);
+        
+        // Wait until the service worker is active
+        if (swRegistration.installing) {
+          console.log('Service worker installing');
+          const worker = swRegistration.installing;
+          
+          // Create a promise that resolves when the service worker is activated
+          await new Promise<void>((resolve) => {
+            worker.addEventListener('statechange', () => {
+              console.log('Service worker state changed to:', worker.state);
+              if (worker.state === 'activated') {
+                console.log('Service worker now activated');
+                resolve();
+              }
+            });
+          });
+        } else if (swRegistration.waiting) {
+          console.log('Service worker is waiting');
+          // Force activation if waiting
+          swRegistration.waiting.postMessage({type: 'SKIP_WAITING'});
+          await new Promise<void>(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.log('Service worker is already active');
+        }
+        
+        setRegistration(swRegistration);
+        return swRegistration;
+      } catch (error) {
+        attempts++;
+        console.error(`Service Worker registration failed (attempt ${attempts}/${maxAttempts}):`, error);
+        
+        if (attempts >= maxAttempts) {
+          toast.error('Failed to register service worker after multiple attempts');
+          throw error;
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      
-      setRegistration(swRegistration);
-      return swRegistration;
-    } catch (error) {
-      console.error('Service Worker registration failed:', error);
-      toast.error('Failed to register service worker');
-      throw error;
     }
+    
+    return null;
   }
 
-  // Check if user is already subscribed
+  // Check if user is already subscribed with better error handling
   async function checkSubscription() {
     try {
       console.log('Checking push subscription status...');
-      const subscription = await registration?.pushManager.getSubscription();
+      if (!registration) {
+        console.error('Service worker registration not available');
+        return;
+      }
+      
+      const subscription = await registration.pushManager.getSubscription();
       console.log('Current subscription:', subscription);
       setIsSubscribed(!!subscription);
       setSubscription(subscription);
@@ -229,14 +253,13 @@ export function usePushNotifications() {
     }
   }
 
-  // Subscribe user to push notifications
+  // Subscribe user to push notifications with better error handling
   async function subscribeUser() {
     try {
       if (!registration || !user || !vapidPublicKey) {
-        if (!vapidPublicKey) {
-          console.error('VAPID public key not available');
-          toast.error('Push notification setup incomplete');
-        }
+        if (!registration) console.error('Service worker registration not available');
+        if (!vapidPublicKey) console.error('VAPID public key not available');
+        toast.error('Push notification setup incomplete');
         return;
       }
 
@@ -272,6 +295,7 @@ export function usePushNotifications() {
       // Unsubscribe from any existing subscriptions
       const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
+        console.log('Unsubscribing from existing subscription');
         await existingSubscription.unsubscribe();
       }
       
@@ -298,12 +322,37 @@ export function usePushNotifications() {
             registration.showNotification('Notifications Enabled', {
               body: 'You will now receive notifications when mentioned in chats',
               icon: '/lovable-uploads/867c4809-f55f-4880-aa49-e12c12c65af6.png'
-            }).then(() => resolve());
+            }).then(() => resolve()).catch(err => {
+              console.error('Error showing test notification:', err);
+              resolve();
+            });
           }, 1000);
         });
       } catch (error) {
         console.error('Error showing test notification:', error);
       }
+      
+      // Verify subscription by sending a test push notification
+      try {
+        console.log('Sending test push notification to verify subscription...');
+        const testResponse = await supabase.functions.invoke('send-push-notification', {
+          body: {
+            notification: {
+              title: 'Test Notification',
+              body: 'This is a test to verify your push notification setup is working',
+              data: {
+                url: '/profile',
+                messageId: 'test-notification'
+              }
+            },
+            userIds: [user.id]
+          }
+        });
+        console.log('Test push notification response:', testResponse);
+      } catch (testError) {
+        console.error('Error sending test push notification:', testError);
+      }
+      
     } catch (error) {
       console.error('Error subscribing to push notifications:', error);
       toast.error('Failed to subscribe to push notifications');
