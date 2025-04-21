@@ -4,12 +4,14 @@ import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getActualAmount, getForecastAmount, fetchForecastSettings, calculateForecastFromSettings } from './tracker/TrackerCalculations';
 import { ForecastSettingsControl } from "./forecast/ForecastSettingsControl";
+
 type PLReportTableProps = {
   isLoading: boolean;
   processedBudgetData: any[];
   currentMonthName: string;
   currentYear: number;
 };
+
 export function PLReportTable({
   isLoading,
   processedBudgetData,
@@ -18,11 +20,14 @@ export function PLReportTable({
 }: PLReportTableProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [renderedData, setRenderedData] = useState<any[]>([]);
+
   const getMonthNumber = (monthName: string) => {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     return months.indexOf(monthName) + 1;
   };
+
   const currentMonth = getMonthNumber(currentMonthName);
+
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
       console.log("PLReportTable: Forecast updated event received", event.detail);
@@ -54,6 +59,7 @@ export function PLReportTable({
       window.removeEventListener('forecast-updated', handleForecastUpdate);
     };
   }, []);
+
   useEffect(() => {
     const loadData = async () => {
       console.log("PLReportTable: Processing data with current forecast settings");
@@ -91,10 +97,12 @@ export function PLReportTable({
     };
     loadData();
   }, [processedBudgetData, refreshTrigger, currentYear, currentMonth]);
+
   const getDaysInMonth = () => {
     const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
     return date.getDate();
   };
+
   const getCurrentDay = () => {
     const today = new Date();
     const yesterday = new Date(today);
@@ -105,6 +113,7 @@ export function PLReportTable({
     const daysInMonth = getDaysInMonth();
     return Math.min(yesterday.getDate(), daysInMonth);
   };
+
   const getFontClass = (name: string) => {
     if (!name) return "";
     const lowercaseName = name.toLowerCase();
@@ -113,11 +122,13 @@ export function PLReportTable({
     }
     return "";
   };
+
   const shouldShowPercentage = (item: any) => {
     if (!item || !item.name) return false;
     const lowercaseName = item.name.toLowerCase();
     return lowercaseName.includes("gross profit") || lowercaseName === "wages and salaries" || lowercaseName === "wages" || lowercaseName === "salaries";
   };
+
   const getPercentageDisplay = (item: any) => {
     if (!item || !item.name) return null;
     const lowercaseName = item.name.toLowerCase();
@@ -149,6 +160,7 @@ export function PLReportTable({
     }
     return null;
   };
+
   const filteredBudgetData = React.useMemo(() => {
     if (!renderedData || renderedData.length === 0) {
       return [];
@@ -191,6 +203,7 @@ export function PLReportTable({
       return name !== "total";
     });
   }, [renderedData]);
+
   const getValueColor = (value: number, isCostLine: boolean = false) => {
     if (isCostLine) {
       if (value < 0) return "text-green-600";
@@ -201,17 +214,20 @@ export function PLReportTable({
     }
     return "";
   };
+
   const isCostLine = (name: string) => {
     if (!name) return false;
     const lowercaseName = name.toLowerCase();
     return lowercaseName.includes('cost') || lowercaseName.includes('expense') || lowercaseName.includes('wages') || lowercaseName.includes('salaries') || lowercaseName.includes('insurance') || lowercaseName === 'repairs and maintenance' || lowercaseName === 'utilities' || lowercaseName === 'rent' || lowercaseName === 'rates' || lowercaseName.includes('administration') || lowercaseName.includes('marketing') || lowercaseName.includes('service charge') || lowercaseName.includes('office') || lowercaseName.includes('cleaning') || lowercaseName.includes('maintenance') || !lowercaseName.includes('profit') && !lowercaseName.includes('revenue') && !lowercaseName.includes('sales') && !lowercaseName.includes('turnover');
   };
+
   const isCostEditableRow = (name: string) => {
     if (!name) return false;
     const lowercaseName = name.toLowerCase();
     const allAdminCosts = ['marketing', 'training', 'printing', 'stationery', 'telephone', 'computer', 'it costs', 'bank charges', 'accountancy', 'legal', 'professional', 'recruitment', 'sundry expenses', 'sundry', 'hotel', 'travel', 'administration', 'advertising', 'cleaning', 'office expenses', 'postage', 'subscriptions', 'entertainment', 'motor expenses', 'motor', 'insurance', 'heat and power', 'heat', 'power', 'utilities', 'repairs', 'maintenance', 'premises', 'rates', 'rent', 'staff costs', 'other staff'];
     return allAdminCosts.some(category => lowercaseName.includes(category));
   };
+
   const getForecastPercentage = (item: any) => {
     if (!item || !item.name) return '0.0%';
     const forecastAmount = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
@@ -313,6 +329,7 @@ export function PLReportTable({
     }
     return '0.0%';
   };
+
   const renderTableContent = () => {
     const adminExpenseItems = ["Wages and Salaries", "Marketing", "Professional Fees", "Bank charges", "Cleaning", "Entertainment (Staff, customer or supplier)", "Printing, postage and stationery", "Sundry Expenses", "Motor expenses", "Insurance", "Heat and power", "Repairs, Maintenance, Premises", "Telephone and internet", "Rates", "Rent", "Other staff costs", "Subscriptions", "Hotel and travel"];
     const adminItems = filteredBudgetData.filter(item => item && item.name && adminExpenseItems.some(expName => item.name.trim() === expName || item.name.trim().toLowerCase() === expName.toLowerCase()));
@@ -356,7 +373,7 @@ export function PLReportTable({
     const operatingProfitForecastPercentage = operatingProfitForecast / safeTurnoverForecast * 100;
     console.log(`OP % calculations - Actual: ${operatingProfitActual}/${totalTurnoverActual} = ${operatingProfitActualPercentage}%, Forecast: ${operatingProfitForecast}/${safeTurnoverForecast} = ${operatingProfitForecastPercentage}%`);
     return <>
-        {filteredBudgetData.map((item, index) => {
+      {filteredBudgetData.map((item, index) => {
         if (!item || item.category === "header" && item.budget_amount === 0) {
           return null;
         }
@@ -413,102 +430,90 @@ export function PLReportTable({
               </TableCell>
             </TableRow>;
       })}
-        
-        <TableRow className="bg-purple-100/50 text-[#48495e]">
-          <TableCell className="font-bold">
-            TOTAL ADMIN EXPENSES
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(adminTotalBudget)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(adminTotalActual)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatPercentage(adminActualPercentage / 100)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(adminTotalForecast)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatPercentage(adminForecastPercentage / 100)}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {formatCurrency(adminBudgetVariance)}
-          </TableCell>
-        </TableRow>
-        
-        <TableRow className="bg-purple-300 text-black">
-          <TableCell className="font-bold bg-purple-300 text-black">
-            Operating profit
-          </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
-            {formatCurrency(operatingProfitBudget)}
-          </TableCell>
-          <TableCell className="text-right">
-            {formatPercentage(operatingProfitActualPercentage / 100)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(operatingProfitActual)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(operatingProfitForecast)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatPercentage(operatingProfitForecastPercentage / 100)}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {formatCurrency(operatingProfitVariance)}
-          </TableCell>
-        </TableRow>
-      </>;
-  };
-  return <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-      <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">
-          P&L Report - {currentMonthName} {currentYear}
-        </h2>
-      </div>
       
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead className="w-[240px] font-bold">Item</TableHead>
-              <TableHead className="text-right font-bold">Budget</TableHead>
-              <TableHead className="text-right font-bold">Actual MTD</TableHead>
-              <TableHead className="text-right font-bold">%</TableHead>
-              <TableHead className="text-right font-bold">Forecast</TableHead>
-              <TableHead className="text-right font-bold">F%</TableHead>
-              <TableHead className="text-right font-bold">Variance</TableHead>
+      <TableRow className="bg-purple-100/50 text-[#48495e]">
+        <TableCell className="font-bold">
+          TOTAL ADMIN EXPENSES
+        </TableCell>
+        <TableCell className="text-right font-bold">
+          {formatCurrency(adminTotalBudget)}
+        </TableCell>
+        <TableCell className="text-right font-bold">
+          {formatCurrency(adminTotalActual)}
+        </TableCell>
+        <TableCell className="text-right font-bold">
+          {formatPercentage(adminActualPercentage / 100)}
+        </TableCell>
+        <TableCell className="text-right font-bold">
+          {formatCurrency(adminTotalForecast)}
+        </TableCell>
+        <TableCell className="text-right font-bold">
+          {formatPercentage(adminForecastPercentage / 100)}
+        </TableCell>
+        <TableCell className={`text-right font-bold ${adminBudgetVariance < 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {formatCurrency(adminBudgetVariance)}
+        </TableCell>
+      </TableRow>
+      
+      <TableRow className="bg-purple-300 text-black">
+        <TableCell className="font-bold bg-purple-300 text-black">
+          Operating profit
+        </TableCell>
+        <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
+          {formatCurrency(operatingProfitBudget)}
+        </TableCell>
+        <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
+          {formatCurrency(operatingProfitActual)}
+        </TableCell>
+        <TableCell className="text-right font-bold">
+          {formatPercentage(operatingProfitActualPercentage / 100)}
+        </TableCell>
+        <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
+          {formatCurrency(operatingProfitForecast)}
+        </TableCell>
+        <TableCell className="text-right font-bold">
+          {formatPercentage(operatingProfitForecastPercentage / 100)}
+        </TableCell>
+        <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {formatCurrency(operatingProfitVariance)}
+        </TableCell>
+      </TableRow>
+    </>;
+  };
+
+  return <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+    <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+      <h2 className="text-xl font-semibold text-gray-800">
+        P&L Report - {currentMonthName} {currentYear}
+      </h2>
+    </div>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-gray-50">
+            <TableHead className="w-[240px] font-bold">Item</TableHead>
+            <TableHead className="text-right font-bold">Budget</TableHead>
+            <TableHead className="text-right font-bold">Actual MTD</TableHead>
+            <TableHead className="text-right font-bold">%</TableHead>
+            <TableHead className="text-right font-bold">Forecast</TableHead>
+            <TableHead className="text-right font-bold">F%</TableHead>
+            <TableHead className="text-right font-bold">Variance</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? Array(10).fill(0).map((_, index) => (
+            <TableRow key={index}>
+              <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? Array(10).fill(0).map((_, index) => <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-[200px]" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[40px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-[80px] ml-auto" />
-                    </TableCell>
-                  </TableRow>) : renderTableContent()}
-          </TableBody>
-        </Table>
-      </div>
-    </div>;
+          )) : renderTableContent()}
+        </TableBody>
+      </Table>
+    </div>
+  </div>;
 }
