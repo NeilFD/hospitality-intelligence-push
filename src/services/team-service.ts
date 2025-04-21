@@ -199,15 +199,16 @@ export const sendMessage = async ({ content, roomId, attachments = [] }: {
   }>;
 }): Promise<TeamMessage> => {
   try {
-    const { user } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    const { data, error } = await supabase.auth.getUser();
+    if (error) throw new Error('User not authenticated');
+    if (!data.user) throw new Error('User not found');
 
     const messageData = {
       content,
-      author_id: user.id,
+      author_id: data.user.id,
       room_id: roomId,
       type: 'text',
-      read_by: [user.id],
+      read_by: [data.user.id],
       attachment_url: attachments.length > 0 ? JSON.stringify(attachments) : null
     };
 
