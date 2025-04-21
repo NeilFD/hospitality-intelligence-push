@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getChatRooms } from '@/services/team-service';
@@ -265,7 +264,7 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
                 )}
                 {(!isMobile || !minimized) && (
                   <span className={cn(
-                    "truncate text-sm text-left", 
+                    "truncate text-sm", 
                     selectedRoomId === room.id ? themeColors.selectedText : "text-tavern-blue-dark"
                   )}>{room.name}</span>
                 )}
