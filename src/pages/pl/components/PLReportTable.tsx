@@ -29,7 +29,8 @@ export function PLReportTable({
     return months.indexOf(monthName) + 1;
   };
 
-  const currentMonth = getMonthNumber(currentMonthName);
+  // Use the currentMonth prop instead of calculating it again
+  // This fixes the duplicate variable issue
 
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
