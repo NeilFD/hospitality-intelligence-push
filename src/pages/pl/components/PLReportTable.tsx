@@ -375,23 +375,28 @@ export function PLReportTable({
           const forecastPercentage = getForecastPercentage(item);
 
           return <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
-                <TableCell className={`${fontClass} ${boldTitleClass}`}>{item.name}</TableCell>
+                <TableCell className={`${fontClass} ${boldTitleClass} flex items-center gap-1`}>
+                  {item.name}
+                  {isCostEditableRow(item.name) && (
+                    <ForecastSettingsControl itemName={item.name} budgetAmount={item.budget_amount || 0} currentYear={currentYear} currentMonth={currentMonth} onMethodChange={() => {
+                      setRefreshTrigger(prev => prev + 1);
+                    }} />
+                  )}
+                </TableCell>
                 <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
                   {formatCurrency(item.budget_amount)}
                 </TableCell>
                 <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
                   {formatCurrency(actualAmount)}
                 </TableCell>
-                <TableCell className="text-right w-14 min-w-[56px] max-w-[56px]">
+                <TableCell className="text-right w-14 min-w-[48px] max-w-[48px]">
                   {percentageDisplay ? percentageDisplay : ""}
                 </TableCell>
                 <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
                   {formatCurrency(forecastAmount)}
-                  {isCostEditableRow(item.name) && <ForecastSettingsControl itemName={item.name} budgetAmount={item.budget_amount || 0} currentYear={currentYear} currentMonth={currentMonth} onMethodChange={() => {
-                    setRefreshTrigger(prev => prev + 1);
-                  }} />}
+                  {/* ForecastSettingsControl REMOVED from here */}
                 </TableCell>
-                <TableCell className="text-right w-14 min-w-[56px] max-w-[56px]">
+                <TableCell className="text-right w-14 min-w-[48px] max-w-[48px]">
                   {forecastPercentage}
                 </TableCell>
                 <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
