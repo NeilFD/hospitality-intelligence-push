@@ -17,6 +17,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 
 interface MessageProps {
   message: TeamMessage;
@@ -48,7 +49,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "��", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "���", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "����", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "���", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -457,7 +458,8 @@ const TeamChat: React.FC<TeamChatProps> = ({
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const pendingReactions = useRef(new Set<string>());
   const [minimizeSidebar, setMinimizeSidebar] = useState(initialMinimizeSidebar);
-  
+  const { isSupported, isSubscribed, subscribeUser, unsubscribeUser } = usePushNotifications();
+
   const scrollToBottom = React.useCallback(() => {
     if (!scrollContainerRef.current) return;
     try {
@@ -686,7 +688,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
         });
       }
       
-      await createMessageMutation.mutateAsync({
+      const message = await createMessageMutation.mutateAsync({
         content: messageText,
         author_id: user.id,
         type: 'text',
@@ -694,6 +696,22 @@ const TeamChat: React.FC<TeamChatProps> = ({
         read_by: [user.id],
         mentioned_users: mentionedUserIds.length > 0 ? mentionedUserIds : undefined
       });
+
+      if (mentionedUserIds.length > 0) {
+        // Send push notifications to mentioned users
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            notification: {
+              title: `${user.first_name} ${user.last_name} mentioned you`,
+              body: messageText,
+              data: {
+                url: `/team/chat?room=${selectedRoomId}`
+              }
+            },
+            userIds: mentionedUserIds
+          }
+        });
+      }
       
       setMessageText('');
       
@@ -1181,9 +1199,21 @@ const TeamChat: React.FC<TeamChatProps> = ({
             {!compact && (
               <div className="bg-white/10 backdrop-blur-sm p-3 border-b border-white/30 flex items-center justify-between h-[52px]">
                 {selectedRoomId && rooms.length > 0 && (
-                  <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
-                    {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
-                  </h2>
+                  <>
+                    <h2 className="text-lg font-semibold text-tavern-blue-dark pl-2 mx-0 py-px my-0">
+                      {rooms.find(room => room.id === selectedRoomId)?.name || 'Chat Room'}
+                    </h2>
+                    {isSupported && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={isSubscribed ? unsubscribeUser : subscribeUser}
+                        className="text-sm"
+                      >
+                        {isSubscribed ? 'Disable Notifications' : 'Enable Notifications'}
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             )}
