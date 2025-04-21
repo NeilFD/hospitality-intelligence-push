@@ -54,6 +54,33 @@ serve(async (req) => {
       }
     )
 
+    // Try to use the SQL function directly for better performance
+    try {
+      console.log(`[add_message_reaction] Attempting to use SQL function directly`);
+      const { data: sqlResult, error: sqlError } = await supabaseClient.rpc(
+        'update_message_reaction',
+        {
+          p_message_id,
+          p_user_id,
+          p_emoji
+        }
+      );
+      
+      if (!sqlError) {
+        console.log(`[add_message_reaction] SQL function succeeded:`, sqlResult);
+        return new Response(JSON.stringify(sqlResult), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+      } else {
+        console.log(`[add_message_reaction] SQL function failed, falling back to manual update:`, sqlError);
+      }
+    } catch (sqlFunctionError) {
+      console.error('Error calling SQL function:', sqlFunctionError);
+      // Continue with manual update as fallback
+    }
+
+    // If SQL function failed, do the manual update
     // First fetch the message to get current reactions
     const { data: message, error: fetchError } = await supabaseClient
       .from('team_messages')

@@ -257,6 +257,26 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
 
+    // First try using the RPC function, which is more efficient
+    try {
+      console.log('Trying RPC function first');
+      const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
+        p_message_id: messageId,
+        p_user_id: userId,
+        p_emoji: emoji
+      });
+      
+      if (!rpcError) {
+        console.log('RPC function successful:', rpcData);
+        return;
+      }
+      
+      console.log('RPC function failed, falling back to edge function:', rpcError);
+    } catch (rpcError) {
+      console.log('RPC error caught, continuing to edge function:', rpcError);
+    }
+
+    // Fallback to edge function
     // Implement timeout using Promise.race without using signal, as not supported in supabase.invoke
     const invokePromise = supabase.functions.invoke('add_message_reaction', {
       body: {

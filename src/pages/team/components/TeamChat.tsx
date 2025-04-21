@@ -450,7 +450,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [isMessageAreaReady, setIsMessageAreaReady] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const pendingReactions = useRef(new Set<string>());
-  
+
   const {
     data: rooms = [],
     isLoading: isLoadingRooms
@@ -537,6 +537,23 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       console.log(`[addReactionMutation] Adding reaction ${emoji} to message ${messageId} by user ${user.id}`);
       
       try {
+        try {
+          const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
+            p_message_id: messageId,
+            p_user_id: user.id,
+            p_emoji: emoji
+          });
+          
+          if (!rpcError) {
+            console.log('RPC reaction update successful:', rpcData);
+            return rpcData;
+          }
+          
+          console.log('RPC failed, falling back to edge function:', rpcError);
+        } catch (rpcError) {
+          console.log('RPC error caught, continuing to edge function:', rpcError);
+        }
+        
         const { data, error } = await supabase.functions.invoke('add_message_reaction', {
           body: {
             p_message_id: messageId,
