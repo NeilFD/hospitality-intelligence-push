@@ -24,6 +24,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { Switch } from '@/components/ui/switch';
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -50,6 +52,14 @@ const ProfilePage = () => {
   const [yPosition, setYPosition] = useState(0);
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   const isMountedRef = useRef(true);
+
+  const { 
+    isSupported, 
+    isSubscribed, 
+    isPermissionBlocked, 
+    subscribeUser, 
+    unsubscribeUser 
+  } = usePushNotifications();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -649,6 +659,33 @@ const ProfilePage = () => {
               {isCurrentUser && (
                 <TabsContent value="settings">
                   <div className="grid gap-4 py-4">
+                    {isSupported && (
+                      <div className="space-y-2 pb-4 border-b">
+                        <h3 className="text-lg font-semibold">Notifications</h3>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>Push Notifications</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {isPermissionBlocked 
+                                ? "Notifications are blocked. Please enable them in your browser settings."
+                                : "Receive notifications when someone mentions you"}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={isSubscribed}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                subscribeUser();
+                              } else {
+                                unsubscribeUser();
+                              }
+                            }}
+                            disabled={isPermissionBlocked}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
