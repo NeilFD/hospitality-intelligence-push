@@ -549,21 +549,9 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
           console.error('RPC error caught:', rpcError);
         }
         
-        const { data, error } = await supabase.functions.invoke('add_message_reaction', {
-          body: {
-            p_message_id: messageId,
-            p_user_id: user.id,
-            p_emoji: emoji
-          }
-        });
-        
-        if (error) {
-          console.error('Edge function error:', error);
-          throw error;
-        }
-        
-        console.log('Successfully added reaction via edge function, response:', data);
-        return data;
+        const result = await addMessageReaction(messageId, user.id, emoji);
+        console.log('addMessageReaction result:', result);
+        return result;
       } catch (error) {
         console.error('Error processing reaction:', error);
         throw error;

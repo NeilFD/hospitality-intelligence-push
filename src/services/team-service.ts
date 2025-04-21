@@ -257,7 +257,7 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
 
-    // First try the RPC call (most efficient)
+    // First try the RPC call (most efficient and reliable)
     try {
       console.log('Attempting direct RPC call for reaction addition');
       const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
@@ -277,8 +277,10 @@ export const addMessageReaction = async (
       console.error('Error in RPC call:', rpcErr);
     }
 
-    // Fallback to manual update if RPC fails
-    console.log('Falling back to manual reaction update');
+    // Fallback to direct update if RPC fails
+    console.log('Falling back to direct reaction update');
+    
+    // Get the current message data with its reactions
     const { data: message, error: fetchError } = await supabase
       .from('team_messages')
       .select('reactions')
@@ -292,12 +294,19 @@ export const addMessageReaction = async (
     
     // Process the reactions
     let reactions = message.reactions || [];
+    
+    // Ensure reactions is properly parsed if it's a string
     if (typeof reactions === 'string') {
       try {
         reactions = JSON.parse(reactions);
       } catch (e) {
         reactions = [];
       }
+    }
+    
+    // If reactions is null or undefined, initialize as empty array
+    if (!reactions) {
+      reactions = [];
     }
     
     // Find if this emoji already exists
