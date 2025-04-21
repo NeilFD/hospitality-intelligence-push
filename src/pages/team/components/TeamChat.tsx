@@ -526,6 +526,10 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     mutationFn: async ({ messageId, emoji }: { messageId: string, emoji: string }) => {
       console.log(`[addReactionMutation] Adding reaction ${emoji} to message ${messageId} by user ${user.id}`);
       
+      if (!user || !user.id) {
+        throw new Error('User not authenticated');
+      }
+      
       try {
         try {
           const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
@@ -539,9 +543,10 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
             return rpcData;
           }
           
-          console.log('RPC failed, falling back to edge function:', rpcError);
+          console.error('RPC failed details:', rpcError);
+          console.log('Falling back to edge function');
         } catch (rpcError) {
-          console.log('RPC error caught, continuing to edge function:', rpcError);
+          console.error('RPC error caught:', rpcError);
         }
         
         const { data, error } = await supabase.functions.invoke('add_message_reaction', {
@@ -565,12 +570,14 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       }
     },
     onSuccess: (data) => {
+      console.log('Reaction mutation succeeded:', data);
       queryClient.invalidateQueries({
         queryKey: ['teamMessages', selectedRoomId]
       });
     },
     onError: (error) => {
       console.error('Reaction mutation error:', error);
+      toast.error('Failed to add reaction');
     }
   });
   
@@ -742,7 +749,12 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   };
   
   const handleAddReaction = async (messageId: string, emoji: string) => {
-    console.log(`[handleAddReaction] Processing reaction: ${emoji} for message ${messageId} from user ${user.id}`);
+    console.log(`[handleAddReaction] Processing reaction: ${emoji} for message ${messageId} from user ${user?.id}`);
+    
+    if (!user || !user.id) {
+      toast.error('You must be logged in to react to messages');
+      return;
+    }
     
     const pendingKey = `${messageId}-${emoji}`;
     if (pendingReactions.current.has(pendingKey)) {
@@ -753,37 +765,11 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     pendingReactions.current.add(pendingKey);
     
     try {
-      try {
-        console.log('Directly calling RPC update_message_reaction with:', {
-          p_message_id: messageId,
-          p_user_id: user.id,
-          p_emoji: emoji
-        });
-        
-        const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
-          p_message_id: messageId,
-          p_user_id: user.id,
-          p_emoji: emoji
-        });
-        
-        if (!rpcError) {
-          console.log('Direct RPC call successful:', rpcData);
-          queryClient.invalidateQueries({
-            queryKey: ['teamMessages', selectedRoomId],
-            refetchType: 'active'
-          });
-          pendingReactions.current.delete(pendingKey);
-          return;
-        }
-        
-        console.log('RPC failed, falling back to edge function:', rpcError);
-      } catch (rpcError) {
-        console.log('RPC error caught, continuing to edge function:', rpcError);
-      }
-      
       await addReactionMutation.mutateAsync({ messageId, emoji });
+      console.log('Reaction successfully processed');
     } catch (error) {
       console.error('Error adding reaction:', error);
+      toast.error('Failed to add reaction');
     } finally {
       pendingReactions.current.delete(pendingKey);
     }

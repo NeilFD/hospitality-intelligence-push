@@ -257,9 +257,8 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
 
-    // First try using the RPC function, which is more efficient
+    // Try direct RPC call first - most efficient method
     try {
-      console.log('Trying RPC function first');
       const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
         p_message_id: messageId,
         p_user_id: userId,
@@ -267,18 +266,18 @@ export const addMessageReaction = async (
       });
       
       if (!rpcError) {
-        console.log('RPC function successful:', rpcData);
+        console.log('Direct RPC call successful:', rpcData);
         return;
       }
       
-      console.log('RPC failed, falling back to edge function:', rpcError);
+      console.error('RPC failed, error details:', rpcError);
+      console.log('Falling back to edge function');
     } catch (rpcError) {
-      console.log('RPC error caught, continuing to edge function:', rpcError);
+      console.error('Error in RPC call:', rpcError);
     }
 
-    // Fallback to edge function
-    // Implement timeout using Promise.race without using signal, as not supported in supabase.invoke
-    const invokePromise = supabase.functions.invoke('add_message_reaction', {
+    // Fall back to edge function if RPC fails
+    const { data, error } = await supabase.functions.invoke('add_message_reaction', {
       body: {
         p_message_id: messageId,
         p_user_id: userId,
@@ -286,19 +285,12 @@ export const addMessageReaction = async (
       },
     });
 
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Request to add reaction timed out')), 8000)
-    );
-
-    const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
-
     if (error) {
       console.error('Error invoking add_message_reaction function:', error);
       throw error;
     }
 
-    console.log('Reaction added successfully:', data);
-    return;
+    console.log('Reaction added successfully via edge function:', data);
   } catch (error: any) {
     console.error('Error adding reaction:', error);
     throw error;
