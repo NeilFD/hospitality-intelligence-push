@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -434,16 +435,16 @@ export function PLReportTable({
           <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
             {formatCurrency(operatingProfitBudget)}
           </TableCell>
-          <TableCell className="text-right font-bold">
+          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
             {formatCurrency(operatingProfitActual)}
           </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[56px] max-w-[56px]">
+          <TableCell className={`text-right font-bold w-14 min-w-[56px] max-w-[56px] ${getValueColor(operatingProfitActualPercentage)}`}>
             {formatPercentage(operatingProfitActualPercentage / 100)}
           </TableCell>
           <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
             {formatCurrency(operatingProfitForecast)}
           </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[56px] max-w-[56px]">
+          <TableCell className={`text-right font-bold w-14 min-w-[56px] max-w-[56px] ${getValueColor(operatingProfitForecastPercentage)}`}>
             {formatPercentage(operatingProfitForecastPercentage / 100)}
           </TableCell>
           <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
