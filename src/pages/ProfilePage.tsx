@@ -1,4 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useParams, useNavigate } from 'react-router-dom';
 import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
@@ -50,6 +53,14 @@ const ProfilePage = () => {
   const [yPosition, setYPosition] = useState(0);
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   const isMountedRef = useRef(true);
+
+  const { 
+    isSubscribed, 
+    subscribeUser, 
+    unsubscribeUser, 
+    isSupported, 
+    isPermissionBlocked 
+  } = usePushNotifications();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -598,7 +609,12 @@ const ProfilePage = () => {
             <Tabs defaultValue="about" className="mt-2">
               <TabsList className="mb-6">
                 <TabsTrigger value="about">About</TabsTrigger>
-                {isCurrentUser && <TabsTrigger value="settings">Edit Profile</TabsTrigger>}
+                {isCurrentUser && (
+                  <>
+                    <TabsTrigger value="settings">Edit Profile</TabsTrigger>
+                    <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                  </>
+                )}
               </TabsList>
               
               <TabsContent value="about">
@@ -733,6 +749,33 @@ const ProfilePage = () => {
                         Save Changes
                       </Button>
                     </div>
+                  </div>
+                </TabsContent>
+              )}
+              
+              {isCurrentUser && (
+                <TabsContent value="notifications">
+                  <div className="grid gap-4 py-4">
+                    {!isSupported ? (
+                      <p className="text-gray-500">
+                        Push notifications are not supported on this device.
+                      </p>
+                    ) : isPermissionBlocked ? (
+                      <p className="text-red-500">
+                        Notification permissions are blocked. Please enable them in your browser settings.
+                      </p>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="push-notifications"
+                          checked={isSubscribed}
+                          onCheckedChange={isSubscribed ? unsubscribeUser : subscribeUser}
+                        />
+                        <Label htmlFor="push-notifications">
+                          {isSubscribed ? 'Disable' : 'Enable'} Push Notifications
+                        </Label>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               )}
