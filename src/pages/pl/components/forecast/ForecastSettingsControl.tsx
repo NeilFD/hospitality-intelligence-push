@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,10 +30,8 @@ export function ForecastSettingsControl({
   const [selectedMethod, setSelectedMethod] = React.useState<ForecastMethod>('fixed');
   const [isEditing, setIsEditing] = React.useState(true);
 
-  // Change structure: dailyValues[day] = { value, note }
   const [dailyValues, setDailyValues] = React.useState<Record<string, { value: number, note: string }>>({});
 
-  // Helper: migrate loaded flat numbers to {value, note}
   function toNotesFormat(incoming: Record<string, any>): Record<string, { value: number, note: string }> {
     if (!incoming) return {};
     const result: Record<string, { value: number, note: string }> = {};
@@ -48,9 +45,7 @@ export function ForecastSettingsControl({
     return result;
   }
 
-  // Helper: flatten notes format to plain numbers if needed for compatibility
   function fromNotesFormat(outgoing: Record<string, { value: number, note: string }>): Record<string, any> {
-    // Always save as { value, note }
     return outgoing; 
   }
 
@@ -68,7 +63,6 @@ export function ForecastSettingsControl({
     return budgetAmount;
   };
 
-  // For tooltip display: resolve setting from cache or server
   const [tooltipMethod, setTooltipMethod] = React.useState<ForecastMethod>('fixed');
   const [tooltipTotal, setTooltipTotal] = React.useState<number>(budgetAmount);
   const [tooltipDaily, setTooltipDaily] = React.useState<number>(0);
@@ -114,7 +108,6 @@ export function ForecastSettingsControl({
         }
       }
 
-      // Always update tooltip preview
       let dailySum = Object.values(dvals).reduce((sum: number, v: any) => sum + (v && v.value ? v.value : 0), 0);
       setTooltipDaily(dailySum);
       if (method === 'fixed') setTooltipTotal(budgetAmount);
@@ -122,7 +115,6 @@ export function ForecastSettingsControl({
       else if (method === 'fixed_plus') setTooltipTotal(budgetAmount + dailySum);
     };
     fetchCurrentSetting();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemName, currentYear, currentMonth, budgetAmount]);
 
   const handleMethodChange = async (value: ForecastMethod) => {
@@ -166,7 +158,6 @@ export function ForecastSettingsControl({
     window.dispatchEvent(event);
     setOpen(false);
 
-    // Also update tooltip state immediately after save
     let dailySum = Object.values(dailyValues).reduce((sum, v) => sum + (v && v.value ? v.value : 0), 0);
     setTooltipMethod(selectedMethod);
     setTooltipDaily(dailySum);
@@ -226,7 +217,6 @@ export function ForecastSettingsControl({
             <div className="font-semibold">Monthly Budget: {formatCurrency(budgetAmount)}</div>
           </div>
         )}
-        {/* Header for values/notes */}
         <div className="grid grid-cols-3 gap-2 mb-1 text-xs font-semibold text-gray-700">
           <div>Date</div>
           <div>Amount</div>
@@ -245,7 +235,6 @@ export function ForecastSettingsControl({
     );
   };
 
-  // Tooltip content builder
   const getTooltipContent = () => {
     if (tooltipMethod === 'fixed') {
       return (
@@ -293,7 +282,7 @@ export function ForecastSettingsControl({
       </Tooltip>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-5xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Forecast Settings - {itemName}</DialogTitle>
           </DialogHeader>
