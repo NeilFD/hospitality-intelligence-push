@@ -186,6 +186,20 @@ export const createMessage = async (message: Omit<TeamMessage, 'id' | 'created_a
   }
 };
 
+export const updateTeamMessage = async (id: string, updates: Partial<TeamMessage>): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('team_messages')
+      .update(updates)
+      .eq('id', id);
+      
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error updating message:', error);
+    throw error;
+  }
+};
+
 export const markMessageAsRead = async (messageId: string, userId: string): Promise<void> => {
   try {
     const { data: message, error: fetchError } = await supabase

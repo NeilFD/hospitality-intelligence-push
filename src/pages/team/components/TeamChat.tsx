@@ -9,7 +9,7 @@ import { useAuthStore } from '@/services/auth-service';
 import { 
   getMessages, 
   createMessage, 
-  updateMessage, 
+  updateTeamMessage as updateMessage, 
   deleteMessage,
   TeamMessage
 } from '@/services/team-service';
@@ -30,9 +30,10 @@ import { Textarea } from '@/components/ui/textarea';
 interface TeamChatProps {
   initialRoomId?: string;
   initialMinimizeSidebar?: boolean;
+  compact?: boolean;
 }
 
-const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, initialMinimizeSidebar }) => {
+const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, initialMinimizeSidebar, compact = false }) => {
   const [searchParams] = useSearchParams();
   const roomId = initialRoomId || searchParams.get('room');
   const [input, setInput] = useState('');
@@ -147,7 +148,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, initialMinimizeSideb
   });
   
   const { mutate: changeMessage } = useMutation({
-    mutationFn: updateMessage,
+    mutationFn: (data: { id: string; content: string }) => updateMessage(data.id, { content: data.content }),
     onSuccess: () => {
       setIsEditMode(false);
       setEditMessageId(null);
@@ -301,7 +302,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, initialMinimizeSideb
   };
   
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-white">
+    <div className={`flex-1 flex flex-col overflow-hidden bg-white ${compact ? 'h-[300px]' : ''}`}>
       <div className="border-b px-4 py-2 bg-gray-50">
         <h2 className="text-lg font-semibold">{room?.name || 'Team Chat'}</h2>
       </div>
@@ -314,7 +315,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, initialMinimizeSideb
               <div key={message.id} className="flex items-start gap-2">
                 <Avatar className="h-8 w-8">
                   {author?.avatar_url ? (
-                    <AvatarImage src={author.avatar_url} alt={author.first_name} />
+                    <AvatarImage src={author.avatar_url} alt={author?.first_name} />
                   ) : (
                     <AvatarFallback>{author?.first_name?.[0]}{author?.last_name?.[0]}</AvatarFallback>
                   )}
