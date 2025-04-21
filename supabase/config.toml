@@ -3,3 +3,6 @@ project_id = "kfiergoryrnjkewmeriy"
 
 [functions.send-push-notification]
 verify_jwt = true
+
+[functions.get-vapid-public-key]
+verify_jwt = true
