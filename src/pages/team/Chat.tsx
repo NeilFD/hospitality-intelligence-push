@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,7 +19,6 @@ const Chat: React.FC = () => {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   
-  // Fetch chat rooms with better error handling
   const { data: rooms = [], isLoading: isLoadingRooms, error: roomsError } = useQuery({
     queryKey: ['chatRooms'],
     queryFn: getChatRooms,
@@ -37,20 +35,17 @@ const Chat: React.FC = () => {
     }
   });
   
-  // Additional debugging
   useEffect(() => {
     console.log('Chat component rendered with slug:', roomSlug);
     console.log('Available rooms:', rooms);
   }, [roomSlug, rooms]);
   
-  // Find the room ID based on the slug in the URL with improved error handling
   useEffect(() => {
     if (!rooms || rooms.length === 0) {
       console.log('No rooms available yet');
       return;
     }
     
-    // First check if roomSlug is already a UUID (might be passed directly)
     if (roomSlug && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomSlug)) {
       console.log('Room ID is already a UUID:', roomSlug);
       setRoomId(roomSlug);
@@ -58,18 +53,15 @@ const Chat: React.FC = () => {
       return;
     }
     
-    // Otherwise look for a room by slug
     const room = rooms.find(r => r.slug === roomSlug || r.name.toLowerCase() === roomSlug.toLowerCase());
     console.log('Finding room by slug or name:', roomSlug, 'Found:', room);
     
-    // If we found a room by slug, use its ID
     if (room) {
       setRoomId(room.id);
       setIsReady(true);
       return;
     }
     
-    // Fall back to first room if available
     if (rooms.length > 0) {
       console.log('Falling back to first room:', rooms[0]);
       setRoomId(rooms[0].id);
@@ -82,11 +74,9 @@ const Chat: React.FC = () => {
     setIsReady(true);
   }, [rooms, roomSlug]);
   
-  // Setup Supabase realtime subscription for message mentions
   useEffect(() => {
     if (!user) return;
     
-    // Subscribe to messages where current user is mentioned
     const channel = supabase
       .channel('public:team_messages:mentions')
       .on(
@@ -100,15 +90,13 @@ const Chat: React.FC = () => {
         (payload) => {
           if (payload.new) {
             const message = payload.new as any;
-            if (message.author_id !== user.id) {  // Don't notify for own messages
-              // Ensure the read_by array is properly initialized
+            if (message.author_id !== user.id) {
               const readBy = Array.isArray(message.read_by) ? message.read_by : [];
               
               toast.info('You have been mentioned in a message', {
                 action: {
                   label: 'View',
                   onClick: () => {
-                    // Mark as read when clicking on the notification toast
                     supabase
                       .from('team_messages')
                       .update({ 
@@ -132,13 +120,11 @@ const Chat: React.FC = () => {
     };
   }, [user]);
   
-  // Setup a dedicated, high-priority realtime subscription for reactions
   useEffect(() => {
     if (!roomId) return;
 
     console.log(`Setting up high-priority reactions realtime subscription in Chat.tsx for room: ${roomId}`);
     
-    // Subscribe specifically to reaction updates on team_messages
     const channel = supabase
       .channel(`chat-reactions-high-priority-${roomId}`)
       .on(
@@ -151,13 +137,11 @@ const Chat: React.FC = () => {
         },
         (payload) => {
           if (payload.new && payload.old) {
-            // Check if reactions have changed
             const oldReactions = payload.old.reactions;
             const newReactions = payload.new.reactions;
             
             if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
               console.log('👉 REACTION CHANGE DETECTED in Chat.tsx, refreshing messages');
-              // Force immediate invalidation
               queryClient.invalidateQueries({
                 queryKey: ['teamMessages', roomId],
                 refetchType: 'active',

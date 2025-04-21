@@ -271,7 +271,7 @@ export const addMessageReaction = async (
         return;
       }
       
-      console.log('RPC function failed, falling back to edge function:', rpcError);
+      console.log('RPC failed, falling back to edge function:', rpcError);
     } catch (rpcError) {
       console.log('RPC error caught, continuing to edge function:', rpcError);
     }
