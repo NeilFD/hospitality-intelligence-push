@@ -332,7 +332,7 @@ export const createNote = async (note: Omit<TeamNote, 'id' | 'created_at' | 'upd
 
 export const updateNote = async (id: string, updates: Partial<TeamNote>): Promise<void> => {
   try {
-    const { error } } = await supabase
+    const { error } = await supabase
       .from('team_notes')
       .update(updates)
       .eq('id', id);
