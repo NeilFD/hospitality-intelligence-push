@@ -273,6 +273,11 @@ const Message: React.FC<MessageProps> = ({
     emoji: "🔖"
   }];
   
+  const handleEmojiClick = (emoji: string) => {
+    console.log(`Emoji ${emoji} clicked for message ${message.id} by user ${currentUserId}`);
+    onAddReaction(message.id, emoji);
+  };
+  
   return <div className={messageContainerClass}>
       {!isOwnMessage && <div className="flex-shrink-0 mr-2">
           <Avatar className="h-8 w-8">
@@ -331,6 +336,7 @@ const Message: React.FC<MessageProps> = ({
                 className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-white shadow-sm hover:bg-gray-50 opacity-70 hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log("Reaction button clicked for message:", message.id);
                 }}
               >
                 <Smile className="h-3.5 w-3.5 text-gray-500" />
@@ -349,7 +355,7 @@ const Message: React.FC<MessageProps> = ({
                     variant="ghost" 
                     size="sm" 
                     className="h-7 w-7 p-0 text-lg" 
-                    onClick={() => onAddReaction(message.id, emoji)}
+                    onClick={() => handleEmojiClick(emoji)}
                   >
                     {emoji}
                   </Button>)}
@@ -363,7 +369,7 @@ const Message: React.FC<MessageProps> = ({
                       variant="ghost" 
                       size="sm" 
                       className="h-7 w-7 p-0" 
-                      onClick={() => onAddReaction(message.id, item.emoji)}
+                      onClick={() => handleEmojiClick(item.emoji)}
                     >
                       {item.emoji}
                     </Button>)}
@@ -395,7 +401,7 @@ const Message: React.FC<MessageProps> = ({
                 <HoverCardTrigger asChild>
                   <button 
                     className={`flex items-center rounded-full px-2 text-xs ${reaction.user_ids.includes(currentUserId) ? 'bg-blue-100 border border-blue-300' : 'bg-gray-100 border border-gray-200'}`} 
-                    onClick={() => onAddReaction(message.id, reaction.emoji)}
+                    onClick={() => handleEmojiClick(reaction.emoji)}
                   >
                     <span className="mr-1">{reaction.emoji}</span>
                     <span>{reaction.user_ids.length}</span>
@@ -706,9 +712,19 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   };
   
   const handleAddReaction = (messageId: string, emoji: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error("You must be logged in to react to messages");
+      return;
+    }
     
-    console.log(`Handling reaction: ${emoji} for message ${messageId}`);
+    console.log(`Handling reaction: ${emoji} for message ${messageId} from user ${user.id}`);
+    
+    const message = messages.find(m => m.id === messageId);
+    if (!message) {
+      console.error('Message not found:', messageId);
+      toast.error('Message not found');
+      return;
+    }
     
     addReactionMutation.mutate({
       messageId,

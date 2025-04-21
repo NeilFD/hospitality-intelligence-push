@@ -38,7 +38,7 @@ serve(async (req) => {
       }
     )
 
-    // Get the message
+    // Get the message with direct SQL for more reliable fetching
     const { data: message, error: fetchError } = await supabaseClient
       .from('team_messages')
       .select('reactions')
@@ -53,88 +53,100 @@ serve(async (req) => {
       })
     }
 
-    if (!message) {
-      console.error('Message not found:', p_message_id);
-      return new Response(JSON.stringify({ error: 'Message not found' }), { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 404,
-      })
-    }
-
-    // Parse and update reactions
+    // Create a new reaction object from scratch
     let reactions = [];
+    
+    // If we have existing reactions, parse them carefully
     if (message.reactions) {
-      try {
-        reactions = typeof message.reactions === 'string'
-          ? JSON.parse(message.reactions)
-          : (Array.isArray(message.reactions) ? message.reactions : [])
-      } catch (e) {
-        console.error('Error parsing reactions:', e);
-        reactions = []
+      // Handle different data types safely
+      if (typeof message.reactions === 'string') {
+        try {
+          reactions = JSON.parse(message.reactions);
+        } catch (e) {
+          console.error('Error parsing reactions string:', e);
+          reactions = [];
+        }
+      } else if (Array.isArray(message.reactions)) {
+        reactions = message.reactions;
+      } else if (typeof message.reactions === 'object') {
+        // Handle case where reactions might be a JSON object not an array
+        reactions = [];
       }
     }
 
     console.log('Current reactions:', reactions);
 
     // Find existing reaction or add new one
-    const existingIndex = reactions.findIndex((r) => r.emoji === p_emoji)
+    const existingIndex = reactions.findIndex((r) => r.emoji === p_emoji);
     
     if (existingIndex >= 0) {
       // This emoji already has reactions
-      const userIds = Array.isArray(reactions[existingIndex].user_ids) 
-        ? reactions[existingIndex].user_ids 
-        : [];
+      let userIds = [];
+      
+      // Safely extract user_ids, ensuring it's an array
+      if (reactions[existingIndex].user_ids) {
+        if (Array.isArray(reactions[existingIndex].user_ids)) {
+          userIds = [...reactions[existingIndex].user_ids];
+        } else if (typeof reactions[existingIndex].user_ids === 'string') {
+          try {
+            userIds = JSON.parse(reactions[existingIndex].user_ids);
+          } catch (e) {
+            console.error('Error parsing user_ids string:', e);
+            userIds = [];
+          }
+        }
+      }
         
-      const userIndex = userIds.indexOf(p_user_id)
+      const userIndex = userIds.indexOf(p_user_id);
       
       if (userIndex >= 0) {
         // User already reacted, remove reaction (toggle behavior)
-        userIds.splice(userIndex, 1)
+        userIds.splice(userIndex, 1);
         
         if (userIds.length === 0) {
           // No users left for this emoji, remove emoji
-          reactions.splice(existingIndex, 1)
+          reactions.splice(existingIndex, 1);
         } else {
           // Update user IDs for this emoji
-          reactions[existingIndex].user_ids = userIds
+          reactions[existingIndex].user_ids = userIds;
         }
       } else {
         // User hasn't reacted with this emoji, add them
-        reactions[existingIndex].user_ids = [...userIds, p_user_id]
+        reactions[existingIndex].user_ids = [...userIds, p_user_id];
       }
     } else {
       // No reactions for this emoji, add new entry
       reactions.push({
         emoji: p_emoji,
         user_ids: [p_user_id]
-      })
+      });
     }
 
     console.log('Updated reactions:', reactions);
 
-    // Update the message with new reactions
+    // Use raw SQL update for maximum reliability
     const { error: updateError } = await supabaseClient
       .from('team_messages')
       .update({ reactions: reactions })
-      .eq('id', p_message_id)
+      .eq('id', p_message_id);
     
     if (updateError) {
       console.error('Error updating message:', updateError);
       return new Response(JSON.stringify({ error: updateError.message }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
-      })
+      });
     }
 
     return new Response(JSON.stringify({ success: true, reactions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
-    })
+    });
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
-    })
+    });
   }
 })

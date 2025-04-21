@@ -17,13 +17,21 @@ BEGIN
     
     -- Create index for reactions column
     CREATE INDEX idx_team_messages_reactions ON team_messages USING GIN (reactions);
-    
-    -- Enable realtime for the team_messages table if not already enabled
-    ALTER PUBLICATION supabase_realtime ADD TABLE team_messages;
-    
-    -- Set REPLICA IDENTITY to FULL for the team_messages table
-    ALTER TABLE team_messages REPLICA IDENTITY FULL;
   END IF;
+  
+  -- Always update the REPLICA IDENTITY to FULL for the team_messages table
+  -- This ensures that the entire row data is available for realtime features
+  ALTER TABLE team_messages REPLICA IDENTITY FULL;
+  
+  -- Always enable publication for realtime updates, idempotent operation
+  -- This part is critical for realtime updates to work
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE team_messages;
+  EXCEPTION
+    WHEN duplicate_object THEN
+      -- Table already in publication, that's fine
+      NULL;
+  END;
 END
 $$;
 
