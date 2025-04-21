@@ -142,8 +142,8 @@ const Chat: React.FC = () => {
           
           if (payload.new && payload.old) {
             // Type assertion to ensure TypeScript knows these properties exist
-            const oldPayload = payload.old as { reactions?: any };
-            const newPayload = payload.new as { reactions?: any };
+            const oldPayload = payload.old as Record<string, any>;
+            const newPayload = payload.new as Record<string, any>;
             
             const oldReactions = oldPayload.reactions;
             const newReactions = newPayload.reactions;

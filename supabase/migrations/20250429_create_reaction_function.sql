@@ -13,14 +13,9 @@ DECLARE
   v_found BOOLEAN := FALSE;
 BEGIN
   -- Get current reactions
-  SELECT reactions INTO v_reactions 
+  SELECT COALESCE(reactions, '[]'::JSONB) INTO v_reactions 
   FROM team_messages 
   WHERE id = p_message_id;
-  
-  -- Initialize reactions if null
-  IF v_reactions IS NULL THEN
-    v_reactions := '[]'::JSONB;
-  END IF;
   
   -- Look for existing emoji
   FOR i IN 0..jsonb_array_length(v_reactions) - 1 LOOP
@@ -33,7 +28,7 @@ BEGIN
   
   IF v_found THEN
     -- Emoji exists, get user_ids
-    v_user_ids := v_reactions->v_existing_index->'user_ids';
+    v_user_ids := COALESCE(v_reactions->v_existing_index->'user_ids', '[]'::JSONB);
     
     -- Check if user already reacted
     v_found := FALSE;
@@ -71,7 +66,7 @@ BEGIN
     v_action_type := 'added';
   END IF;
   
-  -- Update the message with new reactions
+  -- Update the message with new reactions and force updated_at to change
   UPDATE team_messages 
   SET 
     reactions = v_reactions,
@@ -87,6 +82,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Grant execute permission on the function
+-- Grant execute permission on the function to all users
 GRANT EXECUTE ON FUNCTION update_message_reaction TO authenticated;
 GRANT EXECUTE ON FUNCTION update_message_reaction TO anon;
+GRANT EXECUTE ON FUNCTION update_message_reaction TO service_role;
+
+-- Make sure team_messages has REPLICA IDENTITY FULL for proper realtime updates
+ALTER TABLE team_messages REPLICA IDENTITY FULL;
+
+-- Ensure team_messages is in the realtime publication
+BEGIN;
+  -- Check if the table is already in the publication
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE tablename = 'team_messages' 
+    AND pubname = 'supabase_realtime'
+  ) THEN
+    -- Add it to the publication if it's not already there
+    ALTER PUBLICATION supabase_realtime ADD TABLE team_messages;
+  END IF;
+COMMIT;

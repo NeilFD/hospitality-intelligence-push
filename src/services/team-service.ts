@@ -257,119 +257,20 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
 
-    // First try the RPC call (most efficient and reliable)
-    try {
-      console.log('Attempting direct RPC call for reaction addition');
-      const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
-        p_message_id: messageId,
-        p_user_id: userId,
-        p_emoji: emoji
-      });
-      
-      if (!rpcError) {
-        console.log('Direct RPC call successful:', rpcData);
-        return rpcData;
-      }
-      
-      console.error('RPC call failed:', rpcError);
-      // Continue to fallback methods
-    } catch (rpcErr) {
-      console.error('Error in RPC call:', rpcErr);
-    }
-
-    // Fallback to direct update if RPC fails
-    console.log('Falling back to direct reaction update');
-    
-    // Get the current message data with its reactions
-    const { data: message, error: fetchError } = await supabase
-      .from('team_messages')
-      .select('reactions')
-      .eq('id', messageId)
-      .single();
-      
-    if (fetchError) {
-      console.error('Error fetching message for reaction:', fetchError);
-      throw fetchError;
-    }
-    
-    // Process the reactions
-    let reactions = message.reactions || [];
-    
-    // Ensure reactions is properly parsed if it's a string
-    if (typeof reactions === 'string') {
-      try {
-        reactions = JSON.parse(reactions);
-      } catch (e) {
-        reactions = [];
-      }
-    }
-    
-    // If reactions is null or undefined, initialize as empty array
-    if (!reactions) {
-      reactions = [];
-    }
-    
-    // Find if this emoji already exists
-    const existingIndex = reactions.findIndex((r: any) => r.emoji === emoji);
-    let actionType = 'none';
-    
-    if (existingIndex >= 0) {
-      // Get user IDs for this emoji
-      const userIds = reactions[existingIndex].user_ids || [];
-      const userIndex = userIds.indexOf(userId);
-      
-      if (userIndex >= 0) {
-        // Remove user's reaction
-        userIds.splice(userIndex, 1);
-        actionType = 'removed';
-        
-        // If no users left, remove the emoji
-        if (userIds.length === 0) {
-          reactions.splice(existingIndex, 1);
-        } else {
-          reactions[existingIndex].user_ids = userIds;
-        }
-      } else {
-        // Add user's reaction
-        reactions[existingIndex].user_ids = [...userIds, userId];
-        actionType = 'added';
-      }
-    } else {
-      // Add new emoji with user's reaction
-      reactions.push({
-        emoji,
-        user_ids: [userId]
-      });
-      actionType = 'added';
-    }
-    
-    // Update the message with new reactions
-    const { data: updateData, error: updateError } = await supabase
-      .from('team_messages')
-      .update({ 
-        reactions,
-        // Force updated_at to change to trigger realtime event
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', messageId)
-      .select();
-      
-    if (updateError) {
-      console.error('Error updating message with reaction:', updateError);
-      throw updateError;
-    }
-    
-    console.log('Manual reaction update successful:', { 
-      success: true, 
-      reactions,
-      action: actionType
+    // Simple and direct approach - use the RPC function and don't try to be clever
+    const { data, error } = await supabase.rpc('update_message_reaction', {
+      p_message_id: messageId,
+      p_user_id: userId,
+      p_emoji: emoji
     });
     
-    return { 
-      success: true, 
-      reactions,
-      action: actionType
-    };
+    if (error) {
+      console.error('Error updating reaction:', error);
+      throw error;
+    }
+    
+    console.log('Reaction update successful:', data);
+    return data;
   } catch (error: any) {
     console.error('Error in addMessageReaction:', error);
     throw error;

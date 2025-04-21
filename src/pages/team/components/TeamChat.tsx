@@ -524,38 +524,13 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   
   const addReactionMutation = useMutation({
     mutationFn: async ({ messageId, emoji }: { messageId: string, emoji: string }) => {
-      console.log(`[addReactionMutation] Adding reaction ${emoji} to message ${messageId} by user ${user.id}`);
+      console.log(`Adding reaction ${emoji} to message ${messageId} by user ${user?.id}`);
       
       if (!user || !user.id) {
         throw new Error('User not authenticated');
       }
       
-      try {
-        try {
-          console.log('Attempting direct RPC call for reaction');
-          const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
-            p_message_id: messageId,
-            p_user_id: user.id,
-            p_emoji: emoji
-          });
-          
-          if (!rpcError) {
-            console.log('RPC reaction update successful:', rpcData);
-            return rpcData;
-          }
-          
-          console.error('RPC failed details:', rpcError);
-        } catch (rpcError) {
-          console.error('RPC error caught:', rpcError);
-        }
-        
-        const result = await addMessageReaction(messageId, user.id, emoji);
-        console.log('addMessageReaction result:', result);
-        return result;
-      } catch (error) {
-        console.error('Error processing reaction:', error);
-        throw error;
-      }
+      return await addMessageReaction(messageId, user.id, emoji);
     },
     onSuccess: (data) => {
       console.log('Reaction mutation succeeded:', data);
