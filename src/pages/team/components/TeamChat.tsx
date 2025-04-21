@@ -729,8 +729,23 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     pendingReactions.current.add(pendingKey);
     
     try {
-      await addReactionMutation.mutateAsync({ messageId, emoji });
-      console.log('Reaction successfully processed');
+      const { data, error } = await supabase.rpc('update_message_reaction', {
+        p_message_id: messageId,
+        p_user_id: user.id,
+        p_emoji: emoji
+      });
+      
+      if (error) {
+        console.error('Error adding reaction:', error);
+        toast.error('Failed to add reaction');
+        return;
+      }
+      
+      console.log('Reaction successfully processed:', data);
+      
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', selectedRoomId]
+      });
     } catch (error) {
       console.error('Error adding reaction:', error);
       toast.error('Failed to add reaction');

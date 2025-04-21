@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -145,8 +144,9 @@ const Chat: React.FC = () => {
             const oldPayload = payload.old as Record<string, any>;
             const newPayload = payload.new as Record<string, any>;
             
-            const oldReactions = oldPayload.reactions;
-            const newReactions = newPayload.reactions;
+            // Extract reactions or default to empty arrays if undefined
+            const oldReactions = oldPayload.reactions || [];
+            const newReactions = newPayload.reactions || [];
             
             // Stringify to compare the actual data structures
             if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
