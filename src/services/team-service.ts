@@ -156,22 +156,14 @@ export const getChatRooms = async (): Promise<ChatRoom[]> => {
 
 export const getMessages = async (roomId: string): Promise<TeamMessage[]> => {
   try {
-    console.log(`Fetching messages for room: ${roomId}`);
-    
-    // First get the messages
-    const { data: messages, error } = await supabase
+    const { data, error } = await supabase
       .from('team_messages')
       .select('*')
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
       
-    if (error) {
-      console.error('Error fetching messages:', error);
-      throw error;
-    }
-    
-    console.log(`Retrieved ${messages?.length || 0} messages`);
-    return messages || [];
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Error fetching messages:', error);
     throw error;
@@ -190,71 +182,6 @@ export const createMessage = async (message: Omit<TeamMessage, 'id' | 'created_a
     return data;
   } catch (error) {
     console.error('Error creating message:', error);
-    throw error;
-  }
-};
-
-// Helper function for sending messages with attachments
-export const sendMessage = async ({ content, roomId, attachments = [] }: {
-  content: string;
-  roomId: string;
-  attachments?: Array<{
-    type: string;
-    url: string;
-    name?: string;
-    size?: number;
-    duration?: number;
-  }>;
-}): Promise<TeamMessage> => {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) throw new Error('User not authenticated');
-    if (!data.user) throw new Error('User not found');
-
-    const messageData = {
-      content,
-      author_id: data.user.id,
-      room_id: roomId,
-      type: 'text',
-      read_by: [data.user.id],
-      attachment_url: attachments.length > 0 ? JSON.stringify(attachments) : null
-    };
-
-    return await createMessage(messageData);
-  } catch (error) {
-    console.error('Error sending message:', error);
-    throw error;
-  }
-};
-
-export const updateMessageReaction = async ({
-  messageId,
-  emoji,
-  userId
-}: {
-  messageId: string;
-  emoji: string;
-  userId: string;
-}): Promise<any> => {
-  try {
-    console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
-
-    // Simple and direct approach - use the RPC function and don't try to be clever
-    const { data, error } = await supabase.rpc('update_message_reaction', {
-      p_message_id: messageId,
-      p_user_id: userId,
-      p_emoji: emoji
-    });
-    
-    if (error) {
-      console.error('Error updating reaction:', error);
-      throw error;
-    }
-    
-    console.log('Reaction update successful:', data);
-    return data;
-  } catch (error: any) {
-    console.error('Error in updateMessageReaction:', error);
     throw error;
   }
 };
@@ -311,7 +238,7 @@ export const getTeamMembers = async () => {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, avatar_url, email, role, created_at, updated_at, job_title')
+      .select('*')
       .order('first_name', { ascending: true });
       
     if (error) throw error;

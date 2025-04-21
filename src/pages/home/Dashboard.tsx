@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -423,19 +422,18 @@ const HomeDashboard: React.FC = () => {
                 Team Chat
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 h-[400px] flex flex-col">
+            <CardContent className="p-0 h-[400px]">
               {isLoadingRooms ? (
                 <div className="flex justify-center items-center h-full text-gray-500">
                   Loading chat rooms...
                 </div>
               ) : generalRoomId ? (
-                <div className="h-full w-full flex">
+                <div className="h-full w-full">
                   <TeamChat 
                     key={`dashboard-chat-${generalRoomId}`} 
                     initialRoomId={generalRoomId} 
                     compact={isMobile} 
-                    initialMinimizeSidebar={true}
-                    showControls={true}  
+                    initialMinimizeSidebar={true} 
                   />
                 </div>
               ) : (

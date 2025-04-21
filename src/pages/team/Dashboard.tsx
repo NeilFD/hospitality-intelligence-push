@@ -40,25 +40,7 @@ const TeamDashboard: React.FC = () => {
         setError(null);
         const members = await getTeamMembers();
         if (members && Array.isArray(members)) {
-          // Convert the returned members to match UserProfile type
-          const typedMembers: UserProfile[] = members.map(member => ({
-            id: member.id,
-            first_name: member.first_name,
-            last_name: member.last_name,
-            role: member.role,
-            avatar_url: member.avatar_url,
-            email: member.email,
-            created_at: member.created_at || new Date().toISOString(),
-            updated_at: member.updated_at || new Date().toISOString(),
-            job_title: member.job_title || null,
-            birth_date: null,
-            favourite_dish: null,
-            favourite_drink: null,
-            about_me: null,
-            banner_url: null,
-            banner_position_y: null
-          }));
-          setTeamMembers(typedMembers);
+          setTeamMembers(members);
           console.log("Fetched team members:", members);
         } else {
           setError('Invalid data format received');
