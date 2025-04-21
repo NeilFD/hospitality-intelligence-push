@@ -257,7 +257,7 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
     
-    // First try using the Edge Function
+    // Call the Edge Function to add/remove the reaction
     const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
       'add_message_reaction',
       {
@@ -272,7 +272,77 @@ export const addMessageReaction = async (
     
     if (edgeFunctionError) {
       console.error('Error calling edge function:', edgeFunctionError);
-      throw edgeFunctionError;
+      
+      // Fallback to direct database update if the edge function fails
+      // Get the message first
+      const { data: message, error: fetchError } = await supabase
+        .from('team_messages')
+        .select('reactions')
+        .eq('id', messageId)
+        .single();
+        
+      if (fetchError) {
+        console.error('Error fetching message:', fetchError);
+        throw fetchError;
+      }
+      
+      // Parse and update reactions
+      let reactions = [];
+      if (message.reactions) {
+        try {
+          reactions = typeof message.reactions === 'string' 
+            ? JSON.parse(message.reactions) 
+            : (Array.isArray(message.reactions) ? message.reactions : []);
+        } catch (e) {
+          console.error('Error parsing reactions:', e);
+          reactions = [];
+        }
+      }
+      
+      // Find existing reaction or add new one
+      const existingIndex = reactions.findIndex(r => r.emoji === emoji);
+      
+      if (existingIndex >= 0) {
+        // This emoji already has reactions
+        const userIds = Array.isArray(reactions[existingIndex].user_ids) 
+          ? reactions[existingIndex].user_ids 
+          : [];
+          
+        const userIndex = userIds.indexOf(userId);
+        
+        if (userIndex >= 0) {
+          // User already reacted, remove reaction (toggle behavior)
+          userIds.splice(userIndex, 1);
+          
+          if (userIds.length === 0) {
+            // No users left for this emoji, remove emoji
+            reactions.splice(existingIndex, 1);
+          } else {
+            // Update user IDs for this emoji
+            reactions[existingIndex].user_ids = userIds;
+          }
+        } else {
+          // User hasn't reacted with this emoji, add them
+          reactions[existingIndex].user_ids = [...userIds, userId];
+        }
+      } else {
+        // No reactions for this emoji, add new entry
+        reactions.push({
+          emoji,
+          user_ids: [userId]
+        });
+      }
+      
+      // Update the message with new reactions
+      const { error: updateError } = await supabase
+        .from('team_messages')
+        .update({ reactions: reactions })
+        .eq('id', messageId);
+        
+      if (updateError) {
+        console.error('Error updating message:', updateError);
+        throw updateError;
+      }
     }
     
     console.log('Reaction updated successfully:', edgeFunctionData);
