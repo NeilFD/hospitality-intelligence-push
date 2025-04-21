@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -113,6 +114,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         for (const record of masterRecords) {
           const weekNumber = record.week_number;
           
+          // Get the correct revenue field based on module type
           const dayRevenue = moduleType === 'food' ? 
             Number(record.food_revenue) || 0 : 
             Number(record.beverage_revenue) || 0;
@@ -184,7 +186,12 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             let weekCosts = 0;
             
             week.days.forEach(day => {
-              weekRevenue += day.revenue;
+              // Fix: Access correct revenue property based on whether it's legacy or new format
+              const dayRevenue = typeof day.revenue === 'number' ? 
+                day.revenue : // Legacy format
+                (moduleType === 'food' ? day.foodRevenue || 0 : day.beverageRevenue || 0); // New format
+              
+              weekRevenue += dayRevenue;
               
               const dayCosts = Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
               const creditNotes = day.creditNotes.reduce((sum, credit) => sum + credit, 0);
@@ -220,7 +227,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     };
     
     fetchData();
-  }, [currentYear, currentMonth, toast, moduleType]);
+  }, [currentYear, currentMonth, toast, moduleType, monthRecord]);
   
   const gpDifference = gpPercentage - monthRecord.gpTarget;
   const gpStatus = 
