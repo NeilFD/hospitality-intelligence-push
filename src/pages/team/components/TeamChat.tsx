@@ -5,12 +5,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMessages, sendMessage, getTeamMembers, getChatRooms, updateMessageReaction } from '@/services/team-service';
+import { getMessages, createMessage, getTeamMembers, getChatRooms, updateMessageReaction, sendMessage } from '@/services/team-service';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
-import { AtSign, Paperclip, Mic, Image as ImageIcon, Send, Smile, Calendar, ChevronDown, Hash, Pin, Clock, CheckCircle2, Pencil, X, Heart, ThumbsUp, Fire, Party, Frown, RefreshCw } from 'lucide-react';
+import { AtSign, Paperclip, Mic, Image as ImageIcon, Send, Smile, Calendar, ChevronDown, Hash, Pin, Clock, CheckCircle2, Pencil, X, Heart, ThumbsUp, MessageSquare, Frown, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -645,7 +645,7 @@ export default function TeamChat({
     
     try {
       const nextPage = page + 1;
-      const olderMessages = await getMessages(selectedRoomId, nextPage);
+      const olderMessages = await getMessages(selectedRoomId);
       
       if (olderMessages.length === 0) {
         setHasMoreMessages(false);

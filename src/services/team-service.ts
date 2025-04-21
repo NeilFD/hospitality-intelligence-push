@@ -186,6 +186,70 @@ export const createMessage = async (message: Omit<TeamMessage, 'id' | 'created_a
   }
 };
 
+// Helper function for sending messages with attachments
+export const sendMessage = async ({ content, roomId, attachments = [] }: {
+  content: string;
+  roomId: string;
+  attachments?: Array<{
+    type: string;
+    url: string;
+    name?: string;
+    size?: number;
+    duration?: number;
+  }>;
+}): Promise<TeamMessage> => {
+  try {
+    const { user } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const messageData = {
+      content,
+      author_id: user.id,
+      room_id: roomId,
+      type: 'text',
+      read_by: [user.id],
+      attachment_url: attachments.length > 0 ? JSON.stringify(attachments) : null
+    };
+
+    return await createMessage(messageData);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
+  }
+};
+
+export const updateMessageReaction = async ({
+  messageId,
+  emoji,
+  userId
+}: {
+  messageId: string;
+  emoji: string;
+  userId: string;
+}): Promise<any> => {
+  try {
+    console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
+
+    // Simple and direct approach - use the RPC function and don't try to be clever
+    const { data, error } = await supabase.rpc('update_message_reaction', {
+      p_message_id: messageId,
+      p_user_id: userId,
+      p_emoji: emoji
+    });
+    
+    if (error) {
+      console.error('Error updating reaction:', error);
+      throw error;
+    }
+    
+    console.log('Reaction update successful:', data);
+    return data;
+  } catch (error: any) {
+    console.error('Error in updateMessageReaction:', error);
+    throw error;
+  }
+};
+
 export const markMessageAsRead = async (messageId: string, userId: string): Promise<void> => {
   try {
     const { data: message, error: fetchError } = await supabase
