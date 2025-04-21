@@ -24,3 +24,15 @@ self.addEventListener('notificationclick', function(event) {
     );
   }
 });
+
+// Add a specific event listener to verify service worker installation
+self.addEventListener('install', function(event) {
+  console.log('Service Worker installed successfully');
+  self.skipWaiting();
+});
+
+// Add an activate event to take control immediately
+self.addEventListener('activate', function(event) {
+  console.log('Service Worker activated successfully');
+  event.waitUntil(clients.claim());
+});
