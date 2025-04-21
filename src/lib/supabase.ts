@@ -16,6 +16,8 @@ export const ensureStorageBuckets = async () => {
   try {
     // Check if the profiles bucket exists
     const { data: buckets } = await supabase.storage.listBuckets();
+    
+    // Check for profiles bucket
     const profilesBucketExists = buckets?.some(bucket => bucket.name === 'profiles');
     
     if (!profilesBucketExists) {
@@ -30,6 +32,24 @@ export const ensureStorageBuckets = async () => {
         console.error('Error creating profiles bucket:', error);
       } else {
         console.log('Profiles bucket created successfully');
+      }
+    }
+    
+    // Check for team_files bucket
+    const teamFilesBucketExists = buckets?.some(bucket => bucket.name === 'team_files');
+    
+    if (!teamFilesBucketExists) {
+      console.log('Creating team_files storage bucket...');
+      // Create the team_files bucket
+      const { error } = await supabase.storage.createBucket('team_files', {
+        public: true,
+        fileSizeLimit: 52428800 // 50MB
+      });
+      
+      if (error) {
+        console.error('Error creating team_files bucket:', error);
+      } else {
+        console.log('Team files bucket created successfully');
       }
     }
   } catch (error) {

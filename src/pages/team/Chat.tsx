@@ -171,6 +171,45 @@ const Chat: React.FC = () => {
     };
   }, [roomId, queryClient]);
   
+  useEffect(() => {
+    const ensureStorage = async () => {
+      try {
+        console.log('Ensuring storage buckets exist...');
+        
+        // Check if the team_files bucket exists
+        const { data: buckets, error } = await supabase.storage.listBuckets();
+        
+        if (error) {
+          console.error('Error checking storage buckets:', error);
+          return;
+        }
+        
+        if (!buckets.some(bucket => bucket.name === 'team_files')) {
+          console.log('Creating team_files bucket...');
+          const { error: createError } = await supabase.storage.createBucket('team_files', {
+            public: true,
+            fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+          });
+          
+          if (createError) {
+            console.error('Error creating team_files bucket:', createError);
+            return;
+          }
+          
+          console.log('team_files bucket created successfully');
+        } else {
+          console.log('team_files bucket already exists');
+        }
+      } catch (error) {
+        console.error('Error in ensureStorage:', error);
+      }
+    };
+    
+    if (user) {
+      ensureStorage();
+    }
+  }, [user]);
+  
   return (
     <div className={cn("container mx-auto overflow-hidden", isMobile ? "p-0 max-w-full" : "p-4")}>
       <div className="overflow-hidden h-[calc(100vh-130px)] border border-gray-100 rounded-lg">

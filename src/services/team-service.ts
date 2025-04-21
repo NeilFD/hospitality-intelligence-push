@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Define all the types that are being referenced
@@ -214,7 +213,7 @@ export const markMessageAsRead = async (messageId: string, userId: string): Prom
 
 export const uploadTeamFile = async (file: File, type: string): Promise<string> => {
   try {
-    // First check if the bucket exists, and create it if it doesn't
+    // First check if the bucket exists by listing buckets
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
@@ -222,26 +221,32 @@ export const uploadTeamFile = async (file: File, type: string): Promise<string> 
       throw bucketsError;
     }
     
-    const bucketExists = buckets.some(bucket => bucket.name === 'team_files');
+    // Check if team_files bucket exists
+    const bucketExists = buckets?.some(bucket => bucket.name === 'team_files');
     
+    // If bucket doesn't exist, create it with public access
     if (!bucketExists) {
-      console.log('Creating team_files bucket as it does not exist');
-      const { error: createBucketError } = await supabase.storage.createBucket('team_files', {
-        public: true,
-        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
-      });
-      
-      if (createBucketError) {
-        console.error('Error creating bucket:', createBucketError);
-        throw createBucketError;
+      console.log('Team files bucket does not exist, creating it...');
+      // Create bucket with public access
+      try {
+        const { data, error } = await supabase.storage.createBucket('team_files', {
+          public: true,
+          fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+        });
+        
+        if (error) throw error;
+        console.log('Successfully created team_files bucket:', data);
+      } catch (bucketError) {
+        console.error('Error creating bucket:', bucketError);
+        throw new Error('Failed to create storage bucket. Please check your permissions.');
       }
-      console.log('Successfully created team_files bucket');
     }
     
-    // Now proceed with the upload
+    // Prepare file path
     const fileName = `${type}/${Date.now()}-${file.name}`;
     console.log(`Uploading file ${fileName} to team_files bucket...`);
     
+    // Upload file to bucket
     const { error: uploadError, data } = await supabase.storage
       .from('team_files')
       .upload(fileName, file, {
@@ -250,10 +255,11 @@ export const uploadTeamFile = async (file: File, type: string): Promise<string> 
       });
       
     if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw uploadError;
+      console.error('Upload error details:', uploadError);
+      throw new Error(`File upload failed: ${uploadError.message}`);
     }
     
+    // Get public URL for the uploaded file
     const { data: { publicUrl } } = supabase.storage
       .from('team_files')
       .getPublicUrl(fileName);
@@ -261,7 +267,7 @@ export const uploadTeamFile = async (file: File, type: string): Promise<string> 
     console.log('File uploaded successfully, public URL:', publicUrl);  
     return publicUrl;
   } catch (error) {
-    console.error('Error uploading file:', error);
+    console.error('Error in uploadTeamFile:', error);
     throw error;
   }
 };
