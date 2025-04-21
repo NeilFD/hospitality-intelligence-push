@@ -185,16 +185,19 @@ export function ForecastSettingsControl({
         day: 'numeric',
         month: 'short'
       });
-      const valObj = dailyValues[day.toString()] || { value: '', note: '' };
+      const valObj = dailyValues[day.toString()] || { value: 0, note: '' };
       rows.push(
         <div key={day} className="grid grid-cols-3 gap-2 items-center mb-2">
           <Label className="text-sm">{formattedDate}</Label>
           <Input
             type="number"
-            value={valObj.value ?? ''}
+            value={valObj.value === 0 ? '' : valObj.value}
             onChange={(e) => {
               const newValues = { ...dailyValues };
-              newValues[day.toString()] = { ...valObj, value: parseFloat(e.target.value) || 0 };
+              newValues[day.toString()] = { 
+                ...valObj, 
+                value: parseFloat(e.target.value) || 0 
+              };
               setDailyValues(newValues);
             }}
             disabled={!isEditing}
@@ -203,7 +206,7 @@ export function ForecastSettingsControl({
           />
           <Input
             type="text"
-            value={valObj.note ?? ''}
+            value={valObj.note}
             onChange={(e) => {
               const newValues = { ...dailyValues };
               newValues[day.toString()] = { ...valObj, note: e.target.value };
