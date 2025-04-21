@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -580,4 +581,76 @@ export function PLReportTable({
         </TableRow>
         <TableRow
           className="text-black"
-          style={{ backgroundColor: '#D6BCFA', transition: 'none', borderRadius: '0 0.375
+          style={{ backgroundColor: '#D6BCFA', transition: 'none', borderRadius: '0 0.375rem 0.375rem 0' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#D6BCFA'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#D6BCFA'; }}
+        >
+          <TableCell className="font-bold bg-[#D6BCFA] text-black rounded-l-xl">
+            Operating profit
+          </TableCell>
+          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
+            {formatCurrency(operatingProfitBudget)}
+          </TableCell>
+          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
+            &nbsp;{/* blank for B% col */}
+          </TableCell>
+          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
+            {formatCurrency(operatingProfitActual)}
+          </TableCell>
+          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
+            &nbsp; {/* blank for % col */}
+          </TableCell>
+          <TableCell className={`text-right font-bold ${getValueColor(calculatedOperatingProfitForecast)}`}>
+            {formatCurrency(calculatedOperatingProfitForecast)}
+          </TableCell>
+          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
+            &nbsp; {/* blank for F% col */}
+          </TableCell>
+          <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {formatCurrency(operatingProfitVariance)}
+          </TableCell>
+        </TableRow>
+      </>
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+      <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-800">
+          P&L Report - {currentMonthName} {currentYear}
+        </h2>
+      </div>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead className="w-[240px] font-bold">Item</TableHead>
+              <TableHead className="text-right font-bold">Budget</TableHead>
+              <TableHead className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">B%</TableHead>
+              <TableHead className="text-right font-bold">Actual MTD</TableHead>
+              <TableHead className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">%</TableHead>
+              <TableHead className="text-right font-bold">Forecast</TableHead>
+              <TableHead className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">F%</TableHead>
+              <TableHead className="text-right font-bold">Variance</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? Array(10).fill(0).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
+                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+              </TableRow>
+            )) : renderTableContent()}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
