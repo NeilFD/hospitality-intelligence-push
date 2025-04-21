@@ -250,48 +250,36 @@ export const getTeamMembers = async () => {
 };
 
 export const addMessageReaction = async (
-  messageId: string, 
-  userId: string, 
+  messageId: string,
+  userId: string,
   emoji: string
 ): Promise<void> => {
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
-    
-    // Direct Edge Function invocation with explicit timeout handling
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 8000);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        'add_message_reaction', 
-        {
-          body: {
-            p_message_id: messageId,
-            p_user_id: userId,
-            p_emoji: emoji
-          },
-          signal: abortController.signal
-        }
-      );
-      
-      clearTimeout(timeoutId);
-      
-      if (error) {
-        console.error('Error invoking add_message_reaction function:', error);
-        throw error;
-      }
-      
-      console.log('Reaction added successfully:', data);
-      return;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        console.error('Request to add_message_reaction timed out');
-        throw new Error('Request to add reaction timed out');
-      }
+
+    // Implement timeout using Promise.race without using signal, as not supported in supabase.invoke
+    const invokePromise = supabase.functions.invoke('add_message_reaction', {
+      body: {
+        p_message_id: messageId,
+        p_user_id: userId,
+        p_emoji: emoji,
+      },
+    });
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Request to add reaction timed out')), 8000)
+    );
+
+    const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+
+    if (error) {
+      console.error('Error invoking add_message_reaction function:', error);
       throw error;
     }
-  } catch (error) {
+
+    console.log('Reaction added successfully:', data);
+    return;
+  } catch (error: any) {
     console.error('Error adding reaction:', error);
     throw error;
   }
