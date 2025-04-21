@@ -422,18 +422,18 @@ const HomeDashboard: React.FC = () => {
                 Team Chat
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 h-[400px]">
+            <CardContent className="p-0 h-[500px] overflow-hidden">
               {isLoadingRooms ? (
                 <div className="flex justify-center items-center h-full text-gray-500">
                   Loading chat rooms...
                 </div>
               ) : generalRoomId ? (
-                <div className="h-full w-full">
+                <div className="h-full w-full overflow-hidden">
                   <TeamChat 
                     key={`dashboard-chat-${generalRoomId}`} 
                     initialRoomId={generalRoomId} 
                     compact={isMobile} 
-                    initialMinimizeSidebar={true} 
+                    initialMinimizeSidebar={false} 
                   />
                 </div>
               ) : (
