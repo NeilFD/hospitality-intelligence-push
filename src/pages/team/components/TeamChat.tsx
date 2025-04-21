@@ -523,17 +523,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   });
   
   const addReactionMutation = useMutation({
-    mutationFn: async ({
-      messageId,
-      emoji
-    }: {
-      messageId: string;
-      emoji: string;
-    }) => {
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-      
+    mutationFn: async ({ messageId, emoji }: { messageId: string, emoji: string }) => {
       console.log(`[addReactionMutation] Adding reaction ${emoji} to message ${messageId} by user ${user.id}`);
       
       try {
@@ -563,23 +553,24 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
         });
         
         if (error) {
-          console.error('Error from edge function:', error);
+          console.error('Edge function error:', error);
           throw error;
         }
         
-        console.log('Edge function response:', data);
+        console.log('Successfully added reaction, response:', data);
         return data;
       } catch (error) {
-        console.error('Error in addReactionMutation:', error);
+        console.error('Error processing reaction:', error);
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log('Successfully added reaction, response:', data);
+      queryClient.invalidateQueries({
+        queryKey: ['teamMessages', selectedRoomId]
+      });
     },
     onError: (error) => {
-      console.error('Error adding reaction:', error);
-      toast.error('Failed to add reaction');
+      console.error('Reaction mutation error:', error);
     }
   });
   
@@ -750,49 +741,24 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     }
   };
   
-  const handleAddReaction = (messageId: string, emoji: string) => {
-    if (!user) {
-      toast.error("You must be logged in to react to messages");
-      return;
-    }
-    
+  const handleAddReaction = async (messageId: string, emoji: string) => {
     console.log(`[handleAddReaction] Processing reaction: ${emoji} for message ${messageId} from user ${user.id}`);
     
-    const message = messages.find(m => m.id === messageId);
-    if (!message) {
-      console.error('Message not found:', messageId);
-      toast.error('Message not found');
+    const pendingKey = `${messageId}-${emoji}`;
+    if (pendingReactions.current.has(pendingKey)) {
+      console.log(`Reaction ${emoji} to message ${messageId} is already being processed`);
       return;
     }
     
-    const reactionKey = `${messageId}-${emoji}-${Date.now()}`;
-    if (pendingReactions.current.has(reactionKey)) {
-      console.log('Reaction already pending, ignoring duplicate');
-      return;
+    pendingReactions.current.add(pendingKey);
+    
+    try {
+      await addReactionMutation.mutateAsync({ messageId, emoji });
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    } finally {
+      pendingReactions.current.delete(pendingKey);
     }
-    
-    pendingReactions.current.add(reactionKey);
-    toast.loading('Adding reaction...', { id: reactionKey, duration: 2000 });
-    
-    addReactionMutation.mutate(
-      {
-        messageId,
-        emoji
-      },
-      {
-        onSettled: () => {
-          pendingReactions.current.delete(reactionKey);
-          toast.dismiss(reactionKey);
-        },
-        onSuccess: () => {
-          toast.success('Reaction added', { id: reactionKey });
-        },
-        onError: (error) => {
-          console.error('Error adding reaction in mutation handler:', error);
-          toast.error('Failed to add reaction', { id: reactionKey });
-        }
-      }
-    );
   };
   
   const handleDeleteMessage = (messageId: string) => {
