@@ -753,6 +753,34 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     pendingReactions.current.add(pendingKey);
     
     try {
+      try {
+        console.log('Directly calling RPC update_message_reaction with:', {
+          p_message_id: messageId,
+          p_user_id: user.id,
+          p_emoji: emoji
+        });
+        
+        const { data: rpcData, error: rpcError } = await supabase.rpc('update_message_reaction', {
+          p_message_id: messageId,
+          p_user_id: user.id,
+          p_emoji: emoji
+        });
+        
+        if (!rpcError) {
+          console.log('Direct RPC call successful:', rpcData);
+          queryClient.invalidateQueries({
+            queryKey: ['teamMessages', selectedRoomId],
+            refetchType: 'active'
+          });
+          pendingReactions.current.delete(pendingKey);
+          return;
+        }
+        
+        console.log('RPC failed, falling back to edge function:', rpcError);
+      } catch (rpcError) {
+        console.log('RPC error caught, continuing to edge function:', rpcError);
+      }
+      
       await addReactionMutation.mutateAsync({ messageId, emoji });
     } catch (error) {
       console.error('Error adding reaction:', error);
@@ -1081,7 +1109,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
             if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
               console.log('Reactions have changed, refreshing messages');
               queryClient.invalidateQueries({
-                queryKey: ['teamMessages', selectedRoomId]
+                queryKey: ['teamMessages', selectedRoomId],
+                refetchType: 'active'
               });
             }
           }

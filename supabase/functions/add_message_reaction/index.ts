@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -175,7 +174,7 @@ serve(async (req) => {
     console.log(`[add_message_reaction] Action: ${actionType}`);
     console.log(`[add_message_reaction] Updated reactions:`, reactions);
 
-    // Update the message with the new reactions and force a timestamp update
+    // To ensure immediate update visibility, let's manually force an update to the updated_at column
     const { data: updateData, error: updateError } = await supabaseClient
       .from('team_messages')
       .update({ 
