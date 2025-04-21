@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -5,21 +6,39 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PaperclipIcon, SendIcon, SmileIcon, UserPlusIcon, ImageIcon, ChevronLeftIcon, ChevronRightIcon, XIcon, AtSign } from 'lucide-react';
+import { PaperclipIcon, SendIcon, SmileIcon, UserPlusIcon, ImageIcon, ChevronLeftIcon, ChevronRightIcon, XIcon, AtSign, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/services/auth-service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getChatRooms, getChatMessages, sendChatMessage, uploadChatAttachment } from '@/services/team-service';
+import { getChatRooms, getMessages, createMessage, createPoll, uploadTeamFile } from '@/services/team-service';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { cn, formatDistance } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 import ChatRoomSidebar from './ChatRoomSidebar';
 import TeamPoll from './TeamPoll';
-import { createChatPoll } from '@/services/team-service';
-import CreatePollForm from './CreatePollForm';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserProfile } from '@/types/supabase-types';
 import { v4 as uuidv4 } from 'uuid';
-import { EmojiPicker } from '@/components/ui/emoji-picker';
+import { supabase } from '@/lib/supabase';
+
+// Create a simplified emoji picker component
+const EmojiPicker = ({ onEmojiSelect }: { onEmojiSelect: (emoji: string) => void }) => {
+  const emojis = ['😀', '😂', '😊', '❤️', '👍', '🎉', '🔥', '⭐', '🙌', '🤔'];
+  
+  return (
+    <div className="grid grid-cols-5 gap-2 p-2">
+      {emojis.map((emoji) => (
+        <button
+          key={emoji}
+          className="text-xl hover:bg-gray-100 p-2 rounded cursor-pointer"
+          onClick={() => onEmojiSelect(emoji)}
+        >
+          {emoji}
+        </button>
+      ))}
+    </div>
+  );
+};
 
 interface TeamChatProps {
   initialRoomId?: string;
@@ -27,6 +46,11 @@ interface TeamChatProps {
   className?: string;
   initialSidebarMinimized?: boolean;
 }
+
+// Format distance helper function
+const formatDistance = (date: Date, baseDate: Date, options: { addSuffix: boolean }) => {
+  return format(date, 'HH:mm') + (options.addSuffix ? ' ago' : '');
+};
 
 const TeamChat: React.FC<TeamChatProps> = ({ 
   initialRoomId, 
@@ -57,35 +81,27 @@ const TeamChat: React.FC<TeamChatProps> = ({
     queryFn: getChatRooms,
     staleTime: 60000, // 1 minute
     retry: false,
-    meta: {
-      onSuccess: (data: any) => {
-        console.log('Successfully fetched chat rooms:', data);
-      },
-      onError: (error: Error) => {
-        console.error('Error fetching chat rooms:', error);
-        toast.error('Failed to load chat rooms');
-      }
-    }
   });
 
   const { data: messages = [], isLoading: isLoadingMessages, error: messagesError, refetch: refetchMessages } = useQuery({
     queryKey: ['teamMessages', selectedRoomId],
-    queryFn: () => getChatMessages(selectedRoomId || ''),
+    queryFn: () => getMessages(selectedRoomId || ''),
     enabled: !!selectedRoomId,
     staleTime: 10000, // 10 seconds
     retry: false,
-    meta: {
-      onSuccess: (data: any) => {
-        console.log('Successfully fetched messages:', data);
-      },
-      onError: (error: Error) => {
-        console.error('Error fetching messages:', error);
-        toast.error('Failed to load messages');
-      }
-    }
   });
 
-  const { mutate: sendMessage, isLoading: isSendingMessage } = useMutation(sendChatMessage, {
+  const { mutate: sendMessage } = useMutation({
+    mutationFn: (data: { roomId: string; text: string; mentionedUsers: string[] }) => {
+      return createMessage({
+        content: data.text,
+        author_id: user?.id || '',
+        room_id: data.roomId,
+        type: 'text',
+        read_by: [user?.id || ''],
+        mentioned_users: data.mentionedUsers,
+      });
+    },
     onSuccess: () => {
       setMessageText('');
       setAttachment(null);
@@ -98,7 +114,22 @@ const TeamChat: React.FC<TeamChatProps> = ({
     }
   });
 
-  const { mutate: uploadAttachment, isLoading: isUploadingAttachment } = useMutation(uploadChatAttachment, {
+  const { mutate: uploadAttachment } = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const file = formData.get('file') as File;
+      const roomId = formData.get('roomId') as string;
+      const attachmentUrl = await uploadTeamFile(file, 'chat');
+      
+      return createMessage({
+        content: 'Shared an attachment',
+        author_id: user?.id || '',
+        room_id: roomId,
+        type: 'attachment',
+        attachment_url: attachmentUrl,
+        read_by: [user?.id || ''],
+        mentioned_users: [],
+      });
+    },
     onSuccess: () => {
       setAttachment(null);
       queryClient.invalidateQueries({ queryKey: ['teamMessages', selectedRoomId] });
@@ -110,7 +141,34 @@ const TeamChat: React.FC<TeamChatProps> = ({
     }
   });
 
-  const { mutate: createPoll, isLoading: isCreatingPoll } = useMutation(createChatPoll, {
+  const { mutate: createChatPoll } = useMutation({
+    mutationFn: async (data: { roomId: string; question: string; options: string[] }) => {
+      // First create a poll
+      const poll = await createPoll(
+        {
+          question: data.question,
+          author_id: user?.id || '',
+          active: true,
+          multiple_choice: false,
+        },
+        data.options.map((option, i) => ({
+          option_text: option,
+          option_type: 'text',
+          option_order: i
+        }))
+      );
+      
+      // Then create a message with the poll reference
+      return createMessage({
+        content: `Created a poll: ${data.question}`,
+        author_id: user?.id || '',
+        room_id: data.roomId,
+        type: 'poll',
+        poll_id: poll.id,
+        read_by: [user?.id || ''],
+        mentioned_users: [],
+      });
+    },
     onSuccess: () => {
       setPollQuestion('');
       setPollOptions(['', '']);
@@ -155,7 +213,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       handleSendMessage();
@@ -206,7 +264,7 @@ const TeamChat: React.FC<TeamChatProps> = ({
       return;
     }
 
-    createPoll({
+    createChatPoll({
       roomId: selectedRoomId,
       question: pollQuestion,
       options: pollOptions
@@ -263,15 +321,16 @@ const TeamChat: React.FC<TeamChatProps> = ({
               : "w-64"
         )}
       >
+        {/* Use props that exist in ChatRoomSidebar */}
         <ChatRoomSidebar
-          rooms={rooms}
+          chatRooms={rooms}
           selectedRoomId={selectedRoomId}
           onRoomSelect={handleRoomSelect}
           isLoading={isLoadingRooms}
-          error={roomsError}
+          hasError={!!roomsError}
           compact={compact}
-          sidebarMinimized={sidebarMinimized}
-          setSidebarMinimized={setSidebarMinimized}
+          minimized={sidebarMinimized}
+          setMinimized={setSidebarMinimized}
         />
       </div>
 
@@ -315,10 +374,14 @@ const TeamChat: React.FC<TeamChatProps> = ({
                             View Attachment
                           </a>
                         ) : (
-                          <p className="break-words">{message.text}</p>
+                          <p className="break-words">{message.content}</p>
                         )}
                         {message.poll && (
-                          <TeamPoll poll={message.poll} messageId={message.id} />
+                          <TeamPoll 
+                            poll={message.poll} 
+                            messageId={message.id} 
+                            userId={user?.id} 
+                          />
                         )}
                       </div>
                     </div>
@@ -412,13 +475,11 @@ const TeamChat: React.FC<TeamChatProps> = ({
 
               <div className="relative mt-2">
                 <Input
-                  as="textarea"
-                  rows={1}
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Type your message..."
-                  className="pr-10 resize-none"
+                  className="pr-10"
                   onFocus={() => setIsMentionPopoverOpen(false)}
                 />
                 <Button
@@ -426,9 +487,9 @@ const TeamChat: React.FC<TeamChatProps> = ({
                   size="icon"
                   className="absolute right-1 bottom-1"
                   onClick={handleSendMessage}
-                  disabled={isSendingMessage}
+                  disabled={!messageText.trim() && !attachment}
                 >
-                  {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-5 w-5" />}
+                  {false ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-5 w-5" />}
                 </Button>
               </div>
             </div>
@@ -484,16 +545,59 @@ const TeamChat: React.FC<TeamChatProps> = ({
           <DialogHeader>
             <DialogTitle>Create Poll</DialogTitle>
           </DialogHeader>
-          <CreatePollForm
-            pollQuestion={pollQuestion}
-            setPollQuestion={setPollQuestion}
-            pollOptions={pollOptions}
-            handlePollOptionChange={handlePollOptionChange}
-            handleRemovePollOption={handleRemovePollOption}
-            handleAddPollOption={handleAddPollOption}
-            handleCreatePoll={handleCreatePoll}
-            isCreatingPoll={isCreatingPoll}
-          />
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="poll-question" className="block text-sm font-medium text-gray-700">
+                Question
+              </label>
+              <Input
+                id="poll-question"
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                placeholder="Enter your question"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Options
+              </label>
+              {pollOptions.map((option, index) => (
+                <div key={index} className="flex mt-1">
+                  <Input
+                    value={option}
+                    onChange={(e) => handlePollOptionChange(index, e.target.value)}
+                    placeholder={`Option ${index + 1}`}
+                    className="flex-1"
+                  />
+                  {pollOptions.length > 2 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemovePollOption(index)}
+                      className="ml-1"
+                    >
+                      <XIcon className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddPollOption}
+                className="mt-2"
+              >
+                Add Option
+              </Button>
+            </div>
+            
+            <Button onClick={handleCreatePoll} disabled={!pollQuestion.trim() || pollOptions.some(option => !option.trim())}>
+              Create Poll
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
