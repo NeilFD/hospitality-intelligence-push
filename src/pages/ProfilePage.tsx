@@ -755,6 +755,7 @@ const ProfilePage = () => {
               {isCurrentUser && (
                 <TabsContent value="notifications">
                   <div className="grid gap-4 py-4">
+                    <h3 className="text-lg font-semibold mb-4">Push Notifications</h3>
                     {!isSupported ? (
                       <p className="text-gray-500">
                         Push notifications are not supported on this device.
