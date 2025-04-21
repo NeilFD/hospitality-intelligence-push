@@ -243,29 +243,25 @@ export default function PLDashboard() {
     )
   );
 
-  const turnoverForecast = turnoverItem?.forecast_amount || 
-                         (turnoverItem ? getForecastAmount({
-                           ...(turnoverItem || {}), 
-                           id: turnoverItem?.id || generateTempId('turnover')
-                         }, currentYear, currentMonth) : 0);
+  const turnoverForecast = turnoverItem ? getForecastAmount({
+    ...(turnoverItem || {}), 
+    id: turnoverItem?.id || generateTempId('turnover')
+  }, currentYear, currentMonth) : 0;
                          
-  const costOfSalesForecast = costOfSalesItem?.forecast_amount || 
-                            (costOfSalesItem ? getForecastAmount({
-                              ...(costOfSalesItem || {}), 
-                              id: costOfSalesItem?.id || generateTempId('cost-of-sales')
-                            }, currentYear, currentMonth) : 0);
+  const costOfSalesForecast = costOfSalesItem ? getForecastAmount({
+    ...(costOfSalesItem || {}), 
+    id: costOfSalesItem?.id || generateTempId('cost-of-sales')
+  }, currentYear, currentMonth) : 0;
   
-  const adminExpensesForecast = adminExpensesItem?.forecast_amount || 
-                             (adminExpensesItem ? getForecastAmount({
-                               ...(adminExpensesItem || {}),
-                               id: adminExpensesItem?.id || generateTempId('admin-expenses')
-                             }, currentYear, currentMonth) : 0);
+  const adminExpensesForecast = adminExpensesItem ? getForecastAmount({
+    ...(adminExpensesItem || {}),
+    id: adminExpensesItem?.id || generateTempId('admin-expenses')
+  }, currentYear, currentMonth) : 0;
                             
-  const operatingProfitForecast = operatingProfitItem?.forecast_amount || 
-                                (operatingProfitItem ? getForecastAmount({
-                                  ...(operatingProfitItem || {}), 
-                                  id: operatingProfitItem?.id || generateTempId('operating-profit')
-                                }, currentYear, currentMonth) : 0);
+  const operatingProfitForecast = operatingProfitItem ? getForecastAmount({
+    ...(operatingProfitItem || {}), 
+    id: operatingProfitItem?.id || generateTempId('operating-profit')
+  }, currentYear, currentMonth) : 0;
 
   const turnoverActual = turnoverItem ? getActualAmount({
     ...turnoverItem, 
@@ -333,6 +329,7 @@ export default function PLDashboard() {
           processedBudgetData={updatedBudgetData} 
           currentMonthName={currentMonthName} 
           currentYear={currentYear} 
+          currentMonth={currentMonth}
         />
       </div>
     </div>;
