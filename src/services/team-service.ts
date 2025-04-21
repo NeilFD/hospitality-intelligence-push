@@ -221,12 +221,16 @@ export const uploadTeamFile = async (file: File, type: string): Promise<string> 
         upsert: false,
       });
       
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
     
     const { data: { publicUrl } } = supabase.storage
       .from('team_files')
       .getPublicUrl(fileName);
-      
+    
+    console.log('File uploaded successfully, public URL:', publicUrl);  
     return publicUrl;
   } catch (error) {
     console.error('Error uploading file:', error);
