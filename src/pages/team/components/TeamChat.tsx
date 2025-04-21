@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserProfile } from '@/types/supabase-types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
