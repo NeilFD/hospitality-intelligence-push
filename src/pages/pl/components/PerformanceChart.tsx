@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +55,6 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export function PerformanceChart({ chartData, currentMonthName, currentYear, isLoading }: PerformanceChartProps) {
-  // Add state to track visible series
   const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
     revenue: true,
     cosCosts: true,
@@ -64,9 +62,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     ebitda: true
   });
 
-  // Custom Legend component that handles toggle functionality
   const CustomLegend = () => {
-    // Define all available series regardless of what's in the chart payload
     const allSeries = [
       { dataKey: 'revenue', value: 'Revenue', color: '#7E69AB' },
       { dataKey: 'cosCosts', value: 'COS Costs', color: '#A5C0E2' },
@@ -74,12 +70,9 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
       { dataKey: 'ebitda', value: 'EBITDA', color: '#6C7787' }
     ];
     
-    // Toggle visibility when clicking on a legend item
     const toggleItem = (dataKey: keyof VisibleSeries) => {
-      // Count how many series are currently visible
       const visibleCount = Object.values(visibleSeries).filter(Boolean).length;
       
-      // If trying to hide the last visible item, show a message and return without changing state
       if (visibleSeries[dataKey] && visibleCount <= 1) {
         toast.info("At least one series must remain visible");
         return;
@@ -130,30 +123,22 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
           </div>
         ) : (
           <ChartContainer config={{
-            revenue: {
-              color: '#7E69AB' // Complementary purple
-            },
-            cosCosts: {
-              color: '#A5C0E2' // Complementary blue
-            },
-            adminCosts: {
-              color: '#FF9F76' // Complementary orange
-            },
-            ebitda: {
-              color: '#6C7787' // Muted complementary color
-            }
+            revenue: { color: '#7E69AB' },
+            cosCosts: { color: '#A5C0E2' },
+            adminCosts: { color: '#FF9F76' },
+            ebitda: { color: '#6C7787' }
           }}>
             <BarChart data={chartData}>
               <CartesianGrid 
                 vertical={false} 
                 horizontal={true} 
-                stroke="#F1F0FB"  // Soft Gray from the color palette 
+                stroke="#F1F0FB"
                 strokeWidth={1}
                 strokeDasharray="0" 
               />
               <ReferenceLine 
                 y={0} 
-                stroke="#9F9EA1" // Softer silver gray line
+                stroke="#9F9EA1"
                 strokeWidth={1} 
                 isFront={true} 
               />
@@ -167,10 +152,18 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
-              {visibleSeries.revenue && <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />}
-              {visibleSeries.cosCosts && <Bar dataKey="cosCosts" name="COS Costs" fill="var(--color-cosCosts)" />}
-              {visibleSeries.adminCosts && <Bar dataKey="adminCosts" name="Admin Costs" fill="var(--color-adminCosts)" />}
-              {visibleSeries.ebitda && <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />}
+              {visibleSeries.revenue && (
+                <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />
+              )}
+              {visibleSeries.cosCosts && (
+                <Bar dataKey="cosCosts" name="COS Costs" fill="var(--color-cosCosts)" stackId="costs" />
+              )}
+              {visibleSeries.adminCosts && (
+                <Bar dataKey="adminCosts" name="Admin Costs" fill="var(--color-adminCosts)" stackId="costs" />
+              )}
+              {visibleSeries.ebitda && (
+                <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />
+              )}
             </BarChart>
           </ChartContainer>
         )}
