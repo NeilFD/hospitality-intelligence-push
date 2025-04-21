@@ -131,7 +131,7 @@ const Chat: React.FC = () => {
     };
   }, [user]);
   
-  // Setup Supabase realtime subscription for message reactions
+  // Setup Supabase realtime subscription for message reactions and updates
   useEffect(() => {
     if (!roomId) return;
 
@@ -143,7 +143,7 @@ const Chat: React.FC = () => {
       .on(
         'postgres_changes',
         { 
-          event: 'UPDATE', 
+          event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
           schema: 'public', 
           table: 'team_messages',
           filter: `room_id=eq.${roomId}`
@@ -153,7 +153,9 @@ const Chat: React.FC = () => {
           // The TeamChat component will automatically refetch due to this invalidation
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Supabase channel status: ${status}`);
+      });
       
     return () => {
       console.log('Removing realtime subscription');
