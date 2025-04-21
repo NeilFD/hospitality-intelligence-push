@@ -132,15 +132,15 @@ const Chat: React.FC = () => {
     };
   }, [user]);
   
-  // Setup a dedicated realtime subscription for reactions
+  // Setup a dedicated, high-priority realtime subscription for reactions
   useEffect(() => {
     if (!roomId) return;
 
-    console.log(`Setting up reactions-specific realtime subscription in Chat.tsx for room: ${roomId}`);
+    console.log(`Setting up high-priority reactions realtime subscription in Chat.tsx for room: ${roomId}`);
     
     // Subscribe specifically to reaction updates on team_messages
     const channel = supabase
-      .channel(`chat-reactions-${roomId}`)
+      .channel(`chat-reactions-high-priority-${roomId}`)
       .on(
         'postgres_changes',
         { 
@@ -156,20 +156,23 @@ const Chat: React.FC = () => {
             const newReactions = payload.new.reactions;
             
             if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
-              console.log('Reaction change detected in Chat.tsx, refreshing messages');
+              console.log('👉 REACTION CHANGE DETECTED in Chat.tsx, refreshing messages');
+              // Force immediate invalidation
               queryClient.invalidateQueries({
-                queryKey: ['teamMessages', roomId]
+                queryKey: ['teamMessages', roomId],
+                refetchType: 'active',
+                exact: true
               });
             }
           }
         }
       )
       .subscribe((status) => {
-        console.log(`Reactions channel status in Chat.tsx: ${status}`);
+        console.log(`High-priority reactions channel status in Chat.tsx: ${status}`);
       });
       
     return () => {
-      console.log('Removing reactions realtime subscription in Chat.tsx');
+      console.log('Removing high-priority reactions realtime subscription in Chat.tsx');
       supabase.removeChannel(channel);
     };
   }, [roomId, queryClient]);

@@ -257,22 +257,40 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
     
-    // Use Edge Function directly to add reaction - this bypasses any RPC issues
-    const { data, error } = await supabase.functions.invoke('add_message_reaction', {
-      body: {
-        p_message_id: messageId,
-        p_user_id: userId,
-        p_emoji: emoji
-      }
-    });
+    // Direct Edge Function invocation with explicit timeout handling
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 8000);
     
-    if (error) {
-      console.error('Error invoking add_message_reaction function:', error);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'add_message_reaction', 
+        {
+          body: {
+            p_message_id: messageId,
+            p_user_id: userId,
+            p_emoji: emoji
+          },
+          signal: abortController.signal
+        }
+      );
+      
+      clearTimeout(timeoutId);
+      
+      if (error) {
+        console.error('Error invoking add_message_reaction function:', error);
+        throw error;
+      }
+      
+      console.log('Reaction added successfully:', data);
+      return;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('Request to add_message_reaction timed out');
+        throw new Error('Request to add reaction timed out');
+      }
       throw error;
     }
-    
-    console.log('Reaction added successfully:', data);
-    return;
   } catch (error) {
     console.error('Error adding reaction:', error);
     throw error;

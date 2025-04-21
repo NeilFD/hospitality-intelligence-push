@@ -54,7 +54,6 @@ serve(async (req) => {
       }
     )
 
-    // DIRECT DATABASE UPDATE APPROACH - Try a different method for updating reactions
     // First fetch the message to get current reactions
     const { data: message, error: fetchError } = await supabaseClient
       .from('team_messages')
