@@ -1092,6 +1092,7 @@ export type Database = {
           id: string
           mentioned_users: string[] | null
           notification_state: string | null
+          reactions: Json | null
           read_by: string[] | null
           room_id: string
           type: Database["public"]["Enums"]["message_type"]
@@ -1106,6 +1107,7 @@ export type Database = {
           id?: string
           mentioned_users?: string[] | null
           notification_state?: string | null
+          reactions?: Json | null
           read_by?: string[] | null
           room_id: string
           type?: Database["public"]["Enums"]["message_type"]
@@ -1120,6 +1122,7 @@ export type Database = {
           id?: string
           mentioned_users?: string[] | null
           notification_state?: string | null
+          reactions?: Json | null
           read_by?: string[] | null
           room_id?: string
           type?: Database["public"]["Enums"]["message_type"]
