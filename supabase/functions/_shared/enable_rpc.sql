@@ -1,7 +1,7 @@
 
 -- Enable RPC functions with stronger grants
-GRANT EXECUTE ON FUNCTION update_message_reaction TO authenticated;
-GRANT EXECUTE ON FUNCTION update_message_reaction TO anon;
+GRANT EXECUTE ON FUNCTION update_message_reaction(uuid, uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_message_reaction(uuid, uuid, text) TO anon;
 GRANT EXECUTE ON FUNCTION add_message_reaction TO authenticated;
 GRANT EXECUTE ON FUNCTION add_message_reaction TO anon;
 
