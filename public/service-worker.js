@@ -36,3 +36,10 @@ self.addEventListener('activate', function(event) {
   console.log('Service Worker activated successfully');
   event.waitUntil(clients.claim());
 });
+
+// Listen for messages from the main thread
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});

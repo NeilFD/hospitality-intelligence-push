@@ -25,6 +25,7 @@ export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [isPermissionBlocked, setIsPermissionBlocked] = useState(false);
   const { user } = useAuthStore();
 
   // This will be set when the component mounts by fetching from Supabase
@@ -33,6 +34,13 @@ export function usePushNotifications() {
   useEffect(() => {
     // Check if service workers and push messaging is supported
     if ('serviceWorker' in navigator && 'PushManager' in window) {
+      // Check if notifications are blocked
+      if (Notification.permission === 'denied') {
+        setIsPermissionBlocked(true);
+        console.log('Push notifications are blocked by the browser settings');
+        return;
+      }
+      
       registerServiceWorker();
       
       // Fetch the VAPID public key from Supabase
@@ -61,10 +69,36 @@ export function usePushNotifications() {
 
   async function registerServiceWorker() {
     try {
-      const registration = await navigator.serviceWorker.register('/service-worker.js');
-      setRegistration(registration);
+      // Use the top-level window to register the service worker
+      const swRegistration = await navigator.serviceWorker.register('/service-worker.js');
+      console.log('Service Worker registered:', swRegistration);
+      
+      // Wait until the service worker is active
+      if (swRegistration.installing) {
+        console.log('Service worker installing');
+        const worker = swRegistration.installing;
+        
+        // Create a promise that resolves when the service worker is activated
+        await new Promise<void>((resolve) => {
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'activated') {
+              console.log('Service worker now activated');
+              resolve();
+            }
+          });
+        });
+      } else if (swRegistration.waiting) {
+        console.log('Service worker is waiting');
+        // Force activation if waiting
+        await swRegistration.waiting.postMessage({type: 'SKIP_WAITING'});
+      } else {
+        console.log('Service worker is already active');
+      }
+      
+      setRegistration(swRegistration);
     } catch (error) {
       console.error('Service Worker registration failed:', error);
+      toast.error('Failed to register service worker');
     }
   }
 
@@ -84,6 +118,29 @@ export function usePushNotifications() {
         if (!vapidPublicKey) {
           toast.error('VAPID public key not available');
         }
+        return;
+      }
+
+      // First, request notification permission explicitly
+      let permission;
+      try {
+        permission = await Notification.requestPermission();
+      } catch (error) {
+        console.error('Error requesting notification permission:', error);
+        // If iframe restriction error occurred
+        if (error instanceof Error && error.message.includes('cross-origin iframe')) {
+          toast.error('Cannot request notification permission in an iframe. Please open the app in a new tab.');
+          setIsPermissionBlocked(true);
+          return;
+        }
+        toast.error('Failed to request notification permission');
+        return;
+      }
+      
+      if (permission !== 'granted') {
+        console.log('Notification permission denied:', permission);
+        toast.error('Notification permission was denied');
+        setIsPermissionBlocked(permission === 'denied');
         return;
       }
 
@@ -142,6 +199,7 @@ export function usePushNotifications() {
   return {
     isSupported: 'serviceWorker' in navigator && 'PushManager' in window,
     isSubscribed,
+    isPermissionBlocked,
     subscription,
     subscribeUser,
     unsubscribeUser
