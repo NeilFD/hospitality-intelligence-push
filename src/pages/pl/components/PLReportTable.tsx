@@ -22,6 +22,8 @@ export function PLReportTable({
 }: PLReportTableProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [renderedData, setRenderedData] = useState<any[]>([]);
+  const [adminTotalForecast, setAdminTotalForecast] = useState<number>(0);
+  const [operatingProfitForecast, setOperatingProfitForecast] = useState<number>(0);
 
   const getMonthNumber = (monthName: string) => {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -56,6 +58,20 @@ export function PLReportTable({
       window.removeEventListener('forecast-updated', handleForecastUpdate);
     };
   }, []);
+
+  // This useEffect will listen for changes to adminTotalForecast and operatingProfitForecast
+  // and dispatch an event with the values
+  useEffect(() => {
+    if (adminTotalForecast > 0 || operatingProfitForecast !== 0) {
+      const event = new CustomEvent('pl-forecasts-updated', {
+        detail: {
+          adminExpensesForecast: adminTotalForecast,
+          operatingProfitForecast: operatingProfitForecast
+        }
+      });
+      window.dispatchEvent(event);
+    }
+  }, [adminTotalForecast, operatingProfitForecast]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -414,38 +430,38 @@ export function PLReportTable({
     const costOfSalesItem = filteredBudgetData.find(item => item && item.name && (item.name.toLowerCase() === 'cost of sales' || item.name.toLowerCase() === 'cos') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage') && !item.name.toLowerCase().includes('drink'));
     const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
     const adminTotalActual = adminItems.reduce((sum, item) => sum + getActualAmount(item), 0);
-    const adminTotalForecast = adminItems.reduce((sum, item) => {
+    const calculatedAdminTotalForecast = adminItems.reduce((sum, item) => {
       const forecast = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
       return sum + (forecast || 0);
     }, 0);
-    const adminBudgetVariance = adminTotalForecast - adminTotalBudget;
+    
+    // Update the state for adminTotalForecast if it has changed
+    if (calculatedAdminTotalForecast !== adminTotalForecast) {
+      setAdminTotalForecast(calculatedAdminTotalForecast);
+    }
+    
+    const adminBudgetVariance = calculatedAdminTotalForecast - adminTotalBudget;
     const grossProfitItem = filteredBudgetData.find(item => item && item.name && (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
     const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
     const grossProfitForecast = grossProfitItem && grossProfitItem.forecast_amount ? grossProfitItem.forecast_amount : grossProfitActual > 0 && getCurrentDay() > 0 ? grossProfitActual / getCurrentDay() * getDaysInMonth() : grossProfitBudget;
     const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
     const operatingProfitActual = grossProfitActual - adminTotalActual;
-    const operatingProfitForecast = grossProfitForecast - adminTotalForecast;
-    const operatingProfitVariance = operatingProfitForecast - operatingProfitBudget;
+    const calculatedOperatingProfitForecast = grossProfitForecast - calculatedAdminTotalForecast;
+    
+    // Update the state for operatingProfitForecast if it has changed
+    if (calculatedOperatingProfitForecast !== operatingProfitForecast) {
+      setOperatingProfitForecast(calculatedOperatingProfitForecast);
+    }
+    
+    const operatingProfitVariance = calculatedOperatingProfitForecast - operatingProfitBudget;
     const totalTurnoverForecast = turnoverItem?.forecast_amount || (turnoverItem ? getForecastAmount(turnoverItem, currentYear, currentMonth) : 0);
     const totalTurnoverActual = turnoverItem ? getActualAmount(turnoverItem) : 0;
     const adminActualPercentage = totalTurnoverActual && totalTurnoverActual !== 0 ? adminTotalActual / totalTurnoverActual * 100 : 0;
     const safeTurnoverForecast = totalTurnoverForecast && totalTurnoverForecast !== 0 ? totalTurnoverForecast : 1;
-    const adminForecastPercentage = adminTotalForecast / safeTurnoverForecast * 100;
+    const adminForecastPercentage = calculatedAdminTotalForecast / safeTurnoverForecast * 100;
     const operatingProfitActualPercentage = totalTurnoverActual && totalTurnoverActual !== 0 ? operatingProfitActual / totalTurnoverActual * 100 : 0;
-    const operatingProfitForecastPercentage = operatingProfitForecast / safeTurnoverForecast * 100;
-
-    useEffect(() => {
-      if (adminTotalForecast > 0 || operatingProfitForecast !== 0) {
-        const event = new CustomEvent('pl-forecasts-updated', {
-          detail: {
-            adminExpensesForecast: adminTotalForecast,
-            operatingProfitForecast: operatingProfitForecast
-          }
-        });
-        window.dispatchEvent(event);
-      }
-    }, [adminTotalForecast, operatingProfitForecast]);
+    const operatingProfitForecastPercentage = calculatedOperatingProfitForecast / safeTurnoverForecast * 100;
 
     return (
       <>
@@ -553,7 +569,7 @@ export function PLReportTable({
             {formatPercentage(adminActualPercentage / 100)}
           </TableCell>
           <TableCell className="text-right font-bold">
-            {formatCurrency(adminTotalForecast)}
+            {formatCurrency(calculatedAdminTotalForecast)}
           </TableCell>
           <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
             {formatPercentage(adminForecastPercentage / 100)}
@@ -564,74 +580,4 @@ export function PLReportTable({
         </TableRow>
         <TableRow
           className="text-black"
-          style={{ backgroundColor: '#D6BCFA', transition: 'none', borderRadius: '0 0.375rem 0.375rem 0' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#D6BCFA'; }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#D6BCFA'; }}
-        >
-          <TableCell className="font-bold bg-[#D6BCFA] text-black rounded-l-xl">
-            Operating profit
-          </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitBudget)}`}>
-            {formatCurrency(operatingProfitBudget)}
-          </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
-            &nbsp;{/* blank for B% col */}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitActual)}`}>
-            {formatCurrency(operatingProfitActual)}
-          </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
-            &nbsp; {/* blank for % col */}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(operatingProfitForecast)}`}>
-            {formatCurrency(operatingProfitForecast)}
-          </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
-            &nbsp; {/* blank for F% col */}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${operatingProfitVariance > 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {formatCurrency(operatingProfitVariance)}
-          </TableCell>
-        </TableRow>
-      </>
-    );
-  };
-
-  return <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-    <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-      <h2 className="text-xl font-semibold text-gray-800">
-        P&L Report - {currentMonthName} {currentYear}
-      </h2>
-    </div>
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-50">
-            <TableHead className="w-[240px] font-bold">Item</TableHead>
-            <TableHead className="text-right font-bold">Budget</TableHead>
-            <TableHead className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">B%</TableHead>
-            <TableHead className="text-right font-bold">Actual MTD</TableHead>
-            <TableHead className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">%</TableHead>
-            <TableHead className="text-right font-bold">Forecast</TableHead>
-            <TableHead className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">F%</TableHead>
-            <TableHead className="text-right font-bold">Variance</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? Array(10).fill(0).map((_, index) => (
-            <TableRow key={index}>
-              <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
-              <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
-              <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
-              <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
-            </TableRow>
-          )) : renderTableContent()}
-        </TableBody>
-      </Table>
-    </div>
-  </div>;
-}
+          style={{ backgroundColor: '#D6BCFA', transition: 'none', borderRadius: '0 0.375
