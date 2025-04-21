@@ -63,21 +63,21 @@ export default function MonthSelector({
   };
   
   return (
-    <div className="flex items-center space-x-2 w-full justify-center">
+    <div className="flex flex-wrap items-center gap-2 w-full justify-center">
       <Button
         variant="outline"
         size="icon"
         onClick={handlePreviousMonth}
-        className="hover:bg-gray-100"
+        className="hover:bg-gray-100 h-8 w-8 shrink-0"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
       
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-gray-500" />
+          <Calendar className="h-5 w-5 text-gray-500 shrink-0" />
           <Select value={currentMonth.toString()} onValueChange={handleMonthChange}>
-            <SelectTrigger className="w-[120px] bg-white border-gray-300">
+            <SelectTrigger className="w-[110px] bg-white border-gray-300 truncate">
               <SelectValue placeholder="Month" />
             </SelectTrigger>
             <SelectContent>
@@ -91,7 +91,7 @@ export default function MonthSelector({
         </div>
         
         <Select value={currentYear.toString()} onValueChange={handleYearChange}>
-          <SelectTrigger className="w-[90px] bg-white border-gray-300">
+          <SelectTrigger className="w-[80px] bg-white border-gray-300 truncate">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
@@ -108,7 +108,7 @@ export default function MonthSelector({
         variant="outline"
         size="icon"
         onClick={handleNextMonth}
-        className="hover:bg-gray-100"
+        className="hover:bg-gray-100 h-8 w-8 shrink-0"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

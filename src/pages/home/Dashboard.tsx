@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMasterDailyRecord } from '@/services/master-record-service';
@@ -192,7 +193,7 @@ const HomeDashboard: React.FC = () => {
       
       <Card className="shadow-md rounded-lg overflow-hidden bg-white border border-gray-100 mb-6">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-3">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center">
             <div>
               <CardTitle className="flex items-center text-xl font-bold text-gray-800">
                 <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
@@ -204,21 +205,21 @@ const HomeDashboard: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-3 md:mt-0 overflow-visible">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={goToPreviousDay}
-                className="h-8 w-8"
+                className="h-8 w-8 shrink-0"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="min-w-[140px]">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(selectedDate, 'dd MMM yyyy')}
+                  <Button variant="outline" className="min-w-[140px] max-w-[140px] truncate shrink-0">
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">{format(selectedDate, 'dd MMM yyyy')}</span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="center">
@@ -227,6 +228,7 @@ const HomeDashboard: React.FC = () => {
                     selected={selectedDate}
                     onSelect={(date) => date && setSelectedDate(date)}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -235,7 +237,7 @@ const HomeDashboard: React.FC = () => {
                 variant="outline"
                 size="icon"
                 onClick={goToNextDay}
-                className="h-8 w-8"
+                className="h-8 w-8 shrink-0"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
