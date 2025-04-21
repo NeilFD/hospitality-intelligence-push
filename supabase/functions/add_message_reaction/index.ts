@@ -15,6 +15,17 @@ serve(async (req) => {
 
   try {
     const { p_message_id, p_user_id, p_emoji } = await req.json()
+    
+    // Validate inputs
+    if (!p_message_id || !p_user_id || !p_emoji) {
+      console.error('Missing required parameters:', { p_message_id, p_user_id, p_emoji });
+      return new Response(JSON.stringify({ error: 'Missing required parameters' }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+
+    console.log(`Processing reaction: ${p_emoji} for message ${p_message_id} by user ${p_user_id}`);
 
     // Create a Supabase client with the Auth context of the function
     const supabaseClient = createClient(
@@ -35,30 +46,45 @@ serve(async (req) => {
       .single()
     
     if (fetchError) {
+      console.error('Error fetching message:', fetchError);
       return new Response(JSON.stringify({ error: fetchError.message }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
 
+    if (!message) {
+      console.error('Message not found:', p_message_id);
+      return new Response(JSON.stringify({ error: 'Message not found' }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      })
+    }
+
     // Parse and update reactions
-    let reactions = []
+    let reactions = [];
     if (message.reactions) {
       try {
         reactions = typeof message.reactions === 'string'
           ? JSON.parse(message.reactions)
           : (Array.isArray(message.reactions) ? message.reactions : [])
       } catch (e) {
+        console.error('Error parsing reactions:', e);
         reactions = []
       }
     }
+
+    console.log('Current reactions:', reactions);
 
     // Find existing reaction or add new one
     const existingIndex = reactions.findIndex((r) => r.emoji === p_emoji)
     
     if (existingIndex >= 0) {
       // This emoji already has reactions
-      const userIds = reactions[existingIndex].user_ids || []
+      const userIds = Array.isArray(reactions[existingIndex].user_ids) 
+        ? reactions[existingIndex].user_ids 
+        : [];
+        
       const userIndex = userIds.indexOf(p_user_id)
       
       if (userIndex >= 0) {
@@ -84,6 +110,8 @@ serve(async (req) => {
       })
     }
 
+    console.log('Updated reactions:', reactions);
+
     // Update the message with new reactions
     const { error: updateError } = await supabaseClient
       .from('team_messages')
@@ -91,6 +119,7 @@ serve(async (req) => {
       .eq('id', p_message_id)
     
     if (updateError) {
+      console.error('Error updating message:', updateError);
       return new Response(JSON.stringify({ error: updateError.message }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
@@ -102,6 +131,7 @@ serve(async (req) => {
       status: 200,
     })
   } catch (error) {
+    console.error('Unexpected error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
