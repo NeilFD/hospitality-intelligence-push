@@ -195,6 +195,37 @@ const Layout = ({
     fetchUserPermissions();
   }, [isAuthenticated, profile, modules]);
 
+  useEffect(() => {
+    const path = location.pathname;
+    console.log('Layout mounting with path:', path);
+    
+    if (path.includes('/home')) {
+      console.log('Layout: Setting current module to home from path');
+      setCurrentModule('home');
+    } else if (path.includes('/food')) {
+      console.log('Layout: Setting current module to food from path');
+      setCurrentModule('food');
+    } else if (path.includes('/beverage')) {
+      console.log('Layout: Setting current module to beverage from path');
+      setCurrentModule('beverage');
+    } else if (path.includes('/pl')) {
+      console.log('Layout: Setting current module to pl from path');
+      setCurrentModule('pl');
+    } else if (path.includes('/wages')) {
+      console.log('Layout: Setting current module to wages from path');
+      setCurrentModule('wages');
+    } else if (path.includes('/performance')) {
+      console.log('Layout: Setting current module to performance from path');
+      setCurrentModule('performance');
+    } else if (path.includes('/master')) {
+      console.log('Layout: Setting current module to master from path');
+      setCurrentModule('master');
+    } else if (path.includes('/team')) {
+      console.log('Layout: Setting current module to team from path');
+      setCurrentModule('team');
+    }
+  }, [location.pathname, setCurrentModule]);
+
   const hasModuleAccess = (moduleId: string) => {
     if (!profile || !permissionsLoaded) return false;
 

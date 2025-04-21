@@ -1,8 +1,39 @@
 
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useCurrentModule, useSetCurrentModule } from "@/lib/store";
 
 export const Sidebar = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => {
   const [sidebarColor, setSidebarColor] = useState<string | null>(null);
+  const location = useLocation();
+  const currentModule = useCurrentModule();
+  const setCurrentModule = useSetCurrentModule();
+
+  // Add a new useEffect to ensure the sidebar module selection matches the current route
+  useEffect(() => {
+    // Synchronize current module with the URL path
+    const path = location.pathname;
+    
+    if (path.includes('/home')) {
+      setCurrentModule('home');
+    } else if (path.includes('/food')) {
+      setCurrentModule('food');
+    } else if (path.includes('/beverage')) {
+      setCurrentModule('beverage');
+    } else if (path.includes('/pl')) {
+      setCurrentModule('pl');
+    } else if (path.includes('/wages')) {
+      setCurrentModule('wages');
+    } else if (path.includes('/performance')) {
+      setCurrentModule('performance');
+    } else if (path.includes('/master')) {
+      setCurrentModule('master');
+    } else if (path.includes('/team')) {
+      setCurrentModule('team');
+    }
+    
+    console.log('Sidebar URL path check:', path, 'Current module set to:', currentModule);
+  }, [location.pathname, setCurrentModule]);
 
   useEffect(() => {
     // Special handling for Control Centre page
