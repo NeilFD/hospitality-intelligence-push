@@ -121,6 +121,8 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           };
         }
         
+        let totalCostsFromTrackers = 0;
+        
         for (const record of masterRecords) {
           const weekNumber = record.week_number;
           
@@ -151,10 +153,13 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             
             const dayCost = purchasesTotal - creditNotesTotal + staffFoodAllowance;
             weekMap[weekNumber].costs += dayCost;
+            totalCostsFromTrackers += dayCost;
             
             console.log(`${record.date} (Week ${weekNumber}): Revenue=${dayRevenue}, Cost=${dayCost}`);
           }
         }
+        
+        console.log(`Total costs calculated from trackers: ${totalCostsFromTrackers}`);
         
         let monthTotalRevenue = 0;
         let monthTotalCosts = 0;
@@ -188,6 +193,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           variant: "destructive",
         });
         
+        // Only fallback to local store calculation if the primary method fails
         const calculateFromLocalStore = () => {
           const weekMap: Record<number, WeekSummary> = {};
           for (let i = 1; i <= 5; i++) {
@@ -198,6 +204,8 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
               gp: 0
             };
           }
+          
+          let totalCostsFromLocal = 0;
           
           monthRecord.weeks.forEach(week => {
             const weekNumber = week.weekNumber;
@@ -222,7 +230,12 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
               
               const dayCosts = Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
               const creditNotes = day.creditNotes.reduce((sum, credit) => sum + credit, 0);
-              weekCosts += dayCosts - creditNotes + day.staffFoodAllowance;
+              const dayCostNet = dayCosts - creditNotes + day.staffFoodAllowance;
+              
+              weekCosts += dayCostNet;
+              totalCostsFromLocal += dayCostNet;
+              
+              console.log(`Local calculation date (Week ${weekNumber}): Revenue=${dayRevenue}, Cost=${dayCostNet}`);
             });
             
             if (!weekMap[weekNumber]) {
@@ -239,6 +252,8 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             weekMap[weekNumber].gp = calculateGP(weekMap[weekNumber].revenue, weekMap[weekNumber].costs);
           });
           
+          console.log(`Total costs calculated from local store: ${totalCostsFromLocal}`);
+          
           const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
           
           let localTotalRevenue = 0;
@@ -248,6 +263,10 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             localTotalRevenue += week.revenue;
             localTotalCosts += week.costs;
           });
+          
+          console.log('Local weekly breakdown:', localWeeklyData.map(w => 
+            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}`
+          ));
           
           setWeeklyData(localWeeklyData);
           setTotalRevenue(localTotalRevenue);
