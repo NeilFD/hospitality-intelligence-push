@@ -6,7 +6,7 @@ import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check } from 'lucide-react';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell } from 'lucide-react';
 import { useAuthStore } from '@/services/auth-service';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -473,6 +473,7 @@ const ProfilePage = () => {
   
   const isCurrentUser = !id || id === currentUserProfile?.id;
   console.log("Banner URL from profile:", profile.banner_url, "Y Position:", profile.banner_position_y || yPosition);
+  console.log("Is current user:", isCurrentUser);
 
   return (
     <div className="container mx-auto p-4">
@@ -611,7 +612,12 @@ const ProfilePage = () => {
                 {isCurrentUser && (
                   <>
                     <TabsTrigger value="settings">Edit Profile</TabsTrigger>
-                    <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                    <TabsTrigger value="notifications">
+                      <div className="flex items-center">
+                        <Bell className="h-4 w-4 mr-2" />
+                        Notifications
+                      </div>
+                    </TabsTrigger>
                   </>
                 )}
               </TabsList>
