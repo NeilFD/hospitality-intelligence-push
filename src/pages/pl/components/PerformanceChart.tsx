@@ -10,7 +10,8 @@ import { toast } from "sonner";
 interface ChartDataItem {
   name: string;
   revenue: number;
-  costs: number;
+  cosCosts: number;
+  adminCosts: number;
   ebitda: number;
 }
 
@@ -32,7 +33,8 @@ interface CustomTooltipProps {
 
 interface VisibleSeries {
   revenue: boolean;
-  costs: boolean;
+  cosCosts: boolean;
+  adminCosts: boolean;
   ebitda: boolean;
 }
 
@@ -57,7 +59,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
   // Add state to track visible series
   const [visibleSeries, setVisibleSeries] = useState<VisibleSeries>({
     revenue: true,
-    costs: true,
+    cosCosts: true,
+    adminCosts: true,
     ebitda: true
   });
 
@@ -66,7 +69,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     // Define all available series regardless of what's in the chart payload
     const allSeries = [
       { dataKey: 'revenue', value: 'Revenue', color: '#7E69AB' },
-      { dataKey: 'costs', value: 'Costs', color: '#A5C0E2' },
+      { dataKey: 'cosCosts', value: 'COS Costs', color: '#A5C0E2' },
+      { dataKey: 'adminCosts', value: 'Admin Costs', color: '#FF9F76' },
       { dataKey: 'ebitda', value: 'EBITDA', color: '#6C7787' }
     ];
     
@@ -129,8 +133,11 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
             revenue: {
               color: '#7E69AB' // Complementary purple
             },
-            costs: {
+            cosCosts: {
               color: '#A5C0E2' // Complementary blue
+            },
+            adminCosts: {
+              color: '#FF9F76' // Complementary orange
             },
             ebitda: {
               color: '#6C7787' // Muted complementary color
@@ -161,7 +168,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
               {visibleSeries.revenue && <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />}
-              {visibleSeries.costs && <Bar dataKey="costs" name="Costs" fill="var(--color-costs)" />}
+              {visibleSeries.cosCosts && <Bar dataKey="cosCosts" name="COS Costs" fill="var(--color-cosCosts)" />}
+              {visibleSeries.adminCosts && <Bar dataKey="adminCosts" name="Admin Costs" fill="var(--color-adminCosts)" />}
               {visibleSeries.ebitda && <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />}
             </BarChart>
           </ChartContainer>

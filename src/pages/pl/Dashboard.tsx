@@ -236,6 +236,13 @@ export default function PLDashboard() {
     )
   );
 
+  const adminExpensesItem = updatedBudgetData.find(item => 
+    item && item.name && (
+      item.name.toLowerCase() === 'total admin expenses' ||
+      item.name.toLowerCase() === 'total admin'
+    )
+  );
+
   const turnoverForecast = turnoverItem?.forecast_amount || 
                          (turnoverItem ? getForecastAmount({
                            ...(turnoverItem || {}), 
@@ -247,6 +254,12 @@ export default function PLDashboard() {
                               ...(costOfSalesItem || {}), 
                               id: costOfSalesItem?.id || generateTempId('cost-of-sales')
                             }, currentYear, currentMonth) : 0);
+  
+  const adminExpensesForecast = adminExpensesItem?.forecast_amount || 
+                             (adminExpensesItem ? getForecastAmount({
+                               ...(adminExpensesItem || {}),
+                               id: adminExpensesItem?.id || generateTempId('admin-expenses')
+                             }, currentYear, currentMonth) : 0);
                             
   const operatingProfitForecast = operatingProfitItem?.forecast_amount || 
                                 (operatingProfitItem ? getForecastAmount({
@@ -264,6 +277,11 @@ export default function PLDashboard() {
     id: costOfSalesItem.id || generateTempId('cost-of-sales')
   }) : 0;
   
+  const adminExpensesActual = adminExpensesItem ? getActualAmount({
+    ...adminExpensesItem,
+    id: adminExpensesItem.id || generateTempId('admin-expenses')
+  }) : 0;
+  
   const operatingProfitActual = operatingProfitItem ? getActualAmount({
     ...operatingProfitItem, 
     id: operatingProfitItem.id || generateTempId('operating-profit')
@@ -272,17 +290,20 @@ export default function PLDashboard() {
   const chartData = [{
     name: 'Budget',
     revenue: turnoverItem?.budget_amount || 0,
-    costs: costOfSalesItem?.budget_amount || 0,
+    cosCosts: costOfSalesItem?.budget_amount || 0,
+    adminCosts: adminExpensesItem?.budget_amount || 0,
     ebitda: operatingProfitItem?.budget_amount || 0
   }, {
     name: 'MTD Actual',
     revenue: turnoverActual,
-    costs: costOfSalesActual,
+    cosCosts: costOfSalesActual,
+    adminCosts: adminExpensesActual,
     ebitda: operatingProfitActual
   }, {
     name: 'Forecast',
     revenue: turnoverForecast,
-    costs: costOfSalesForecast,
+    cosCosts: costOfSalesForecast,
+    adminCosts: adminExpensesForecast,
     ebitda: operatingProfitForecast
   }];
   
