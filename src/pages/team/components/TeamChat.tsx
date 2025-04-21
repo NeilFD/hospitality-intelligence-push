@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,30 +7,34 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/services/auth-service';
 import { 
-  fetchTeamRoom, 
-  fetchTeamMessages, 
-  createTeamMessage, 
-  updateTeamMessage, 
-  deleteTeamMessage,
+  getMessages, 
+  createMessage, 
+  updateMessage, 
+  deleteMessage,
   TeamMessage
 } from '@/services/team-service';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Paperclip, Loader2, Edit, Trash2, X } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { MentionsInput, Mention } from 'react-mentions';
 import { 
   Popover, 
   PopoverTrigger, 
   PopoverContent 
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-const TeamChat = () => {
+interface TeamChatProps {
+  initialRoomId?: string;
+  initialMinimizeSidebar?: boolean;
+}
+
+const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, initialMinimizeSidebar }) => {
   const [searchParams] = useSearchParams();
-  const roomId = searchParams.get('room');
+  const roomId = initialRoomId || searchParams.get('room');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<TeamMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,15 +48,30 @@ const TeamChat = () => {
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
   
-  const { data: room, refetch: refetchRoom } = useQuery({
+  const { data: room } = useQuery({
     queryKey: ['teamRoom', roomId],
-    queryFn: () => fetchTeamRoom(roomId),
+    queryFn: async () => {
+      if (!roomId) return null;
+      
+      const { data, error } = await supabase
+        .from('team_chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching room:', error);
+        return null;
+      }
+      
+      return data;
+    },
     enabled: !!roomId,
   });
   
   const { data: initialMessages, refetch: refetchMessages } = useQuery({
     queryKey: ['teamMessages', roomId],
-    queryFn: () => fetchTeamMessages(roomId),
+    queryFn: () => getMessages(roomId as string),
     enabled: !!roomId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -69,7 +89,7 @@ const TeamChat = () => {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'team_messages' },
-          (payload) => {
+          (payload: any) => {
             if (payload.errors) {
               console.error('Error in Realtime channel:', payload.errors);
             } else {
@@ -77,15 +97,15 @@ const TeamChat = () => {
               
               if (payload.new) {
                 if (payload.new.room_id === roomId) {
-                  if (payload.event === 'INSERT') {
+                  if (payload.eventType === 'INSERT') {
                     setMessages((prevMessages) => [...prevMessages, payload.new as TeamMessage]);
-                  } else if (payload.event === 'UPDATE') {
+                  } else if (payload.eventType === 'UPDATE') {
                     setMessages((prevMessages) =>
                       prevMessages.map((msg) =>
                         msg.id === payload.new.id ? (payload.new as TeamMessage) : msg
                       )
                     );
-                  } else if (payload.event === 'DELETE') {
+                  } else if (payload.eventType === 'DELETE') {
                     setMessages((prevMessages) =>
                       prevMessages.filter((msg) => msg.id !== payload.old?.id)
                     );
@@ -109,7 +129,8 @@ const TeamChat = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages]);
   
-  const { mutate: addMessage } = useMutation(createTeamMessage, {
+  const { mutate: addMessage } = useMutation({
+    mutationFn: createMessage,
     onSuccess: () => {
       setInput('');
       setFile(null);
@@ -125,7 +146,8 @@ const TeamChat = () => {
     },
   });
   
-  const { mutate: changeMessage } = useMutation(updateTeamMessage, {
+  const { mutate: changeMessage } = useMutation({
+    mutationFn: updateMessage,
     onSuccess: () => {
       setIsEditMode(false);
       setEditMessageId(null);
@@ -139,7 +161,8 @@ const TeamChat = () => {
     },
   });
   
-  const { mutate: removeMessage } = useMutation(deleteTeamMessage, {
+  const { mutate: removeMessage } = useMutation({
+    mutationFn: deleteMessage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teamMessages', roomId] });
       refetchMessages();
@@ -196,8 +219,10 @@ const TeamChat = () => {
       room_id: roomId,
       author_id: user.id,
       content: input.trim(),
-      file_url: fileUrl,
+      attachment_url: fileUrl,
       mentioned_users: mentionedUsers,
+      type: 'text' as const,
+      read_by: [user.id]
     };
     
     addMessage(messageData);
@@ -253,6 +278,28 @@ const TeamChat = () => {
     </div>
   );
   
+  // Fetch profile data for message authors
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        return [];
+      }
+      
+      return data;
+    }
+  });
+  
+  // Helper function to get author info
+  const getAuthor = (authorId: string) => {
+    return profiles.find(profile => profile.id === authorId);
+  };
+  
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
       <div className="border-b px-4 py-2 bg-gray-50">
@@ -261,72 +308,75 @@ const TeamChat = () => {
       
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-2">
-          {messages.map((message) => (
-            <div key={message.id} className="flex items-start gap-2">
-              <Avatar className="h-8 w-8">
-                {message.author?.avatar_url ? (
-                  <AvatarImage src={message.author.avatar_url} alt={message.author.first_name} />
-                ) : (
-                  <AvatarFallback>{message.author?.first_name?.[0]}{message.author?.last_name?.[0]}</AvatarFallback>
-                )}
-              </Avatar>
-              
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">{message.author?.first_name} {message.author?.last_name}</span>
-                  <span className="text-xs text-gray-500">{new Date(message.created_at).toLocaleString()}</span>
-                </div>
-                
-                <div className="relative">
-                  {isEditMode && editMessageId === message.id ? (
-                    <Textarea
-                      value={editMessageContent}
-                      onChange={(e) => setEditMessageContent(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleUpdate();
-                        }
-                      }}
-                      className="w-full rounded-md border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
+          {messages.map((message) => {
+            const author = getAuthor(message.author_id);
+            return (
+              <div key={message.id} className="flex items-start gap-2">
+                <Avatar className="h-8 w-8">
+                  {author?.avatar_url ? (
+                    <AvatarImage src={author.avatar_url} alt={author.first_name} />
                   ) : (
-                    <p className="text-sm break-words whitespace-pre-line">{message.content}</p>
+                    <AvatarFallback>{author?.first_name?.[0]}{author?.last_name?.[0]}</AvatarFallback>
                   )}
+                </Avatar>
+                
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{author?.first_name} {author?.last_name}</span>
+                    <span className="text-xs text-gray-500">{new Date(message.created_at).toLocaleString()}</span>
+                  </div>
                   
-                  {message.file_url && (
-                    <a href={message.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                      View Attachment
-                    </a>
-                  )}
-                  
-                  {user?.id === message.author_id && (
-                    <div className="absolute top-0 right-0 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
-                      {isEditMode && editMessageId === message.id ? (
-                        <>
-                          <Button variant="ghost" size="icon" onClick={handleUpdate}>
-                            <Send className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(message)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(message.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )}
+                  <div className="relative">
+                    {isEditMode && editMessageId === message.id ? (
+                      <Textarea
+                        value={editMessageContent}
+                        onChange={(e) => setEditMessageContent(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleUpdate();
+                          }
+                        }}
+                        className="w-full rounded-md border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <p className="text-sm break-words whitespace-pre-line">{message.content}</p>
+                    )}
+                    
+                    {message.attachment_url && (
+                      <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                        View Attachment
+                      </a>
+                    )}
+                    
+                    {user?.id === message.author_id && (
+                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
+                        {isEditMode && editMessageId === message.id ? (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={handleUpdate}>
+                              <Send className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(message)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(message.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
