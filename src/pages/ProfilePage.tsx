@@ -53,6 +53,7 @@ const ProfilePage = () => {
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   const isMountedRef = useRef(true);
   const profileLoadAttemptedRef = useRef(false);
+  const initialRenderRef = useRef(true);
 
   const { 
     isSubscribed, 
@@ -77,13 +78,21 @@ const ProfilePage = () => {
         return;
       }
       
-      if (!currentUserProfile && id === undefined && profileLoadAttemptedRef.current) {
-        console.log("Waiting for current user profile to be available");
-        return;
+      if (!currentUserProfile && id === undefined) {
+        if (profileLoadAttemptedRef.current) {
+          console.log("Waiting for current user profile to be available");
+          return;
+        } else {
+          console.log("First attempt to load current user profile");
+        }
       }
       
       profileLoadAttemptedRef.current = true;
-      setLoading(true);
+      
+      if (initialRenderRef.current) {
+        setLoading(true);
+        initialRenderRef.current = false;
+      }
       
       try {
         console.log("Loading profile data...", id ? `for ID: ${id}` : "for current user");
