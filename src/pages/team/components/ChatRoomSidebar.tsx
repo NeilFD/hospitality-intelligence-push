@@ -22,6 +22,8 @@ import { ChatRoom } from '@/services/team-service';
 interface ChatRoomSidebarProps {
   selectedRoomId: string;
   onRoomSelect: (roomId: string) => void;
+  minimized: boolean;
+  setMinimized: (minimized: boolean) => void;
 }
 
 const getRoomIcon = (room: ChatRoom) => {
@@ -45,14 +47,15 @@ const getRoomIcon = (room: ChatRoom) => {
 
 const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({ 
   selectedRoomId, 
-  onRoomSelect 
+  onRoomSelect,
+  minimized,
+  setMinimized
 }) => {
   const { data: rooms = [], isLoading } = useQuery({
     queryKey: ['chatRooms'],
     queryFn: getChatRooms
   });
   const isMobile = useIsMobile();
-  const [minimized, setMinimized] = React.useState(isMobile ? true : false);
 
   const [themeColors, setThemeColors] = React.useState(() => {
     const htmlElement = document.documentElement;
@@ -101,11 +104,10 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
         selectedBg: 'bg-[#7E69AB]/90',
         selectedHover: 'hover:bg-[#7E69AB]/80',
         selectedText: 'text-white',
-        hoverBg: 'hover:bg-[#86e0b3]',
-        hoverText: 'hover:text-[#48495E]'
+        hoverBg: 'hover:bg-[#7E69AB]/10',
+        hoverText: 'hover:text-[#7E69AB]'
       };
     }
-    // Default theme
     return {
       selectedBg: 'bg-[#7E69AB]/90',
       selectedHover: 'hover:bg-[#7E69AB]/80',
@@ -195,7 +197,6 @@ const ChatRoomSidebar: React.FC<ChatRoomSidebarProps> = ({
     setMinimized(!minimized);
   };
 
-  // Add debugging to understand what's happening when rooms are clicked
   const handleRoomClick = (roomId: string) => {
     console.log('Room clicked:', roomId, 'Previous selected:', selectedRoomId);
     onRoomSelect(roomId);

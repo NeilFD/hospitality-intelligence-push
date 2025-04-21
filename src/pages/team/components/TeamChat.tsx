@@ -16,6 +16,7 @@ import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
 interface MessageProps {
   message: TeamMessage;
@@ -28,8 +29,9 @@ interface MessageProps {
 }
 
 interface TeamChatProps {
-  initialRoomId?: string | null;
+  initialRoomId?: string;
   compact?: boolean;
+  initialMinimizeSidebar?: boolean;
 }
 
 const EMOJI_CATEGORIES = [{
@@ -46,7 +48,7 @@ const EMOJI_CATEGORIES = [{
   emojis: ["🎉", "🎊", "🎂", "🍰", "🧁", "🍾", "🥂", "🥳", "🎈", "🎁", "🎀", "🎐", "🎆", "🎇", "🎃", "🎄", "🎋", "🎍", "🎎", "🎏", "🎑", "🧧", "🎭", "🎪", "🎡", "🎢", "🎨"]
 }, {
   name: "Activities",
-  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
+  emojis: ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "���", "🏒", "����", "🥍", "���", "🪃", "������", "⛳", "🪁", "����", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "����", "⛸️", "🥌", "🎿", "⛷️", "🏂", "���"]
 }];
 
 const highlightMentions = (content: string, teamMembers: UserProfile[]): React.ReactNode => {
@@ -430,7 +432,11 @@ const Message: React.FC<MessageProps> = ({
     </div>;
 };
 
-const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
+const TeamChat: React.FC<TeamChatProps> = ({ 
+  initialRoomId,
+  compact = false,
+  initialMinimizeSidebar = false
+}) => {
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
@@ -450,7 +456,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   const [isMessageAreaReady, setIsMessageAreaReady] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const pendingReactions = useRef(new Set<string>());
-
+  const [minimizeSidebar, setMinimizeSidebar] = useState(initialMinimizeSidebar);
+  
   const {
     data: rooms = [],
     isLoading: isLoadingRooms
@@ -1092,8 +1099,13 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
   }, [selectedRoomId, queryClient]);
   
   return (
-    <div className={componentClasses}>
-      <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />
+    <div className={cn("flex h-full relative", compact ? "max-h-[400px]" : "min-h-[500px] max-h-[calc(100vh-150px)]")}>
+      <ChatRoomSidebar 
+        selectedRoomId={selectedRoomId || ''} 
+        onRoomSelect={handleRoomSelect} 
+        minimized={minimizeSidebar}
+        setMinimized={setMinimizeSidebar}
+      />
       
       <div className={mainChatClasses}>
         <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
