@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import ChatRoomSidebar from './ChatRoomSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { supabase } from '@/lib/supabase';
 
 interface MessageProps {
   message: TeamMessage;
@@ -275,7 +276,11 @@ const Message: React.FC<MessageProps> = ({
   
   const handleEmojiClick = (emoji: string) => {
     console.log(`Emoji ${emoji} clicked for message ${message.id} by user ${currentUserId}`);
-    onAddReaction(message.id, emoji);
+    if (onAddReaction) {
+      onAddReaction(message.id, emoji);
+    } else {
+      console.error("onAddReaction handler is not defined");
+    }
   };
   
   return <div className={messageContainerClass}>
@@ -529,15 +534,31 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
         throw new Error('User not authenticated');
       }
       
-      console.log(`Adding reaction ${emoji} to message ${messageId} by user ${user.id}`);
-      await addMessageReaction(messageId, user.id, emoji);
-      return { success: true };
+      console.log(`[addReactionMutation] Adding reaction ${emoji} to message ${messageId} by user ${user.id}`);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('add_message_reaction', {
+          body: {
+            p_message_id: messageId,
+            p_user_id: user.id,
+            p_emoji: emoji
+          }
+        });
+        
+        if (error) {
+          console.error('Error from edge function:', error);
+          throw error;
+        }
+        
+        console.log('Edge function response:', data);
+        return data;
+      } catch (error) {
+        console.error('Error in addReactionMutation:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
-      console.log('Successfully added reaction, invalidating queries');
-      queryClient.invalidateQueries({
-        queryKey: ['teamMessages', selectedRoomId]
-      });
+    onSuccess: (data) => {
+      console.log('Successfully added reaction, response:', data);
     },
     onError: (error) => {
       console.error('Error adding reaction:', error);
@@ -718,7 +739,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       return;
     }
     
-    console.log(`Handling reaction: ${emoji} for message ${messageId} from user ${user.id}`);
+    console.log(`[handleAddReaction] Processing reaction: ${emoji} for message ${messageId} from user ${user.id}`);
     
     const message = messages.find(m => m.id === messageId);
     if (!message) {
@@ -727,13 +748,14 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       return;
     }
     
-    const reactionKey = `${messageId}-${emoji}`;
+    const reactionKey = `${messageId}-${emoji}-${Date.now()}`;
     if (pendingReactions.current.has(reactionKey)) {
-      console.log('Reaction already pending, ignoring');
+      console.log('Reaction already pending, ignoring duplicate');
       return;
     }
     
     pendingReactions.current.add(reactionKey);
+    toast.loading('Adding reaction...', { id: reactionKey, duration: 2000 });
     
     addReactionMutation.mutate(
       {
@@ -743,6 +765,14 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
       {
         onSettled: () => {
           pendingReactions.current.delete(reactionKey);
+          toast.dismiss(reactionKey);
+        },
+        onSuccess: () => {
+          toast.success('Reaction added', { id: reactionKey });
+        },
+        onError: (error) => {
+          console.error('Error adding reaction in mutation handler:', error);
+          toast.error('Failed to add reaction', { id: reactionKey });
         }
       }
     );
@@ -1044,6 +1074,46 @@ const TeamChat: React.FC<TeamChatProps> = ({ initialRoomId, compact }) => {
     }
   };
 
+  useEffect(() => {
+    if (!selectedRoomId) return;
+
+    console.log(`Setting up reaction-specific realtime subscription for room: ${selectedRoomId}`);
+    
+    const channel = supabase
+      .channel(`reaction-updates-${selectedRoomId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'team_messages',
+          filter: `room_id=eq.${selectedRoomId}`
+        },
+        (payload) => {
+          console.log('Message updated in realtime with reactions:', payload);
+          if (payload.new && payload.old) {
+            const oldReactions = payload.old.reactions;
+            const newReactions = payload.new.reactions;
+            
+            if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
+              console.log('Reactions have changed, refreshing messages');
+              queryClient.invalidateQueries({
+                queryKey: ['teamMessages', selectedRoomId]
+              });
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`Reaction-specific supabase channel status: ${status}`);
+      });
+      
+    return () => {
+      console.log('Removing reaction-specific realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [selectedRoomId, queryClient]);
+  
   return (
     <div className={componentClasses}>
       <ChatRoomSidebar selectedRoomId={selectedRoomId} onRoomSelect={handleRoomSelect} />

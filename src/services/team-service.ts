@@ -257,38 +257,21 @@ export const addMessageReaction = async (
   try {
     console.log(`Adding reaction: ${emoji} to message ${messageId} by user ${userId}`);
     
-    // DIFFERENT APPROACH: Use direct RPC call instead of edge function
-    const { data, error } = await supabase.rpc(
-      'update_message_reaction',
-      {
+    // Use Edge Function directly to add reaction - this bypasses any RPC issues
+    const { data, error } = await supabase.functions.invoke('add_message_reaction', {
+      body: {
         p_message_id: messageId,
         p_user_id: userId,
         p_emoji: emoji
       }
-    );
+    });
     
     if (error) {
-      console.error('Error with RPC update_message_reaction:', error);
-      
-      // Fallback to the edge function if RPC fails
-      const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('add_message_reaction', {
-        body: {
-          p_message_id: messageId,
-          p_user_id: userId,
-          p_emoji: emoji
-        }
-      });
-      
-      if (edgeFunctionError) {
-        console.error('Error invoking add_message_reaction function:', edgeFunctionError);
-        throw edgeFunctionError;
-      }
-      
-      console.log('Reaction edge function response:', edgeFunctionData);
-      return;
+      console.error('Error invoking add_message_reaction function:', error);
+      throw error;
     }
     
-    console.log('Reaction RPC response:', data);
+    console.log('Reaction added successfully:', data);
     return;
   } catch (error) {
     console.error('Error adding reaction:', error);

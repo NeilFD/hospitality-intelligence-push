@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import TeamChat from './components/TeamChat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -87,7 +88,7 @@ const Chat: React.FC = () => {
     
     // Subscribe to messages where current user is mentioned
     const channel = supabase
-      .channel('public:team_messages')
+      .channel('public:team_messages:mentions')
       .on(
         'postgres_changes',
         { 
@@ -131,37 +132,44 @@ const Chat: React.FC = () => {
     };
   }, [user]);
   
-  // Setup Supabase realtime subscription for message reactions and updates
+  // Setup a dedicated realtime subscription for reactions
   useEffect(() => {
     if (!roomId) return;
 
-    console.log(`Setting up realtime subscription for room: ${roomId}`);
+    console.log(`Setting up reactions-specific realtime subscription in Chat.tsx for room: ${roomId}`);
     
-    // Subscribe to all changes in the team_messages table for the current room
+    // Subscribe specifically to reaction updates on team_messages
     const channel = supabase
-      .channel(`room-updates-main-${roomId}`) // Use unique channel name
+      .channel(`chat-reactions-${roomId}`)
       .on(
         'postgres_changes',
         { 
-          event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+          event: 'UPDATE', 
           schema: 'public', 
           table: 'team_messages',
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
-          console.log('Message updated in realtime (main):', payload);
-          // Invalidate the query to update the UI
-          queryClient.invalidateQueries({
-            queryKey: ['teamMessages', roomId]
-          });
+          if (payload.new && payload.old) {
+            // Check if reactions have changed
+            const oldReactions = payload.old.reactions;
+            const newReactions = payload.new.reactions;
+            
+            if (JSON.stringify(oldReactions) !== JSON.stringify(newReactions)) {
+              console.log('Reaction change detected in Chat.tsx, refreshing messages');
+              queryClient.invalidateQueries({
+                queryKey: ['teamMessages', roomId]
+              });
+            }
+          }
         }
       )
       .subscribe((status) => {
-        console.log(`Supabase channel status (main): ${status}`);
+        console.log(`Reactions channel status in Chat.tsx: ${status}`);
       });
       
     return () => {
-      console.log('Removing realtime subscription (main)');
+      console.log('Removing reactions realtime subscription in Chat.tsx');
       supabase.removeChannel(channel);
     };
   }, [roomId, queryClient]);
