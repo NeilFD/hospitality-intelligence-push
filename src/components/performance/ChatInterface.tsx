@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SendHorizonal, Sparkles, User, Share2, Bot as BotIcon, UserRound } from 'lucide-react';
+import { SendHorizonal, Sparkles, Bot as BotIcon, UserRound } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { useWagesStore } from '@/components/wages/WagesStore';
@@ -454,21 +454,13 @@ export default function ChatInterface({
   };
 
   function UserAvatar() {
-    if (user?.avatar_url) {
-      return (
-        <Avatar className="w-8 h-8 bg-berry-purple/30">
-          <AvatarImage src={user.avatar_url} alt={user?.first_name || "User"} />
-          <AvatarFallback>
-            {user?.first_name
-              ? user.first_name.charAt(0).toUpperCase()
-              : <UserRound className="h-4 w-4 text-white" />}
-          </AvatarFallback>
-        </Avatar>
-      );
-    }
     return (
-      <Avatar className="w-8 h-8 bg-berry-purple/30">
-        <AvatarFallback>
+      <Avatar className="w-8 h-8">
+        <AvatarImage 
+          src={user?.avatar_url || undefined} 
+          alt={user?.first_name || "User"} 
+        />
+        <AvatarFallback className="bg-[#6a1b9a] text-white">
           {user?.first_name
             ? user.first_name.charAt(0).toUpperCase()
             : <UserRound className="h-4 w-4 text-white" />}
@@ -479,7 +471,7 @@ export default function ChatInterface({
 
   function BotAvatar() {
     return (
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-berry-purple flex items-center justify-center">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#6a1b9a] flex items-center justify-center">
         <BotIcon className="h-4 w-4 text-white" />
       </div>
     );
@@ -509,7 +501,7 @@ export default function ChatInterface({
               <div 
                 className={`relative group max-w-[80%] ${
                   message.isUser 
-                    ? 'bg-berry-purple text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
+                    ? 'bg-[#6a1b9a] text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
                     : 'bg-white text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
                 } p-3 shadow-sm`}
               >
