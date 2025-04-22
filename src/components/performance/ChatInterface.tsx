@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,11 +102,14 @@ const extractAIResponse = (response: any): string => {
 };
 
 const cleanResponseText = (text: string) => {
+  // First, remove JSON response wrapper if present
   let cleanedText = text
-    .replace(/^"/, '')  // Remove leading quote
-    .replace(/"$/, '')  // Remove trailing quote
-    .replace(/\\n/g, '\n')  // Convert escaped newlines to actual newlines
-    .replace(/\\"/g, '"')  // Unescape quotes
+    .replace(/^(\s*)?{"response":"/i, '') // Remove leading {"response":"
+    .replace(/"}(\s*)?$/, '')             // Remove trailing "}
+    .replace(/^"/, '')                    // Remove leading quote
+    .replace(/"$/, '')                    // Remove trailing quote
+    .replace(/\\n/g, '\n')                // Convert escaped newlines to actual newlines
+    .replace(/\\"/g, '"')                 // Unescape quotes
     .trim();
 
   const paragraphs = cleanedText
@@ -465,7 +469,7 @@ export default function ChatInterface({
               <div 
                 className={`relative group max-w-[80%] ${message.isUser 
                   ? 'bg-tavern-blue text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
-                  : 'bg-[#7E69AB] text-white rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
+                  : 'bg-white/80 backdrop-blur-sm text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
                 } p-3 shadow-sm`}
               >
                 <p className="text-sm whitespace-pre-wrap">
