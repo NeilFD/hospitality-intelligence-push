@@ -125,7 +125,7 @@ export default function ChatInterface({
   } = useAuthStore();
   const location = useLocation();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/74046e2b-f868-43ec-9343-c1e7ca6d803c";
+  const webhookUrl = "https://neilfd.app.n8n.cloud/webhook/80c0a1b3-3700-416f-8549-3f421234d930";
   const {
     data: foodTrackerData
   } = useQuery({
@@ -642,8 +642,9 @@ export default function ChatInterface({
     }
     
     return {
-      query: input,
-      timestamp: new Date().toISOString(),
+      Query: input,
+      UserID: user?.id || null,
+      Timestamp: new Date().toISOString(),
       userData: {
         userRole: user?.email || "Guest",
         currentRoute: location.pathname
