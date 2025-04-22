@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -455,31 +454,45 @@ export default function ChatInterface({
   };
 
   function UserAvatar() {
-    const { user } = useAuthStore();
+    const { user, profile } = useAuthStore();
     
     console.log("User avatar data:", user);
+    console.log("Profile data:", profile);
     
-    // Check all possible paths for profile image
-    const avatarUrl = user?.user_metadata?.avatar_url || 
-                     user?.avatar_url || 
-                     user?.profile?.avatar_url ||
-                     user?.profile_image ||
-                     user?.user_metadata?.profile_image;
-                     
-    // For debugging, log all potential avatar sources                 
+    const avatarUrl = profile?.avatar_url || 
+                   user?.user_metadata?.avatar_url || 
+                   user?.avatar_url || 
+                   user?.user_metadata?.profile_image;
+                   
     console.log("Avatar URL sources:", {
+      fromProfile: profile?.avatar_url,
       fromUserMetadata: user?.user_metadata?.avatar_url,
       fromUserRoot: user?.avatar_url,
-      fromProfile: user?.profile?.avatar_url,
-      fromProfileImage: user?.profile_image,
-      fromMetadataProfileImage: user?.user_metadata?.profile_image,
+      fromUserMetadataProfileImage: user?.user_metadata?.profile_image,
       selectedUrl: avatarUrl
     });
     
-    const firstName = user?.user_metadata?.first_name || 
-                      user?.first_name || 
-                      user?.profile?.first_name || 
-                      '';
+    const firstName = profile?.first_name || 
+                    user?.user_metadata?.first_name || 
+                    user?.first_name || 
+                    '';
+    
+    useEffect(() => {
+      if (user?.id && !avatarUrl) {
+        supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single()
+          .then(({ data, error }) => {
+            if (!error && data?.avatar_url) {
+              console.log("Found avatar_url in profiles table:", data.avatar_url);
+            } else if (error) {
+              console.error("Error fetching profile:", error);
+            }
+          });
+      }
+    }, [user?.id]);
     
     return (
       <Avatar className="h-8 w-8 bg-[#6a1b9a]">
@@ -514,7 +527,7 @@ export default function ChatInterface({
     <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
       <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
         <div className="p-2 bg-tavern-blue/20 rounded-full backdrop-blur-sm animate-float">
-          <Sparkles className="text-tavern-blue-dark h-5 w-5" />
+          <Sparkles className="h-5 w-5 text-tavern-blue-dark" />
         </div>
         <h3 className="font-semibold text-tavern-blue-dark text-lg">Hi, your performance assistant</h3>
         {isSyncing && <span className="text-xs text-tavern-blue-dark ml-auto animate-pulse">Syncing data...</span>}
