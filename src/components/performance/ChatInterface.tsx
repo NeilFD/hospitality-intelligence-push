@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,7 +101,6 @@ const extractAIResponse = (response: any): string => {
 };
 
 const cleanResponseText = (text: string) => {
-  // First, remove JSON response wrapper if present
   let cleanedText = text
     .replace(/^(\s*)?{"response":"/i, '') // Remove leading {"response":"
     .replace(/"}(\s*)?$/, '')             // Remove trailing "}
@@ -468,7 +466,7 @@ export default function ChatInterface({
               
               <div 
                 className={`relative group max-w-[80%] ${message.isUser 
-                  ? 'bg-tavern-blue text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
+                  ? 'bg-berry-purple text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
                   : 'bg-white/80 backdrop-blur-sm text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
                 } p-3 shadow-sm`}
               >

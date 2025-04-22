@@ -53,6 +53,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "berry-purple": "#9b87f5", // Added berry purple color for user messages
         pastel: {
           green: "#F2FCE2",
           "green-dark": "#5B9B58",
