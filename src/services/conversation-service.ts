@@ -2,6 +2,17 @@
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from './auth-service';
 
+// Define Conversation type that was missing but being imported
+export interface Conversation {
+  id: string;
+  query: string;
+  response: string;
+  user_id: string;
+  timestamp: string;
+  shared: boolean;
+  payload?: any;
+}
+
 export const sendWebhookRequest = async (url: string, payload: any) => {
   try {
     console.log("Preparing to send webhook request with payload:", payload);
@@ -79,6 +90,73 @@ const storeConversation = async (query: string, response: string, userId: string
     return data;
   } catch (error) {
     console.error('Error storing conversation:', error);
+  }
+};
+
+// Export function to get user conversations that was missing
+export const getUserConversations = async (): Promise<Conversation[]> => {
+  try {
+    const { user } = useAuthStore.getState();
+    if (!user?.id) {
+      console.error('User not logged in');
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('ai_conversations')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('timestamp', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching user conversations:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching user conversations:', error);
+    return [];
+  }
+};
+
+// Export delete conversation function that was missing
+export const deleteConversation = async (conversationId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('ai_conversations')
+      .delete()
+      .eq('id', conversationId);
+      
+    if (error) {
+      console.error('Error deleting conversation:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    return false;
+  }
+};
+
+// Export function to update conversation shared status that was missing
+export const updateConversationSharedStatus = async (conversationId: string, shared: boolean = true): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('ai_conversations')
+      .update({ shared })
+      .eq('id', conversationId);
+      
+    if (error) {
+      console.error('Error updating conversation share status:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating conversation share status:', error);
+    return false;
   }
 };
 
