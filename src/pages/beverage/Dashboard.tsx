@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
@@ -189,12 +190,12 @@ export default function BeverageDashboard() {
 
   return (
     <div className="container py-4 space-y-4">
-      <h1 className="text-3xl font-bold text-tavern-blue mb-4 text-center">Beverage Hub Dashboard</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-4 text-center">Beverage Hub Dashboard</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
-            <CardTitle className="text-tavern-blue-dark text-xl">
+        <Card className="shadow-md border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
+          <CardHeader className="pb-2 border-b border-gray-200">
+            <CardTitle className="text-gray-900 text-xl">
               Current Month
             </CardTitle>
           </CardHeader>
@@ -228,9 +229,9 @@ export default function BeverageDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-tavern-blue-light/20 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-tavern-blue-light/5 backdrop-blur-sm">
-          <CardHeader className="pb-2 border-b border-tavern-blue-light/20 bg-white/40">
-            <CardTitle className="text-tavern-blue-dark text-xl">
+        <Card className="shadow-md border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
+          <CardHeader className="pb-2 border-b border-gray-200">
+            <CardTitle className="text-gray-900 text-xl">
               Annual Performance
             </CardTitle>
           </CardHeader>
