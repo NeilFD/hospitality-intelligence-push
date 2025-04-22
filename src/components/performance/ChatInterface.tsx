@@ -455,19 +455,29 @@ export default function ChatInterface({
   };
 
   function UserAvatar() {
-    // Check if user exists and has avatar_url
     return (
-      <Avatar className="w-8 h-8">
-        <AvatarImage 
-          src={user?.avatar_url || undefined} 
-          alt={user?.first_name || "User"} 
-        />
-        <AvatarFallback className="bg-[#6a1b9a] text-white">
-          {user?.first_name
-            ? user.first_name.charAt(0).toUpperCase()
-            : <UserRound className="h-4 w-4 text-white" />}
-        </AvatarFallback>
-      </Avatar>
+      <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-[#6a1b9a]">
+        {user && user.avatar_url ? (
+          <img 
+            src={user.avatar_url} 
+            alt={user.first_name || "User"} 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // If image fails to load, show fallback
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+              const fallback = document.createElement('div');
+              fallback.className = 'text-white font-medium text-sm';
+              fallback.textContent = user.first_name ? user.first_name.charAt(0).toUpperCase() : '?';
+              e.currentTarget.parentElement?.appendChild(fallback);
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full w-full">
+            <UserRound className="h-4 w-4 text-white" />
+          </div>
+        )}
+      </div>
     );
   }
 
