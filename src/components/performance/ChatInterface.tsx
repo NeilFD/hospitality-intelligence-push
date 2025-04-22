@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,6 +98,22 @@ const extractAIResponse = (response: any): string => {
     return "No response data received from webhook.";
   }
   return responseText;
+};
+
+const cleanResponseText = (text: string) => {
+  let cleanedText = text
+    .replace(/^"/, '')  // Remove leading quote
+    .replace(/"$/, '')  // Remove trailing quote
+    .replace(/\\n/g, '\n')  // Convert escaped newlines to actual newlines
+    .replace(/\\"/g, '"')  // Unescape quotes
+    .trim();
+
+  const paragraphs = cleanedText
+    .split(/\n\n+/)
+    .filter(p => p.trim().length > 0)
+    .map(p => p.trim());
+
+  return paragraphs.join('\n\n');
 };
 
 export default function ChatInterface({
@@ -359,7 +374,6 @@ export default function ChatInterface({
   };
 
   const preparePayload = async () => {
-    // Let's simplify the payload to just include the essential fields
     return {
       Query: input,
       UserID: user?.id || null,
@@ -451,10 +465,15 @@ export default function ChatInterface({
               <div 
                 className={`relative group max-w-[80%] ${message.isUser 
                   ? 'bg-tavern-blue text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
-                  : 'bg-white/80 backdrop-blur-sm text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
+                  : 'bg-[#7E69AB] text-white rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
                 } p-3 shadow-sm`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {message.isUser 
+                    ? message.text 
+                    : cleanResponseText(message.text)
+                  }
+                </p>
                 <span className="block text-xs opacity-70 mt-1">
                   {message.timestamp instanceof Date 
                     ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
