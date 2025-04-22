@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SendHorizonal, Sparkles, Bot as BotIcon, UserRound } from 'lucide-react';
+import { SendHorizonal, Sparkles, Bot as BotIcon, UserRound, Share2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { useWagesStore } from '@/components/wages/WagesStore';
