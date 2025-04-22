@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -896,4 +897,22 @@ const ProfilePage = () => {
                             
                             <p className="mt-2"><strong>Android Users:</strong></p>
                             <ul className="list-disc pl-5 space-y-1">
-                              <li>Add to home screen for
+                              <li>Add to home screen for best experience</li>
+                              <li>Ensure Chrome/browser notifications are enabled in system settings</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              )}
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default ProfilePage;
