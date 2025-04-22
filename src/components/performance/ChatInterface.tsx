@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -459,17 +458,25 @@ export default function ChatInterface({
     
     console.log("User avatar data:", user);
     
+    // Check if user metadata contains profile image
+    const avatarUrl = user?.user_metadata?.avatar_url || user?.avatar_url;
+    const firstName = user?.user_metadata?.first_name || user?.first_name || '';
+    
     return (
       <Avatar className="h-8 w-8 bg-[#6a1b9a]">
-        {user?.avatar_url ? (
+        {avatarUrl ? (
           <AvatarImage 
-            src={user.avatar_url} 
-            alt={user?.first_name || "User"}
+            src={avatarUrl} 
+            alt={firstName || "User"}
             className="object-cover"
+            onError={(e) => {
+              console.error("Avatar image failed to load:", e);
+              e.currentTarget.style.display = 'none';
+            }}
           />
         ) : null}
         <AvatarFallback className="bg-[#6a1b9a] text-white">
-          {user?.first_name ? user.first_name.charAt(0).toUpperCase() : <UserRound className="h-4 w-4" />}
+          {firstName ? firstName.charAt(0).toUpperCase() : <UserRound className="h-4 w-4" />}
         </AvatarFallback>
       </Avatar>
     );
