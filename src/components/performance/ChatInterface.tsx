@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -455,29 +454,21 @@ export default function ChatInterface({
   };
 
   function UserAvatar() {
+    const { user } = useAuthStore();
+    
     return (
-      <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-[#6a1b9a]">
-        {user && user.avatar_url ? (
-          <img 
+      <Avatar className="h-8 w-8 bg-[#6a1b9a]">
+        {user?.avatar_url ? (
+          <AvatarImage 
             src={user.avatar_url} 
-            alt={user.first_name || "User"} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // If image fails to load, show fallback
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
-              const fallback = document.createElement('div');
-              fallback.className = 'text-white font-medium text-sm';
-              fallback.textContent = user.first_name ? user.first_name.charAt(0).toUpperCase() : '?';
-              e.currentTarget.parentElement?.appendChild(fallback);
-            }}
+            alt={user.first_name || "User"}
+            className="object-cover"
           />
-        ) : (
-          <div className="flex items-center justify-center h-full w-full">
-            <UserRound className="h-4 w-4 text-white" />
-          </div>
-        )}
-      </div>
+        ) : null}
+        <AvatarFallback className="bg-[#6a1b9a] text-white">
+          {user?.first_name ? user.first_name.charAt(0).toUpperCase() : <UserRound className="h-4 w-4" />}
+        </AvatarFallback>
+      </Avatar>
     );
   }
 
