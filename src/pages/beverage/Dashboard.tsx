@@ -193,7 +193,7 @@ export default function BeverageDashboard() {
       <h1 className="text-3xl font-bold text-gray-900 mb-4 text-center">Beverage Hub Dashboard</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-md border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
+        <Card className="shadow-sm border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 bg-white">
           <CardHeader className="pb-2 border-b border-gray-200">
             <CardTitle className="text-gray-900 text-xl">
               Current Month
@@ -229,7 +229,7 @@ export default function BeverageDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 bg-white">
+        <Card className="shadow-sm border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 bg-white">
           <CardHeader className="pb-2 border-b border-gray-200">
             <CardTitle className="text-gray-900 text-xl">
               Annual Performance
