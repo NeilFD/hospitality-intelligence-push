@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -458,9 +459,27 @@ export default function ChatInterface({
     
     console.log("User avatar data:", user);
     
-    // Check if user metadata contains profile image
-    const avatarUrl = user?.user_metadata?.avatar_url || user?.avatar_url;
-    const firstName = user?.user_metadata?.first_name || user?.first_name || '';
+    // Check all possible paths for profile image
+    const avatarUrl = user?.user_metadata?.avatar_url || 
+                     user?.avatar_url || 
+                     user?.profile?.avatar_url ||
+                     user?.profile_image ||
+                     user?.user_metadata?.profile_image;
+                     
+    // For debugging, log all potential avatar sources                 
+    console.log("Avatar URL sources:", {
+      fromUserMetadata: user?.user_metadata?.avatar_url,
+      fromUserRoot: user?.avatar_url,
+      fromProfile: user?.profile?.avatar_url,
+      fromProfileImage: user?.profile_image,
+      fromMetadataProfileImage: user?.user_metadata?.profile_image,
+      selectedUrl: avatarUrl
+    });
+    
+    const firstName = user?.user_metadata?.first_name || 
+                      user?.first_name || 
+                      user?.profile?.first_name || 
+                      '';
     
     return (
       <Avatar className="h-8 w-8 bg-[#6a1b9a]">
@@ -471,6 +490,7 @@ export default function ChatInterface({
             className="object-cover"
             onError={(e) => {
               console.error("Avatar image failed to load:", e);
+              console.error("Failed URL:", avatarUrl);
               e.currentTarget.style.display = 'none';
             }}
           />
