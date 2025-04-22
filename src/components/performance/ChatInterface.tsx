@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -456,12 +457,14 @@ export default function ChatInterface({
   function UserAvatar() {
     const { user } = useAuthStore();
     
+    console.log("User avatar data:", user);
+    
     return (
       <Avatar className="h-8 w-8 bg-[#6a1b9a]">
         {user?.avatar_url ? (
           <AvatarImage 
             src={user.avatar_url} 
-            alt={user.first_name || "User"}
+            alt={user?.first_name || "User"}
             className="object-cover"
           />
         ) : null}
