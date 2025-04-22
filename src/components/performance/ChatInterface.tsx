@@ -784,3 +784,4 @@ export default function ChatInterface({
             >
               {!message.isUser && (
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue-light/20 flex items-center justify-center">
+                  <BotIcon
