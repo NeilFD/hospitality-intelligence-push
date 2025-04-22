@@ -1,3 +1,4 @@
+
 self.addEventListener('push', function(event) {
   console.log('Push notification received:', event);
   if (event.data) {

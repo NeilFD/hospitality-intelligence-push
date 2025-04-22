@@ -54,6 +54,7 @@ const ProfilePage = () => {
   const isMountedRef = useRef(true);
   const profileLoadAttemptedRef = useRef(false);
   const initialRenderRef = useRef(true);
+  const activeObjectRef = useRef<fabric.Object | null>(null);
 
   const { 
     isSubscribed, 
@@ -181,27 +182,49 @@ const ProfilePage = () => {
     }
   }, [currentUserProfile, id, loading, profile, isAuthenticated]);
 
+  // Clean up canvas resources when component unmounts
   useEffect(() => {
     return () => {
-      if (canvasRef.current) {
-        try {
+      try {
+        if (canvasRef.current) {
+          // Safely clear any active objects
+          if (activeObjectRef.current) {
+            try {
+              canvasRef.current.discardActiveObject();
+              canvasRef.current.remove(activeObjectRef.current);
+              activeObjectRef.current = null;
+            } catch (e) {
+              console.log("Error removing active object during cleanup:", e);
+            }
+          }
+          
+          // Clear and dispose of canvas
           canvasRef.current.clear();
           canvasRef.current.dispose();
           canvasRef.current = null;
-        } catch (e) {
-          console.error('Error disposing canvas on unmount:', e);
         }
+      } catch (e) {
+        console.log('Error during canvas cleanup on unmount:', e);
       }
     };
   }, []);
-
-  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
 
   useEffect(() => {
     if (isRepositioningBanner && canvasElRef.current && containerRef.current && profile?.banner_url && !canvasInitialized) {
       const initCanvas = async () => {
         try {
+          // Clean up any existing canvas instance first
           if (canvasRef.current) {
+            if (activeObjectRef.current) {
+              try {
+                canvasRef.current.discardActiveObject();
+                canvasRef.current.remove(activeObjectRef.current);
+                activeObjectRef.current = null;
+              } catch (e) {
+                console.log("Error removing active object:", e);
+              }
+            }
+            
             canvasRef.current.clear();
             canvasRef.current.dispose();
             canvasRef.current = null;
@@ -227,6 +250,7 @@ const ProfilePage = () => {
           canvasRef.current = canvas;
           setCanvasInitialized(true);
           
+          // Create a new image object in Fabric.js
           fabric.Image.fromURL(profile.banner_url, (img) => {
             if (!isMountedRef.current || !canvas) return;
             
@@ -242,17 +266,22 @@ const ProfilePage = () => {
             img.left = 0;
             img.top = yPosition || 0;
             
-            canvas.add(img);
-            canvas.setActiveObject(img);
-            setActiveObject(img);
-            
-            img.on('moved', function() {
-              if (isMountedRef.current) {
-                setYPosition(img.top || 0);
-              }
-            });
-            
-            canvas.renderAll();
+            // Add image to canvas
+            try {
+              canvas.add(img);
+              canvas.setActiveObject(img);
+              activeObjectRef.current = img;
+              
+              img.on('moved', function() {
+                if (isMountedRef.current) {
+                  setYPosition(img.top || 0);
+                }
+              });
+              
+              canvas.renderAll();
+            } catch (e) {
+              console.log("Error adding image to canvas:", e);
+            }
           });
         } catch (e) {
           console.error('Error initializing canvas:', e);
@@ -269,9 +298,14 @@ const ProfilePage = () => {
       const cleanupCanvas = () => {
         try {
           if (canvasRef.current) {
-            if (activeObject) {
-              canvasRef.current.remove(activeObject);
-              setActiveObject(null);
+            if (activeObjectRef.current) {
+              try {
+                canvasRef.current.discardActiveObject();
+                canvasRef.current.remove(activeObjectRef.current);
+                activeObjectRef.current = null;
+              } catch (e) {
+                console.log("Error removing active object during mode switch:", e);
+              }
             }
             
             canvasRef.current.clear();
@@ -279,7 +313,7 @@ const ProfilePage = () => {
             canvasRef.current = null;
           }
         } catch (e) {
-          console.error('Error cleaning up canvas:', e);
+          console.log('Error cleaning up canvas:', e);
         } finally {
           setCanvasInitialized(false);
         }
@@ -287,7 +321,7 @@ const ProfilePage = () => {
       
       setTimeout(cleanupCanvas, 0);
     }
-  }, [isRepositioningBanner, canvasInitialized, activeObject]);
+  }, [isRepositioningBanner, canvasInitialized]);
 
   const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -862,28 +896,4 @@ const ProfilePage = () => {
                             
                             <p className="mt-2"><strong>Android Users:</strong></p>
                             <ul className="list-disc pl-5 space-y-1">
-                              <li>Add to home screen for best experience</li>
-                              <li>Ensure notifications are enabled in your device settings for this browser</li>
-                            </ul>
-                            
-                            <p className="mt-2"><strong>Desktop Users:</strong></p>
-                            <ul className="list-disc pl-5 space-y-1">
-                              <li>Simply click "Enable" above and accept the browser permission request</li>
-                              <li>Notifications will appear even when the app is closed</li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              )}
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-export default ProfilePage;
+                              <li>Add to home screen for
