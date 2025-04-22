@@ -1710,7 +1710,202 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      beverage_performance_analysis: {
+        Row: {
+          beverage_revenue: number | null
+          covers: number | null
+          date: string | null
+          day_of_week: string | null
+          gross_profit_percentage: number | null
+          month: number | null
+          staff_beverage_allowance: number | null
+          total_cost: number | null
+          total_credit_notes: number | null
+          total_purchases: number | null
+          week_number: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      budget_vs_actual: {
+        Row: {
+          actual_amount: number | null
+          budget_achievement_percentage: number | null
+          budget_amount: number | null
+          budget_variance: number | null
+          category: string | null
+          forecast_achievement_percentage: number | null
+          forecast_amount: number | null
+          forecast_variance: number | null
+          month: number | null
+          name: string | null
+          year: number | null
+        }
+        Insert: {
+          actual_amount?: number | null
+          budget_achievement_percentage?: never
+          budget_amount?: number | null
+          budget_variance?: never
+          category?: string | null
+          forecast_achievement_percentage?: never
+          forecast_amount?: number | null
+          forecast_variance?: never
+          month?: number | null
+          name?: string | null
+          year?: number | null
+        }
+        Update: {
+          actual_amount?: number | null
+          budget_achievement_percentage?: never
+          budget_amount?: number | null
+          budget_variance?: never
+          category?: string | null
+          forecast_achievement_percentage?: never
+          forecast_amount?: number | null
+          forecast_variance?: never
+          month?: number | null
+          name?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      daily_performance_summary: {
+        Row: {
+          average_spend_per_cover: number | null
+          beverage_revenue: number | null
+          date: string | null
+          day_of_week: string | null
+          dinner_covers: number | null
+          foh_wages: number | null
+          food_revenue: number | null
+          id: string | null
+          kitchen_wages: number | null
+          local_events: string | null
+          lunch_covers: number | null
+          month: number | null
+          precipitation: number | null
+          temperature: number | null
+          total_covers: number | null
+          total_revenue: number | null
+          total_wages: number | null
+          wage_percentage: number | null
+          weather_description: string | null
+          week_number: number | null
+          wind_speed: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      food_performance_analysis: {
+        Row: {
+          covers: number | null
+          date: string | null
+          day_of_week: string | null
+          food_revenue: number | null
+          gross_profit_percentage: number | null
+          month: number | null
+          staff_food_allowance: number | null
+          total_cost: number | null
+          total_credit_notes: number | null
+          total_purchases: number | null
+          week_number: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      monthly_performance_summary: {
+        Row: {
+          average_spend_per_cover: number | null
+          days_with_records: number | null
+          month: number | null
+          total_beverage_revenue: number | null
+          total_covers: number | null
+          total_dinner_covers: number | null
+          total_food_revenue: number | null
+          total_lunch_covers: number | null
+          total_revenue: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      revenue_tag_analysis: {
+        Row: {
+          date: string | null
+          manual_beverage_revenue_impact: number | null
+          manual_food_revenue_impact: number | null
+          percentage_of_total_revenue: number | null
+          tag_description: string | null
+          tag_name: string | null
+          total_revenue: number | null
+          total_revenue_impact: number | null
+        }
+        Relationships: []
+      }
+      weather_impact_analysis: {
+        Row: {
+          average_spend_per_cover: number | null
+          date: string | null
+          day_of_week: string | null
+          dinner_covers: number | null
+          lunch_covers: number | null
+          month: number | null
+          precipitation: number | null
+          temperature: number | null
+          total_covers: number | null
+          total_revenue: number | null
+          weather_description: string | null
+          wind_speed: number | null
+          year: number | null
+        }
+        Insert: {
+          average_spend_per_cover?: never
+          date?: string | null
+          day_of_week?: string | null
+          dinner_covers?: number | null
+          lunch_covers?: number | null
+          month?: number | null
+          precipitation?: number | null
+          temperature?: number | null
+          total_covers?: number | null
+          total_revenue?: number | null
+          weather_description?: string | null
+          wind_speed?: number | null
+          year?: number | null
+        }
+        Update: {
+          average_spend_per_cover?: never
+          date?: string | null
+          day_of_week?: string | null
+          dinner_covers?: number | null
+          lunch_covers?: number | null
+          month?: number | null
+          precipitation?: number | null
+          temperature?: number | null
+          total_covers?: number | null
+          total_revenue?: number | null
+          weather_description?: string | null
+          wind_speed?: number | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      weekly_performance_summary: {
+        Row: {
+          average_spend_per_cover: number | null
+          month: number | null
+          total_beverage_revenue: number | null
+          total_covers: number | null
+          total_dinner_covers: number | null
+          total_food_revenue: number | null
+          total_lunch_covers: number | null
+          total_revenue: number | null
+          week_end_date: string | null
+          week_number: number | null
+          week_start_date: string | null
+          year: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_update_user_password: {

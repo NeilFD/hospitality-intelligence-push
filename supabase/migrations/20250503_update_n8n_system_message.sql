@@ -1,4 +1,5 @@
 
+
 -- Create a dedicated table to store the system message for the n8n AI agent
 -- This allows easier updates to the system prompt without changing code
 
@@ -51,6 +52,8 @@ Or use these analytical functions:
 ✅ For date ranges, use DATE format ''YYYY-MM-DD''
 ✅ Join tables using appropriate keys
 ✅ Filter by year/month/module_type as needed
+✅ IMPORTANT: Use the column name `date` (not business_date) for filtering dates
+✅ Current date: The current year is 2025, use recent data from 2025 when date ranges aren't specified
 
 When reporting on lunch_covers, dinner_covers, or total_covers, use views like daily_performance_summary which aggregates this data properly.
 ') 
@@ -58,3 +61,4 @@ ON CONFLICT (name)
 DO UPDATE SET 
   message = EXCLUDED.message,
   updated_at = now();
+
