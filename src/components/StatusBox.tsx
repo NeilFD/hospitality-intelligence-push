@@ -1,4 +1,3 @@
-
 import { cn } from '@/lib/utils';
 
 interface StatusBoxProps {
@@ -6,7 +5,7 @@ interface StatusBoxProps {
   value: string;
   status: 'good' | 'warning' | 'bad' | 'neutral';
   className?: string;
-  gpMode?: boolean; // New prop to handle GP% specific coloring
+  gpMode?: boolean;
 }
 
 export default function StatusBox({ 
@@ -17,13 +16,12 @@ export default function StatusBox({
   gpMode = false 
 }: StatusBoxProps) {
   const statusClasses = {
-    good: 'bg-tavern-green/10 backdrop-blur-sm text-[#48495E] border-tavern-green/30',
-    warning: 'bg-tavern-amber/10 backdrop-blur-sm text-[#48495E] border-tavern-amber/30',
-    bad: 'bg-tavern-red/10 backdrop-blur-sm text-[#48495E] border-tavern-red/30',
-    neutral: 'bg-tavern-blue-light/5 backdrop-blur-sm text-[#48495E] border-tavern-blue-light/20'
+    good: 'bg-white border-tavern-green/30',
+    warning: 'bg-white border-tavern-amber/30',
+    bad: 'bg-white border-tavern-red/30',
+    neutral: 'bg-white border-tavern-blue-light/20'
   };
   
-  // More advanced font size calculation
   const getFontSize = () => {
     const length = value.length;
     if (length <= 4) return 'text-3xl sm:text-4xl';
@@ -32,19 +30,15 @@ export default function StatusBox({
     return 'text-lg sm:text-xl';
   };
 
-  // New method to determine color for GP% and Variance
   const getGPStatus = () => {
     if (!gpMode) return status;
     
-    // Remove % sign and convert to number
     const numValue = parseFloat(value.replace('%', ''));
     
-    // For GP%, check if it's below the default target (which seems to be 70%)
     if (label === 'Weekly GP %') {
       return numValue < 70 ? 'bad' : 'good';
     }
     
-    // For Variance, check if it's negative
     if (label === 'Variance') {
       return numValue < 0 ? 'bad' : 'good';
     }
@@ -52,7 +46,6 @@ export default function StatusBox({
     return status;
   };
 
-  // Updated method to get text color based on status
   const getTextColor = () => {
     const calculatedStatus = gpMode ? getGPStatus() : status;
     switch (calculatedStatus) {
