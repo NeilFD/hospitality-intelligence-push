@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth, syncTrackerPurchasesToPurchases, syncTrackerCreditNotesToCreditNotes, fetchTrackerPurchases, fetchPurchases, fetchDailyRecords } from '@/services/kitchen-service';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface ExtendedDailyRecord {
   date: string; // YYYY-MM-DD
@@ -101,16 +102,30 @@ const extractAIResponse = (response: any): string => {
 };
 
 const cleanResponseText = (text: string) => {
-  let cleanedText = text
-    .replace(/^(\s*)?{"response":"/i, '') // Remove leading {"response":"
-    .replace(/"}(\s*)?$/, '')             // Remove trailing "}
-    .replace(/^"/, '')                    // Remove leading quote
-    .replace(/"$/, '')                    // Remove trailing quote
-    .replace(/\\n/g, '\n')                // Convert escaped newlines to actual newlines
-    .replace(/\\"/g, '"')                 // Unescape quotes
+  let cleaned = text?.trim?.() || "";
+
+  cleaned = cleaned
+    .replace(/^["']?{\s*"response"\s*:\s*["']?/, '') // Remove leading {"response":
+    .replace(/["']?\s*}["']?$/, '')                  // Remove trailing }
+    .replace(/^"/, '')                               // Remove leading lone quote
+    .replace(/"$/, '')                               // Remove trailing lone quote
+    .replace(/\\n/g, '\n')                           // Convert escaped newlines
+    .replace(/\\"/g, '"')                            // Unescape quotes
     .trim();
 
-  const paragraphs = cleanedText
+  if (cleaned === "undefined" || cleaned === "[object Object]") {
+    return "Sorry, there was a problem understanding the AI's response.";
+  }
+
+  if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
+    try {
+      const obj = JSON.parse(cleaned);
+      if (typeof obj.response === 'string') return obj.response;
+      return JSON.stringify(obj, null, 2);
+    } catch (e) { /* ignore */ }
+  }
+
+  const paragraphs = cleaned
     .split(/\n\n+/)
     .filter(p => p.trim().length > 0)
     .map(p => p.trim());
@@ -438,6 +453,38 @@ export default function ChatInterface({
     toast.success("WhatsApp sharing initiated");
   };
 
+  function UserAvatar() {
+    if (user?.avatar_url) {
+      return (
+        <Avatar className="w-8 h-8 bg-berry-purple/30">
+          <AvatarImage src={user.avatar_url} alt={user?.first_name || "User"} />
+          <AvatarFallback>
+            {user?.first_name
+              ? user.first_name.charAt(0).toUpperCase()
+              : <UserRound className="h-4 w-4 text-white" />}
+          </AvatarFallback>
+        </Avatar>
+      );
+    }
+    return (
+      <Avatar className="w-8 h-8 bg-berry-purple/30">
+        <AvatarFallback>
+          {user?.first_name
+            ? user.first_name.charAt(0).toUpperCase()
+            : <UserRound className="h-4 w-4 text-white" />}
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+
+  function BotAvatar() {
+    return (
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-berry-purple flex items-center justify-center">
+        <BotIcon className="h-4 w-4 text-white" />
+      </div>
+    );
+  }
+
   return (
     <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
       <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
@@ -458,16 +505,12 @@ export default function ChatInterface({
                 animationDelay: `${index * 0.05}s`
               }}
             >
-              {!message.isUser && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue-light/20 flex items-center justify-center">
-                  <BotIcon className="h-4 w-4 text-tavern-blue" />
-                </div>
-              )}
-              
+              {!message.isUser && <BotAvatar />}
               <div 
-                className={`relative group max-w-[80%] ${message.isUser 
-                  ? 'bg-berry-purple text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
-                  : 'bg-white/80 backdrop-blur-sm text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
+                className={`relative group max-w-[80%] ${
+                  message.isUser 
+                    ? 'bg-berry-purple text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
+                    : 'bg-white text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
                 } p-3 shadow-sm`}
               >
                 <p className="text-sm whitespace-pre-wrap">
@@ -502,12 +545,7 @@ export default function ChatInterface({
                   </DropdownMenu>
                 )}
               </div>
-              
-              {message.isUser && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue/20 flex items-center justify-center">
-                  <UserRound className="h-4 w-4 text-tavern-blue" />
-                </div>
-              )}
+              {message.isUser && <UserAvatar />}
             </div>
           ))}
         </div>
