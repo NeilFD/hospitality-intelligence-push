@@ -455,6 +455,7 @@ export default function ChatInterface({
   };
 
   function UserAvatar() {
+    // Check if user exists and has avatar_url
     return (
       <Avatar className="w-8 h-8">
         <AvatarImage 
