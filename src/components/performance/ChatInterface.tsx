@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -358,352 +359,11 @@ export default function ChatInterface({
   };
 
   const preparePayload = async () => {
-    let monthlyWages = [];
-    let weekdayTotals = {};
-    try {
-      monthlyWages = await getMonthlyWages(currentYear, currentMonth);
-      weekdayTotals = await getWeekdayTotals(currentYear, currentMonth);
-    } catch (error) {
-      console.error("Error fetching wages data:", error);
-    }
-    
-    setIsSyncing(true);
-    try {
-      await syncTrackerPurchasesToPurchases(currentYear, currentMonth, 'food');
-      await syncTrackerCreditNotesToCreditNotes(currentYear, currentMonth, 'food');
-      await syncTrackerPurchasesToPurchases(currentYear, currentMonth, 'beverage');
-      await syncTrackerCreditNotesToCreditNotes(currentYear, currentMonth, 'beverage');
-      console.log("Successfully synchronized tracker data to purchases and credit notes tables.");
-    } catch (error) {
-      console.error("Error syncing tracker data:", error);
-    } finally {
-      setIsSyncing(false);
-    }
-    
-    const foodAnnualData = getCompleteAnnualData();
-    const foodMonthData = getCompleteMonthData(currentYear, currentMonth);
-    const bevData = getCompleteBevData(currentYear, currentMonth);
-    
-    const deepCopyFoodData = annualRecord ? JSON.parse(JSON.stringify(annualRecord)) : null;
-    if (foodTrackerData && foodTrackerData.length > 0 && deepCopyFoodData && deepCopyFoodData.months) {
-      console.log("Updating deepCopyFoodData with tracker data");
-      const currentMonthData = deepCopyFoodData.months.find(m => m.year === currentYear && m.month === currentMonth);
-      if (currentMonthData) {
-        const trackerDataByDate = {};
-        foodTrackerData.forEach(day => {
-          trackerDataByDate[day.date] = day;
-        });
-        if (currentMonthData.weeks) {
-          currentMonthData.weeks.forEach(week => {
-            if (week.days) {
-              week.days.forEach(day => {
-                const trackerDay = trackerDataByDate[day.date];
-                if (trackerDay) {
-                  day.revenue = trackerDay.revenue || 0;
-                  console.log(`Updated food day ${day.date} revenue to ${day.revenue}`);
-                }
-              });
-            }
-          });
-        }
-      }
-    }
-    
-    let deepCopyBevData = null;
-    try {
-      if (window.bevStore) {
-        deepCopyBevData = JSON.parse(JSON.stringify(window.bevStore.getState().annualRecord));
-        if (bevTrackerData && bevTrackerData.length > 0 && deepCopyBevData && deepCopyBevData.months) {
-          console.log("Updating deepCopyBevData with tracker data");
-          const currentMonthData = deepCopyBevData.months.find(m => m.year === currentYear && m.month === currentMonth);
-          if (currentMonthData) {
-            const trackerDataByDate = {};
-            bevTrackerData.forEach(day => {
-              trackerDataByDate[day.date] = day;
-            });
-            if (currentMonthData.weeks) {
-              currentMonthData.weeks.forEach(week => {
-                if (week.days) {
-                  week.days.forEach(day => {
-                    const trackerDay = trackerDataByDate[day.date];
-                    if (trackerDay) {
-                      day.revenue = trackerDay.revenue || 0;
-                      console.log(`Updated beverage day ${day.date} revenue to ${day.revenue}`);
-                    }
-                  });
-                }
-              });
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error copying beverage data:", error);
-      deepCopyBevData = {
-        error: "Failed to copy beverage data"
-      };
-    }
-
-    let foodPurchases = [];
-    let bevPurchases = [];
-    try {
-      const foodTrackerIds = foodTrackerData?.map(day => day.id) || [];
-      if (foodTrackerIds.length > 0) {
-        for (const id of foodTrackerIds) {
-          try {
-            const purchases = await fetchTrackerPurchases(id);
-            foodPurchases = [...foodPurchases, ...purchases];
-          } catch (e) {
-            console.error(`Error fetching purchases for tracker ${id}:`, e);
-          }
-        }
-      }
-      
-      const bevTrackerIds = bevTrackerData?.map(day => day.id) || [];
-      if (bevTrackerIds.length > 0) {
-        for (const id of bevTrackerIds) {
-          try {
-            const purchases = await fetchTrackerPurchases(id);
-            bevPurchases = [...bevPurchases, ...purchases];
-          } catch (e) {
-            console.error(`Error fetching purchases for bev tracker ${id}:`, e);
-          }
-        }
-      }
-      
-      if (foodPurchases.length === 0 && foodTrackerData && foodTrackerData.length > 0) {
-        console.log("No purchases found through tracker, trying direct purchase table query...");
-        const {
-          data: foodDailyRecords
-        } = await supabase.from('daily_records').select('id, date').eq('module_type', 'food').gte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`).lte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-31`);
-        
-        if (foodDailyRecords && foodDailyRecords.length > 0) {
-          console.log(`Found ${foodDailyRecords.length} daily records for food`);
-          for (const dailyRecord of foodDailyRecords) {
-            try {
-              const dailyPurchases = await fetchPurchases(dailyRecord.id);
-              if (dailyPurchases && dailyPurchases.length > 0) {
-                console.log(`Found ${dailyPurchases.length} purchases for ${dailyRecord.date}`);
-                const purchasesWithDate = dailyPurchases.map(p => ({
-                  ...p,
-                  date: dailyRecord.date
-                }));
-                foodPurchases = [...foodPurchases, ...purchasesWithDate];
-              }
-            } catch (e) {
-              console.error(`Error fetching purchases for daily record ${dailyRecord.id}:`, e);
-            }
-          }
-        }
-      }
-      
-      if (bevPurchases.length === 0 && bevTrackerData && bevTrackerData.length > 0) {
-        console.log("No purchases found through tracker for beverage, trying direct purchase table query...");
-        const {
-          data: bevDailyRecords
-        } = await supabase.from('daily_records').select('id, date').eq('module_type', 'beverage').gte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`).lte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-31`);
-        
-        if (bevDailyRecords && bevDailyRecords.length > 0) {
-          console.log(`Found ${bevDailyRecords.length} daily records for beverage`);
-          for (const dailyRecord of bevDailyRecords) {
-            try {
-              const dailyPurchases = await fetchPurchases(dailyRecord.id);
-              if (dailyPurchases && dailyPurchases.length > 0) {
-                console.log(`Found ${dailyPurchases.length} purchases for ${dailyRecord.date}`);
-                const purchasesWithDate = dailyPurchases.map(p => ({
-                  ...p,
-                  date: dailyRecord.date
-                }));
-                bevPurchases = [...bevPurchases, ...purchasesWithDate];
-              }
-            } catch (e) {
-              console.error(`Error fetching purchases for daily record ${dailyRecord.id}:`, e);
-            }
-          }
-        }
-      }
-      
-      console.log(`Final count - Food purchases: ${foodPurchases.length}, Bev purchases: ${bevPurchases.length}`);
-    } catch (error) {
-      console.error("Error fetching detailed purchase data:", error);
-    }
-    
-    const foodDailyPurchases = {};
-    foodPurchases.forEach(purchase => {
-      const date = purchase.date || "unknown";
-      if (!foodDailyPurchases[date]) {
-        foodDailyPurchases[date] = [];
-      }
-      foodDailyPurchases[date].push(purchase);
-    });
-    
-    const bevDailyPurchases = {};
-    bevPurchases.forEach(purchase => {
-      const date = purchase.date || "unknown";
-      if (!bevDailyPurchases[date]) {
-        bevDailyPurchases[date] = [];
-      }
-      bevDailyPurchases[date].push(purchase);
-    });
-
-    let localTotalRevenue = 0;
-    let localTotalStaffAllowance = 0;
-    let localTrackerData = foodTrackerData || [];
-
-    for (const day of localTrackerData) {
-      if (day.date) {
-        localTotalRevenue += Number(day.revenue || 0);
-        localTotalStaffAllowance += Number(day.staff_food_allowance || 0);
-      }
-    }
-
-    let localMonthData = {
-      revenue: 0,
-      cost: 0,
-      gpPercentage: 0
-    };
-    let localAnnualData = {
-      revenue: 0,
-      cost: 0,
-      gpPercentage: 0
-    };
-
-    if (foodTrackerData && foodTrackerData.length > 0) {
-      const trackerRevenue = foodTrackerData.reduce((sum, day) => {
-        return sum + Number(day.revenue || 0);
-      }, 0);
-      let totalCost = 0;
-      if (annualRecord && annualRecord.months) {
-        const thisMonth = annualRecord.months.find(m => m.year === currentYear && m.month === currentMonth);
-        if (thisMonth && thisMonth.weeks) {
-          thisMonth.weeks.forEach(week => {
-            if (week.days) {
-              week.days.forEach(day => {
-                const dayPurchases = day.purchases ? Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
-                const creditNotes = day.creditNotes ? day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
-                totalCost += dayPurchases - creditNotes + (day.staffFoodAllowance || 0);
-              });
-            }
-          });
-        }
-      }
-      console.log("Food tracker month total revenue:", trackerRevenue);
-      console.log("Food cost (from store):", totalCost);
-      localMonthData.revenue = trackerRevenue;
-      localMonthData.cost = totalCost;
-      localMonthData.gpPercentage = calculateGP(trackerRevenue, totalCost);
-    }
-
-    if (window.bevStore) {
-      try {
-        const bevData = window.bevStore.getState().annualRecord;
-        if (bevData && bevData.months) {
-          bevData.months.forEach(m => {
-            if (m.weeks) {
-              m.weeks.forEach(week => {
-                if (week.days) {
-                  week.days.forEach(day => {
-                    if (day.revenue !== undefined) {
-                      localAnnualData.revenue += Number(day.revenue);
-                    }
-                    if (day.purchases) {
-                      const dayPurchases = Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0);
-                      localAnnualData.cost += dayPurchases;
-                    }
-                  });
-                }
-              });
-            }
-          });
-          localAnnualData.gpPercentage = calculateGP(localAnnualData.revenue, localAnnualData.cost);
-          const bevMonth = bevData.months.find(m => m.year === currentYear && m.month === currentMonth);
-          if (bevMonth && bevMonth.weeks) {
-            bevMonth.weeks.forEach(week => {
-              if (week.days) {
-                week.days.forEach(day => {
-                  if (day.revenue !== undefined) {
-                    localMonthData.revenue += Number(day.revenue);
-                  }
-                  const dayPurchases = day.purchases ? Object.values(day.purchases).reduce((sum, amount) => sum + Number(amount), 0) : 0;
-                  const creditNotes = day.creditNotes ? day.creditNotes.reduce((sum, credit) => sum + Number(credit), 0) : 0;
-                  const staffFoodAmount = day.staffFoodAllowance || 0;
-                  localMonthData.cost += dayPurchases - creditNotes + staffFoodAmount;
-                });
-              }
-            });
-            localMonthData.gpPercentage = calculateGP(localMonthData.revenue, localMonthData.cost);
-          }
-        }
-      } catch (error) {
-        console.error("Error extracting data from bevStore:", error);
-      }
-    } else {
-      console.warn("Beverage store not found in window object");
-    }
-    
+    // Let's simplify the payload to just include the essential fields
     return {
       Query: input,
       UserID: user?.id || null,
-      Timestamp: new Date().toISOString(),
-      userData: {
-        userRole: user?.email || "Guest",
-        currentRoute: location.pathname
-      },
-      trackerData: {
-        food: {
-          year: currentYear,
-          month: currentMonth,
-          monthToDate: {
-            revenue: foodMonthData.revenue,
-            purchases: foodMonthData.cost,
-            gpPercentage: foodMonthData.gpPercentage,
-            costPercentage: 100 - foodMonthData.gpPercentage
-          },
-          annual: {
-            revenue: foodAnnualData.revenue,
-            purchases: foodAnnualData.cost,
-            gpPercentage: foodAnnualData.gpPercentage,
-            costPercentage: 100 - foodAnnualData.gpPercentage
-          },
-          rawData: deepCopyFoodData,
-          trackerRecords: foodTrackerData || [],
-          purchaseDetails: foodPurchases,
-          dailyPurchases: foodDailyPurchases
-        },
-        beverage: {
-          year: currentYear,
-          month: currentMonth,
-          monthToDate: {
-            revenue: bevData.monthToDate.revenue,
-            purchases: bevData.monthToDate.cost,
-            gpPercentage: bevData.monthToDate.gpPercentage,
-            costPercentage: 100 - bevData.monthToDate.gpPercentage
-          },
-          annual: {
-            revenue: bevData.annual.revenue,
-            purchases: bevData.annual.cost,
-            gpPercentage: bevData.annual.gpPercentage,
-            costPercentage: 100 - bevData.annual.gpPercentage
-          },
-          rawData: deepCopyBevData,
-          trackerRecords: bevTrackerData || [],
-          purchaseDetails: bevPurchases,
-          dailyPurchases: bevDailyPurchases
-        },
-        wages: {
-          year: currentYear,
-          month: currentMonth,
-          daily: monthlyWages,
-          weeklyAnalysis: weekdayTotals,
-          allWages: monthlyWages
-        }
-      },
-      conversationHistory: messages.map(msg => ({
-        role: msg.isUser ? "user" : "assistant",
-        content: msg.text,
-        timestamp: ensureDate(msg.timestamp).toISOString(),
-        conversationId: msg.conversationId
-      }))
+      Timestamp: new Date().toISOString()
     };
   };
 
@@ -784,4 +444,76 @@ export default function ChatInterface({
             >
               {!message.isUser && (
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue-light/20 flex items-center justify-center">
-                  <BotIcon
+                  <BotIcon className="h-4 w-4 text-tavern-blue" />
+                </div>
+              )}
+              
+              <div 
+                className={`relative group max-w-[80%] ${message.isUser 
+                  ? 'bg-tavern-blue text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
+                  : 'bg-white/80 backdrop-blur-sm text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
+                } p-3 shadow-sm`}
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                <span className="block text-xs opacity-70 mt-1">
+                  {message.timestamp instanceof Date 
+                    ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                    : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  }
+                </span>
+                
+                {!message.isUser && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="absolute -right-10 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Share response</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => shareViaEmail(message.text)}>
+                        Email
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => shareViaWhatsApp(message.text)}>
+                        WhatsApp
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+              
+              {message.isUser && (
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-tavern-blue/20 flex items-center justify-center">
+                  <UserRound className="h-4 w-4 text-tavern-blue" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+      
+      <form onSubmit={handleSubmit} className="p-4 border-t border-white/30 flex gap-2 items-center bg-white/80 backdrop-blur-md">
+        <Input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about your business performance..."
+          className="rounded-full bg-white/50 border-white/30 focus-visible:ring-tavern-blue"
+          disabled={isLoading}
+        />
+        <Button 
+          type="submit" 
+          size="icon" 
+          className="rounded-full bg-tavern-blue hover:bg-tavern-blue-dark transition-colors"
+          disabled={isLoading || !input.trim()}
+        >
+          {isLoading ? (
+            <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+          ) : (
+            <SendHorizonal className="h-5 w-5" />
+          )}
+        </Button>
+      </form>
+    </div>
+  );
+}
