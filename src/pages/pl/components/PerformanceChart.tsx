@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -176,10 +177,10 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />
               )}
               {visibleSeries.cosCosts && (
-                <Bar dataKey="cosCosts" name="COS Costs" fill="var(--color-cosCosts)" stackId="costs" />
+                <Bar dataKey="cosCosts" name="COS Costs" fill="var(--color-cosCosts)" stackId="stack" />
               )}
               {visibleSeries.adminCosts && (
-                <Bar dataKey="adminCosts" name="Admin Costs" fill="var(--color-adminCosts)" stackId="costs" />
+                <Bar dataKey="adminCosts" name="Admin Costs" fill="var(--color-adminCosts)" stackId="stack" />
               )}
               {visibleSeries.ebitda && (
                 <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />
