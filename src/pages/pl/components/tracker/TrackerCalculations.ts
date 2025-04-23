@@ -223,6 +223,12 @@ export function calculateForecastFromSettings(
             if (!isNaN(parsed)) {
               total += parsed;
             }
+          } else if (typeof value === 'object' && value !== null && 'value' in value) {
+            // Handle the case where value is an object with a value property
+            const numValue = Number(value.value);
+            if (!isNaN(numValue)) {
+              total += numValue;
+            }
           }
         });
       }
@@ -239,6 +245,12 @@ export function calculateForecastFromSettings(
             const parsed = parseFloat(value);
             if (!isNaN(parsed)) {
               dailyTotal += parsed;
+            }
+          } else if (typeof value === 'object' && value !== null && 'value' in value) {
+            // Handle the case where value is an object with a value property
+            const numValue = Number(value.value);
+            if (!isNaN(numValue)) {
+              dailyTotal += numValue;
             }
           }
         });
