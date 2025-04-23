@@ -156,7 +156,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
   // Log chart data for debugging
   console.log("Chart data received in PerformanceChart:", chartData);
   
-  // Additional detailed logging to inspect the actual values
+  // Add specific debug logging for MTD Actual values
   if (chartData && chartData.length > 0) {
     const mtdData = chartData.find(item => item.name === 'MTD Actual');
     if (mtdData) {
