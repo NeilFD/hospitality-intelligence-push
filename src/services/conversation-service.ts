@@ -97,7 +97,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       console.log(`Authenticated user: ${user.user.id}`);
       const { data, error } = await supabase.from('ai_conversations').insert({
         user_id: user.user.id,
-        query: payload.query || `Webhook request to ${webhookUrl}`,
+        query: payload.Query || payload.query || `Webhook request to ${webhookUrl}`,
         response: "Processing request...",
         payload: payload,
         timestamp: new Date().toISOString(),
@@ -237,7 +237,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       let responseForStorage = "";
       
       // Try to get the most appropriate response content for storage
-      if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].response) {
+      if (Array.isArray(responseData) && responseData.length > 0 && responseData[0]?.response) {
         responseForStorage = responseData[0].response;
       } else if (responseData?.output) {
         responseForStorage = responseData.output;
@@ -303,3 +303,4 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
     };
   }
 };
+
