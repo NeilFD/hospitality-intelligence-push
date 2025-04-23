@@ -547,6 +547,27 @@ export const syncTrackerCreditNotesToCreditNotes = async (year: number, month: n
   }
 };
 
+export const getMonthlyRevenueSummary = async (year: number, month: number, moduleType: ModuleType = 'food') => {
+  try {
+    const { data, error } = await supabase
+      .from('monthly_performance_summary')
+      .select('*')
+      .eq('year', year)
+      .eq('month', month)
+      .single();
+
+    if (error) {
+      console.error('Error fetching monthly revenue summary:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Error in getMonthlyRevenueSummary for ${year}-${month}:`, error);
+    return null;
+  }
+};
+
 export const getTrackerSummaryByMonth = async (year: number, month: number, moduleType: ModuleType = 'food'): Promise<TrackerSummary> => {
   try {
     let gpTarget = moduleType === 'food' ? 68 : 72;
@@ -570,6 +591,29 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
     }
 
     const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
+
+    let finalRevenue = 0;
+    try {
+      const { data: revenueSummary, error: summaryError } = await supabase
+        .from('monthly_performance_summary')
+        .select('*')
+        .eq('year', year)
+        .eq('month', month)
+        .single();
+        
+      if (!summaryError && revenueSummary) {
+        if (moduleType === 'food') {
+          finalRevenue = revenueSummary.total_food_revenue || 0;
+        } else if (moduleType === 'beverage') {
+          finalRevenue = revenueSummary.total_beverage_revenue || 0;
+        } else {
+          finalRevenue = revenueSummary.total_revenue || 0;
+        }
+        console.log(`Using monthly_performance_summary revenue for ${year}-${month} (${moduleType}): ${finalRevenue}`);
+      }
+    } catch (summaryError) {
+      console.error('Error fetching monthly performance summary:', summaryError);
+    }
 
     let totalRevenue = 0;
     let totalPurchases = 0;
@@ -598,6 +642,10 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
       totalCreditNotes += creditNotesAmount;
 
       console.log(`Day ${day.date}: Revenue=${day.revenue}, Purchases=${purchasesAmount}, CreditNotes=${creditNotesAmount}, StaffFood=${day.staff_food_allowance}`);
+    }
+
+    if (finalRevenue > 0) {
+      totalRevenue = finalRevenue;
     }
 
     const totalCost = totalPurchases - totalCreditNotes + totalStaffAllowance;

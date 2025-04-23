@@ -69,29 +69,43 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
     navigate(`/${moduleType}/month/${year}/${month}`);
   };
   
-  const generateAllWeeksForMonth = (): WeekSummary[] => {
-    const totalWeeks = 5;
-    const allWeeks: WeekSummary[] = [];
-    
-    for (let i = 1; i <= totalWeeks; i++) {
-      allWeeks.push({
-        weekNumber: i,
-        revenue: 0,
-        costs: 0,
-        gp: 0
-      });
-    }
-    
-    return allWeeks;
-  };
-  
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // First, try to get the dashboard revenue data as it's the most accurate
+        const { data: dashboardData, error: dashboardError } = await supabase.rpc(
+          'get_monthly_revenue_summary',
+          { 
+            target_year: currentYear, 
+            target_month: currentMonth,
+            module_type: moduleType
+          }
+        );
+        
+        if (dashboardError) {
+          console.error('Error fetching dashboard revenue data:', dashboardError);
+        }
+        
+        let dashboardRevenue = 0;
+        if (dashboardData && dashboardData.length > 0) {
+          if (moduleType === 'food') {
+            dashboardRevenue = dashboardData[0].total_food_revenue || 0;
+          } else if (moduleType === 'beverage') {
+            dashboardRevenue = dashboardData[0].total_beverage_revenue || 0;
+          } else {
+            dashboardRevenue = dashboardData[0].total_revenue || 0;
+          }
+          console.log(`Using dashboard revenue for ${currentYear}-${currentMonth} ${moduleType}: ${dashboardRevenue}`);
+        }
+        
         const trackerSummary = await getTrackerSummaryByMonth(currentYear, currentMonth, moduleType);
         
+        // Determine which revenue figure to use - prioritize dashboard data
+        const revenueToUse = dashboardRevenue > 0 ? dashboardRevenue : (trackerSummary ? trackerSummary.revenue : 0);
+        console.log(`Final revenue to use: ${revenueToUse} (Dashboard: ${dashboardRevenue}, Tracker: ${trackerSummary ? trackerSummary.revenue : 0})`);
+        
         if (trackerSummary && trackerSummary.totalCost > 0) {
-          console.log(`Using tracker summary for ${currentYear}-${currentMonth}: Revenue=${trackerSummary.revenue}, Cost=${trackerSummary.totalCost}, GP=${trackerSummary.gpPercentage}%`);
+          console.log(`Using tracker summary for ${currentYear}-${currentMonth}: Revenue=${revenueToUse}, Cost=${trackerSummary.totalCost}, GP=${trackerSummary.gpPercentage}%`);
           
           const { data: masterRecords, error: masterError } = await supabase
             .from('master_daily_records')
@@ -166,14 +180,22 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           
           console.log(`Total costs calculated from trackers: ${totalCostsFromTrackers}`);
           
-          const totalRevenueToUse = trackerSummary.revenue;
+          // Distribute the total revenue based on the proportions from weekly data
+          if (totalRevenueFromWeeks > 0) {
+            Object.values(weekMap).forEach(week => {
+              // Calculate each week's proportion of the total calculated revenue
+              const weekRevenueProportion = totalRevenueFromWeeks > 0 ? week.revenue / totalRevenueFromWeeks : 0;
+              // Distribute the actual revenue amount based on this proportion
+              week.revenue = revenueToUse * weekRevenueProportion;
+            });
+          }
           
           if (totalRevenueFromWeeks > 0 && Math.abs(totalCostsFromTrackers - trackerSummary.totalCost) > 0.01) {
             console.log(`Normalizing weekly costs to match tracker summary: ${totalCostsFromTrackers} -> ${trackerSummary.totalCost}`);
             
             Object.values(weekMap).forEach(week => {
               if (totalRevenueFromWeeks > 0) {
-                const revenueRatio = week.revenue / totalRevenueFromWeeks;
+                const revenueRatio = week.revenue / revenueToUse;
                 week.costs = trackerSummary.totalCost * revenueRatio;
               }
               week.gp = calculateGP(week.revenue, week.costs);
@@ -191,13 +213,14 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           ));
           
           setWeeklyData(weeklyDataArray);
-          setTotalRevenue(totalRevenueToUse);
+          setTotalRevenue(revenueToUse);
           setTotalCosts(trackerSummary.totalCost);
-          setGpPercentage(trackerSummary.gpPercentage / 100);
+          setGpPercentage(calculateGP(revenueToUse, trackerSummary.totalCost));
           
           return;
         }
         
+        // Fall back to calculate from master records if no tracker summary
         const { data: masterRecords, error: masterError } = await supabase
           .from('master_daily_records')
           .select('*')
