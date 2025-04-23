@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface Conversation {
@@ -81,25 +80,48 @@ export const deleteConversation = async (id: string): Promise<void> => {
 // Send webhook request to n8n with enhanced debugging
 export const sendWebhookRequest = async (webhookUrl: string, payload: any): Promise<any> => {
   try {
-    // Additional deep debugging
     console.log(`=========== WEBHOOK REQUEST DETAILS ===========`);
     console.log(`URL: ${webhookUrl}`);
-    console.log('Full Payload:', JSON.stringify(payload, null, 2));
+    
+    // Get the current user and their recent conversations
+    const { data: user } = await supabase.auth.getUser();
+    let recentConversations: { query: string; response: string }[] = [];
+    
+    if (user && user.user) {
+      const { data: conversations } = await supabase
+        .from('ai_conversations')
+        .select('query, response')
+        .eq('user_id', user.user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+        
+      if (conversations) {
+        recentConversations = conversations;
+      }
+    }
+    
+    // Enhance the payload with conversation history
+    const enhancedPayload = {
+      ...payload,
+      conversationHistory: recentConversations,
+      Query: payload.Query || payload.query,
+    };
+    
+    console.log('Full Payload:', JSON.stringify(enhancedPayload, null, 2));
     console.log(`Origin: ${window.location.origin}`);
     console.log(`User Agent: ${navigator.userAgent}`);
     console.log(`Time: ${new Date().toISOString()}`);
     
     // Store the conversation attempt in Supabase
-    const { data: user } = await supabase.auth.getUser();
     let conversationId = null;
     
     if (user && user.user) {
       console.log(`Authenticated user: ${user.user.id}`);
       const { data, error } = await supabase.from('ai_conversations').insert({
         user_id: user.user.id,
-        query: payload.Query || payload.query || `Webhook request to ${webhookUrl}`,
+        query: enhancedPayload.Query,
         response: "Processing request...",
-        payload: payload,
+        payload: enhancedPayload,
         timestamp: new Date().toISOString(),
         shared: false
       }).select();
@@ -110,14 +132,8 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         conversationId = data[0].id;
         console.log(`Created conversation with ID: ${conversationId}`);
         
-        // Update the payload to include the conversation ID
-        payload = {
-          ...payload,
-          conversationId: conversationId
-        };
+        enhancedPayload.conversationId = conversationId;
       }
-    } else {
-      console.log('No authenticated user found for conversation storage');
     }
     
     // Update conversation with attempt status
@@ -138,7 +154,6 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Origin': window.location.origin,
-      // Adding some commonly required headers
       'X-Requested-With': 'XMLHttpRequest',
       'Cache-Control': 'no-cache'
     };
@@ -152,7 +167,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         method: 'POST',
         headers: headers,
         body: JSON.stringify(payload),
-        credentials: 'omit' // Don't send cookies
+        credentials: 'omit'
       });
       
       console.log('Standard fetch response status:', response.status);
@@ -195,7 +210,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       responseData = { 
         message: "Request sent in no-cors mode. Cannot access response details.", 
         status: "unknown", 
-        success: true // Assume success since we didn't get an exception
+        success: true
       };
     } else {
       try {
@@ -206,7 +221,6 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
           responseData = JSON.parse(responseText);
           console.log('Parsed JSON response:', responseData);
           
-          // Extract output from n8n response if available (this is the AI response)
           if (responseData.output) {
             console.log('Found output in response:', responseData.output);
           }
@@ -231,12 +245,9 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
     console.log('Final processed response:', responseData);
     console.log(`=========== END WEBHOOK REQUEST DETAILS ===========`);
     
-    // Update conversation with response
     if (conversationId) {
-      // Extract the actual response text for storage
       let responseForStorage = "";
       
-      // Try to get the most appropriate response content for storage
       if (Array.isArray(responseData) && responseData.length > 0 && responseData[0]?.response) {
         responseForStorage = responseData[0].response;
       } else if (responseData?.output) {
@@ -254,7 +265,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       await supabase
         .from('ai_conversations')
         .update({ 
-          response: responseForStorage.substring(0, 1000), // Limit the size for storage
+          response: responseForStorage.substring(0, 1000),
           payload: {
             ...payload,
             responseStatus: statusCode,
@@ -264,7 +275,6 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         .eq('id', conversationId);
     }
     
-    // For no-cors responses, we assume success but with limited info
     if (response.type === 'opaque') {
       return {
         success: true,
@@ -275,7 +285,6 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       };
     }
     
-    // Return the parsed response data directly, preserving the original format
     return {
       success: statusCode >= 200 && statusCode < 300,
       data: responseData,
@@ -286,7 +295,6 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
   } catch (error) {
     console.error('Webhook request failed with critical error:', error);
     
-    // Log detailed error information
     const errorDetails = {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
@@ -303,4 +311,3 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
     };
   }
 };
-
