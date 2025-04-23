@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -111,15 +112,18 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
                        !isWages && !item.isHeader && !item.isOperatingProfit;
   
+  // Always check for manually entered value first
   if (typeof item.manually_entered_actual === 'number') {
     return Number(item.manually_entered_actual);
   }
   
+  // Then check for daily values
   if (item.daily_values && item.daily_values.length > 0) {
     const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
     return total;
   }
 
+  // For revenue, COS, gross profit, and wages, use actual_amount if present
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWages) && 
       typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
     return Number(item.actual_amount);

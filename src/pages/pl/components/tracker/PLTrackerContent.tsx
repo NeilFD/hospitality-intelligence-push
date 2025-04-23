@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -51,44 +50,40 @@ export function PLTrackerContent({
   
   // Function to determine if an item should use pro-rated actuals
   const shouldUseProRatedActual = (item: PLTrackerBudgetItem): boolean => {
+    // Define expense items as not being revenue, cost of sales, gross profit, etc.
     const isExpenseItem = !item.name.toLowerCase().includes('turnover') &&
-                        !item.name.toLowerCase().includes('revenue') &&
-                        !item.name.toLowerCase().includes('sales') &&
-                        !item.name.toLowerCase().includes('cost of sales') &&
-                        !item.name.toLowerCase().includes('cos') &&
-                        !item.name.toLowerCase().includes('gross profit') &&
-                        !item.name.toLowerCase().includes('wages') &&
-                        !item.name.toLowerCase().includes('salaries') &&
-                        !item.isHeader &&
-                        !item.isOperatingProfit &&
-                        !item.isGrossProfit;
+                       !item.name.toLowerCase().includes('revenue') &&
+                       !item.name.toLowerCase().includes('sales') &&
+                       !item.name.toLowerCase().includes('cost of sales') &&
+                       !item.name.toLowerCase().includes('cos') &&
+                       !item.name.toLowerCase().includes('gross profit') &&
+                       !item.name.toLowerCase().includes('wages') &&
+                       !item.name.toLowerCase().includes('salaries') &&
+                       !item.isHeader &&
+                       !item.isOperatingProfit &&
+                       !item.isGrossProfit;
     
-    // Check for specific expense item categories to apply pro-rating
-    const isAdminExpense = item.category && [
-      'Marketing',
-      'Utilities',
-      'Rent and Rates',
-      'Equipment',
-      'General Admin',
-      'Maintenance',
-      'Professional Fees',
-      'IT and Communications',
-      'Travel'
-    ].some(category => item.category?.includes(category));
-    
-    return isExpenseItem && isAdminExpense;
+    // All expense items should use pro-rated budget by default
+    return isExpenseItem;
   };
   
   // Get the effective actual amount considering pro-rating for expense items
   const getEffectiveActualAmount = (item: PLTrackerBudgetItem): number => {
-    const actualAmount = getActualAmount(item);
+    // Check for manually entered actual or daily values first
+    const manualActual = getActualAmount(item);
     
-    // If it's an expense item and no actual amount has been manually entered or tracked
-    if (shouldUseProRatedActual(item) && actualAmount === 0) {
+    // If there's a manual value or daily values, use that
+    if (manualActual > 0) {
+      return manualActual;
+    }
+    
+    // For expense items, use pro-rated budget if no manual value exists
+    if (shouldUseProRatedActual(item)) {
       return calculateProRatedActual(item, daysInMonth, dayOfMonth);
     }
     
-    return actualAmount;
+    // For other items (revenue, COS, etc.), return the actual amount
+    return manualActual;
   };
 
   if (isLoading) {
