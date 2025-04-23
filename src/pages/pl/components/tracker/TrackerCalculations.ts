@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -137,9 +138,9 @@ export function calculateProRatedActual(
   dayOfMonth: number
 ): number {
   if (item.budget_amount) {
-    // Calculate the pro-rated budget based on the day of month
-    const proRated = (item.budget_amount / daysInMonth) * dayOfMonth;
-    return proRated;
+    // This is the key fix - we're ensuring we return the pro-rated budget amount
+    // for expense items when there's no actual amount recorded
+    return (item.budget_amount / daysInMonth) * dayOfMonth;
   }
   return 0;
 }

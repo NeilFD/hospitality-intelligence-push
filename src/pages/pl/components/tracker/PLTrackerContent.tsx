@@ -80,10 +80,11 @@ export function PLTrackerContent({
     
     // For expense items, use pro-rated budget if no manual value exists
     if (shouldUseProRatedActual(item)) {
+      console.log(`Using pro-rated budget for ${item.name}:`, item.budget_amount);
       return calculateProRatedActual(item, daysInMonth, dayOfMonth);
     }
     
-    // For other items (revenue, COS, etc.), return the actual amount
+    // For other items (revenue, COS, etc.), just return the actual or zero
     return manualActual;
   };
 
