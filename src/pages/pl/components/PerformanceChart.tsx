@@ -180,16 +180,16 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
               {visibleSeries.revenue && (
-                <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />
+                <Bar dataKey="revenue" name="Revenue" fill={SERIES_COLORS.revenue} />
               )}
               {visibleSeries.cosCosts && (
-                <Bar dataKey="cosCosts" name="COS Costs" fill="var(--color-cosCosts)" stackId="stack" />
+                <Bar dataKey="cosCosts" name="COS Costs" fill={SERIES_COLORS.cosCosts} stackId="stack" />
               )}
               {visibleSeries.adminCosts && (
-                <Bar dataKey="adminCosts" name="Admin Costs" fill="var(--color-adminCosts)" stackId="stack" />
+                <Bar dataKey="adminCosts" name="Admin Costs" fill={SERIES_COLORS.adminCosts} stackId="stack" />
               )}
               {visibleSeries.ebitda && (
-                <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />
+                <Bar dataKey="ebitda" name="EBITDA" fill={SERIES_COLORS.ebitda} />
               )}
             </BarChart>
           </ChartContainer>

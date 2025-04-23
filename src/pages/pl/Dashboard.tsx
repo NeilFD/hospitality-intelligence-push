@@ -313,16 +313,16 @@ export default function PLDashboard() {
     ebitda: operatingProfitItem?.budget_amount || 0
   }, {
     name: 'MTD Actual',
-    revenue: turnoverActual,
-    cosCosts: costOfSalesActual,
-    adminCosts: adminExpensesActual,
-    ebitda: operatingProfitActual
+    revenue: turnoverActual || 0,
+    cosCosts: costOfSalesActual || 0,
+    adminCosts: adminExpensesActual || 0,
+    ebitda: operatingProfitActual || 0
   }, {
     name: 'Forecast',
-    revenue: turnoverForecast,
-    cosCosts: costOfSalesForecast,
-    adminCosts: effectiveAdminExpensesForecast,
-    ebitda: effectiveOperatingProfitForecast
+    revenue: turnoverForecast || 0,
+    cosCosts: costOfSalesForecast || 0,
+    adminCosts: effectiveAdminExpensesForecast || 0,
+    ebitda: effectiveOperatingProfitForecast || 0
   }];
   
   console.log("Chart data for Performance Chart:", chartData);
