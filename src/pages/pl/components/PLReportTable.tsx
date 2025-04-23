@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getActualAmount, getForecastAmount, fetchForecastSettings, calculateForecastFromSettings } from './tracker/TrackerCalculations';
+import { getActualAmount, getForecastAmount, fetchForecastSettings, calculateForecastFromSettings, calculateProRatedActual } from './tracker/TrackerCalculations';
 import { ForecastSettingsControl } from "./forecast/ForecastSettingsControl";
 
 type PLReportTableProps = {
@@ -29,6 +28,35 @@ export function PLReportTable({
   const getMonthNumber = (monthName: string) => {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     return months.indexOf(monthName) + 1;
+  };
+
+  const shouldUseProRatedActual = (item: any): boolean => {
+    if (!item || !item.name) return false;
+    
+    const specialItems = ['turnover', 'revenue', 'sales', 'cost of sales', 'cos', 
+                        'gross profit', 'wages', 'salaries'];
+                        
+    const isSpecialItem = specialItems.some(term => 
+      item.name.toLowerCase().includes(term)
+    );
+    
+    return !isSpecialItem;
+  };
+
+  const getEffectiveActualAmount = (item: any): number => {
+    if (!item || !item.name) return 0;
+    
+    const manualActual = getActualAmount(item);
+    
+    if (manualActual > 0) {
+      return manualActual;
+    }
+    
+    if (shouldUseProRatedActual(item)) {
+      return calculateProRatedActual(item, getDaysInMonth(), getCurrentDay());
+    }
+    
+    return manualActual;
   };
 
   useEffect(() => {
@@ -60,8 +88,6 @@ export function PLReportTable({
     };
   }, []);
 
-  // This useEffect will listen for changes to adminTotalForecast and operatingProfitForecast
-  // and dispatch an event with the values
   useEffect(() => {
     if (adminTotalForecast > 0 || operatingProfitForecast !== 0) {
       const event = new CustomEvent('pl-forecasts-updated', {
@@ -430,13 +456,12 @@ export function PLReportTable({
     const beverageCOSItem = filteredBudgetData.find(item => item && item.name && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink') || item.name.toLowerCase().includes('bev')) && (item.name.toLowerCase().includes('cos') || item.name.toLowerCase().includes('cost of sales')));
     const costOfSalesItem = filteredBudgetData.find(item => item && item.name && (item.name.toLowerCase() === 'cost of sales' || item.name.toLowerCase() === 'cos') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage') && !item.name.toLowerCase().includes('drink'));
     const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
-    const adminTotalActual = adminItems.reduce((sum, item) => sum + getActualAmount(item), 0);
+    const adminTotalActual = adminItems.reduce((sum, item) => sum + getEffectiveActualAmount(item), 0);
     const calculatedAdminTotalForecast = adminItems.reduce((sum, item) => {
       const forecast = item.forecast_amount || getForecastAmount(item, currentYear, currentMonth);
       return sum + (forecast || 0);
     }, 0);
     
-    // Update the state for adminTotalForecast if it has changed
     if (calculatedAdminTotalForecast !== adminTotalForecast) {
       setAdminTotalForecast(calculatedAdminTotalForecast);
     }
@@ -450,7 +475,6 @@ export function PLReportTable({
     const operatingProfitActual = grossProfitActual - adminTotalActual;
     const calculatedOperatingProfitForecast = grossProfitForecast - calculatedAdminTotalForecast;
     
-    // Update the state for operatingProfitForecast if it has changed
     if (calculatedOperatingProfitForecast !== operatingProfitForecast) {
       setOperatingProfitForecast(calculatedOperatingProfitForecast);
     }
@@ -475,7 +499,7 @@ export function PLReportTable({
           }
           const fontClass = getFontClass(item.name);
           const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
-          const actualAmount = getActualAmount(item);
+          const actualAmount = getEffectiveActualAmount(item);
           let forecastAmount = item.forecast_amount;
           if (!forecastAmount && item.forecast_settings) {
             forecastAmount = calculateForecastFromSettings(item.forecast_settings, item.budget_amount);
