@@ -128,7 +128,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
   };
 
   // Log chart data for debugging
-  console.log("Chart data received:", chartData);
+  console.log("Chart data received in PerformanceChart:", chartData);
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-3">
