@@ -258,22 +258,44 @@ export function getForecastAmount(
   daysInMonth: number = 30,
   dayOfMonth: number = 19
 ): number {
-  const itemName = item.name.toLowerCase();
-  const actualAmount = getActualAmount(item);
+  // First, check if the current date is available to determine the real dayOfMonth
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
   
-  // For revenue/sales, COS, GP, and wages, use MTD projection
-  if (itemName.includes('revenue') || 
-      itemName.includes('sales') || 
-      itemName === 'turnover' ||
-      itemName.includes('cost of sales') ||
-      itemName.includes('cos') ||
-      itemName.includes('gross profit') ||
-      itemName.includes('wages') ||
-      itemName.includes('salaries')) {
+  // If we're forecasting for the current month, use the current day
+  if (year === currentYear && month === currentMonth) {
+    dayOfMonth = today.getDate() - 1; // Use yesterday's date as the completed day
+    if (dayOfMonth < 1) dayOfMonth = 1; // Ensure we don't use 0
+  }
+  
+  // Get actual amount for the item
+  const actualAmount = getActualAmount(item);
+  const itemName = item.name?.toLowerCase() || '';
+  
+  // Always use MTD projection for revenue items and other special categories
+  const isRevenueItem = 
+    itemName.includes('revenue') || 
+    itemName.includes('sales') || 
+    itemName === 'turnover' ||
+    itemName.includes('turnover');
     
-    if (actualAmount && actualAmount !== 0 && dayOfMonth > 0) {
-      return (actualAmount / dayOfMonth) * daysInMonth;
-    }
+  const isCOSItem = 
+    itemName.includes('cost of sales') ||
+    itemName.includes('cos');
+    
+  const isGrossProfitItem = 
+    itemName.includes('gross profit');
+    
+  const isWagesItem = 
+    itemName.includes('wages') ||
+    itemName.includes('salaries');
+  
+  // For revenue items or special categories with actual values, always use MTD projection
+  if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWagesItem) && 
+      actualAmount && actualAmount !== 0 && dayOfMonth > 0) {
+    // Calculate the daily average and project for the full month
+    return (actualAmount / dayOfMonth) * daysInMonth;
   }
 
   // If forecast_amount is already set and not zero, use it
@@ -283,7 +305,7 @@ export function getForecastAmount(
     return item.forecast_amount;
   }
 
-  // Try to get settings directly first
+  // Try to get forecast settings
   let forecastSettings = null;
   
   // Check if the item already has forecast settings attached
