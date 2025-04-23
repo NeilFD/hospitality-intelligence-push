@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { useToast } from '@/hooks/use-toast';
@@ -123,13 +122,24 @@ export function useTrackerData(processedBudgetData: PLTrackerBudgetItem[]) {
     setHasUnsavedChanges(true);
   }, []);
   
-  // Update daily values
-  const updateDailyValues = useCallback((index: number, dailyValues: DayInput[]) => {
+  // Update daily values - fix the signature to match what PLTrackerContent expects
+  const updateDailyValues = useCallback((index: number, day: number, value: string) => {
     setTrackedBudgetData(prev => {
       const updated = [...prev];
       
-      if (!updated[index]) {
+      if (!updated[index] || !updated[index].daily_values) {
         return prev;
+      }
+      
+      // Find the day in the array and update its value
+      const dailyValues = [...updated[index].daily_values];
+      const dayIndex = dailyValues.findIndex(d => d.day === day);
+      
+      if (dayIndex >= 0) {
+        dailyValues[dayIndex] = {
+          ...dailyValues[dayIndex],
+          value: value === '' ? null : parseFloat(value)
+        };
       }
       
       // Update daily values

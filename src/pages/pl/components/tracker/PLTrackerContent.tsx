@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -10,10 +11,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PLTrackerBudgetItem } from '../types/PLTrackerTypes';
+import { PLTrackerBudgetItem, DayInput } from '../types/PLTrackerTypes';
 import { formatCurrency } from '@/lib/date-utils';
 import { TrackerSummaryRows } from '../TrackerSummaryRows';
 import { calculateProRatedActual } from './TrackerCalculations';
+import { DailyInputDrawer } from './DailyInputDrawer';
 
 interface PLTrackerContentProps {
   isLoading: boolean;
@@ -45,7 +47,7 @@ export function PLTrackerContent({
   currentYear
 }: PLTrackerContentProps) {
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
-  const [showDailyBreakdown, setShowDailyBreakdown] = useState(false);
+  const [showDailyDrawer, setShowDailyDrawer] = useState(false);
   
   // Function to determine if an item should use pro-rated actuals
   const shouldUseProRatedActual = (item: PLTrackerBudgetItem): boolean => {
@@ -91,31 +93,23 @@ export function PLTrackerContent({
     </div>;
   }
   
-  const toggleDailyBreakdown = (index: number) => {
-    setSelectedItem(selectedItem === index ? null : index);
-    setShowDailyBreakdown(selectedItem !== index);
-  };
-
-  const renderDailyBreakdown = (item: PLTrackerBudgetItem, index: number) => {
-    if (!item.daily_values) {
-      return <p>No daily breakdown available for this item.</p>;
-    }
-
-    return (
-      <div className="grid grid-cols-7 gap-2">
-        {item.daily_values.map((day, dayIndex) => (
-          <div key={dayIndex} className="text-center">
-            <Badge variant="secondary" className="mb-1">{dayIndex + 1}</Badge>
-            <Input
-              type="number"
-              value={day.value || ''}
-              onChange={(e) => updateDailyValues(index, dayIndex, e.target.value)}
-              className="h-8 text-center"
-            />
-          </div>
-        ))}
-      </div>
-    );
+  // Handle the daily value updates from the drawer
+  const handleDailyValueUpdate = (index: number, dailyValues: DayInput[]) => {
+    // Calculate the sum of all daily values
+    const total = dailyValues.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
+    
+    // First update the manual actual amount
+    updateManualActualAmount(index, total.toString());
+    
+    // Then update each day individually
+    dailyValues.forEach(day => {
+      if (day.value !== null) {
+        updateDailyValues(index, day.day, day.value.toString());
+      }
+    });
+    
+    // Close the drawer
+    setShowDailyDrawer(false);
   };
 
   return (
@@ -168,7 +162,12 @@ export function PLTrackerContent({
                       variant="ghost"
                       size="sm"
                       className="h-auto p-0 font-normal justify-start hover:bg-transparent hover:underline w-full text-left"
-                      onClick={() => setSelectedItem(selectedItem === index ? null : index)}
+                      onClick={() => {
+                        setSelectedItem(selectedItem === index ? null : index);
+                        if (selectedItem !== index && shouldUseProRatedActual(item)) {
+                          setShowDailyDrawer(true);
+                        }
+                      }}
                     >
                       {item.name}
                     </Button>
@@ -231,10 +230,17 @@ export function PLTrackerContent({
         </TableBody>
       </Table>
       
-      {showDailyBreakdown && selectedItem !== null && (
-        <div className="p-4 bg-gray-50 border-t">
-          {renderDailyBreakdown(filteredBudgetData[selectedItem], selectedItem)}
-        </div>
+      {selectedItem !== null && filteredBudgetData[selectedItem] && (
+        <DailyInputDrawer
+          isOpen={showDailyDrawer}
+          onClose={() => setShowDailyDrawer(false)}
+          onSave={(dailyValues) => handleDailyValueUpdate(selectedItem, dailyValues)}
+          initialValues={filteredBudgetData[selectedItem].daily_values || []}
+          itemName={filteredBudgetData[selectedItem].name}
+          monthName={currentMonthName}
+          year={currentYear}
+          budgetItemId={filteredBudgetData[selectedItem].id}
+        />
       )}
     </div>
   );
