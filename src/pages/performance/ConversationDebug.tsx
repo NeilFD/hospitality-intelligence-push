@@ -41,7 +41,9 @@ export default function ConversationDebug() {
     setSelectedPayload(payload);
     
     try {
+      console.log('Sending webhook test with payload:', payload);
       const response = await sendWebhookRequest(webhookUrl, payload);
+      console.log('Webhook test response:', response);
       
       if (response.success) {
         toast.success('Webhook test sent successfully');

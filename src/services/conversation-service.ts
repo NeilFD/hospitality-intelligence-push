@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface Conversation {
@@ -83,20 +84,26 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
     console.log(`=========== WEBHOOK REQUEST DETAILS ===========`);
     console.log(`URL: ${webhookUrl}`);
     
-    // Get the current user and their recent conversations
+    // Get the current user 
     const { data: user } = await supabase.auth.getUser();
     let recentConversations: { query: string; response: string }[] = [];
     
     if (user && user.user) {
+      // Get the recent conversations with more details for better context
       const { data: conversations } = await supabase
         .from('ai_conversations')
-        .select('query, response')
+        .select('query, response, created_at')
         .eq('user_id', user.user.id)
         .order('created_at', { ascending: false })
         .limit(5);
         
       if (conversations) {
-        recentConversations = conversations;
+        recentConversations = conversations.map(conv => ({
+          query: conv.query,
+          response: conv.response,
+          timestamp: conv.created_at
+        }));
+        console.log('Retrieved conversation history:', recentConversations);
       }
     }
     
@@ -107,7 +114,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       Query: payload.Query || payload.query,
     };
     
-    console.log('Full Payload:', JSON.stringify(enhancedPayload, null, 2));
+    console.log('Full Payload with Conversation History:', JSON.stringify(enhancedPayload, null, 2));
     console.log(`Origin: ${window.location.origin}`);
     console.log(`User Agent: ${navigator.userAgent}`);
     console.log(`Time: ${new Date().toISOString()}`);
@@ -166,7 +173,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
       response = await fetch(webhookUrl, {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(enhancedPayload), // Send the enhanced payload with history
         credentials: 'omit'
       });
       
@@ -182,7 +189,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(enhancedPayload), // Send the enhanced payload with history
           mode: 'no-cors'
         });
         
@@ -267,7 +274,7 @@ export const sendWebhookRequest = async (webhookUrl: string, payload: any): Prom
         .update({ 
           response: responseForStorage.substring(0, 1000),
           payload: {
-            ...payload,
+            ...enhancedPayload,
             responseStatus: statusCode,
             responseTimestamp: new Date().toISOString()
           }
