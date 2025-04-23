@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth, syncTrackerPurchasesToPurchases, syncTrackerCreditNotesToCreditNotes, fetchTrackerPurchases, fetchPurchases, fetchDailyRecords } from '@/services/kitchen-service';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
 
 interface ExtendedDailyRecord {
   date: string; // YYYY-MM-DD
@@ -524,93 +525,102 @@ export default function ChatInterface({
   }
 
   return (
-    <div className={`flex flex-col rounded-xl overflow-hidden shadow-glass ${className} animate-fade-in`}>
-      <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
-        <div className="p-2 bg-tavern-blue/20 rounded-full backdrop-blur-sm animate-float">
-          <Sparkles className="h-5 w-5 text-tavern-blue-dark" />
-        </div>
-        <h3 className="font-semibold text-tavern-blue-dark text-lg">Hi, your performance assistant</h3>
-        {isSyncing && <span className="text-xs text-tavern-blue-dark ml-auto animate-pulse">Syncing data...</span>}
-      </div>
-      
-      <ScrollArea ref={scrollAreaRef} className="flex-1 h-64 p-4 overflow-y-auto chat-container">
-        <div className="space-y-5">
-          {messages.map((message, index) => (
-            <div 
-              key={index} 
-              className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'} animate-scale-in`} 
-              style={{
-                animationDelay: `${index * 0.05}s`
-              }}
-            >
-              {!message.isUser && <BotAvatar />}
-              <div 
-                className={`relative group max-w-[80%] ${
-                  message.isUser 
-                    ? 'bg-[#6a1b9a] text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
-                    : 'bg-white text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
-                } p-3 shadow-sm`}
-              >
-                <p className="text-sm whitespace-pre-wrap">
-                  {message.isUser 
-                    ? message.text 
-                    : cleanResponseText(message.text)
-                  }
-                </p>
-                <span className="block text-xs opacity-70 mt-1">
-                  {message.timestamp instanceof Date 
-                    ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-                    : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                  }
-                </span>
-                
-                {!message.isUser && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="absolute -right-10 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>Share response</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => shareViaEmail(message.text)}>
-                        Email
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => shareViaWhatsApp(message.text)}>
-                        WhatsApp
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-              {message.isUser && <UserAvatar />}
+    <ResizablePanelGroup 
+      direction="vertical" 
+      className={`rounded-xl overflow-hidden shadow-glass ${className}`}
+    >
+      <ResizablePanel defaultSize={100}>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-pastel-purple/70 to-pastel-blue/70 backdrop-blur-md border-b border-white/30">
+            <div className="p-2 bg-tavern-blue/20 rounded-full backdrop-blur-sm animate-float">
+              <Sparkles className="h-5 w-5 text-tavern-blue-dark" />
             </div>
-          ))}
+            <h3 className="font-semibold text-tavern-blue-dark text-lg">Hi, your performance assistant</h3>
+            {isSyncing && <span className="text-xs text-tavern-blue-dark ml-auto animate-pulse">Syncing data...</span>}
+          </div>
+          
+          <ScrollArea ref={scrollAreaRef} className="flex-1 p-4 overflow-y-auto chat-container">
+            <div className="space-y-5">
+              {messages.map((message, index) => (
+                <div 
+                  key={index} 
+                  className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'} animate-scale-in`} 
+                  style={{
+                    animationDelay: `${index * 0.05}s`
+                  }}
+                >
+                  {!message.isUser && <BotAvatar />}
+                  <div 
+                    className={`relative group max-w-[80%] ${
+                      message.isUser 
+                        ? 'bg-[#6a1b9a] text-white rounded-tl-xl rounded-tr-none rounded-bl-xl rounded-br-xl ml-auto' 
+                        : 'bg-white text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
+                    } p-3 shadow-sm`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.isUser 
+                        ? message.text 
+                        : cleanResponseText(message.text)
+                      }
+                    </p>
+                    <span className="block text-xs opacity-70 mt-1">
+                      {message.timestamp instanceof Date 
+                        ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                        : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      }
+                    </span>
+                    
+                    {!message.isUser && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="absolute -right-10 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuLabel>Share response</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => shareViaEmail(message.text)}>
+                            Email
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => shareViaWhatsApp(message.text)}>
+                            WhatsApp
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                  {message.isUser && <UserAvatar />}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          
+          <form onSubmit={handleSubmit} className="p-4 border-t border-white/30 flex gap-2 items-center bg-white/80 backdrop-blur-md">
+            <Input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask about your business performance..."
+              className="rounded-full bg-white/50 border-white/30 focus-visible:ring-tavern-blue"
+              disabled={isLoading}
+            />
+            <Button 
+              type="submit" 
+              size="icon" 
+              className="rounded-full bg-tavern-blue hover:bg-tavern-blue-dark transition-colors"
+              disabled={isLoading || !input.trim()}
+            >
+              {isLoading ? (
+                <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+              ) : (
+                <SendHorizonal className="h-5 w-5" />
+              )}
+            </Button>
+          </form>
         </div>
-      </ScrollArea>
+      </ResizablePanel>
       
-      <form onSubmit={handleSubmit} className="p-4 border-t border-white/30 flex gap-2 items-center bg-white/80 backdrop-blur-md">
-        <Input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about your business performance..."
-          className="rounded-full bg-white/50 border-white/30 focus-visible:ring-tavern-blue"
-          disabled={isLoading}
-        />
-        <Button 
-          type="submit" 
-          size="icon" 
-          className="rounded-full bg-tavern-blue hover:bg-tavern-blue-dark transition-colors"
-          disabled={isLoading || !input.trim()}
-        >
-          {isLoading ? (
-            <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-          ) : (
-            <SendHorizonal className="h-5 w-5" />
-          )}
-        </Button>
-      </form>
-    </div>
+      <ResizableHandle withHandle />
+    </ResizablePanelGroup>
   );
 }
