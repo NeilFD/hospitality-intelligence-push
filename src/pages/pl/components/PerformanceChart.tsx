@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
@@ -84,6 +84,27 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     adminCosts: true,
     ebitda: true
   });
+  
+  // Force refresh the chart when data changes
+  const [key, setKey] = useState<number>(0);
+  
+  useEffect(() => {
+    // Update the chart key when chartData changes to force a re-render
+    setKey(prevKey => prevKey + 1);
+    
+    // Validate the chartData when it changes
+    if (chartData && chartData.length > 0) {
+      const mtdData = chartData.find(item => item.name === 'MTD Actual');
+      if (mtdData) {
+        console.log("MTD Actual data in useEffect:", {
+          revenue: mtdData.revenue,
+          cosCosts: mtdData.cosCosts,
+          adminCosts: mtdData.adminCosts,
+          ebitda: mtdData.ebitda
+        });
+      }
+    }
+  }, [chartData]);
 
   const CustomLegend = () => {
     const allSeries = [
@@ -109,6 +130,11 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
       <div className="flex flex-wrap justify-center gap-4 pt-4">
         {allSeries.map((entry, index) => {
           const isActive = visibleSeries[entry.dataKey as keyof VisibleSeries];
+          
+          // Find the actual value for this series in MTD Actual
+          const mtdData = chartData.find(item => item.name === 'MTD Actual');
+          const seriesValue = mtdData ? mtdData[entry.dataKey as keyof Omit<ChartDataItem, 'name'>] : 0;
+          
           return (
             <div 
               key={`item-${index}`}
@@ -119,7 +145,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 className="w-3 h-3 rounded-sm" 
                 style={{ backgroundColor: entry.color }} 
               />
-              <span>{entry.value}</span>
+              <span>{entry.value} {mtdData && ` (£${seriesValue.toLocaleString('en-GB')})`}</span>
             </div>
           );
         })}
@@ -159,12 +185,15 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
             <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
           </div>
         ) : (
-          <ChartContainer config={{
-            revenue: { color: '#7E69AB' },
-            cosCosts: { color: '#A5C0E2' },
-            adminCosts: { color: '#FF9F76' },
-            ebitda: { color: '#6C7787' }
-          }}>
+          <ChartContainer 
+            key={key} 
+            config={{
+              revenue: { color: '#7E69AB' },
+              cosCosts: { color: '#A5C0E2' },
+              adminCosts: { color: '#FF9F76' },
+              ebitda: { color: '#6C7787' }
+            }}
+          >
             <BarChart 
               data={chartData}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}

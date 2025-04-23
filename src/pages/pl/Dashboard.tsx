@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -306,6 +305,13 @@ export default function PLDashboard() {
     id: operatingProfitItem.id || generateTempId('operating-profit')
   }) : 0;
   
+  console.log("Budget items loaded:", {
+    turnoverItem,
+    costOfSalesItem,
+    adminExpensesItem,
+    operatingProfitItem
+  });
+  
   console.log("MTD Actual values:", {
     turnoverActual,
     costOfSalesActual,
@@ -313,7 +319,6 @@ export default function PLDashboard() {
     operatingProfitActual
   });
 
-  // Ensure all values are properly converted to numbers and defined before creating chart data
   const chartData = [
     {
       name: 'Budget',
@@ -325,7 +330,7 @@ export default function PLDashboard() {
     {
       name: 'MTD Actual',
       revenue: Number(turnoverActual || 0),
-      cosCosts: Number(costOfSalesActual || 0),
+      cosCosts: Number(costOfSalesActual || 0), 
       adminCosts: Number(adminExpensesActual || 0),
       ebitda: Number(operatingProfitActual || 0)
     }, 
