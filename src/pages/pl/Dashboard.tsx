@@ -19,7 +19,6 @@ export default function PLDashboard() {
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
   
-  // State to store the forecast values from PLReportTable
   const [adminExpensesForecast, setAdminExpensesForecast] = useState<number>(0);
   const [operatingProfitForecast, setOperatingProfitForecast] = useState<number>(0);
   
@@ -35,7 +34,6 @@ export default function PLDashboard() {
     setCurrentYear(parseInt(value));
   };
   
-  // Event handler for forecast updates
   const handleForecastsUpdated = (event: CustomEvent) => {
     if (event.detail) {
       if (event.detail.adminExpensesForecast !== undefined) {
@@ -48,7 +46,6 @@ export default function PLDashboard() {
   };
   
   useEffect(() => {
-    // Add event listener for forecast updates from PLReportTable
     window.addEventListener('pl-forecasts-updated', handleForecastsUpdated as EventListener);
     
     return () => {
@@ -278,13 +275,11 @@ export default function PLDashboard() {
     id: costOfSalesItem?.id || generateTempId('cost-of-sales')
   }, currentYear, currentMonth) : 0;
   
-  // Use the state values if available, otherwise fall back to the previous calculation
   const effectiveAdminExpensesForecast = adminExpensesForecast || (adminExpensesItem ? getForecastAmount({
     ...(adminExpensesItem || {}),
     id: adminExpensesItem?.id || generateTempId('admin-expenses')
   }, currentYear, currentMonth) : 0);
                             
-  // Use the state values if available, otherwise fall back to the previous calculation
   const effectiveOperatingProfitForecast = operatingProfitForecast || (operatingProfitItem ? getForecastAmount({
     ...(operatingProfitItem || {}), 
     id: operatingProfitItem?.id || generateTempId('operating-profit')
@@ -330,7 +325,7 @@ export default function PLDashboard() {
     ebitda: effectiveOperatingProfitForecast
   }];
   
-  console.log("Chart data:", chartData);
+  console.log("Chart data for Performance Chart:", chartData);
   
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold mb-6 text-center text-[#342640]">P&L Tracker Dashboard</h1>
