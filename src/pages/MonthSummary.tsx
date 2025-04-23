@@ -166,6 +166,8 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           
           console.log(`Total costs calculated from trackers: ${totalCostsFromTrackers}`);
           
+          const totalRevenueToUse = trackerSummary.revenue;
+          
           if (totalRevenueFromWeeks > 0 && Math.abs(totalCostsFromTrackers - trackerSummary.totalCost) > 0.01) {
             console.log(`Normalizing weekly costs to match tracker summary: ${totalCostsFromTrackers} -> ${trackerSummary.totalCost}`);
             
@@ -189,7 +191,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           ));
           
           setWeeklyData(weeklyDataArray);
-          setTotalRevenue(trackerSummary.revenue);
+          setTotalRevenue(totalRevenueToUse);
           setTotalCosts(trackerSummary.totalCost);
           setGpPercentage(trackerSummary.gpPercentage / 100);
           
@@ -228,6 +230,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         }
         
         let totalCostsFromTrackers = 0;
+        let totalCalculatedRevenue = 0;
         
         for (const record of masterRecords) {
           const weekNumber = record.week_number;
@@ -247,6 +250,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             Number(record.beverage_revenue) || 0;
             
           weekMap[weekNumber].revenue += dayRevenue;
+          totalCalculatedRevenue += dayRevenue;
           
           const trackerRecord = trackerByDate[record.date];
           if (trackerRecord) {
@@ -266,6 +270,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         }
         
         console.log(`Total costs calculated from trackers: ${totalCostsFromTrackers}`);
+        console.log(`Total revenue calculated from master records: ${totalCalculatedRevenue}`);
         
         let monthTotalRevenue = 0;
         let monthTotalCosts = 0;
@@ -311,6 +316,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           }
           
           let totalCostsFromLocal = 0;
+          let totalRevenueFromLocal = 0;
           
           monthRecord.weeks.forEach(week => {
             const weekNumber = week.weekNumber;
@@ -332,6 +338,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
               }
               
               weekRevenue += dayRevenue;
+              totalRevenueFromLocal += dayRevenue;
               
               const dayCosts = Object.values(day.purchases).reduce((sum, amount) => sum + amount, 0);
               const creditNotes = day.creditNotes.reduce((sum, credit) => sum + credit, 0);
@@ -358,6 +365,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           });
           
           console.log(`Total costs calculated from local store: ${totalCostsFromLocal}`);
+          console.log(`Total revenue calculated from local store: ${totalRevenueFromLocal}`);
           
           const localWeeklyData = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
           
