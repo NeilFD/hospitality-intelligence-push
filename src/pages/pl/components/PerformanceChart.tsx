@@ -149,7 +149,10 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
             adminCosts: { color: '#FF9F76' },
             ebitda: { color: '#6C7787' }
           }}>
-            <BarChart data={chartData}>
+            <BarChart 
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
               <CartesianGrid 
                 vertical={false} 
                 horizontal={true} 
@@ -161,7 +164,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 y={0} 
                 stroke="#9F9EA1"
                 strokeWidth={1} 
-                isFront={true} 
+                isFront={false}
               />
               <XAxis 
                 dataKey="name" 
