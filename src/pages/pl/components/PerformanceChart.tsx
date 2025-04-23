@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,25 +84,11 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     ebitda: true
   });
   
-  // Force refresh the chart when data changes
   const [key, setKey] = useState<number>(0);
   
   useEffect(() => {
     // Update the chart key when chartData changes to force a re-render
     setKey(prevKey => prevKey + 1);
-    
-    // Validate the chartData when it changes
-    if (chartData && chartData.length > 0) {
-      const mtdData = chartData.find(item => item.name === 'MTD Actual');
-      if (mtdData) {
-        console.log("MTD Actual data in useEffect:", {
-          revenue: mtdData.revenue,
-          cosCosts: mtdData.cosCosts,
-          adminCosts: mtdData.adminCosts,
-          ebitda: mtdData.ebitda
-        });
-      }
-    }
   }, [chartData]);
 
   const CustomLegend = () => {
@@ -131,9 +116,10 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
         {allSeries.map((entry, index) => {
           const isActive = visibleSeries[entry.dataKey as keyof VisibleSeries];
           
-          // Find the actual value for this series in MTD Actual
-          const mtdData = chartData.find(item => item.name === 'MTD Actual');
-          const seriesValue = mtdData ? mtdData[entry.dataKey as keyof Omit<ChartDataItem, 'name'>] : 0;
+          // Filter out MTD Actual data for the legend
+          const relevantData = chartData.filter(item => item.name !== 'MTD Actual');
+          const currentData = relevantData[0]; // Use the first available data point
+          const seriesValue = currentData ? currentData[entry.dataKey as keyof Omit<ChartDataItem, 'name'>] : 0;
           
           return (
             <div 
@@ -145,7 +131,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 className="w-3 h-3 rounded-sm" 
                 style={{ backgroundColor: entry.color }} 
               />
-              <span>{entry.value} {mtdData && ` (£${seriesValue.toLocaleString('en-GB')})`}</span>
+              <span>{entry.value} {currentData && ` (£${seriesValue.toLocaleString('en-GB')})`}</span>
             </div>
           );
         })}
@@ -153,21 +139,8 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     );
   };
 
-  // Log chart data for debugging
-  console.log("Chart data received in PerformanceChart:", chartData);
-  
-  // Add specific debug logging for MTD Actual values
-  if (chartData && chartData.length > 0) {
-    const mtdData = chartData.find(item => item.name === 'MTD Actual');
-    if (mtdData) {
-      console.log("MTD Actual data in chart:", {
-        revenue: mtdData.revenue,
-        cosCosts: mtdData.cosCosts,
-        adminCosts: mtdData.adminCosts,
-        ebitda: mtdData.ebitda
-      });
-    }
-  }
+  // Filter out MTD Actual data before rendering
+  const filteredChartData = chartData.filter(item => item.name !== 'MTD Actual');
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-3">
@@ -195,7 +168,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
             }}
           >
             <BarChart 
-              data={chartData}
+              data={filteredChartData}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid 
