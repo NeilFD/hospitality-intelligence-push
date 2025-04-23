@@ -35,7 +35,6 @@ export function PLTracker({
   console.log("Processed budget data count:", processedBudgetData.length);
   
   // Keep original actual_amount values intact for special items like revenue, COS, wages
-  // Let the getActualAmount function handle the logic for expense items
   const processedDataWithActuals = processedBudgetData.map(item => {
     // Log each item's budget and actual amount for debugging
     console.log(`Processing ${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);

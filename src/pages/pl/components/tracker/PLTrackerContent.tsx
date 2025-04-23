@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -50,21 +51,21 @@ export function PLTrackerContent({
   
   // Function to determine if an item should use pro-rated actuals
   const shouldUseProRatedActual = (item: PLTrackerBudgetItem): boolean => {
-    // Define expense items as not being revenue, cost of sales, gross profit, etc.
-    const isExpenseItem = !item.name.toLowerCase().includes('turnover') &&
-                       !item.name.toLowerCase().includes('revenue') &&
-                       !item.name.toLowerCase().includes('sales') &&
-                       !item.name.toLowerCase().includes('cost of sales') &&
-                       !item.name.toLowerCase().includes('cos') &&
-                       !item.name.toLowerCase().includes('gross profit') &&
-                       !item.name.toLowerCase().includes('wages') &&
-                       !item.name.toLowerCase().includes('salaries') &&
-                       !item.isHeader &&
-                       !item.isOperatingProfit &&
-                       !item.isGrossProfit;
+    if (item.isHeader || item.isGrossProfit || item.isOperatingProfit) {
+      return false;
+    }
     
-    // All expense items should use pro-rated budget by default
-    return isExpenseItem;
+    // Special items that should not use pro-rated amounts
+    const specialItems = ['turnover', 'revenue', 'sales', 'cost of sales', 'cos', 
+                        'gross profit', 'wages', 'salaries'];
+                        
+    // Check if the item name contains any of the special items
+    const isSpecialItem = specialItems.some(term => 
+      item.name.toLowerCase().includes(term)
+    );
+    
+    // All regular expense items should use pro-rated budget
+    return !isSpecialItem;
   };
   
   // Get the effective actual amount considering pro-rating for expense items
