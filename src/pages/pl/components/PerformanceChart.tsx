@@ -129,6 +129,19 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
 
   // Log chart data for debugging
   console.log("Chart data received in PerformanceChart:", chartData);
+  
+  // Additional detailed logging to inspect the actual values
+  if (chartData && chartData.length > 0) {
+    const mtdData = chartData.find(item => item.name === 'MTD Actual');
+    if (mtdData) {
+      console.log("MTD Actual data in chart:", {
+        revenue: mtdData.revenue,
+        cosCosts: mtdData.cosCosts,
+        adminCosts: mtdData.adminCosts,
+        ebitda: mtdData.ebitda
+      });
+    }
+  }
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-3">

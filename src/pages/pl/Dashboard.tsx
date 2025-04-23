@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -312,6 +313,7 @@ export default function PLDashboard() {
     operatingProfitActual
   });
 
+  // Ensure all values are properly converted to numbers and defined before creating chart data
   const chartData = [
     {
       name: 'Budget',
