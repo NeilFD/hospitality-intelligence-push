@@ -305,25 +305,36 @@ export default function PLDashboard() {
     id: operatingProfitItem.id || generateTempId('operating-profit')
   }) : 0;
   
-  const chartData = [{
-    name: 'Budget',
-    revenue: turnoverItem?.budget_amount || 0,
-    cosCosts: costOfSalesItem?.budget_amount || 0,
-    adminCosts: adminExpensesItem?.budget_amount || 0,
-    ebitda: operatingProfitItem?.budget_amount || 0
-  }, {
-    name: 'MTD Actual',
-    revenue: turnoverActual || 0,
-    cosCosts: costOfSalesActual || 0,
-    adminCosts: adminExpensesActual || 0,
-    ebitda: operatingProfitActual || 0
-  }, {
-    name: 'Forecast',
-    revenue: turnoverForecast || 0,
-    cosCosts: costOfSalesForecast || 0,
-    adminCosts: effectiveAdminExpensesForecast || 0,
-    ebitda: effectiveOperatingProfitForecast || 0
-  }];
+  console.log("MTD Actual values:", {
+    turnoverActual,
+    costOfSalesActual,
+    adminExpensesActual,
+    operatingProfitActual
+  });
+
+  const chartData = [
+    {
+      name: 'Budget',
+      revenue: Number(turnoverItem?.budget_amount || 0),
+      cosCosts: Number(costOfSalesItem?.budget_amount || 0),
+      adminCosts: Number(adminExpensesItem?.budget_amount || 0),
+      ebitda: Number(operatingProfitItem?.budget_amount || 0)
+    }, 
+    {
+      name: 'MTD Actual',
+      revenue: Number(turnoverActual || 0),
+      cosCosts: Number(costOfSalesActual || 0),
+      adminCosts: Number(adminExpensesActual || 0),
+      ebitda: Number(operatingProfitActual || 0)
+    }, 
+    {
+      name: 'Forecast',
+      revenue: Number(turnoverForecast || 0),
+      cosCosts: Number(costOfSalesForecast || 0),
+      adminCosts: Number(effectiveAdminExpensesForecast || 0),
+      ebitda: Number(effectiveOperatingProfitForecast || 0)
+    }
+  ];
   
   console.log("Chart data for Performance Chart:", chartData);
   

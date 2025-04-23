@@ -183,10 +183,10 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 <Bar dataKey="revenue" name="Revenue" fill={SERIES_COLORS.revenue} />
               )}
               {visibleSeries.cosCosts && (
-                <Bar dataKey="cosCosts" name="COS Costs" fill={SERIES_COLORS.cosCosts} stackId="stack" />
+                <Bar dataKey="cosCosts" name="COS Costs" fill={SERIES_COLORS.cosCosts} stackId="costs" />
               )}
               {visibleSeries.adminCosts && (
-                <Bar dataKey="adminCosts" name="Admin Costs" fill={SERIES_COLORS.adminCosts} stackId="stack" />
+                <Bar dataKey="adminCosts" name="Admin Costs" fill={SERIES_COLORS.adminCosts} stackId="costs" />
               )}
               {visibleSeries.ebitda && (
                 <Bar dataKey="ebitda" name="EBITDA" fill={SERIES_COLORS.ebitda} />
