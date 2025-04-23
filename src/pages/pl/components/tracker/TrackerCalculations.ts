@@ -125,10 +125,6 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
     return Number(item.actual_amount);
   }
 
-  if (isExpenseItem) {
-    return 0;
-  }
-
   return 0;
 }
 
@@ -137,8 +133,10 @@ export function calculateProRatedActual(
   daysInMonth: number,
   dayOfMonth: number
 ): number {
-  const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
-  return proRatedActual;
+  if (item.budget_amount) {
+    return (item.budget_amount / daysInMonth) * dayOfMonth;
+  }
+  return 0;
 }
 
 export async function fetchForecastSettings(itemName: string, year: number, month: number) {

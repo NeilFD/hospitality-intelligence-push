@@ -74,17 +74,21 @@ export function PLTrackerContent({
       'Professional Fees',
       'IT and Communications',
       'Travel'
-    ].some(category => item.category.includes(category));
+    ].some(category => item.category?.includes(category));
     
     return isExpenseItem && isAdminExpense;
   };
   
   // Get the effective actual amount considering pro-rating for expense items
   const getEffectiveActualAmount = (item: PLTrackerBudgetItem): number => {
-    if (shouldUseProRatedActual(item)) {
+    const actualAmount = getActualAmount(item);
+    
+    // If it's an expense item and no actual amount has been manually entered or tracked
+    if (shouldUseProRatedActual(item) && actualAmount === 0) {
       return calculateProRatedActual(item, daysInMonth, dayOfMonth);
     }
-    return getActualAmount(item);
+    
+    return actualAmount;
   };
 
   if (isLoading) {
