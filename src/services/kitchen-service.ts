@@ -1,3 +1,4 @@
+
 import { ModuleType, TrackerSummary } from '@/types/kitchen-ledger';
 import { supabase } from '@/lib/supabase';
 
@@ -549,6 +550,9 @@ export const syncTrackerCreditNotesToCreditNotes = async (year: number, month: n
 
 export const getMonthlyRevenueSummary = async (year: number, month: number, moduleType: ModuleType = 'food') => {
   try {
+    console.log(`Getting monthly revenue summary for ${year}-${month} (${moduleType})`);
+    
+    // Try to get monthly performance summary from the database
     const { data, error } = await supabase
       .from('monthly_performance_summary')
       .select('*')
@@ -561,7 +565,24 @@ export const getMonthlyRevenueSummary = async (year: number, month: number, modu
       return null;
     }
 
-    return data;
+    console.log(`Monthly performance summary for ${year}-${month}:`, data);
+    
+    // Return the data with the appropriate revenue field based on module type
+    let moduleRevenue = 0;
+    if (moduleType === 'food' && data?.total_food_revenue) {
+      moduleRevenue = data.total_food_revenue;
+    } else if (moduleType === 'beverage' && data?.total_beverage_revenue) {
+      moduleRevenue = data.total_beverage_revenue;
+    } else if (data?.total_revenue) {
+      moduleRevenue = data.total_revenue;
+    }
+    
+    console.log(`Revenue for ${moduleType}: ${moduleRevenue}`);
+    
+    return {
+      ...data,
+      moduleRevenue
+    };
   } catch (error) {
     console.error(`Error in getMonthlyRevenueSummary for ${year}-${month}:`, error);
     return null;
@@ -592,27 +613,13 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
 
     const trackerData = await fetchTrackerDataByMonth(year, month, moduleType);
 
+    // First try to get the revenue from monthly_performance_summary
     let finalRevenue = 0;
-    try {
-      const { data: revenueSummary, error: summaryError } = await supabase
-        .from('monthly_performance_summary')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month)
-        .single();
-        
-      if (!summaryError && revenueSummary) {
-        if (moduleType === 'food') {
-          finalRevenue = revenueSummary.total_food_revenue || 0;
-        } else if (moduleType === 'beverage') {
-          finalRevenue = revenueSummary.total_beverage_revenue || 0;
-        } else {
-          finalRevenue = revenueSummary.total_revenue || 0;
-        }
-        console.log(`Using monthly_performance_summary revenue for ${year}-${month} (${moduleType}): ${finalRevenue}`);
-      }
-    } catch (summaryError) {
-      console.error('Error fetching monthly performance summary:', summaryError);
+    
+    const revenueSummary = await getMonthlyRevenueSummary(year, month, moduleType);
+    if (revenueSummary) {
+      finalRevenue = revenueSummary.moduleRevenue || 0;
+      console.log(`Using monthly_performance_summary revenue for ${year}-${month} (${moduleType}): ${finalRevenue}`);
     }
 
     let totalRevenue = 0;
@@ -644,7 +651,9 @@ export const getTrackerSummaryByMonth = async (year: number, month: number, modu
       console.log(`Day ${day.date}: Revenue=${day.revenue}, Purchases=${purchasesAmount}, CreditNotes=${creditNotesAmount}, StaffFood=${day.staff_food_allowance}`);
     }
 
+    // Prioritize using the revenue from monthly_performance_summary
     if (finalRevenue > 0) {
+      console.log(`Using monthly summary revenue: ${finalRevenue} instead of tracker revenue: ${totalRevenue}`);
       totalRevenue = finalRevenue;
     }
 
