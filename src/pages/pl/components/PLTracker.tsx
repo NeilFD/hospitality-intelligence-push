@@ -6,7 +6,7 @@ import { TrackerHeader } from './tracker/TrackerHeader';
 import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
-import { calculateProRatedBudget, getActualAmount, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount, calculateProRatedActual, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;

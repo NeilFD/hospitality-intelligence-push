@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -127,12 +126,19 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   }
 
   if (isExpenseItem) {
-    const daysInMonth = 30;
-    const dayOfMonth = 19;
-    return (item.budget_amount / daysInMonth) * dayOfMonth * 0.65;
+    return 0;
   }
 
   return 0;
+}
+
+export function calculateProRatedActual(
+  item: PLTrackerBudgetItem,
+  daysInMonth: number,
+  dayOfMonth: number
+): number {
+  const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
+  return proRatedActual;
 }
 
 export async function fetchForecastSettings(itemName: string, year: number, month: number) {
@@ -302,13 +308,4 @@ export function getForecastAmount(
   
   // If no settings found, use the budget amount
   return item.budget_amount || 0;
-}
-
-export function calculateProRatedActual(
-  item: PLTrackerBudgetItem,
-  daysInMonth: number,
-  dayOfMonth: number
-): number {
-  const proRatedActual = (item.budget_amount / daysInMonth) * dayOfMonth;
-  return proRatedActual;
 }
