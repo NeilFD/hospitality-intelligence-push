@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -15,7 +14,6 @@ import {
   updateAllForecasts,
   getForecastAmount
 } from './tracker/TrackerCalculations';
-import { storeTrackerSnapshot } from './tracker/SnapshotManager';
 import { toast } from "sonner";
 import { useTracker } from './hooks/useTracker';
 
@@ -43,7 +41,6 @@ export function PLTracker({
   
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // Use the tracker hook which handles initialization
   const { isInitializing } = useTracker(currentYear, currentMonthName);
   
   useEffect(() => {
@@ -82,24 +79,12 @@ export function PLTracker({
   } = useTrackerData(processedDataWithActuals);
   
   const handleSaveWithAnalyticsUpdate = () => {
-    // Start save operation with clear steps
     toast.info("Saving data...");
     setTrackedBudgetData(prev => [...prev]); // Force refresh UI
     
-    // First step: Save forecast amounts
     saveForecastAmounts()
       .then(() => {
-        const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-        
-        // Second step: Store snapshot data
-        return storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
-      })
-      .then((success) => {
-        if (success) {
-          toast.success("Data saved successfully");
-        } else {
-          toast.error("Snapshot creation failed");
-        }
+        toast.success("Data saved successfully");
       })
       .catch(error => {
         console.error('Error in save operation:', error);

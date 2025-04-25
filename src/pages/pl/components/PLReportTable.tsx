@@ -8,6 +8,7 @@ import { useDateCalculations } from "./hooks/useDateCalculations";
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { syncUiWithAnalytics } from './tracker/TrackerCalculations';
+import { storeTrackerSnapshot } from './tracker/SnapshotManager';
 
 type PLReportTableProps = {
   isLoading: boolean;
@@ -79,11 +80,38 @@ export function PLReportTable({
     
     setIsSyncing(true);
     try {
+      // First step: Sync analytics data
       const success = await syncUiWithAnalytics(currentYear, currentMonth);
+      
       if (success) {
-        setLastSyncTime(new Date().toLocaleTimeString());
-        setRefreshTrigger(prev => prev + 1);
+        // Second step: Store snapshot data
+        const snapshotSuccess = await storeTrackerSnapshot(
+          renderedData.filter(item => 
+            !(item.isHeader && !item.name.toLowerCase().includes('total') && !item.name.toLowerCase().includes('turnover'))
+          ).map(item => ({
+            ...item,
+            category: item.category || 'General',
+            budget_amount: item.budget_amount || 0,
+            actual_amount: getActualAmount(item),
+            forecast_amount: calculateCorrectForecast(item)
+          })), 
+          currentYear, 
+          currentMonth
+        );
+
+        if (snapshotSuccess) {
+          setLastSyncTime(new Date().toLocaleTimeString());
+          setRefreshTrigger(prev => prev + 1);
+          toast.success("Data synced and snapshot stored successfully");
+        } else {
+          toast.error("Analytics synced but snapshot creation failed");
+        }
+      } else {
+        toast.error("Failed to sync analytics data");
       }
+    } catch (error) {
+      console.error('Error in sync operation:', error);
+      toast.error("Error during sync operation");
     } finally {
       setIsSyncing(false);
     }
@@ -513,7 +541,7 @@ export function PLReportTable({
     const adminBudgetVariance = calculatedAdminTotalForecast - adminTotalBudget;
     const grossProfitItem = renderedData.find(item => item && item.name && (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
-    const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
+    const grossProfitBudget = grossProfitItem ? item.budget_amount || 0 : 0;
     const grossProfitForecast = grossProfitItem ? calculateCorrectForecast(grossProfitItem) : 0;
     const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
     const operatingProfitActual = grossProfitActual - adminTotalActual;
@@ -624,131 +652,3 @@ export function PLReportTable({
                   {formatCurrency(actualAmount)}
                 </TableCell>
                 <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
-                  {percentageDisplay ? percentageDisplay : ""}
-                </TableCell>
-                <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
-                  {formatCurrency(forecastAmount)}
-                </TableCell>
-                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
-                  {forecastPercentage}
-                </TableCell>
-                <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
-                  {formatCurrency(varianceAmount)}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-
-        <TableRow className="bg-purple-100/50 text-[#48495e]">
-          <TableCell className="font-bold bg-purple-50">
-            TOTAL ADMIN EXPENSES
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(adminTotalBudget)}
-          </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
-            {formatPercentage(adminTotalBudget / (turnoverItem?.budget_amount || 1))}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(adminTotalActual)}
-          </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
-            {formatPercentage(adminActualPercentage / 100)}
-          </TableCell>
-          <TableCell className="text-right font-bold">
-            {formatCurrency(calculatedAdminTotalForecast)}
-          </TableCell>
-          <TableCell className="text-right font-bold w-14 min-w-[40px] max-w-[40px]">
-            {formatPercentage(adminForecastPercentage / 100)}
-          </TableCell>
-          <TableCell className={`text-right font-bold ${getValueColor(adminBudgetVariance, true)}`}>
-            {formatCurrency(adminBudgetVariance)}
-          </TableCell>
-        </TableRow>
-
-        <TableRow className="bg-green-100/50 font-bold text-[#48495e]">
-          <TableCell className="bg-green-50 font-bold">
-            OPERATING PROFIT
-          </TableCell>
-          <TableCell className={`text-right ${operatingProfitBudget < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatCurrency(operatingProfitBudget)}
-          </TableCell>
-          <TableCell className={`text-right w-14 min-w-[40px] max-w-[40px] ${(operatingProfitBudget / (turnoverItem?.budget_amount || 1)) < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatPercentage(operatingProfitBudget / (turnoverItem?.budget_amount || 1))}
-          </TableCell>
-          <TableCell className={`text-right ${operatingProfitActual < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatCurrency(operatingProfitActual)}
-          </TableCell>
-          <TableCell className={`text-right w-14 min-w-[40px] max-w-[40px] ${operatingProfitActualPercentage < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatPercentage(operatingProfitActualPercentage / 100)}
-          </TableCell>
-          <TableCell className={`text-right ${calculatedOperatingProfitForecast < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatCurrency(calculatedOperatingProfitForecast)}
-          </TableCell>
-          <TableCell className={`text-right w-14 min-w-[40px] max-w-[40px] ${operatingProfitForecastPercentage < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatPercentage(operatingProfitForecastPercentage / 100)}
-          </TableCell>
-          <TableCell className={`text-right ${operatingProfitVariance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatCurrency(operatingProfitVariance)}
-          </TableCell>
-        </TableRow>
-      </>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-[250px]" />
-        <Skeleton className="h-[400px] w-full" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold">P&L Report</h3>
-        <div className="flex items-center gap-2">
-          {lastSyncTime && (
-            <span className="text-sm text-gray-500">
-              Last synced: {lastSyncTime}
-            </span>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleSyncAnalytics}
-            disabled={isSyncing}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Sync Analytics Data'}
-          </Button>
-        </div>
-      </div>
-      
-      <div className="rounded-md border">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-64">Line Item</TableHead>
-                <TableHead className="text-right">Budget</TableHead>
-                <TableHead className="text-right w-14">%</TableHead>
-                <TableHead className="text-right">Actual</TableHead>
-                <TableHead className="text-right w-14">%</TableHead>
-                <TableHead className="text-right">Forecast</TableHead>
-                <TableHead className="text-right w-14">%</TableHead>
-                <TableHead className="text-right">Variance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {renderTableContent()}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    </>
-  );
-}
