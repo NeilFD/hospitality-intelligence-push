@@ -30,6 +30,52 @@ export const fetchBudgetItems = async (year: number, month: number) => {
   
   console.log(`Fetched ${data?.length || 0} budget items`);
   
+  // Ensure special items like revenue, COS, wages, and GP have proper forecasts based on MTD projection
+  if (data && data.length > 0) {
+    // Get current date info for projection
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const isCurrentMonth = (year === currentYear && month === currentMonth);
+    
+    // Only apply special handling if we're looking at the current month
+    if (isCurrentMonth) {
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const dayOfMonth = Math.min(now.getDate(), daysInMonth);
+      
+      // Process each item that needs special forecast calculation
+      data = data.map(item => {
+        const itemName = (item.name || '').toLowerCase();
+        
+        // Special handling for revenue, COS, GP, and wages items
+        if (
+          itemName.includes('revenue') || 
+          itemName.includes('sales') || 
+          itemName === 'turnover' ||
+          itemName.includes('turnover') ||
+          itemName.includes('cost of sales') ||
+          itemName.includes('cos') ||
+          itemName.includes('gross profit') ||
+          itemName.includes('wages') ||
+          itemName.includes('salaries')
+        ) {
+          // If we have actual data, use it for MTD projection
+          if (item.actual_amount && item.actual_amount !== 0) {
+            // Calculate the daily average and project for the full month
+            const projection = (item.actual_amount / dayOfMonth) * daysInMonth;
+            
+            console.log(`Applying MTD projection for ${item.name}: ${item.actual_amount} → ${projection}`);
+            
+            // Update forecast directly
+            item.forecast_amount = projection;
+          }
+        }
+        
+        return item;
+      });
+    }
+  }
+  
   return data;
 };
 
