@@ -399,7 +399,7 @@ export function PLReportTable({
       i => i && i.name && (i.name.toLowerCase().includes('beverage') || i.name.toLowerCase().includes('drink')) &&
       (i.name.toLowerCase().includes('revenue') || i.name.toLowerCase().includes('sales'))
     );
-    const beverageRevenueBudget = beverageRevenueItem && beverageRevenueItem.budget_amount ? beverageRevenueBudget : 0;
+    const beverageRevenueBudget = beverageRevenueItem && beverageRevenueItem.budget_amount ? beverageRevenueItem.budget_amount : 0;
 
     if (name === 'turnover' || name === 'total revenue') {
       return '100.0%';
