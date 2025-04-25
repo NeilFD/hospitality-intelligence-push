@@ -488,18 +488,11 @@ export function getForecastAmount(
 
 export const refreshBudgetVsActual = async (): Promise<boolean> => {
   try {
-    console.log('Manually refreshing budget_vs_actual view at', new Date().toISOString());
-    const { data, error } = await supabase.rpc('refresh_budget_vs_actual');
-    
-    if (error) {
-      console.error('Error refreshing budget_vs_actual view:', error);
-      return false;
-    }
-    
-    console.log('Successfully refreshed budget_vs_actual view');
+    await supabase.rpc('refresh_budget_vs_actual');
+    console.log('Budget view refreshed successfully');
     return true;
-  } catch (err) {
-    console.error('Unexpected error refreshing budget_vs_actual view:', err);
+  } catch (error) {
+    console.error('Error refreshing budget view:', error);
     return false;
   }
 };

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -111,8 +110,14 @@ export function PLTracker({
       if (saveSuccess) {
         // Ensure the analytics view is refreshed after saving forecast amounts
         const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-        await refreshBudgetVsActual();
-        console.log('Analytics data refreshed after saving forecasts');
+        
+        // Modify refreshBudgetVsActual to return a boolean
+        const refreshSuccess = await refreshBudgetVsActual();
+        
+        console.log('Analytics data refreshed after saving forecasts:', refreshSuccess);
+        
+        // Return true only if both save and refresh are successful
+        return saveSuccess && refreshSuccess;
       }
       
       return saveSuccess;
