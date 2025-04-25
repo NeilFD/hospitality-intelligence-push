@@ -509,13 +509,25 @@ export function PLReportTable({
     return (
       <>
         {renderedData
-          .filter(item => 
-            item && 
-            item.name && 
-            item.name.toLowerCase() !== "total" && 
-            item.category !== "header" && 
-            item.budget_amount !== 0
-          )
+          .filter(item => {
+            if (!item || !item.name) return false;
+            
+            if (item.name.trim().toLowerCase() === 'total') return false;
+            
+            if (item.category === "header") return false;
+            
+            if (item.budget_amount === 0) return false;
+            
+            const lowerName = item.name.toLowerCase();
+            if (lowerName.includes('total') && 
+                !lowerName.includes('total admin') && 
+                !lowerName.includes('total revenue')) {
+              console.log('Filtering out total row:', item.name);
+              return false;
+            }
+            
+            return true;
+          })
           .map((item, index) => {
             if (!item || (item.category === "header" && item.budget_amount === 0)) {
               return null;
