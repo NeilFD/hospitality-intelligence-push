@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -50,8 +51,9 @@ export function PLTracker({
         const success = await updateAllForecasts(currentYear, monthNumber);
         console.log('Forecasts updated successfully on component load:', success);
         
-        const refreshSuccess = await refreshBudgetVsActual();
-        console.log('Budget vs actual refreshed on component load:', refreshSuccess);
+        // Call refreshBudgetVsActual but don't rely on its return value
+        refreshBudgetVsActual();
+        console.log('Budget vs actual refresh triggered on component load');
       } catch (err) {
         console.error('Failed to update forecasts on component load:', err);
       }
@@ -104,11 +106,12 @@ export function PLTracker({
           new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1
         );
         
-        const refreshSuccess = await refreshBudgetVsActual();
+        // Call refreshBudgetVsActual but don't rely on its return value for the condition
+        refreshBudgetVsActual();
+        console.log('Analytics data refresh triggered after saving forecasts');
         
-        console.log('Analytics data refreshed after saving forecasts:', refreshSuccess);
-        
-        return saveSuccess && refreshSuccess;
+        // Just return saveSuccess since we're not depending on refreshBudgetVsActual's return value
+        return saveSuccess;
       }
       
       return saveSuccess;
