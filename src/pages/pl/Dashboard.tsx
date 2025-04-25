@@ -10,7 +10,10 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
 import { fetchTotalWagesForMonth } from '@/services/wages-service';
-import { getActualAmount, getForecastAmount } from './components/tracker/TrackerCalculations';
+import { getActualAmount, getForecastAmount, updateAllForecasts } from './components/tracker/TrackerCalculations';
+import { refreshBudgetVsActual } from './components/tracker/TrackerCalculations';
+import { supabase } from '@/lib/supabase';
+import { toast } from "sonner";
 
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
@@ -46,6 +49,26 @@ export default function PLDashboard() {
   };
   
   useEffect(() => {
+    console.log(`Force updating forecasts for ${currentYear}-${currentMonth}`);
+    
+    const forceUpdateForecasts = async () => {
+      try {
+        await updateAllForecasts(currentYear, currentMonth);
+        await supabase.rpc('refresh_budget_vs_actual')
+          .then(() => console.log('Budget view refreshed'))
+          .catch(err => console.log('Error refreshing budget view:', err));
+        await refreshBudgetVsActual();
+        toast.success("Forecasts have been updated");
+      } catch (err) {
+        console.error('Failed to update forecasts:', err);
+        toast.error("Error updating forecasts");
+      }
+    };
+    
+    forceUpdateForecasts();
+  }, [currentYear, currentMonth]);
+  
+  useEffect(() => {
     window.addEventListener('pl-forecasts-updated', handleForecastsUpdated as EventListener);
     
     return () => {
@@ -79,6 +102,18 @@ export default function PLDashboard() {
   } = useBudgetData(currentYear, currentMonth);
   
   const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
+
+  const handleRefreshForecasts = async () => {
+    toast.info("Updating forecasts...");
+    
+    try {
+      await updateAllForecasts(currentYear, currentMonth);
+      toast.success("Forecasts updated successfully");
+    } catch (err) {
+      console.error('Error updating forecasts:', err);
+      toast.error("Error updating forecasts");
+    }
+  };
   
   useEffect(() => {
     console.log("Loading forecast settings for all items");
@@ -115,6 +150,8 @@ export default function PLDashboard() {
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
       console.log("Dashboard: Forecast updated event received", event.detail);
+      
+      handleRefreshForecasts();
     };
 
     window.addEventListener('forecast-updated', handleForecastUpdate);
@@ -217,6 +254,14 @@ export default function PLDashboard() {
     }
     
     const result = { ...item };
+    
+    if (!result.forecast_amount || result.forecast_amount === 0) {
+      result.forecast_amount = getForecastAmount(
+        result, 
+        currentYear, 
+        currentMonth
+      );
+    }
     
     if (!result.forecast_settings) {
       const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
@@ -351,12 +396,18 @@ export default function PLDashboard() {
       <div className="flex justify-between items-center mb-6">
         <MonthYearSelector currentMonth={currentMonth} currentMonthName={currentMonthName} currentYear={currentYear} onMonthChange={handleMonthChange} onYearChange={handleYearChange} />
         
-        <Button variant="outline" asChild>
-          <Link to="/pl/budget" className="flex items-center gap-2">
-            <FileUp size={16} />
-            Manage Budget Data
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefreshForecasts}>
+            Refresh Forecasts
+          </Button>
+          
+          <Button variant="outline" asChild>
+            <Link to="/pl/budget" className="flex items-center gap-2">
+              <FileUp size={16} />
+              Manage Budget Data
+            </Link>
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

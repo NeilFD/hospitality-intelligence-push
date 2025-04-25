@@ -66,14 +66,14 @@ export function TrackerLineItem({
   const isCOS = item.name.toLowerCase().includes('cost of sales') || 
                item.name.toLowerCase().includes('cos');
                
-  const isWages = item.name.toLowerCase().includes('wages and salaries') ||
+  const isWagesItem = item.name.toLowerCase().includes('wages and salaries') ||
                  item.name.toLowerCase() === 'wages' ||
                  item.name.toLowerCase() === 'salaries';
                  
   const isTotalItem = item.name.toLowerCase().includes('total');
   
   const isAdminExpense = !isRevenue && !isCOS && !isGrossProfit && !isOperatingProfit && 
-                        !isWages && !item.isHeader && !isTotalItem;
+                        !isWagesItem && !item.isHeader && !isTotalItem;
                  
   const isHighlightedItem = item.isHighlighted;
   

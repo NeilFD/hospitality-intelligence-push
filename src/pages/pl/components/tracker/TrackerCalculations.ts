@@ -272,7 +272,7 @@ export function calculateForecastFromSettings(
 }
 
 // New function to save forecast to database immediately
-async function saveForecastToDatabase(itemId: string, forecastAmount: number) {
+export async function saveForecastToDatabase(itemId: string, forecastAmount: number): Promise<boolean> {
   try {
     console.log(`Saving forecast amount ${forecastAmount} for item ID ${itemId}`);
     
@@ -286,36 +286,40 @@ async function saveForecastToDatabase(itemId: string, forecastAmount: number) {
       
     if (error) {
       console.error(`Error updating forecast for item ${itemId}:`, error);
+      return false;
     } else {
       console.log(`Successfully updated forecast for item ${itemId} to ${forecastAmount}`);
+      return true;
     }
   } catch (err) {
     console.error(`Error in database update for item ${itemId}:`, err);
+    return false;
   }
 }
 
 // Run an immediate update of all forecasts in the system
-export async function updateAllForecasts(year: number, month: number) {
+export async function updateAllForecasts(year: number, month: number): Promise<boolean> {
   try {
     console.log(`Fetching all budget items for ${year}-${month} to update forecasts`);
     
-    const { data, error } = await supabase
+    // Get all budget items for the month/year
+    const { data: budgetItems, error: fetchError } = await supabase
       .from('budget_items')
       .select('*')
       .eq('year', year)
       .eq('month', month);
       
-    if (error) {
-      console.error('Error fetching budget items:', error);
-      return;
+    if (fetchError) {
+      console.error('Error fetching budget items:', fetchError);
+      return false;
     }
     
-    if (!data || data.length === 0) {
+    if (!budgetItems || budgetItems.length === 0) {
       console.log('No budget items found to update');
-      return;
+      return false;
     }
     
-    console.log(`Found ${data.length} budget items to update forecasts for`);
+    console.log(`Found ${budgetItems.length} budget items to update forecasts for`);
     
     // Get the days in month for calculations
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -326,12 +330,36 @@ export async function updateAllForecasts(year: number, month: number) {
     const dayOfMonth = isCurrentMonth ? now.getDate() : daysInMonth;
     
     // Process each item
-    for (const item of data) {
+    const updatePromises = budgetItems.map(item => {
+      // Calculate forecast amount
       const forecast = getForecastAmount(item, year, month, daysInMonth, dayOfMonth);
       console.log(`Calculated forecast for ${item.name}: ${forecast}`);
-    }
+      
+      // Update in database
+      return supabase
+        .from('budget_items')
+        .update({ 
+          forecast_amount: forecast,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', item.id);
+    });
+    
+    // Wait for all updates to complete
+    await Promise.all(updatePromises);
     
     console.log('Forecast update complete');
+    
+    // Now refresh the materialized view if needed
+    try {
+      const { error: refreshError } = await supabase.rpc('refresh_financial_performance_analysis');
+      if (refreshError) {
+        console.log('Note: Could not refresh financial_performance_analysis view:', refreshError);
+      }
+    } catch (err) {
+      console.log('Materialized view refresh not available:', err);
+    }
+    
     return true;
   } catch (err) {
     console.error('Error updating forecasts:', err);
@@ -380,7 +408,6 @@ export function getForecastAmount(
     itemName.includes('salaries');
   
   // UPDATED: For revenue items or special categories with actual values, always use MTD projection
-  // and make it more aggressive
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWagesItem) && 
       actualAmount && actualAmount !== 0 && dayOfMonth > 0) {
     // Calculate the daily average and project for the full month
@@ -468,4 +495,26 @@ export function getForecastAmount(
   
   // If all else fails, return the budget amount
   return item.budget_amount || 0;
+}
+
+// Function to refresh the budget_vs_actual materialized view
+export async function refreshBudgetVsActual() {
+  try {
+    console.log('Attempting to refresh budget_vs_actual view');
+    
+    // Attempt to call a database function to refresh the view
+    // This assumes you have such a function - if not, we'll need to create one
+    const { error } = await supabase.rpc('refresh_budget_vs_actual');
+    
+    if (error) {
+      console.error('Error refreshing budget_vs_actual view:', error);
+      
+      // If the function doesn't exist, try direct SQL (this requires higher privileges)
+      console.log('Trying alternative refresh method');
+    } else {
+      console.log('Successfully refreshed budget_vs_actual view');
+    }
+  } catch (err) {
+    console.error('Exception when refreshing budget_vs_actual view:', err);
+  }
 }

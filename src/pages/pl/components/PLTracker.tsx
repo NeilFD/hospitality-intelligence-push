@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -12,7 +11,8 @@ import {
   getActualAmount, 
   calculateProRatedActual, 
   calculateSummaryProRatedBudget,
-  updateAllForecasts
+  updateAllForecasts,
+  getForecastAmount
 } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
@@ -49,8 +49,8 @@ export function PLTracker({
     // Force update of all forecasts in the database
     const updateForecasts = async () => {
       try {
-        await updateAllForecasts(currentYear, monthNumber);
-        console.log('Forecasts updated successfully on component load');
+        const success = await updateAllForecasts(currentYear, monthNumber);
+        console.log('Forecasts updated successfully on component load:', success);
       } catch (err) {
         console.error('Failed to update forecasts on component load:', err);
       }
@@ -59,10 +59,27 @@ export function PLTracker({
     updateForecasts();
   }, [currentMonthName, currentYear]);
   
+  // Pre-calculate forecast values for all items
+  useEffect(() => {
+    if (processedBudgetData && processedBudgetData.length > 0) {
+      console.log('Pre-calculating forecast values for all items');
+      
+      const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
+      
+      processedBudgetData.forEach(item => {
+        // Only process items with IDs
+        if (item.id) {
+          const forecast = getForecastAmount(item, currentYear, monthNumber, daysInMonth, actualDayOfMonth);
+          console.log(`Pre-calculated forecast for ${item.name}: ${forecast}`);
+        }
+      });
+    }
+  }, [processedBudgetData, currentMonthName, currentYear, daysInMonth, actualDayOfMonth]);
+  
   // Keep original actual_amount values intact for special items like revenue, COS, wages
   const processedDataWithActuals = processedBudgetData.map(item => {
     // Log each item's budget and actual amount for debugging
-    console.log(`Processing ${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
+    console.log(`Processing ${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}, forecast=${item.forecast_amount}`);
     
     return {
       ...item,
@@ -85,7 +102,8 @@ export function PLTracker({
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
     name: item.name,
     actual_amount: item.actual_amount,
-    budget_amount: item.budget_amount
+    budget_amount: item.budget_amount,
+    forecast_amount: item.forecast_amount
   })));
   
   const filteredBudgetData = trackedBudgetData.filter(item => 
