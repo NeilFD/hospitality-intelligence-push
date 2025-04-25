@@ -4,6 +4,7 @@ import { formatCurrency, formatPercentage } from "@/lib/date-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getActualAmount, getForecastAmount, fetchForecastSettings, calculateForecastFromSettings, calculateProRatedActual } from './tracker/TrackerCalculations';
 import { ForecastSettingsControl } from "./forecast/ForecastSettingsControl";
+import { useDateCalculations } from "./hooks/useDateCalculations";
 
 type PLReportTableProps = {
   isLoading: boolean;
@@ -30,6 +31,15 @@ export function PLReportTable({
     return months.indexOf(monthName) + 1;
   };
 
+  const { dayOfMonth, daysInMonth } = useDateCalculations(currentMonthName, currentYear);
+
+  console.log('PLReportTable date calculations:', {
+    currentMonthName,
+    currentYear,
+    dayOfMonth,
+    daysInMonth
+  });
+
   const shouldUseProRatedActual = (item: any): boolean => {
     if (!item || !item.name) return false;
     
@@ -53,7 +63,7 @@ export function PLReportTable({
     }
     
     if (shouldUseProRatedActual(item)) {
-      return calculateProRatedActual(item, getDaysInMonth(), getCurrentDay());
+      return calculateProRatedActual(item, daysInMonth, dayOfMonth);
     }
     
     return manualActual;
@@ -111,8 +121,6 @@ export function PLReportTable({
           }
           
           const isSpecialItem = isItemRequiringMTDProjection(item.name);
-          const daysInMonth = getDaysInMonth();
-          const dayOfMonth = getCurrentDay();
           
           if (isSpecialItem && item.actual_amount > 0 && dayOfMonth > 0) {
             const projection = (item.actual_amount / dayOfMonth) * daysInMonth;
@@ -164,7 +172,7 @@ export function PLReportTable({
     };
     
     loadData();
-  }, [processedBudgetData, refreshTrigger, currentYear, currentMonth]);
+  }, [processedBudgetData, refreshTrigger, currentYear, currentMonth, dayOfMonth, daysInMonth]);
 
   const isItemRequiringMTDProjection = (name: string): boolean => {
     if (!name) return false;
@@ -180,27 +188,6 @@ export function PLReportTable({
       lowercaseName.includes('wages') || 
       lowercaseName.includes('salaries')
     );
-  };
-
-  const getDaysInMonth = () => {
-    const date = new Date(currentYear, getMonthNumber(currentMonthName), 0);
-    return date.getDate();
-  };
-
-  const getCurrentDay = () => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    
-    if (currentMonthName === 'April' && currentYear === 2025) {
-      return 19;
-    }
-    
-    if (yesterday.getFullYear() === currentYear && yesterday.getMonth() === getMonthNumber(currentMonthName) - 1) {
-      return yesterday.getDate();
-    }
-    const daysInMonth = getDaysInMonth();
-    return Math.min(yesterday.getDate(), daysInMonth);
   };
 
   const getFontClass = (name: string) => {
@@ -372,8 +359,6 @@ export function PLReportTable({
     if (!item) return 0;
     
     if (isItemRequiringMTDProjection(item.name) && item.actual_amount > 0) {
-      const dayOfMonth = getCurrentDay();
-      const daysInMonth = getDaysInMonth();
       if (dayOfMonth > 0) {
         return (item.actual_amount / dayOfMonth) * daysInMonth;
       }
@@ -502,7 +487,7 @@ export function PLReportTable({
     const adminBudgetVariance = calculatedAdminTotalForecast - adminTotalBudget;
     const grossProfitItem = renderedData.find(item => item && item.name && (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
-    const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
+    const grossProfitBudget = grossProfitItem ? item.budget_amount || 0 : 0;
     const grossProfitForecast = grossProfitItem ? calculateCorrectForecast(grossProfitItem) : 0;
     const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
     const operatingProfitActual = grossProfitActual - adminTotalActual;
@@ -648,73 +633,4 @@ export function PLReportTable({
           <TableCell className="text-right">
             {formatCurrency(operatingProfitActual)}
           </TableCell>
-          <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
-            {formatPercentage(operatingProfitActualPercentage / 100)}
-          </TableCell>
-          <TableCell className="text-right">
-            {formatCurrency(calculatedOperatingProfitForecast)}
-          </TableCell>
-          <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
-            {formatPercentage(operatingProfitForecastPercentage / 100)}
-          </TableCell>
-          <TableCell className={`text-right ${getValueColor(operatingProfitVariance, false)}`}>
-            {formatCurrency(operatingProfitVariance)}
-          </TableCell>
-        </TableRow>
-      </>
-    );
-  };
-
-  return (
-    <div className="overflow-x-auto">
-      <Table className="min-w-[1100px] w-full">
-        <TableHeader className="bg-[#48495e] text-white text-sm">
-          <TableRow>
-            <TableHead className="w-60 py-2">Item</TableHead>
-            <TableHead className="text-right py-2">Budget</TableHead>
-            <TableHead className="text-right w-14 min-w-[40px] max-w-[40px] py-2">%</TableHead>
-            <TableHead className="text-right py-2">Actual</TableHead>
-            <TableHead className="text-right w-14 min-w-[40px] max-w-[40px] py-2">%</TableHead>
-            <TableHead className="text-right py-2">Forecast</TableHead>
-            <TableHead className="text-right w-14 min-w-[40px] max-w-[40px] py-2">%</TableHead>
-            <TableHead className="text-right py-2">Variance</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            Array.from({ length: 10 }).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-full" />
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            renderTableContent()
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
+          <TableCell className="text-right w-14 min-w-[40px] max-

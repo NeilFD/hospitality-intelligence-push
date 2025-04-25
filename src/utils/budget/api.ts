@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { updateAllForecasts } from '@/pages/pl/components/tracker/TrackerCalculations';
 
@@ -79,7 +78,6 @@ export const fetchBudgetItems = async (year: number, month: number) => {
               projection
             });
             
-            // Create a new object instead of modifying the original
             return {
               ...item,
               forecast_amount: projection
@@ -87,7 +85,6 @@ export const fetchBudgetItems = async (year: number, month: number) => {
           }
         }
         
-        // Return the original item if no modifications are needed
         return item;
       });
     }
