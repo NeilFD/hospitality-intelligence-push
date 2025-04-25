@@ -104,12 +104,12 @@ export function PLTracker({
           new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1
         );
         
-        // Ensure refreshBudgetVsActual returns a boolean and store it
+        // Call refreshBudgetVsActual and properly await its boolean result
         const refreshSuccess = await refreshBudgetVsActual();
         
         console.log('Analytics data refreshed after saving forecasts:', refreshSuccess);
         
-        // Both values are now properly typed as booleans
+        // Return the combined success status
         return saveSuccess && refreshSuccess;
       }
       
