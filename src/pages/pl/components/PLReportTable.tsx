@@ -513,7 +513,7 @@ export function PLReportTable({
           if (!item || (item.category === "header" && item.budget_amount === 0)) {
             return null;
           }
-          if (!item.name) {
+          if (!item.name || item.name === "Total") {  // Added condition to skip "Total" row
             return null;
           }
           
@@ -625,25 +625,25 @@ export function PLReportTable({
           <TableCell className="bg-green-50 font-bold">
             OPERATING PROFIT
           </TableCell>
-          <TableCell className="text-right">
+          <TableCell className={`text-right ${operatingProfitBudget < 0 ? 'text-red-600' : 'text-green-600'}`}>
             {formatCurrency(operatingProfitBudget)}
           </TableCell>
-          <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+          <TableCell className={`text-right w-14 min-w-[40px] max-w-[40px] ${(operatingProfitBudget / (turnoverItem?.budget_amount || 1)) < 0 ? 'text-red-600' : 'text-green-600'}`}>
             {formatPercentage(operatingProfitBudget / (turnoverItem?.budget_amount || 1))}
           </TableCell>
-          <TableCell className="text-right">
+          <TableCell className={`text-right ${operatingProfitActual < 0 ? 'text-red-600' : 'text-green-600'}`}>
             {formatCurrency(operatingProfitActual)}
           </TableCell>
-          <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+          <TableCell className={`text-right w-14 min-w-[40px] max-w-[40px] ${operatingProfitActualPercentage < 0 ? 'text-red-600' : 'text-green-600'}`}>
             {formatPercentage(operatingProfitActualPercentage / 100)}
           </TableCell>
-          <TableCell className="text-right">
+          <TableCell className={`text-right ${calculatedOperatingProfitForecast < 0 ? 'text-red-600' : 'text-green-600'}`}>
             {formatCurrency(calculatedOperatingProfitForecast)}
           </TableCell>
-          <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+          <TableCell className={`text-right w-14 min-w-[40px] max-w-[40px] ${operatingProfitForecastPercentage < 0 ? 'text-red-600' : 'text-green-600'}`}>
             {formatPercentage(operatingProfitForecastPercentage / 100)}
           </TableCell>
-          <TableCell className={`text-right ${getValueColor(operatingProfitVariance, false)}`}>
+          <TableCell className={`text-right ${operatingProfitVariance < 0 ? 'text-red-600' : 'text-green-600'}`}>
             {formatCurrency(operatingProfitVariance)}
           </TableCell>
         </TableRow>
