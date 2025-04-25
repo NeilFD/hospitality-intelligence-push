@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -55,13 +56,13 @@ export default function PLDashboard() {
         await updateAllForecasts(currentYear, currentMonth);
         
         try {
-          await supabase.rpc('refresh_budget_vs_actual');
-          console.log('Budget view refreshed');
+          // Using the updated function that returns a Promise
+          const refreshSuccess = await refreshBudgetVsActual();
+          console.log('Budget view refreshed:', refreshSuccess);
         } catch (err) {
           console.log('Error refreshing budget view:', err);
         }
         
-        await refreshBudgetVsActual();
         toast.success("Forecasts have been updated");
       } catch (err) {
         console.error('Failed to update forecasts:', err);
@@ -113,7 +114,9 @@ export default function PLDashboard() {
     try {
       await updateAllForecasts(currentYear, currentMonth);
       
-      await refreshBudgetVsActual();
+      // Using the updated function that returns a Promise
+      const refreshSuccess = await refreshBudgetVsActual();
+      console.log('Analytics data refreshed:', refreshSuccess);
       
       toast.success("Forecasts and analytics data updated successfully");
     } catch (err) {

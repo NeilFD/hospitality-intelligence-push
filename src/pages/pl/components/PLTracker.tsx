@@ -42,27 +42,27 @@ export function PLTracker({
   
   console.log("Processed budget data count:", processedBudgetData.length);
   
+  // Completely rewritten useEffect to properly handle promises
   useEffect(() => {
     const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
     console.log(`Initializing forecasts for ${currentYear}-${monthNumber}`);
     
-    const updateForecasts = async () => {
+    const initializeData = async () => {
       try {
-        const success = await updateAllForecasts(currentYear, monthNumber);
-        console.log('Forecasts updated successfully on component load:', success);
+        // First update forecasts
+        const forecastSuccess = await updateAllForecasts(currentYear, monthNumber);
+        console.log('Forecasts updated successfully:', forecastSuccess);
         
-        try {
-          const refreshSuccess = await refreshBudgetVsActual();
-          console.log('Budget vs actual refresh completed:', refreshSuccess);
-        } catch (refreshErr) {
-          console.error('Failed to refresh budget vs actual on component load:', refreshErr);
-        }
-      } catch (err) {
-        console.error('Failed to update forecasts on component load:', err);
+        // Then refresh budget vs actual data
+        const refreshSuccess = await refreshBudgetVsActual();
+        console.log('Budget vs actual refresh completed:', refreshSuccess);
+      } catch (error) {
+        console.error('Error during data initialization:', error);
       }
     };
     
-    updateForecasts();
+    // Execute the async function
+    initializeData();
   }, [currentMonthName, currentYear]);
   
   useEffect(() => {
@@ -100,28 +100,26 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithActuals);
   
+  // Completely rewritten save handler to properly handle promises
   const handleSaveWithAnalyticsUpdate = async (): Promise<boolean> => {
     try {
+      // First save forecast amounts
       const saveSuccess = await saveForecastAmounts();
-      
-      if (saveSuccess) {
-        // Store snapshot data
-        const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-        await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
-        
-        try {
-          const refreshSuccess = await refreshBudgetVsActual();
-          console.log('Analytics data refresh completed:', refreshSuccess);
-          return true;
-        } catch (refreshErr) {
-          console.error('Error refreshing analytics data:', refreshErr);
-          return false;
-        }
+      if (!saveSuccess) {
+        console.error('Failed to save forecast amounts');
+        return false;
       }
       
-      return false;
-    } catch (err) {
-      console.error('Error in handleSaveWithAnalyticsUpdate:', err);
+      // Then store snapshot data
+      const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
+      await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
+      
+      // Finally refresh analytics data
+      const refreshSuccess = await refreshBudgetVsActual();
+      console.log('Analytics data refresh completed:', refreshSuccess);
+      return true;
+    } catch (error) {
+      console.error('Error in save operation:', error);
       return false;
     }
   };
