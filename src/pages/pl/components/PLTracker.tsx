@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -40,11 +41,22 @@ export function PLTracker({
   // Debug log for all processed budget data
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // NEW: Initialize forecasts when component loads
+  // Initialize forecasts when component loads - CRITICAL to ensure forecasts exist
   useEffect(() => {
     const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
     console.log(`Initializing forecasts for ${currentYear}-${monthNumber}`);
-    updateAllForecasts(currentYear, monthNumber);
+    
+    // Force update of all forecasts in the database
+    const updateForecasts = async () => {
+      try {
+        await updateAllForecasts(currentYear, monthNumber);
+        console.log('Forecasts updated successfully on component load');
+      } catch (err) {
+        console.error('Failed to update forecasts on component load:', err);
+      }
+    };
+    
+    updateForecasts();
   }, [currentMonthName, currentYear]);
   
   // Keep original actual_amount values intact for special items like revenue, COS, wages

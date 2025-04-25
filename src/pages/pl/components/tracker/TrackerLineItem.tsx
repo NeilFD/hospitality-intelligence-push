@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -112,16 +113,20 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  let forecastAmount = 0;
+  // Calculate forecast amount - improved to always have a value
+  let forecastAmount = item.forecast_amount || 0;
   
-  if (actualAmount > 0 && dayOfMonth > 0) {
+  if (forecastAmount === 0 && actualAmount > 0 && dayOfMonth > 0) {
+    // If no forecast amount is set but we have actuals, calculate a projection
     forecastAmount = (actualAmount / dayOfMonth) * daysInMonth;
-  } else {
+  } else if (forecastAmount === 0) {
+    // Default to budget amount if no forecast or actuals
     forecastAmount = item.budget_amount || 0;
   }
     
   useEffect(() => {
     if (!isNaN(forecastAmount) && index >= 0) {
+      console.log(`Setting forecast for ${item.name}: ${forecastAmount}`);
       updateForecastAmount(index, forecastAmount.toString());
     }
   }, [forecastAmount, index, updateForecastAmount, item.name]);

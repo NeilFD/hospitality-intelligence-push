@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -124,7 +123,7 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   }
 
   // For revenue, COS, gross profit, and wages, use actual_amount if present
-  if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWages) && 
+  if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWagesItem) && 
       typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
     return Number(item.actual_amount);
   }
@@ -271,6 +270,74 @@ export function calculateForecastFromSettings(
   }
 }
 
+// New function to save forecast to database immediately
+async function saveForecastToDatabase(itemId: string, forecastAmount: number) {
+  try {
+    console.log(`Saving forecast amount ${forecastAmount} for item ID ${itemId}`);
+    
+    const { error } = await supabase
+      .from('budget_items')
+      .update({ 
+        forecast_amount: forecastAmount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', itemId);
+      
+    if (error) {
+      console.error(`Error updating forecast for item ${itemId}:`, error);
+    } else {
+      console.log(`Successfully updated forecast for item ${itemId} to ${forecastAmount}`);
+    }
+  } catch (err) {
+    console.error(`Error in database update for item ${itemId}:`, err);
+  }
+}
+
+// Run an immediate update of all forecasts in the system
+export async function updateAllForecasts(year: number, month: number) {
+  try {
+    console.log(`Fetching all budget items for ${year}-${month} to update forecasts`);
+    
+    const { data, error } = await supabase
+      .from('budget_items')
+      .select('*')
+      .eq('year', year)
+      .eq('month', month);
+      
+    if (error) {
+      console.error('Error fetching budget items:', error);
+      return;
+    }
+    
+    if (!data || data.length === 0) {
+      console.log('No budget items found to update');
+      return;
+    }
+    
+    console.log(`Found ${data.length} budget items to update forecasts for`);
+    
+    // Get the days in month for calculations
+    const daysInMonth = new Date(year, month, 0).getDate();
+    
+    // Calculate the day of month (use current day if we're in the current month)
+    const now = new Date();
+    const isCurrentMonth = now.getFullYear() === year && (now.getMonth() + 1) === month;
+    const dayOfMonth = isCurrentMonth ? now.getDate() : daysInMonth;
+    
+    // Process each item
+    for (const item of data) {
+      const forecast = getForecastAmount(item, year, month, daysInMonth, dayOfMonth);
+      console.log(`Calculated forecast for ${item.name}: ${forecast}`);
+    }
+    
+    console.log('Forecast update complete');
+    return true;
+  } catch (err) {
+    console.error('Error updating forecasts:', err);
+    return false;
+  }
+}
+
 export function getForecastAmount(
   item: PLTrackerBudgetItem | any,
   year: number,
@@ -400,72 +467,4 @@ export function getForecastAmount(
   
   // If all else fails, return the budget amount
   return item.budget_amount || 0;
-}
-
-// New function to save forecast to database immediately
-async function saveForecastToDatabase(itemId: string, forecastAmount: number) {
-  try {
-    console.log(`Saving forecast amount ${forecastAmount} for item ID ${itemId}`);
-    
-    const { error } = await supabase
-      .from('budget_items')
-      .update({ 
-        forecast_amount: forecastAmount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', itemId);
-      
-    if (error) {
-      console.error(`Error updating forecast for item ${itemId}:`, error);
-    } else {
-      console.log(`Successfully updated forecast for item ${itemId} to ${forecastAmount}`);
-    }
-  } catch (err) {
-    console.error(`Error in database update for item ${itemId}:`, err);
-  }
-}
-
-// Run an immediate update of all forecasts in the system
-export async function updateAllForecasts(year: number, month: number) {
-  try {
-    console.log(`Fetching all budget items for ${year}-${month} to update forecasts`);
-    
-    const { data, error } = await supabase
-      .from('budget_items')
-      .select('*')
-      .eq('year', year)
-      .eq('month', month);
-      
-    if (error) {
-      console.error('Error fetching budget items:', error);
-      return;
-    }
-    
-    if (!data || data.length === 0) {
-      console.log('No budget items found to update');
-      return;
-    }
-    
-    console.log(`Found ${data.length} budget items to update forecasts for`);
-    
-    // Get the days in month for calculations
-    const daysInMonth = new Date(year, month, 0).getDate();
-    
-    // Calculate the day of month (use current day if we're in the current month)
-    const now = new Date();
-    const isCurrentMonth = now.getFullYear() === year && (now.getMonth() + 1) === month;
-    const dayOfMonth = isCurrentMonth ? now.getDate() : daysInMonth;
-    
-    // Process each item
-    for (const item of data) {
-      const forecast = getForecastAmount(item, year, month, daysInMonth, dayOfMonth);
-      console.log(`Calculated forecast for ${item.name}: ${forecast}`);
-    }
-    
-    console.log('Forecast update complete');
-    return true;
-  } catch (err) {
-    console.error('Error updating forecasts:', err);
-    return false;
-  }
 }
