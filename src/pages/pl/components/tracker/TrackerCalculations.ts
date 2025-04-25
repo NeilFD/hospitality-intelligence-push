@@ -199,8 +199,8 @@ export function calculateForecastFromSettings(
 ): number {
   if (!settings) {
     // If there are no settings but we have actuals and days, use them for projection
-    if (actualAmount && actualAmount !== 0 && dayOfMonth && dayOfMonth > 0) {
-      return (actualAmount / dayOfMonth) * (daysInMonth || 30);
+    if (actualAmount && actualAmount !== 0 && dayOfMonth && dayOfMonth > 0 && daysInMonth) {
+      return (actualAmount / dayOfMonth) * daysInMonth;
     }
     return budgetAmount || 0;
   }
@@ -258,6 +258,14 @@ export function calculateForecastFromSettings(
       return (budgetAmount || 0) + dailyTotal;
     }
     
+    // NEW: Add mtd_projection method that specifically handles MTD projections
+    case 'mtd_projection': {
+      if (actualAmount && actualAmount !== 0 && dayOfMonth && dayOfMonth > 0 && daysInMonth) {
+        return (actualAmount / dayOfMonth) * daysInMonth;
+      }
+      return budgetAmount || 0;
+    }
+    
     default:
       return budgetAmount || 0;
   }
@@ -285,7 +293,7 @@ export function getForecastAmount(
   const actualAmount = getActualAmount(item);
   const itemName = item.name?.toLowerCase() || '';
   
-  // Always use MTD projection for revenue items and other special categories
+  // UPDATED: Handle special categories more aggressively with MTD projection
   const isRevenueItem = 
     itemName.includes('revenue') || 
     itemName.includes('sales') || 
@@ -303,11 +311,37 @@ export function getForecastAmount(
     itemName.includes('wages') ||
     itemName.includes('salaries');
   
-  // For revenue items or special categories with actual values, always use MTD projection
+  // UPDATED: For revenue items or special categories with actual values, always use MTD projection
+  // and make it more aggressive
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWagesItem) && 
       actualAmount && actualAmount !== 0 && dayOfMonth > 0) {
     // Calculate the daily average and project for the full month
-    return (actualAmount / dayOfMonth) * daysInMonth;
+    const projection = (actualAmount / dayOfMonth) * daysInMonth;
+    
+    // Store the forecast directly in the item object to ensure it's available for display
+    if (item.id) {
+      const forecastAmount = projection;
+      
+      // Use setTimeout to avoid blocking the UI while updating
+      setTimeout(async () => {
+        try {
+          const { error } = await supabase
+            .from('budget_items')
+            .update({ forecast_amount: forecastAmount })
+            .eq('id', item.id);
+            
+          if (error) {
+            console.error(`Error updating forecast for ${itemName}:`, error);
+          } else {
+            console.log(`Successfully updated forecast for ${itemName} to ${forecastAmount}`);
+          }
+        } catch (err) {
+          console.error(`Error in supabase update for ${itemName}:`, err);
+        }
+      }, 0);
+    }
+    
+    return projection;
   }
 
   // If forecast_amount is already set and not zero, use it
@@ -341,9 +375,65 @@ export function getForecastAmount(
   
   // Calculate the forecast amount based on the settings
   if (forecastSettings) {
-    return calculateForecastFromSettings(forecastSettings, item.budget_amount, actualAmount, daysInMonth, dayOfMonth);
+    const forecastAmount = calculateForecastFromSettings(
+      forecastSettings, 
+      item.budget_amount, 
+      actualAmount, 
+      daysInMonth, 
+      dayOfMonth
+    );
+    
+    // If we have an item ID, update the database directly
+    if (item.id) {
+      // Use setTimeout to avoid blocking the UI while updating
+      setTimeout(async () => {
+        try {
+          const { error } = await supabase
+            .from('budget_items')
+            .update({ forecast_amount: forecastAmount })
+            .eq('id', item.id);
+            
+          if (error) {
+            console.error(`Error updating forecast for ${itemName}:`, error);
+          } else {
+            console.log(`Successfully updated forecast for ${itemName} to ${forecastAmount}`);
+          }
+        } catch (err) {
+          console.error(`Error in supabase update for ${itemName}:`, err);
+        }
+      }, 0);
+    }
+    
+    return forecastAmount;
   }
   
-  // If no settings found, use the budget amount
+  // If no settings found, use direct MTD projection if we have actual data
+  if (actualAmount && actualAmount > 0 && dayOfMonth > 0) {
+    const projection = (actualAmount / dayOfMonth) * daysInMonth;
+    
+    // Update the database with the projection
+    if (item.id) {
+      setTimeout(async () => {
+        try {
+          const { error } = await supabase
+            .from('budget_items')
+            .update({ forecast_amount: projection })
+            .eq('id', item.id);
+            
+          if (error) {
+            console.error(`Error updating forecast for ${itemName}:`, error);
+          } else {
+            console.log(`Successfully updated forecast for ${itemName} to ${projection}`);
+          }
+        } catch (err) {
+          console.error(`Error in supabase update for ${itemName}:`, err);
+        }
+      }, 0);
+    }
+    
+    return projection;
+  }
+  
+  // If all else fails, return the budget amount
   return item.budget_amount || 0;
 }
