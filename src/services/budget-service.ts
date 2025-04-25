@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { DayInput } from '@/pages/pl/components/types/PLTrackerTypes';
 
@@ -102,76 +103,77 @@ export const saveDailyValues = async (
 
 export const fetchFoodCOSForMonth = async (year: number, month: number): Promise<number> => {
   try {
-    // Fetch all tracker_data entries for the given month and year for food module
-    const { data: trackerData, error } = await supabase
-      .from('tracker_data')
-      .select('id')
+    // Query budget_items table directly for Food Cost of Sales
+    const { data, error } = await supabase
+      .from('budget_items')
+      .select('actual_amount')
       .eq('year', year)
       .eq('month', month)
-      .eq('module_type', 'food');
+      .eq('name', 'Food Cost of Sales')
+      .single();
     
     if (error) {
-      console.error('Error fetching food tracker data:', error);
-      return 0;
+      console.error('Error fetching food COS from budget_items:', error);
+      
+      // Fallback to the tracker data if direct approach fails
+      return fetchCOSFromTracker('food', year, month);
     }
     
-    if (!trackerData || trackerData.length === 0) {
-      return 0;
+    if (data && data.actual_amount !== null) {
+      return Number(data.actual_amount);
     }
     
-    // Get all tracker_data ids for this month
-    const trackerIds = trackerData.map(item => item.id);
-    
-    // Fetch all purchases associated with these tracker_data records
-    const { data: purchases, error: purchasesError } = await supabase
-      .from('tracker_purchases')
-      .select('amount')
-      .in('tracker_data_id', trackerIds);
-    
-    if (purchasesError) {
-      console.error('Error fetching food purchases:', purchasesError);
-      return 0;
-    }
-    
-    // Fetch all credit notes associated with these tracker_data records
-    const { data: credits, error: creditsError } = await supabase
-      .from('tracker_credit_notes')
-      .select('amount')
-      .in('tracker_data_id', trackerIds);
-    
-    if (creditsError) {
-      console.error('Error fetching food credit notes:', creditsError);
-      return 0;
-    }
-    
-    // Calculate total purchases
-    const totalPurchases = purchases ? purchases.reduce((sum, item) => sum + Number(item.amount), 0) : 0;
-    
-    // Calculate total credits
-    const totalCredits = credits ? credits.reduce((sum, item) => sum + Number(item.amount), 0) : 0;
-    
-    // COS = Purchases - Credits
-    const totalCOS = totalPurchases - totalCredits;
-    
-    return totalCOS;
+    // Fallback to tracker data
+    return fetchCOSFromTracker('food', year, month);
   } catch (err) {
     console.error('Unexpected error calculating food COS:', err);
-    return 0;
+    return fetchCOSFromTracker('food', year, month);
   }
 };
 
 export const fetchBeverageCOSForMonth = async (year: number, month: number): Promise<number> => {
   try {
-    // Fetch all tracker_data entries for the given month and year for beverage module
+    // Query budget_items table directly for Beverage Cost of Sales
+    const { data, error } = await supabase
+      .from('budget_items')
+      .select('actual_amount')
+      .eq('year', year)
+      .eq('month', month)
+      .eq('name', 'Beverage Cost of Sales')
+      .single();
+    
+    if (error) {
+      console.error('Error fetching beverage COS from budget_items:', error);
+      
+      // Fallback to the tracker data if direct approach fails
+      return fetchCOSFromTracker('beverage', year, month);
+    }
+    
+    if (data && data.actual_amount !== null) {
+      return Number(data.actual_amount);
+    }
+    
+    // Fallback to tracker data
+    return fetchCOSFromTracker('beverage', year, month);
+  } catch (err) {
+    console.error('Unexpected error calculating beverage COS:', err);
+    return fetchCOSFromTracker('beverage', year, month);
+  }
+};
+
+// Helper function to fetch COS from tracker data
+const fetchCOSFromTracker = async (moduleType: 'food' | 'beverage', year: number, month: number): Promise<number> => {
+  try {
+    // Fetch all tracker_data entries for the given month and year for the module
     const { data: trackerData, error } = await supabase
       .from('tracker_data')
       .select('id')
       .eq('year', year)
       .eq('month', month)
-      .eq('module_type', 'beverage');
+      .eq('module_type', moduleType);
     
     if (error) {
-      console.error('Error fetching beverage tracker data:', error);
+      console.error(`Error fetching ${moduleType} tracker data:`, error);
       return 0;
     }
     
@@ -189,7 +191,7 @@ export const fetchBeverageCOSForMonth = async (year: number, month: number): Pro
       .in('tracker_data_id', trackerIds);
     
     if (purchasesError) {
-      console.error('Error fetching beverage purchases:', purchasesError);
+      console.error(`Error fetching ${moduleType} purchases:`, purchasesError);
       return 0;
     }
     
@@ -200,7 +202,7 @@ export const fetchBeverageCOSForMonth = async (year: number, month: number): Pro
       .in('tracker_data_id', trackerIds);
     
     if (creditsError) {
-      console.error('Error fetching beverage credit notes:', creditsError);
+      console.error(`Error fetching ${moduleType} credit notes:`, creditsError);
       return 0;
     }
     
@@ -215,7 +217,7 @@ export const fetchBeverageCOSForMonth = async (year: number, month: number): Pro
     
     return totalCOS;
   } catch (err) {
-    console.error('Unexpected error calculating beverage COS:', err);
+    console.error(`Unexpected error calculating ${moduleType} COS:`, err);
     return 0;
   }
 };
