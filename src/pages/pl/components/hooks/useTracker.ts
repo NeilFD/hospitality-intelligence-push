@@ -19,14 +19,14 @@ export function useTracker(currentYear: number, currentMonthName: string) {
       try {
         // Update forecasts
         console.log("Updating all forecasts...");
-        const forecastSuccess = await updateAllForecasts(currentYear, monthNumber);
-        console.log('Forecasts updated successfully:', forecastSuccess);
+        await updateAllForecasts(currentYear, monthNumber);
+        console.log('Forecasts updated successfully');
         
         // Refresh budget vs actual data
         console.log("Refreshing budget vs actual data...");
         try {
-          const refreshResult = await refreshBudgetVsActual();
-          console.log('Budget vs actual refresh completed:', refreshResult);
+          await refreshBudgetVsActual(); 
+          console.log('Budget vs actual refresh completed');
         } catch (refreshError) {
           console.warn('Non-critical error during budget vs actual refresh:', refreshError);
           // Continue even if this fails - it's not critical

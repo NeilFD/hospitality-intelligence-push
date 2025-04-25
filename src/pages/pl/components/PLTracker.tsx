@@ -81,22 +81,32 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithActuals);
   
-  const handleSaveWithAnalyticsUpdate = async (): Promise<boolean> => {
+  const handleSaveWithAnalyticsUpdate = async () => {
     try {
       // First save forecast amounts
+      toast.info("Saving data...");
+      setTrackedBudgetData(prev => [...prev]); // Force refresh UI
+      
       const saveSuccess = await saveForecastAmounts();
+      
       if (!saveSuccess) {
         console.error('Failed to save forecast amounts');
+        toast.error("Failed to save forecast amounts");
         return false;
       }
       
       // Then store snapshot data
       const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-      await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
       
-      // Show success message
-      toast.success("Data saved successfully");
-      return true;
+      try {
+        await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
+        toast.success("Data saved successfully");
+        return true;
+      } catch (snapshotError) {
+        console.error('Error storing snapshot:', snapshotError);
+        toast.warning("Data saved but snapshot creation failed");
+        return false;
+      }
     } catch (error) {
       console.error('Error in save operation:', error);
       toast.error("Failed to save data");
