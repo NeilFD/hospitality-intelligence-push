@@ -687,10 +687,12 @@ export type Database = {
         Row: {
           actual_amount: number | null
           budget_amount: number
+          budget_variance: number | null
           captured_at: string | null
           category: string
           created_at: string | null
           forecast_amount: number | null
+          forecast_variance: number | null
           id: string
           month: number
           name: string
@@ -700,10 +702,12 @@ export type Database = {
         Insert: {
           actual_amount?: number | null
           budget_amount: number
+          budget_variance?: number | null
           captured_at?: string | null
           category: string
           created_at?: string | null
           forecast_amount?: number | null
+          forecast_variance?: number | null
           id?: string
           month: number
           name: string
@@ -713,10 +717,12 @@ export type Database = {
         Update: {
           actual_amount?: number | null
           budget_amount?: number
+          budget_variance?: number | null
           captured_at?: string | null
           category?: string
           created_at?: string | null
           forecast_amount?: number | null
+          forecast_variance?: number | null
           id?: string
           month?: number
           name?: string
@@ -2072,6 +2078,8 @@ export type Database = {
           budget_amount: number
           actual_amount: number
           forecast_amount: number
+          budget_variance: number
+          forecast_variance: number
           captured_at: string
         }[]
       }

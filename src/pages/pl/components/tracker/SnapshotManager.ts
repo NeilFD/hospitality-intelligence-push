@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 
 export const storeTrackerSnapshot = async (
@@ -18,17 +18,21 @@ export const storeTrackerSnapshot = async (
     console.log(`After filtering, storing ${itemsToStore.length} significant items in snapshot`);
 
     // Store each item as a snapshot
-    const promises = itemsToStore.map(item => 
-      supabase.rpc('store_pl_snapshot', {
+    const promises = itemsToStore.map(item => {
+      const budgetAmount = item.budget_amount || 0;
+      const actualAmount = item.actual_amount || 0;
+      const forecastAmount = item.forecast_amount || 0;
+      
+      return supabase.rpc('store_pl_snapshot', {
         p_year: year,
         p_month: month,
         p_category: item.category,
         p_name: item.name,
-        p_budget_amount: item.budget_amount,
-        p_actual_amount: item.actual_amount || null,
-        p_forecast_amount: item.forecast_amount || null
-      })
-    );
+        p_budget_amount: budgetAmount,
+        p_actual_amount: actualAmount,
+        p_forecast_amount: forecastAmount
+      });
+    });
 
     const results = await Promise.all(promises);
     const failures = results.filter(result => result.error);
@@ -46,7 +50,18 @@ export const storeTrackerSnapshot = async (
   }
 };
 
-export const getLatestSnapshot = async (year: number, month: number) => {
+interface PLSnapshot {
+  category: string;
+  name: string;
+  budget_amount: number;
+  actual_amount: number | null;
+  forecast_amount: number | null;
+  budget_variance: number | null;
+  forecast_variance: number | null;
+  captured_at: string;
+}
+
+export const getLatestSnapshot = async (year: number, month: number): Promise<PLSnapshot[] | null> => {
   try {
     const { data, error } = await supabase.rpc('get_latest_pl_snapshots', {
       p_year: year,
@@ -60,3 +75,4 @@ export const getLatestSnapshot = async (year: number, month: number) => {
     return null;
   }
 };
+
