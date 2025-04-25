@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -26,7 +25,6 @@ export default function PLDashboard() {
   
   const [adminExpensesForecast, setAdminExpensesForecast] = useState<number>(0);
   const [operatingProfitForecast, setOperatingProfitForecast] = useState<number>(0);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   
   const handleMonthChange = (value: string) => {
     const month = parseInt(value);
@@ -51,51 +49,29 @@ export default function PLDashboard() {
     }
   };
   
-  // Function to perform a complete refresh of budget data
-  const performFullRefresh = async () => {
-    setIsRefreshing(true);
-    toast.info("Performing complete data refresh...");
-    
-    try {
-      // Step 1: Update all forecast values
-      await updateAllForecasts(currentYear, currentMonth);
-      
-      // Step 2: Refresh the budget_vs_actual view in the database
-      try {
-        await supabase.rpc('refresh_budget_vs_actual');
-        console.log('Budget vs actual view refreshed via RPC');
-      } catch (rpcErr) {
-        console.log('RPC refresh failed, using SQL refresh instead:', rpcErr);
-        
-        // If RPC fails, try refreshing with raw SQL (this should be handled by your backend)
-        const { error } = await supabase
-          .from('budget_vs_actual')
-          .select('count')
-          .limit(1);
-          
-        if (error) console.log('SQL refresh attempt error:', error);
-      }
-      
-      // Step 3: Force data refetch in React Query
-      await refreshBudgetVsActual();
-      
-      // Step 4: Manually invalidate queries to force reload
-      queryClient.invalidateQueries({
-        queryKey: ['budget-data', currentYear, currentMonth]
-      });
-      
-      toast.success("Data refresh completed");
-    } catch (err) {
-      console.error('Error during full refresh:', err);
-      toast.error("Error refreshing data");
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-  
   useEffect(() => {
     console.log(`Force updating forecasts for ${currentYear}-${currentMonth}`);
-    performFullRefresh();
+    
+    const forceUpdateForecasts = async () => {
+      try {
+        await updateAllForecasts(currentYear, currentMonth);
+        
+        try {
+          await supabase.rpc('refresh_budget_vs_actual');
+          console.log('Budget view refreshed');
+        } catch (err) {
+          console.log('Error refreshing budget view:', err);
+        }
+        
+        await refreshBudgetVsActual();
+        toast.success("Forecasts have been updated");
+      } catch (err) {
+        console.error('Failed to update forecasts:', err);
+        toast.error("Error updating forecasts");
+      }
+    };
+    
+    forceUpdateForecasts();
   }, [currentYear, currentMonth]);
   
   useEffect(() => {
@@ -128,15 +104,21 @@ export default function PLDashboard() {
 
   const {
     isLoading: isBudgetDataLoading,
-    processedBudgetData,
-    queryClient // Access the queryClient from the hook
+    processedBudgetData
   } = useBudgetData(currentYear, currentMonth);
   
-  const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading || isRefreshing;
+  const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
 
   const handleRefreshForecasts = async () => {
     toast.info("Updating forecasts...");
-    await performFullRefresh();
+    
+    try {
+      await updateAllForecasts(currentYear, currentMonth);
+      toast.success("Forecasts updated successfully");
+    } catch (err) {
+      console.error('Error updating forecasts:', err);
+      toast.error("Error updating forecasts");
+    }
   };
   
   useEffect(() => {
@@ -437,12 +419,8 @@ export default function PLDashboard() {
         <MonthYearSelector currentMonth={currentMonth} currentMonthName={currentMonthName} currentYear={currentYear} onMonthChange={handleMonthChange} onYearChange={handleYearChange} />
         
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefreshForecasts} 
-            disabled={isRefreshing}
-          >
-            {isRefreshing ? 'Refreshing...' : 'Refresh Forecasts'}
+          <Button variant="outline" onClick={handleRefreshForecasts}>
+            Refresh Forecasts
           </Button>
           
           <Button variant="outline" asChild>

@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BudgetItem } from '@/utils/budget/types';
-import { useQueryClient } from '@tanstack/react-query';
 
 // Type for processed budget data that extends BudgetItem but replaces budget with budget_amount
 export interface ProcessedBudgetItem extends Omit<BudgetItem, 'budget'> {
@@ -20,7 +20,6 @@ export const useBudgetData = (year: number, month: number) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [processedBudgetData, setProcessedBudgetData] = useState<ProcessedBudgetItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     const fetchBudgetData = async () => {
@@ -28,7 +27,7 @@ export const useBudgetData = (year: number, month: number) => {
       setError(null);
       
       try {
-        // Fetch budget data from Supabase with more direct query
+        // Fetch budget data from Supabase
         const { data: budgetData, error: budgetError } = await supabase
           .from('budget_items')
           .select('*')
@@ -48,11 +47,9 @@ export const useBudgetData = (year: number, month: number) => {
           return;
         }
         
-        console.log("Raw budget data from database:", budgetData);
-        
         // Process the budget data
         const processedData = processBudgetData(budgetData);
-        console.log("Processed budget data:", processedData.map(item => `${item.name}: Budget=${item.budget_amount}, Actual=${item.actual_amount}, Forecast=${item.forecast_amount}`));
+        console.log("Processed budget data:", processedData.map(item => `${item.name} (${item.category})`));
         setProcessedBudgetData(processedData);
       } catch (err) {
         console.error('Unexpected error in useBudgetData:', err);
@@ -368,5 +365,5 @@ export const useBudgetData = (year: number, month: number) => {
     return result;
   };
   
-  return { isLoading, processedBudgetData, error, queryClient };
+  return { isLoading, processedBudgetData, error };
 };
