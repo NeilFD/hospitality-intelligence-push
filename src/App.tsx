@@ -32,6 +32,7 @@ import WeeklyForecast from '@/pages/pl/WeeklyForecast';
 
 // Import Performance and Team components
 import PerformanceDashboard from '@/pages/performance/Dashboard';
+import ConversationHistory from '@/pages/performance/ConversationHistory';
 import TeamDashboard from '@/pages/team/Dashboard';
 import TeamNoticeboard from '@/pages/team/Noticeboard';
 import TeamChat from '@/pages/team/Chat';
@@ -151,6 +152,7 @@ function App() {
                 
                 {/* Performance Module Routes */}
                 <Route path="/performance/dashboard" element={<Layout><PerformanceDashboard /></Layout>} />
+                <Route path="/performance/conversation-history" element={<Layout><ConversationHistory /></Layout>} />
                 <Route path="/performance/wage-optimization" element={<Layout><WageOptimization /></Layout>} />
                 
                 {/* Team Module Routes */}

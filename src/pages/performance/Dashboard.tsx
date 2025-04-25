@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -97,7 +96,7 @@ export default function PerformanceDashboard() {
           let hasData = false;
           for (const month of bevData.months) {
             if (month.weeks) {
-              for (const week of month.weeks) {
+              for (const week of bevData.weeks) {
                 if (week.days) {
                   for (const day of week.days) {
                     if (day.revenue && Number(day.revenue) > 0) {
