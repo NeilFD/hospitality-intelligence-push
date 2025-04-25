@@ -1742,26 +1742,26 @@ export type Database = {
           year: number | null
         }
         Insert: {
-          actual_amount?: number | null
+          actual_amount?: never
           budget_achievement_percentage?: never
           budget_amount?: number | null
           budget_variance?: never
           category?: string | null
           forecast_achievement_percentage?: never
-          forecast_amount?: number | null
+          forecast_amount?: never
           forecast_variance?: never
           month?: number | null
           name?: string | null
           year?: number | null
         }
         Update: {
-          actual_amount?: number | null
+          actual_amount?: never
           budget_achievement_percentage?: never
           budget_amount?: number | null
           budget_variance?: never
           category?: string | null
           forecast_achievement_percentage?: never
-          forecast_amount?: number | null
+          forecast_amount?: never
           forecast_variance?: never
           month?: number | null
           name?: string | null

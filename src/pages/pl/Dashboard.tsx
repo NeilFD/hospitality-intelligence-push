@@ -171,7 +171,23 @@ export default function PLDashboard() {
     return `temp-id-${name.toLowerCase().replace(/\s+/g, '-')}`;
   };
 
-  const updatedBudgetData = processedBudgetData.map(item => {
+  const processedDataWithActuals = processedBudgetData.map(item => {
+    if (!item.id) {
+      console.warn(`Item ${item.name} missing ID, generating one`);
+      return {
+        ...item,
+        id: generateTempId(item.name),
+        actual_amount: item.actual_amount
+      };
+    }
+    
+    return {
+      ...item,
+      actual_amount: item.actual_amount
+    };
+  }) as PLTrackerBudgetItem[];
+
+  const updatedBudgetData = processedDataWithActuals.map(item => {
     if (!item || !item.name) {
       console.warn("Warning: Found item without name in updatedBudgetData");
       return item;
