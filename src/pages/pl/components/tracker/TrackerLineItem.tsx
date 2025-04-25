@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
@@ -66,14 +65,14 @@ export function TrackerLineItem({
   const isCOS = item.name.toLowerCase().includes('cost of sales') || 
                item.name.toLowerCase().includes('cos');
                
-  const isWagesItem = item.name.toLowerCase().includes('wages and salaries') ||
+  const isWages = item.name.toLowerCase().includes('wages and salaries') ||
                  item.name.toLowerCase() === 'wages' ||
                  item.name.toLowerCase() === 'salaries';
                  
   const isTotalItem = item.name.toLowerCase().includes('total');
   
   const isAdminExpense = !isRevenue && !isCOS && !isGrossProfit && !isOperatingProfit && 
-                        !isWagesItem && !item.isHeader && !isTotalItem;
+                        !isWages && !item.isHeader && !isTotalItem;
                  
   const isHighlightedItem = item.isHighlighted;
   
@@ -113,20 +112,16 @@ export function TrackerLineItem({
     percentageDisplay = `${(item.budget_percentage * 100).toFixed(2)}%`;
   }
 
-  // Calculate forecast amount - improved to always have a value
-  let forecastAmount = item.forecast_amount || 0;
+  let forecastAmount = 0;
   
-  if (forecastAmount === 0 && actualAmount > 0 && dayOfMonth > 0) {
-    // If no forecast amount is set but we have actuals, calculate a projection
+  if (actualAmount > 0 && dayOfMonth > 0) {
     forecastAmount = (actualAmount / dayOfMonth) * daysInMonth;
-  } else if (forecastAmount === 0) {
-    // Default to budget amount if no forecast or actuals
+  } else {
     forecastAmount = item.budget_amount || 0;
   }
     
   useEffect(() => {
     if (!isNaN(forecastAmount) && index >= 0) {
-      console.log(`Setting forecast for ${item.name}: ${forecastAmount}`);
       updateForecastAmount(index, forecastAmount.toString());
     }
   }, [forecastAmount, index, updateForecastAmount, item.name]);

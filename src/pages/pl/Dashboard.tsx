@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -10,11 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
 import { fetchTotalWagesForMonth } from '@/services/wages-service';
-import { getActualAmount, getForecastAmount, updateAllForecasts } from './components/tracker/TrackerCalculations';
-import { refreshBudgetVsActual } from './components/tracker/TrackerCalculations';
-import { supabase } from '@/lib/supabase';
-import { toast } from "sonner";
-import { PLTrackerBudgetItem } from './components/types/PLTrackerTypes';
+import { getActualAmount, getForecastAmount } from './components/tracker/TrackerCalculations';
 
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
@@ -23,6 +20,7 @@ export default function PLDashboard() {
   }));
   const [currentYear, setCurrentYear] = useState<number>(2025);
   
+  // State to store the forecast values from PLReportTable
   const [adminExpensesForecast, setAdminExpensesForecast] = useState<number>(0);
   const [operatingProfitForecast, setOperatingProfitForecast] = useState<number>(0);
   
@@ -38,6 +36,7 @@ export default function PLDashboard() {
     setCurrentYear(parseInt(value));
   };
   
+  // Event handler for forecast updates
   const handleForecastsUpdated = (event: CustomEvent) => {
     if (event.detail) {
       if (event.detail.adminExpensesForecast !== undefined) {
@@ -50,31 +49,7 @@ export default function PLDashboard() {
   };
   
   useEffect(() => {
-    console.log(`Force updating forecasts for ${currentYear}-${currentMonth}`);
-    
-    const forceUpdateForecasts = async () => {
-      try {
-        await updateAllForecasts(currentYear, currentMonth);
-        
-        try {
-          await supabase.rpc('refresh_budget_vs_actual');
-          console.log('Budget view refreshed');
-        } catch (err) {
-          console.log('Error refreshing budget view:', err);
-        }
-        
-        await refreshBudgetVsActual();
-        toast.success("Forecasts have been updated");
-      } catch (err) {
-        console.error('Failed to update forecasts:', err);
-        toast.error("Error updating forecasts");
-      }
-    };
-    
-    forceUpdateForecasts();
-  }, [currentYear, currentMonth]);
-  
-  useEffect(() => {
+    // Add event listener for forecast updates from PLReportTable
     window.addEventListener('pl-forecasts-updated', handleForecastsUpdated as EventListener);
     
     return () => {
@@ -108,18 +83,6 @@ export default function PLDashboard() {
   } = useBudgetData(currentYear, currentMonth);
   
   const isLoading = isBudgetDataLoading || isMasterDataLoading || isFoodCOSLoading || isBeverageCOSLoading || isWagesLoading;
-
-  const handleRefreshForecasts = async () => {
-    toast.info("Updating forecasts...");
-    
-    try {
-      await updateAllForecasts(currentYear, currentMonth);
-      toast.success("Forecasts updated successfully");
-    } catch (err) {
-      console.error('Error updating forecasts:', err);
-      toast.error("Error updating forecasts");
-    }
-  };
   
   useEffect(() => {
     console.log("Loading forecast settings for all items");
@@ -156,8 +119,6 @@ export default function PLDashboard() {
   useEffect(() => {
     const handleForecastUpdate = (event: any) => {
       console.log("Dashboard: Forecast updated event received", event.detail);
-      
-      handleRefreshForecasts();
     };
 
     window.addEventListener('forecast-updated', handleForecastUpdate);
@@ -171,23 +132,7 @@ export default function PLDashboard() {
     return `temp-id-${name.toLowerCase().replace(/\s+/g, '-')}`;
   };
 
-  const processedDataWithActuals = processedBudgetData.map(item => {
-    if (!item.id) {
-      console.warn(`Item ${item.name} missing ID, generating one`);
-      return {
-        ...item,
-        id: generateTempId(item.name),
-        actual_amount: item.actual_amount
-      };
-    }
-    
-    return {
-      ...item,
-      actual_amount: item.actual_amount
-    };
-  }) as PLTrackerBudgetItem[];
-
-  const updatedBudgetData = processedDataWithActuals.map(item => {
+  const updatedBudgetData = processedBudgetData.map(item => {
     if (!item || !item.name) {
       console.warn("Warning: Found item without name in updatedBudgetData");
       return item;
@@ -277,14 +222,6 @@ export default function PLDashboard() {
     
     const result = { ...item };
     
-    if (!result.forecast_amount || result.forecast_amount === 0) {
-      result.forecast_amount = getForecastAmount(
-        result, 
-        currentYear, 
-        currentMonth
-      );
-    }
-    
     if (!result.forecast_settings) {
       const cacheKey = `forecast_${item.name}_${currentYear}_${currentMonth}`;
       const cachedSettings = localStorage.getItem(cacheKey);
@@ -342,11 +279,13 @@ export default function PLDashboard() {
     id: costOfSalesItem?.id || generateTempId('cost-of-sales')
   }, currentYear, currentMonth) : 0;
   
+  // Use the state values if available, otherwise fall back to the previous calculation
   const effectiveAdminExpensesForecast = adminExpensesForecast || (adminExpensesItem ? getForecastAmount({
     ...(adminExpensesItem || {}),
     id: adminExpensesItem?.id || generateTempId('admin-expenses')
   }, currentYear, currentMonth) : 0);
                             
+  // Use the state values if available, otherwise fall back to the previous calculation
   const effectiveOperatingProfitForecast = operatingProfitForecast || (operatingProfitItem ? getForecastAmount({
     ...(operatingProfitItem || {}), 
     id: operatingProfitItem?.id || generateTempId('operating-profit')
@@ -372,45 +311,27 @@ export default function PLDashboard() {
     id: operatingProfitItem.id || generateTempId('operating-profit')
   }) : 0;
   
-  console.log("Budget items loaded:", {
-    turnoverItem,
-    costOfSalesItem,
-    adminExpensesItem,
-    operatingProfitItem
-  });
+  const chartData = [{
+    name: 'Budget',
+    revenue: turnoverItem?.budget_amount || 0,
+    cosCosts: costOfSalesItem?.budget_amount || 0,
+    adminCosts: adminExpensesItem?.budget_amount || 0,
+    ebitda: operatingProfitItem?.budget_amount || 0
+  }, {
+    name: 'MTD Actual',
+    revenue: turnoverActual,
+    cosCosts: costOfSalesActual,
+    adminCosts: adminExpensesActual,
+    ebitda: operatingProfitActual
+  }, {
+    name: 'Forecast',
+    revenue: turnoverForecast,
+    cosCosts: costOfSalesForecast,
+    adminCosts: effectiveAdminExpensesForecast,
+    ebitda: effectiveOperatingProfitForecast
+  }];
   
-  console.log("MTD Actual values:", {
-    turnoverActual,
-    costOfSalesActual,
-    adminExpensesActual,
-    operatingProfitActual
-  });
-
-  const chartData = [
-    {
-      name: 'Budget',
-      revenue: Number(turnoverItem?.budget_amount || 0),
-      cosCosts: Number(costOfSalesItem?.budget_amount || 0),
-      adminCosts: Number(adminExpensesItem?.budget_amount || 0),
-      ebitda: Number(operatingProfitItem?.budget_amount || 0)
-    }, 
-    {
-      name: 'MTD Actual',
-      revenue: Number(turnoverActual || 0),
-      cosCosts: Number(costOfSalesActual || 0), 
-      adminCosts: Number(adminExpensesActual || 0),
-      ebitda: Number(operatingProfitActual || 0)
-    }, 
-    {
-      name: 'Forecast',
-      revenue: Number(turnoverForecast || 0),
-      cosCosts: Number(costOfSalesForecast || 0),
-      adminCosts: Number(effectiveAdminExpensesForecast || 0),
-      ebitda: Number(effectiveOperatingProfitForecast || 0)
-    }
-  ];
-  
-  console.log("Chart data for Performance Chart:", chartData);
+  console.log("Chart data:", chartData);
   
   return <div className="container py-8 text-[#48495e]">
       <h1 className="text-3xl font-bold mb-6 text-center text-[#342640]">P&L Tracker Dashboard</h1>
@@ -418,18 +339,12 @@ export default function PLDashboard() {
       <div className="flex justify-between items-center mb-6">
         <MonthYearSelector currentMonth={currentMonth} currentMonthName={currentMonthName} currentYear={currentYear} onMonthChange={handleMonthChange} onYearChange={handleYearChange} />
         
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefreshForecasts}>
-            Refresh Forecasts
-          </Button>
-          
-          <Button variant="outline" asChild>
-            <Link to="/pl/budget" className="flex items-center gap-2">
-              <FileUp size={16} />
-              Manage Budget Data
-            </Link>
-          </Button>
-        </div>
+        <Button variant="outline" asChild>
+          <Link to="/pl/budget" className="flex items-center gap-2">
+            <FileUp size={16} />
+            Manage Budget Data
+          </Link>
+        </Button>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
 import { ProcessedBudgetItem } from '../hooks/useBudgetData';
@@ -6,14 +6,7 @@ import { TrackerHeader } from './tracker/TrackerHeader';
 import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
-import { 
-  calculateProRatedBudget, 
-  getActualAmount, 
-  calculateProRatedActual, 
-  calculateSummaryProRatedBudget,
-  updateAllForecasts,
-  getForecastAmount
-} from './tracker/TrackerCalculations';
+import { calculateProRatedBudget, getActualAmount, calculateProRatedActual, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -41,45 +34,10 @@ export function PLTracker({
   // Debug log for all processed budget data
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // Initialize forecasts when component loads - CRITICAL to ensure forecasts exist
-  useEffect(() => {
-    const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-    console.log(`Initializing forecasts for ${currentYear}-${monthNumber}`);
-    
-    // Force update of all forecasts in the database
-    const updateForecasts = async () => {
-      try {
-        const success = await updateAllForecasts(currentYear, monthNumber);
-        console.log('Forecasts updated successfully on component load:', success);
-      } catch (err) {
-        console.error('Failed to update forecasts on component load:', err);
-      }
-    };
-    
-    updateForecasts();
-  }, [currentMonthName, currentYear]);
-  
-  // Pre-calculate forecast values for all items
-  useEffect(() => {
-    if (processedBudgetData && processedBudgetData.length > 0) {
-      console.log('Pre-calculating forecast values for all items');
-      
-      const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-      
-      processedBudgetData.forEach(item => {
-        // Only process items with IDs
-        if (item.id) {
-          const forecast = getForecastAmount(item, currentYear, monthNumber, daysInMonth, actualDayOfMonth);
-          console.log(`Pre-calculated forecast for ${item.name}: ${forecast}`);
-        }
-      });
-    }
-  }, [processedBudgetData, currentMonthName, currentYear, daysInMonth, actualDayOfMonth]);
-  
   // Keep original actual_amount values intact for special items like revenue, COS, wages
   const processedDataWithActuals = processedBudgetData.map(item => {
     // Log each item's budget and actual amount for debugging
-    console.log(`Processing ${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}, forecast=${item.forecast_amount}`);
+    console.log(`Processing ${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}`);
     
     return {
       ...item,
@@ -102,8 +60,7 @@ export function PLTracker({
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
     name: item.name,
     actual_amount: item.actual_amount,
-    budget_amount: item.budget_amount,
-    forecast_amount: item.forecast_amount
+    budget_amount: item.budget_amount
   })));
   
   const filteredBudgetData = trackedBudgetData.filter(item => 

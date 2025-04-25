@@ -1742,26 +1742,26 @@ export type Database = {
           year: number | null
         }
         Insert: {
-          actual_amount?: never
+          actual_amount?: number | null
           budget_achievement_percentage?: never
           budget_amount?: number | null
           budget_variance?: never
           category?: string | null
           forecast_achievement_percentage?: never
-          forecast_amount?: never
+          forecast_amount?: number | null
           forecast_variance?: never
           month?: number | null
           name?: string | null
           year?: number | null
         }
         Update: {
-          actual_amount?: never
+          actual_amount?: number | null
           budget_achievement_percentage?: never
           budget_amount?: number | null
           budget_variance?: never
           category?: string | null
           forecast_achievement_percentage?: never
-          forecast_amount?: never
+          forecast_amount?: number | null
           forecast_variance?: never
           month?: number | null
           name?: string | null
@@ -1792,22 +1792,6 @@ export type Database = {
           weather_description: string | null
           week_number: number | null
           wind_speed: number | null
-          year: number | null
-        }
-        Relationships: []
-      }
-      financial_performance_analysis: {
-        Row: {
-          budget_achievement_percentage: number | null
-          budget_amount: number | null
-          budget_variance: number | null
-          date: string | null
-          gp_percentage: number | null
-          month: number | null
-          net_profit: number | null
-          revenue: number | null
-          total_wages: number | null
-          wage_percentage: number | null
           year: number | null
         }
         Relationships: []
@@ -2117,18 +2101,6 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
-      }
-      refresh_all_forecasts: {
-        Args: { year_val: number; month_val: number }
-        Returns: boolean
-      }
-      refresh_budget_vs_actual: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      refresh_financial_performance_analysis: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       set_active_theme: {
         Args: { theme_id: string }
