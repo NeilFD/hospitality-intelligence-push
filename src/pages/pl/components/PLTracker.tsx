@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -103,10 +104,12 @@ export function PLTracker({
           new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1
         );
         
+        // Store the result of refreshBudgetVsActual as a boolean
         const refreshSuccess = await refreshBudgetVsActual();
         
         console.log('Analytics data refreshed after saving forecasts:', refreshSuccess);
         
+        // Now both values are properly typed as booleans
         return saveSuccess && refreshSuccess;
       }
       
