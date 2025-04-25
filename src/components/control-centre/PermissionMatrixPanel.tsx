@@ -135,21 +135,32 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
     }
   };
 
-  // Save changes to the database
+  // Save changes to the database with improved error handling
   const saveChanges = async () => {
     try {
       setSaving(true);
       
-      console.log('Saving permission matrix:', matrix);
+      console.log('Saving permission matrix:', JSON.stringify(matrix, null, 2));
+      
+      // Validate matrix structure before sending
+      if (!Array.isArray(matrix) || matrix.length === 0) {
+        throw new Error('Invalid matrix structure: matrix must be a non-empty array');
+      }
+      
+      // Ensure that each role has valid modulePermissions
+      const validMatrix = matrix.map(role => ({
+        ...role,
+        modulePermissions: Array.isArray(role.modulePermissions) ? role.modulePermissions : []
+      }));
       
       // Call the RPC function directly using Supabase client
       const { data, error: updateError } = await supabase.rpc('update_permission_matrix', {
-        matrix: matrix
+        matrix: validMatrix
       });
       
       if (updateError) {
         console.error('Error updating permission matrix:', updateError);
-        toast.error('Failed to save permission matrix');
+        toast.error('Failed to save permission matrix: ' + updateError.message);
         return;
       }
       
@@ -157,7 +168,8 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
       toast.success('Permission matrix saved successfully');
     } catch (error) {
       console.error('Exception saving permission matrix:', error);
-      toast.error('Failed to save permission matrix');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to save permission matrix: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
