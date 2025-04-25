@@ -1796,6 +1796,22 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_performance_analysis: {
+        Row: {
+          budget_achievement_percentage: number | null
+          budget_amount: number | null
+          budget_variance: number | null
+          date: string | null
+          gp_percentage: number | null
+          month: number | null
+          net_profit: number | null
+          revenue: number | null
+          total_wages: number | null
+          wage_percentage: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
       food_performance_analysis: {
         Row: {
           covers: number | null
@@ -2101,6 +2117,10 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
+      }
+      refresh_financial_performance_analysis: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       set_active_theme: {
         Args: { theme_id: string }

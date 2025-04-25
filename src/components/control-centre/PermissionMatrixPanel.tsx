@@ -63,60 +63,70 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
     fetchPermissionMatrix();
   }, [initialMatrix]);
 
-  // Toggle module access
+  // Toggle module access with error handling
   const toggleModuleAccess = (roleId: string, moduleId: string) => {
-    setMatrix(prevMatrix => 
-      prevMatrix.map(role => 
-        role.roleId === roleId 
-          ? {
-              ...role,
-              modulePermissions: role.modulePermissions.map(module => 
-                module.moduleId === moduleId 
-                  ? {
-                      ...module,
-                      hasAccess: !module.hasAccess,
-                      // If turning off module access, also turn off page access
-                      pagePermissions: module.pagePermissions.map(page => ({
-                        ...page,
-                        hasAccess: !module.hasAccess ? false : page.hasAccess
-                      }))
-                    }
-                  : module
-              )
-            }
-          : role
-      )
-    );
+    try {
+      setMatrix(prevMatrix => 
+        prevMatrix.map(role => 
+          role.roleId === roleId 
+            ? {
+                ...role,
+                modulePermissions: role.modulePermissions.map(module => 
+                  module.moduleId === moduleId 
+                    ? {
+                        ...module,
+                        hasAccess: !module.hasAccess,
+                        // If turning off module access, also turn off page access
+                        pagePermissions: module.pagePermissions.map(page => ({
+                          ...page,
+                          hasAccess: !module.hasAccess ? false : page.hasAccess
+                        }))
+                      }
+                    : module
+                )
+              }
+            : role
+        )
+      );
+    } catch (err) {
+      console.error('Error toggling module access:', err);
+      toast.error('Failed to update permissions. Please try again.');
+    }
   };
 
-  // Toggle page access
+  // Toggle page access with error handling
   const togglePageAccess = (roleId: string, moduleId: string, pageId: string) => {
-    setMatrix(prevMatrix => 
-      prevMatrix.map(role => 
-        role.roleId === roleId 
-          ? {
-              ...role,
-              modulePermissions: role.modulePermissions.map(module => 
-                module.moduleId === moduleId 
-                  ? {
-                      ...module,
-                      pagePermissions: module.pagePermissions.map(page => 
-                        page.pageId === pageId 
-                          ? { ...page, hasAccess: !page.hasAccess }
-                          : page
-                      ),
-                      // If any page has access, the module must have access
-                      hasAccess: module.hasAccess || 
-                        module.pagePermissions.some(page => 
-                          page.pageId === pageId && !page.hasAccess
-                        )
-                    }
-                  : module
-              )
-            }
-          : role
-      )
-    );
+    try {
+      setMatrix(prevMatrix => 
+        prevMatrix.map(role => 
+          role.roleId === roleId 
+            ? {
+                ...role,
+                modulePermissions: role.modulePermissions.map(module => 
+                  module.moduleId === moduleId 
+                    ? {
+                        ...module,
+                        pagePermissions: module.pagePermissions.map(page => 
+                          page.pageId === pageId 
+                            ? { ...page, hasAccess: !page.hasAccess }
+                            : page
+                        ),
+                        // If any page has access, the module must have access
+                        hasAccess: module.hasAccess || 
+                          module.pagePermissions.some(page => 
+                            page.pageId === pageId && !page.hasAccess
+                          )
+                      }
+                    : module
+                )
+              }
+            : role
+        )
+      );
+    } catch (err) {
+      console.error('Error toggling page access:', err);
+      toast.error('Failed to update permissions. Please try again.');
+    }
   };
 
   // Save changes to the database
