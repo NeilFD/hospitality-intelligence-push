@@ -1,5 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
+import { updateAllForecasts } from '@/pages/pl/components/tracker/TrackerCalculations';
 
 /**
  * Fetch budget items for a specific year and month
@@ -15,5 +16,13 @@ export const fetchBudgetItems = async (year: number, month: number) => {
     .eq('month', month);
     
   if (error) throw error;
+  
+  // After fetching, ensure forecasts are up to date
+  try {
+    await updateAllForecasts(year, month);
+  } catch (err) {
+    console.warn('Failed to update forecasts:', err);
+  }
+  
   return data;
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
 import { ProcessedBudgetItem } from '../hooks/useBudgetData';
@@ -6,7 +6,13 @@ import { TrackerHeader } from './tracker/TrackerHeader';
 import { PLTrackerContent } from './tracker/PLTrackerContent';
 import { useDateCalculations } from './hooks/useDateCalculations';
 import { useTrackerData } from './hooks/useTrackerData';
-import { calculateProRatedBudget, getActualAmount, calculateProRatedActual, calculateSummaryProRatedBudget } from './tracker/TrackerCalculations';
+import { 
+  calculateProRatedBudget, 
+  getActualAmount, 
+  calculateProRatedActual, 
+  calculateSummaryProRatedBudget,
+  updateAllForecasts
+} from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -33,6 +39,13 @@ export function PLTracker({
   
   // Debug log for all processed budget data
   console.log("Processed budget data count:", processedBudgetData.length);
+  
+  // NEW: Initialize forecasts when component loads
+  useEffect(() => {
+    const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
+    console.log(`Initializing forecasts for ${currentYear}-${monthNumber}`);
+    updateAllForecasts(currentYear, monthNumber);
+  }, [currentMonthName, currentYear]);
   
   // Keep original actual_amount values intact for special items like revenue, COS, wages
   const processedDataWithActuals = processedBudgetData.map(item => {
