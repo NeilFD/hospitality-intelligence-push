@@ -4,9 +4,6 @@ import { updateAllForecasts } from '@/pages/pl/components/tracker/TrackerCalcula
 
 /**
  * Fetch budget items for a specific year and month
- * @param year The budget year
- * @param month The budget month 
- * @returns Promise that resolves to an array of budget items
  */
 export const fetchBudgetItems = async (year: number, month: number) => {
   console.log(`Fetching budget items for ${year}-${month}`);
@@ -34,6 +31,9 @@ export const fetchBudgetItems = async (year: number, month: number) => {
   if (data && data.length > 0) {
     // Get current date info for projection
     const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     const isCurrentMonth = (year === currentYear && month === currentMonth);
@@ -41,10 +41,17 @@ export const fetchBudgetItems = async (year: number, month: number) => {
     // Only apply special handling if we're looking at the current month
     if (isCurrentMonth) {
       const daysInMonth = new Date(year, month, 0).getDate();
-      const dayOfMonth = Math.min(now.getDate(), daysInMonth);
+      const dayOfMonth = yesterday.getDate(); // Use yesterday's date
+      
+      console.log('Using MTD projection with:', {
+        year,
+        month,
+        daysInMonth,
+        dayOfMonth: dayOfMonth,
+        yesterday: yesterday.toISOString()
+      });
       
       // Process each item that needs special forecast calculation
-      // Create a new array instead of modifying the original
       return data.map(item => {
         const itemName = (item.name || '').toLowerCase();
         
@@ -65,7 +72,12 @@ export const fetchBudgetItems = async (year: number, month: number) => {
             // Calculate the daily average and project for the full month
             const projection = (item.actual_amount / dayOfMonth) * daysInMonth;
             
-            console.log(`Applying MTD projection for ${item.name}: ${item.actual_amount} → ${projection}`);
+            console.log(`Applying MTD projection for ${item.name}:`, {
+              actual: item.actual_amount,
+              dayOfMonth,
+              daysInMonth,
+              projection
+            });
             
             // Create a new object instead of modifying the original
             return {

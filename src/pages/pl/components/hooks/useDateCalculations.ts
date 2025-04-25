@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 export function useDateCalculations(currentMonthName: string, currentYear: number) {
@@ -21,8 +20,26 @@ export function useDateCalculations(currentMonthName: string, currentYear: numbe
     const lastDay = new Date(Date.UTC(currentYear, month + 1, 0)).getDate();
     setDaysInMonth(lastDay);
     
-    // Set day of month (capped at max days in month)
-    setDayOfMonth(Math.min(yesterday.getDate(), lastDay));
+    // Set day of month based on yesterday's date if we're in current month,
+    // otherwise use the last day of the selected month
+    const isCurrentMonth = today.getFullYear() === currentYear && 
+                         today.getMonth() === month;
+                         
+    console.log('Date calculations:', {
+      currentYear,
+      currentMonthName,
+      isCurrentMonth,
+      yesterdayDate: yesterday.getDate(),
+      daysInMonth: lastDay
+    });
+    
+    if (isCurrentMonth) {
+      // Use yesterday's date for current month
+      setDayOfMonth(yesterday.getDate());
+    } else {
+      // For past or future months, use the last day of that month
+      setDayOfMonth(lastDay);
+    }
   }, [currentMonthName, currentYear]);
 
   return {
