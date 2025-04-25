@@ -13,10 +13,11 @@ import {
   calculateProRatedActual, 
   calculateSummaryProRatedBudget,
   updateAllForecasts,
-  getForecastAmount,
-  refreshBudgetVsActual
+  getForecastAmount
 } from './tracker/TrackerCalculations';
 import { storeTrackerSnapshot } from './tracker/SnapshotManager';
+import { toast } from "sonner";
+import { useTracker } from './hooks/useTracker';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -42,28 +43,8 @@ export function PLTracker({
   
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // Completely rewritten useEffect to properly handle promises
-  useEffect(() => {
-    const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-    console.log(`Initializing forecasts for ${currentYear}-${monthNumber}`);
-    
-    const initializeData = async () => {
-      try {
-        // First update forecasts
-        const forecastSuccess = await updateAllForecasts(currentYear, monthNumber);
-        console.log('Forecasts updated successfully:', forecastSuccess);
-        
-        // Then refresh budget vs actual data
-        const refreshSuccess = await refreshBudgetVsActual();
-        console.log('Budget vs actual refresh completed:', refreshSuccess);
-      } catch (error) {
-        console.error('Error during data initialization:', error);
-      }
-    };
-    
-    // Execute the async function
-    initializeData();
-  }, [currentMonthName, currentYear]);
+  // Use the new hook to handle all data initialization and analytics refreshes
+  const { isInitializing } = useTracker(currentYear, currentMonthName);
   
   useEffect(() => {
     if (processedBudgetData && processedBudgetData.length > 0) {
@@ -100,7 +81,6 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithActuals);
   
-  // Completely rewritten save handler to properly handle promises
   const handleSaveWithAnalyticsUpdate = async (): Promise<boolean> => {
     try {
       // First save forecast amounts
@@ -114,12 +94,12 @@ export function PLTracker({
       const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
       await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
       
-      // Finally refresh analytics data
-      const refreshSuccess = await refreshBudgetVsActual();
-      console.log('Analytics data refresh completed:', refreshSuccess);
+      // Show success message
+      toast.success("Data saved successfully");
       return true;
     } catch (error) {
       console.error('Error in save operation:', error);
+      toast.error("Failed to save data");
       return false;
     }
   };
@@ -144,13 +124,13 @@ export function PLTracker({
         dayOfMonth={actualDayOfMonth}
         daysInMonth={daysInMonth}
         hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
+        isSaving={isSaving || isInitializing}
         onSaveChanges={handleSaveWithAnalyticsUpdate}
         onClose={onClose}
       />
       
       <PLTrackerContent
-        isLoading={isLoading}
+        isLoading={isLoading || isInitializing}
         filteredBudgetData={filteredBudgetData}
         trackedBudgetData={trackedBudgetData}
         dayOfMonth={actualDayOfMonth}

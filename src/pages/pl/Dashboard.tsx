@@ -12,7 +12,6 @@ import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
 import { fetchTotalWagesForMonth } from '@/services/wages-service';
 import { getActualAmount, getForecastAmount, updateAllForecasts, refreshBudgetVsActual } from './components/tracker/TrackerCalculations';
-import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 
 export default function PLDashboard() {
@@ -114,11 +113,19 @@ export default function PLDashboard() {
     try {
       await updateAllForecasts(currentYear, currentMonth);
       
-      // Using the updated function that returns a Promise
-      const refreshSuccess = await refreshBudgetVsActual();
-      console.log('Analytics data refreshed:', refreshSuccess);
-      
-      toast.success("Forecasts and analytics data updated successfully");
+      try {
+        const refreshSuccess = await refreshBudgetVsActual();
+        console.log('Analytics data refreshed:', refreshSuccess);
+        
+        if (refreshSuccess) {
+          toast.success("Forecasts and analytics data updated successfully");
+        } else {
+          toast.warning("Forecasts updated but analytics refresh may be incomplete");
+        }
+      } catch (err) {
+        console.error('Error refreshing analytics data:', err);
+        toast.warning("Forecasts updated but analytics refresh failed");
+      }
     } catch (err) {
       console.error('Error updating forecasts:', err);
       toast.error("Error updating forecasts");

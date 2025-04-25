@@ -488,6 +488,7 @@ export function getForecastAmount(
 
 export const refreshBudgetVsActual = async (): Promise<boolean> => {
   try {
+    console.log('Starting budget vs actual refresh');
     const { data, error } = await supabase.rpc('refresh_budget_vs_actual');
     
     if (error) {
