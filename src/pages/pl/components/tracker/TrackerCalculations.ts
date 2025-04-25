@@ -1,3 +1,4 @@
+
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -105,11 +106,11 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   const isGrossProfitItem = item.name.toLowerCase().includes('gross profit') ||
                           item.isGrossProfit;
   
-  const isWages = item.name.toLowerCase().includes('wages') ||
-                 item.name.toLowerCase().includes('salaries');
+  const isWagesItem = item.name.toLowerCase().includes('wages') ||
+                     item.name.toLowerCase().includes('salaries');
 
   const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
-                       !isWages && !item.isHeader && !item.isOperatingProfit;
+                       !isWagesItem && !item.isHeader && !item.isOperatingProfit;
   
   // Always check for manually entered value first
   if (typeof item.manually_entered_actual === 'number') {
