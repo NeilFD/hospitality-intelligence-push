@@ -1,4 +1,3 @@
-
 import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 import { supabase } from "@/lib/supabase";
 
@@ -300,6 +299,26 @@ export async function saveForecastToDatabase(itemId: string, forecastAmount: num
 // Run an immediate update of all forecasts in the system
 export async function updateAllForecasts(year: number, month: number): Promise<boolean> {
   try {
+    console.log(`Updating all forecasts for ${year}-${month}`);
+    
+    // First try the database function if available
+    try {
+      const { data, error } = await supabase.rpc('refresh_all_forecasts', {
+        year_val: year,
+        month_val: month
+      });
+      
+      if (!error) {
+        console.log('Successfully updated forecasts using database function');
+        return true;
+      } else {
+        console.log('Database function failed, falling back to client-side implementation:', error);
+      }
+    } catch (dbErr) {
+      console.log('Error calling refresh_all_forecasts function, falling back to client implementation:', dbErr);
+    }
+    
+    // Fallback to the original client-side implementation
     console.log(`Fetching all budget items for ${year}-${month} to update forecasts`);
     
     // Get all budget items for the month/year
@@ -357,12 +376,15 @@ export async function updateAllForecasts(year: number, month: number): Promise<b
         console.log('Note: Could not refresh financial_performance_analysis view:', refreshError);
       }
     } catch (err) {
-      console.log('Materialized view refresh not available:', err);
+      console.log('Materialized view refresh failed (this is expected if it does not exist):', err);
     }
+    
+    // Also refresh the budget_vs_actual view
+    await refreshBudgetVsActual();
     
     return true;
   } catch (err) {
-    console.error('Error updating forecasts:', err);
+    console.error('Error in updateAllForecasts:', err);
     return false;
   }
 }
@@ -500,21 +522,15 @@ export function getForecastAmount(
 // Function to refresh the budget_vs_actual materialized view
 export async function refreshBudgetVsActual() {
   try {
-    console.log('Attempting to refresh budget_vs_actual view');
-    
-    // Attempt to call a database function to refresh the view
-    // This assumes you have such a function - if not, we'll need to create one
     const { error } = await supabase.rpc('refresh_budget_vs_actual');
-    
     if (error) {
       console.error('Error refreshing budget_vs_actual view:', error);
-      
-      // If the function doesn't exist, try direct SQL (this requires higher privileges)
-      console.log('Trying alternative refresh method');
-    } else {
-      console.log('Successfully refreshed budget_vs_actual view');
+      return false;
     }
+    console.log('Successfully refreshed budget_vs_actual view');
+    return true;
   } catch (err) {
-    console.error('Exception when refreshing budget_vs_actual view:', err);
+    console.error('Error calling refresh_budget_vs_actual function:', err);
+    return false;
   }
 }

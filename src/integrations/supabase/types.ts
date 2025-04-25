@@ -2118,6 +2118,14 @@ export type Database = {
           similarity: number
         }[]
       }
+      refresh_all_forecasts: {
+        Args: { year_val: number; month_val: number }
+        Returns: boolean
+      }
+      refresh_budget_vs_actual: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       refresh_financial_performance_analysis: {
         Args: Record<PropertyKey, never>
         Returns: undefined
