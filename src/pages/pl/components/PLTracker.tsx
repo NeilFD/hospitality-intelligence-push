@@ -106,7 +106,8 @@ export function PLTracker({
         const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
         await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
         
-        // Call refreshBudgetVsActual without awaiting it
+        // Call refreshBudgetVsActual without checking its return value or awaiting it
+        // This avoids the TypeScript error about testing void for truthiness
         refreshBudgetVsActual();
         console.log('Analytics data refresh triggered after saving forecasts');
         
