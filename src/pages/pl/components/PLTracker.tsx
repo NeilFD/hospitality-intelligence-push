@@ -51,8 +51,12 @@ export function PLTracker({
         const success = await updateAllForecasts(currentYear, monthNumber);
         console.log('Forecasts updated successfully on component load:', success);
         
-        const refreshSuccess = await refreshBudgetVsActual();
-        console.log('Budget vs actual refresh completed:', refreshSuccess);
+        try {
+          const refreshSuccess = await refreshBudgetVsActual();
+          console.log('Budget vs actual refresh completed:', refreshSuccess);
+        } catch (refreshErr) {
+          console.error('Failed to refresh budget vs actual on component load:', refreshErr);
+        }
       } catch (err) {
         console.error('Failed to update forecasts on component load:', err);
       }
@@ -105,10 +109,14 @@ export function PLTracker({
         const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
         await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
         
-        const refreshSuccess = await refreshBudgetVsActual();
-        console.log('Analytics data refresh completed:', refreshSuccess);
-        
-        return true;
+        try {
+          const refreshSuccess = await refreshBudgetVsActual();
+          console.log('Analytics data refresh completed:', refreshSuccess);
+          return true;
+        } catch (refreshErr) {
+          console.error('Error refreshing analytics data:', refreshErr);
+          return false;
+        }
       }
       
       return false;
