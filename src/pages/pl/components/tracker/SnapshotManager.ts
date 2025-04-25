@@ -60,4 +60,3 @@ export const getLatestSnapshot = async (year: number, month: number) => {
     return null;
   }
 };
-

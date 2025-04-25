@@ -94,8 +94,12 @@ export function PLTracker({
         // Second step: Store snapshot data
         return storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
       })
-      .then(() => {
-        toast.success("Data saved successfully");
+      .then((success) => {
+        if (success) {
+          toast.success("Data saved successfully");
+        } else {
+          toast.error("Snapshot creation failed");
+        }
       })
       .catch(error => {
         console.error('Error in save operation:', error);
