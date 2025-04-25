@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
@@ -83,6 +83,13 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
     adminCosts: true,
     ebitda: true
   });
+  
+  const [key, setKey] = useState<number>(0);
+  
+  useEffect(() => {
+    // Update the chart key when chartData changes to force a re-render
+    setKey(prevKey => prevKey + 1);
+  }, [chartData]);
 
   const CustomLegend = () => {
     const allSeries = [
@@ -108,6 +115,12 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
       <div className="flex flex-wrap justify-center gap-4 pt-4">
         {allSeries.map((entry, index) => {
           const isActive = visibleSeries[entry.dataKey as keyof VisibleSeries];
+          
+          // Filter out MTD Actual data for the legend
+          const relevantData = chartData.filter(item => item.name !== 'MTD Actual');
+          const currentData = relevantData[0]; // Use the first available data point
+          const seriesValue = currentData ? currentData[entry.dataKey as keyof Omit<ChartDataItem, 'name'>] : 0;
+          
           return (
             <div 
               key={`item-${index}`}
@@ -118,13 +131,16 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 className="w-3 h-3 rounded-sm" 
                 style={{ backgroundColor: entry.color }} 
               />
-              <span>{entry.value}</span>
+              <span>{entry.value} {currentData && ` (£${seriesValue.toLocaleString('en-GB')})`}</span>
             </div>
           );
         })}
       </div>
     );
   };
+
+  // Filter out MTD Actual data before rendering
+  const filteredChartData = chartData.filter(item => item.name !== 'MTD Actual');
 
   return (
     <Card className="shadow-md rounded-xl overflow-hidden lg:col-span-3">
@@ -142,13 +158,19 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
             <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
           </div>
         ) : (
-          <ChartContainer config={{
-            revenue: { color: '#7E69AB' },
-            cosCosts: { color: '#A5C0E2' },
-            adminCosts: { color: '#FF9F76' },
-            ebitda: { color: '#6C7787' }
-          }}>
-            <BarChart data={chartData}>
+          <ChartContainer 
+            key={key} 
+            config={{
+              revenue: { color: '#7E69AB' },
+              cosCosts: { color: '#A5C0E2' },
+              adminCosts: { color: '#FF9F76' },
+              ebitda: { color: '#6C7787' }
+            }}
+          >
+            <BarChart 
+              data={filteredChartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
               <CartesianGrid 
                 vertical={false} 
                 horizontal={true} 
@@ -160,7 +182,7 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
                 y={0} 
                 stroke="#9F9EA1"
                 strokeWidth={1} 
-                isFront={true} 
+                isFront={false}
               />
               <XAxis 
                 dataKey="name" 
@@ -173,16 +195,16 @@ export function PerformanceChart({ chartData, currentMonthName, currentYear, isL
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
               {visibleSeries.revenue && (
-                <Bar dataKey="revenue" name="Revenue" fill="var(--color-revenue)" />
+                <Bar dataKey="revenue" name="Revenue" fill={SERIES_COLORS.revenue} />
               )}
               {visibleSeries.cosCosts && (
-                <Bar dataKey="cosCosts" name="COS Costs" fill="var(--color-cosCosts)" stackId="costs" />
+                <Bar dataKey="cosCosts" name="COS Costs" fill={SERIES_COLORS.cosCosts} stackId="costs" />
               )}
               {visibleSeries.adminCosts && (
-                <Bar dataKey="adminCosts" name="Admin Costs" fill="var(--color-adminCosts)" stackId="costs" />
+                <Bar dataKey="adminCosts" name="Admin Costs" fill={SERIES_COLORS.adminCosts} stackId="costs" />
               )}
               {visibleSeries.ebitda && (
-                <Bar dataKey="ebitda" name="EBITDA" fill="var(--color-ebitda)" />
+                <Bar dataKey="ebitda" name="EBITDA" fill={SERIES_COLORS.ebitda} />
               )}
             </BarChart>
           </ChartContainer>

@@ -63,77 +63,109 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
     fetchPermissionMatrix();
   }, [initialMatrix]);
 
-  // Toggle module access
+  // Toggle module access with error handling and proper null checks
   const toggleModuleAccess = (roleId: string, moduleId: string) => {
-    setMatrix(prevMatrix => 
-      prevMatrix.map(role => 
-        role.roleId === roleId 
-          ? {
-              ...role,
-              modulePermissions: role.modulePermissions.map(module => 
-                module.moduleId === moduleId 
-                  ? {
-                      ...module,
-                      hasAccess: !module.hasAccess,
-                      // If turning off module access, also turn off page access
-                      pagePermissions: module.pagePermissions.map(page => ({
-                        ...page,
-                        hasAccess: !module.hasAccess ? false : page.hasAccess
-                      }))
-                    }
-                  : module
-              )
-            }
-          : role
-      )
-    );
+    try {
+      setMatrix(prevMatrix => 
+        prevMatrix.map(role => 
+          role.roleId === roleId 
+            ? {
+                ...role,
+                modulePermissions: role.modulePermissions.map(module => 
+                  module.moduleId === moduleId 
+                    ? {
+                        ...module,
+                        hasAccess: !module.hasAccess,
+                        // If turning off module access, also turn off page access
+                        // Only map if pagePermissions exists and is an array
+                        pagePermissions: Array.isArray(module.pagePermissions) 
+                          ? module.pagePermissions.map(page => ({
+                              ...page,
+                              hasAccess: !module.hasAccess ? false : page.hasAccess
+                            }))
+                          : []
+                      }
+                    : module
+                )
+              }
+            : role
+        )
+      );
+    } catch (err) {
+      console.error('Error toggling module access:', err);
+      toast.error('Failed to update permissions. Please try again.');
+    }
   };
 
-  // Toggle page access
+  // Toggle page access with error handling and proper null checks
   const togglePageAccess = (roleId: string, moduleId: string, pageId: string) => {
-    setMatrix(prevMatrix => 
-      prevMatrix.map(role => 
-        role.roleId === roleId 
-          ? {
-              ...role,
-              modulePermissions: role.modulePermissions.map(module => 
-                module.moduleId === moduleId 
-                  ? {
-                      ...module,
-                      pagePermissions: module.pagePermissions.map(page => 
-                        page.pageId === pageId 
-                          ? { ...page, hasAccess: !page.hasAccess }
-                          : page
-                      ),
-                      // If any page has access, the module must have access
-                      hasAccess: module.hasAccess || 
-                        module.pagePermissions.some(page => 
-                          page.pageId === pageId && !page.hasAccess
-                        )
-                    }
-                  : module
-              )
-            }
-          : role
-      )
-    );
+    try {
+      setMatrix(prevMatrix => 
+        prevMatrix.map(role => 
+          role.roleId === roleId 
+            ? {
+                ...role,
+                modulePermissions: role.modulePermissions.map(module => 
+                  module.moduleId === moduleId 
+                    ? {
+                        ...module,
+                        pagePermissions: Array.isArray(module.pagePermissions)
+                          ? module.pagePermissions.map(page => 
+                              page.pageId === pageId 
+                                ? { ...page, hasAccess: !page.hasAccess }
+                                : page
+                            )
+                          : [],
+                        // If any page has access, the module must have access
+                        hasAccess: module.hasAccess || 
+                          (Array.isArray(module.pagePermissions) && 
+                            module.pagePermissions.some(page => 
+                              page.pageId === pageId && !page.hasAccess
+                            ))
+                      }
+                    : module
+                )
+              }
+            : role
+        )
+      );
+    } catch (err) {
+      console.error('Error toggling page access:', err);
+      toast.error('Failed to update permissions. Please try again.');
+    }
   };
 
-  // Save changes to the database
+  // Save changes to the database with improved error handling
   const saveChanges = async () => {
     try {
       setSaving(true);
       
-      console.log('Saving permission matrix:', matrix);
+      console.log('Saving permission matrix:', JSON.stringify(matrix, null, 2));
       
-      // Call the RPC function directly using Supabase client
+      // Validate matrix structure before sending
+      if (!Array.isArray(matrix) || matrix.length === 0) {
+        throw new Error('Invalid matrix structure: matrix must be a non-empty array');
+      }
+      
+      // Ensure that each role has valid modulePermissions and proper format for JSON
+      const validMatrix = JSON.stringify(matrix.map(role => ({
+        ...role,
+        modulePermissions: Array.isArray(role.modulePermissions) ? role.modulePermissions.map(module => ({
+          ...module,
+          pagePermissions: Array.isArray(module.pagePermissions) ? module.pagePermissions : []
+        })) : []
+      })));
+      
+      console.log('Formatted matrix for RPC:', validMatrix);
+      
+      // Call the RPC function directly using Supabase client, ensuring we pass a properly stringified JSON array
       const { data, error: updateError } = await supabase.rpc('update_permission_matrix', {
-        matrix: matrix
+        matrix: JSON.parse(validMatrix)  // Parse it back to ensure it's sent as JSON not string
       });
       
       if (updateError) {
         console.error('Error updating permission matrix:', updateError);
-        toast.error('Failed to save permission matrix');
+        toast.error('Failed to save permission matrix: ' + updateError.message);
         return;
       }
       
@@ -141,7 +173,8 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
       toast.success('Permission matrix saved successfully');
     } catch (error) {
       console.error('Exception saving permission matrix:', error);
-      toast.error('Failed to save permission matrix');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to save permission matrix: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -246,7 +279,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {role.modulePermissions && role.modulePermissions.length > 0 ? (
+                        {Array.isArray(role.modulePermissions) && role.modulePermissions.length > 0 ? (
                           role.modulePermissions.map(module => (
                             <React.Fragment key={module.moduleId}>
                               <TableRow className="bg-muted/50">
@@ -260,7 +293,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
                                   />
                                 </TableCell>
                               </TableRow>
-                              {module.pagePermissions && module.pagePermissions.map(page => (
+                              {module.pagePermissions && Array.isArray(module.pagePermissions) && module.pagePermissions.map(page => (
                                 <TableRow key={page.pageId}>
                                   <TableCell className="pl-6">{page.pageName}</TableCell>
                                   <TableCell className="text-center">
