@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -509,90 +508,98 @@ export function PLReportTable({
 
     return (
       <>
-        {renderedData.map((item, index) => {
-          if (!item || (item.category === "header" && item.budget_amount === 0)) {
-            return null;
-          }
-          if (!item.name || item.name === "Total") {  // Added condition to skip "Total" row
-            return null;
-          }
-          
-          const fontClass = getFontClass(item.name);
-          const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
-          const actualAmount = getEffectiveActualAmount(item);
-          
-          const forecastAmount = calculateCorrectForecast(item);
-          
-          const shouldHighlight =
-            item.name.toLowerCase() === "turnover" ||
-            item.name.toLowerCase() === "total revenue" ||
-            (item.name.toLowerCase().includes("gross profit") &&
-              !item.name.toLowerCase().includes("food") &&
-              !item.name.toLowerCase().includes("beverage") &&
-              !item.name.toLowerCase().includes("drink")) ||
-            item.name.toLowerCase() === "total admin expenses" ||
-            item.name.toLowerCase().includes("operating profit") ||
-            (item.name.toLowerCase().includes("cost of sales") &&
-              !item.name.toLowerCase().includes("food") &&
-              !item.name.toLowerCase().includes("beverage") &&
-              !item.name.toLowerCase().includes("drink"));
+        {renderedData
+          .filter(item => 
+            item && 
+            item.name && 
+            item.name !== "Total" && 
+            item.category !== "header" && 
+            item.budget_amount !== 0
+          )
+          .map((item, index) => {
+            if (!item || (item.category === "header" && item.budget_amount === 0)) {
+              return null;
+            }
+            if (!item.name || item.name === "Total") {  // Added condition to skip "Total" row
+              return null;
+            }
+            
+            const fontClass = getFontClass(item.name);
+            const percentageDisplay = shouldShowPercentage(item) ? getPercentageDisplay(item) : null;
+            const actualAmount = getEffectiveActualAmount(item);
+            
+            const forecastAmount = calculateCorrectForecast(item);
+            
+            const shouldHighlight =
+              item.name.toLowerCase() === "turnover" ||
+              item.name.toLowerCase() === "total revenue" ||
+              (item.name.toLowerCase().includes("gross profit") &&
+                !item.name.toLowerCase().includes("food") &&
+                !item.name.toLowerCase().includes("beverage") &&
+                !item.name.toLowerCase().includes("drink")) ||
+              item.name.toLowerCase() === "total admin expenses" ||
+              item.name.toLowerCase().includes("operating profit") ||
+              (item.name.toLowerCase().includes("cost of sales") &&
+                !item.name.toLowerCase().includes("food") &&
+                !item.name.toLowerCase().includes("beverage") &&
+                !item.name.toLowerCase().includes("drink"));
               
-          const highlightClass = shouldHighlight ? "bg-purple-50" : "";
-          const boldValueClass = shouldHighlight && item.name.toLowerCase().includes("cost of sales") ? "font-bold" : "";
-          const boldTitleClass = shouldHighlight && item.name.toLowerCase().includes("cost of sales") ? "font-bold" : "";
-          const varianceAmount = forecastAmount - (item.budget_amount || 0);
-          const itemIsCostLine = isCostLine(item.name);
+            const highlightClass = shouldHighlight ? "bg-purple-50" : "";
+            const boldValueClass = shouldHighlight && item.name.toLowerCase().includes("cost of sales") ? "font-bold" : "";
+            const boldTitleClass = shouldHighlight && item.name.toLowerCase().includes("cost of sales") ? "font-bold" : "";
+            const varianceAmount = forecastAmount - (item.budget_amount || 0);
+            const itemIsCostLine = isCostLine(item.name);
 
-          if (item.name.toLowerCase().includes('total admin')) {
-            return null;
-          }
-          if (item.name.toLowerCase().includes('operating profit')) {
-            return null;
-          }
+            if (item.name.toLowerCase().includes('total admin')) {
+              return null;
+            }
+            if (item.name.toLowerCase().includes('operating profit')) {
+              return null;
+            }
 
-          const forecastPercentage = getForecastPercentage(item);
-          const budgetPercentage = getBudgetPercentage(item);
+            const forecastPercentage = getForecastPercentage(item);
+            const budgetPercentage = getBudgetPercentage(item);
 
-          return (
-            <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
-              <TableCell className={`${fontClass} ${boldTitleClass} flex items-center justify-between`}>
-                <span className="flex-grow">{item.name}</span>
-                {isCostEditableRow(item.name) && (
-                  <ForecastSettingsControl
-                    itemName={item.name}
-                    budgetAmount={item.budget_amount || 0}
-                    currentYear={currentYear}
-                    currentMonth={currentMonth}
-                    onMethodChange={() => {
-                      setRefreshTrigger(prev => prev + 1);
-                    }}
-                  />
-                )}
-              </TableCell>
-              <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
-                {formatCurrency(item.budget_amount)}
-              </TableCell>
-              <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
-                {budgetPercentage}
-              </TableCell>
-              <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
-                {formatCurrency(actualAmount)}
-              </TableCell>
-              <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
-                {percentageDisplay ? percentageDisplay : ""}
-              </TableCell>
-              <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
-                {formatCurrency(forecastAmount)}
-              </TableCell>
-              <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
-                {forecastPercentage}
-              </TableCell>
-              <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
-                {formatCurrency(varianceAmount)}
-              </TableCell>
-            </TableRow>
-          );
-        })}
+            return (
+              <TableRow key={index} className={`${item.category === "header" ? "bg-slate-50" : ""} ${highlightClass}`}>
+                <TableCell className={`${fontClass} ${boldTitleClass} flex items-center justify-between`}>
+                  <span className="flex-grow">{item.name}</span>
+                  {isCostEditableRow(item.name) && (
+                    <ForecastSettingsControl
+                      itemName={item.name}
+                      budgetAmount={item.budget_amount || 0}
+                      currentYear={currentYear}
+                      currentMonth={currentMonth}
+                      onMethodChange={() => {
+                        setRefreshTrigger(prev => prev + 1);
+                      }}
+                    />
+                  )}
+                </TableCell>
+                <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+                  {formatCurrency(item.budget_amount)}
+                </TableCell>
+                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+                  {budgetPercentage}
+                </TableCell>
+                <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+                  {formatCurrency(actualAmount)}
+                </TableCell>
+                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+                  {percentageDisplay ? percentageDisplay : ""}
+                </TableCell>
+                <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+                  {formatCurrency(forecastAmount)}
+                </TableCell>
+                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+                  {forecastPercentage}
+                </TableCell>
+                <TableCell className={`text-right ${fontClass} ${boldValueClass} ${getValueColor(varianceAmount, itemIsCostLine)}`}>
+                  {formatCurrency(varianceAmount)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
 
         <TableRow className="bg-purple-100/50 text-[#48495e]">
           <TableCell className="font-bold bg-purple-50">
