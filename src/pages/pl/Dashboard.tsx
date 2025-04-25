@@ -10,8 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyRevenueData } from '@/services/master-record-service';
 import { fetchFoodCOSForMonth, fetchBeverageCOSForMonth } from '@/services/budget-service';
 import { fetchTotalWagesForMonth } from '@/services/wages-service';
-import { getActualAmount, getForecastAmount, updateAllForecasts } from './components/tracker/TrackerCalculations';
-import { refreshBudgetVsActual } from './components/tracker/TrackerCalculations';
+import { getActualAmount, getForecastAmount, updateAllForecasts, refreshBudgetVsActual } from './components/tracker/TrackerCalculations';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 
@@ -55,7 +54,6 @@ export default function PLDashboard() {
       try {
         await updateAllForecasts(currentYear, currentMonth);
         
-        // Fix the TypeScript error by properly awaiting the RPC call
         try {
           await supabase.rpc('refresh_budget_vs_actual');
           console.log('Budget view refreshed');
@@ -114,7 +112,10 @@ export default function PLDashboard() {
     
     try {
       await updateAllForecasts(currentYear, currentMonth);
-      toast.success("Forecasts updated successfully");
+      
+      await refreshBudgetVsActual();
+      
+      toast.success("Forecasts and analytics data updated successfully");
     } catch (err) {
       console.error('Error updating forecasts:', err);
       toast.error("Error updating forecasts");

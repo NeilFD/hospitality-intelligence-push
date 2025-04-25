@@ -1,5 +1,6 @@
-import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
-import { supabase } from "@/lib/supabase";
+import { supabase } from '@/lib/supabase';
+import { PLTrackerBudgetItem } from '../types/PLTrackerTypes';
+import { toast } from "sonner";
 
 export function calculateProRatedBudget(
   item: PLTrackerBudgetItem,
@@ -111,18 +112,15 @@ export function getActualAmount(item: PLTrackerBudgetItem): number {
   const isExpenseItem = !isRevenueItem && !isCOSItem && !isGrossProfitItem && 
                        !isWagesItem && !item.isHeader && !item.isOperatingProfit;
   
-  // Always check for manually entered value first
   if (typeof item.manually_entered_actual === 'number') {
     return Number(item.manually_entered_actual);
   }
   
-  // Then check for daily values
   if (item.daily_values && item.daily_values.length > 0) {
     const total = item.daily_values.reduce((sum, day) => sum + (Number(day.value) || 0), 0);
     return total;
   }
 
-  // For revenue, COS, gross profit, and wages, use actual_amount if present
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWagesItem) && 
       typeof item.actual_amount === 'number' && item.actual_amount !== 0) {
     return Number(item.actual_amount);
@@ -137,8 +135,6 @@ export function calculateProRatedActual(
   dayOfMonth: number
 ): number {
   if (item.budget_amount) {
-    // This is the key fix - we're ensuring we return the pro-rated budget amount
-    // for expense items when there's no actual amount recorded
     return (item.budget_amount / daysInMonth) * dayOfMonth;
   }
   return 0;
@@ -146,7 +142,6 @@ export function calculateProRatedActual(
 
 export async function fetchForecastSettings(itemName: string, year: number, month: number) {
   try {
-    // First check in Supabase
     const { data } = await supabase
       .from('cost_item_forecast_settings')
       .select('method, discrete_values')
@@ -173,7 +168,6 @@ export async function fetchForecastSettings(itemName: string, year: number, mont
     console.error(`Error fetching forecast settings for ${itemName}:`, error);
   }
   
-  // If not in Supabase, try localStorage
   try {
     const cacheKey = `forecast_${itemName}_${year}_${month}`;
     const cachedSettings = localStorage.getItem(cacheKey);
@@ -197,7 +191,6 @@ export function calculateForecastFromSettings(
   dayOfMonth?: number
 ): number {
   if (!settings) {
-    // If there are no settings but we have actuals and days, use them for projection
     if (actualAmount && actualAmount !== 0 && dayOfMonth && dayOfMonth > 0 && daysInMonth) {
       return (actualAmount / dayOfMonth) * daysInMonth;
     }
@@ -223,7 +216,6 @@ export function calculateForecastFromSettings(
               total += parsed;
             }
           } else if (typeof value === 'object' && value !== null && 'value' in value) {
-            // Handle the case where value is an object with a value property
             const numValue = Number(value.value);
             if (!isNaN(numValue)) {
               total += numValue;
@@ -246,7 +238,6 @@ export function calculateForecastFromSettings(
               dailyTotal += parsed;
             }
           } else if (typeof value === 'object' && value !== null && 'value' in value) {
-            // Handle the case where value is an object with a value property
             const numValue = Number(value.value);
             if (!isNaN(numValue)) {
               dailyTotal += numValue;
@@ -257,7 +248,6 @@ export function calculateForecastFromSettings(
       return (budgetAmount || 0) + dailyTotal;
     }
     
-    // NEW: Add mtd_projection method that specifically handles MTD projections
     case 'mtd_projection': {
       if (actualAmount && actualAmount !== 0 && dayOfMonth && dayOfMonth > 0 && daysInMonth) {
         return (actualAmount / dayOfMonth) * daysInMonth;
@@ -270,7 +260,6 @@ export function calculateForecastFromSettings(
   }
 }
 
-// New function to save forecast to database immediately
 export async function saveForecastToDatabase(itemId: string, forecastAmount: number): Promise<boolean> {
   try {
     console.log(`Saving forecast amount ${forecastAmount} for item ID ${itemId}`);
@@ -296,90 +285,90 @@ export async function saveForecastToDatabase(itemId: string, forecastAmount: num
   }
 }
 
-// Run an immediate update of all forecasts in the system
 export async function updateAllForecasts(year: number, month: number): Promise<boolean> {
   try {
-    console.log(`Updating all forecasts for ${year}-${month}`);
+    console.log(`Updating all forecasts for ${year}-${month}...`);
     
-    // First try the database function if available
-    try {
-      const { data, error } = await supabase.rpc('refresh_all_forecasts', {
-        year_val: year,
-        month_val: month
+    const { data: refreshData, error: refreshError } = await supabase
+      .rpc('refresh_all_forecasts', { 
+        year_val: year, 
+        month_val: month 
       });
-      
-      if (!error) {
-        console.log('Successfully updated forecasts using database function');
-        return true;
-      } else {
-        console.log('Database function failed, falling back to client-side implementation:', error);
-      }
-    } catch (dbErr) {
-      console.log('Error calling refresh_all_forecasts function, falling back to client implementation:', dbErr);
+    
+    if (refreshError) {
+      console.error('Error refreshing forecasts:', refreshError);
+      return false;
     }
     
-    // Fallback to the original client-side implementation
-    console.log(`Fetching all budget items for ${year}-${month} to update forecasts`);
+    console.log('Basic forecast refresh completed with result:', refreshData);
     
-    // Get all budget items for the month/year
-    const { data: budgetItems, error: fetchError } = await supabase
+    const { data: items, error: itemsError } = await supabase
       .from('budget_items')
       .select('*')
       .eq('year', year)
       .eq('month', month);
-      
-    if (fetchError) {
-      console.error('Error fetching budget items:', fetchError);
+    
+    if (itemsError) {
+      console.error('Error fetching budget items for forecast update:', itemsError);
       return false;
     }
     
-    if (!budgetItems || budgetItems.length === 0) {
-      console.log('No budget items found to update');
-      return false;
+    if (!items || items.length === 0) {
+      console.log('No budget items found to update forecasts for.');
+      return true;
     }
     
-    console.log(`Found ${budgetItems.length} budget items to update forecasts for`);
+    console.log(`Processing ${items.length} budget items for forecast updates...`);
     
-    // Get the days in month for calculations
+    const currentDate = new Date();
+    const currentDay = currentDate.getDate();
     const daysInMonth = new Date(year, month, 0).getDate();
     
-    // Calculate the day of month (use current day if we're in the current month)
-    const now = new Date();
-    const isCurrentMonth = now.getFullYear() === year && (now.getMonth() + 1) === month;
-    const dayOfMonth = isCurrentMonth ? now.getDate() : daysInMonth;
-    
-    // Process each item
-    const updatePromises = budgetItems.map(item => {
-      // Calculate forecast amount
-      const forecast = getForecastAmount(item, year, month, daysInMonth, dayOfMonth);
-      console.log(`Calculated forecast for ${item.name}: ${forecast}`);
+    for (const item of items) {
+      if (!item.budget_amount || item.budget_amount === 0) continue;
       
-      // Update in database
-      return supabase
-        .from('budget_items')
-        .update({ 
-          forecast_amount: forecast,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', item.id);
-    });
-    
-    // Wait for all updates to complete
-    await Promise.all(updatePromises);
-    
-    console.log('Forecast update complete');
-    
-    // Now refresh the materialized view if needed
-    try {
-      const { error: refreshError } = await supabase.rpc('refresh_financial_performance_analysis');
-      if (refreshError) {
-        console.log('Note: Could not refresh financial_performance_analysis view:', refreshError);
+      const { data: settingsData } = await supabase
+        .from('cost_item_forecast_settings')
+        .select('*')
+        .eq('item_name', item.name)
+        .eq('year', year)
+        .eq('month', month)
+        .maybeSingle();
+      
+      let forecastAmount = item.budget_amount;
+      
+      if (settingsData) {
+        forecastAmount = getForecastAmount(
+          { ...item, id: item.id },
+          year,
+          month,
+          daysInMonth,
+          currentDay
+        );
       }
-    } catch (err) {
-      console.log('Materialized view refresh failed (this is expected if it does not exist):', err);
+      
+      const specialItems = ['revenue', 'sales', 'turnover', 'cost of sales', 'cos', 'gross profit', 'wages', 'salaries'];
+      const isSpecialItem = specialItems.some(term => item.name.toLowerCase().includes(term));
+      
+      if (isSpecialItem && item.actual_amount && item.actual_amount > 0 && currentDay < daysInMonth) {
+        forecastAmount = (item.actual_amount / currentDay) * daysInMonth;
+      }
+      
+      if (forecastAmount !== item.forecast_amount) {
+        const { error: updateError } = await supabase
+          .from('budget_items')
+          .update({ 
+            forecast_amount: forecastAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.id);
+          
+        if (updateError) {
+          console.error(`Error updating forecast for ${item.name}:`, updateError);
+        }
+      }
     }
     
-    // Also refresh the budget_vs_actual view
     await refreshBudgetVsActual();
     
     return true;
@@ -396,22 +385,18 @@ export function getForecastAmount(
   daysInMonth: number = 30,
   dayOfMonth: number = 19
 ): number {
-  // First, check if the current date is available to determine the real dayOfMonth
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
   const currentYear = today.getFullYear();
   
-  // If we're forecasting for the current month, use the current day
   if (year === currentYear && month === currentMonth) {
-    dayOfMonth = today.getDate() - 1; // Use yesterday's date as the completed day
-    if (dayOfMonth < 1) dayOfMonth = 1; // Ensure we don't use 0
+    dayOfMonth = today.getDate() - 1;
+    if (dayOfMonth < 1) dayOfMonth = 1;
   }
   
-  // Get actual amount for the item
   const actualAmount = getActualAmount(item);
   const itemName = item.name?.toLowerCase() || '';
   
-  // UPDATED: Handle special categories more aggressively with MTD projection
   const isRevenueItem = 
     itemName.includes('revenue') || 
     itemName.includes('sales') || 
@@ -429,41 +414,31 @@ export function getForecastAmount(
     itemName.includes('wages') ||
     itemName.includes('salaries');
   
-  // UPDATED: For revenue items or special categories with actual values, always use MTD projection
   if ((isRevenueItem || isCOSItem || isGrossProfitItem || isWagesItem) && 
       actualAmount && actualAmount !== 0 && dayOfMonth > 0) {
-    // Calculate the daily average and project for the full month
     const projection = (actualAmount / dayOfMonth) * daysInMonth;
     
-    // Store the forecast directly in the item object to ensure it's available for display
     if (item.id) {
       const forecastAmount = projection;
-      
-      // Use immediate database update to ensure the forecast is saved
       saveForecastToDatabase(item.id, forecastAmount);
-      
       return projection;
     }
     
     return projection;
   }
 
-  // If forecast_amount is already set and not zero, use it
   if (item.forecast_amount !== undefined && 
       item.forecast_amount !== null && 
       item.forecast_amount !== 0) {
     return item.forecast_amount;
   }
 
-  // Try to get forecast settings
   let forecastSettings = null;
   
-  // Check if the item already has forecast settings attached
   if (item.forecast_settings) {
     console.log(`Using direct forecast_settings for ${item.name}:`, item.forecast_settings);
     forecastSettings = item.forecast_settings;
   } else {
-    // Try to get settings from localStorage
     const cacheKey = `forecast_${item.name}_${year}_${month}`;
     const cachedSettings = localStorage.getItem(cacheKey);
     
@@ -477,7 +452,6 @@ export function getForecastAmount(
     }
   }
   
-  // Calculate the forecast amount based on the settings
   if (forecastSettings) {
     const forecastAmount = calculateForecastFromSettings(
       forecastSettings, 
@@ -487,20 +461,16 @@ export function getForecastAmount(
       dayOfMonth
     );
     
-    // If we have an item ID, update the database directly
     if (item.id) {
-      // Use immediate database update
       saveForecastToDatabase(item.id, forecastAmount);
     }
     
     return forecastAmount;
   }
   
-  // If no settings found, use direct MTD projection if we have actual data
   if (actualAmount && actualAmount > 0 && dayOfMonth > 0) {
     const projection = (actualAmount / dayOfMonth) * daysInMonth;
     
-    // Update the database with the projection
     if (item.id) {
       saveForecastToDatabase(item.id, projection);
     }
@@ -508,29 +478,50 @@ export function getForecastAmount(
     return projection;
   }
   
-  // For any admin expenses or other items with budget but no actuals, 
-  // use budget as forecast but also save it
   if (item.budget_amount && item.id) {
     saveForecastToDatabase(item.id, item.budget_amount);
     return item.budget_amount;
   }
   
-  // If all else fails, return the budget amount
   return item.budget_amount || 0;
 }
 
-// Function to refresh the budget_vs_actual materialized view
-export async function refreshBudgetVsActual() {
+export const refreshBudgetVsActual = async (): Promise<boolean> => {
   try {
-    const { error } = await supabase.rpc('refresh_budget_vs_actual');
+    console.log('Manually refreshing budget_vs_actual view at', new Date().toISOString());
+    const { data, error } = await supabase.rpc('refresh_budget_vs_actual');
+    
     if (error) {
       console.error('Error refreshing budget_vs_actual view:', error);
       return false;
     }
+    
     console.log('Successfully refreshed budget_vs_actual view');
     return true;
   } catch (err) {
-    console.error('Error calling refresh_budget_vs_actual function:', err);
+    console.error('Unexpected error refreshing budget_vs_actual view:', err);
     return false;
   }
-}
+};
+
+export const syncUiWithAnalytics = async (year: number, month: number): Promise<boolean> => {
+  try {
+    console.log(`Synchronizing UI data with analytics for ${year}-${month}`);
+    
+    await updateAllForecasts(year, month);
+    
+    const refreshSuccess = await refreshBudgetVsActual();
+    
+    if (refreshSuccess) {
+      toast.success("Analytics data synchronized successfully");
+      return true;
+    } else {
+      toast.error("Failed to synchronize analytics data");
+      return false;
+    }
+  } catch (err) {
+    console.error('Error in syncUiWithAnalytics:', err);
+    toast.error("Error synchronizing analytics data");
+    return false;
+  }
+};

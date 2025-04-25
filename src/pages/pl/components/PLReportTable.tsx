@@ -5,6 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getActualAmount, getForecastAmount, fetchForecastSettings, calculateForecastFromSettings, calculateProRatedActual } from './tracker/TrackerCalculations';
 import { ForecastSettingsControl } from "./forecast/ForecastSettingsControl";
 import { useDateCalculations } from "./hooks/useDateCalculations";
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { syncUiWithAnalytics } from './tracker/TrackerCalculations';
 
 type PLReportTableProps = {
   isLoading: boolean;
@@ -25,6 +28,8 @@ export function PLReportTable({
   const [renderedData, setRenderedData] = useState<any[]>([]);
   const [adminTotalForecast, setAdminTotalForecast] = useState<number>(0);
   const [operatingProfitForecast, setOperatingProfitForecast] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
 
   const getMonthNumber = (monthName: string) => {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -67,6 +72,21 @@ export function PLReportTable({
     }
     
     return manualActual;
+  };
+
+  const handleSyncAnalytics = async () => {
+    if (isSyncing) return;
+    
+    setIsSyncing(true);
+    try {
+      const success = await syncUiWithAnalytics(currentYear, currentMonth);
+      if (success) {
+        setLastSyncTime(new Date().toLocaleTimeString());
+        setRefreshTrigger(prev => prev + 1);
+      }
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   useEffect(() => {
@@ -168,6 +188,12 @@ export function PLReportTable({
         }));
         
         setRenderedData(updatedData);
+        
+        syncUiWithAnalytics(currentYear, currentMonth).then(success => {
+          if (success) {
+            setLastSyncTime(new Date().toLocaleTimeString());
+          }
+        });
       }
     };
     
@@ -672,34 +698,57 @@ export function PLReportTable({
 
   if (isLoading) {
     return (
-      <div className="space-y-2 p-4">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-[250px]" />
+        <Skeleton className="h-[400px] w-full" />
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-64">Line Item</TableHead>
-            <TableHead className="text-right">Budget</TableHead>
-            <TableHead className="text-right w-14">%</TableHead>
-            <TableHead className="text-right">Actual</TableHead>
-            <TableHead className="text-right w-14">%</TableHead>
-            <TableHead className="text-right">Forecast</TableHead>
-            <TableHead className="text-right w-14">%</TableHead>
-            <TableHead className="text-right">Variance</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {renderTableContent()}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold">P&L Report</h3>
+        <div className="flex items-center gap-2">
+          {lastSyncTime && (
+            <span className="text-sm text-gray-500">
+              Last synced: {lastSyncTime}
+            </span>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSyncAnalytics}
+            disabled={isSyncing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Sync Analytics Data'}
+          </Button>
+        </div>
+      </div>
+      
+      <div className="rounded-md border">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-64">Line Item</TableHead>
+                <TableHead className="text-right">Budget</TableHead>
+                <TableHead className="text-right w-14">%</TableHead>
+                <TableHead className="text-right">Actual</TableHead>
+                <TableHead className="text-right w-14">%</TableHead>
+                <TableHead className="text-right">Forecast</TableHead>
+                <TableHead className="text-right w-14">%</TableHead>
+                <TableHead className="text-right">Variance</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {renderTableContent()}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </>
   );
 }

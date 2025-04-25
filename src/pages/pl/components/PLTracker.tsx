@@ -12,7 +12,8 @@ import {
   calculateProRatedActual, 
   calculateSummaryProRatedBudget,
   updateAllForecasts,
-  getForecastAmount
+  getForecastAmount,
+  refreshBudgetVsActual
 } from './tracker/TrackerCalculations';
 
 interface PLTrackerProps {
@@ -51,6 +52,9 @@ export function PLTracker({
       try {
         const success = await updateAllForecasts(currentYear, monthNumber);
         console.log('Forecasts updated successfully on component load:', success);
+        
+        // Explicitly refresh the analytics view after updates
+        await refreshBudgetVsActual();
       } catch (err) {
         console.error('Failed to update forecasts on component load:', err);
       }
@@ -98,6 +102,20 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithActuals);
   
+  // Wrap the save function to ensure analytics are updated after saving
+  const handleSaveWithAnalyticsUpdate = async () => {
+    const saveSuccess = await saveForecastAmounts();
+    
+    if (saveSuccess) {
+      // Ensure the analytics view is refreshed after saving forecast amounts
+      const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
+      await refreshBudgetVsActual();
+      console.log('Analytics data refreshed after saving forecasts');
+    }
+    
+    return saveSuccess;
+  };
+  
   // Debug log for top few actual amounts
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
     name: item.name,
@@ -120,7 +138,7 @@ export function PLTracker({
         daysInMonth={daysInMonth}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
-        onSaveChanges={saveForecastAmounts}
+        onSaveChanges={handleSaveWithAnalyticsUpdate}
         onClose={onClose}
       />
       
