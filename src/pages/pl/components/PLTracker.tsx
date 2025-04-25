@@ -51,7 +51,7 @@ export function PLTracker({
         const success = await updateAllForecasts(currentYear, monthNumber);
         console.log('Forecasts updated successfully on component load:', success);
         
-        // Call refreshBudgetVsActual but don't rely on its return value
+        // Call refreshBudgetVsActual without checking its return value
         refreshBudgetVsActual();
         console.log('Budget vs actual refresh triggered on component load');
       } catch (err) {
@@ -107,7 +107,6 @@ export function PLTracker({
         await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
         
         // Call refreshBudgetVsActual without checking its return value or awaiting it
-        // This avoids the TypeScript error about testing void for truthiness
         refreshBudgetVsActual();
         console.log('Analytics data refresh triggered after saving forecasts');
         
