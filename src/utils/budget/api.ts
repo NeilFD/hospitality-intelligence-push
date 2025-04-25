@@ -44,7 +44,8 @@ export const fetchBudgetItems = async (year: number, month: number) => {
       const dayOfMonth = Math.min(now.getDate(), daysInMonth);
       
       // Process each item that needs special forecast calculation
-      data = data.map(item => {
+      // Create a new array instead of modifying the original
+      return data.map(item => {
         const itemName = (item.name || '').toLowerCase();
         
         // Special handling for revenue, COS, GP, and wages items
@@ -66,11 +67,15 @@ export const fetchBudgetItems = async (year: number, month: number) => {
             
             console.log(`Applying MTD projection for ${item.name}: ${item.actual_amount} → ${projection}`);
             
-            // Update forecast directly
-            item.forecast_amount = projection;
+            // Create a new object instead of modifying the original
+            return {
+              ...item,
+              forecast_amount: projection
+            };
           }
         }
         
+        // Return the original item if no modifications are needed
         return item;
       });
     }
