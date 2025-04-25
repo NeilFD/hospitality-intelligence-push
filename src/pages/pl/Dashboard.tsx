@@ -14,6 +14,7 @@ import { getActualAmount, getForecastAmount, updateAllForecasts } from './compon
 import { refreshBudgetVsActual } from './components/tracker/TrackerCalculations';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
+import { PLTrackerBudgetItem } from './components/types/PLTrackerTypes';
 
 export default function PLDashboard() {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1);
@@ -55,7 +56,6 @@ export default function PLDashboard() {
       try {
         await updateAllForecasts(currentYear, currentMonth);
         
-        // Fix the TypeScript error by properly awaiting the RPC call
         try {
           await supabase.rpc('refresh_budget_vs_actual');
           console.log('Budget view refreshed');
