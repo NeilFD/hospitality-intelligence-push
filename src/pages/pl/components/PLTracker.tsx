@@ -43,7 +43,7 @@ export function PLTracker({
   
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // Use the new hook to handle all data initialization and analytics refreshes
+  // Use the tracker hook which handles initialization
   const { isInitializing } = useTracker(currentYear, currentMonthName);
   
   useEffect(() => {
