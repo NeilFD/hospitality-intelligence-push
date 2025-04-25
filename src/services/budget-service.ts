@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { DayInput } from '@/pages/pl/components/types/PLTrackerTypes';
 
@@ -220,3 +219,27 @@ export const fetchBeverageCOSForMonth = async (year: number, month: number): Pro
     return 0;
   }
 };
+
+export async function updateBudgetVarianceCalculations(year: number, month: number): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('budget_items')
+      .update({
+        updated_at: new Date().toISOString() // This triggers a refresh of the view
+      })
+      .eq('year', year)
+      .eq('month', month)
+      .select('id');
+    
+    if (error) {
+      console.error('Error updating budget variance calculations:', error);
+      return false;
+    }
+    
+    console.log(`Updated timestamp on ${data?.length || 0} budget items to trigger variance recalculation`);
+    return true;
+  } catch (err) {
+    console.error('Error in updateBudgetVarianceCalculations:', err);
+    return false;
+  }
+}

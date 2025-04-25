@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUp } from 'lucide-react';
@@ -53,9 +54,10 @@ export default function PLDashboard() {
     
     const forceUpdateForecasts = async () => {
       try {
+        // Update all forecasts first
         await updateAllForecasts(currentYear, currentMonth);
         
-        // Fix the TypeScript error by properly awaiting the RPC call
+        // Now refresh the budget vs actual view to ensure all calculations are updated
         try {
           await supabase.rpc('refresh_budget_vs_actual');
           console.log('Budget view refreshed');
@@ -114,6 +116,8 @@ export default function PLDashboard() {
     
     try {
       await updateAllForecasts(currentYear, currentMonth);
+      // Ensure we're refreshing the budget_vs_actual view after forecasts are updated
+      await refreshBudgetVsActual();
       toast.success("Forecasts updated successfully");
     } catch (err) {
       console.error('Error updating forecasts:', err);
