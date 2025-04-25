@@ -14,36 +14,31 @@ export function useTracker(currentYear: number, currentMonthName: string) {
     setIsInitializing(true);
     setError(null);
     
-    // Create an async function
-    const initializeData = async () => {
-      try {
-        // Update forecasts
-        console.log("Updating all forecasts...");
-        await updateAllForecasts(currentYear, monthNumber);
+    // Update forecasts without checking return values
+    console.log("Updating all forecasts...");
+    updateAllForecasts(currentYear, monthNumber)
+      .then(() => {
         console.log('Forecasts updated successfully');
         
-        // Refresh budget vs actual data
+        // Attempt to refresh budget vs actual data, but don't prevent completion if it fails
         console.log("Refreshing budget vs actual data...");
-        try {
-          await refreshBudgetVsActual(); 
-          console.log('Budget vs actual refresh completed');
-        } catch (refreshError) {
-          console.warn('Non-critical error during budget vs actual refresh:', refreshError);
-          // Continue even if this fails - it's not critical
-        }
-      } catch (err) {
+        refreshBudgetVsActual()
+          .then(() => {
+            console.log('Budget vs actual refresh completed');
+          })
+          .catch(refreshError => {
+            console.warn('Non-critical error during budget vs actual refresh:', refreshError);
+          })
+          .finally(() => {
+            // Always mark initialization as complete
+            setIsInitializing(false);
+          });
+      })
+      .catch(err => {
         console.error('Error during data initialization:', err);
         setError(err instanceof Error ? err : new Error('Unknown error during initialization'));
-      } finally {
-        // Always set loading to false when done
         setIsInitializing(false);
-      }
-    };
-    
-    // Execute the async function
-    initializeData();
-    
-    // Cleanup function not needed here as we don't need to cancel anything
+      });
   }, [currentMonthName, currentYear]);
   
   return {

@@ -81,37 +81,36 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithActuals);
   
-  const handleSaveWithAnalyticsUpdate = async () => {
-    try {
-      // First save forecast amounts
-      toast.info("Saving data...");
-      setTrackedBudgetData(prev => [...prev]); // Force refresh UI
-      
-      const saveSuccess = await saveForecastAmounts();
-      
-      if (!saveSuccess) {
-        console.error('Failed to save forecast amounts');
-        toast.error("Failed to save forecast amounts");
-        return false;
-      }
-      
-      // Then store snapshot data
-      const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
-      
-      try {
-        await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
-        toast.success("Data saved successfully");
-        return true;
-      } catch (snapshotError) {
-        console.error('Error storing snapshot:', snapshotError);
-        toast.warning("Data saved but snapshot creation failed");
-        return false;
-      }
-    } catch (error) {
-      console.error('Error in save operation:', error);
-      toast.error("Failed to save data");
-      return false;
-    }
+  const handleSaveWithAnalyticsUpdate = () => {
+    // Start save operation
+    toast.info("Saving data...");
+    setTrackedBudgetData(prev => [...prev]); // Force refresh UI
+    
+    // First step: Save forecast amounts
+    saveForecastAmounts()
+      .then(saveSuccess => {
+        if (!saveSuccess) {
+          toast.error("Failed to save forecast amounts");
+          return;
+        }
+        
+        // Second step: Store snapshot data
+        const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
+        
+        // Store tracker snapshot without checking the return value
+        storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber)
+          .then(() => {
+            toast.success("Data saved successfully");
+          })
+          .catch(err => {
+            console.error('Error storing snapshot:', err);
+            toast.warning("Data saved but snapshot creation failed");
+          });
+      })
+      .catch(error => {
+        console.error('Error in save operation:', error);
+        toast.error("Failed to save data");
+      });
   };
   
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
