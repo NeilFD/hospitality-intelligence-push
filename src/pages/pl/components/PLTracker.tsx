@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -51,7 +50,8 @@ export function PLTracker({
         const success = await updateAllForecasts(currentYear, monthNumber);
         console.log('Forecasts updated successfully on component load:', success);
         
-        await refreshBudgetVsActual();
+        const refreshSuccess = await refreshBudgetVsActual();
+        console.log('Budget vs actual refreshed on component load:', refreshSuccess);
       } catch (err) {
         console.error('Failed to update forecasts on component load:', err);
       }
@@ -95,7 +95,7 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithActuals);
   
-  const handleSaveWithAnalyticsUpdate = async () => {
+  const handleSaveWithAnalyticsUpdate = async (): Promise<boolean> => {
     try {
       const saveSuccess = await saveForecastAmounts();
       
@@ -104,12 +104,10 @@ export function PLTracker({
           new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1
         );
         
-        // Call refreshBudgetVsActual and properly await its boolean result
         const refreshSuccess = await refreshBudgetVsActual();
         
         console.log('Analytics data refreshed after saving forecasts:', refreshSuccess);
         
-        // Return the combined success status
         return saveSuccess && refreshSuccess;
       }
       
