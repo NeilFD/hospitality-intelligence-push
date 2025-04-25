@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -16,6 +15,7 @@ import {
   getForecastAmount,
   refreshBudgetVsActual
 } from './tracker/TrackerCalculations';
+import { storeTrackerSnapshot } from './tracker/SnapshotManager';
 
 interface PLTrackerProps {
   isLoading: boolean;
@@ -109,10 +109,12 @@ export function PLTracker({
       const saveSuccess = await saveForecastAmounts();
       
       if (saveSuccess) {
-        // Ensure the analytics view is refreshed after saving forecast amounts
-        const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
+        // Store a snapshot of the current state
+        await storeTrackerSnapshot(trackedBudgetData, currentYear, 
+          new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1
+        );
         
-        // Use refreshBudgetVsActual and handle its return value
+        // Ensure the analytics view is refreshed after saving forecast amounts
         const refreshSuccess = await refreshBudgetVsActual();
         
         console.log('Analytics data refreshed after saving forecasts:', refreshSuccess);

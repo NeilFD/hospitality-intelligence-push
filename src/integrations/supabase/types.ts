@@ -683,6 +683,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pl_analytics_snapshots: {
+        Row: {
+          actual_amount: number | null
+          budget_amount: number
+          captured_at: string | null
+          category: string
+          created_at: string | null
+          forecast_amount: number | null
+          id: string
+          month: number
+          name: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          actual_amount?: number | null
+          budget_amount: number
+          captured_at?: string | null
+          category: string
+          created_at?: string | null
+          forecast_amount?: number | null
+          id?: string
+          month: number
+          name: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          actual_amount?: number | null
+          budget_amount?: number
+          captured_at?: string | null
+          category?: string
+          created_at?: string | null
+          forecast_amount?: number | null
+          id?: string
+          month?: number
+          name?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about_me: string | null
@@ -2022,6 +2064,17 @@ export type Database = {
           total_triggers: number
         }[]
       }
+      get_latest_pl_snapshots: {
+        Args: { p_year: number; p_month: number }
+        Returns: {
+          category: string
+          name: string
+          budget_amount: number
+          actual_amount: number
+          forecast_amount: number
+          captured_at: string
+        }[]
+      }
       get_permission_matrix: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2153,6 +2206,18 @@ export type Database = {
       sparsevec_typmod_in: {
         Args: { "": unknown[] }
         Returns: number
+      }
+      store_pl_snapshot: {
+        Args: {
+          p_year: number
+          p_month: number
+          p_category: string
+          p_name: string
+          p_budget_amount: number
+          p_actual_amount: number
+          p_forecast_amount: number
+        }
+        Returns: string
       }
       sync_conversations_to_vector_documents: {
         Args: Record<PropertyKey, never>
