@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { formatCurrency, formatPercentage } from "@/lib/date-utils";
@@ -487,7 +488,7 @@ export function PLReportTable({
     const adminBudgetVariance = calculatedAdminTotalForecast - adminTotalBudget;
     const grossProfitItem = renderedData.find(item => item && item.name && (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
-    const grossProfitBudget = grossProfitItem ? item.budget_amount || 0 : 0;
+    const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
     const grossProfitForecast = grossProfitItem ? calculateCorrectForecast(grossProfitItem) : 0;
     const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
     const operatingProfitActual = grossProfitActual - adminTotalActual;
@@ -633,4 +634,53 @@ export function PLReportTable({
           <TableCell className="text-right">
             {formatCurrency(operatingProfitActual)}
           </TableCell>
-          <TableCell className="text-right w-14 min-w-[40px] max-
+          <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+            {formatPercentage(operatingProfitActualPercentage / 100)}
+          </TableCell>
+          <TableCell className="text-right">
+            {formatCurrency(calculatedOperatingProfitForecast)}
+          </TableCell>
+          <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+            {formatPercentage(operatingProfitForecastPercentage / 100)}
+          </TableCell>
+          <TableCell className={`text-right ${getValueColor(operatingProfitVariance, false)}`}>
+            {formatCurrency(operatingProfitVariance)}
+          </TableCell>
+        </TableRow>
+      </>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2 p-4">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-64">Line Item</TableHead>
+            <TableHead className="text-right">Budget</TableHead>
+            <TableHead className="text-right w-14">%</TableHead>
+            <TableHead className="text-right">Actual</TableHead>
+            <TableHead className="text-right w-14">%</TableHead>
+            <TableHead className="text-right">Forecast</TableHead>
+            <TableHead className="text-right w-14">%</TableHead>
+            <TableHead className="text-right">Variance</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {renderTableContent()}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
