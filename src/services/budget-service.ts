@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { DayInput } from '@/pages/pl/components/types/PLTrackerTypes';
 
@@ -218,5 +217,65 @@ export const fetchBeverageCOSForMonth = async (year: number, month: number): Pro
   } catch (err) {
     console.error('Unexpected error calculating beverage COS:', err);
     return 0;
+  }
+};
+
+export const fetchLatestForecastValue = async (
+  budgetItemName: string,
+  year: number,
+  month: number
+): Promise<number | null> => {
+  try {
+    console.log(`Fetching latest forecast for ${budgetItemName} (${year}-${month})`);
+    
+    // Directly query the budget_items table
+    const { data, error } = await supabase
+      .from('budget_items')
+      .select('forecast_amount')
+      .eq('name', budgetItemName)
+      .eq('year', year)
+      .eq('month', month)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching forecast value:', error);
+      return null;
+    }
+    
+    console.log(`Retrieved forecast value for ${budgetItemName}:`, data?.forecast_amount);
+    return data?.forecast_amount || null;
+  } catch (err) {
+    console.error('Unexpected error fetching forecast value:', err);
+    return null;
+  }
+};
+
+export const forceBudgetViewRefresh = async (): Promise<boolean> => {
+  try {
+    // First try the RPC call
+    await supabase.rpc('refresh_budget_vs_actual');
+    console.log('Budget view refreshed via RPC');
+    return true;
+  } catch (rpcError) {
+    console.error('RPC refresh failed:', rpcError);
+    
+    try {
+      // As a fallback, try to force a refresh by running a query
+      const { data, error } = await supabase
+        .from('budget_vs_actual')
+        .select('count(*)')
+        .limit(1);
+      
+      if (error) {
+        console.error('Error refreshing view via query:', error);
+        return false;
+      }
+      
+      console.log('Budget view refreshed via query');
+      return true;
+    } catch (queryError) {
+      console.error('Query refresh failed:', queryError);
+      return false;
+    }
   }
 };

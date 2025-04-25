@@ -1748,7 +1748,7 @@ export type Database = {
           budget_variance?: never
           category?: string | null
           forecast_achievement_percentage?: never
-          forecast_amount?: never
+          forecast_amount?: number | null
           forecast_variance?: never
           month?: number | null
           name?: string | null
@@ -1761,7 +1761,7 @@ export type Database = {
           budget_variance?: never
           category?: string | null
           forecast_achievement_percentage?: never
-          forecast_amount?: never
+          forecast_amount?: number | null
           forecast_variance?: never
           month?: number | null
           name?: string | null
