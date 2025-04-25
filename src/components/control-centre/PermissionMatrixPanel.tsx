@@ -63,7 +63,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
     fetchPermissionMatrix();
   }, [initialMatrix]);
 
-  // Toggle module access with error handling
+  // Toggle module access with error handling and proper null checks
   const toggleModuleAccess = (roleId: string, moduleId: string) => {
     try {
       setMatrix(prevMatrix => 
@@ -77,10 +77,13 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
                         ...module,
                         hasAccess: !module.hasAccess,
                         // If turning off module access, also turn off page access
-                        pagePermissions: module.pagePermissions.map(page => ({
-                          ...page,
-                          hasAccess: !module.hasAccess ? false : page.hasAccess
-                        }))
+                        // Only map if pagePermissions exists and is an array
+                        pagePermissions: Array.isArray(module.pagePermissions) 
+                          ? module.pagePermissions.map(page => ({
+                              ...page,
+                              hasAccess: !module.hasAccess ? false : page.hasAccess
+                            }))
+                          : []
                       }
                     : module
                 )
@@ -94,7 +97,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
     }
   };
 
-  // Toggle page access with error handling
+  // Toggle page access with error handling and proper null checks
   const togglePageAccess = (roleId: string, moduleId: string, pageId: string) => {
     try {
       setMatrix(prevMatrix => 
@@ -106,16 +109,19 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
                   module.moduleId === moduleId 
                     ? {
                         ...module,
-                        pagePermissions: module.pagePermissions.map(page => 
-                          page.pageId === pageId 
-                            ? { ...page, hasAccess: !page.hasAccess }
-                            : page
-                        ),
+                        pagePermissions: Array.isArray(module.pagePermissions)
+                          ? module.pagePermissions.map(page => 
+                              page.pageId === pageId 
+                                ? { ...page, hasAccess: !page.hasAccess }
+                                : page
+                            )
+                          : [],
                         // If any page has access, the module must have access
                         hasAccess: module.hasAccess || 
-                          module.pagePermissions.some(page => 
-                            page.pageId === pageId && !page.hasAccess
-                          )
+                          (Array.isArray(module.pagePermissions) && 
+                            module.pagePermissions.some(page => 
+                              page.pageId === pageId && !page.hasAccess
+                            ))
                       }
                     : module
                 )
@@ -256,7 +262,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {role.modulePermissions && role.modulePermissions.length > 0 ? (
+                        {Array.isArray(role.modulePermissions) && role.modulePermissions.length > 0 ? (
                           role.modulePermissions.map(module => (
                             <React.Fragment key={module.moduleId}>
                               <TableRow className="bg-muted/50">
@@ -270,7 +276,7 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
                                   />
                                 </TableCell>
                               </TableRow>
-                              {module.pagePermissions && module.pagePermissions.map(page => (
+                              {module.pagePermissions && Array.isArray(module.pagePermissions) && module.pagePermissions.map(page => (
                                 <TableRow key={page.pageId}>
                                   <TableCell className="pl-6">{page.pageName}</TableCell>
                                   <TableCell className="text-center">
