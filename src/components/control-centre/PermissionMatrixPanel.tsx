@@ -147,15 +147,20 @@ export function PermissionMatrixPanel({ permissionMatrix: initialMatrix }: Permi
         throw new Error('Invalid matrix structure: matrix must be a non-empty array');
       }
       
-      // Ensure that each role has valid modulePermissions
-      const validMatrix = matrix.map(role => ({
+      // Ensure that each role has valid modulePermissions and proper format for JSON
+      const validMatrix = JSON.stringify(matrix.map(role => ({
         ...role,
-        modulePermissions: Array.isArray(role.modulePermissions) ? role.modulePermissions : []
-      }));
+        modulePermissions: Array.isArray(role.modulePermissions) ? role.modulePermissions.map(module => ({
+          ...module,
+          pagePermissions: Array.isArray(module.pagePermissions) ? module.pagePermissions : []
+        })) : []
+      })));
       
-      // Call the RPC function directly using Supabase client
+      console.log('Formatted matrix for RPC:', validMatrix);
+      
+      // Call the RPC function directly using Supabase client, ensuring we pass a properly stringified JSON array
       const { data, error: updateError } = await supabase.rpc('update_permission_matrix', {
-        matrix: validMatrix
+        matrix: JSON.parse(validMatrix)  // Parse it back to ensure it's sent as JSON not string
       });
       
       if (updateError) {
