@@ -542,7 +542,7 @@ export function PLReportTable({
     const adminBudgetVariance = calculatedAdminTotalForecast - adminTotalBudget;
     const grossProfitItem = renderedData.find(item => item && item.name && (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
     const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
-    const grossProfitBudget = grossProfitItem ? item.budget_amount || 0 : 0;
+    const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
     const grossProfitForecast = grossProfitItem ? calculateCorrectForecast(grossProfitItem) : 0;
     const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
     const operatingProfitActual = grossProfitActual - adminTotalActual;
