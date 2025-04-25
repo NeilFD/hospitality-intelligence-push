@@ -8,8 +8,17 @@ export const storeTrackerSnapshot = async (
   month: number
 ): Promise<boolean> => {
   try {
+    console.log(`Storing ${items.length} items in snapshot for ${year}-${month}`);
+
+    // Filter out items with zero or null forecast values to avoid storing unnecessary data
+    const itemsToStore = items.filter(item => 
+      !(item.isHeader && !item.name.toLowerCase().includes('total') && !item.name.toLowerCase().includes('turnover'))
+    );
+    
+    console.log(`After filtering, storing ${itemsToStore.length} significant items in snapshot`);
+
     // Store each item as a snapshot
-    const promises = items.map(item => 
+    const promises = itemsToStore.map(item => 
       supabase.rpc('store_pl_snapshot', {
         p_year: year,
         p_month: month,
@@ -21,8 +30,15 @@ export const storeTrackerSnapshot = async (
       })
     );
 
-    await Promise.all(promises);
-    console.log(`Stored ${items.length} items in snapshot for ${year}-${month}`);
+    const results = await Promise.all(promises);
+    const failures = results.filter(result => result.error);
+    
+    if (failures.length > 0) {
+      console.error('Some snapshots failed to store:', failures);
+      return false;
+    }
+    
+    console.log(`Successfully stored ${itemsToStore.length} items in snapshot for ${year}-${month}`);
     return true;
   } catch (error) {
     console.error('Error storing snapshot:', error);

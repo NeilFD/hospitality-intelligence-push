@@ -102,19 +102,18 @@ export function PLTracker({
       const saveSuccess = await saveForecastAmounts();
       
       if (saveSuccess) {
-        await storeTrackerSnapshot(trackedBudgetData, currentYear, 
-          new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1
-        );
+        // Store snapshot data
+        const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
+        await storeTrackerSnapshot(trackedBudgetData, currentYear, monthNumber);
         
-        // Call refreshBudgetVsActual but don't rely on its return value for the condition
+        // Call refreshBudgetVsActual without awaiting it
         refreshBudgetVsActual();
         console.log('Analytics data refresh triggered after saving forecasts');
         
-        // Just return saveSuccess since we're not depending on refreshBudgetVsActual's return value
-        return saveSuccess;
+        return true;  // Return true if saving was successful
       }
       
-      return saveSuccess;
+      return false;  // Return false if saving was not successful
     } catch (err) {
       console.error('Error in handleSaveWithAnalyticsUpdate:', err);
       return false;
