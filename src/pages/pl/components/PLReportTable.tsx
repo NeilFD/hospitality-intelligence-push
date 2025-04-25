@@ -512,7 +512,7 @@ export function PLReportTable({
           .filter(item => 
             item && 
             item.name && 
-            item.name !== "Total" && 
+            item.name.toLowerCase() !== "total" && 
             item.category !== "header" && 
             item.budget_amount !== 0
           )
