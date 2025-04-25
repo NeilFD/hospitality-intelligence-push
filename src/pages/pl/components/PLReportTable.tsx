@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { syncUiWithAnalytics } from './tracker/TrackerCalculations';
 import { storeTrackerSnapshot } from './tracker/SnapshotManager';
+import { toast } from "sonner";
 
 type PLReportTableProps = {
   isLoading: boolean;
@@ -652,3 +653,128 @@ export function PLReportTable({
                   {formatCurrency(actualAmount)}
                 </TableCell>
                 <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+                  {percentageDisplay}
+                </TableCell>
+                <TableCell className={`text-right ${fontClass} ${boldValueClass}`}>
+                  {formatCurrency(forecastAmount)}
+                </TableCell>
+                <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+                  {forecastPercentage}
+                </TableCell>
+                <TableCell className={`text-right ${getValueColor(varianceAmount, itemIsCostLine)}`}>
+                  {formatCurrency(varianceAmount)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+          
+          {/* Total Admin Expenses Row */}
+          <TableRow className="bg-purple-50">
+            <TableCell className="font-semibold">Total Admin Expenses</TableCell>
+            <TableCell className="text-right font-semibold">
+              {formatCurrency(adminTotalBudget)}
+            </TableCell>
+            <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+              {formatPercentage(adminTotalBudget / (turnoverItem?.budget_amount || 1))}
+            </TableCell>
+            <TableCell className="text-right font-semibold">
+              {formatCurrency(adminTotalActual)}
+            </TableCell>
+            <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+              {formatPercentage(adminActualPercentage / 100)}
+            </TableCell>
+            <TableCell className="text-right font-semibold">
+              {formatCurrency(calculatedAdminTotalForecast)}
+            </TableCell>
+            <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+              {formatPercentage(adminForecastPercentage / 100)}
+            </TableCell>
+            <TableCell className={`text-right ${getValueColor(adminBudgetVariance, true)}`}>
+              {formatCurrency(adminBudgetVariance)}
+            </TableCell>
+          </TableRow>
+          
+          {/* Operating Profit Row */}
+          <TableRow className="bg-purple-50">
+            <TableCell className="font-semibold">Operating Profit/(Loss)</TableCell>
+            <TableCell className="text-right font-semibold">
+              {formatCurrency(operatingProfitBudget)}
+            </TableCell>
+            <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+              {formatPercentage(operatingProfitBudget / (turnoverItem?.budget_amount || 1))}
+            </TableCell>
+            <TableCell className="text-right font-semibold">
+              {formatCurrency(operatingProfitActual)}
+            </TableCell>
+            <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+              {formatPercentage(operatingProfitActualPercentage / 100)}
+            </TableCell>
+            <TableCell className="text-right font-semibold">
+              {formatCurrency(calculatedOperatingProfitForecast)}
+            </TableCell>
+            <TableCell className="text-right w-14 min-w-[40px] max-w-[40px]">
+              {formatPercentage(operatingProfitForecastPercentage / 100)}
+            </TableCell>
+            <TableCell className={`text-right ${getValueColor(operatingProfitVariance, false)}`}>
+              {formatCurrency(operatingProfitVariance)}
+            </TableCell>
+          </TableRow>
+      </>
+    );
+  };
+  
+  return (
+    <div className="px-1 pt-2">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">P&L Report - {currentMonthName} {currentYear}</h2>
+        <div className="flex items-center gap-2">
+          {lastSyncTime && (
+            <span className="text-sm text-gray-500">Last synced: {lastSyncTime}</span>
+          )}
+          <Button
+            onClick={handleSyncAnalytics}
+            disabled={isSyncing}
+            size="sm"
+            variant="outline"
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Sync Analytics'}
+          </Button>
+        </div>
+      </div>
+      
+      <div className="relative overflow-x-auto border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-64">Item</TableHead>
+              <TableHead className="text-right w-24">Budget</TableHead>
+              <TableHead className="text-right w-14 min-w-[40px] max-w-[40px]">%</TableHead>
+              <TableHead className="text-right w-24">Actual</TableHead>
+              <TableHead className="text-right w-14 min-w-[40px] max-w-[40px]">%</TableHead>
+              <TableHead className="text-right w-24">Forecast</TableHead>
+              <TableHead className="text-right w-14 min-w-[40px] max-w-[40px]">%</TableHead>
+              <TableHead className="text-right w-24">Variance</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-8">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Skeleton className="h-8 w-[250px]" />
+                    <Skeleton className="h-8 w-[200px]" />
+                    <Skeleton className="h-8 w-[300px]" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              renderTableContent()
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
