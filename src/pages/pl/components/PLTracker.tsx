@@ -34,27 +34,22 @@ export function PLTracker({
 }: PLTrackerProps) {
   const { yesterdayDate, daysInMonth, dayOfMonth } = useDateCalculations(currentMonthName, currentYear);
   
-  // Force day of month to be 19 for April 2025 as specified
   const actualDayOfMonth = currentMonthName === 'April' && currentYear === 2025 ? 19 : dayOfMonth;
   
   console.log(`Using day of month: ${actualDayOfMonth} for ${currentMonthName} ${currentYear}`);
   console.log(`Days in month: ${daysInMonth}`);
   
-  // Debug log for all processed budget data
   console.log("Processed budget data count:", processedBudgetData.length);
   
-  // Initialize forecasts when component loads - CRITICAL to ensure forecasts exist
   useEffect(() => {
     const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
     console.log(`Initializing forecasts for ${currentYear}-${monthNumber}`);
     
-    // Force update of all forecasts in the database
     const updateForecasts = async () => {
       try {
         const success = await updateAllForecasts(currentYear, monthNumber);
         console.log('Forecasts updated successfully on component load:', success);
         
-        // Explicitly refresh the analytics view after updates
         await refreshBudgetVsActual();
       } catch (err) {
         console.error('Failed to update forecasts on component load:', err);
@@ -64,7 +59,6 @@ export function PLTracker({
     updateForecasts();
   }, [currentMonthName, currentYear]);
   
-  // Pre-calculate forecast values for all items
   useEffect(() => {
     if (processedBudgetData && processedBudgetData.length > 0) {
       console.log('Pre-calculating forecast values for all items');
@@ -72,7 +66,6 @@ export function PLTracker({
       const monthNumber = new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1;
       
       processedBudgetData.forEach(item => {
-        // Only process items with IDs
         if (item.id) {
           const forecast = getForecastAmount(item, currentYear, monthNumber, daysInMonth, actualDayOfMonth);
           console.log(`Pre-calculated forecast for ${item.name}: ${forecast}`);
@@ -81,9 +74,7 @@ export function PLTracker({
     }
   }, [processedBudgetData, currentMonthName, currentYear, daysInMonth, actualDayOfMonth]);
   
-  // Keep original actual_amount values intact for special items like revenue, COS, wages
   const processedDataWithActuals = processedBudgetData.map(item => {
-    // Log each item's budget and actual amount for debugging
     console.log(`Processing ${item.name}: budget=${item.budget_amount}, actual=${item.actual_amount}, forecast=${item.forecast_amount}`);
     
     return {
@@ -103,23 +94,19 @@ export function PLTracker({
     saveForecastAmounts
   } = useTrackerData(processedDataWithActuals);
   
-  // Wrap the save function to ensure analytics are updated after saving
   const handleSaveWithAnalyticsUpdate = async () => {
     try {
       const saveSuccess = await saveForecastAmounts();
       
       if (saveSuccess) {
-        // Store a snapshot of the current state
         await storeTrackerSnapshot(trackedBudgetData, currentYear, 
           new Date(Date.parse(`${currentMonthName} 1, ${currentYear}`)).getMonth() + 1
         );
         
-        // Ensure the analytics view is refreshed after saving forecast amounts
         const refreshSuccess = await refreshBudgetVsActual();
         
         console.log('Analytics data refreshed after saving forecasts:', refreshSuccess);
         
-        // Return true only if both save and refresh are successful
         return saveSuccess && refreshSuccess;
       }
       
@@ -130,7 +117,6 @@ export function PLTracker({
     }
   };
   
-  // Debug log for top few actual amounts
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
     name: item.name,
     actual_amount: item.actual_amount,
