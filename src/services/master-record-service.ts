@@ -12,6 +12,7 @@ export const fetchMasterDailyRecord = async (date: string): Promise<MasterDailyR
     .maybeSingle();
   
   if (error) {
+    console.error('Error fetching master daily record:', error);
     throw error;
   }
   
@@ -39,7 +40,10 @@ export const fetchMasterWeeklyRecords = async (
     .lte('date', endDate)
     .order('date');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching master weekly records:', error);
+    throw error;
+  }
   
   console.log(`Fetched ${data.length} records for week ${weekNumber} from ${startDate} to ${endDate}`);
   return data.map(mapDbRecordToMasterDailyRecord);
@@ -66,7 +70,10 @@ export const fetchMasterDailyRecordsForWeek = async (
     .lte('date', endDate)
     .order('date');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching master records for week:', error);
+    throw error;
+  }
   
   return data.map(record => ({
     date: record.date,
@@ -87,7 +94,10 @@ export const fetchMasterRecordsByMonth = async (
     .eq('month', month)
     .order('date');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching master records by month:', error);
+    throw error;
+  }
   
   return data.map(record => ({
     date: record.date,
@@ -107,7 +117,10 @@ export const fetchMonthlyRevenueData = async (
     .eq('year', year)
     .eq('month', month);
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching monthly revenue data:', error);
+    throw error;
+  }
   
   // Calculate the totals
   const foodRevenue = data.reduce((sum, record) => sum + (record.food_revenue || 0), 0);
@@ -129,7 +142,10 @@ export const fetchMasterMonthlyRecords = async (
     .eq('month', month)
     .order('date');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching master monthly records:', error);
+    throw error;
+  }
   
   console.log(`Fetched ${data.length} records for month ${month}/${year}`);
   return data.map(mapDbRecordToMasterDailyRecord);
@@ -139,86 +155,101 @@ export const fetchMasterMonthlyRecords = async (
 export const upsertMasterDailyRecord = async (
   record: Partial<MasterDailyRecord> & { date: string }
 ): Promise<MasterDailyRecord> => {
-  // Calculate the date components if not provided
-  const date = new Date(record.date);
-  const year = record.year || date.getFullYear();
-  const month = record.month || date.getMonth() + 1;
-  const dayOfWeek = record.dayOfWeek || date.toLocaleDateString('en-US', { weekday: 'long' });
-  
-  // Calculate week number if not provided
-  let weekNumber = record.weekNumber;
-  if (!weekNumber) {
-    const weekDates = generateWeekDates(year, month);
-    for (let i = 0; i < weekDates.length; i++) {
-      const { startDate, endDate } = weekDates[i];
-      if (record.date >= startDate && record.date <= endDate) {
-        weekNumber = i + 1;
-        break;
+  try {
+    // Calculate the date components if not provided
+    const date = new Date(record.date);
+    const year = record.year || date.getFullYear();
+    const month = record.month || date.getMonth() + 1;
+    const dayOfWeek = record.dayOfWeek || date.toLocaleDateString('en-US', { weekday: 'long' });
+    
+    // Calculate week number if not provided
+    let weekNumber = record.weekNumber;
+    if (!weekNumber) {
+      const weekDates = generateWeekDates(year, month);
+      for (let i = 0; i < weekDates.length; i++) {
+        const { startDate, endDate } = weekDates[i];
+        if (record.date >= startDate && record.date <= endDate) {
+          weekNumber = i + 1;
+          break;
+        }
       }
     }
+    
+    // Calculate total revenue and covers
+    const foodRevenue = record.foodRevenue || 0;
+    const beverageRevenue = record.beverageRevenue || 0;
+    const totalRevenue = foodRevenue + beverageRevenue;
+    
+    const lunchCovers = record.lunchCovers || 0;
+    const dinnerCovers = record.dinnerCovers || 0;
+    const totalCovers = lunchCovers + dinnerCovers;
+    
+    // Calculate average cover spend
+    const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
+    
+    console.log(`Preparing to upsert record for ${record.date} with week ${weekNumber}`);
+    
+    const dbRecord = {
+      date: record.date,
+      day_of_week: dayOfWeek,
+      year,
+      month,
+      week_number: weekNumber as number,
+      
+      food_revenue: foodRevenue,
+      beverage_revenue: beverageRevenue,
+      total_revenue: totalRevenue,
+      
+      lunch_covers: lunchCovers,
+      dinner_covers: dinnerCovers,
+      total_covers: totalCovers,
+      average_cover_spend: averageCoverSpend,
+      
+      weather_description: record.weatherDescription,
+      temperature: record.temperature,
+      precipitation: record.precipitation,
+      wind_speed: record.windSpeed,
+      
+      day_foh_team: record.dayFohTeam,
+      day_foh_manager: record.dayFohManager,
+      day_kitchen_team: record.dayKitchenTeam,
+      day_kitchen_manager: record.dayKitchenManager,
+      evening_foh_team: record.eveningFohTeam,
+      evening_foh_manager: record.eveningFohManager,
+      evening_kitchen_team: record.eveningKitchenTeam,
+      evening_kitchen_manager: record.eveningKitchenManager,
+      
+      local_events: record.localEvents,
+      operations_notes: record.operationsNotes
+    };
+    
+    console.log('Upserting record with data:', JSON.stringify(dbRecord, null, 2));
+    
+    const { data, error } = await supabase
+      .from('master_daily_records')
+      .upsert(dbRecord, {
+        onConflict: 'date',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error upserting master daily record:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned after upsert');
+      throw new Error('Failed to save record: No data returned from database');
+    }
+    
+    console.log('Successfully upserted record:', data);
+    return mapDbRecordToMasterDailyRecord(data);
+  } catch (error) {
+    console.error('Exception in upsertMasterDailyRecord:', error);
+    throw error;
   }
-  
-  // Calculate total revenue and covers
-  const foodRevenue = record.foodRevenue || 0;
-  const beverageRevenue = record.beverageRevenue || 0;
-  const totalRevenue = foodRevenue + beverageRevenue;
-  
-  const lunchCovers = record.lunchCovers || 0;
-  const dinnerCovers = record.dinnerCovers || 0;
-  const totalCovers = lunchCovers + dinnerCovers;
-  
-  // Calculate average cover spend
-  const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
-  
-  const dbRecord = {
-    date: record.date,
-    day_of_week: dayOfWeek,
-    year,
-    month,
-    week_number: weekNumber as number,
-    
-    food_revenue: foodRevenue,
-    beverage_revenue: beverageRevenue,
-    total_revenue: totalRevenue,
-    
-    lunch_covers: lunchCovers,
-    dinner_covers: dinnerCovers,
-    total_covers: totalCovers,
-    average_cover_spend: averageCoverSpend,
-    
-    weather_description: record.weatherDescription,
-    temperature: record.temperature,
-    precipitation: record.precipitation,
-    wind_speed: record.windSpeed,
-    
-    // Add the team fields
-    day_foh_team: record.dayFohTeam,
-    day_foh_manager: record.dayFohManager,
-    day_kitchen_team: record.dayKitchenTeam,
-    day_kitchen_manager: record.dayKitchenManager,
-    evening_foh_team: record.eveningFohTeam,
-    evening_foh_manager: record.eveningFohManager,
-    evening_kitchen_team: record.eveningKitchenTeam,
-    evening_kitchen_manager: record.eveningKitchenManager,
-    
-    local_events: record.localEvents,
-    operations_notes: record.operationsNotes
-  };
-  
-  console.log(`Upserting record for ${record.date} with week ${weekNumber}`);
-  
-  const { data, error } = await supabase
-    .from('master_daily_records')
-    .upsert(dbRecord, {
-      onConflict: 'date',
-      ignoreDuplicates: false
-    })
-    .select()
-    .single();
-  
-  if (error) throw error;
-  
-  return mapDbRecordToMasterDailyRecord(data);
 };
 
 // Map database record to TypeScript object
@@ -245,7 +276,6 @@ const mapDbRecordToMasterDailyRecord = (data: any): MasterDailyRecord => {
     precipitation: data.precipitation,
     windSpeed: data.wind_speed,
     
-    // Map the team fields
     dayFohTeam: data.day_foh_team,
     dayFohManager: data.day_foh_manager,
     dayKitchenTeam: data.day_kitchen_team,

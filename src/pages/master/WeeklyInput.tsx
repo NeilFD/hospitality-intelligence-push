@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -167,14 +168,17 @@ const WeeklyInput = () => {
   
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
+      console.log('WeeklyInput: Saving daily record...', data);
       const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & {
         date: string;
       });
+      console.log('WeeklyInput: Record saved successfully:', updatedRecord);
+      
       setRecords(prev => prev.map(record => record.date === updatedRecord.date ? updatedRecord : record));
       toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
     } catch (error) {
-      console.error('Error saving daily record:', error);
-      toast.error('Failed to save daily record');
+      console.error('WeeklyInput: Error saving daily record:', error);
+      // Error toast is now handled in the DailyRecordForm component
     }
   }, []);
   

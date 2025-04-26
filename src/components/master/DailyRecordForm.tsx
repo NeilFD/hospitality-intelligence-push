@@ -17,6 +17,8 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 import { TavernLogo } from '@/components/TavernLogo';
 import { formatCurrency, formatPercentage } from '@/lib/date-utils';
 
+console.log("Daily Record Form is imported and being used correctly");
+
 interface ForecastDataItem {
   foodRevenue: number;
   beverageRevenue: number;
