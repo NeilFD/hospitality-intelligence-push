@@ -188,94 +188,54 @@ export const upsertMasterDailyRecord = async (
     // Calculate average cover spend
     const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
     
-    // Prepare the data object for insert/update
-    const dbRecord = {
-      date: record.date,
-      day_of_week: dayOfWeek,
-      year,
-      month,
-      week_number: weekNumber as number,
-      
-      food_revenue: foodRevenue,
-      beverage_revenue: beverageRevenue,
-      total_revenue: totalRevenue,
-      
-      lunch_covers: lunchCovers,
-      dinner_covers: dinnerCovers,
-      total_covers: totalCovers,
-      average_cover_spend: averageCoverSpend,
-      
-      weather_description: record.weatherDescription,
-      temperature: record.temperature,
-      precipitation: record.precipitation,
-      wind_speed: record.windSpeed,
-      
-      day_foh_team: record.dayFohTeam,
-      day_foh_manager: record.dayFohManager,
-      day_kitchen_team: record.dayKitchenTeam,
-      day_kitchen_manager: record.dayKitchenManager,
-      evening_foh_team: record.eveningFohTeam,
-      evening_foh_manager: record.eveningFohManager,
-      evening_kitchen_team: record.eveningKitchenTeam,
-      evening_kitchen_manager: record.eveningKitchenManager,
-      
-      local_events: record.localEvents,
-      operations_notes: record.operationsNotes
-    };
-
-    // First check if record exists to determine if we need to update or insert
-    const { data: existingRecord, error: checkError } = await supabase
-      .from('master_daily_records')
-      .select('id')
-      .eq('date', record.date)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('Error checking for existing record:', checkError);
-      throw new Error(`Failed to check if record exists: ${checkError.message}`);
-    }
-
-    let result;
-    
-    if (existingRecord?.id) {
-      // Update existing record using a direct update to avoid triggering view refreshes
-      console.log(`Record exists for date ${record.date}, updating directly with ID: ${existingRecord.id}`);
-      const { data, error } = await supabase
-        .from('master_daily_records')
-        .update(dbRecord)
-        .eq('id', existingRecord.id)
-        .select('*')
-        .single();
-      
-      if (error) {
-        console.error('Error updating master daily record:', error);
-        throw new Error(`Failed to update record: ${error.message}`);
+    // Call our new RPC function with the prepared data
+    const { data, error } = await supabase.rpc('upsert_master_daily_record', {
+      record_data: {
+        date: record.date,
+        day_of_week: dayOfWeek,
+        year,
+        month,
+        week_number: weekNumber,
+        
+        food_revenue: foodRevenue,
+        beverage_revenue: beverageRevenue,
+        total_revenue: totalRevenue,
+        
+        lunch_covers: lunchCovers,
+        dinner_covers: dinnerCovers,
+        total_covers: totalCovers,
+        average_cover_spend: averageCoverSpend,
+        
+        weather_description: record.weatherDescription,
+        temperature: record.temperature,
+        precipitation: record.precipitation,
+        wind_speed: record.windSpeed,
+        
+        day_foh_team: record.dayFohTeam,
+        day_foh_manager: record.dayFohManager,
+        day_kitchen_team: record.dayKitchenTeam,
+        day_kitchen_manager: record.dayKitchenManager,
+        evening_foh_team: record.eveningFohTeam,
+        evening_foh_manager: record.eveningFohManager,
+        evening_kitchen_team: record.eveningKitchenTeam,
+        evening_kitchen_manager: record.eveningKitchenManager,
+        
+        local_events: record.localEvents,
+        operations_notes: record.operationsNotes
       }
-      
-      result = data;
-    } else {
-      // Insert new record directly
-      console.log(`No record exists for date ${record.date}, inserting new record directly`);
-      const { data, error } = await supabase
-        .from('master_daily_records')
-        .insert(dbRecord)
-        .select('*')
-        .single();
-      
-      if (error) {
-        console.error('Error inserting master daily record:', error);
-        throw new Error(`Failed to insert record: ${error.message}`);
-      }
-      
-      result = data;
+    });
+    
+    if (error) {
+      console.error('Error in RPC upsert_master_daily_record:', error);
+      throw new Error(`Failed to upsert record: ${error.message}`);
     }
     
-    if (!result) {
+    if (!data) {
       throw new Error('No data returned from database operation');
     }
     
-    console.log('Database operation succeeded, returned data:', result);
-    return mapDbRecordToMasterDailyRecord(result);
+    console.log('Database operation succeeded, returned data:', data);
+    return mapDbRecordToMasterDailyRecord(data);
     
   } catch (error) {
     console.error('Exception in upsertMasterDailyRecord:', error);

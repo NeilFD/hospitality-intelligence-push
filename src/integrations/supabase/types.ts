@@ -2260,6 +2260,10 @@ export type Database = {
         Args: { user_id: string; password: string }
         Returns: boolean
       }
+      upsert_master_daily_record: {
+        Args: { record_data: Json }
+        Returns: Json
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
