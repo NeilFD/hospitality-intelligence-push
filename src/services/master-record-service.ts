@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import { generateWeekDates } from '@/lib/date-utils';
@@ -188,42 +189,48 @@ export const upsertMasterDailyRecord = async (
     // Calculate average cover spend
     const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
     
-    // Call our new RPC function with the prepared data
-    const { data, error } = await supabase.rpc('upsert_master_daily_record', {
-      record_data: {
-        date: record.date,
-        day_of_week: dayOfWeek,
-        year,
-        month,
-        week_number: weekNumber,
-        
-        food_revenue: foodRevenue,
-        beverage_revenue: beverageRevenue,
-        total_revenue: totalRevenue,
-        
-        lunch_covers: lunchCovers,
-        dinner_covers: dinnerCovers,
-        total_covers: totalCovers,
-        average_cover_spend: averageCoverSpend,
-        
-        weather_description: record.weatherDescription,
-        temperature: record.temperature,
-        precipitation: record.precipitation,
-        wind_speed: record.windSpeed,
-        
-        day_foh_team: record.dayFohTeam,
-        day_foh_manager: record.dayFohManager,
-        day_kitchen_team: record.dayKitchenTeam,
-        day_kitchen_manager: record.dayKitchenManager,
-        evening_foh_team: record.eveningFohTeam,
-        evening_foh_manager: record.eveningFohManager,
-        evening_kitchen_team: record.eveningKitchenTeam,
-        evening_kitchen_manager: record.eveningKitchenManager,
-        
-        local_events: record.localEvents,
-        operations_notes: record.operationsNotes
-      }
-    });
+    // Prepare the record data for our RPC function
+    const recordData = {
+      date: record.date,
+      day_of_week: dayOfWeek,
+      year,
+      month,
+      week_number: weekNumber,
+      
+      food_revenue: foodRevenue,
+      beverage_revenue: beverageRevenue,
+      total_revenue: totalRevenue,
+      
+      lunch_covers: lunchCovers,
+      dinner_covers: dinnerCovers,
+      total_covers: totalCovers,
+      average_cover_spend: averageCoverSpend,
+      
+      weather_description: record.weatherDescription,
+      temperature: record.temperature,
+      precipitation: record.precipitation,
+      wind_speed: record.windSpeed,
+      
+      day_foh_team: record.dayFohTeam,
+      day_foh_manager: record.dayFohManager,
+      day_kitchen_team: record.dayKitchenTeam,
+      day_kitchen_manager: record.dayKitchenManager,
+      evening_foh_team: record.eveningFohTeam,
+      evening_foh_manager: record.eveningFohManager,
+      evening_kitchen_team: record.eveningKitchenTeam,
+      evening_kitchen_manager: record.eveningKitchenManager,
+      
+      local_events: record.localEvents,
+      operations_notes: record.operationsNotes
+    };
+    
+    console.log('Calling RPC function with data:', JSON.stringify(recordData, null, 2));
+    
+    // Call the RPC function directly
+    const { data, error } = await supabase
+      .rpc('upsert_master_daily_record', {
+        record_data: recordData
+      });
     
     if (error) {
       console.error('Error in RPC upsert_master_daily_record:', error);
