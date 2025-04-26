@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import { generateWeekDates } from '@/lib/date-utils';
