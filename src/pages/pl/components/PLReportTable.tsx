@@ -90,6 +90,8 @@ export function PLReportTable({
           item.name.trim() === expName || item.name.trim().toLowerCase() === expName.toLowerCase())
       );
       
+      console.log('Admin items for OP calculation:', adminItems);
+      
       const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
       const adminTotalActual = adminItems.reduce((sum, item) => sum + getEffectiveActualAmount(item), 0);
       const calculatedAdminTotalForecast = adminItems.reduce((sum, item) => {
@@ -97,31 +99,43 @@ export function PLReportTable({
         return sum + (forecast || 0);
       }, 0);
       
+      console.log('Admin totals:', {
+        budget: adminTotalBudget,
+        actual: adminTotalActual,
+        forecast: calculatedAdminTotalForecast
+      });
+      
       const grossProfitItem = renderedData.find(item => item && item.name && 
         (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && 
         !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
+      
+      console.log('Gross Profit item:', grossProfitItem);
       
       const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
       const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
       const grossProfitForecast = grossProfitItem ? calculateCorrectForecast(grossProfitItem) : 0;
       
+      console.log('Gross Profit values:', {
+        budget: grossProfitBudget,
+        actual: grossProfitActual,
+        forecast: grossProfitForecast
+      });
+      
       const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
       const operatingProfitActual = grossProfitActual - adminTotalActual;
       const calculatedOperatingProfitForecast = grossProfitForecast - calculatedAdminTotalForecast;
+
+      console.log('Operating Profit calculations:', {
+        budget: operatingProfitBudget,
+        actual: operatingProfitActual,
+        forecast: calculatedOperatingProfitForecast
+      });
 
       const success = await syncUiWithAnalytics(currentYear, currentMonth);
       
       if (success) {
         const snapshotSuccess = await storeTrackerSnapshot(
-          renderedData.filter(item => 
-            !(item.isHeader && !item.name.toLowerCase().includes('total') && !item.name.toLowerCase().includes('turnover'))
-          ).map(item => ({
-            ...item,
-            category: item.category || 'General',
-            budget_amount: item.budget_amount || 0,
-            actual_amount: getActualAmount(item),
-            forecast_amount: calculateCorrectForecast(item)
-          })), 
+          renderedData, 
           currentYear, 
           currentMonth,
           {

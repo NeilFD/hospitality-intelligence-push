@@ -10,14 +10,11 @@ export const storeTrackerSnapshot = async (
 ): Promise<boolean> => {
   try {
     console.log(`Storing ${items.length} items in snapshot for ${year}-${month}`);
+    console.log('Operating Profit values:', calculatedOperatingProfit);
 
-    // Filter out items with zero or null forecast values to avoid storing unnecessary data
-    const itemsToStore = items.filter(item => 
-      !(item.isHeader && !item.name.toLowerCase().includes('total') && !item.name.toLowerCase().includes('turnover'))
-    );
+    // Store items that have significant values
+    const itemsToStore = items.filter(item => item.budget_amount || item.actual_amount || item.forecast_amount);
     
-    console.log(`After filtering, storing ${itemsToStore.length} significant items in snapshot`);
-
     // Add Operating Profit if provided
     if (calculatedOperatingProfit) {
       itemsToStore.push({
@@ -30,12 +27,20 @@ export const storeTrackerSnapshot = async (
         isOperatingProfit: true
       } as PLTrackerBudgetItem);
     }
+    
+    console.log(`After filtering and adding OP, storing ${itemsToStore.length} items in snapshot`);
 
     // Store each item as a snapshot
     const promises = itemsToStore.map(item => {
       const budgetAmount = item.budget_amount || 0;
       const actualAmount = item.actual_amount || 0;
       const forecastAmount = item.forecast_amount || 0;
+      
+      console.log(`Storing snapshot for ${item.name}:`, {
+        budget: budgetAmount,
+        actual: actualAmount,
+        forecast: forecastAmount
+      });
       
       return supabase.rpc('store_pl_snapshot', {
         p_year: year,
