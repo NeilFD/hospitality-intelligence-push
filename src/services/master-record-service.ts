@@ -227,74 +227,78 @@ export const upsertMasterDailyRecord = async (
     
     console.log('Upserting record with data:', JSON.stringify(dbRecord, null, 2));
     
-    // First check if the record already exists
-    const { data: existingRecord, error: checkError } = await supabase
-      .from('master_daily_records')
-      .select('id')
-      .eq('date', record.date)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('Error checking for existing record:', checkError);
-      throw checkError; // Make sure to propagate this error
-    }
-    
+    // MODIFIED: Using a transaction to ensure database consistency
     let result;
+    const { data, error } = await supabase.rpc('upsert_master_daily_record', {
+      record_data: dbRecord
+    });
     
-    if (existingRecord?.id) {
-      // Update existing record
-      console.log(`Record exists for date ${record.date}, updating with ID: ${existingRecord.id}`);
-      const { data: updatedData, error: updateError } = await supabase
+    if (error) {
+      console.error('Error in upsert_master_daily_record RPC:', error);
+      
+      // Fallback to traditional update/insert if RPC fails
+      console.log('Falling back to manual upsert process');
+      
+      // First check if the record already exists
+      const { data: existingRecord, error: checkError } = await supabase
         .from('master_daily_records')
-        .update(dbRecord)
-        .eq('id', existingRecord.id)
-        .select('*')
-        .single();
+        .select('id')
+        .eq('date', record.date)
+        .maybeSingle();
       
-      if (updateError) {
-        console.error('Error updating master daily record:', updateError);
-        throw updateError;
+      if (checkError) {
+        console.error('Error checking for existing record:', checkError);
+        throw checkError;
       }
       
-      if (!updatedData) {
-        throw new Error('No data returned after update operation');
+      if (existingRecord?.id) {
+        // Update existing record
+        console.log(`Record exists for date ${record.date}, updating with ID: ${existingRecord.id}`);
+        const { data: updatedData, error: updateError } = await supabase
+          .from('master_daily_records')
+          .update(dbRecord)
+          .eq('id', existingRecord.id)
+          .select('*')
+          .single();
+        
+        if (updateError) {
+          console.error('Error updating master daily record:', updateError);
+          throw updateError;
+        }
+        
+        result = updatedData;
+      } else {
+        // Insert new record
+        console.log(`No record exists for date ${record.date}, inserting new record`);
+        const { data: insertedData, error: insertError } = await supabase
+          .from('master_daily_records')
+          .insert(dbRecord)
+          .select('*')
+          .single();
+        
+        if (insertError) {
+          console.error('Error inserting master daily record:', insertError);
+          throw insertError;
+        }
+        
+        result = insertedData;
       }
-      
-      result = updatedData;
-      console.log('Successfully updated record:', result);
     } else {
-      // Insert new record
-      console.log(`No record exists for date ${record.date}, inserting new record`);
-      const { data: insertedData, error: insertError } = await supabase
-        .from('master_daily_records')
-        .insert(dbRecord)
-        .select('*')
-        .single();
-      
-      if (insertError) {
-        console.error('Error inserting master daily record:', insertError);
-        throw insertError;
-      }
-      
-      if (!insertedData) {
-        throw new Error('No data returned after insert operation');
-      }
-      
-      result = insertedData;
-      console.log('Successfully inserted record:', result);
+      // RPC succeeded
+      result = data;
+      console.log('Successfully saved record via RPC:', result);
     }
     
-    // Double-check that we have valid data after the operation
     if (!result || typeof result !== 'object') {
       console.error('Invalid result after database operation:', result);
       throw new Error('Invalid data returned from database operation');
     }
     
-    // Fetch the record again to ensure we have the most up-to-date data
+    // MODIFIED: Additional explicit verification query to ensure data consistency
     const { data: verifiedRecord, error: verifyError } = await supabase
       .from('master_daily_records')
       .select('*')
-      .eq('id', result.id)
+      .eq('date', record.date)
       .single();
       
     if (verifyError) {
@@ -307,7 +311,9 @@ export const upsertMasterDailyRecord = async (
     }
     
     console.log('Verified saved record exists:', verifiedRecord);
-    return mapDbRecordToMasterDailyRecord(verifiedRecord);
+    const mappedRecord = mapDbRecordToMasterDailyRecord(verifiedRecord);
+    console.log('Final mapped record to return:', mappedRecord);
+    return mappedRecord;
   } catch (error) {
     console.error('Exception in upsertMasterDailyRecord:', error);
     throw error;

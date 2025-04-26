@@ -30,6 +30,7 @@ const WeeklyInput = () => {
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveAttempts, setSaveAttempts] = useState(0);
   
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
@@ -169,9 +170,15 @@ const WeeklyInput = () => {
   }, [loadRecords]);
   
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
+    if (isSaving) {
+      console.log('Already saving, ignoring duplicate save request');
+      return;
+    }
+    
     try {
-      console.log('WeeklyInput: Saving daily record...', data);
       setIsSaving(true);
+      setSaveAttempts(prev => prev + 1);
+      console.log(`WeeklyInput: Saving daily record... (Attempt #${saveAttempts + 1})`, data);
       
       if (!data.date) {
         throw new Error('Date is required for saving records');
@@ -186,7 +193,7 @@ const WeeklyInput = () => {
         weekNumber
       };
       
-      console.log('WeeklyInput: Record ready for saving:', recordToSave);
+      console.log('WeeklyInput: Record ready for saving:', JSON.stringify(recordToSave, null, 2));
       
       const updatedRecord = await upsertMasterDailyRecord(recordToSave);
       console.log('WeeklyInput: Record saved successfully:', updatedRecord);
@@ -195,26 +202,37 @@ const WeeklyInput = () => {
         throw new Error('Failed to save record: No data returned from server');
       }
       
-      // Explicitly update the correct record in state to ensure UI reflects saved data
+      // Force a refresh of the records after saving to ensure data is current
+      const freshRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
+      console.log('Fetched fresh records after saving:', freshRecords);
+      
+      // Update the state with refreshed data
       setRecords(prev => {
-        // Create a new array to ensure React detects the state change
-        return prev.map(record => {
-          if (record.date === updatedRecord.date) {
-            console.log(`Updating record in state for date ${record.date}`);
-            return updatedRecord; // Use the full returned record from the server
+        const updatedRecords = prev.map(record => {
+          const freshRecord = freshRecords.find(fr => fr.date === record.date);
+          if (freshRecord) {
+            return freshRecord;
           }
           return record;
         });
+        return updatedRecords;
       });
       
       toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
     } catch (error) {
       console.error('WeeklyInput: Error saving daily record:', error);
       toast.error(`Failed to save record: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Attempt to reload records to ensure UI is in sync with database
+      try {
+        await loadRecords();
+      } catch (reloadError) {
+        console.error('Failed to reload records after save error:', reloadError);
+      }
     } finally {
       setIsSaving(false);
     }
-  }, [year, month, weekNumber]);
+  }, [year, month, weekNumber, isSaving, saveAttempts, loadRecords]);
   
   const getForecastVariance = (actual: number, forecast: number) => {
     if (forecast === 0) return { variance: 0, percentage: 0 };
@@ -291,7 +309,7 @@ const WeeklyInput = () => {
                 className="mt-0 p-0"
               >
                 <DailyRecordForm 
-                  key={`${day.date}-${day.id || 'new'}`} 
+                  key={`${day.date}-${day.id || 'new'}-${saveAttempts}`} 
                   date={day.date} 
                   dayOfWeek={day.dayOfWeek} 
                   initialData={day}
