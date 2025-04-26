@@ -29,6 +29,7 @@ const WeeklyInput = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
@@ -170,15 +171,29 @@ const WeeklyInput = () => {
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
       console.log('WeeklyInput: Saving daily record...', data);
+      setIsSaving(true);
       
       if (!data.date) {
         throw new Error('Date is required for saving records');
       }
       
-      const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & {
-        date: string;
-      });
+      // Ensure we have all the necessary information before saving
+      const recordToSave: Partial<MasterDailyRecord> & { date: string } = {
+        ...data,
+        date: data.date,
+        year,
+        month,
+        weekNumber
+      };
+      
+      console.log('WeeklyInput: Record ready for saving:', recordToSave);
+      
+      const updatedRecord = await upsertMasterDailyRecord(recordToSave);
       console.log('WeeklyInput: Record saved successfully:', updatedRecord);
+      
+      if (!updatedRecord || !updatedRecord.id) {
+        throw new Error('Failed to save record: No data returned from server');
+      }
       
       // Explicitly update the correct record in state to ensure UI reflects saved data
       setRecords(prev => {
@@ -186,9 +201,7 @@ const WeeklyInput = () => {
         return prev.map(record => {
           if (record.date === updatedRecord.date) {
             console.log(`Updating record in state for date ${record.date}`);
-            return {
-              ...updatedRecord // Use the full returned record from the server
-            };
+            return updatedRecord; // Use the full returned record from the server
           }
           return record;
         });
@@ -198,8 +211,10 @@ const WeeklyInput = () => {
     } catch (error) {
       console.error('WeeklyInput: Error saving daily record:', error);
       toast.error(`Failed to save record: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSaving(false);
     }
-  }, []);
+  }, [year, month, weekNumber]);
   
   const getForecastVariance = (actual: number, forecast: number) => {
     if (forecast === 0) return { variance: 0, percentage: 0 };
@@ -276,7 +291,7 @@ const WeeklyInput = () => {
                 className="mt-0 p-0"
               >
                 <DailyRecordForm 
-                  key={day.date} 
+                  key={`${day.date}-${day.id || 'new'}`} 
                   date={day.date} 
                   dayOfWeek={day.dayOfWeek} 
                   initialData={day}

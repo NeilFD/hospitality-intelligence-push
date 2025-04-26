@@ -256,7 +256,12 @@ export const upsertMasterDailyRecord = async (
         throw updateError;
       }
       
+      if (!updatedData) {
+        throw new Error('No data returned after update operation');
+      }
+      
       result = updatedData;
+      console.log('Successfully updated record:', result);
     } else {
       // Insert new record
       console.log(`No record exists for date ${record.date}, inserting new record`);
@@ -271,15 +276,38 @@ export const upsertMasterDailyRecord = async (
         throw insertError;
       }
       
+      if (!insertedData) {
+        throw new Error('No data returned after insert operation');
+      }
+      
       result = insertedData;
+      console.log('Successfully inserted record:', result);
     }
     
-    if (!result) {
-      throw new Error('No data returned after database operation');
+    // Double-check that we have valid data after the operation
+    if (!result || typeof result !== 'object') {
+      console.error('Invalid result after database operation:', result);
+      throw new Error('Invalid data returned from database operation');
     }
     
-    console.log('Successfully saved record:', result);
-    return mapDbRecordToMasterDailyRecord(result);
+    // Fetch the record again to ensure we have the most up-to-date data
+    const { data: verifiedRecord, error: verifyError } = await supabase
+      .from('master_daily_records')
+      .select('*')
+      .eq('id', result.id)
+      .single();
+      
+    if (verifyError) {
+      console.error('Error verifying record after save:', verifyError);
+      throw verifyError;
+    }
+    
+    if (!verifiedRecord) {
+      throw new Error('Failed to verify record exists after save');
+    }
+    
+    console.log('Verified saved record exists:', verifiedRecord);
+    return mapDbRecordToMasterDailyRecord(verifiedRecord);
   } catch (error) {
     console.error('Exception in upsertMasterDailyRecord:', error);
     throw error;
