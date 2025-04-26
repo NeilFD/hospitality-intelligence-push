@@ -195,6 +195,7 @@ const WeeklyInput = () => {
       
       console.log('WeeklyInput: Record ready for saving:', JSON.stringify(recordToSave, null, 2));
       
+      // Attempt to save the record
       const updatedRecord = await upsertMasterDailyRecord(recordToSave);
       console.log('WeeklyInput: Record saved successfully:', updatedRecord);
       
@@ -202,21 +203,18 @@ const WeeklyInput = () => {
         throw new Error('Failed to save record: No data returned from server');
       }
       
-      // Force a refresh of the records after saving to ensure data is current
-      const freshRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
-      console.log('Fetched fresh records after saving:', freshRecords);
-      
-      // Update the state with refreshed data
+      // Immediately update the records state with the updated data
       setRecords(prev => {
-        const updatedRecords = prev.map(record => {
-          const freshRecord = freshRecords.find(fr => fr.date === record.date);
-          if (freshRecord) {
-            return freshRecord;
+        return prev.map(record => {
+          if (record.date === updatedRecord.date) {
+            return updatedRecord;
           }
           return record;
         });
-        return updatedRecords;
       });
+      
+      // Also force a refresh of the records to ensure data is current
+      await loadRecords();
       
       toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
     } catch (error) {
