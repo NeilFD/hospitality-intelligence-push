@@ -15,23 +15,52 @@ export const storeTrackerSnapshot = async (
     // Store items that have significant values
     const itemsToStore = items.filter(item => item.budget_amount || item.actual_amount || item.forecast_amount);
     
+    // Remove any existing Operating Profit entries to prevent duplicates
+    const filteredItems = itemsToStore.filter(item => 
+      !item.name.toLowerCase().includes('operating profit') && 
+      !item.isOperatingProfit
+    );
+    
+    console.log(`After removing existing OP entries, items count: ${filteredItems.length}`);
+    
     // Add Operating Profit if provided
     if (calculatedOperatingProfit) {
-      itemsToStore.push({
+      // Ensure these values are properly formatted numbers
+      const budget = parseFloat(calculatedOperatingProfit.budget.toFixed(2));
+      const actual = parseFloat(calculatedOperatingProfit.actual.toFixed(2));  
+      const forecast = parseFloat(calculatedOperatingProfit.forecast.toFixed(2));
+      
+      console.log(`Adding Operating Profit with explicit values:`, {
+        budget,
+        actual,
+        forecast
+      });
+      
+      filteredItems.push({
         name: "Operating Profit/(Loss)",
         category: "Operating Performance",
-        budget_amount: calculatedOperatingProfit.budget,
-        actual_amount: calculatedOperatingProfit.actual,
-        forecast_amount: calculatedOperatingProfit.forecast,
+        budget_amount: budget,
+        actual_amount: actual,
+        forecast_amount: forecast,
         isHeader: false,
         isOperatingProfit: true
       } as PLTrackerBudgetItem);
     }
     
-    console.log(`After filtering and adding OP, storing ${itemsToStore.length} items in snapshot`);
+    console.log(`Final items to store: ${filteredItems.length}`);
+    
+    if (calculatedOperatingProfit) {
+      // Log the operating profit entry to verify it's being included correctly
+      const opItem = filteredItems.find(item => 
+        item.name.toLowerCase().includes('operating profit') || 
+        item.isOperatingProfit
+      );
+      
+      console.log('Operating Profit entry to be stored:', opItem);
+    }
 
     // Store each item as a snapshot
-    const promises = itemsToStore.map(item => {
+    const promises = filteredItems.map(item => {
       const budgetAmount = item.budget_amount || 0;
       const actualAmount = item.actual_amount || 0;
       const forecastAmount = item.forecast_amount || 0;
@@ -61,7 +90,7 @@ export const storeTrackerSnapshot = async (
       return false;
     }
     
-    console.log(`Successfully stored ${itemsToStore.length} items in snapshot for ${year}-${month}`);
+    console.log(`Successfully stored ${filteredItems.length} items in snapshot for ${year}-${month}`);
     return true;
   } catch (error) {
     console.error('Error storing snapshot:', error);
@@ -94,4 +123,3 @@ export const getLatestSnapshot = async (year: number, month: number): Promise<PL
     return null;
   }
 };
-

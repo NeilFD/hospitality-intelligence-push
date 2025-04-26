@@ -131,11 +131,29 @@ export function PLReportTable({
         forecast: calculatedOperatingProfitForecast
       });
 
+      if (calculatedOperatingProfitForecast === 0) {
+        console.warn('Calculated OP Forecast is zero - this might indicate an issue with calculation');
+      }
+
       const success = await syncUiWithAnalytics(currentYear, currentMonth);
       
       if (success) {
+        const itemsWithGoodValues = renderedData.map(item => ({
+          ...item,
+          category: item.category || 'General',
+          budget_amount: item.budget_amount || 0,
+          actual_amount: getActualAmount(item),
+          forecast_amount: calculateCorrectForecast(item)
+        }));
+        
+        console.log('Final OP values for snapshot:', {
+          budget: operatingProfitBudget,
+          actual: operatingProfitActual,
+          forecast: calculatedOperatingProfitForecast
+        });
+        
         const snapshotSuccess = await storeTrackerSnapshot(
-          renderedData, 
+          itemsWithGoodValues,
           currentYear, 
           currentMonth,
           {
