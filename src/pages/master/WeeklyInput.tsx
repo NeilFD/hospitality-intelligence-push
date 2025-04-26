@@ -171,13 +171,11 @@ const WeeklyInput = () => {
         date: string;
       });
       setRecords(prev => prev.map(record => record.date === updatedRecord.date ? updatedRecord : record));
-      toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
     } catch (error) {
-      console.error('Error saving daily record:', error);
-      toast.error('Failed to save daily record');
+      console.error('Error in handleSaveDailyRecord:', error);
     }
   }, []);
-  
+
   const getForecastVariance = (actual: number, forecast: number) => {
     if (forecast === 0) return { variance: 0, percentage: 0 };
     const variance = actual - forecast;

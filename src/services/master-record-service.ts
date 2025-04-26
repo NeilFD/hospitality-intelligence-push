@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { MasterDailyRecord } from '@/types/master-record-types';
 import { generateWeekDates } from '@/lib/date-utils';
@@ -135,90 +134,105 @@ export const fetchMasterMonthlyRecords = async (
   return data.map(mapDbRecordToMasterDailyRecord);
 };
 
-// Create or update a master daily record
+// Update upsertMasterDailyRecord to include better error handling and logging
 export const upsertMasterDailyRecord = async (
   record: Partial<MasterDailyRecord> & { date: string }
 ): Promise<MasterDailyRecord> => {
-  // Calculate the date components if not provided
-  const date = new Date(record.date);
-  const year = record.year || date.getFullYear();
-  const month = record.month || date.getMonth() + 1;
-  const dayOfWeek = record.dayOfWeek || date.toLocaleDateString('en-US', { weekday: 'long' });
-  
-  // Calculate week number if not provided
-  let weekNumber = record.weekNumber;
-  if (!weekNumber) {
-    const weekDates = generateWeekDates(year, month);
-    for (let i = 0; i < weekDates.length; i++) {
-      const { startDate, endDate } = weekDates[i];
-      if (record.date >= startDate && record.date <= endDate) {
-        weekNumber = i + 1;
-        break;
+  try {
+    // Calculate the date components if not provided
+    const date = new Date(record.date);
+    const year = record.year || date.getFullYear();
+    const month = record.month || date.getMonth() + 1;
+    const dayOfWeek = record.dayOfWeek || date.toLocaleDateString('en-US', { weekday: 'long' });
+    
+    console.log(`Attempting to upsert master record for date ${record.date}`);
+    
+    // Calculate week number if not provided
+    let weekNumber = record.weekNumber;
+    if (!weekNumber) {
+      const weekDates = generateWeekDates(year, month);
+      for (let i = 0; i < weekDates.length; i++) {
+        const { startDate, endDate } = weekDates[i];
+        if (record.date >= startDate && record.date <= endDate) {
+          weekNumber = i + 1;
+          break;
+        }
       }
     }
+    
+    // Calculate total revenue and covers
+    const foodRevenue = record.foodRevenue || 0;
+    const beverageRevenue = record.beverageRevenue || 0;
+    const totalRevenue = foodRevenue + beverageRevenue;
+    
+    const lunchCovers = record.lunchCovers || 0;
+    const dinnerCovers = record.dinnerCovers || 0;
+    const totalCovers = lunchCovers + dinnerCovers;
+    
+    // Calculate average cover spend
+    const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
+    
+    const dbRecord = {
+      date: record.date,
+      day_of_week: dayOfWeek,
+      year,
+      month,
+      week_number: weekNumber as number,
+      
+      food_revenue: foodRevenue,
+      beverage_revenue: beverageRevenue,
+      total_revenue: totalRevenue,
+      
+      lunch_covers: lunchCovers,
+      dinner_covers: dinnerCovers,
+      total_covers: totalCovers,
+      average_cover_spend: averageCoverSpend,
+      
+      weather_description: record.weatherDescription,
+      temperature: record.temperature,
+      precipitation: record.precipitation,
+      wind_speed: record.windSpeed,
+      
+      day_foh_team: record.dayFohTeam,
+      day_foh_manager: record.dayFohManager,
+      day_kitchen_team: record.dayKitchenTeam,
+      day_kitchen_manager: record.dayKitchenManager,
+      evening_foh_team: record.eveningFohTeam,
+      evening_foh_manager: record.eveningFohManager,
+      evening_kitchen_team: record.eveningKitchenTeam,
+      evening_kitchen_manager: record.eveningKitchenManager,
+      
+      local_events: record.localEvents,
+      operations_notes: record.operationsNotes
+    };
+    
+    console.log('Upserting record with data:', dbRecord);
+    
+    const { data, error } = await supabase
+      .from('master_daily_records')
+      .upsert(dbRecord, {
+        onConflict: 'date',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Database error while upserting master record:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned from upsert operation');
+      throw new Error('Failed to save master record');
+    }
+    
+    console.log('Successfully saved master record:', data);
+    return mapDbRecordToMasterDailyRecord(data);
+  } catch (error) {
+    console.error('Error in upsertMasterDailyRecord:', error);
+    throw error;
   }
-  
-  // Calculate total revenue and covers
-  const foodRevenue = record.foodRevenue || 0;
-  const beverageRevenue = record.beverageRevenue || 0;
-  const totalRevenue = foodRevenue + beverageRevenue;
-  
-  const lunchCovers = record.lunchCovers || 0;
-  const dinnerCovers = record.dinnerCovers || 0;
-  const totalCovers = lunchCovers + dinnerCovers;
-  
-  // Calculate average cover spend
-  const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
-  
-  const dbRecord = {
-    date: record.date,
-    day_of_week: dayOfWeek,
-    year,
-    month,
-    week_number: weekNumber as number,
-    
-    food_revenue: foodRevenue,
-    beverage_revenue: beverageRevenue,
-    total_revenue: totalRevenue,
-    
-    lunch_covers: lunchCovers,
-    dinner_covers: dinnerCovers,
-    total_covers: totalCovers,
-    average_cover_spend: averageCoverSpend,
-    
-    weather_description: record.weatherDescription,
-    temperature: record.temperature,
-    precipitation: record.precipitation,
-    wind_speed: record.windSpeed,
-    
-    // Add the team fields
-    day_foh_team: record.dayFohTeam,
-    day_foh_manager: record.dayFohManager,
-    day_kitchen_team: record.dayKitchenTeam,
-    day_kitchen_manager: record.dayKitchenManager,
-    evening_foh_team: record.eveningFohTeam,
-    evening_foh_manager: record.eveningFohManager,
-    evening_kitchen_team: record.eveningKitchenTeam,
-    evening_kitchen_manager: record.eveningKitchenManager,
-    
-    local_events: record.localEvents,
-    operations_notes: record.operationsNotes
-  };
-  
-  console.log(`Upserting record for ${record.date} with week ${weekNumber}`);
-  
-  const { data, error } = await supabase
-    .from('master_daily_records')
-    .upsert(dbRecord, {
-      onConflict: 'date',
-      ignoreDuplicates: false
-    })
-    .select()
-    .single();
-  
-  if (error) throw error;
-  
-  return mapDbRecordToMasterDailyRecord(data);
 };
 
 // Map database record to TypeScript object
@@ -245,7 +259,6 @@ const mapDbRecordToMasterDailyRecord = (data: any): MasterDailyRecord => {
     precipitation: data.precipitation,
     windSpeed: data.wind_speed,
     
-    // Map the team fields
     dayFohTeam: data.day_foh_team,
     dayFohManager: data.day_foh_manager,
     dayKitchenTeam: data.day_kitchen_team,
