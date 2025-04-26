@@ -31,6 +31,7 @@ const WeeklyInput = () => {
   const [records, setRecords] = useState<MasterDailyRecord[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveAttempts, setSaveAttempts] = useState(0);
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
   
   const year = useMemo(() => params.year ? parseInt(params.year, 10) : new Date().getFullYear(), [params.year]);
   const month = useMemo(() => params.month ? parseInt(params.month, 10) : new Date().getMonth() + 1, [params.month]);
@@ -203,6 +204,8 @@ const WeeklyInput = () => {
         throw new Error('Failed to save record: No data returned from server');
       }
       
+      setLastSavedId(updatedRecord.id);
+      
       // Immediately update the records state with the updated data
       setRecords(prev => {
         return prev.map(record => {
@@ -213,8 +216,10 @@ const WeeklyInput = () => {
         });
       });
       
-      // Also force a refresh of the records to ensure data is current
-      await loadRecords();
+      // Force a refresh of the records to ensure data is current
+      setTimeout(() => {
+        loadRecords();
+      }, 500);
       
       toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
     } catch (error) {
@@ -223,7 +228,9 @@ const WeeklyInput = () => {
       
       // Attempt to reload records to ensure UI is in sync with database
       try {
-        await loadRecords();
+        setTimeout(() => {
+          loadRecords();
+        }, 500);
       } catch (reloadError) {
         console.error('Failed to reload records after save error:', reloadError);
       }
