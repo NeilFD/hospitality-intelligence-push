@@ -100,6 +100,7 @@ const WeeklyInput = () => {
       console.log(`Loading master records for: Year=${year}, Month=${month}, Week=${weekNumber}`);
       
       const fetchedRecords = await fetchMasterWeeklyRecords(year, month, weekNumber);
+      console.log('Fetched records:', fetchedRecords);
       
       if (weekNumber > 0 && weekNumber <= weekDates.length) {
         const { startDate, endDate } = weekDates[weekNumber - 1];
@@ -169,6 +170,11 @@ const WeeklyInput = () => {
   const handleSaveDailyRecord = useCallback(async (data: Partial<MasterDailyRecord>) => {
     try {
       console.log('WeeklyInput: Saving daily record...', data);
+      
+      if (!data.date) {
+        throw new Error('Date is required for saving records');
+      }
+      
       const updatedRecord = await upsertMasterDailyRecord(data as Partial<MasterDailyRecord> & {
         date: string;
       });

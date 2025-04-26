@@ -236,6 +236,7 @@ export const upsertMasterDailyRecord = async (
     
     if (checkError) {
       console.error('Error checking for existing record:', checkError);
+      throw checkError; // Make sure to propagate this error
     }
     
     let result;
@@ -247,7 +248,7 @@ export const upsertMasterDailyRecord = async (
         .from('master_daily_records')
         .update(dbRecord)
         .eq('id', existingRecord.id)
-        .select()
+        .select('*')
         .single();
       
       if (updateError) {
@@ -262,7 +263,7 @@ export const upsertMasterDailyRecord = async (
       const { data: insertedData, error: insertError } = await supabase
         .from('master_daily_records')
         .insert(dbRecord)
-        .select()
+        .select('*')
         .single();
       
       if (insertError) {
