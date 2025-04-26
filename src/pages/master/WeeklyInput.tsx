@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -185,7 +184,6 @@ const WeeklyInput = () => {
         throw new Error('Date is required for saving records');
       }
       
-      // Ensure we have all the necessary information before saving
       const recordToSave: Partial<MasterDailyRecord> & { date: string } = {
         ...data,
         date: data.date,
@@ -196,44 +194,47 @@ const WeeklyInput = () => {
       
       console.log('WeeklyInput: Record ready for saving:', JSON.stringify(recordToSave, null, 2));
       
-      // Attempt to save the record
-      const updatedRecord = await upsertMasterDailyRecord(recordToSave);
-      console.log('WeeklyInput: Record saved successfully:', updatedRecord);
-      
-      if (!updatedRecord || !updatedRecord.id) {
-        throw new Error('Failed to save record: No data returned from server');
-      }
-      
-      setLastSavedId(updatedRecord.id);
-      
-      // Immediately update the records state with the updated data
-      setRecords(prev => {
-        return prev.map(record => {
-          if (record.date === updatedRecord.date) {
-            return updatedRecord;
-          }
-          return record;
-        });
-      });
-      
-      // Force a refresh of the records to ensure data is current
-      setTimeout(() => {
-        loadRecords();
-      }, 500);
-      
-      toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
-    } catch (error) {
-      console.error('WeeklyInput: Error saving daily record:', error);
-      toast.error(`Failed to save record: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
-      // Attempt to reload records to ensure UI is in sync with database
       try {
+        const updatedRecord = await upsertMasterDailyRecord(recordToSave);
+        console.log('WeeklyInput: Record saved successfully:', updatedRecord);
+        
+        if (!updatedRecord || !updatedRecord.id) {
+          throw new Error('Failed to save record: No data returned from server');
+        }
+        
+        setLastSavedId(updatedRecord.id);
+        
+        setRecords(prev => {
+          return prev.map(record => {
+            if (record.date === updatedRecord.date) {
+              return updatedRecord;
+            }
+            return record;
+          });
+        });
+        
+        toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
+        
         setTimeout(() => {
           loadRecords();
         }, 500);
-      } catch (reloadError) {
-        console.error('Failed to reload records after save error:', reloadError);
+      } catch (saveError: any) {
+        console.error('Error in save operation:', saveError);
+        
+        const errorMessage = saveError.message || 'Unknown error';
+        toast.error(`Failed to save record: ${errorMessage}`);
+        
+        setTimeout(() => {
+          loadRecords();
+        }, 500);
       }
+    } catch (error: any) {
+      console.error('WeeklyInput: Error in handleSaveDailyRecord:', error);
+      toast.error(`Failed to save record: ${error.message || 'Unknown error'}`);
+      
+      setTimeout(() => {
+        loadRecords();
+      }, 500);
     } finally {
       setIsSaving(false);
     }

@@ -151,12 +151,12 @@ export const fetchMasterMonthlyRecords = async (
   return data.map(mapDbRecordToMasterDailyRecord);
 };
 
-// Create or update a master daily record - simplified to avoid permission issues
+// Create or update a master daily record - completely reworked to avoid materialized view issues
 export const upsertMasterDailyRecord = async (
   record: Partial<MasterDailyRecord> & { date: string }
 ): Promise<MasterDailyRecord> => {
   try {
-    console.log('Starting upsert operation for date:', record.date);
+    console.log('Starting direct upsert operation for date:', record.date);
     
     // Calculate the date components if not provided
     const date = new Date(record.date);
@@ -189,18 +189,7 @@ export const upsertMasterDailyRecord = async (
     // Calculate average cover spend
     const averageCoverSpend = totalCovers > 0 ? totalRevenue / totalCovers : 0;
     
-    // First check if the record exists
-    const { data: existingRecord, error: checkError } = await supabase
-      .from('master_daily_records')
-      .select('id')
-      .eq('date', record.date)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('Error checking for existing record:', checkError);
-      throw new Error(`Failed to check if record exists: ${checkError.message}`);
-    }
-    
+    // Prepare the data object for insert/update
     const dbRecord = {
       date: record.date,
       day_of_week: dayOfWeek,
@@ -234,17 +223,29 @@ export const upsertMasterDailyRecord = async (
       local_events: record.localEvents,
       operations_notes: record.operationsNotes
     };
+
+    // First check if record exists to determine if we need to update or insert
+    const { data: existingRecord, error: checkError } = await supabase
+      .from('master_daily_records')
+      .select('id')
+      .eq('date', record.date)
+      .maybeSingle();
     
+    if (checkError) {
+      console.error('Error checking for existing record:', checkError);
+      throw new Error(`Failed to check if record exists: ${checkError.message}`);
+    }
+
     let result;
     
     if (existingRecord?.id) {
-      // Update existing record
-      console.log(`Record exists for date ${record.date}, updating with ID: ${existingRecord.id}`);
+      // Update existing record using a direct update to avoid triggering view refreshes
+      console.log(`Record exists for date ${record.date}, updating directly with ID: ${existingRecord.id}`);
       const { data, error } = await supabase
         .from('master_daily_records')
         .update(dbRecord)
         .eq('id', existingRecord.id)
-        .select()
+        .select('*')
         .single();
       
       if (error) {
@@ -254,12 +255,12 @@ export const upsertMasterDailyRecord = async (
       
       result = data;
     } else {
-      // Insert new record
-      console.log(`No record exists for date ${record.date}, inserting new record`);
+      // Insert new record directly
+      console.log(`No record exists for date ${record.date}, inserting new record directly`);
       const { data, error } = await supabase
         .from('master_daily_records')
         .insert(dbRecord)
-        .select()
+        .select('*')
         .single();
       
       if (error) {
