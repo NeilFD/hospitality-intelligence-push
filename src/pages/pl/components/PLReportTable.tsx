@@ -81,11 +81,37 @@ export function PLReportTable({
     
     setIsSyncing(true);
     try {
-      // First step: Sync analytics data
+      const adminItems = renderedData.filter(item => item && item.name && 
+        ["Wages and Salaries", "Marketing", "Professional Fees", "Bank charges", "Cleaning", 
+         "Entertainment (Staff, customer or supplier)", "Printing, postage and stationery", 
+         "Sundry Expenses", "Motor expenses", "Insurance", "Heat and power", 
+         "Repairs, Maintenance, Premises", "Telephone and internet", "Rates", "Rent", 
+         "Other staff costs", "Subscriptions", "Hotel and travel"].some(expName => 
+          item.name.trim() === expName || item.name.trim().toLowerCase() === expName.toLowerCase())
+      );
+      
+      const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
+      const adminTotalActual = adminItems.reduce((sum, item) => sum + getEffectiveActualAmount(item), 0);
+      const calculatedAdminTotalForecast = adminItems.reduce((sum, item) => {
+        const forecast = calculateCorrectForecast(item);
+        return sum + (forecast || 0);
+      }, 0);
+      
+      const grossProfitItem = renderedData.find(item => item && item.name && 
+        (item.name.toLowerCase() === 'gross profit' || item.name.toLowerCase() === 'gross profit/(loss)') && 
+        !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage'));
+      
+      const grossProfitBudget = grossProfitItem ? grossProfitItem.budget_amount || 0 : 0;
+      const grossProfitActual = grossProfitItem ? getActualAmount(grossProfitItem) : 0;
+      const grossProfitForecast = grossProfitItem ? calculateCorrectForecast(grossProfitItem) : 0;
+      
+      const operatingProfitBudget = grossProfitBudget - adminTotalBudget;
+      const operatingProfitActual = grossProfitActual - adminTotalActual;
+      const calculatedOperatingProfitForecast = grossProfitForecast - calculatedAdminTotalForecast;
+
       const success = await syncUiWithAnalytics(currentYear, currentMonth);
       
       if (success) {
-        // Second step: Store snapshot data with Operating Profit values
         const snapshotSuccess = await storeTrackerSnapshot(
           renderedData.filter(item => 
             !(item.isHeader && !item.name.toLowerCase().includes('total') && !item.name.toLowerCase().includes('turnover'))
@@ -528,11 +554,7 @@ export function PLReportTable({
     const adminExpenseItems = ["Wages and Salaries", "Marketing", "Professional Fees", "Bank charges", "Cleaning", "Entertainment (Staff, customer or supplier)", "Printing, postage and stationery", "Sundry Expenses", "Motor expenses", "Insurance", "Heat and power", "Repairs, Maintenance, Premises", "Telephone and internet", "Rates", "Rent", "Other staff costs", "Subscriptions", "Hotel and travel"];
     const adminItems = renderedData.filter(item => item && item.name && adminExpenseItems.some(expName => item.name.trim() === expName || item.name.trim().toLowerCase() === expName.toLowerCase()));
     const turnoverItem = renderedData.find(item => item && item.name && (item.name.toLowerCase() === 'turnover' || item.name.toLowerCase() === 'total revenue'));
-    const foodRevenueItem = renderedData.find(item => item && item.name && item.name.toLowerCase().includes('food') && (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales')));
-    const beverageRevenueItem = renderedData.find(item => item && item.name && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink')) && (item.name.toLowerCase().includes('revenue') || item.name.toLowerCase().includes('sales')));
-    const foodCOSItem = renderedData.find(item => item && item.name && item.name.toLowerCase().includes('food') && (item.name.toLowerCase().includes('cos') || item.name.toLowerCase().includes('cost of sales')));
-    const beverageCOSItem = renderedData.find(item => item && item.name && (item.name.toLowerCase().includes('beverage') || item.name.toLowerCase().includes('drink') || item.name.toLowerCase().includes('bev')) && (item.name.toLowerCase().includes('cos') || item.name.toLowerCase().includes('cost of sales')));
-    const costOfSalesItem = renderedData.find(item => item && item.name && (item.name.toLowerCase() === 'cost of sales' || item.name.toLowerCase() === 'cos') && !item.name.toLowerCase().includes('food') && !item.name.toLowerCase().includes('beverage') && !item.name.toLowerCase().includes('drink'));
+    
     const adminTotalBudget = adminItems.reduce((sum, item) => sum + (item.budget_amount || 0), 0);
     const adminTotalActual = adminItems.reduce((sum, item) => sum + getEffectiveActualAmount(item), 0);
     const calculatedAdminTotalForecast = adminItems.reduce((sum, item) => {
