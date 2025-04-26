@@ -5,7 +5,8 @@ import { PLTrackerBudgetItem } from "../types/PLTrackerTypes";
 export const storeTrackerSnapshot = async (
   items: PLTrackerBudgetItem[],
   year: number,
-  month: number
+  month: number,
+  calculatedOperatingProfit?: { budget: number; actual: number; forecast: number }
 ): Promise<boolean> => {
   try {
     console.log(`Storing ${items.length} items in snapshot for ${year}-${month}`);
@@ -16,6 +17,19 @@ export const storeTrackerSnapshot = async (
     );
     
     console.log(`After filtering, storing ${itemsToStore.length} significant items in snapshot`);
+
+    // Add Operating Profit if provided
+    if (calculatedOperatingProfit) {
+      itemsToStore.push({
+        name: "Operating Profit/(Loss)",
+        category: "Operating Performance",
+        budget_amount: calculatedOperatingProfit.budget,
+        actual_amount: calculatedOperatingProfit.actual,
+        forecast_amount: calculatedOperatingProfit.forecast,
+        isHeader: false,
+        isOperatingProfit: true
+      } as PLTrackerBudgetItem);
+    }
 
     // Store each item as a snapshot
     const promises = itemsToStore.map(item => {

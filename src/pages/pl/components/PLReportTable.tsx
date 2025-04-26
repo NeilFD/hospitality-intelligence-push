@@ -85,7 +85,7 @@ export function PLReportTable({
       const success = await syncUiWithAnalytics(currentYear, currentMonth);
       
       if (success) {
-        // Second step: Store snapshot data
+        // Second step: Store snapshot data with Operating Profit values
         const snapshotSuccess = await storeTrackerSnapshot(
           renderedData.filter(item => 
             !(item.isHeader && !item.name.toLowerCase().includes('total') && !item.name.toLowerCase().includes('turnover'))
@@ -97,7 +97,12 @@ export function PLReportTable({
             forecast_amount: calculateCorrectForecast(item)
           })), 
           currentYear, 
-          currentMonth
+          currentMonth,
+          {
+            budget: operatingProfitBudget,
+            actual: operatingProfitActual,
+            forecast: calculatedOperatingProfitForecast
+          }
         );
 
         if (snapshotSuccess) {
