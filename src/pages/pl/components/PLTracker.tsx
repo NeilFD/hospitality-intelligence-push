@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PLTrackerBudgetItem } from './types/PLTrackerTypes';
@@ -14,7 +15,6 @@ import {
   updateAllForecasts,
   getForecastAmount
 } from './tracker/TrackerCalculations';
-import { toast } from "sonner";
 import { useTracker } from './hooks/useTracker';
 
 interface PLTrackerProps {
@@ -79,17 +79,9 @@ export function PLTracker({
   } = useTrackerData(processedDataWithActuals);
   
   const handleSaveWithAnalyticsUpdate = () => {
-    toast.info("Saving data...");
     setTrackedBudgetData(prev => [...prev]); // Force refresh UI
     
-    saveForecastAmounts()
-      .then(() => {
-        toast.success("Data saved successfully");
-      })
-      .catch(error => {
-        console.error('Error in save operation:', error);
-        toast.error("Failed to save data");
-      });
+    saveForecastAmounts();
   };
   
   console.log("First 5 tracked budget data items:", trackedBudgetData.slice(0, 5).map(item => ({
