@@ -174,11 +174,24 @@ const WeeklyInput = () => {
       });
       console.log('WeeklyInput: Record saved successfully:', updatedRecord);
       
-      setRecords(prev => prev.map(record => record.date === updatedRecord.date ? updatedRecord : record));
+      // Explicitly update the correct record in state to ensure UI reflects saved data
+      setRecords(prev => {
+        // Create a new array to ensure React detects the state change
+        return prev.map(record => {
+          if (record.date === updatedRecord.date) {
+            console.log(`Updating record in state for date ${record.date}`);
+            return {
+              ...updatedRecord // Use the full returned record from the server
+            };
+          }
+          return record;
+        });
+      });
+      
       toast.success(`Record for ${format(new Date(updatedRecord.date), 'EEE, MMM d')} saved successfully`);
     } catch (error) {
       console.error('WeeklyInput: Error saving daily record:', error);
-      // Error toast is now handled in the DailyRecordForm component
+      toast.error(`Failed to save record: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, []);
   

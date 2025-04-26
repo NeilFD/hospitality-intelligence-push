@@ -156,6 +156,8 @@ export const upsertMasterDailyRecord = async (
   record: Partial<MasterDailyRecord> & { date: string }
 ): Promise<MasterDailyRecord> => {
   try {
+    console.log('Starting upsert operation for date:', record.date);
+    
     // Calculate the date components if not provided
     const date = new Date(record.date);
     const year = record.year || date.getFullYear();
@@ -225,27 +227,58 @@ export const upsertMasterDailyRecord = async (
     
     console.log('Upserting record with data:', JSON.stringify(dbRecord, null, 2));
     
-    const { data, error } = await supabase
+    // First check if the record already exists
+    const { data: existingRecord, error: checkError } = await supabase
       .from('master_daily_records')
-      .upsert(dbRecord, {
-        onConflict: 'date',
-        ignoreDuplicates: false
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('date', record.date)
+      .maybeSingle();
     
-    if (error) {
-      console.error('Error upserting master daily record:', error);
-      throw error;
+    if (checkError) {
+      console.error('Error checking for existing record:', checkError);
     }
     
-    if (!data) {
-      console.error('No data returned after upsert');
-      throw new Error('Failed to save record: No data returned from database');
+    let result;
+    
+    if (existingRecord?.id) {
+      // Update existing record
+      console.log(`Record exists for date ${record.date}, updating with ID: ${existingRecord.id}`);
+      const { data: updatedData, error: updateError } = await supabase
+        .from('master_daily_records')
+        .update(dbRecord)
+        .eq('id', existingRecord.id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.error('Error updating master daily record:', updateError);
+        throw updateError;
+      }
+      
+      result = updatedData;
+    } else {
+      // Insert new record
+      console.log(`No record exists for date ${record.date}, inserting new record`);
+      const { data: insertedData, error: insertError } = await supabase
+        .from('master_daily_records')
+        .insert(dbRecord)
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('Error inserting master daily record:', insertError);
+        throw insertError;
+      }
+      
+      result = insertedData;
     }
     
-    console.log('Successfully upserted record:', data);
-    return mapDbRecordToMasterDailyRecord(data);
+    if (!result) {
+      throw new Error('No data returned after database operation');
+    }
+    
+    console.log('Successfully saved record:', result);
+    return mapDbRecordToMasterDailyRecord(result);
   } catch (error) {
     console.error('Exception in upsertMasterDailyRecord:', error);
     throw error;
