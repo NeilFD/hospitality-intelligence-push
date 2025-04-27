@@ -101,6 +101,17 @@ const extractAIResponse = (response: any): string => {
   return responseText;
 };
 
+const parseMarkdownBold = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const boldText = part.slice(2, -2);
+      return <strong key={index} className="font-bold">{boldText}</strong>;
+    }
+    return part;
+  });
+};
+
 const cleanResponseText = (text: string) => {
   let cleaned = text?.trim?.() || "";
 
@@ -130,7 +141,13 @@ const cleanResponseText = (text: string) => {
     .filter(p => p.trim().length > 0)
     .map(p => p.trim());
 
-  return paragraphs.join('\n\n');
+  const formattedParagraphs = paragraphs.map((paragraph, index) => (
+    <p key={index} className="whitespace-pre-wrap">
+      {parseMarkdownBold(paragraph)}
+    </p>
+  ));
+
+  return formattedParagraphs;
 };
 
 export default function ChatInterface({
@@ -551,12 +568,10 @@ export default function ChatInterface({
                     : 'bg-white text-gray-800 rounded-tl-none rounded-tr-xl rounded-bl-xl rounded-br-xl'
                 } p-3 shadow-sm`}
               >
-                <p className="text-sm whitespace-pre-wrap">
-                  {message.isUser 
-                    ? message.text 
-                    : cleanResponseText(message.text)
-                  }
-                </p>
+                {message.isUser 
+                  ? message.text 
+                  : cleanResponseText(message.text)
+                }
                 <span className="block text-xs opacity-70 mt-1">
                   {message.timestamp instanceof Date 
                     ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
