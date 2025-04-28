@@ -18,6 +18,8 @@ export interface DbWages {
 }
 
 export const fetchWagesByMonth = async (year: number, month: number): Promise<DailyWages[]> => {
+  console.log(`Fetching wages data from Supabase for ${year}-${month}`);
+  
   const { data, error } = await supabase
     .from('wages')
     .select('*')
@@ -30,6 +32,8 @@ export const fetchWagesByMonth = async (year: number, month: number): Promise<Da
     throw error;
   }
 
+  console.log(`Received ${data.length} wage records from Supabase`);
+  
   return data.map((wage) => ({
     year: wage.year,
     month: wage.month,
@@ -44,6 +48,8 @@ export const fetchWagesByMonth = async (year: number, month: number): Promise<Da
 };
 
 export const fetchWagesByDay = async (year: number, month: number, day: number): Promise<DailyWages | null> => {
+  console.log(`Fetching wages for specific day: ${year}-${month}-${day}`);
+  
   const { data, error } = await supabase
     .from('wages')
     .select('*')
@@ -60,6 +66,8 @@ export const fetchWagesByDay = async (year: number, month: number, day: number):
     throw error;
   }
 
+  console.log(`Found wage record for ${year}-${month}-${day}:`, data);
+  
   return {
     year: data.year,
     month: data.month,
@@ -118,8 +126,9 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       .eq('day', wages.day)
       .maybeSingle();
       
-    if (fetchError && fetchError.code !== 'PGRST116') {
+    if (fetchError) {
       console.error('Error checking for existing record:', fetchError);
+      throw fetchError;
     }
     
     // Ensure numeric values
@@ -181,8 +190,8 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       }
     }
     
-    // Special handling for materialized view errors (ignore them)
     if (saveError) {
+      // Special handling for materialized view errors (ignore them)
       if (saveError.code === '42501' && saveError.message.includes('financial_performance_analysis')) {
         console.log('Ignoring materialized view permission error, data should be saved');
         return;
@@ -191,7 +200,8 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
         await emergencyDirectSave(wages);
       } else {
         // For other types of errors, try the emergency direct save
-        throw saveError;
+        console.log('Error during save, trying emergency direct save:', saveError);
+        await emergencyDirectSave(wages);
       }
     }
   } catch (error) {
@@ -205,10 +215,12 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
 async function emergencyDirectSave(wages: DailyWages): Promise<void> {
   try {
     console.log('Attempting emergency direct save via RPC...');
-    const { data, error: rpcError } = await supabase
+    
+    // Use the Supabase RPC function for the emergency save
+    const { data, error } = await supabase
       .rpc('upsert_wages_record', {
         p_year: wages.year,
-        p_month: wages.month,
+        p_month: wages.month, 
         p_day: wages.day,
         p_date: wages.date,
         p_day_of_week: wages.dayOfWeek,
@@ -218,14 +230,61 @@ async function emergencyDirectSave(wages: DailyWages): Promise<void> {
         p_bev_revenue: Number(wages.bevRevenue) || 0
       });
       
-    if (rpcError) {
-      console.error('Exception in emergency wages save:', rpcError);
-      throw rpcError;
+    if (error) {
+      // If RPC fails, try final direct approach
+      console.error('Exception in emergency RPC wages save:', error);
+      await finalEmergencyDirectSave(wages);
+    } else {
+      console.log('Emergency direct save successful via RPC');
+    }
+  } catch (finalError) {
+    console.error('Emergency RPC save failed, trying final direct save method:', finalError);
+    await finalEmergencyDirectSave(wages);
+  }
+}
+
+// Final fallback that does direct SQL-like operations
+async function finalEmergencyDirectSave(wages: DailyWages): Promise<void> {
+  try {
+    console.log('Attempting final emergency direct save...');
+    
+    // First try to delete any existing record to avoid conflicts
+    const { error: deleteError } = await supabase
+      .from('wages')
+      .delete()
+      .eq('year', wages.year)
+      .eq('month', wages.month)
+      .eq('day', wages.day);
+      
+    if (deleteError) {
+      console.warn('Could not delete existing record:', deleteError);
     }
     
-    console.log('Emergency direct save successful');
-  } catch (finalError) {
-    console.error('All attempts to save wages failed:', finalError);
-    throw finalError;
+    // Then insert a new clean record
+    const { error: insertError } = await supabase
+      .from('wages')
+      .insert([{
+        year: wages.year,
+        month: wages.month,
+        day: wages.day,
+        date: wages.date,
+        day_of_week: wages.dayOfWeek,
+        foh_wages: Number(wages.fohWages) || 0,
+        kitchen_wages: Number(wages.kitchenWages) || 0,
+        food_revenue: Number(wages.foodRevenue) || 0,
+        bev_revenue: Number(wages.bevRevenue) || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }]);
+      
+    if (insertError) {
+      console.error('Final emergency insert failed:', insertError);
+      throw insertError;
+    }
+    
+    console.log('Final emergency direct save successful');
+  } catch (ultimateError) {
+    console.error('All attempts to save wages failed:', ultimateError);
+    throw ultimateError;
   }
 }

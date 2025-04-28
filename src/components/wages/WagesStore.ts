@@ -31,6 +31,7 @@ interface WagesStore {
     wagesPercentage: number;
     count: number;
   }>>;
+  clearCache: () => void;
 }
 
 const createEmptyDayData = (year: number, month: number, day: number): DailyWages => {
@@ -65,7 +66,11 @@ export const useWagesStore = create<WagesStore>()(
           const key = `${data.year}-${data.month}-${data.day}`;
           console.log(`Saving wages data for ${key}`);
           
-          // Update local state immediately for UI responsiveness
+          // First persist to the database
+          await upsertDailyWages(data);
+          console.log(`Successfully sent wages data to server for ${key}`);
+          
+          // Then update local state to ensure UI consistency
           set((state) => ({
             wagesData: {
               ...state.wagesData,
@@ -73,11 +78,7 @@ export const useWagesStore = create<WagesStore>()(
             }
           }));
           
-          // Then persist to the database
-          await upsertDailyWages(data);
-          console.log(`Successfully saved wages data for ${key}`);
-          
-          // Refresh the data from the database to ensure UI is in sync
+          // Explicitly fetch fresh data from server to ensure we have the latest
           try {
             const refreshedData = await fetchWagesByDay(data.year, data.month, data.day);
             if (refreshedData) {
@@ -101,25 +102,42 @@ export const useWagesStore = create<WagesStore>()(
       
       getDailyWages: async (year: number, month: number, day: number) => {
         const key = `${year}-${month}-${day}`;
-        const cachedData = get().wagesData[key];
-        
-        if (cachedData) return cachedData;
         
         try {
-          const data = await fetchWagesByDay(year, month, day);
-          if (data) {
+          // Always fetch fresh data from the server first
+          const serverData = await fetchWagesByDay(year, month, day);
+          
+          if (serverData) {
+            // Update the cache with server data
             set((state) => ({
               wagesData: {
                 ...state.wagesData,
-                [key]: data
+                [key]: serverData
               }
             }));
-            return data;
+            console.log(`Got fresh data from server for ${key}`);
+            return serverData;
           }
           
+          // If no server data, check cache
+          const cachedData = get().wagesData[key];
+          if (cachedData) {
+            console.log(`Using cached data for ${key}`);
+            return cachedData;
+          }
+          
+          // If neither server nor cache has data, return empty data
           return createEmptyDayData(year, month, day);
         } catch (error) {
           console.error('Failed to fetch daily wages', error);
+          
+          // If error fetching from server, try to use cache
+          const cachedData = get().wagesData[key];
+          if (cachedData) {
+            console.log(`Using cached data for ${key} after fetch error`);
+            return cachedData;
+          }
+          
           return createEmptyDayData(year, month, day);
         }
       },
@@ -128,20 +146,19 @@ export const useWagesStore = create<WagesStore>()(
         set({ isLoading: true });
         
         try {
-          const daysInMonth = new Date(year, month, 0).getDate();
-          const result: DailyWages[] = [];
-          
           // Always fetch fresh data from the database to ensure consistency
           console.log(`Fetching fresh wages data for ${year}-${month}`);
           const supabaseData = await fetchWagesByMonth(year, month);
           
-          // Convert to a map for easier lookup
+          // Create a map for easier lookup and update the local cache
           const dataMap: Record<number, DailyWages> = {};
+          
+          // Update cache with fresh data
           supabaseData.forEach(day => {
+            const key = `${day.year}-${day.month}-${day.day}`;
             dataMap[day.day] = day;
             
-            // Update the local cache
-            const key = `${day.year}-${day.month}-${day.day}`;
+            // Update the local cache with server data
             set(state => ({
               wagesData: {
                 ...state.wagesData,
@@ -150,7 +167,10 @@ export const useWagesStore = create<WagesStore>()(
             }));
           });
           
-          // Create the full month array, using Supabase data where available
+          // Create the full month array
+          const daysInMonth = new Date(year, month, 0).getDate();
+          const result: DailyWages[] = [];
+          
           for (let day = 1; day <= daysInMonth; day++) {
             if (dataMap[day]) {
               result.push(dataMap[day]);
@@ -171,8 +191,14 @@ export const useWagesStore = create<WagesStore>()(
           const result: DailyWages[] = [];
           
           for (let day = 1; day <= daysInMonth; day++) {
-            const emptyDay = createEmptyDayData(year, month, day);
-            result.push(emptyDay);
+            const key = `${year}-${month}-${day}`;
+            const cachedData = get().wagesData[key];
+            
+            if (cachedData) {
+              result.push(cachedData);
+            } else {
+              result.push(createEmptyDayData(year, month, day));
+            }
           }
           
           return result;
@@ -231,10 +257,18 @@ export const useWagesStore = create<WagesStore>()(
         });
         
         return weekdayTotals;
+      },
+      
+      clearCache: () => {
+        console.log('Clearing wages data cache');
+        set({ wagesData: {} });
       }
     }),
     {
-      name: 'wages-tracker-storage'
+      name: 'wages-tracker-storage',
+      // Only persist isLoading state, not the actual wages data
+      // This forces fresh load from the server on page refresh
+      partialize: (state) => ({ isLoading: state.isLoading })
     }
   )
 );

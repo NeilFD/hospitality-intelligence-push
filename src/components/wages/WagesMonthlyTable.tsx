@@ -1,3 +1,4 @@
+
 import React, { useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -12,11 +13,14 @@ import { fetchMasterRecordsByMonth, fetchMasterDailyRecord } from '@/services/ma
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [monthlyData, setMonthlyData] = React.useState<any[]>([]);
-  const { getMonthlyWages, setDailyWages } = useWagesStore();
+  const { getMonthlyWages, setDailyWages, clearCache } = useWagesStore();
   
   const loadWagesData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Clear cache to ensure we get fresh data
+      clearCache();
+      
       // Fetch wages data
       console.log(`Fetching wages data for year=${year}, month=${month}`);
       const wagesData = await getMonthlyWages(year, month);
@@ -75,6 +79,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         return day;
       }));
       
+      console.log('Setting monthly data with updated values:', updatedWagesData);
       setMonthlyData(updatedWagesData);
     } catch (error) {
       console.error('Error fetching wages data:', error);
@@ -82,7 +87,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     } finally {
       setIsLoading(false);
     }
-  }, [year, month, getMonthlyWages]);
+  }, [year, month, getMonthlyWages, clearCache]);
   
   useEffect(() => {
     loadWagesData();
@@ -126,8 +131,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       // Then save to database
       await setDailyWages(updatedDay);
       
-      // Refresh data to ensure everything is in sync
+      // Show success message
       toast.success('Data saved successfully');
+      
+      // Refresh all data to ensure everything is in sync
+      await loadWagesData();
+      
     } catch (error) {
       console.error('Failed to save data:', error);
       toast.error('Failed to save data. Refreshing data...');
@@ -260,7 +269,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         min={0}
                         step="0.01"
                         autoComplete="off"
-                        key={`foh-${day.day}`}
+                        key={`foh-${day.day}-${day.fohWages}`}
                       />
                     </TableCell>
                     <TableCell className="text-right p-1">
@@ -272,7 +281,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         min={0}
                         step="0.01"
                         autoComplete="off"
-                        key={`kitchen-${day.day}`}
+                        key={`kitchen-${day.day}-${day.kitchenWages}`}
                       />
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(totalDailyWages)}</TableCell>
