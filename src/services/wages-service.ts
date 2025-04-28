@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { DailyWages } from '@/components/wages/WagesStore';
 import { getCurrentUser } from '@/lib/supabase';
@@ -129,60 +128,48 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
 
     console.log('Sending to database:', dbWages);
 
-    // Direct upsert approach with specific conflict handling
-    const { data, error } = await supabase
+    // Check if record exists first
+    const { data: existingData, error: findError } = await supabase
       .from('wages')
-      .upsert(dbWages, {
-        onConflict: 'year,month,day',
-        returning: 'minimal'
-      });
+      .select('id')
+      .eq('year', dbWages.year)
+      .eq('month', dbWages.month)
+      .eq('day', dbWages.day)
+      .maybeSingle();
     
-    if (error) {
-      console.error('Error with upsert, trying alternative approach:', error);
-      
-      // Alternative approach: Try to find if record exists
-      const { data: existingData, error: findError } = await supabase
+    if (findError && findError.code !== 'PGRST116') {
+      console.error('Error finding existing record:', findError);
+      throw findError;
+    }
+    
+    if (existingData?.id) {
+      // Update existing record with explicit field updates
+      console.log('Found existing record with ID:', existingData.id);
+      const { error: updateError } = await supabase
         .from('wages')
-        .select('id')
-        .eq('year', dbWages.year)
-        .eq('month', dbWages.month)
-        .eq('day', dbWages.day)
-        .maybeSingle();
+        .update({
+          foh_wages: fohWages,
+          kitchen_wages: kitchenWages,
+          food_revenue: foodRevenue,
+          bev_revenue: bevRevenue,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingData.id);
       
-      if (findError && findError.code !== 'PGRST116') {
-        console.error('Error finding existing record:', findError);
-        throw findError;
+      if (updateError) {
+        console.error('Error updating existing record:', updateError);
+        throw updateError;
       }
+    } else {
+      // Insert new record
+      console.log('No existing record found, inserting new record');
+      const { error: insertError } = await supabase
+        .from('wages')
+        .insert(dbWages);
       
-      if (existingData?.id) {
-        // Update existing record
-        console.log('Found existing record with ID:', existingData.id);
-        const { error: updateError } = await supabase
-          .from('wages')
-          .update({
-            foh_wages: fohWages,
-            kitchen_wages: kitchenWages,
-            food_revenue: foodRevenue,
-            bev_revenue: bevRevenue,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingData.id);
-        
-        if (updateError) {
-          console.error('Error updating existing record:', updateError);
-          throw updateError;
-        }
-      } else {
-        // Insert new record as a last resort
-        console.log('No existing record found, inserting new record');
-        const { error: insertError } = await supabase
-          .from('wages')
-          .insert([dbWages]);
-        
-        if (insertError) {
-          console.error('Error inserting new record:', insertError);
-          throw insertError;
-        }
+      if (insertError) {
+        console.error('Error inserting new record:', insertError);
+        throw insertError;
       }
     }
     
