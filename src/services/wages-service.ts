@@ -115,19 +115,24 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
     console.log(`Attempting to save wages for ${dateKey}`);
     
-    // Ensure we're working with clean number values, not strings or undefined
-    // Fix the TypeScript errors by using proper type checking
+    // Ensure we're working with clean number values
+    // Fix the TypeScript errors by using proper type checking and safer conversions
     const fohWages = typeof wages.fohWages === 'number' ? wages.fohWages : 
-                    (wages.fohWages ? parseFloat(String(wages.fohWages)) : 0);
-    const kitchenWages = typeof wages.kitchenWages === 'number' ? wages.kitchenWages : 
-                        (wages.kitchenWages ? parseFloat(String(wages.kitchenWages)) : 0);
-    const foodRevenue = typeof wages.foodRevenue === 'number' ? wages.foodRevenue : 
-                       (wages.foodRevenue ? parseFloat(String(wages.foodRevenue)) : 0);
-    const bevRevenue = typeof wages.bevRevenue === 'number' ? wages.bevRevenue :
-                      (wages.bevRevenue ? parseFloat(String(wages.bevRevenue)) : 0);
+                    (wages.fohWages ? Number(wages.fohWages) : 0);
     
-    // Format date correctly as YYYY-MM-DD for PostgreSQL (as string, will be cast correctly)
-    const formattedDate = `${wages.year}-${String(wages.month).padStart(2, '0')}-${String(wages.day).padStart(2, '0')}`;
+    const kitchenWages = typeof wages.kitchenWages === 'number' ? wages.kitchenWages : 
+                        (wages.kitchenWages ? Number(wages.kitchenWages) : 0);
+    
+    const foodRevenue = typeof wages.foodRevenue === 'number' ? wages.foodRevenue : 
+                       (wages.foodRevenue ? Number(wages.foodRevenue) : 0);
+    
+    const bevRevenue = typeof wages.bevRevenue === 'number' ? wages.bevRevenue :
+                      (wages.bevRevenue ? Number(wages.bevRevenue) : 0);
+    
+    // Format date correctly as YYYY-MM-DD for PostgreSQL
+    const month = String(wages.month).padStart(2, '0');
+    const day = String(wages.day).padStart(2, '0');
+    const formattedDate = `${wages.year}-${month}-${day}`;
     console.log(`Using formatted date: ${formattedDate}`);
     
     // Get the current user for tracking
@@ -180,7 +185,6 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
           year: wages.year,
           month: wages.month,
           day: wages.day,
-          // Important: Store date as properly formatted string that PostgreSQL can cast to date
           date: formattedDate,
           day_of_week: wages.dayOfWeek,
           foh_wages: fohWages,
