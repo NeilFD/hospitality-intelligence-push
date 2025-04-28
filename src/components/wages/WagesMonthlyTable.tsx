@@ -14,6 +14,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   const [isLoading, setIsLoading] = React.useState(true);
   const [monthlyData, setMonthlyData] = React.useState<any[]>([]);
   const [inputValues, setInputValues] = React.useState<Record<string, Record<string, string>>>({});
+  const [dirtyInputs, setDirtyInputs] = React.useState<Record<string, Set<string>>>({});
   const [saveTimeout, setSaveTimeout] = React.useState<NodeJS.Timeout | null>(null);
   const { getMonthlyWages, setDailyWages, clearCache } = useWagesStore();
   
@@ -88,11 +89,14 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       const initialInputValues: Record<string, Record<string, string>> = {};
       updatedWagesData.forEach(day => {
         initialInputValues[day.day] = {
-          fohWages: day.fohWages?.toString() || '',
-          kitchenWages: day.kitchenWages?.toString() || ''
+          fohWages: day.fohWages ? day.fohWages.toString() : '',
+          kitchenWages: day.kitchenWages ? day.kitchenWages.toString() : ''
         };
       });
       setInputValues(initialInputValues);
+      
+      // Reset dirty inputs
+      setDirtyInputs({});
       
     } catch (error) {
       console.error('Error fetching wages data:', error);
@@ -122,6 +126,16 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       }
     }));
     
+    // Mark this field as dirty
+    setDirtyInputs(prev => {
+      const newDirty = { ...prev };
+      if (!newDirty[day]) {
+        newDirty[day] = new Set();
+      }
+      newDirty[day].add(field);
+      return newDirty;
+    });
+    
     // Clear any existing timeout
     if (saveTimeout) {
       clearTimeout(saveTimeout);
@@ -138,6 +152,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   // Function to save data after delay
   const saveData = async (day: number, field: string, value: string) => {
     try {
+      // First, check if the value is empty
+      if (value.trim() === '') {
+        // Don't save empty values
+        return;
+      }
+      
       const numValue = parseFloat(value) || 0;
       
       const dateObj = new Date(year, month - 1, day);
@@ -168,6 +188,18 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       
       // Save to database
       await setDailyWages(updatedDay);
+
+      // Clear this field from dirty state
+      setDirtyInputs(prev => {
+        const newDirty = { ...prev };
+        if (newDirty[day]) {
+          newDirty[day].delete(field);
+          if (newDirty[day].size === 0) {
+            delete newDirty[day];
+          }
+        }
+        return newDirty;
+      });
       
       // Show success message
       toast.success('Data saved successfully');
@@ -299,6 +331,10 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                   ? (totalDailyWages / totalDailyRevenue) * 100 
                   : 0;
                 
+                // Check if these fields are dirty (being edited)
+                const isDirtyFoh = dirtyInputs[day.day]?.has('fohWages');
+                const isDirtyKitchen = dirtyInputs[day.day]?.has('kitchenWages');
+                
                 return (
                   <TableRow key={day.day}>
                     <TableCell className="font-medium">
@@ -309,7 +345,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         type="number"
                         value={inputValues[day.day]?.fohWages || ''}
                         onChange={(e) => handleInputChange(day.day, 'fohWages', e.target.value)}
-                        className="w-24 ml-auto"
+                        className={`w-24 ml-auto ${isDirtyFoh ? 'border-amber-400' : ''}`}
                         min={0}
                         step="0.01"
                         autoComplete="off"
@@ -320,7 +356,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                         type="number"
                         value={inputValues[day.day]?.kitchenWages || ''}
                         onChange={(e) => handleInputChange(day.day, 'kitchenWages', e.target.value)}
-                        className="w-24 ml-auto"
+                        className={`w-24 ml-auto ${isDirtyKitchen ? 'border-amber-400' : ''}`}
                         min={0}
                         step="0.01"
                         autoComplete="off"

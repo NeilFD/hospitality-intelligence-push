@@ -41,9 +41,11 @@ Deno.serve(async (req) => {
     console.log(`Values received: foh=${p_foh_wages}, kitchen=${p_kitchen_wages}, food=${p_food_revenue}, bev=${p_bev_revenue}`)
     
     // Don't perform any operations if values are undefined or empty - this is crucial
-    if (p_foh_wages === undefined && p_kitchen_wages === undefined && 
-        p_food_revenue === undefined && p_bev_revenue === undefined) {
-      console.log('All wage values are undefined, skipping database operation')
+    if ((p_foh_wages === undefined || p_foh_wages === '') && 
+        (p_kitchen_wages === undefined || p_kitchen_wages === '') && 
+        (p_food_revenue === undefined || p_food_revenue === '') && 
+        (p_bev_revenue === undefined || p_bev_revenue === '')) {
+      console.log('All wage values are undefined or empty, skipping database operation')
       return new Response(JSON.stringify({ 
         success: true, 
         message: 'No changes detected, skipping update' 
@@ -52,6 +54,12 @@ Deno.serve(async (req) => {
         status: 200
       })
     }
+    
+    // Convert empty strings to null to ensure proper database handling
+    const fohWages = p_foh_wages === '' ? null : parseFloat(p_foh_wages) || 0;
+    const kitchenWages = p_kitchen_wages === '' ? null : parseFloat(p_kitchen_wages) || 0;
+    const foodRevenue = p_food_revenue === '' ? null : parseFloat(p_food_revenue) || 0;
+    const bevRevenue = p_bev_revenue === '' ? null : parseFloat(p_bev_revenue) || 0;
     
     // First check if record exists
     const { data: existingRecord, error: fetchError } = await supabaseClient
@@ -76,14 +84,14 @@ Deno.serve(async (req) => {
       
       // Only update fields that have been provided in the request
       // This is critical to prevent overwriting existing data with undefined values
-      const updateData = {
+      const updateData: any = {
         updated_at: new Date().toISOString()
       };
       
-      if (p_foh_wages !== undefined) updateData['foh_wages'] = p_foh_wages;
-      if (p_kitchen_wages !== undefined) updateData['kitchen_wages'] = p_kitchen_wages;
-      if (p_food_revenue !== undefined) updateData['food_revenue'] = p_food_revenue;
-      if (p_bev_revenue !== undefined) updateData['bev_revenue'] = p_bev_revenue;
+      if (p_foh_wages !== undefined && p_foh_wages !== '') updateData['foh_wages'] = fohWages;
+      if (p_kitchen_wages !== undefined && p_kitchen_wages !== '') updateData['kitchen_wages'] = kitchenWages;
+      if (p_food_revenue !== undefined && p_food_revenue !== '') updateData['food_revenue'] = foodRevenue;
+      if (p_bev_revenue !== undefined && p_bev_revenue !== '') updateData['bev_revenue'] = bevRevenue;
       
       console.log('Update data:', updateData);
       
@@ -108,10 +116,10 @@ Deno.serve(async (req) => {
           day: p_day,
           date: p_date,
           day_of_week: p_day_of_week,
-          foh_wages: p_foh_wages || 0,
-          kitchen_wages: p_kitchen_wages || 0,
-          food_revenue: p_food_revenue || 0,
-          bev_revenue: p_bev_revenue || 0
+          foh_wages: fohWages,
+          kitchen_wages: kitchenWages,
+          food_revenue: foodRevenue,
+          bev_revenue: bevRevenue
         }])
         .select()
         
@@ -128,20 +136,26 @@ Deno.serve(async (req) => {
       if (error.code === '42501' && error.message.includes('financial_performance_analysis')) {
         console.log('Ignoring materialized view permission error')
         
-        // Return the existing record or empty object if none exists
-        const responseData = existingRecord || { 
-          year: p_year, 
-          month: p_month, 
-          day: p_day,
-          foh_wages: p_foh_wages || 0,
-          kitchen_wages: p_kitchen_wages || 0,
-          food_revenue: p_food_revenue || 0,
-          bev_revenue: p_bev_revenue || 0
-        };
+        // Fetch the record again to ensure we have the latest data
+        const { data: refreshedRecord } = await supabaseClient
+          .from('wages')
+          .select('*')
+          .eq('year', p_year)
+          .eq('month', p_month)
+          .eq('day', p_day)
+          .maybeSingle();
         
         return new Response(JSON.stringify({ 
           success: true, 
-          data: responseData,
+          data: refreshedRecord || { 
+            year: p_year, 
+            month: p_month, 
+            day: p_day,
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages,
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue
+          },
           message: 'Data saved successfully despite materialized view permission issue' 
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
