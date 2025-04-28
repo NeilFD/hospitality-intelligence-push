@@ -129,37 +129,49 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
 
     console.log('Sending to database:', dbWages);
 
-    // Check if record already exists
-    const { data: existingRecord } = await supabase
+    // Try direct upsert with more specific conflict target
+    const { error } = await supabase
       .from('wages')
-      .select('id')
-      .eq('year', dbWages.year)
-      .eq('month', dbWages.month)
-      .eq('day', dbWages.day)
-      .single();
-      
-    let result;
-    
-    if (existingRecord) {
-      // Update existing record
-      console.log('Updating existing record with ID:', existingRecord.id);
-      result = await supabase
-        .from('wages')
-        .update(dbWages)
-        .eq('id', existingRecord.id);
-    } else {
-      // Insert new record
-      console.log('Inserting new wages record');
-      result = await supabase
-        .from('wages')
-        .insert(dbWages);
-    }
-    
-    const { error } = result;
+      .upsert(dbWages, {
+        onConflict: 'year,month,day',
+        ignoreDuplicates: false
+      });
     
     if (error) {
-      console.error('Error upserting wages:', error);
-      throw error;
+      console.error('Error with direct upsert, falling back to check-then-update:', error);
+      
+      // Fallback: Check if record already exists
+      const { data: existingRecord } = await supabase
+        .from('wages')
+        .select('id')
+        .eq('year', dbWages.year)
+        .eq('month', dbWages.month)
+        .eq('day', dbWages.day)
+        .single();
+        
+      let result;
+      
+      if (existingRecord) {
+        // Update existing record
+        console.log('Updating existing record with ID:', existingRecord.id);
+        result = await supabase
+          .from('wages')
+          .update(dbWages)
+          .eq('id', existingRecord.id);
+      } else {
+        // Insert new record
+        console.log('Inserting new wages record');
+        result = await supabase
+          .from('wages')
+          .insert(dbWages);
+      }
+      
+      const { error: fallbackError } = result;
+      
+      if (fallbackError) {
+        console.error('Error in fallback upsert method:', fallbackError);
+        throw fallbackError;
+      }
     }
     
     console.log('Wages data saved successfully');
