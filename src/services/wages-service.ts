@@ -117,6 +117,42 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
     console.log(`Attempting to save wages for ${dateKey}`);
     
+    // Ensure numeric values
+    const fohWages = Number(wages.fohWages) || 0;
+    const kitchenWages = Number(wages.kitchenWages) || 0;
+    const foodRevenue = Number(wages.foodRevenue) || 0;
+    const bevRevenue = Number(wages.bevRevenue) || 0;
+
+    // Try to use the Edge Function first for more robust handling
+    try {
+      console.log('Attempting to save via Edge Function');
+      
+      const { data, error } = await supabase.functions.invoke('upsert_wages_record', {
+        body: {
+          p_year: wages.year,
+          p_month: wages.month, 
+          p_day: wages.day,
+          p_date: wages.date,
+          p_day_of_week: wages.dayOfWeek,
+          p_foh_wages: fohWages,
+          p_kitchen_wages: kitchenWages,
+          p_food_revenue: foodRevenue,
+          p_bev_revenue: bevRevenue
+        }
+      });
+      
+      if (error) {
+        console.error('Error using Edge Function:', error);
+        throw error;
+      }
+      
+      console.log('Edge Function save result:', data);
+      return;
+    } catch (edgeFunctionError) {
+      console.error('Edge Function failed, falling back to direct DB access:', edgeFunctionError);
+      // Continue with traditional approach below
+    }
+    
     // First check if record already exists
     const { data: existingRecord, error: fetchError } = await supabase
       .from('wages')
@@ -130,12 +166,6 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       console.error('Error checking for existing record:', fetchError);
       throw fetchError;
     }
-    
-    // Ensure numeric values
-    const fohWages = Number(wages.fohWages) || 0;
-    const kitchenWages = Number(wages.kitchenWages) || 0;
-    const foodRevenue = Number(wages.foodRevenue) || 0;
-    const bevRevenue = Number(wages.bevRevenue) || 0;
     
     // Convert from DailyWages to DbWages
     const dbWages: DbWages = {
@@ -218,7 +248,7 @@ async function emergencyDirectSave(wages: DailyWages): Promise<void> {
     
     // Use the Supabase RPC function for the emergency save
     const { data, error } = await supabase
-      .rpc('upsert_wages_record', {
+      .rpc('direct_upsert_wages', {
         p_year: wages.year,
         p_month: wages.month, 
         p_day: wages.day,
