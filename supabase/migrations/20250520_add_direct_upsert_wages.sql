@@ -31,10 +31,10 @@ BEGIN
     -- Update existing record
     UPDATE wages
     SET
-      foh_wages = p_foh_wages,
-      kitchen_wages = p_kitchen_wages,
-      food_revenue = p_food_revenue,
-      bev_revenue = p_bev_revenue,
+      foh_wages = COALESCE(p_foh_wages, foh_wages),
+      kitchen_wages = COALESCE(p_kitchen_wages, kitchen_wages),
+      food_revenue = COALESCE(p_food_revenue, food_revenue),
+      bev_revenue = COALESCE(p_bev_revenue, bev_revenue),
       updated_at = NOW()
     WHERE id = v_id;
     
@@ -67,7 +67,9 @@ BEGIN
       foh_wages,
       kitchen_wages,
       food_revenue,
-      bev_revenue
+      bev_revenue,
+      created_at,
+      updated_at
     )
     VALUES (
       p_year,
@@ -78,7 +80,9 @@ BEGIN
       p_foh_wages,
       p_kitchen_wages,
       p_food_revenue,
-      p_bev_revenue
+      p_bev_revenue,
+      NOW(),
+      NOW()
     )
     RETURNING json_build_object(
       'id', id,
@@ -101,3 +105,6 @@ EXCEPTION
     RETURN json_build_object('error', SQLERRM);
 END;
 $$;
+
+-- Grant execute permission to the function
+GRANT EXECUTE ON FUNCTION public.direct_upsert_wages TO authenticated;
