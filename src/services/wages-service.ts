@@ -145,6 +145,7 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     let saveError = null;
     
     if (existingRecord?.id) {
+      console.log(`Updating existing wages record with ID ${existingRecord.id}`);
       // Update existing record by ID
       const { error } = await supabase
         .from('wages')
@@ -165,6 +166,7 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
         console.error(`Error updating wages record:`, error);
       }
     } else {
+      console.log(`Creating new wages record for ${dateKey}`);
       // Insert new record
       const { error } = await supabase
         .from('wages')
@@ -184,37 +186,46 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       if (saveError.code === '42501' && saveError.message.includes('financial_performance_analysis')) {
         console.log('Ignoring materialized view permission error, data should be saved');
         return;
+      } else if (saveError.code === '23505') {  // Duplicate key error
+        console.log('Duplicate record detected, trying emergency direct save...');
+        await emergencyDirectSave(wages);
       } else {
-        // For other types of errors, throw them
+        // For other types of errors, try the emergency direct save
         throw saveError;
       }
     }
   } catch (error) {
-    // Last resort fallback - try one more time with direct RPC call
-    try {
-      console.log('Attempting emergency direct save...');
-      const { data, error: rpcError } = await supabase
-        .rpc('upsert_wages_record', {
-          p_year: wages.year,
-          p_month: wages.month,
-          p_day: wages.day,
-          p_date: wages.date,
-          p_day_of_week: wages.dayOfWeek,
-          p_foh_wages: Number(wages.fohWages) || 0,
-          p_kitchen_wages: Number(wages.kitchenWages) || 0,
-          p_food_revenue: Number(wages.foodRevenue) || 0,
-          p_bev_revenue: Number(wages.bevRevenue) || 0
-        });
-        
-      if (rpcError) {
-        console.error('Exception in emergency wages save:', rpcError);
-        throw rpcError;
-      }
-      
-      console.log('Emergency direct save successful');
-    } catch (finalError) {
-      console.error('All attempts to save wages failed:', finalError);
-      throw finalError;
-    }
+    console.error('Primary save method failed:', error);
+    // Last resort fallback - try emergency direct save
+    await emergencyDirectSave(wages);
   }
 };
+
+// Separated this out for cleaner code and reusability
+async function emergencyDirectSave(wages: DailyWages): Promise<void> {
+  try {
+    console.log('Attempting emergency direct save via RPC...');
+    const { data, error: rpcError } = await supabase
+      .rpc('upsert_wages_record', {
+        p_year: wages.year,
+        p_month: wages.month,
+        p_day: wages.day,
+        p_date: wages.date,
+        p_day_of_week: wages.dayOfWeek,
+        p_foh_wages: Number(wages.fohWages) || 0,
+        p_kitchen_wages: Number(wages.kitchenWages) || 0,
+        p_food_revenue: Number(wages.foodRevenue) || 0,
+        p_bev_revenue: Number(wages.bevRevenue) || 0
+      });
+      
+    if (rpcError) {
+      console.error('Exception in emergency wages save:', rpcError);
+      throw rpcError;
+    }
+    
+    console.log('Emergency direct save successful');
+  } catch (finalError) {
+    console.error('All attempts to save wages failed:', finalError);
+    throw finalError;
+  }
+}

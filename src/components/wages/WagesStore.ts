@@ -62,16 +62,37 @@ export const useWagesStore = create<WagesStore>()(
       
       setDailyWages: async (data: DailyWages) => {
         try {
+          const key = `${data.year}-${data.month}-${data.day}`;
+          console.log(`Saving wages data for ${key}`);
+          
+          // Update local state immediately for UI responsiveness
+          set((state) => ({
+            wagesData: {
+              ...state.wagesData,
+              [key]: {...data}
+            }
+          }));
+          
+          // Then persist to the database
           await upsertDailyWages(data);
-          set((state) => {
-            const key = `${data.year}-${data.month}-${data.day}`;
-            return {
-              wagesData: {
-                ...state.wagesData,
-                [key]: data
-              }
-            };
-          });
+          console.log(`Successfully saved wages data for ${key}`);
+          
+          // Refresh the data from the database to ensure UI is in sync
+          try {
+            const refreshedData = await fetchWagesByDay(data.year, data.month, data.day);
+            if (refreshedData) {
+              set((state) => ({
+                wagesData: {
+                  ...state.wagesData,
+                  [key]: refreshedData
+                }
+              }));
+              console.log(`Refreshed data from database for ${key}`);
+            }
+          } catch (refreshError) {
+            console.warn('Failed to refresh data after save, using local data:', refreshError);
+          }
+          
         } catch (error) {
           console.error('Failed to save wages data', error);
           throw error;
@@ -110,7 +131,8 @@ export const useWagesStore = create<WagesStore>()(
           const daysInMonth = new Date(year, month, 0).getDate();
           const result: DailyWages[] = [];
           
-          // First try to get all the month's data from Supabase
+          // Always fetch fresh data from the database to ensure consistency
+          console.log(`Fetching fresh wages data for ${year}-${month}`);
           const supabaseData = await fetchWagesByMonth(year, month);
           
           // Convert to a map for easier lookup
@@ -158,7 +180,9 @@ export const useWagesStore = create<WagesStore>()(
       },
       
       getWeekdayTotals: async (year: number, month: number) => {
-        const monthlyData = await get().getMonthlyWages(year, month);
+        // Force fetch fresh data from the server
+        const monthlyData = await fetchWagesByMonth(year, month);
+        
         const weekdayTotals: Record<string, {
           fohWages: number;
           kitchenWages: number;

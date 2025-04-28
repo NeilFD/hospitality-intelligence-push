@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -15,78 +14,79 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   const [monthlyData, setMonthlyData] = React.useState<any[]>([]);
   const { getMonthlyWages, setDailyWages } = useWagesStore();
   
-  React.useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch wages data
-        const wagesData = await getMonthlyWages(year, month);
+  const loadWagesData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Fetch wages data
+      console.log(`Fetching wages data for year=${year}, month=${month}`);
+      const wagesData = await getMonthlyWages(year, month);
+      
+      // Explicitly fetch the master records for the month to ensure we have the latest data
+      console.log(`Fetching master records for year=${year}, month=${month}`);
+      const masterRecords = await fetchMasterRecordsByMonth(year, month);
+      
+      // Create a lookup map for easier access
+      const masterRecordsByDate: Record<string, { foodRevenue: number; beverageRevenue: number }> = {};
+      
+      masterRecords.forEach(record => {
+        const dateStr = record.date;
+        console.log(`Master record found for ${dateStr}: Food=${record.foodRevenue}, Bev=${record.beverageRevenue}`);
+        masterRecordsByDate[dateStr] = {
+          foodRevenue: record.foodRevenue || 0,
+          beverageRevenue: record.beverageRevenue || 0
+        };
+      });
+      
+      // Update wages data with revenue from master records
+      const updatedWagesData = await Promise.all(wagesData.map(async (day) => {
+        // Format the date string in YYYY-MM-DD format for lookups
+        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.day.toString().padStart(2, '0')}`;
+        console.log(`Looking up master record for ${dateStr}`);
         
-        // Explicitly fetch the master records for the month to ensure we have the latest data
-        console.log(`Fetching master records for year=${year}, month=${month}`);
-        const masterRecords = await fetchMasterRecordsByMonth(year, month);
+        let masterRecord = masterRecordsByDate[dateStr];
         
-        // Create a lookup map for easier access
-        const masterRecordsByDate: Record<string, { foodRevenue: number; beverageRevenue: number }> = {};
-        
-        masterRecords.forEach(record => {
-          const dateStr = record.date;
-          console.log(`Master record found for ${dateStr}: Food=${record.foodRevenue}, Bev=${record.beverageRevenue}`);
-          masterRecordsByDate[dateStr] = {
-            foodRevenue: record.foodRevenue || 0,
-            beverageRevenue: record.beverageRevenue || 0
-          };
-        });
-        
-        // Update wages data with revenue from master records
-        const updatedWagesData = await Promise.all(wagesData.map(async (day) => {
-          // Format the date string in YYYY-MM-DD format for lookups
-          const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.day.toString().padStart(2, '0')}`;
-          console.log(`Looking up master record for ${dateStr}`);
-          
-          let masterRecord = masterRecordsByDate[dateStr];
-          
-          // If no master record was found in the batch fetch, try fetching it individually
-          // This is especially important for recently added records
-          if (!masterRecord || (masterRecord.foodRevenue === 0 && masterRecord.beverageRevenue === 0)) {
-            console.log(`No master record found in batch fetch for ${dateStr}, trying individual fetch`);
-            try {
-              const individualRecord = await fetchMasterDailyRecord(dateStr);
-              if (individualRecord) {
-                console.log(`Individual fetch successful for ${dateStr}: Food=${individualRecord.foodRevenue}, Bev=${individualRecord.beverageRevenue}`);
-                masterRecord = {
-                  foodRevenue: individualRecord.foodRevenue || 0,
-                  beverageRevenue: individualRecord.beverageRevenue || 0
-                };
-              }
-            } catch (error) {
-              console.error(`Error fetching individual master record for ${dateStr}:`, error);
+        // If no master record was found in the batch fetch, try fetching it individually
+        // This is especially important for recently added records
+        if (!masterRecord || (masterRecord.foodRevenue === 0 && masterRecord.beverageRevenue === 0)) {
+          console.log(`No master record found in batch fetch for ${dateStr}, trying individual fetch`);
+          try {
+            const individualRecord = await fetchMasterDailyRecord(dateStr);
+            if (individualRecord) {
+              console.log(`Individual fetch successful for ${dateStr}: Food=${individualRecord.foodRevenue}, Bev=${individualRecord.beverageRevenue}`);
+              masterRecord = {
+                foodRevenue: individualRecord.foodRevenue || 0,
+                beverageRevenue: individualRecord.beverageRevenue || 0
+              };
             }
+          } catch (error) {
+            console.error(`Error fetching individual master record for ${dateStr}:`, error);
           }
-          
-          if (masterRecord) {
-            console.log(`Found master record for ${dateStr}: updating with food=${masterRecord.foodRevenue}, bev=${masterRecord.beverageRevenue}`);
-            return {
-              ...day,
-              foodRevenue: masterRecord.foodRevenue,
-              bevRevenue: masterRecord.beverageRevenue
-            };
-          }
-          
-          return day;
-        }));
+        }
         
-        setMonthlyData(updatedWagesData);
-      } catch (error) {
-        console.error('Error fetching wages data:', error);
-        toast.error('Failed to load wages data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
+        if (masterRecord) {
+          console.log(`Found master record for ${dateStr}: updating with food=${masterRecord.foodRevenue}, bev=${masterRecord.beverageRevenue}`);
+          return {
+            ...day,
+            foodRevenue: masterRecord.foodRevenue,
+            bevRevenue: masterRecord.beverageRevenue
+          };
+        }
+        
+        return day;
+      }));
+      
+      setMonthlyData(updatedWagesData);
+    } catch (error) {
+      console.error('Error fetching wages data:', error);
+      toast.error('Failed to load wages data');
+    } finally {
+      setIsLoading(false);
+    }
   }, [year, month, getMonthlyWages]);
+  
+  useEffect(() => {
+    loadWagesData();
+  }, [loadWagesData]);
   
   const handleInputChange = async (day: number, field: string, value: string) => {
     try {
@@ -118,30 +118,22 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       
       console.log(`Attempting to save data for day ${day}:`, updatedDay);
       
-      await setDailyWages(updatedDay);
-      
+      // Update the UI immediately for better UX
       setMonthlyData(prevData => 
         prevData.map(d => d.day === day ? updatedDay : d)
       );
       
+      // Then save to database
+      await setDailyWages(updatedDay);
+      
+      // Refresh data to ensure everything is in sync
       toast.success('Data saved successfully');
     } catch (error) {
       console.error('Failed to save data:', error);
-      toast.error('Failed to save data');
+      toast.error('Failed to save data. Refreshing data...');
       
-      if (monthlyData && day) {
-        setMonthlyData(prevData => 
-          prevData.map(d => {
-            if (d.day === day) {
-              return {
-                ...d,
-                [field]: parseFloat(value) || 0
-              };
-            }
-            return d;
-          })
-        );
-      }
+      // If there's an error, refresh the data to ensure UI is in sync with database
+      loadWagesData();
     }
   };
   
