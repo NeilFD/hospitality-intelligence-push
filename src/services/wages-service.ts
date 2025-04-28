@@ -107,6 +107,20 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     const user = await getCurrentUser();
     console.log('Upserting wages data:', wages);
     
+    // Check first if a record already exists
+    const { data: existingData, error: checkError } = await supabase
+      .from('wages')
+      .select('id')
+      .eq('year', wages.year)
+      .eq('month', wages.month)
+      .eq('day', wages.day)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking for existing wages record:', checkError);
+      throw checkError;
+    }
+    
     // Ensure that numeric values are numbers and not strings
     const fohWages = Number(wages.fohWages) || 0;
     const kitchenWages = Number(wages.kitchenWages) || 0;
@@ -126,34 +140,38 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       bev_revenue: bevRevenue,
       created_by: user?.id
     };
-
-    console.log('Sending to database:', dbWages);
-
-    // Use a direct upsert operation to avoid any issues with materialized views
-    const { data, error } = await supabase
-      .from('wages')
-      .upsert(
-        dbWages,
-        { 
-          onConflict: 'year,month,day', 
-          ignoreDuplicates: false 
-        }
-      )
-      .select('id');
-
-    console.log('Upsert response:', { data, error });
-
-    if (error) {
-      // If the error is related to the materialized view, ignore it and consider the operation successful
-      if (error.code === '42501' && error.message.includes('financial_performance_analysis')) {
+    
+    let result;
+    
+    if (existingData?.id) {
+      // Update existing record
+      console.log(`Updating existing record with ID: ${existingData.id}`);
+      result = await supabase
+        .from('wages')
+        .update({
+          ...dbWages,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingData.id);
+    } else {
+      // Insert new record
+      console.log('Inserting new wages record');
+      result = await supabase
+        .from('wages')
+        .insert(dbWages);
+    }
+    
+    if (result.error) {
+      // If the error is related to the materialized view, ignore it
+      if (result.error.code === '42501' && result.error.message.includes('financial_performance_analysis')) {
         console.log('Ignoring materialized view permission error, data was likely saved');
         return;
       }
-      console.error('Error upserting wages record:', error);
-      throw error;
+      console.error('Error saving wages record:', result.error);
+      throw result.error;
     }
-
-    console.log('Wages data saved successfully:', data);
+    
+    console.log('Wages data saved successfully');
   } catch (error) {
     console.error('Exception during wages upsert:', error);
     throw error;
