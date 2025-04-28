@@ -64,11 +64,11 @@ export const useWagesStore = create<WagesStore>()(
       setDailyWages: async (data: DailyWages) => {
         try {
           const key = `${data.year}-${data.month}-${data.day}`;
-          console.log(`Saving wages data for ${key}`);
+          console.log(`[STORE] Saving wages data for ${key}`, data);
           
           // First persist to the database
           await upsertDailyWages(data);
-          console.log(`Successfully sent wages data to server for ${key}`);
+          console.log(`[STORE] Successfully sent wages data to server for ${key}`);
           
           // Then update local state to ensure UI consistency
           set((state) => ({
@@ -88,14 +88,14 @@ export const useWagesStore = create<WagesStore>()(
                   [key]: refreshedData
                 }
               }));
-              console.log(`Refreshed data from database for ${key}`);
+              console.log(`[STORE] Refreshed data from database for ${key}`, refreshedData);
             }
           } catch (refreshError) {
-            console.warn('Failed to refresh data after save, using local data:', refreshError);
+            console.warn('[STORE] Failed to refresh data after save, using local data:', refreshError);
           }
           
         } catch (error) {
-          console.error('Failed to save wages data', error);
+          console.error('[STORE] Failed to save wages data', error);
           throw error;
         }
       },

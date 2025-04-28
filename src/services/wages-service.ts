@@ -109,29 +109,28 @@ export const fetchTotalWagesForMonth = async (year: number, month: number): Prom
   }
 };
 
-export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
+export const upsertDailyWages = async (wages: DailyWages) => {
   try {
-    // Format date values correctly for logging
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
-    console.log(`Attempting to save wages for ${dateKey}:`, wages);
+    console.log(`[SAVE] Attempting to save wages for ${dateKey}:`, wages);
     
-    // Make sure we have numeric values
+    // Explicit number conversion to fix TypeScript errors
     const fohWages = Number(wages.fohWages || 0);
     const kitchenWages = Number(wages.kitchenWages || 0);
     const foodRevenue = Number(wages.foodRevenue || 0);
     const bevRevenue = Number(wages.bevRevenue || 0);
     
-    console.log(`Converted values: foh=${fohWages}, kitchen=${kitchenWages}, food=${foodRevenue}, bev=${bevRevenue}`);
+    console.log(`[SAVE] Converted values: foh=${fohWages}, kitchen=${kitchenWages}, food=${foodRevenue}, bev=${bevRevenue}`);
     
-    // Format date correctly as YYYY-MM-DD for PostgreSQL
+    // Format date as YYYY-MM-DD for PostgreSQL
     const month = String(wages.month).padStart(2, '0');
     const day = String(wages.day).padStart(2, '0');
     const formattedDate = `${wages.year}-${month}-${day}`;
-    console.log(`Using formatted date: ${formattedDate}`);
+    console.log(`[SAVE] Using formatted date: ${formattedDate}`);
     
     // Get the current user for tracking
     const user = await getCurrentUser();
-    console.log('Current user:', user?.id || 'anonymous');
+    console.log('[SAVE] Current user:', user?.id || 'anonymous');
 
     // First check if a record exists
     const { data: existing, error: checkError } = await supabase
@@ -143,70 +142,91 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       .maybeSingle();
 
     if (checkError) {
-      console.error('Error checking for existing record:', checkError);
+      console.error('[SAVE] Error checking for existing record:', checkError);
       throw checkError;
     }
 
-    let result;
-
-    // Use different approaches based on whether record exists
-    if (existing?.id) {
-      // Update the existing record
-      console.log(`Updating existing wages record with ID ${existing.id}`);
+    // Use direct Supabase RPC function for upsert
+    try {
+      const { data, error } = await supabase.rpc('direct_upsert_wages', {
+        p_year: wages.year,
+        p_month: wages.month, 
+        p_day: wages.day,
+        p_date: formattedDate,
+        p_day_of_week: wages.dayOfWeek,
+        p_foh_wages: fohWages,
+        p_kitchen_wages: kitchenWages,
+        p_food_revenue: foodRevenue,
+        p_bev_revenue: bevRevenue
+      });
       
-      const { data, error: updateError } = await supabase
-        .from('wages')
-        .update({
-          foh_wages: fohWages,
-          kitchen_wages: kitchenWages,
-          food_revenue: foodRevenue,
-          bev_revenue: bevRevenue,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existing.id)
-        .select();
-
-      if (updateError) {
-        console.error('Error updating wages record:', updateError);
-        throw updateError;
+      if (error) {
+        console.error('[SAVE] Error using direct_upsert_wages RPC:', error);
+        throw error;
       }
-
-      result = data;
-      console.log(`Successfully updated wages record for ${dateKey}:`, data);
-    } else {
-      // Insert a new record
-      console.log(`Creating new wages record for ${dateKey}`);
       
-      const { data, error: insertError } = await supabase
-        .from('wages')
-        .insert([{
-          year: wages.year,
-          month: wages.month,
-          day: wages.day,
-          date: formattedDate,
-          day_of_week: wages.dayOfWeek,
-          foh_wages: fohWages,
-          kitchen_wages: kitchenWages,
-          food_revenue: foodRevenue,
-          bev_revenue: bevRevenue,
-          created_by: user?.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select();
+      console.log('[SAVE] Successfully saved wages via RPC:', data);
+      return data;
+    } catch (rpcError) {
+      console.error('[SAVE] RPC method failed, falling back to standard approach:', rpcError);
+      
+      // Fallback to standard approach if RPC fails
+      if (existing?.id) {
+        // Update the existing record
+        console.log(`[SAVE] Updating existing wages record with ID ${existing.id}`);
+        
+        const { data, error: updateError } = await supabase
+          .from('wages')
+          .update({
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages,
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select();
 
-      if (insertError) {
-        console.error('Error inserting wages record:', insertError);
-        throw insertError;
+        if (updateError) {
+          console.error('[SAVE] Error updating wages record:', updateError);
+          throw updateError;
+        }
+
+        console.log(`[SAVE] Successfully updated wages record for ${dateKey}:`, data);
+        return data;
+      } else {
+        // Insert a new record
+        console.log(`[SAVE] Creating new wages record for ${dateKey}`);
+        
+        const { data, error: insertError } = await supabase
+          .from('wages')
+          .insert([{
+            year: wages.year,
+            month: wages.month,
+            day: wages.day,
+            date: formattedDate,
+            day_of_week: wages.dayOfWeek,
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages,
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue,
+            created_by: user?.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select();
+
+        if (insertError) {
+          console.error('[SAVE] Error inserting wages record:', insertError);
+          throw insertError;
+        }
+
+        console.log(`[SAVE] Successfully inserted wages record for ${dateKey}:`, data);
+        return data;
       }
-
-      result = data;
-      console.log(`Successfully inserted wages record for ${dateKey}:`, data);
     }
-
-    return result;
   } catch (error) {
-    console.error('Error saving wages data:', error);
+    console.error('[SAVE] Error saving wages data:', error);
     throw error;
   }
 };
