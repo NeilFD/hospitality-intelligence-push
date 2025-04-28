@@ -111,22 +111,28 @@ export const fetchTotalWagesForMonth = async (year: number, month: number): Prom
 
 export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
   try {
+    // Format date values correctly for debugging
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
     console.log(`Attempting to save wages for ${dateKey}`);
     
-    // Format the date correctly for PostgreSQL
-    const dateStr = `${wages.year}-${wages.month.toString().padStart(2, '0')}-${wages.day.toString().padStart(2, '0')}`;
+    // Ensure we're working with clean number values, not strings or undefined
+    const fohWages = typeof wages.fohWages === 'number' ? wages.fohWages : 
+                    (wages.fohWages ? parseFloat(wages.fohWages.toString()) : 0);
+    const kitchenWages = typeof wages.kitchenWages === 'number' ? wages.kitchenWages : 
+                        (wages.kitchenWages ? parseFloat(wages.kitchenWages.toString()) : 0);
+    const foodRevenue = typeof wages.foodRevenue === 'number' ? wages.foodRevenue : 
+                       (wages.foodRevenue ? parseFloat(wages.foodRevenue.toString()) : 0);
+    const bevRevenue = typeof wages.bevRevenue === 'number' ? wages.bevRevenue :
+                      (wages.bevRevenue ? parseFloat(wages.bevRevenue.toString()) : 0);
     
-    // Convert values to numbers and handle null/undefined
-    const fohWages = Number(wages.fohWages) || 0;
-    const kitchenWages = Number(wages.kitchenWages) || 0;
-    const foodRevenue = Number(wages.foodRevenue) || 0;
-    const bevRevenue = Number(wages.bevRevenue) || 0;
-
-    // Get the current user ID for tracking
+    // Format date correctly as YYYY-MM-DD for PostgreSQL (as string, will be cast correctly)
+    const formattedDate = `${wages.year}-${wages.month.toString().padStart(2, '0')}-${wages.day.toString().padStart(2, '0')}`;
+    console.log(`Using formatted date: ${formattedDate}`);
+    
+    // Get the current user for tracking
     const user = await getCurrentUser();
-    
-    // First, check if the record exists
+
+    // First check if a record exists
     const { data: existing, error: checkError } = await supabase
       .from('wages')
       .select('id')
@@ -134,16 +140,15 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       .eq('month', wages.month)
       .eq('day', wages.day)
       .maybeSingle();
-    
+
     if (checkError) {
-      console.error('Error checking for existing wage record:', checkError);
+      console.error('Error checking for existing record:', checkError);
       throw checkError;
     }
-    
-    let result;
-    
+
+    // Use different approaches based on whether record exists
     if (existing?.id) {
-      // Update existing record
+      // Update the existing record
       console.log(`Updating existing wages record with ID ${existing.id}`);
       
       const { data, error: updateError } = await supabase
@@ -157,16 +162,15 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
         })
         .eq('id', existing.id)
         .select();
-      
+
       if (updateError) {
         console.error('Error updating wages record:', updateError);
         throw updateError;
       }
-      
-      result = data;
-      console.log(`Successfully updated wages record for ${dateKey}:`, result);
+
+      console.log(`Successfully updated wages record for ${dateKey}:`, data);
     } else {
-      // Insert new record
+      // Insert a new record with properly formatted values
       console.log(`Creating new wages record for ${dateKey}`);
       
       const { data, error: insertError } = await supabase
@@ -175,7 +179,8 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
           year: wages.year,
           month: wages.month,
           day: wages.day,
-          date: dateStr,
+          // Important: Store date as properly formatted string that PostgreSQL can cast to date
+          date: formattedDate,
           day_of_week: wages.dayOfWeek,
           foh_wages: fohWages,
           kitchen_wages: kitchenWages,
@@ -186,14 +191,13 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
           updated_at: new Date().toISOString()
         }])
         .select();
-      
+
       if (insertError) {
         console.error('Error inserting wages record:', insertError);
         throw insertError;
       }
-      
-      result = data;
-      console.log(`Successfully inserted wages record for ${dateKey}:`, result);
+
+      console.log(`Successfully inserted wages record for ${dateKey}:`, data);
     }
   } catch (error) {
     console.error('Error saving wages data:', error);
