@@ -103,31 +103,68 @@ export const fetchTotalWagesForMonth = async (year: number, month: number): Prom
 };
 
 export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
-  const user = await getCurrentUser();
-  
-  // Convert from DailyWages to DbWages
-  const dbWages: DbWages = {
-    year: wages.year,
-    month: wages.month,
-    day: wages.day,
-    date: wages.date,
-    day_of_week: wages.dayOfWeek,
-    foh_wages: wages.fohWages,
-    kitchen_wages: wages.kitchenWages,
-    food_revenue: wages.foodRevenue,
-    bev_revenue: wages.bevRevenue,
-    created_by: user?.id
-  };
+  try {
+    const user = await getCurrentUser();
+    console.log('Upserting wages data:', wages);
+    
+    // Ensure that numeric values are numbers and not strings
+    const fohWages = Number(wages.fohWages) || 0;
+    const kitchenWages = Number(wages.kitchenWages) || 0;
+    const foodRevenue = Number(wages.foodRevenue) || 0;
+    const bevRevenue = Number(wages.bevRevenue) || 0;
+    
+    // Convert from DailyWages to DbWages
+    const dbWages: DbWages = {
+      year: wages.year,
+      month: wages.month,
+      day: wages.day,
+      date: wages.date,
+      day_of_week: wages.dayOfWeek,
+      foh_wages: fohWages,
+      kitchen_wages: kitchenWages,
+      food_revenue: foodRevenue,
+      bev_revenue: bevRevenue,
+      created_by: user?.id
+    };
 
-  const { error } = await supabase
-    .from('wages')
-    .upsert(dbWages, {
-      onConflict: 'year,month,day',
-      ignoreDuplicates: false
-    });
+    console.log('Sending to database:', dbWages);
 
-  if (error) {
-    console.error('Error upserting wages:', error);
+    // Check if record already exists
+    const { data: existingRecord } = await supabase
+      .from('wages')
+      .select('id')
+      .eq('year', dbWages.year)
+      .eq('month', dbWages.month)
+      .eq('day', dbWages.day)
+      .single();
+      
+    let result;
+    
+    if (existingRecord) {
+      // Update existing record
+      console.log('Updating existing record with ID:', existingRecord.id);
+      result = await supabase
+        .from('wages')
+        .update(dbWages)
+        .eq('id', existingRecord.id);
+    } else {
+      // Insert new record
+      console.log('Inserting new wages record');
+      result = await supabase
+        .from('wages')
+        .insert(dbWages);
+    }
+    
+    const { error } = result;
+    
+    if (error) {
+      console.error('Error upserting wages:', error);
+      throw error;
+    }
+    
+    console.log('Wages data saved successfully');
+  } catch (error) {
+    console.error('Exception during wages upsert:', error);
     throw error;
   }
 };
