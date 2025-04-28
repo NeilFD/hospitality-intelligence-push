@@ -129,25 +129,30 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
 
     console.log('Sending to database:', dbWages);
 
-    // Direct approach without trying to refresh materialized views
-    const { data: existingData, error: checkError } = await supabase
+    // First check if the record already exists
+    const { data: existingRecord, error: checkError } = await supabase
       .from('wages')
       .select('id')
       .eq('year', dbWages.year)
       .eq('month', dbWages.month)
       .eq('day', dbWages.day)
-      .single();
+      .maybeSingle();
     
-    if (checkError && checkError.code !== 'PGRST116') {
-      // If it's something other than "no rows returned", log and throw
-      if (checkError.code !== '42501' || !checkError.message.includes('financial_performance_analysis')) {
+    // Handle check errors, but ignore specific materialized view errors
+    if (checkError && checkError.code !== 'PGRST116') { // 'PGRST116' is "no rows returned"
+      if (!(checkError.code === '42501' && checkError.message.includes('financial_performance_analysis'))) {
         console.error('Error checking for existing record:', checkError);
         throw checkError;
+      } else {
+        console.log('Ignoring materialized view permission error during check');
       }
     }
     
-    if (existingData?.id) {
-      // Update existing record
+    let success = false;
+    
+    if (existingRecord?.id) {
+      // Record exists, update it
+      console.log('Record exists with ID:', existingRecord.id, 'updating...');
       const { error: updateError } = await supabase
         .from('wages')
         .update({
@@ -156,33 +161,75 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
           food_revenue: foodRevenue,
           bev_revenue: bevRevenue
         })
-        .eq('id', existingData.id);
+        .eq('id', existingRecord.id);
         
       if (updateError) {
         if (updateError.code === '42501' && updateError.message.includes('financial_performance_analysis')) {
           console.log('Ignoring materialized view permission error during update');
+          success = true; // Consider it a success despite the permission error
         } else {
           console.error('Error updating record:', updateError);
           throw updateError;
         }
+      } else {
+        success = true;
       }
     } else {
-      // Insert new record
-      const { error: insertError } = await supabase
+      // Record doesn't exist, insert it
+      console.log('Record does not exist, inserting new record');
+      const { data: insertData, error: insertError } = await supabase
         .from('wages')
-        .insert(dbWages);
+        .insert(dbWages)
+        .select('id')
+        .single();
         
       if (insertError) {
         if (insertError.code === '42501' && insertError.message.includes('financial_performance_analysis')) {
           console.log('Ignoring materialized view permission error during insert');
+          success = true; // Consider it a success despite the permission error
+        } else if (insertError.code === '23505') { // Duplicate key error
+          console.log('Duplicate key detected on insert, trying update instead');
+          
+          // Try an update as a fallback
+          const { error: fallbackUpdateError } = await supabase
+            .from('wages')
+            .update({
+              foh_wages: fohWages,
+              kitchen_wages: kitchenWages,
+              food_revenue: foodRevenue,
+              bev_revenue: bevRevenue
+            })
+            .eq('year', dbWages.year)
+            .eq('month', dbWages.month)
+            .eq('day', dbWages.day);
+            
+          if (fallbackUpdateError) {
+            if (fallbackUpdateError.code === '42501' && fallbackUpdateError.message.includes('financial_performance_analysis')) {
+              console.log('Ignoring materialized view permission error during fallback update');
+              success = true;
+            } else {
+              console.error('Error during fallback update:', fallbackUpdateError);
+              throw fallbackUpdateError;
+            }
+          } else {
+            success = true;
+          }
         } else {
           console.error('Error inserting record:', insertError);
           throw insertError;
         }
+      } else {
+        success = true;
+        console.log('Successfully inserted new record with ID:', insertData?.id);
       }
     }
     
-    console.log('Wages data processed successfully');
+    if (success) {
+      console.log('Wages data processed successfully');
+    } else {
+      console.error('Failed to save wages data without a specific error');
+      throw new Error('Failed to save wages data');
+    }
   } catch (error) {
     console.error('Exception during wages upsert:', error);
     throw error;
