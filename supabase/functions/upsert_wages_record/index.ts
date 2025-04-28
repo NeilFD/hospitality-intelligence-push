@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const {
       p_year,
-      p_month,
+      p_month, 
       p_day,
       p_date,
       p_day_of_week,
