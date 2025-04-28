@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { DailyWages } from '@/components/wages/WagesStore';
 import { getCurrentUser } from '@/lib/supabase';
@@ -105,13 +106,27 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
   try {
     const user = await getCurrentUser();
     
+    const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
+    console.log(`Attempting to save wages for ${dateKey}`);
+    
+    // First check if record already exists
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('wages')
+      .select('id')
+      .eq('year', wages.year)
+      .eq('month', wages.month)
+      .eq('day', wages.day)
+      .maybeSingle();
+      
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Error checking for existing record:', fetchError);
+    }
+    
     // Ensure numeric values
     const fohWages = Number(wages.fohWages) || 0;
     const kitchenWages = Number(wages.kitchenWages) || 0;
     const foodRevenue = Number(wages.foodRevenue) || 0;
     const bevRevenue = Number(wages.bevRevenue) || 0;
-    
-    console.log(`Attempting to save wages for ${wages.year}-${wages.month}-${wages.day}`);
     
     // Convert from DailyWages to DbWages
     const dbWages: DbWages = {
@@ -126,61 +141,80 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       bev_revenue: bevRevenue,
       created_by: user?.id
     };
-
-    // First try a direct insert
-    const { error: insertError } = await supabase
-      .from('wages')
-      .insert([dbWages]);
     
-    // If insert fails (likely due to duplicate key or materialized view permission)
-    if (insertError) {
-      // If this is a materialized view permission error, ignore it - the data should be saved
-      if (insertError.code === '42501' && insertError.message.includes('financial_performance_analysis')) {
-        console.log('Ignoring materialized view permission error, data should be saved');
-        return;
-      }
+    let saveError = null;
+    
+    if (existingRecord?.id) {
+      // Update existing record by ID
+      const { error } = await supabase
+        .from('wages')
+        .update({
+          foh_wages: fohWages,
+          kitchen_wages: kitchenWages,
+          food_revenue: foodRevenue,
+          bev_revenue: bevRevenue,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingRecord.id);
+        
+      saveError = error;
       
-      // If this is a duplicate key error, try an update instead
-      if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
-        console.log('Record already exists, attempting update');
-        
-        // Update based on year, month, day composite key
-        const { error: updateError } = await supabase
-          .from('wages')
-          .update({
-            foh_wages: fohWages,
-            kitchen_wages: kitchenWages,
-            food_revenue: foodRevenue,
-            bev_revenue: bevRevenue,
-            updated_at: new Date().toISOString()
-          })
-          .eq('year', wages.year)
-          .eq('month', wages.month)
-          .eq('day', wages.day);
-        
-        // If update also fails due to materialized view permission, ignore it
-        if (updateError) {
-          if (updateError.code === '42501' && updateError.message.includes('financial_performance_analysis')) {
-            console.log('Ignoring materialized view permission error on update, data should be saved');
-            return;
-          }
-          
-          console.error('Failed to update wages record:', updateError);
-          throw updateError;
-        }
-        
-        console.log(`Successfully updated wages record for ${wages.date}`);
-        return;
+      if (!error) {
+        console.log(`Successfully updated wages record for ${dateKey} with ID ${existingRecord.id}`);
+      } else {
+        console.error(`Error updating wages record:`, error);
       }
+    } else {
+      // Insert new record
+      const { error } = await supabase
+        .from('wages')
+        .insert([dbWages]);
+        
+      saveError = error;
       
-      // For other types of errors, throw them
-      console.error('Failed to insert wages record:', insertError);
-      throw insertError;
+      if (!error) {
+        console.log(`Successfully inserted wages record for ${dateKey}`);
+      } else {
+        console.error(`Error inserting wages record:`, error);
+      }
     }
     
-    console.log(`Successfully inserted wages record for ${wages.date}`);
+    // Special handling for materialized view errors (ignore them)
+    if (saveError) {
+      if (saveError.code === '42501' && saveError.message.includes('financial_performance_analysis')) {
+        console.log('Ignoring materialized view permission error, data should be saved');
+        return;
+      } else {
+        // For other types of errors, throw them
+        throw saveError;
+      }
+    }
   } catch (error) {
-    console.error('Exception in upsertDailyWages:', error);
-    throw error;
+    // Last resort fallback - try one more time with direct RPC call
+    try {
+      console.log('Attempting emergency direct save...');
+      const { data, error: rpcError } = await supabase
+        .rpc('upsert_wages_record', {
+          p_year: wages.year,
+          p_month: wages.month,
+          p_day: wages.day,
+          p_date: wages.date,
+          p_day_of_week: wages.dayOfWeek,
+          p_foh_wages: Number(wages.fohWages) || 0,
+          p_kitchen_wages: Number(wages.kitchenWages) || 0,
+          p_food_revenue: Number(wages.foodRevenue) || 0,
+          p_bev_revenue: Number(wages.bevRevenue) || 0
+        });
+        
+      if (rpcError) {
+        console.error('Exception in emergency wages save:', rpcError);
+        throw rpcError;
+      }
+      
+      console.log('Emergency direct save successful');
+    } catch (finalError) {
+      console.error('All attempts to save wages failed:', finalError);
+      throw finalError;
+    }
   }
 };
