@@ -161,7 +161,63 @@ Deno.serve(async (req) => {
           
           if (directError) {
             console.error('Direct upsert failed:', directError);
-            throw new Error(`Direct upsert failed: ${directError.message}`);
+            
+            // Attempt final direct database operation if RPC fails
+            try {
+              let finalResult;
+              if (existingRecord?.id) {
+                // Update existing record directly
+                const { data, error: finalError } = await supabaseClient
+                  .from('wages')
+                  .update({
+                    foh_wages: fohWages,
+                    kitchen_wages: kitchenWages,
+                    food_revenue: foodRevenue,
+                    bev_revenue: bevRevenue,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', existingRecord.id)
+                  .select();
+                  
+                finalResult = data;
+                if (finalError) {
+                  throw new Error(`Final update failed: ${finalError.message}`);
+                }
+              } else {
+                // Insert new record directly
+                const { data, error: finalError } = await supabaseClient
+                  .from('wages')
+                  .insert([{
+                    year: p_year,
+                    month: p_month,
+                    day: p_day,
+                    date: p_date,
+                    day_of_week: p_day_of_week,
+                    foh_wages: fohWages,
+                    kitchen_wages: kitchenWages,
+                    food_revenue: foodRevenue,
+                    bev_revenue: bevRevenue
+                  }])
+                  .select();
+                  
+                finalResult = data;
+                if (finalError) {
+                  throw new Error(`Final insert failed: ${finalError.message}`);
+                }
+              }
+              
+              return new Response(JSON.stringify({
+                success: true,
+                data: finalResult,
+                message: 'Data saved successfully via final direct method'
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200
+              });
+            } catch (finalError) {
+              console.error('Final direct operation failed:', finalError);
+              throw new Error(`All save attempts failed: ${finalError}`);
+            }
           }
           
           console.log('Direct upsert succeeded:', directResult);
@@ -176,7 +232,7 @@ Deno.serve(async (req) => {
           });
         } catch (directErr) {
           console.error('Direct upsert exception:', directErr);
-          throw new Error(`All save attempts failed: ${directErr.message}`);
+          throw new Error(`All save attempts failed: ${directErr}`);
         }
       }
       
