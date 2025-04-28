@@ -21,6 +21,10 @@ DECLARE
   v_id uuid;
   v_record json;
 BEGIN
+  -- Log incoming parameters for debugging
+  RAISE LOG 'direct_upsert_wages called with: year=%, month=%, day=%, foh=%, kitchen=%, food=%, bev=%',
+    p_year, p_month, p_day, p_foh_wages, p_kitchen_wages, p_food_revenue, p_bev_revenue;
+  
   -- Check if record exists
   SELECT id INTO v_id
   FROM wages
@@ -38,6 +42,8 @@ BEGIN
       updated_at = NOW()
     WHERE id = v_id;
     
+    RAISE LOG 'Updated existing record with ID: %', v_id;
+    
     -- Get updated record
     SELECT json_build_object(
       'id', id,
@@ -49,7 +55,8 @@ BEGIN
       'foh_wages', foh_wages,
       'kitchen_wages', kitchen_wages,
       'food_revenue', food_revenue,
-      'bev_revenue', bev_revenue
+      'bev_revenue', bev_revenue,
+      'status', 'updated'
     )
     INTO v_record
     FROM wages
@@ -94,15 +101,21 @@ BEGIN
       'foh_wages', foh_wages,
       'kitchen_wages', kitchen_wages,
       'food_revenue', food_revenue,
-      'bev_revenue', bev_revenue
+      'bev_revenue', bev_revenue,
+      'status', 'inserted'
     ) INTO v_record;
+    
+    RAISE LOG 'Inserted new record: %', v_record;
     
     RETURN v_record;
   END IF;
 EXCEPTION
   WHEN OTHERS THEN
     RAISE LOG 'Error in direct_upsert_wages: %', SQLERRM;
-    RETURN json_build_object('error', SQLERRM);
+    RETURN json_build_object(
+      'error', SQLERRM,
+      'status', 'error'
+    );
 END;
 $$;
 

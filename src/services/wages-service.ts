@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { DailyWages } from '@/components/wages/WagesStore';
 import { getCurrentUser } from '@/lib/supabase';
@@ -110,8 +111,6 @@ export const fetchTotalWagesForMonth = async (year: number, month: number): Prom
 
 export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
   try {
-    const user = await getCurrentUser();
-    
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
     console.log(`Attempting to save wages for ${dateKey}`);
     
@@ -120,8 +119,9 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     const foodRevenue = Number(wages.foodRevenue) || 0;
     const bevRevenue = Number(wages.bevRevenue) || 0;
 
+    // First attempt: Use the Edge Function
     try {
-      console.log('Attempting to save via Edge Function');
+      console.log('Saving via Edge Function');
       
       const { data, error } = await supabase.functions.invoke('upsert_wages_record', {
         body: {
@@ -138,7 +138,7 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       });
       
       if (error) {
-        console.error('Error using Edge Function:', error);
+        console.error('Edge Function error:', error);
         throw error;
       }
       
@@ -147,12 +147,13 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     } catch (edgeFunctionError) {
       console.error('Edge Function failed, trying direct RPC call:', edgeFunctionError);
       
+      // Second attempt: Direct RPC call
       try {
         const { data, error } = await supabase.rpc(
           'direct_upsert_wages',
           {
             p_year: wages.year,
-            p_month: wages.month, 
+            p_month: wages.month,
             p_day: wages.day,
             p_date: wages.date,
             p_day_of_week: wages.dayOfWeek,
@@ -172,10 +173,11 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
         return;
       } catch (rpcError) {
         console.error('Direct RPC call failed, falling back to direct database operations:', rpcError);
-        // Continue with fallback approach
       }
     }
     
+    // Final fallback: Direct database operations
+    console.log('Using direct database operations');
     const { data: existingRecord, error: fetchError } = await supabase
       .from('wages')
       .select('id')
@@ -210,6 +212,8 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       console.log(`Successfully updated wages record for ${dateKey}`);
     } else {
       console.log(`Creating new wages record for ${dateKey}`);
+      const user = await getCurrentUser();
+      
       const { error } = await supabase
         .from('wages')
         .insert([{

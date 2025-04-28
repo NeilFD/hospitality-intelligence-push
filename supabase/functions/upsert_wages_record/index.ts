@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4'
 import { corsHeaders } from '../_shared/cors.ts'
 import { Database } from '../_shared/database.types.ts'
 
-console.log("Function upsert_wages_record called");
+console.log("Function upsert_wages_record loaded");
 
 Deno.serve(async (req) => {
   // Handle CORS
@@ -40,41 +40,15 @@ Deno.serve(async (req) => {
     console.log(`Processing wages upsert for ${p_year}-${p_month}-${p_day}`)
     console.log(`Values received: foh=${p_foh_wages}, kitchen=${p_kitchen_wages}, food=${p_food_revenue}, bev=${p_bev_revenue}`)
     
-    // Convert empty strings to null to ensure proper database handling
-    const fohWages = p_foh_wages === '' ? null : (p_foh_wages === undefined ? null : parseFloat(p_foh_wages) || 0);
-    const kitchenWages = p_kitchen_wages === '' ? null : (p_kitchen_wages === undefined ? null : parseFloat(p_kitchen_wages) || 0);
-    const foodRevenue = p_food_revenue === '' ? null : (p_food_revenue === undefined ? null : parseFloat(p_food_revenue) || 0);
-    const bevRevenue = p_bev_revenue === '' ? null : (p_bev_revenue === undefined ? null : parseFloat(p_bev_revenue) || 0);
+    // Handling empty values properly (convert empty strings to null)
+    const fohWages = p_foh_wages === '' ? null : p_foh_wages !== undefined ? parseFloat(p_foh_wages) || 0 : null;
+    const kitchenWages = p_kitchen_wages === '' ? null : p_kitchen_wages !== undefined ? parseFloat(p_kitchen_wages) || 0 : null;
+    const foodRevenue = p_food_revenue === '' ? null : p_food_revenue !== undefined ? parseFloat(p_food_revenue) || 0 : null;
+    const bevRevenue = p_bev_revenue === '' ? null : p_bev_revenue !== undefined ? parseFloat(p_bev_revenue) || 0 : null;
     
     console.log(`Parsed values: foh=${fohWages}, kitchen=${kitchenWages}, food=${foodRevenue}, bev=${bevRevenue}`);
-    
-    // Skip database operations if all fields are empty/undefined
-    if (fohWages === null && kitchenWages === null && foodRevenue === null && bevRevenue === null) {
-      console.log('All wage values are null, skipping database operation');
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'No changes detected, skipping update' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      });
-    }
-    
-    // First check if record exists
-    const { data: existingRecord, error: fetchError } = await supabaseClient
-      .from('wages')
-      .select('id, foh_wages, kitchen_wages, food_revenue, bev_revenue')
-      .eq('year', p_year)
-      .eq('month', p_month)
-      .eq('day', p_day)
-      .maybeSingle();
-      
-    if (fetchError) {
-      console.error('Error checking for existing record:', fetchError);
-      throw new Error(`Failed to check for existing record: ${fetchError.message}`);
-    }
-    
-    // Let's try the direct RPC approach first as it's more reliable
+
+    // Primary method: Use direct RPC call to direct_upsert_wages
     try {
       console.log('Using direct RPC call to direct_upsert_wages');
       
@@ -111,8 +85,22 @@ Deno.serve(async (req) => {
     } catch (rpcError) {
       console.error('RPC method failed, falling back to direct database operations:', rpcError);
       
-      // Fall back to direct database operations
+      // Fallback: Direct database operations
       try {
+        // First check if record exists
+        const { data: existingRecord, error: fetchError } = await supabaseClient
+          .from('wages')
+          .select('id, foh_wages, kitchen_wages, food_revenue, bev_revenue')
+          .eq('year', p_year)
+          .eq('month', p_month)
+          .eq('day', p_day)
+          .maybeSingle();
+          
+        if (fetchError) {
+          console.error('Error checking for existing record:', fetchError);
+          throw new Error(`Failed to check for existing record: ${fetchError.message}`);
+        }
+        
         let result;
         
         if (existingRecord?.id) {
