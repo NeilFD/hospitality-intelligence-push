@@ -13,6 +13,8 @@ import { fetchMasterRecordsByMonth, fetchMasterDailyRecord } from '@/services/ma
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [monthlyData, setMonthlyData] = React.useState<any[]>([]);
+  const [inputValues, setInputValues] = React.useState<Record<string, Record<string, string>>>({});
+  const [saveTimeout, setSaveTimeout] = React.useState<NodeJS.Timeout | null>(null);
   const { getMonthlyWages, setDailyWages, clearCache } = useWagesStore();
   
   const loadWagesData = useCallback(async () => {
@@ -81,6 +83,17 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       
       console.log('Setting monthly data with updated values:', updatedWagesData);
       setMonthlyData(updatedWagesData);
+      
+      // Initialize input values
+      const initialInputValues: Record<string, Record<string, string>> = {};
+      updatedWagesData.forEach(day => {
+        initialInputValues[day.day] = {
+          fohWages: day.fohWages?.toString() || '',
+          kitchenWages: day.kitchenWages?.toString() || ''
+        };
+      });
+      setInputValues(initialInputValues);
+      
     } catch (error) {
       console.error('Error fetching wages data:', error);
       toast.error('Failed to load wages data');
@@ -93,13 +106,38 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     loadWagesData();
   }, [loadWagesData]);
   
-  const handleInputChange = async (day: number, field: string, value: string) => {
-    try {
-      if (field === 'foodRevenue' || field === 'bevRevenue') {
-        toast.info('Revenue data can only be changed in the Master Input module');
-        return;
+  // Handle controlled input changes
+  const handleInputChange = (day: number, field: string, value: string) => {
+    if (field === 'foodRevenue' || field === 'bevRevenue') {
+      toast.info('Revenue data can only be changed in the Master Input module');
+      return;
+    }
+    
+    // Update local state immediately for responsive UI
+    setInputValues(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [field]: value
       }
-      
+    }));
+    
+    // Clear any existing timeout
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    // Set a new timeout to save after user stops typing
+    const newTimeout = setTimeout(() => {
+      saveData(day, field, value);
+    }, 1500); // 1.5 seconds delay
+    
+    setSaveTimeout(newTimeout);
+  };
+  
+  // Function to save data after delay
+  const saveData = async (day: number, field: string, value: string) => {
+    try {
       const numValue = parseFloat(value) || 0;
       
       const dateObj = new Date(year, month - 1, day);
@@ -121,30 +159,36 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         [field]: numValue
       };
       
-      console.log(`Attempting to save data for day ${day}:`, updatedDay);
+      console.log(`Saving data for day ${day}:`, updatedDay);
       
       // Update the UI immediately for better UX
       setMonthlyData(prevData => 
         prevData.map(d => d.day === day ? updatedDay : d)
       );
       
-      // Then save to database
+      // Save to database
       await setDailyWages(updatedDay);
       
       // Show success message
       toast.success('Data saved successfully');
       
-      // Refresh all data to ensure everything is in sync
-      await loadWagesData();
-      
     } catch (error) {
       console.error('Failed to save data:', error);
-      toast.error('Failed to save data. Refreshing data...');
+      toast.error('Failed to save data');
       
-      // If there's an error, refresh the data to ensure UI is in sync with database
+      // Refresh data to ensure UI is in sync with database
       loadWagesData();
     }
   };
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
+  }, [saveTimeout]);
   
   const totals = monthlyData.reduce((acc, day) => {
     acc.fohWages += day.fohWages;
@@ -263,25 +307,23 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
                     <TableCell className="text-right p-1">
                       <Input
                         type="number"
-                        value={day.fohWages !== undefined ? day.fohWages : ''}
+                        value={inputValues[day.day]?.fohWages || ''}
                         onChange={(e) => handleInputChange(day.day, 'fohWages', e.target.value)}
                         className="w-24 ml-auto"
                         min={0}
                         step="0.01"
                         autoComplete="off"
-                        key={`foh-${day.day}-${day.fohWages}`}
                       />
                     </TableCell>
                     <TableCell className="text-right p-1">
                       <Input
                         type="number"
-                        value={day.kitchenWages !== undefined ? day.kitchenWages : ''}
+                        value={inputValues[day.day]?.kitchenWages || ''}
                         onChange={(e) => handleInputChange(day.day, 'kitchenWages', e.target.value)}
                         className="w-24 ml-auto"
                         min={0}
                         step="0.01"
                         autoComplete="off"
-                        key={`kitchen-${day.day}-${day.kitchenWages}`}
                       />
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(totalDailyWages)}</TableCell>
