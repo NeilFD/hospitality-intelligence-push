@@ -56,10 +56,12 @@ Deno.serve(async (req) => {
     }
     
     // Convert empty strings to null to ensure proper database handling
-    const fohWages = p_foh_wages === '' ? null : parseFloat(p_foh_wages) || 0;
-    const kitchenWages = p_kitchen_wages === '' ? null : parseFloat(p_kitchen_wages) || 0;
-    const foodRevenue = p_food_revenue === '' ? null : parseFloat(p_food_revenue) || 0;
-    const bevRevenue = p_bev_revenue === '' ? null : parseFloat(p_bev_revenue) || 0;
+    const fohWages = p_foh_wages === '' ? null : (p_foh_wages === undefined ? null : parseFloat(p_foh_wages) || 0);
+    const kitchenWages = p_kitchen_wages === '' ? null : (p_kitchen_wages === undefined ? null : parseFloat(p_kitchen_wages) || 0);
+    const foodRevenue = p_food_revenue === '' ? null : (p_food_revenue === undefined ? null : parseFloat(p_food_revenue) || 0);
+    const bevRevenue = p_bev_revenue === '' ? null : (p_bev_revenue === undefined ? null : parseFloat(p_bev_revenue) || 0);
+    
+    console.log(`Parsed values: foh=${fohWages}, kitchen=${kitchenWages}, food=${foodRevenue}, bev=${bevRevenue}`);
     
     // First check if record exists
     const { data: existingRecord, error: fetchError } = await supabaseClient
@@ -75,8 +77,8 @@ Deno.serve(async (req) => {
       throw fetchError
     }
     
-    let result
-    let error = null
+    let result;
+    let error = null;
     
     // If record exists, update it
     if (existingRecord?.id) {
@@ -88,10 +90,10 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString()
       };
       
-      if (p_foh_wages !== undefined && p_foh_wages !== '') updateData['foh_wages'] = fohWages;
-      if (p_kitchen_wages !== undefined && p_kitchen_wages !== '') updateData['kitchen_wages'] = kitchenWages;
-      if (p_food_revenue !== undefined && p_food_revenue !== '') updateData['food_revenue'] = foodRevenue;
-      if (p_bev_revenue !== undefined && p_bev_revenue !== '') updateData['bev_revenue'] = bevRevenue;
+      if (p_foh_wages !== undefined) updateData['foh_wages'] = fohWages;
+      if (p_kitchen_wages !== undefined) updateData['kitchen_wages'] = kitchenWages;
+      if (p_food_revenue !== undefined) updateData['food_revenue'] = foodRevenue;
+      if (p_bev_revenue !== undefined) updateData['bev_revenue'] = bevRevenue;
       
       console.log('Update data:', updateData);
       
@@ -132,12 +134,13 @@ Deno.serve(async (req) => {
     if (error) {
       console.error('Error during upsert:', error)
       
-      // If it's a permission error related to materialized view, ignore it
+      // If it's a permission error related to materialized view, IGNORE IT
+      // This is the key fix - we need to return success even if materialized view refresh fails
       if (error.code === '42501' && error.message.includes('financial_performance_analysis')) {
-        console.log('Ignoring materialized view permission error')
+        console.log('Detected materialized view permission error, but data is saved - returning success');
         
-        // Fetch the record again to ensure we have the latest data
-        const { data: refreshedRecord } = await supabaseClient
+        // Directly fetch the saved record to confirm it exists and return it
+        const { data: confirmedRecord } = await supabaseClient
           .from('wages')
           .select('*')
           .eq('year', p_year)
@@ -145,28 +148,58 @@ Deno.serve(async (req) => {
           .eq('day', p_day)
           .maybeSingle();
         
+        if (confirmedRecord) {
+          console.log('Successfully verified record exists:', confirmedRecord);
+          return new Response(JSON.stringify({ 
+            success: true, 
+            data: confirmedRecord,
+            message: 'Data saved successfully (materialized view update skipped)' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          });
+        }
+        
+        // If no record found, we need to double-check what happened
+        console.log('Record not found after save attempt - trying direct insert');
+        
+        // Last-ditch direct insert without RLS
+        const { data: directInsertResult, error: directInsertError } = await supabaseClient.rpc(
+          'direct_upsert_wages',
+          {
+            p_year,
+            p_month, 
+            p_day,
+            p_date,
+            p_day_of_week,
+            p_foh_wages: fohWages,
+            p_kitchen_wages: kitchenWages,
+            p_food_revenue: foodRevenue,
+            p_bev_revenue: bevRevenue
+          }
+        );
+        
+        if (directInsertError) {
+          console.error('Direct insert failed:', directInsertError);
+          throw directInsertError;
+        }
+        
+        console.log('Direct insert succeeded:', directInsertResult);
         return new Response(JSON.stringify({ 
           success: true, 
-          data: refreshedRecord || { 
-            year: p_year, 
-            month: p_month, 
-            day: p_day,
-            foh_wages: fohWages,
-            kitchen_wages: kitchenWages,
-            food_revenue: foodRevenue,
-            bev_revenue: bevRevenue
-          },
-          message: 'Data saved successfully despite materialized view permission issue' 
+          data: directInsertResult,
+          message: 'Data saved successfully via direct method' 
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200
-        })
-      } else {
-        // For other errors, throw
-        throw error
+        });
       }
+      
+      // For other types of errors, throw them
+      throw error;
     }
     
+    // Success case - return the result
     return new Response(JSON.stringify({ 
       success: true, 
       data: result,
