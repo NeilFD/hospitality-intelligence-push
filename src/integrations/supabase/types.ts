@@ -2053,6 +2053,20 @@ export type Database = {
         Args: { user_id_val: string; password_val: string }
         Returns: boolean
       }
+      direct_upsert_wages: {
+        Args: {
+          p_year: number
+          p_month: number
+          p_day: number
+          p_date: string
+          p_day_of_week: string
+          p_foh_wages: number
+          p_kitchen_wages: number
+          p_food_revenue: number
+          p_bev_revenue: number
+        }
+        Returns: Json
+      }
       duplicate_database_structure: {
         Args: Record<PropertyKey, never>
         Returns: string
