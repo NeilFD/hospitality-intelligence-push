@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { DailyWages } from '@/components/wages/WagesStore';
 import { getCurrentUser } from '@/lib/supabase';
@@ -112,90 +113,121 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     const foodRevenue = Number(wages.foodRevenue) || 0;
     const bevRevenue = Number(wages.bevRevenue) || 0;
     
-    // Convert from DailyWages to DbWages
-    const dbWages: DbWages = {
-      year: wages.year,
-      month: wages.month,
-      day: wages.day,
-      date: wages.date,
-      day_of_week: wages.dayOfWeek,
-      foh_wages: fohWages,
-      kitchen_wages: kitchenWages,
-      food_revenue: foodRevenue,
-      bev_revenue: bevRevenue,
-      created_by: user?.id
-    };
-    
-    console.log('Preparing to save wages data:', dbWages);
-    
-    // Try to directly insert first, then catch and handle the conflict
-    try {
-      const { error: insertError } = await supabase
-        .from('wages')
-        .insert([dbWages]);
+    // First check if record exists and get its ID
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('wages')
+      .select('id')
+      .eq('year', wages.year)
+      .eq('month', wages.month)
+      .eq('day', wages.day)
+      .single();
       
-      // If no error, insertion was successful
-      if (!insertError) {
-        console.log('Wages record inserted successfully');
-        return;
-      }
-      
-      // If there was an error but it's not a duplicate key error, throw it
-      if (insertError && !(insertError.code === '23505' || insertError.message.includes('duplicate key'))) {
-        // If the error is related to the materialized view, ignore it
-        if (insertError.code === '42501' && insertError.message.includes('financial_performance_analysis')) {
-          console.log('Ignoring materialized view permission error on insert, data was likely saved');
-          return;
-        }
-        
-        console.error('Error inserting wages record:', insertError);
-        throw insertError;
-      }
-      
-      // If we get here, it means there was a duplicate key error, so try update instead
-      console.log('Record already exists, attempting update...');
-    } catch (insertErr) {
-      // Handle insert error that isn't a duplicate key (server error, etc.)
-      if (!(insertErr.code === '23505' || insertErr.message?.includes('duplicate key'))) {
-        if (insertErr.code === '42501' && insertErr.message?.includes('financial_performance_analysis')) {
-          console.log('Ignoring materialized view permission error, data was likely saved');
-          return;
-        }
-        
-        console.error('Unexpected error during insert:', insertErr);
-        throw insertErr;
-      }
-      
-      console.log('Record already exists (caught exception), attempting update...');
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is ok
+      console.error('Error checking for existing record:', fetchError);
     }
     
-    // If insertion failed due to duplicate, try an update without using upsert
-    const { error: updateError } = await supabase
-      .from('wages')
-      .update({
+    if (existingRecord) {
+      console.log(`Found existing record with ID: ${existingRecord.id}, updating...`);
+      
+      try {
+        // Direct update using the record ID to avoid materialized view issues
+        const { error: updateError } = await supabase
+          .from('wages')
+          .update({
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages,
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+        
+        if (!updateError) {
+          console.log(`Successfully updated wages record with ID: ${existingRecord.id}`);
+          return;
+        }
+        
+        if (updateError.code === '42501' && updateError.message.includes('financial_performance_analysis')) {
+          console.log('Ignoring materialized view permission error on update, data was likely saved');
+          return;
+        }
+        
+        console.error('Error updating wages record:', updateError);
+        throw updateError;
+      } catch (error) {
+        console.error('Exception during wages update:', error);
+        throw error;
+      }
+    } else {
+      console.log('No existing record found, creating new record...');
+      
+      // Convert from DailyWages to DbWages
+      const dbWages: DbWages = {
+        year: wages.year,
+        month: wages.month,
+        day: wages.day,
+        date: wages.date,
+        day_of_week: wages.dayOfWeek,
         foh_wages: fohWages,
         kitchen_wages: kitchenWages,
         food_revenue: foodRevenue,
         bev_revenue: bevRevenue,
-        updated_at: new Date().toISOString()
-      })
-      .eq('year', wages.year)
-      .eq('month', wages.month)
-      .eq('day', wages.day);
-    
-    if (updateError) {
-      // If the error is related to the materialized view, ignore it
-      if (updateError.code === '42501' && updateError.message.includes('financial_performance_analysis')) {
-        console.log('Ignoring materialized view permission error on update, data was likely saved');
-        return;
-      }
+        created_by: user?.id
+      };
       
-      console.error('Error updating wages record:', updateError);
-      throw updateError;
+      try {
+        const { data: insertData, error: insertError } = await supabase
+          .from('wages')
+          .insert([dbWages])
+          .select('id')
+          .single();
+          
+        if (!insertError) {
+          console.log(`Successfully inserted wages record with ID: ${insertData?.id}`);
+          return;
+        }
+        
+        if (insertError.code === '42501' && insertError.message.includes('financial_performance_analysis')) {
+          console.log('Ignoring materialized view permission error on insert, data was likely saved');
+          return;
+        } else if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
+          console.log('Got duplicate key error during insert, record likely exists but was not found initially. Attempting update...');
+          
+          // Fall back to update by composite key
+          const { error: fallbackUpdateError } = await supabase
+            .from('wages')
+            .update({
+              foh_wages: fohWages,
+              kitchen_wages: kitchenWages,
+              food_revenue: foodRevenue,
+              bev_revenue: bevRevenue,
+              updated_at: new Date().toISOString()
+            })
+            .eq('year', wages.year)
+            .eq('month', wages.month)
+            .eq('day', wages.day);
+            
+          if (!fallbackUpdateError) {
+            console.log('Successfully updated wages record via fallback method');
+            return;
+          }
+          
+          if (fallbackUpdateError.code === '42501' && fallbackUpdateError.message.includes('financial_performance_analysis')) {
+            console.log('Ignoring materialized view permission error on fallback update, data was likely saved');
+            return;
+          }
+          
+          console.error('Error in fallback update:', fallbackUpdateError);
+          throw fallbackUpdateError;
+        }
+        
+        console.error('Error inserting wages record:', insertError);
+        throw insertError;
+      } catch (error) {
+        console.error('Exception during wages insert:', error);
+        throw error;
+      }
     }
-    
-    console.log('Wages data updated successfully');
-    
   } catch (error) {
     console.error('Exception during wages upsert:', error);
     throw error;
