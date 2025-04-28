@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { DailyWages } from '@/components/wages/WagesStore';
 import { getCurrentUser } from '@/lib/supabase';
@@ -129,49 +128,48 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
 
     console.log('Sending to database:', dbWages);
 
-    // Try direct upsert with more specific conflict target
-    const { error } = await supabase
+    // First check if record already exists
+    const { data: existingRecord, error: queryError } = await supabase
       .from('wages')
-      .upsert(dbWages, {
-        onConflict: 'year,month,day',
-        ignoreDuplicates: false
-      });
+      .select('id')
+      .eq('year', dbWages.year)
+      .eq('month', dbWages.month)
+      .eq('day', dbWages.day)
+      .maybeSingle();
     
-    if (error) {
-      console.error('Error with direct upsert, falling back to check-then-update:', error);
-      
-      // Fallback: Check if record already exists
-      const { data: existingRecord } = await supabase
+    if (queryError && queryError.code !== 'PGRST116') {
+      console.error('Error checking for existing record:', queryError);
+      throw queryError;
+    }
+    
+    let result;
+    
+    if (existingRecord?.id) {
+      // Update existing record
+      console.log('Updating existing record with ID:', existingRecord.id);
+      result = await supabase
         .from('wages')
-        .select('id')
-        .eq('year', dbWages.year)
-        .eq('month', dbWages.month)
-        .eq('day', dbWages.day)
-        .single();
-        
-      let result;
-      
-      if (existingRecord) {
-        // Update existing record
-        console.log('Updating existing record with ID:', existingRecord.id);
-        result = await supabase
-          .from('wages')
-          .update(dbWages)
-          .eq('id', existingRecord.id);
-      } else {
-        // Insert new record
-        console.log('Inserting new wages record');
-        result = await supabase
-          .from('wages')
-          .insert(dbWages);
-      }
-      
-      const { error: fallbackError } = result;
-      
-      if (fallbackError) {
-        console.error('Error in fallback upsert method:', fallbackError);
-        throw fallbackError;
-      }
+        .update({
+          foh_wages: fohWages,
+          kitchen_wages: kitchenWages,
+          food_revenue: foodRevenue,
+          bev_revenue: bevRevenue,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingRecord.id);
+    } else {
+      // Insert new record
+      console.log('Inserting new wages record');
+      result = await supabase
+        .from('wages')
+        .insert([dbWages]);
+    }
+    
+    const { error: saveError } = result;
+    
+    if (saveError) {
+      console.error('Error saving wages data:', saveError);
+      throw saveError;
     }
     
     console.log('Wages data saved successfully');
