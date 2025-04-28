@@ -111,23 +111,17 @@ export const fetchTotalWagesForMonth = async (year: number, month: number): Prom
 
 export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
   try {
-    // Format date values correctly for debugging
+    // Format date values correctly for logging
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
-    console.log(`Attempting to save wages for ${dateKey}`);
+    console.log(`Attempting to save wages for ${dateKey}:`, wages);
     
-    // Ensure we're working with clean number values
-    // Fix the TypeScript errors by using proper type checking and safer conversions
-    const fohWages = typeof wages.fohWages === 'number' ? wages.fohWages : 
-                    (wages.fohWages ? Number(wages.fohWages) : 0);
+    // Make sure we have numeric values
+    const fohWages = Number(wages.fohWages || 0);
+    const kitchenWages = Number(wages.kitchenWages || 0);
+    const foodRevenue = Number(wages.foodRevenue || 0);
+    const bevRevenue = Number(wages.bevRevenue || 0);
     
-    const kitchenWages = typeof wages.kitchenWages === 'number' ? wages.kitchenWages : 
-                        (wages.kitchenWages ? Number(wages.kitchenWages) : 0);
-    
-    const foodRevenue = typeof wages.foodRevenue === 'number' ? wages.foodRevenue : 
-                       (wages.foodRevenue ? Number(wages.foodRevenue) : 0);
-    
-    const bevRevenue = typeof wages.bevRevenue === 'number' ? wages.bevRevenue :
-                      (wages.bevRevenue ? Number(wages.bevRevenue) : 0);
+    console.log(`Converted values: foh=${fohWages}, kitchen=${kitchenWages}, food=${foodRevenue}, bev=${bevRevenue}`);
     
     // Format date correctly as YYYY-MM-DD for PostgreSQL
     const month = String(wages.month).padStart(2, '0');
@@ -137,6 +131,7 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     
     // Get the current user for tracking
     const user = await getCurrentUser();
+    console.log('Current user:', user?.id || 'anonymous');
 
     // First check if a record exists
     const { data: existing, error: checkError } = await supabase
@@ -151,6 +146,8 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
       console.error('Error checking for existing record:', checkError);
       throw checkError;
     }
+
+    let result;
 
     // Use different approaches based on whether record exists
     if (existing?.id) {
@@ -174,9 +171,10 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
         throw updateError;
       }
 
+      result = data;
       console.log(`Successfully updated wages record for ${dateKey}:`, data);
     } else {
-      // Insert a new record with properly formatted values
+      // Insert a new record
       console.log(`Creating new wages record for ${dateKey}`);
       
       const { data, error: insertError } = await supabase
@@ -202,8 +200,11 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
         throw insertError;
       }
 
+      result = data;
       console.log(`Successfully inserted wages record for ${dateKey}:`, data);
     }
+
+    return result;
   } catch (error) {
     console.error('Error saving wages data:', error);
     throw error;
