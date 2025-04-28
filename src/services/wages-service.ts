@@ -128,52 +128,43 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
 
     console.log('Sending to database:', dbWages);
 
-    // Check if record exists first
-    const { data: existingData, error: findError } = await supabase
-      .from('wages')
-      .select('id')
-      .eq('year', dbWages.year)
-      .eq('month', dbWages.month)
-      .eq('day', dbWages.day)
-      .maybeSingle();
-    
-    if (findError && findError.code !== 'PGRST116') {
-      console.error('Error finding existing record:', findError);
-      throw findError;
-    }
-    
-    if (existingData?.id) {
-      // Update existing record with explicit field updates
-      console.log('Found existing record with ID:', existingData.id);
-      const { error: updateError } = await supabase
-        .from('wages')
-        .update({
-          foh_wages: fohWages,
-          kitchen_wages: kitchenWages,
-          food_revenue: foodRevenue,
-          bev_revenue: bevRevenue,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingData.id);
-      
-      if (updateError) {
-        console.error('Error updating existing record:', updateError);
-        throw updateError;
-      }
-    } else {
-      // Insert new record
-      console.log('No existing record found, inserting new record');
+    // Simple insert/update approach based on existence check
+    try {
+      // First try insert - if it fails due to conflict, we know the record exists
       const { error: insertError } = await supabase
         .from('wages')
         .insert(dbWages);
       
-      if (insertError) {
-        console.error('Error inserting new record:', insertError);
+      // If there's a duplicate key violation, update the record instead
+      if (insertError && (insertError.code === '23505' || insertError.message.includes('duplicate'))) {
+        console.log('Record exists, updating instead');
+        
+        const { error: updateError } = await supabase
+          .from('wages')
+          .update({
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages, 
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('year', dbWages.year)
+          .eq('month', dbWages.month)
+          .eq('day', dbWages.day);
+          
+        if (updateError) {
+          throw updateError;
+        }
+      } else if (insertError) {
+        // If it's any other error on insert, throw it
         throw insertError;
       }
+      
+      console.log('Wages data saved successfully');
+    } catch (error) {
+      console.error('Database operation failed:', error);
+      throw error;
     }
-    
-    console.log('Wages data saved successfully');
   } catch (error) {
     console.error('Exception during wages upsert:', error);
     throw error;
