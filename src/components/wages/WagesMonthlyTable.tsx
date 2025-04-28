@@ -1,4 +1,3 @@
-
 import React, { useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
@@ -24,9 +23,17 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       // Clear cache to ensure we get fresh data
       clearCache();
       
-      // Fetch wages data
+      // Fetch wages data with error handling
       console.log(`Fetching wages data for year=${year}, month=${month}`);
-      const wagesData = await getMonthlyWages(year, month);
+      let wagesData;
+      try {
+        wagesData = await getMonthlyWages(year, month);
+      } catch (wagesError) {
+        console.error('Error loading wages data, retrying:', wagesError);
+        // Wait a moment and retry once
+        await new Promise(r => setTimeout(r, 1000));
+        wagesData = await getMonthlyWages(year, month);
+      }
       
       // Explicitly fetch the master records for the month to ensure we have the latest data
       console.log(`Fetching master records for year=${year}, month=${month}`);
@@ -152,14 +159,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   // Function to save data after delay
   const saveData = async (day: number, field: string, value: string) => {
     try {
-      // First, check if the value is empty
-      if (value.trim() === '') {
-        // Don't save empty values
-        return;
-      }
+      console.log(`Saving ${field} value for day ${day}: ${value}`);
       
+      // Parse value properly
       const numValue = parseFloat(value) || 0;
       
+      // Get current day data
       const dateObj = new Date(year, month - 1, day);
       const dayOfWeek = dateObj.getDay();
       const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -186,8 +191,15 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         prevData.map(d => d.day === day ? updatedDay : d)
       );
       
-      // Save to database
-      await setDailyWages(updatedDay);
+      // Save to database with retry logic
+      try {
+        await setDailyWages(updatedDay);
+      } catch (saveError) {
+        console.error('First save attempt failed, retrying:', saveError);
+        // Wait a moment and retry once
+        await new Promise(r => setTimeout(r, 1000));
+        await setDailyWages(updatedDay);
+      }
 
       // Clear this field from dirty state
       setDirtyInputs(prev => {
@@ -203,6 +215,9 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       
       // Show success message
       toast.success('Data saved successfully');
+      
+      // Refresh data after a short delay to ensure UI is in sync with database
+      setTimeout(() => loadWagesData(), 1500);
       
     } catch (error) {
       console.error('Failed to save data:', error);

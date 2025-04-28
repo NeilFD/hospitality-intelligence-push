@@ -48,128 +48,133 @@ Deno.serve(async (req) => {
     
     console.log(`Parsed values: foh=${fohWages}, kitchen=${kitchenWages}, food=${foodRevenue}, bev=${bevRevenue}`);
 
-    // Primary method: Use direct RPC call to direct_upsert_wages
+    // Format date for SQL (converting from YYYY-MM-DD string to a proper date format)
+    const formattedDate = p_date ? p_date.split('T')[0] : `${p_year}-${p_month.toString().padStart(2, '0')}-${p_day.toString().padStart(2, '0')}`;
+
+    // Primary method: Try direct database operations first as it's most reliable
     try {
-      console.log('Using direct RPC call to direct_upsert_wages');
+      console.log('Using direct database operations');
       
-      const { data: directResult, error: directError } = await supabaseClient.rpc(
-        'direct_upsert_wages',
-        {
-          p_year,
-          p_month,
-          p_day,
-          p_date,
-          p_day_of_week,
-          p_foh_wages: fohWages,
-          p_kitchen_wages: kitchenWages,
-          p_food_revenue: foodRevenue,
-          p_bev_revenue: bevRevenue
-        }
-      );
-      
-      if (directError) {
-        console.error('Direct RPC call failed:', directError);
-        throw new Error(`Direct RPC failed: ${directError.message}`);
+      // Check if record exists
+      const { data: existingRecord, error: fetchError } = await supabaseClient
+        .from('wages')
+        .select('id, foh_wages, kitchen_wages, food_revenue, bev_revenue')
+        .eq('year', p_year)
+        .eq('month', p_month)
+        .eq('day', p_day)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error('Error checking for existing record:', fetchError);
+        throw new Error(`Failed to check for existing record: ${fetchError.message}`);
       }
       
-      console.log('Direct RPC call succeeded:', directResult);
+      let result;
+      
+      if (existingRecord?.id) {
+        console.log(`Updating existing record with ID ${existingRecord.id}`);
+        
+        // Only update fields that have been provided
+        const updateData: any = {
+          updated_at: new Date().toISOString()
+        };
+        
+        if (fohWages !== null) updateData.foh_wages = fohWages;
+        if (kitchenWages !== null) updateData.kitchen_wages = kitchenWages;
+        if (foodRevenue !== null) updateData.food_revenue = foodRevenue;
+        if (bevRevenue !== null) updateData.bev_revenue = bevRevenue;
+        
+        console.log('Update data:', updateData);
+        
+        const { data, error: updateError } = await supabaseClient
+          .from('wages')
+          .update(updateData)
+          .eq('id', existingRecord.id)
+          .select();
+          
+        if (updateError) {
+          console.error('Error updating wages:', updateError);
+          throw updateError;
+        }
+        
+        result = data;
+        console.log('Update result:', result);
+      } else {
+        // Insert new record
+        console.log('Creating new record');
+        
+        const { data, error: insertError } = await supabaseClient
+          .from('wages')
+          .insert([{
+            year: p_year,
+            month: p_month,
+            day: p_day,
+            date: formattedDate,
+            day_of_week: p_day_of_week,
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages,
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue
+          }])
+          .select();
+          
+        if (insertError) {
+          console.error('Error inserting wages:', insertError);
+          throw insertError;
+        }
+        
+        result = data;
+        console.log('Insert result:', result);
+      }
       
       return new Response(JSON.stringify({
         success: true,
-        data: directResult,
-        message: 'Data saved successfully via direct RPC'
+        data: result,
+        message: 'Data saved successfully via direct database operation'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       });
-    } catch (rpcError) {
-      console.error('RPC method failed, falling back to direct database operations:', rpcError);
+    } catch (dbError) {
+      console.error('Direct database operation failed, trying RPC call:', dbError);
       
-      // Fallback: Direct database operations
+      // Fallback: Try RPC call
       try {
-        // First check if record exists
-        const { data: existingRecord, error: fetchError } = await supabaseClient
-          .from('wages')
-          .select('id, foh_wages, kitchen_wages, food_revenue, bev_revenue')
-          .eq('year', p_year)
-          .eq('month', p_month)
-          .eq('day', p_day)
-          .maybeSingle();
-          
-        if (fetchError) {
-          console.error('Error checking for existing record:', fetchError);
-          throw new Error(`Failed to check for existing record: ${fetchError.message}`);
+        console.log('Using direct RPC call to direct_upsert_wages');
+        
+        const { data: directResult, error: directError } = await supabaseClient.rpc(
+          'direct_upsert_wages',
+          {
+            p_year,
+            p_month,
+            p_day,
+            p_date: formattedDate,
+            p_day_of_week,
+            p_foh_wages: fohWages,
+            p_kitchen_wages: kitchenWages,
+            p_food_revenue: foodRevenue,
+            p_bev_revenue: bevRevenue
+          }
+        );
+        
+        if (directError) {
+          console.error('Direct RPC call failed:', directError);
+          throw new Error(`Direct RPC failed: ${directError.message}`);
         }
         
-        let result;
-        
-        if (existingRecord?.id) {
-          console.log(`Updating existing record with ID ${existingRecord.id}`);
-          
-          // Only update fields that have been provided
-          const updateData: any = {
-            updated_at: new Date().toISOString()
-          };
-          
-          if (fohWages !== null) updateData.foh_wages = fohWages;
-          if (kitchenWages !== null) updateData.kitchen_wages = kitchenWages;
-          if (foodRevenue !== null) updateData.food_revenue = foodRevenue;
-          if (bevRevenue !== null) updateData.bev_revenue = bevRevenue;
-          
-          console.log('Update data:', updateData);
-          
-          const { data, error: updateError } = await supabaseClient
-            .from('wages')
-            .update(updateData)
-            .eq('id', existingRecord.id)
-            .select();
-            
-          if (updateError) {
-            console.error('Error updating wages:', updateError);
-            throw updateError;
-          }
-          
-          result = data;
-          console.log('Update result:', result);
-        } else {
-          // Insert new record
-          console.log('Creating new record');
-          
-          const { data, error: insertError } = await supabaseClient
-            .from('wages')
-            .insert([{
-              year: p_year,
-              month: p_month,
-              day: p_day,
-              date: p_date,
-              day_of_week: p_day_of_week,
-              foh_wages: fohWages,
-              kitchen_wages: kitchenWages,
-              food_revenue: foodRevenue,
-              bev_revenue: bevRevenue
-            }])
-            .select();
-            
-          if (insertError) {
-            console.error('Error inserting wages:', insertError);
-            throw insertError;
-          }
-          
-          result = data;
-          console.log('Insert result:', result);
-        }
+        console.log('Direct RPC call succeeded:', directResult);
         
         return new Response(JSON.stringify({
           success: true,
-          data: result,
-          message: 'Data saved successfully via direct database operation'
+          data: directResult,
+          message: 'Data saved successfully via direct RPC'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200
         });
-      } catch (dbError) {
-        console.error('Direct database operation failed:', dbError);
-        throw new Error(`All save attempts failed: ${dbError.message}`);
+      } catch (rpcError) {
+        console.error('All save attempts failed:', rpcError);
+        throw new Error(`All save attempts failed: ${rpcError.message}`);
       }
     }
   } catch (error) {

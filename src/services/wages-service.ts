@@ -114,70 +114,16 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
     console.log(`Attempting to save wages for ${dateKey}`);
     
+    const dateStr = `${wages.year}-${wages.month.toString().padStart(2, '0')}-${wages.day.toString().padStart(2, '0')}`;
     const fohWages = Number(wages.fohWages) || 0;
     const kitchenWages = Number(wages.kitchenWages) || 0;
     const foodRevenue = Number(wages.foodRevenue) || 0;
     const bevRevenue = Number(wages.bevRevenue) || 0;
 
-    // First attempt: Use the Edge Function
-    try {
-      console.log('Saving via Edge Function');
-      
-      const { data, error } = await supabase.functions.invoke('upsert_wages_record', {
-        body: {
-          p_year: wages.year,
-          p_month: wages.month, 
-          p_day: wages.day,
-          p_date: wages.date,
-          p_day_of_week: wages.dayOfWeek,
-          p_foh_wages: fohWages,
-          p_kitchen_wages: kitchenWages,
-          p_food_revenue: foodRevenue,
-          p_bev_revenue: bevRevenue
-        }
-      });
-      
-      if (error) {
-        console.error('Edge Function error:', error);
-        throw error;
-      }
-      
-      console.log('Edge Function save result:', data);
-      return;
-    } catch (edgeFunctionError) {
-      console.error('Edge Function failed, trying direct RPC call:', edgeFunctionError);
-      
-      // Second attempt: Direct RPC call
-      try {
-        const { data, error } = await supabase.rpc(
-          'direct_upsert_wages',
-          {
-            p_year: wages.year,
-            p_month: wages.month,
-            p_day: wages.day,
-            p_date: wages.date,
-            p_day_of_week: wages.dayOfWeek,
-            p_foh_wages: fohWages,
-            p_kitchen_wages: kitchenWages,
-            p_food_revenue: foodRevenue,
-            p_bev_revenue: bevRevenue
-          }
-        );
-        
-        if (error) {
-          console.error('Direct RPC call failed:', error);
-          throw error;
-        }
-        
-        console.log('Direct RPC call succeeded:', data);
-        return;
-      } catch (rpcError) {
-        console.error('Direct RPC call failed, falling back to direct database operations:', rpcError);
-      }
-    }
+    // Direct database operation for maximum reliability
+    console.log('Using direct database operation');
     
-    // Final fallback: Direct database operations
-    console.log('Using direct database operations');
+    // First check if record exists
     const { data: existingRecord, error: fetchError } = await supabase
       .from('wages')
       .select('id')
@@ -192,8 +138,10 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     }
     
     if (existingRecord?.id) {
+      // Update existing record
       console.log(`Updating existing wages record with ID ${existingRecord.id}`);
-      const { error } = await supabase
+      
+      const { error: updateError } = await supabase
         .from('wages')
         .update({
           foh_wages: fohWages,
@@ -204,23 +152,24 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
         })
         .eq('id', existingRecord.id);
         
-      if (error) {
-        console.error('Error updating wages record:', error);
-        throw error;
+      if (updateError) {
+        console.error('Error updating wages record:', updateError);
+        throw updateError;
       }
       
       console.log(`Successfully updated wages record for ${dateKey}`);
     } else {
+      // Insert new record
       console.log(`Creating new wages record for ${dateKey}`);
       const user = await getCurrentUser();
       
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('wages')
         .insert([{
           year: wages.year,
           month: wages.month,
           day: wages.day,
-          date: wages.date,
+          date: dateStr,
           day_of_week: wages.dayOfWeek,
           foh_wages: fohWages,
           kitchen_wages: kitchenWages,
@@ -231,9 +180,9 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
           updated_at: new Date().toISOString()
         }]);
         
-      if (error) {
-        console.error('Error inserting wages record:', error);
-        throw error;
+      if (insertError) {
+        console.error('Error inserting wages record:', insertError);
+        throw insertError;
       }
       
       console.log(`Successfully inserted wages record for ${dateKey}`);
