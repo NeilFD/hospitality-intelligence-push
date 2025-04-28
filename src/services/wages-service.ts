@@ -114,34 +114,39 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
     const dateKey = `${wages.year}-${wages.month}-${wages.day}`;
     console.log(`Attempting to save wages for ${dateKey}`);
     
+    // Format the date correctly for PostgreSQL
     const dateStr = `${wages.year}-${wages.month.toString().padStart(2, '0')}-${wages.day.toString().padStart(2, '0')}`;
+    
+    // Convert values to numbers and handle null/undefined
     const fohWages = Number(wages.fohWages) || 0;
     const kitchenWages = Number(wages.kitchenWages) || 0;
     const foodRevenue = Number(wages.foodRevenue) || 0;
     const bevRevenue = Number(wages.bevRevenue) || 0;
 
-    // Direct database operation for maximum reliability
-    console.log('Using direct database operation');
+    // Get the current user ID for tracking
+    const user = await getCurrentUser();
     
-    // First check if record exists
-    const { data: existingRecord, error: fetchError } = await supabase
+    // First, check if the record exists
+    const { data: existing, error: checkError } = await supabase
       .from('wages')
       .select('id')
       .eq('year', wages.year)
       .eq('month', wages.month)
       .eq('day', wages.day)
       .maybeSingle();
-      
-    if (fetchError) {
-      console.error('Error checking for existing record:', fetchError);
-      throw fetchError;
+    
+    if (checkError) {
+      console.error('Error checking for existing wage record:', checkError);
+      throw checkError;
     }
     
-    if (existingRecord?.id) {
+    let result;
+    
+    if (existing?.id) {
       // Update existing record
-      console.log(`Updating existing wages record with ID ${existingRecord.id}`);
+      console.log(`Updating existing wages record with ID ${existing.id}`);
       
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('wages')
         .update({
           foh_wages: fohWages,
@@ -150,20 +155,21 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
           bev_revenue: bevRevenue,
           updated_at: new Date().toISOString()
         })
-        .eq('id', existingRecord.id);
-        
+        .eq('id', existing.id)
+        .select();
+      
       if (updateError) {
         console.error('Error updating wages record:', updateError);
         throw updateError;
       }
       
-      console.log(`Successfully updated wages record for ${dateKey}`);
+      result = data;
+      console.log(`Successfully updated wages record for ${dateKey}:`, result);
     } else {
       // Insert new record
       console.log(`Creating new wages record for ${dateKey}`);
-      const user = await getCurrentUser();
       
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('wages')
         .insert([{
           year: wages.year,
@@ -178,14 +184,16 @@ export const upsertDailyWages = async (wages: DailyWages): Promise<void> => {
           created_by: user?.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        }]);
-        
+        }])
+        .select();
+      
       if (insertError) {
         console.error('Error inserting wages record:', insertError);
         throw insertError;
       }
       
-      console.log(`Successfully inserted wages record for ${dateKey}`);
+      result = data;
+      console.log(`Successfully inserted wages record for ${dateKey}:`, result);
     }
   } catch (error) {
     console.error('Error saving wages data:', error);
