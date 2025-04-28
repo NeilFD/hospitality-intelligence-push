@@ -74,181 +74,116 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to check for existing record: ${fetchError.message}`);
     }
     
-    let result;
-    let error = null;
-    
+    // Let's try the direct RPC approach first as it's more reliable
     try {
-      // If record exists, update it
-      if (existingRecord?.id) {
-        console.log(`Updating existing record with ID ${existingRecord.id}`);
-        
-        // Only update fields that have been provided
-        const updateData: any = {
-          updated_at: new Date().toISOString()
-        };
-        
-        if (fohWages !== null) updateData.foh_wages = fohWages;
-        if (kitchenWages !== null) updateData.kitchen_wages = kitchenWages;
-        if (foodRevenue !== null) updateData.food_revenue = foodRevenue;
-        if (bevRevenue !== null) updateData.bev_revenue = bevRevenue;
-        
-        console.log('Update data:', updateData);
-        
-        const { data, error: updateError } = await supabaseClient
-          .from('wages')
-          .update(updateData)
-          .eq('id', existingRecord.id)
-          .select();
-          
-        result = data;
-        error = updateError;
-        console.log('Update result:', result, 'Error:', error);
-      } else {
-        // Insert new record
-        console.log('Creating new record');
-        
-        const { data, error: insertError } = await supabaseClient
-          .from('wages')
-          .insert([{
-            year: p_year,
-            month: p_month,
-            day: p_day,
-            date: p_date,
-            day_of_week: p_day_of_week,
-            foh_wages: fohWages,
-            kitchen_wages: kitchenWages,
-            food_revenue: foodRevenue,
-            bev_revenue: bevRevenue
-          }])
-          .select();
-          
-        result = data;
-        error = insertError;
-        console.log('Insert result:', result, 'Error:', error);
-      }
-    } catch (operationError) {
-      console.error('Exception during database operation:', operationError);
-      error = { message: operationError.message };
-    }
-    
-    // Handle materialized view error or any other error
-    if (error) {
-      console.error('Error during upsert:', error);
+      console.log('Using direct RPC call to direct_upsert_wages');
       
-      // Specifically catch materialized view errors
-      if (error.message && (
-          error.message.includes('financial_performance_analysis') || 
-          error.message.includes('permission denied') ||
-          error.message.includes('42501'))) {
-        console.log('Detected materialized view error - using direct upsert as fallback');
+      const { data: directResult, error: directError } = await supabaseClient.rpc(
+        'direct_upsert_wages',
+        {
+          p_year,
+          p_month,
+          p_day,
+          p_date,
+          p_day_of_week,
+          p_foh_wages: fohWages,
+          p_kitchen_wages: kitchenWages,
+          p_food_revenue: foodRevenue,
+          p_bev_revenue: bevRevenue
+        }
+      );
+      
+      if (directError) {
+        console.error('Direct RPC call failed:', directError);
+        throw new Error(`Direct RPC failed: ${directError.message}`);
+      }
+      
+      console.log('Direct RPC call succeeded:', directResult);
+      
+      return new Response(JSON.stringify({
+        success: true,
+        data: directResult,
+        message: 'Data saved successfully via direct RPC'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      });
+    } catch (rpcError) {
+      console.error('RPC method failed, falling back to direct database operations:', rpcError);
+      
+      // Fall back to direct database operations
+      try {
+        let result;
         
-        // Use the direct upsert function as a fallback
-        try {
-          const { data: directResult, error: directError } = await supabaseClient.rpc(
-            'direct_upsert_wages',
-            {
-              p_year,
-              p_month,
-              p_day,
-              p_date,
-              p_day_of_week,
-              p_foh_wages: fohWages,
-              p_kitchen_wages: kitchenWages,
-              p_food_revenue: foodRevenue,
-              p_bev_revenue: bevRevenue
-            }
-          );
+        if (existingRecord?.id) {
+          console.log(`Updating existing record with ID ${existingRecord.id}`);
           
-          if (directError) {
-            console.error('Direct upsert failed:', directError);
+          // Only update fields that have been provided
+          const updateData: any = {
+            updated_at: new Date().toISOString()
+          };
+          
+          if (fohWages !== null) updateData.foh_wages = fohWages;
+          if (kitchenWages !== null) updateData.kitchen_wages = kitchenWages;
+          if (foodRevenue !== null) updateData.food_revenue = foodRevenue;
+          if (bevRevenue !== null) updateData.bev_revenue = bevRevenue;
+          
+          console.log('Update data:', updateData);
+          
+          const { data, error: updateError } = await supabaseClient
+            .from('wages')
+            .update(updateData)
+            .eq('id', existingRecord.id)
+            .select();
             
-            // Attempt final direct database operation if RPC fails
-            try {
-              let finalResult;
-              if (existingRecord?.id) {
-                // Update existing record directly
-                const { data, error: finalError } = await supabaseClient
-                  .from('wages')
-                  .update({
-                    foh_wages: fohWages,
-                    kitchen_wages: kitchenWages,
-                    food_revenue: foodRevenue,
-                    bev_revenue: bevRevenue,
-                    updated_at: new Date().toISOString()
-                  })
-                  .eq('id', existingRecord.id)
-                  .select();
-                  
-                finalResult = data;
-                if (finalError) {
-                  throw new Error(`Final update failed: ${finalError.message}`);
-                }
-              } else {
-                // Insert new record directly
-                const { data, error: finalError } = await supabaseClient
-                  .from('wages')
-                  .insert([{
-                    year: p_year,
-                    month: p_month,
-                    day: p_day,
-                    date: p_date,
-                    day_of_week: p_day_of_week,
-                    foh_wages: fohWages,
-                    kitchen_wages: kitchenWages,
-                    food_revenue: foodRevenue,
-                    bev_revenue: bevRevenue
-                  }])
-                  .select();
-                  
-                finalResult = data;
-                if (finalError) {
-                  throw new Error(`Final insert failed: ${finalError.message}`);
-                }
-              }
-              
-              return new Response(JSON.stringify({
-                success: true,
-                data: finalResult,
-                message: 'Data saved successfully via final direct method'
-              }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200
-              });
-            } catch (finalError) {
-              console.error('Final direct operation failed:', finalError);
-              throw new Error(`All save attempts failed: ${finalError}`);
-            }
+          if (updateError) {
+            console.error('Error updating wages:', updateError);
+            throw updateError;
           }
           
-          console.log('Direct upsert succeeded:', directResult);
+          result = data;
+          console.log('Update result:', result);
+        } else {
+          // Insert new record
+          console.log('Creating new record');
           
-          return new Response(JSON.stringify({
-            success: true,
-            data: directResult,
-            message: 'Data saved successfully via direct method'
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          });
-        } catch (directErr) {
-          console.error('Direct upsert exception:', directErr);
-          throw new Error(`All save attempts failed: ${directErr}`);
+          const { data, error: insertError } = await supabaseClient
+            .from('wages')
+            .insert([{
+              year: p_year,
+              month: p_month,
+              day: p_day,
+              date: p_date,
+              day_of_week: p_day_of_week,
+              foh_wages: fohWages,
+              kitchen_wages: kitchenWages,
+              food_revenue: foodRevenue,
+              bev_revenue: bevRevenue
+            }])
+            .select();
+            
+          if (insertError) {
+            console.error('Error inserting wages:', insertError);
+            throw insertError;
+          }
+          
+          result = data;
+          console.log('Insert result:', result);
         }
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: result,
+          message: 'Data saved successfully via direct database operation'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        });
+      } catch (dbError) {
+        console.error('Direct database operation failed:', dbError);
+        throw new Error(`All save attempts failed: ${dbError.message}`);
       }
-      
-      // For non-materialized view errors that weren't caught above
-      throw new Error(`Database operation failed: ${error.message}`);
     }
-    
-    // Success case - return the result
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result,
-      message: 'Data saved successfully' 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200
-    });
   } catch (error) {
     console.error('Unhandled error:', error);
     return new Response(JSON.stringify({ 
