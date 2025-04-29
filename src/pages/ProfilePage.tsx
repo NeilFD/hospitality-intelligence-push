@@ -7,7 +7,7 @@ import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell } from 'lucide-react';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell, Pencil, BriefcaseBusiness } from 'lucide-react';
 import { useAuthStore } from '@/services/auth-service';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader';
 
 const ProfilePage = () => {
-  const { id } = useParams();
+  const { userId } = useParams();
   const navigate = useNavigate();
   const { profile: currentUserProfile, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -44,7 +44,12 @@ const ProfilePage = () => {
     favouriteDish: '',
     favouriteDrink: '',
     aboutMe: '',
-    birthDate: ''
+    birthDate: '',
+    employmentType: '',
+    minHoursPerDay: 0,
+    maxHoursPerDay: 0,
+    minHoursPerWeek: 0,
+    maxHoursPerWeek: 0
   });
   
   const canvasRef = useRef<fabric.Canvas | null>(null);
@@ -80,7 +85,7 @@ const ProfilePage = () => {
         return;
       }
       
-      if (!currentUserProfile && id === undefined) {
+      if (!currentUserProfile && userId === undefined) {
         if (profileLoadAttemptedRef.current) {
           console.log("Waiting for current user profile to be available");
           return;
@@ -97,14 +102,14 @@ const ProfilePage = () => {
       }
       
       try {
-        console.log("Loading profile data...", id ? `for ID: ${id}` : "for current user");
+        console.log("Loading profile data...", userId ? `for ID: ${userId}` : "for current user");
         let profileToLoad;
         
-        if (id) {
+        if (userId) {
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', id)
+            .eq('id', userId)
             .maybeSingle();
             
           if (error) throw error;
@@ -140,7 +145,12 @@ const ProfilePage = () => {
             favouriteDish: profileToLoad.favourite_dish || '',
             favouriteDrink: profileToLoad.favourite_drink || '',
             aboutMe: profileToLoad.about_me || '',
-            birthDate: profileToLoad.birth_date || ''
+            birthDate: profileToLoad.birth_date || '',
+            employmentType: profileToLoad.employment_type || 'hourly',
+            minHoursPerDay: profileToLoad.min_hours_per_day || 0,
+            maxHoursPerDay: profileToLoad.max_hours_per_day || 8,
+            minHoursPerWeek: profileToLoad.min_hours_per_week || 0,
+            maxHoursPerWeek: profileToLoad.max_hours_per_week || 40
           });
         }
       } catch (error) {
@@ -158,11 +168,11 @@ const ProfilePage = () => {
     return () => {
       isMountedRef.current = false;
     };
-  }, [id, currentUserProfile, isAuthenticated, authLoading, navigate]);
+  }, [userId, currentUserProfile, isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
     if (
-      !id && 
+      !userId && 
       !loading && 
       currentUserProfile && 
       isAuthenticated && 
@@ -178,10 +188,15 @@ const ProfilePage = () => {
         favouriteDish: currentUserProfile.favourite_dish || '',
         favouriteDrink: currentUserProfile.favourite_drink || '',
         aboutMe: currentUserProfile.about_me || '',
-        birthDate: currentUserProfile.birth_date || ''
+        birthDate: currentUserProfile.birth_date || '',
+        employmentType: currentUserProfile.employment_type || 'hourly',
+        minHoursPerDay: currentUserProfile.min_hours_per_day || 0,
+        maxHoursPerDay: currentUserProfile.max_hours_per_day || 8,
+        minHoursPerWeek: currentUserProfile.min_hours_per_week || 0,
+        maxHoursPerWeek: currentUserProfile.max_hours_per_week || 40
       });
     }
-  }, [currentUserProfile, id, loading, profile, isAuthenticated]);
+  }, [currentUserProfile, userId, loading, profile, isAuthenticated]);
 
   // Clean up canvas resources when component unmounts
   useEffect(() => {
@@ -451,7 +466,12 @@ const ProfilePage = () => {
         favouriteDish: profile.favourite_dish || '',
         favouriteDrink: profile.favourite_drink || '',
         aboutMe: profile.about_me || '',
-        birthDate: profile.birth_date || ''
+        birthDate: profile.birth_date || '',
+        employmentType: profile.employment_type || 'hourly',
+        minHoursPerDay: profile.min_hours_per_day || 0,
+        maxHoursPerDay: profile.max_hours_per_day || 8,
+        minHoursPerWeek: profile.min_hours_per_week || 0,
+        maxHoursPerWeek: profile.max_hours_per_week || 40
       });
     }
     setIsEditing(false);
@@ -470,7 +490,12 @@ const ProfilePage = () => {
           favourite_dish: editForm.favouriteDish,
           favourite_drink: editForm.favouriteDrink,
           about_me: editForm.aboutMe,
-          birth_date: editForm.birthDate
+          birth_date: editForm.birthDate,
+          employment_type: editForm.employmentType,
+          min_hours_per_day: editForm.minHoursPerDay,
+          max_hours_per_day: editForm.maxHoursPerDay,
+          min_hours_per_week: editForm.minHoursPerWeek,
+          max_hours_per_week: editForm.maxHoursPerWeek
         })
         .eq('id', profile.id);
         
@@ -484,13 +509,18 @@ const ProfilePage = () => {
         favourite_dish: editForm.favouriteDish,
         favourite_drink: editForm.favouriteDrink,
         about_me: editForm.aboutMe,
-        birth_date: editForm.birthDate
+        birth_date: editForm.birthDate,
+        employment_type: editForm.employmentType,
+        min_hours_per_day: editForm.minHoursPerDay,
+        max_hours_per_day: editForm.maxHoursPerDay,
+        min_hours_per_week: editForm.minHoursPerWeek,
+        max_hours_per_week: editForm.maxHoursPerWeek
       });
       
       setIsEditing(false);
       toast.success('Profile updated successfully');
       
-      if (!id && currentUserProfile) {
+      if (!userId && currentUserProfile) {
         useAuthStore.setState({
           profile: {
             ...currentUserProfile,
@@ -500,7 +530,12 @@ const ProfilePage = () => {
             favourite_dish: editForm.favouriteDish,
             favourite_drink: editForm.favouriteDrink,
             about_me: editForm.aboutMe,
-            birth_date: editForm.birthDate
+            birth_date: editForm.birthDate,
+            employment_type: editForm.employmentType,
+            min_hours_per_day: editForm.minHoursPerDay,
+            max_hours_per_day: editForm.maxHoursPerDay,
+            min_hours_per_week: editForm.minHoursPerWeek,
+            max_hours_per_week: editForm.maxHoursPerWeek
           }
         });
       }
@@ -546,7 +581,7 @@ const ProfilePage = () => {
     );
   }
   
-  const isCurrentUser = !id || id === currentUserProfile?.id;
+  const isCurrentUser = !userId || userId === currentUserProfile?.id;
 
   return (
     <div className="container mx-auto p-4">
@@ -685,6 +720,12 @@ const ProfilePage = () => {
             <Tabs defaultValue="about" className="mt-4">
               <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg">
                 <TabsTrigger value="about" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">About</TabsTrigger>
+                <TabsTrigger value="job-data" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <div className="flex items-center">
+                    <BriefcaseBusiness className="h-4 w-4 mr-2" />
+                    Job Data
+                  </div>
+                </TabsTrigger>
                 {isCurrentUser && (
                   <>
                     <TabsTrigger value="settings" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">Edit Profile</TabsTrigger>
@@ -743,6 +784,55 @@ const ProfilePage = () => {
                 </div>
               </TabsContent>
               
+              <TabsContent value="job-data">
+                <div className="grid gap-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Employment Details</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="text-sm text-gray-500 mb-1">Employment Type</div>
+                          <div className="font-semibold capitalize">{profile.employment_type || 'Not specified'}</div>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="text-sm text-gray-500 mb-1">Position</div>
+                          <div className="font-semibold">{profile.job_title || 'Not specified'}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="text-sm text-gray-500 mb-2">Daily Hours</div>
+                          <div className="flex items-center justify-between">
+                            <span>Min: <span className="font-semibold">{profile.min_hours_per_day || 0}</span></span>
+                            <span>Max: <span className="font-semibold">{profile.max_hours_per_day || 0}</span></span>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="text-sm text-gray-500 mb-2">Weekly Hours</div>
+                          <div className="flex items-center justify-between">
+                            <span>Min: <span className="font-semibold">{profile.min_hours_per_week || 0}</span></span>
+                            <span>Max: <span className="font-semibold">{profile.max_hours_per_week || 0}</span></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {isCurrentUser && (
+                      <div className="mt-6 flex justify-end">
+                        <Button className="flex items-center" onClick={() => setIsEditing(true)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit Job Details
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+              
               {isCurrentUser && (
                 <TabsContent value="settings">
                   <div className="grid gap-4 py-4">
@@ -786,6 +876,73 @@ const ProfilePage = () => {
                         placeholder="MM-DD (e.g. 05-15)"
                       />
                       <p className="text-sm text-muted-foreground">Format: MM-DD (e.g. 05-15)</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="employmentType">Employment Type</Label>
+                      <Select 
+                        value={editForm.employmentType} 
+                        onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select employment type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hourly">Hourly</SelectItem>
+                          <SelectItem value="salary">Salary</SelectItem>
+                          <SelectItem value="contract">Contract</SelectItem>
+                          <SelectItem value="part-time">Part-time</SelectItem>
+                          <SelectItem value="full-time">Full-time</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Hours Per Day</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="minHoursPerDay" className="text-sm">Minimum</Label>
+                          <Input 
+                            id="minHoursPerDay" 
+                            type="number" 
+                            value={editForm.minHoursPerDay}
+                            onChange={(e) => setEditForm({...editForm, minHoursPerDay: parseInt(e.target.value) || 0})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="maxHoursPerDay" className="text-sm">Maximum</Label>
+                          <Input 
+                            id="maxHoursPerDay" 
+                            type="number" 
+                            value={editForm.maxHoursPerDay}
+                            onChange={(e) => setEditForm({...editForm, maxHoursPerDay: parseInt(e.target.value) || 0})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Hours Per Week</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="minHoursPerWeek" className="text-sm">Minimum</Label>
+                          <Input 
+                            id="minHoursPerWeek" 
+                            type="number" 
+                            value={editForm.minHoursPerWeek}
+                            onChange={(e) => setEditForm({...editForm, minHoursPerWeek: parseInt(e.target.value) || 0})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="maxHoursPerWeek" className="text-sm">Maximum</Label>
+                          <Input 
+                            id="maxHoursPerWeek" 
+                            type="number" 
+                            value={editForm.maxHoursPerWeek}
+                            onChange={(e) => setEditForm({...editForm, maxHoursPerWeek: parseInt(e.target.value) || 0})}
+                          />
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="space-y-2">

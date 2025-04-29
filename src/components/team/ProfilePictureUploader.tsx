@@ -97,13 +97,6 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
     }
   };
 
-  const getUserInitials = () => {
-    if (!profile) return '?';
-    const firstName = profile.first_name || '';
-    const lastName = profile.last_name || '';
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-
   return (
     <div className="relative group">
       <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
@@ -111,7 +104,7 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
           <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
         ) : (
           <AvatarFallback className="bg-hi-purple-light/30 text-hi-purple text-4xl">
-            {getUserInitials()}
+            {profile.first_name?.[0] || ''}{profile.last_name?.[0] || ''}
           </AvatarFallback>
         )}
       </Avatar>
