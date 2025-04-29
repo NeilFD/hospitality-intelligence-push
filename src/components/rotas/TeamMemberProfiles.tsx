@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +38,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
     setIsLoading(true);
     try {
       console.log("Fetching team members for location ID:", location.id);
+      // Use the correct table - team_members instead of profiles
       const { data, error } = await supabase
         .from('team_members')
         .select(`
@@ -48,7 +48,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
         .eq('location_id', location.id);
       
       if (error) {
-        console.error("Error details:", error);
+        console.error("Error fetching team members:", error);
         throw error;
       }
       
