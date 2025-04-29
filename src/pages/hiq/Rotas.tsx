@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
 import { RotasLogo } from '@/components/RotasLogo';
 import { updateJobRoles } from '@/components/rotas/JobRolesUtils';
-import { AuthProvider } from '@/contexts/AuthContext';
 
 export default function HiQRotas() {
   const setCurrentModule = useSetCurrentModule();
@@ -201,12 +200,10 @@ export default function HiQRotas() {
                 </TabsContent>
                 
                 <TabsContent value="team-members" className="mt-0 space-y-4">
-                  <AuthProvider>
-                    <TeamMemberProfiles 
-                      location={location} 
-                      jobRoles={jobRoles}
-                    />
-                  </AuthProvider>
+                  <TeamMemberProfiles 
+                    location={location} 
+                    jobRoles={jobRoles}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="global-rules" className="mt-0 space-y-4">
