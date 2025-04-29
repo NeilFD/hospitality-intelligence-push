@@ -135,13 +135,13 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
     // Convert numeric fields from string to number
     const processedData = {
       ...formData,
-      min_hours_per_day: parseFloat(formData.min_hours_per_day?.toString() || '0'),
-      max_hours_per_day: parseFloat(formData.max_hours_per_day?.toString() || '8'),
-      min_hours_per_week: parseFloat(formData.min_hours_per_week?.toString() || '0'),
-      max_hours_per_week: parseFloat(formData.max_hours_per_week?.toString() || '40'),
-      wage_rate: parseFloat(formData.wage_rate?.toString() || '0'),
-      annual_salary: parseFloat(formData.annual_salary?.toString() || '0'),
-      contractor_rate: parseFloat(formData.contractor_rate?.toString() || '0'),
+      min_hours_per_day: parseFloat(formData.min_hours_per_day.toString() || '0'),
+      max_hours_per_day: parseFloat(formData.max_hours_per_day.toString() || '8'),
+      min_hours_per_week: parseFloat(formData.min_hours_per_week.toString() || '0'),
+      max_hours_per_week: parseFloat(formData.max_hours_per_week.toString() || '40'),
+      wage_rate: parseFloat(formData.wage_rate.toString() || '0'),
+      annual_salary: parseFloat(formData.annual_salary.toString() || '0'),
+      contractor_rate: parseFloat(formData.contractor_rate.toString() || '0'),
       available_for_rota: formData.available_for_rota === true, // Make sure it's a boolean
       in_ft_education: formData.in_ft_education === true,
       availability: availability
@@ -287,7 +287,7 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
                   type="number" 
                   id="wage_rate" 
                   value={formData.wage_rate}
-                  onChange={(e) => setFormData({...formData, wage_rate: e.target.value})}
+                  onChange={(e) => setFormData({...formData, wage_rate: Number(e.target.value)})}
                 />
               </div>
             )}
@@ -299,7 +299,7 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
                   type="number" 
                   id="annual_salary" 
                   value={formData.annual_salary}
-                  onChange={(e) => setFormData({...formData, annual_salary: e.target.value})}
+                  onChange={(e) => setFormData({...formData, annual_salary: Number(e.target.value)})}
                 />
               </div>
             )}
@@ -311,7 +311,7 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
                   type="number" 
                   id="contractor_rate" 
                   value={formData.contractor_rate}
-                  onChange={(e) => setFormData({...formData, contractor_rate: e.target.value})}
+                  onChange={(e) => setFormData({...formData, contractor_rate: Number(e.target.value)})}
                 />
               </div>
             )}
@@ -352,7 +352,7 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
                 type="number" 
                 id="min_hours_per_day" 
                 value={formData.min_hours_per_day}
-                onChange={(e) => setFormData({...formData, min_hours_per_day: e.target.value})}
+                onChange={(e) => setFormData({...formData, min_hours_per_day: Number(e.target.value)})}
               />
             </div>
             
@@ -363,7 +363,7 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
                 type="number" 
                 id="max_hours_per_day" 
                 value={formData.max_hours_per_day}
-                onChange={(e) => setFormData({...formData, max_hours_per_day: e.target.value})}
+                onChange={(e) => setFormData({...formData, max_hours_per_day: Number(e.target.value)})}
               />
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
                 type="number" 
                 id="min_hours_per_week" 
                 value={formData.min_hours_per_week}
-                onChange={(e) => setFormData({...formData, min_hours_per_week: e.target.value})}
+                onChange={(e) => setFormData({...formData, min_hours_per_week: Number(e.target.value)})}
               />
             </div>
             
@@ -387,7 +387,7 @@ export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, loca
                 type="number" 
                 id="max_hours_per_week" 
                 value={formData.max_hours_per_week}
-                onChange={(e) => setFormData({...formData, max_hours_per_week: e.target.value})}
+                onChange={(e) => setFormData({...formData, max_hours_per_week: Number(e.target.value)})}
               />
             </div>
           </div>
