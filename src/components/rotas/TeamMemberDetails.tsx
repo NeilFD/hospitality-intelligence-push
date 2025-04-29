@@ -18,32 +18,32 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] md:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
               <AvatarImage src={member.photo_url} alt={member.full_name} />
-              <AvatarFallback className="text-xl">{getInitials(member.full_name)}</AvatarFallback>
+              <AvatarFallback className="text-xl">{getInitials(`${member.first_name} ${member.last_name}`)}</AvatarFallback>
             </Avatar>
             <div>
-              <DialogTitle className="text-2xl">{member.full_name}</DialogTitle>
+              <DialogTitle className="text-2xl">{`${member.first_name || ''} ${member.last_name || ''}`}</DialogTitle>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary">{member.job_roles?.title}</Badge>
-                <Badge variant="outline">{member.employment_type}</Badge>
+                <Badge variant="secondary">{member.job_title || 'No job title'}</Badge>
+                <Badge variant="outline">{member.employment_type || 'Not specified'}</Badge>
               </div>
             </div>
           </div>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
                 <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Wage Rate</div>
-                <div className="font-medium">£{member.wage_rate?.toFixed(2)}/hour</div>
+                <div className="font-medium">£{member.wage_rate?.toFixed(2) || '0.00'}/hour</div>
               </div>
             </div>
             
@@ -53,19 +53,19 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Performance</div>
-                <div className="font-medium">{member.performance_score?.toFixed(0)}%</div>
+                <div className="font-medium">{member.performance_score?.toFixed(0) || '0'}%</div>
               </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full">
                 <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Daily Hours</div>
-                <div className="font-medium">{member.min_hours_per_day} - {member.max_hours_per_day} hours</div>
+                <div className="font-medium">{member.min_hours_per_day || 0} - {member.max_hours_per_day || 0} hours</div>
               </div>
             </div>
             
@@ -75,17 +75,48 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Weekly Hours</div>
-                <div className="font-medium">{member.min_hours_per_week} - {member.max_hours_per_week} hours</div>
+                <div className="font-medium">{member.min_hours_per_week || 0} - {member.max_hours_per_week || 0} hours</div>
               </div>
             </div>
           </div>
           
-          <Card>
-            <CardContent className="pt-4">
-              <h3 className="font-medium mb-3">Weekly Availability</h3>
-              <AvailabilityViewer availability={member.availability} />
-            </CardContent>
-          </Card>
+          {member.availability && (
+            <Card>
+              <CardContent className="pt-4">
+                <h3 className="font-medium mb-3">Weekly Availability</h3>
+                <AvailabilityViewer availability={member.availability} />
+              </CardContent>
+            </Card>
+          )}
+          
+          {member.about_me && (
+            <Card>
+              <CardContent className="pt-4">
+                <h3 className="font-medium mb-3">About</h3>
+                <p className="text-sm text-muted-foreground">{member.about_me}</p>
+              </CardContent>
+            </Card>
+          )}
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {member.favourite_dish && (
+              <div className="flex items-center gap-2">
+                <div className="text-sm">
+                  <div className="font-medium">Favourite Dish</div>
+                  <div className="text-muted-foreground">{member.favourite_dish}</div>
+                </div>
+              </div>
+            )}
+            
+            {member.favourite_drink && (
+              <div className="flex items-center gap-2">
+                <div className="text-sm">
+                  <div className="font-medium">Favourite Drink</div>
+                  <div className="text-muted-foreground">{member.favourite_drink}</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         <DialogFooter className="gap-2 sm:gap-0">
