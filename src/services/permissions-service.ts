@@ -40,7 +40,7 @@ export const getUserAccessibleModules = async (role: string): Promise<ModuleType
   try {
     // If user is GOD, they have access to everything
     if (role === 'GOD') {
-      return ['home', 'food', 'beverage', 'pl', 'wages', 'performance', 'team', 'master'];
+      return ['home', 'food', 'beverage', 'pl', 'wages', 'performance', 'team', 'master', 'hiq'];
     }
 
     // Get the permission matrix from the database
