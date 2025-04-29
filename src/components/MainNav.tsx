@@ -36,11 +36,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
   // Determine active HiQ section based on current path
   useEffect(() => {
     if (location.pathname.includes('/hiq/')) {
-      if (location.pathname.includes('/hiq/insights')) {
-        setActiveHiqItem('insights');
-      } else if (location.pathname.includes('/hiq/assistant')) {
-        setActiveHiqItem('assistant');
-      } else if (location.pathname.includes('/hiq/performance')) {
+      if (location.pathname.includes('/hiq/performance')) {
         setActiveHiqItem('performance');
       } else {
         setActiveHiqItem('dashboard');
@@ -108,7 +104,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
             />
             <NavItem 
               to="/hiq/performance" 
-              label="Performance" 
+              label="Performance and Analysis" 
               icon="performance" 
               active={activeHiqItem === 'performance'} 
             />
