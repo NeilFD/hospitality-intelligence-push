@@ -260,14 +260,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "/hiq/conversation-history",
-        element: (
-          <RequireAuth>
-            <HiQPerformance />
-          </RequireAuth>
-        ),
-      },
-      {
         path: "/master/weekly-input",
         element: (
           <RequireAuth>
