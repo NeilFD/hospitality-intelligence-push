@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,27 +38,23 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const fetchTeamMembers = async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching team members for location ID:", location.id);
-      // Use the correct table - team_members instead of profiles
+      console.log("Fetching team members from profiles table");
+      // Use the profiles table instead of team_members
       const { data, error } = await supabase
-        .from('team_members')
-        .select(`
-          *,
-          job_roles (*)
-        `)
-        .eq('location_id', location.id);
+        .from('profiles')
+        .select('*');
       
       if (error) {
-        console.error("Error fetching team members:", error);
+        console.error("Error fetching profiles:", error);
         throw error;
       }
       
-      console.log("Team members fetched:", data?.length || 0, "members");
+      console.log("Profiles fetched:", data?.length || 0, "profiles");
       setTeamMembers(data || []);
     } catch (error) {
-      console.error('Error fetching team members:', error);
-      toast("Error loading team members", {
-        description: "There was a problem loading the team member data.",
+      console.error('Error fetching profiles:', error);
+      toast("Error loading profiles", {
+        description: "There was a problem loading the profile data.",
         style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
@@ -68,7 +65,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const handleDeleteMember = async (id) => {
     try {
       const { error } = await supabase
-        .from('team_members')
+        .from('profiles')
         .delete()
         .eq('id', id);
       
@@ -101,13 +98,19 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
 
   // Filter team members based on search term
   const filteredMembers = teamMembers.filter(member => 
-    member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.job_roles?.title?.toLowerCase().includes(searchTerm.toLowerCase())
+    member.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const getInitials = (name) => {
-    if (!name) return '??';
-    return name.split(' ').map(part => part[0]).join('').toUpperCase();
+  const getInitials = (firstName, lastName) => {
+    if (!firstName && !lastName) return '??';
+    return (firstName?.[0] || '') + (lastName?.[0] || '');
+  };
+  
+  const getFullName = (member) => {
+    return `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Unnamed User';
   };
   
   return (
@@ -176,17 +179,17 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Avatar className="h-10 w-10 border border-gray-200">
-                      <AvatarImage src={member.photo_url} alt={member.full_name} />
-                      <AvatarFallback>{getInitials(member.full_name)}</AvatarFallback>
+                      <AvatarImage src={member.avatar_url} alt={getFullName(member)} />
+                      <AvatarFallback>{getInitials(member.first_name, member.last_name)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{member.full_name}</div>
-                      <div className="text-sm text-muted-foreground">{member.job_roles?.title}</div>
+                      <div className="font-medium">{getFullName(member)}</div>
+                      <div className="text-sm text-muted-foreground">{member.job_title || 'No job title'}</div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t">
                     <Badge variant="secondary" className="bg-gray-100">
-                      {member.employment_type}
+                      {member.role || 'No role'}
                     </Badge>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button 
