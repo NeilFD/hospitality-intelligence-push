@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -179,7 +178,7 @@ export const getProfileHighScore = async (profileId: string): Promise<number> =>
       return 0;
     }
     
-    const score = data[0].weighted_score * 10;
+    const score = +(data[0].weighted_score * 10).toFixed(1);
     console.log(`Retrieved high score for profile ${profileId}: ${score}`);
     return score;
   } catch (error) {

@@ -35,12 +35,12 @@ export function ProfileAvatar({
   const getStarPosition = () => {
     switch(size) {
       case 'sm':
-        return 'scale-75 -top-1.5 -right-1.5';
+        return 'scale-75 -top-2 -right-2';
       case 'lg':
-        return '-top-2.5 -right-2.5 scale-125';
+        return '-top-3 -right-3 scale-150';
       case 'md':
       default:
-        return '-top-2 -right-2 scale-100';
+        return '-top-3 -right-3 scale-125';
     }
   };
 
@@ -82,8 +82,11 @@ export function ProfileAvatar({
         ) : null}
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
+      
       {shouldShowStar && (
-        <StarBadge className={getStarPosition()} />
+        <div className="absolute" style={{ zIndex: 10 }}>
+          <StarBadge className={getStarPosition()} />
+        </div>
       )}
     </div>
   );
