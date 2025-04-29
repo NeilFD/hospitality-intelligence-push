@@ -1167,6 +1167,7 @@ export type Database = {
       }
       shift_rules: {
         Row: {
+          archived: boolean | null
           created_at: string
           day_of_week: Database["public"]["Enums"]["day_of_week"]
           end_time: string
@@ -1182,6 +1183,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean | null
           created_at?: string
           day_of_week: Database["public"]["Enums"]["day_of_week"]
           end_time: string
@@ -1197,6 +1199,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean | null
           created_at?: string
           day_of_week?: Database["public"]["Enums"]["day_of_week"]
           end_time?: string
