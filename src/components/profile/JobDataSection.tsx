@@ -93,7 +93,7 @@ export default function JobDataSection({
                     min="0"
                     step="0.01"
                     value={editForm.wageRate}
-                    onChange={(e) => handleChange('wageRate', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('wageRate', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
@@ -107,7 +107,7 @@ export default function JobDataSection({
                     min="0"
                     step="100"
                     value={editForm.annualSalary}
-                    onChange={(e) => handleChange('annualSalary', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('annualSalary', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
@@ -121,7 +121,7 @@ export default function JobDataSection({
                     min="0"
                     step="0.01"
                     value={editForm.contractorRate}
-                    onChange={(e) => handleChange('contractorRate', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('contractorRate', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
@@ -163,7 +163,7 @@ export default function JobDataSection({
                   type="number"
                   min="0"
                   value={editForm.minHoursPerWeek}
-                  onChange={(e) => handleChange('minHoursPerWeek', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('minHoursPerWeek', parseInt(e.target.value) || 0)}
                 />
               </div>
               <div className="space-y-2">
@@ -173,7 +173,7 @@ export default function JobDataSection({
                   type="number"
                   min={editForm.minHoursPerWeek}
                   value={editForm.maxHoursPerWeek}
-                  onChange={(e) => handleChange('maxHoursPerWeek', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('maxHoursPerWeek', parseInt(e.target.value) || 0)}
                 />
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function JobDataSection({
                   type="number"
                   min="0"
                   value={editForm.minHoursPerDay}
-                  onChange={(e) => handleChange('minHoursPerDay', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('minHoursPerDay', parseInt(e.target.value) || 0)}
                 />
               </div>
               <div className="space-y-2">
@@ -196,7 +196,7 @@ export default function JobDataSection({
                   type="number"
                   min={editForm.minHoursPerDay}
                   value={editForm.maxHoursPerDay}
-                  onChange={(e) => handleChange('maxHoursPerDay', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('maxHoursPerDay', parseInt(e.target.value) || 0)}
                 />
               </div>
             </div>

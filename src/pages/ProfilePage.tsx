@@ -590,12 +590,19 @@ const ProfilePage = () => {
         updateData.contractor_rate = editForm.contractorRate;
       }
       
+      // Debug profile update data
+      console.log('Updating profile with data:', updateData);
+      
       const { error } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', profile.id);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        toast.error('Failed to update profile: ' + error.message);
+        return;
+      }
       
       setProfile({
         ...profile,

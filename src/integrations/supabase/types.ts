@@ -928,6 +928,7 @@ export type Database = {
         Row: {
           about_me: string | null
           annual_salary: number | null
+          available_for_rota: boolean | null
           avatar_url: string | null
           banner_position_y: number | null
           banner_url: string | null
@@ -960,6 +961,7 @@ export type Database = {
         Insert: {
           about_me?: string | null
           annual_salary?: number | null
+          available_for_rota?: boolean | null
           avatar_url?: string | null
           banner_position_y?: number | null
           banner_url?: string | null
@@ -992,6 +994,7 @@ export type Database = {
         Update: {
           about_me?: string | null
           annual_salary?: number | null
+          available_for_rota?: boolean | null
           avatar_url?: string | null
           banner_position_y?: number | null
           banner_url?: string | null
@@ -1501,11 +1504,16 @@ export type Database = {
       }
       team_members: {
         Row: {
+          annual_salary: number | null
           availability: Json | null
+          contractor_rate: number | null
           created_at: string
+          employment_start_date: string | null
+          employment_status: string | null
           employment_type: Database["public"]["Enums"]["employment_type"]
           full_name: string
           id: string
+          in_ft_education: boolean | null
           job_role_id: string
           location_id: string
           max_hours_per_day: number
@@ -1519,11 +1527,16 @@ export type Database = {
           wage_rate: number
         }
         Insert: {
+          annual_salary?: number | null
           availability?: Json | null
+          contractor_rate?: number | null
           created_at?: string
+          employment_start_date?: string | null
+          employment_status?: string | null
           employment_type?: Database["public"]["Enums"]["employment_type"]
           full_name: string
           id?: string
+          in_ft_education?: boolean | null
           job_role_id: string
           location_id: string
           max_hours_per_day?: number
@@ -1537,11 +1550,16 @@ export type Database = {
           wage_rate?: number
         }
         Update: {
+          annual_salary?: number | null
           availability?: Json | null
+          contractor_rate?: number | null
           created_at?: string
+          employment_start_date?: string | null
+          employment_status?: string | null
           employment_type?: Database["public"]["Enums"]["employment_type"]
           full_name?: string
           id?: string
+          in_ft_education?: boolean | null
           job_role_id?: string
           location_id?: string
           max_hours_per_day?: number
