@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { ModuleType } from '@/types/kitchen-ledger';
-import { Sandwich, Wine, Clock, ChartBar, BarChart, Users, ConciergeBell, Home, Brain } from 'lucide-react';
+import { Sandwich, Wine, Clock, ChartBar, BarChart, Users, ConciergeBell, Home, Brain, MessageSquare } from 'lucide-react';
 
 interface ModuleIconProps {
-  type: ModuleType | 'hospitality';
+  type: ModuleType | 'hospitality' | 'message-square';
   className?: string;
 }
 
@@ -28,6 +28,8 @@ export const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
       return <Brain className={className} />;
     case 'hospitality':
       return <ConciergeBell className={className} />;
+    case 'message-square':
+      return <MessageSquare className={className} />;
     default:
       return <ChartBar className={className} />;
   }
