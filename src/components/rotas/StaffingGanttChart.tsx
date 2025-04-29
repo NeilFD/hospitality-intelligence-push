@@ -7,6 +7,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface ShiftRule {
   id: string;
@@ -96,6 +105,31 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     
     return hours;
   }, [rules, jobRoles, startHour, endHour]);
+
+  // Calculate totals for all hours
+  const hourlyTotals = useMemo(() => {
+    let fohMinTotal = 0;
+    let fohMaxTotal = 0;
+    let kitchenMinTotal = 0;
+    let kitchenMaxTotal = 0;
+    let totalMinHours = 0;
+    let totalMaxHours = 0;
+
+    staffingByHour.forEach(hour => {
+      fohMinTotal += hour.foh.min;
+      fohMaxTotal += hour.foh.max;
+      kitchenMinTotal += hour.kitchen.min;
+      kitchenMaxTotal += hour.kitchen.max;
+      totalMinHours += hour.total.min;
+      totalMaxHours += hour.total.max;
+    });
+
+    return {
+      foh: { min: fohMinTotal, max: fohMaxTotal },
+      kitchen: { min: kitchenMinTotal, max: kitchenMaxTotal },
+      total: { min: totalMinHours, max: totalMaxHours }
+    };
+  }, [staffingByHour]);
 
   // Calculate position for a shift block
   const getShiftStyle = (rule: ShiftRule) => {
@@ -262,38 +296,58 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
           <div className="mt-8 border-t pt-3">
             <h5 className="font-medium mb-3">Hourly Staff Totals</h5>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-xs">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-1 px-2 text-left">Time</th>
-                    <th className="py-1 px-2 text-right">FOH</th>
-                    <th className="py-1 px-2 text-right">Kitchen</th>
-                    <th className="py-1 px-2 text-right font-bold">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="min-w-full text-xs">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="py-1 px-2 text-left">Time</TableHead>
+                    <TableHead className="py-1 px-2 text-right">FOH</TableHead>
+                    <TableHead className="py-1 px-2 text-right">Kitchen</TableHead>
+                    <TableHead className="py-1 px-2 text-right font-bold">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {staffingByHour.map((hour, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="py-1 px-2 text-left">{hour.hour}:00</td>
-                      <td className="py-1 px-2 text-right">
+                    <TableRow key={index}>
+                      <TableCell className="py-1 px-2 text-left">{hour.hour}:00</TableCell>
+                      <TableCell className="py-1 px-2 text-right">
                         {hour.foh.min === hour.foh.max ? 
                           hour.foh.min : 
                           `${hour.foh.min}-${hour.foh.max}`}
-                      </td>
-                      <td className="py-1 px-2 text-right">
+                      </TableCell>
+                      <TableCell className="py-1 px-2 text-right">
                         {hour.kitchen.min === hour.kitchen.max ? 
                           hour.kitchen.min : 
                           `${hour.kitchen.min}-${hour.kitchen.max}`}
-                      </td>
-                      <td className="py-1 px-2 text-right font-bold">
+                      </TableCell>
+                      <TableCell className="py-1 px-2 text-right font-bold">
                         {hour.total.min === hour.total.max ? 
                           hour.total.min : 
                           `${hour.total.min}-${hour.total.max}`}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+                <TableFooter className="bg-slate-100 dark:bg-slate-800 font-medium">
+                  <TableRow>
+                    <TableCell className="py-2 px-2 text-left">Total Hours</TableCell>
+                    <TableCell className="py-2 px-2 text-right">
+                      {hourlyTotals.foh.min === hourlyTotals.foh.max ? 
+                        hourlyTotals.foh.min : 
+                        `${hourlyTotals.foh.min}-${hourlyTotals.foh.max}`}
+                    </TableCell>
+                    <TableCell className="py-2 px-2 text-right">
+                      {hourlyTotals.kitchen.min === hourlyTotals.kitchen.max ? 
+                        hourlyTotals.kitchen.min : 
+                        `${hourlyTotals.kitchen.min}-${hourlyTotals.kitchen.max}`}
+                    </TableCell>
+                    <TableCell className="py-2 px-2 text-right font-bold">
+                      {hourlyTotals.total.min === hourlyTotals.total.max ? 
+                        hourlyTotals.total.min : 
+                        `${hourlyTotals.total.min}-${hourlyTotals.total.max}`}
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
             </div>
           </div>
         </div>
