@@ -1,4 +1,3 @@
-
 import {
   createBrowserRouter,
 } from "react-router-dom";
@@ -28,8 +27,6 @@ import MasterMonthly from "@/pages/master/MonthSummary";
 import MasterWeekly from "@/pages/master/WeeklyInput";
 import MasterDaily from "@/pages/master/Dashboard";
 import HiQDashboard from "@/pages/hiq/Dashboard";
-import HiQInsights from "@/pages/hiq/Insights";
-import HiQAssistant from "@/pages/hiq/Assistant";
 import HiQPerformance from "@/pages/hiq/Performance";
 import HomeDashboard from "@/pages/home/Dashboard";
 
@@ -251,22 +248,6 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <HiQDashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/hiq/insights",
-        element: (
-          <RequireAuth>
-            <HiQInsights />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/hiq/assistant",
-        element: (
-          <RequireAuth>
-            <HiQAssistant />
           </RequireAuth>
         ),
       },
