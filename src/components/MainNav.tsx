@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import NavItem from './NavItem';
-import { useCurrentModule } from '@/lib/store';
+import { useCurrentModule, useSetCurrentModule } from '@/lib/store';
 import { getUserAccessibleModules } from '@/services/permissions-service';
 import { ModuleType } from '@/types/kitchen-ledger';
 import { useLocation } from 'react-router-dom';
@@ -93,7 +93,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           active={currentModule === 'hiq'} 
         />
         
-        {/* Show submenu items for HiQ when it's the active module - MODIFIED TO REMOVE AI ENTRIES */}
+        {/* Only show Dashboard and Performance submenu items for HiQ */}
         {currentModule === 'hiq' && (
           <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
             <NavItem 
@@ -108,6 +108,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
               icon="performance" 
               active={activeHiqItem === 'performance'} 
             />
+            {/* AI menu items have been completely removed */}
           </div>
         )}
         
