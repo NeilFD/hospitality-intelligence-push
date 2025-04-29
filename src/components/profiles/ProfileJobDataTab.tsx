@@ -24,14 +24,8 @@ const DAY_LABELS = {
 
 const EMPLOYMENT_TYPES = ['hourly', 'salaried', 'contract'];
 
-interface ProfileJobDataTabProps {
-  profile: any;
-  setProfile: any;
-  jobRoles?: any[];
-}
-
-export default function ProfileJobDataTab({ profile, setProfile, jobRoles: initialJobRoles }: ProfileJobDataTabProps) {
-  const [jobRoles, setJobRoles] = useState<any[]>(initialJobRoles || []);
+export default function ProfileJobDataTab({ profile, setProfile }) {
+  const [jobRoles, setJobRoles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({

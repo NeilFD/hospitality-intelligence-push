@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell, Hammer, Clock, DollarSign } from 'lucide-react';
-import { useAuthStore } from '@/services/auth-service';
+import { useAuthStore } from '@/services/auth-store';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -679,8 +679,7 @@ const ProfilePage = () => {
                 </Badge>
                 {profile.job_title && (
                   <div className="flex items-center text-gray-500">
-                    <Briefcase className="h-4 w-4 mr-3 text-hi-purple-light" />
-                    <span>Job Title: {profile.job_title}</span>
+                    <Briefcase className="h-4 w-4 mr-1" /> {profile.job_title}
                   </div>
                 )}
               </div>
