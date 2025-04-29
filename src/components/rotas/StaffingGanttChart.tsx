@@ -44,22 +44,22 @@ interface StaffingGanttChartProps {
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
   // Convert time strings like "09:00" to decimal hours (9.0)
-  const timeToDecimal = (timeString: string) => {
+  const timeToDecimal = (timeString: string): number => {
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours + (minutes / 60);
   };
-
-  // Special handling for midnight - always treat 00:00 as hour 24 for end times
-  const getAdjustedTimeValue = (timeString: string, isEndTime: boolean = false) => {
+  
+  // Special handling for end time midnight (00:00) - treat as hour 24
+  const normalizeTime = (timeString: string, isEndTime = false): number => {
     if (isEndTime && timeString === "00:00") {
-      return 24.0; // Midnight as end time is treated as hour 24
+      return 24.0;
     }
     return timeToDecimal(timeString);
   };
 
   // Determine chart boundaries from opening hours
-  const startHour = Math.floor(timeToDecimal(openingHours.start));
-  const endHour = Math.ceil(getAdjustedTimeValue(openingHours.end, true));
+  const startHour = Math.floor(normalizeTime(openingHours.start));
+  const endHour = Math.ceil(normalizeTime(openingHours.end, true));
   const totalHours = endHour - startHour;
   
   // Group shifts by FOH and Kitchen
@@ -78,9 +78,10 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     const hours: StaffingByHour[] = [];
     
     // Initialize each hour slot
-    for (let hour = startHour; hour <= endHour; hour++) {
+    for (let i = 0; i < totalHours; i++) {
+      const hourValue = (startHour + i) % 24;
       hours.push({
-        hour: hour % 24, // Convert 24 back to 0 for display
+        hour: hourValue,
         foh: { min: 0, max: 0 },
         kitchen: { min: 0, max: 0 },
         total: { min: 0, max: 0 }
@@ -89,8 +90,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     
     // Process each rule and add to the appropriate hours
     rules.forEach(rule => {
-      const ruleStart = getAdjustedTimeValue(rule.start_time);
-      const ruleEnd = getAdjustedTimeValue(rule.end_time, true); // Pass true for end time
+      const ruleStart = normalizeTime(rule.start_time);
+      const ruleEnd = normalizeTime(rule.end_time, true);
       const role = jobRoles.find(r => r.id === rule.job_role_id);
       
       if (!role) return;
@@ -98,19 +99,19 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
       const isKitchen = role.is_kitchen;
       const category = isKitchen ? 'kitchen' : 'foh';
       
-      // Process each hour slot
-      hours.forEach(hourSlot => {
-        const slotStartHour = hourSlot.hour === 0 ? 24 : hourSlot.hour;
-        const slotHourActual = startHour + (hours.indexOf(hourSlot));
+      // For each hour in our chart, check if this shift covers it
+      for (let i = 0; i < hours.length; i++) {
+        const hourSlot = hours[i];
+        const hourAbsolute = startHour + i;
         
-        // Check if this shift applies to this hour
-        if (ruleStart <= slotHourActual && slotHourActual < ruleEnd) {
+        // If this hour is within the shift timeframe
+        if (ruleStart <= hourAbsolute && hourAbsolute < ruleEnd) {
           hourSlot[category].min += rule.min_staff;
           hourSlot[category].max += rule.max_staff;
           hourSlot.total.min += rule.min_staff;
           hourSlot.total.max += rule.max_staff;
         }
-      });
+      }
     });
     
     return hours;
@@ -143,8 +144,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Calculate position for a shift block
   const getShiftStyle = (rule: ShiftRule) => {
-    const startDecimal = getAdjustedTimeValue(rule.start_time);
-    const endDecimal = getAdjustedTimeValue(rule.end_time, true);
+    const startDecimal = normalizeTime(rule.start_time);
+    const endDecimal = normalizeTime(rule.end_time, true);
     
     const startPercent = ((startDecimal - startHour) / totalHours) * 100;
     const widthPercent = ((endDecimal - startDecimal) / totalHours) * 100;
@@ -180,7 +181,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Format hour for display
   const formatHourDisplay = (hour: number) => {
-    return hour === 24 ? "00" : hour;
+    return hour === 0 ? "00" : hour;
   };
 
   return (
