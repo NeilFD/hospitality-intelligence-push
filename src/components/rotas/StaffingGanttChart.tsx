@@ -49,16 +49,17 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return hours + (minutes / 60);
   };
   
-  // Special handling for end time midnight (00:00) - treat as hour 24
+  // Handle 00:00 end time specially - always treat as hour 24
   const normalizeTime = (timeString: string, isEndTime = false): number => {
     if (isEndTime && timeString === "00:00") {
-      return 24.0; // Midnight end time is hour 24 (end of day)
+      return 24.0; // Midnight end time is always hour 24 (end of day)
     }
     return timeToDecimal(timeString);
   };
 
   // Determine chart boundaries from opening hours
   const startHour = Math.floor(normalizeTime(openingHours.start));
+  
   // For the end hour, if it's 00:00, treat it as 24
   const endHourRaw = normalizeTime(openingHours.end, true);
   const endHour = Math.ceil(endHourRaw);
@@ -79,7 +80,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
   const staffingByHour = useMemo(() => {
     const hours: StaffingByHour[] = [];
     
-    // Initialize each hour slot (include the exact number needed)
+    // Initialize each hour slot - make sure we have all needed hours
     for (let i = 0; i <= totalHours; i++) {
       const hourValue = (startHour + i) % 24;
       hours.push({
@@ -107,8 +108,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
         const hourSlot = hours[i];
         const hourAbsolute = startHour + i;
         
-        // If this hour is within the shift timeframe
-        // For shifts ending at midnight (00:00/24.0), we need to include the last hour block
+        // If this hour is within the shift timeframe, include it
+        // For midnight ending shifts (00:00/24.0), make sure to include the 23:00-00:00 hour
         if (ruleStart <= hourAbsolute && hourAbsolute < ruleEnd) {
           hourSlot[category].min += rule.min_staff;
           hourSlot[category].max += rule.max_staff;
@@ -146,9 +147,9 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     };
   }, [staffingByHour]);
 
-  // Calculate position for a shift block
+  // Calculate position for a shift block - ensure 00:00 is displayed at the end of the chart
   const getShiftStyle = (rule: ShiftRule) => {
-    // Make sure to normalize times correctly, especially for 00:00
+    // Critical: Normalize times correctly to handle 00:00 as hour 24
     const startDecimal = normalizeTime(rule.start_time);
     const endDecimal = normalizeTime(rule.end_time, true);
     
