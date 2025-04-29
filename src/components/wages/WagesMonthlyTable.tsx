@@ -29,17 +29,9 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       // Clear cache to ensure we get fresh data
       clearCache();
       
-      // Fetch wages data with error handling
+      // Fetch wages data
       console.log(`Fetching wages data for year=${year}, month=${month}`);
-      let wagesData;
-      try {
-        wagesData = await getMonthlyWages(year, month);
-      } catch (wagesError) {
-        console.error('Error loading wages data, retrying:', wagesError);
-        // Wait a moment and retry once
-        await new Promise(r => setTimeout(r, 1000));
-        wagesData = await getMonthlyWages(year, month);
-      }
+      const wagesData = await getMonthlyWages(year, month);
       
       // Explicitly fetch the master records for the month to ensure we have the latest data
       console.log(`Fetching master records for year=${year}, month=${month}`);
@@ -66,7 +58,6 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         let masterRecord = masterRecordsByDate[dateStr];
         
         // If no master record was found in the batch fetch, try fetching it individually
-        // This is especially important for recently added records
         if (!masterRecord || (masterRecord.foodRevenue === 0 && masterRecord.beverageRevenue === 0)) {
           console.log(`No master record found in batch fetch for ${dateStr}, trying individual fetch`);
           try {
@@ -198,49 +189,34 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         prevData.map(d => d.day === day ? updatedDay : d)
       );
       
-      // Save to database with retry logic and better error handling
+      // Save to database with simple error handling
       try {
         setSaveError(null);
         await setDailyWages(updatedDay);
-      } catch (saveError: any) {
-        console.error('First save attempt failed, retrying:', saveError);
-        // Wait a moment and retry once
-        await new Promise(r => setTimeout(r, 1000));
-        try {
-          await setDailyWages(updatedDay);
-        } catch (retryError: any) {
-          console.error('Retry failed:', retryError);
-          setSaveError(`Failed to save data: ${retryError.message || 'Unknown error'}`);
-          toast.error('Failed to save data after retry');
-          return;
-        }
-      }
-
-      // Clear this field from dirty state
-      setDirtyInputs(prev => {
-        const newDirty = { ...prev };
-        if (newDirty[day]) {
-          newDirty[day].delete(field);
-          if (newDirty[day].size === 0) {
-            delete newDirty[day];
+        
+        // Clear this field from dirty state
+        setDirtyInputs(prev => {
+          const newDirty = { ...prev };
+          if (newDirty[day]) {
+            newDirty[day].delete(field);
+            if (newDirty[day].size === 0) {
+              delete newDirty[day];
+            }
           }
-        }
-        return newDirty;
-      });
-      
-      // Show success message
-      toast.success('Data saved successfully');
-      
-      // Refresh data after a short delay to ensure UI is in sync with database
-      setTimeout(() => loadWagesData(), 1500);
+          return newDirty;
+        });
+        
+        toast.success('Data saved successfully');
+      } catch (saveError: any) {
+        console.error('Error saving data:', saveError);
+        setSaveError(`Failed to save data: ${saveError.message || 'Unknown error'}`);
+        toast.error('Failed to save data');
+      }
       
     } catch (error: any) {
       console.error('Failed to save data:', error);
       setSaveError(`Failed to save data: ${error.message || 'Unknown error'}`);
       toast.error('Failed to save data');
-      
-      // Refresh data to ensure UI is in sync with database
-      loadWagesData();
     }
   };
 
