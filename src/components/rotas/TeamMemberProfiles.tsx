@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,7 +99,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   };
   
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-lg rounded-xl border-0">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -107,7 +108,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
           </CardTitle>
           <Button 
             variant="outline"
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
             onClick={() => setIsAdding(true)}
           >
             <Plus className="h-4 w-4" />
@@ -121,14 +122,14 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
             placeholder="Search team members..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4"
+            className="mb-4 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           />
           
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <p>Loading team members...</p>
             </div>
-          ) : filteredMembers.length === 0 ? (
+          ) : teamMembers.length === 0 || filteredMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8">
               <User className="h-12 w-12 text-muted-foreground mb-2" />
               <p className="text-muted-foreground">No team members found</p>
@@ -143,11 +144,11 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
               {filteredMembers.map(member => (
                 <div 
                   key={member.id}
-                  className="p-4 border rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="p-4 border rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
                   onClick={() => handleViewMember(member)}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 border border-gray-200">
                       <AvatarImage src={member.photo_url} alt={member.full_name} />
                       <AvatarFallback>{getInitials(member.full_name)}</AvatarFallback>
                     </Avatar>
@@ -157,10 +158,10 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                    <Badge variant="outline">
+                    <Badge variant="secondary" className="bg-gray-100">
                       {member.employment_type}
                     </Badge>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button 
                         variant="ghost" 
                         size="icon"

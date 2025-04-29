@@ -106,7 +106,7 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
 
   return (
     <div className="relative group">
-      <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+      <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
         {profile.avatar_url ? (
           <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
         ) : (
@@ -116,7 +116,7 @@ export const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
         )}
       </Avatar>
       
-      <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md cursor-pointer hover:bg-gray-100 transition-colors">
+      <label htmlFor="avatar-upload" className="absolute bottom-1 right-1 bg-white rounded-full p-2 shadow-md cursor-pointer hover:bg-gray-100 transition-colors border border-gray-100 hover:scale-110 duration-200">
         {uploadingAvatar ? (
           <Loader2 className="h-5 w-5 text-hi-purple animate-spin" />
         ) : (

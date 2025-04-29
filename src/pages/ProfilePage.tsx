@@ -547,14 +547,12 @@ const ProfilePage = () => {
   }
   
   const isCurrentUser = !id || id === currentUserProfile?.id;
-  console.log("Banner URL from profile:", profile.banner_url, "Y Position:", profile.banner_position_y || yPosition);
-  console.log("Is current user:", isCurrentUser);
 
   return (
     <div className="container mx-auto p-4">
       <div className="max-w-4xl mx-auto">
-        <Card className="mb-8 overflow-hidden border-0 shadow-lg">
-          <div ref={containerRef} className="relative h-32">
+        <Card className="mb-8 overflow-hidden border-0 shadow-xl rounded-xl">
+          <div ref={containerRef} className="relative h-48 sm:h-64">
             {isRepositioningBanner ? (
               <div className="h-full w-full">
                 <canvas ref={canvasElRef} className="w-full h-full"></canvas>
@@ -597,7 +595,7 @@ const ProfilePage = () => {
                   <div className="h-full w-full bg-gradient-to-r from-hi-purple-light to-hi-purple"></div>
                 )}
                 {isCurrentUser && (
-                  <div className="absolute bottom-2 right-2 flex space-x-2 z-10">
+                  <div className="absolute bottom-4 right-4 flex space-x-2 z-10">
                     {profile.banner_url && (
                       <TooltipProvider>
                         <Tooltip>
@@ -605,7 +603,7 @@ const ProfilePage = () => {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="bg-white bg-opacity-0 group-hover:bg-opacity-80 text-gray-600 hover:text-hi-purple transition-all duration-300 opacity-0 group-hover:opacity-100"
+                              className="bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-all duration-300 shadow-md border border-white/50"
                               onClick={handleStartRepositioning}
                             >
                               <Move className="h-4 w-4 mr-1" /> Reposition
@@ -621,7 +619,7 @@ const ProfilePage = () => {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <label htmlFor="banner-upload" className="bg-white bg-opacity-80 rounded-md p-2 cursor-pointer hover:bg-opacity-100 transition-colors">
+                          <label htmlFor="banner-upload" className="bg-white/80 backdrop-blur-sm rounded-md p-2 cursor-pointer hover:bg-white transition-colors shadow-md border border-white/50 flex items-center justify-center">
                             <Camera className="h-5 w-5 text-hi-purple" />
                             <input 
                               type="file" 
@@ -640,17 +638,20 @@ const ProfilePage = () => {
                     </TooltipProvider>
                   </div>
                 )}
+
+                {/* Dark gradient overlay at the bottom of banner for better text visibility */}
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent"></div>
               </div>
             )}
           </div>
           
           <div className="relative px-6">
-            <div className="-mt-16 flex items-end gap-4">
+            <div className="-mt-16 flex items-end gap-4 relative z-10">
               <div className="relative">
                 {isCurrentUser ? (
                   <ProfilePictureUploader profile={profile} onAvatarUpdate={handleUpdateAvatar} />
                 ) : (
-                  <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+                  <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
                     {profile.avatar_url ? (
                       <AvatarImage src={profile.avatar_url} alt={`${profile.first_name} ${profile.last_name}`} />
                     ) : (
@@ -667,8 +668,8 @@ const ProfilePage = () => {
               <h1 className="text-3xl font-bold">
                 {profile.first_name} {profile.last_name}
               </h1>
-              <div className="flex items-center mt-1 mb-4">
-                <Badge variant="outline" className="mr-2 border-hi-purple-light/50 text-hi-purple">
+              <div className="flex items-center gap-3 mt-1 mb-4">
+                <Badge variant="outline" className="border-hi-purple-light/50 text-hi-purple">
                   {profile.role || 'Team Member'}
                 </Badge>
                 {profile.job_title && (
@@ -680,14 +681,14 @@ const ProfilePage = () => {
             </div>
           </div>
           
-          <CardContent className="px-6 pb-6">
-            <Tabs defaultValue="about" className="mt-2">
-              <TabsList className="mb-6">
-                <TabsTrigger value="about">About</TabsTrigger>
+          <CardContent className="px-6 pb-6 pt-0">
+            <Tabs defaultValue="about" className="mt-4">
+              <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg">
+                <TabsTrigger value="about" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">About</TabsTrigger>
                 {isCurrentUser && (
                   <>
-                    <TabsTrigger value="settings">Edit Profile</TabsTrigger>
-                    <TabsTrigger value="notifications">
+                    <TabsTrigger value="settings" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">Edit Profile</TabsTrigger>
+                    <TabsTrigger value="notifications" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
                       <div className="flex items-center">
                         <Bell className="h-4 w-4 mr-2" />
                         Notifications
@@ -703,35 +704,35 @@ const ProfilePage = () => {
                     <h3 className="text-lg font-semibold mb-4">Profile Details</h3>
                     
                     {profile.birth_date && (
-                      <div className="flex items-center mb-3 text-gray-700">
-                        <Cake className="h-5 w-5 mr-3 text-hi-purple-light" />
+                      <div className="flex items-center mb-3 text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <Cake className="h-5 w-5 mr-3 text-hi-purple" />
                         <span>Birthday: {profile.birth_date}</span>
                       </div>
                     )}
                     
                     {profile.favourite_dish && (
-                      <div className="flex items-center mb-3 text-gray-700">
-                        <Utensils className="h-5 w-5 mr-3 text-hi-purple-light" />
+                      <div className="flex items-center mb-3 text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <Utensils className="h-5 w-5 mr-3 text-hi-purple" />
                         <span>Favourite Dish: {profile.favourite_dish}</span>
                       </div>
                     )}
                     
                     {profile.favourite_drink && (
-                      <div className="flex items-center mb-3 text-gray-700">
-                        <Wine className="h-5 w-5 mr-3 text-hi-purple-light" />
+                      <div className="flex items-center mb-3 text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <Wine className="h-5 w-5 mr-3 text-hi-purple" />
                         <span>Favourite Drink: {profile.favourite_drink}</span>
                       </div>
                     )}
                     
-                    <div className="flex items-center mb-3 text-gray-700">
-                      <CalendarDays className="h-5 w-5 mr-3 text-hi-purple-light" />
+                    <div className="flex items-center mb-3 text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <CalendarDays className="h-5 w-5 mr-3 text-hi-purple" />
                       <span>Member since {new Date(profile.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                   
                   <div>
                     <h3 className="text-lg font-semibold mb-4">About Me</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="bg-gray-50 p-5 rounded-lg shadow-inner">
                       {profile.about_me ? (
                         <p className="whitespace-pre-line">{profile.about_me}</p>
                       ) : (
