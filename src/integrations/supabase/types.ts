@@ -2306,7 +2306,15 @@ export type Database = {
     Enums: {
       forecast_method: "fixed" | "discrete" | "fixed_plus"
       message_type: "text" | "image" | "voice" | "gif" | "file"
-      module_type: "food" | "beverage" | "pl" | "wages" | "performance" | "home"
+      module_type:
+        | "food"
+        | "beverage"
+        | "pl"
+        | "wages"
+        | "performance"
+        | "home"
+        | "hiq"
+        | "team"
       poll_option_type: "text" | "image"
       revenue_tag_scope: "food" | "beverage" | "both"
       user_role: "Owner" | "Manager" | "Team Member" | "GOD" | "Super User"
@@ -2427,7 +2435,16 @@ export const Constants = {
     Enums: {
       forecast_method: ["fixed", "discrete", "fixed_plus"],
       message_type: ["text", "image", "voice", "gif", "file"],
-      module_type: ["food", "beverage", "pl", "wages", "performance", "home"],
+      module_type: [
+        "food",
+        "beverage",
+        "pl",
+        "wages",
+        "performance",
+        "home",
+        "hiq",
+        "team",
+      ],
       poll_option_type: ["text", "image"],
       revenue_tag_scope: ["food", "beverage", "both"],
       user_role: ["Owner", "Manager", "Team Member", "GOD", "Super User"],

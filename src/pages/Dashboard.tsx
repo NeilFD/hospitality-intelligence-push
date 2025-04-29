@@ -5,6 +5,7 @@ import { useCurrentModule, useSetCurrentModule } from '@/lib/store';
 import FoodDashboard from '@/pages/food/Dashboard';
 import BeverageDashboard from '@/pages/beverage/Dashboard';
 import HomeDashboard from '@/pages/home/Dashboard';
+import HiQDashboard from '@/pages/hiq/Dashboard';
 
 export default function Dashboard() {
   const currentModule = useCurrentModule();
@@ -27,6 +28,9 @@ export default function Dashboard() {
     } else if (path.includes('/food/dashboard') && currentModule !== 'food') {
       console.log('Setting current module to food');
       setCurrentModule('food');
+    } else if (path.includes('/hiq/dashboard') && currentModule !== 'hiq') {
+      console.log('Setting current module to hiq');
+      setCurrentModule('hiq');
     }
   }, [path, currentModule, setCurrentModule]);
   
@@ -37,6 +41,8 @@ export default function Dashboard() {
     return <BeverageDashboard />;
   } else if (path.includes('/food/dashboard')) {
     return <FoodDashboard />;
+  } else if (path.includes('/hiq/dashboard')) {
+    return <HiQDashboard />;
   }
   
   // If we're on the generic dashboard, redirect to the appropriate one
