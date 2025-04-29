@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -121,102 +120,104 @@ export default function HiQRotas() {
   };
 
   return (
-    <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gradient-to-br from-[#3a86ff]/60 to-[#0072ff]/80 rounded-lg shadow-glass">
-            <ClipboardList className="h-5 w-5 text-white/90" />
+    <div className="animate-fade-in">
+      <div className="px-6 pt-6 space-y-6">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-gradient-to-br from-[#3a86ff]/60 to-[#0072ff]/80 rounded-lg shadow-glass">
+              <ClipboardList className="h-5 w-5 text-white/90" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3a86ff] via-[#0072ff] to-[#3a86ff] bg-clip-text text-transparent">
+              Staff Rota Configuration
+            </h1>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3a86ff] via-[#0072ff] to-[#3a86ff] bg-clip-text text-transparent">
-            Staff Rota Configuration
-          </h1>
+          <div className="flex items-center gap-4">
+            <RotasLogo size="md" className="hidden md:block animate-float" />
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <RotasLogo size="md" className="hidden md:block animate-float" />
-        </div>
+        
+        <Card className="shadow-md">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Rota Manager</CardTitle>
+                <CardDescription>Configure staff scheduling rules and constraints</CardDescription>
+              </div>
+              <Button variant="outline" onClick={fetchInitialData}>Refresh Data</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-2">
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Skeleton className="h-[400px] w-full" />
+                  <Skeleton className="h-[400px] w-full" />
+                  <Skeleton className="h-[400px] w-full" />
+                </div>
+              </div>
+            ) : (
+              <Tabs defaultValue="weekly-overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full grid grid-cols-4 mb-6">
+                  <TabsTrigger value="weekly-overview" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span className="hidden sm:inline">Weekly Overview</span>
+                    <span className="sm:hidden">Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="shift-builder" className="flex items-center gap-2">
+                    <FileEdit className="h-4 w-4" />
+                    <span className="hidden sm:inline">Shift Builder</span>
+                    <span className="sm:hidden">Shifts</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="team-members" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span className="hidden sm:inline">Team Members</span>
+                    <span className="sm:hidden">Team</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="global-rules" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Global Rules</span>
+                    <span className="sm:hidden">Rules</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="mb-4">
+                  <Separator />
+                </div>
+                
+                <TabsContent value="weekly-overview" className="mt-0 space-y-4">
+                  <WeeklyOverviewPanel 
+                    location={location} 
+                    jobRoles={jobRoles} 
+                  />
+                </TabsContent>
+                
+                <TabsContent value="shift-builder" className="mt-0 space-y-4">
+                  <ShiftBuilder
+                    location={location}
+                    jobRoles={jobRoles}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="team-members" className="mt-0 space-y-4">
+                  <TeamMemberProfiles 
+                    location={location} 
+                    jobRoles={jobRoles}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="global-rules" className="mt-0 space-y-4">
+                  <GlobalRulesSettings 
+                    location={location} 
+                    globalConstraints={globalConstraints} 
+                    setGlobalConstraints={setGlobalConstraints}
+                  />
+                </TabsContent>
+              </Tabs>
+            )}
+          </CardContent>
+        </Card>
       </div>
-      
-      <Card className="shadow-md">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Rota Manager</CardTitle>
-              <CardDescription>Configure staff scheduling rules and constraints</CardDescription>
-            </div>
-            <Button variant="outline" onClick={fetchInitialData}>Refresh Data</Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-2">
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <div className="grid gap-4 md:grid-cols-3">
-                <Skeleton className="h-[400px] w-full" />
-                <Skeleton className="h-[400px] w-full" />
-                <Skeleton className="h-[400px] w-full" />
-              </div>
-            </div>
-          ) : (
-            <Tabs defaultValue="weekly-overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-4 mb-6">
-                <TabsTrigger value="weekly-overview" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span className="hidden sm:inline">Weekly Overview</span>
-                  <span className="sm:hidden">Overview</span>
-                </TabsTrigger>
-                <TabsTrigger value="shift-builder" className="flex items-center gap-2">
-                  <FileEdit className="h-4 w-4" />
-                  <span className="hidden sm:inline">Shift Builder</span>
-                  <span className="sm:hidden">Shifts</span>
-                </TabsTrigger>
-                <TabsTrigger value="team-members" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Team Members</span>
-                  <span className="sm:hidden">Team</span>
-                </TabsTrigger>
-                <TabsTrigger value="global-rules" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Global Rules</span>
-                  <span className="sm:hidden">Rules</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <div className="mb-4">
-                <Separator />
-              </div>
-              
-              <TabsContent value="weekly-overview" className="mt-0 space-y-4">
-                <WeeklyOverviewPanel 
-                  location={location} 
-                  jobRoles={jobRoles} 
-                />
-              </TabsContent>
-              
-              <TabsContent value="shift-builder" className="mt-0 space-y-4">
-                <ShiftBuilder
-                  location={location}
-                  jobRoles={jobRoles}
-                />
-              </TabsContent>
-              
-              <TabsContent value="team-members" className="mt-0 space-y-4">
-                <TeamMemberProfiles 
-                  location={location} 
-                  jobRoles={jobRoles}
-                />
-              </TabsContent>
-              
-              <TabsContent value="global-rules" className="mt-0 space-y-4">
-                <GlobalRulesSettings 
-                  location={location} 
-                  globalConstraints={globalConstraints} 
-                  setGlobalConstraints={setGlobalConstraints}
-                />
-              </TabsContent>
-            </Tabs>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

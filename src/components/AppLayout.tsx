@@ -7,7 +7,7 @@ const AppLayout: React.FC = () => {
   return (
     <div className="flex h-screen">
       <SideNav />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
     </div>
