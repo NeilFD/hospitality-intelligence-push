@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -848,11 +849,256 @@ const ProfilePage = () => {
               </TabsContent>
               
               {isCurrentUser && (
-                <TabsContent value="settings">
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
+                <>
+                  <TabsContent value="settings">
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">First Name</Label>
+                          <Input 
+                            id="firstName" 
+                            value={editForm.firstName}
+                            onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input 
+                            id="lastName" 
+                            value={editForm.lastName}
+                            onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                      
                       <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
+                        <Label htmlFor="jobTitle">Job Title</Label>
                         <Input 
-                          id="firstName" 
-                          value={editForm.firstName}
+                          id="jobTitle" 
+                          value={editForm.jobTitle}
+                          onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="birthDate">Birth Date</Label>
+                        <Input 
+                          id="birthDate" 
+                          value={editForm.birthDate}
+                          onChange={(e) => setEditForm({...editForm, birthDate: e.target.value})}
+                          placeholder="YYYY-MM-DD"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="favouriteDish">Favourite Dish</Label>
+                          <Input 
+                            id="favouriteDish" 
+                            value={editForm.favouriteDish}
+                            onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="favouriteDrink">Favourite Drink</Label>
+                          <Input 
+                            id="favouriteDrink" 
+                            value={editForm.favouriteDrink}
+                            onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="aboutMe">About Me</Label>
+                        <Textarea 
+                          id="aboutMe" 
+                          value={editForm.aboutMe}
+                          onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
+                          rows={5}
+                        />
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <h3 className="font-medium text-lg">Job Information</h3>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="employmentType">Employment Type</Label>
+                          <Select 
+                            value={editForm.employmentType} 
+                            onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
+                          >
+                            <SelectTrigger id="employmentType">
+                              <SelectValue placeholder="Select employment type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="hourly">Hourly</SelectItem>
+                              <SelectItem value="salary">Salary</SelectItem>
+                              <SelectItem value="part_time">Part Time</SelectItem>
+                              <SelectItem value="full_time">Full Time</SelectItem>
+                              <SelectItem value="contractor">Contractor</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Daily Hours</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="flex justify-between mb-1">
+                                <span className="text-sm">Min:</span>
+                                <span className="text-sm font-medium">{editForm.minHoursPerDay}</span>
+                              </div>
+                              <Slider
+                                value={[editForm.minHoursPerDay]}
+                                min={0}
+                                max={12}
+                                step={0.5}
+                                onValueChange={(value) => setEditForm({...editForm, minHoursPerDay: value[0]})}
+                              />
+                            </div>
+                            <div>
+                              <div className="flex justify-between mb-1">
+                                <span className="text-sm">Max:</span>
+                                <span className="text-sm font-medium">{editForm.maxHoursPerDay}</span>
+                              </div>
+                              <Slider
+                                value={[editForm.maxHoursPerDay]}
+                                min={0}
+                                max={12}
+                                step={0.5}
+                                onValueChange={(value) => setEditForm({...editForm, maxHoursPerDay: value[0]})}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Weekly Hours</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="flex justify-between mb-1">
+                                <span className="text-sm">Min:</span>
+                                <span className="text-sm font-medium">{editForm.minHoursPerWeek}</span>
+                              </div>
+                              <Slider
+                                value={[editForm.minHoursPerWeek]}
+                                min={0}
+                                max={80}
+                                step={1}
+                                onValueChange={(value) => setEditForm({...editForm, minHoursPerWeek: value[0]})}
+                              />
+                            </div>
+                            <div>
+                              <div className="flex justify-between mb-1">
+                                <span className="text-sm">Max:</span>
+                                <span className="text-sm font-medium">{editForm.maxHoursPerWeek}</span>
+                              </div>
+                              <Slider
+                                value={[editForm.maxHoursPerWeek]}
+                                min={0}
+                                max={80}
+                                step={1}
+                                onValueChange={(value) => setEditForm({...editForm, maxHoursPerWeek: value[0]})}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                        <Button onClick={handleSaveProfile}>Save Changes</Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="notifications">
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Push Notifications</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          {isSupported ? (
+                            <div className="flex flex-col space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium">Browser Notifications</p>
+                                  <p className="text-sm text-gray-500">
+                                    Receive notifications when you're not on the site
+                                  </p>
+                                </div>
+                                {isPermissionBlocked ? (
+                                  <div className="text-sm text-red-500">
+                                    Notifications blocked in browser settings
+                                  </div>
+                                ) : (
+                                  <Switch 
+                                    checked={isSubscribed} 
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        subscribeUser();
+                                      } else {
+                                        unsubscribeUser();
+                                      }
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">
+                              Push notifications are not supported in your browser.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Email Notifications</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="flex flex-col space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">Daily Updates</p>
+                                <p className="text-sm text-gray-500">
+                                  Receive a daily digest of activities
+                                </p>
+                              </div>
+                              <Switch defaultChecked={true} />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">Rota Updates</p>
+                                <p className="text-sm text-gray-500">
+                                  Get notified when your schedule changes
+                                </p>
+                              </div>
+                              <Switch defaultChecked={true} />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">Team Announcements</p>
+                                <p className="text-sm text-gray-500">
+                                  Receive important team-wide announcements
+                                </p>
+                              </div>
+                              <Switch defaultChecked={true} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </>
+              )}
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default ProfilePage;
