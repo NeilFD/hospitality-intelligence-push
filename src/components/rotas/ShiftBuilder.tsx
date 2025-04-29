@@ -20,6 +20,8 @@ import { Label } from '@/components/ui/label';
 import ShiftRuleForm from './ShiftRuleForm';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ShiftBuilderProps {
   location: any;
@@ -33,6 +35,7 @@ export default function ShiftBuilder({ location, jobRoles }: ShiftBuilderProps) 
   const [editingShift, setEditingShift] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string>('all');
 
   useEffect(() => {
     if (location?.id) {
@@ -133,15 +136,21 @@ export default function ShiftBuilder({ location, jobRoles }: ShiftBuilderProps) 
       thu: 'Thursday',
       fri: 'Friday',
       sat: 'Saturday',
-      sun: 'Sunday'
+      sun: 'Sunday',
+      all: 'All Days'
     };
     return days[dayOfWeek as keyof typeof days] || dayOfWeek;
   };
 
-  // Filter shifts based on the active tab
-  const filteredShifts = shiftRules.filter(rule => 
-    activeTab === 'active' ? !rule.archived : rule.archived
-  );
+  // The array of day codes
+  const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+  // Filter shifts based on the active tab and selected day
+  const filteredShifts = shiftRules.filter(rule => {
+    const matchesTab = activeTab === 'active' ? !rule.archived : rule.archived;
+    const matchesDay = selectedDay === 'all' || rule.day_of_week === selectedDay;
+    return matchesTab && matchesDay;
+  });
 
   return (
     <Card className="shadow-sm">
@@ -176,171 +185,299 @@ export default function ShiftBuilder({ location, jobRoles }: ShiftBuilderProps) 
           <TabsContent value="active" className="mt-0">
             {isLoading ? (
               <div className="py-8 text-center">Loading shifts...</div>
-            ) : filteredShifts.length === 0 ? (
-              <Alert className="bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 my-4">
-                <AlertDescription>
-                  No active shifts found. Click "Create Shift" to add a new shift rule.
-                </AlertDescription>
-              </Alert>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Job Role</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Staff</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredShifts.map((rule) => (
-                    <TableRow key={rule.id}>
-                      <TableCell className="font-medium">
-                        {rule.name || 'Unnamed Shift'}
-                      </TableCell>
-                      <TableCell>{rule.job_roles?.title || 'Unknown'}</TableCell>
-                      <TableCell>{getDayNames(rule.day_of_week)}</TableCell>
-                      <TableCell>
-                        {formatTime(rule.start_time)} - {formatTime(rule.end_time)}
-                      </TableCell>
-                      <TableCell>
-                        {rule.min_staff === rule.max_staff ? 
-                          rule.min_staff : 
-                          `${rule.min_staff}-${rule.max_staff}`
-                        }
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditShift(rule)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleToggleArchive(rule.id, !!rule.archived)}
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                          {confirmDelete === rule.id ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteShift(rule.id)}
-                              >
-                                <Check className="h-4 w-4 text-red-500" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setConfirmDelete(null)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteShift(rule.id)}
-                            >
-                              <X className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <>
+                <div className="mb-4">
+                  <Select
+                    value={selectedDay}
+                    onValueChange={setSelectedDay}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Days</SelectItem>
+                      {dayOrder.map(day => (
+                        <SelectItem key={day} value={day}>{getDayNames(day)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {filteredShifts.length === 0 ? (
+                  <Alert className="bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 my-4">
+                    <AlertDescription>
+                      No active shifts found{selectedDay !== 'all' ? ` for ${getDayNames(selectedDay)}` : ''}. Click "Create Shift" to add a new shift rule.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Job Role</TableHead>
+                        <TableHead>Days</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Staff</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredShifts.map((rule) => (
+                        <TableRow key={rule.id}>
+                          <TableCell className="font-medium">
+                            {rule.name || 'Unnamed Shift'}
+                          </TableCell>
+                          <TableCell>{rule.job_roles?.title || 'Unknown'}</TableCell>
+                          <TableCell>{getDayNames(rule.day_of_week)}</TableCell>
+                          <TableCell>
+                            {formatTime(rule.start_time)} - {formatTime(rule.end_time)}
+                          </TableCell>
+                          <TableCell>
+                            {rule.min_staff === rule.max_staff ? 
+                              rule.min_staff : 
+                              `${rule.min_staff}-${rule.max_staff}`
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleEditShift(rule)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Edit shift</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleToggleArchive(rule.id, !!rule.archived)}
+                                    >
+                                      <Archive className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Archive shift</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              {confirmDelete === rule.id ? (
+                                <>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => handleDeleteShift(rule.id)}
+                                        >
+                                          <Check className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Confirm delete</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => setConfirmDelete(null)}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Cancel delete</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </>
+                              ) : (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDeleteShift(rule.id)}
+                                      >
+                                        <X className="h-4 w-4 text-red-500" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Delete shift</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </>
             )}
           </TabsContent>
           
           <TabsContent value="archived" className="mt-0">
             {isLoading ? (
               <div className="py-8 text-center">Loading archived shifts...</div>
-            ) : filteredShifts.length === 0 ? (
-              <Alert className="bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 my-4">
-                <AlertDescription>
-                  No archived shifts found.
-                </AlertDescription>
-              </Alert>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Job Role</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Staff</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredShifts.map((rule) => (
-                    <TableRow key={rule.id} className="opacity-70">
-                      <TableCell className="font-medium">
-                        {rule.name || 'Unnamed Shift'}
-                      </TableCell>
-                      <TableCell>{rule.job_roles?.title || 'Unknown'}</TableCell>
-                      <TableCell>{getDayNames(rule.day_of_week)}</TableCell>
-                      <TableCell>
-                        {formatTime(rule.start_time)} - {formatTime(rule.end_time)}
-                      </TableCell>
-                      <TableCell>
-                        {rule.min_staff === rule.max_staff ? 
-                          rule.min_staff : 
-                          `${rule.min_staff}-${rule.max_staff}`
-                        }
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleToggleArchive(rule.id, !!rule.archived)}
-                          >
-                            <Check className="h-4 w-4 text-green-500" />
-                          </Button>
-                          {confirmDelete === rule.id ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteShift(rule.id)}
-                              >
-                                <Check className="h-4 w-4 text-red-500" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setConfirmDelete(null)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteShift(rule.id)}
-                            >
-                              <X className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <>
+                <div className="mb-4">
+                  <Select
+                    value={selectedDay}
+                    onValueChange={setSelectedDay}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Days</SelectItem>
+                      {dayOrder.map(day => (
+                        <SelectItem key={day} value={day}>{getDayNames(day)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {filteredShifts.length === 0 ? (
+                  <Alert className="bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 my-4">
+                    <AlertDescription>
+                      No archived shifts found{selectedDay !== 'all' ? ` for ${getDayNames(selectedDay)}` : ''}.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Job Role</TableHead>
+                        <TableHead>Days</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Staff</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredShifts.map((rule) => (
+                        <TableRow key={rule.id} className="opacity-70">
+                          <TableCell className="font-medium">
+                            {rule.name || 'Unnamed Shift'}
+                          </TableCell>
+                          <TableCell>{rule.job_roles?.title || 'Unknown'}</TableCell>
+                          <TableCell>{getDayNames(rule.day_of_week)}</TableCell>
+                          <TableCell>
+                            {formatTime(rule.start_time)} - {formatTime(rule.end_time)}
+                          </TableCell>
+                          <TableCell>
+                            {rule.min_staff === rule.max_staff ? 
+                              rule.min_staff : 
+                              `${rule.min_staff}-${rule.max_staff}`
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleToggleArchive(rule.id, !!rule.archived)}
+                                    >
+                                      <Check className="h-4 w-4 text-green-500" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Restore shift</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              {confirmDelete === rule.id ? (
+                                <>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => handleDeleteShift(rule.id)}
+                                        >
+                                          <Check className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Confirm delete</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => setConfirmDelete(null)}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Cancel delete</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </>
+                              ) : (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDeleteShift(rule.id)}
+                                      >
+                                        <X className="h-4 w-4 text-red-500" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Delete shift</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>
