@@ -50,9 +50,9 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return hours + minutes / 60;
   };
 
-  // Calculate chart boundaries
-  const chartStart = Math.floor(timeToHours(openingHours.start, false));
-  const chartEnd = Math.ceil(timeToHours(openingHours.end, true));
+  // Calculate chart boundaries - use a standard full-day display (00:01 - 00:00)
+  const chartStart = 0; // Start at midnight (00:00)
+  const chartEnd = 24; // End at midnight next day (00:00/24:00)
   const totalHours = chartEnd - chartStart;
 
   // Group shifts by FOH and Kitchen
@@ -71,8 +71,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     const hours: StaffingByHour[] = [];
     
     // Initialize the hours array with every hour slot we need
-    for (let i = 0; i <= totalHours; i++) {
-      const hourValue = (chartStart + i) % 24; // Wrap around at 24 for midnight
+    for (let i = 0; i < totalHours; i++) {
+      const hourValue = i; // Hour value from 0 to 23
       hours.push({
         hour: hourValue,
         foh: { min: 0, max: 0 },
@@ -93,7 +93,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
       
       // For each hour in our chart, add appropriate staffing
       hours.forEach((hourSlot, index) => {
-        const absoluteHour = chartStart + index;
+        const absoluteHour = index;
         
         // An hour is covered by this shift if it starts at or after the shift start
         // and before the shift end
@@ -107,7 +107,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     });
     
     return hours;
-  }, [rules, jobRoles, chartStart, totalHours]);
+  }, [rules, jobRoles]);
 
   // Calculate totals across all hours
   const hourlyTotals = useMemo(() => {
@@ -136,13 +136,13 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Improved shift position calculation
   const calculateShiftPosition = (shift: ShiftRule) => {
-    const startHour = timeToHours(shift.start_time, false) - chartStart;
-    const endHour = timeToHours(shift.end_time, true) - chartStart;
+    const startHour = timeToHours(shift.start_time, false);
+    const endHour = timeToHours(shift.end_time, true);
     const duration = endHour - startHour;
 
     return {
       gridColumnStart: Math.floor(startHour) + 1,
-      gridColumnEnd: `span ${Math.ceil(duration)}`
+      gridColumnEnd: Math.floor(startHour) + 1 + Math.ceil(duration)
     };
   };
 
@@ -171,7 +171,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Format hour display (ensures 0 is displayed as "00")
   const formatHourDisplay = (hour: number) => {
-    return hour === 0 ? "00" : hour;
+    return hour === 0 ? "00" : hour < 10 ? `0${hour}` : hour;
   };
 
   return (
@@ -189,7 +189,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                 <div key={i} className="relative" style={{ gridColumnStart: i === 0 ? 1 : 'auto' }}>
                   <div className="absolute left-0 h-8 border-l border-slate-200 dark:border-slate-700"></div>
                   <span className="absolute -top-6 -ml-2 text-xs text-muted-foreground whitespace-nowrap">
-                    {formatHourDisplay((chartStart + i) % 24)}:00
+                    {formatHourDisplay(i)}:00
                   </span>
                 </div>
               ))}
@@ -225,7 +225,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                         <div
                           className="absolute h-full bg-blue-200 dark:bg-blue-700/40 border border-blue-300 dark:border-blue-600 rounded flex items-center justify-center hover:bg-blue-300 dark:hover:bg-blue-700/60 transition-colors"
                           style={{
-                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / span ${Math.ceil(timeToHours(rule.end_time, true) - timeToHours(rule.start_time, false))}`,
+                            gridColumnStart: calculateShiftPosition(rule).gridColumnStart,
+                            gridColumnEnd: calculateShiftPosition(rule).gridColumnEnd,
                             width: '100%'
                           }}
                         >
@@ -284,7 +285,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                         <div
                           className="absolute h-full bg-green-200 dark:bg-green-700/40 border border-green-300 dark:border-green-600 rounded flex items-center justify-center hover:bg-green-300 dark:hover:bg-green-700/60 transition-colors"
                           style={{
-                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / span ${Math.ceil(timeToHours(rule.end_time, true) - timeToHours(rule.start_time, false))}`,
+                            gridColumnStart: calculateShiftPosition(rule).gridColumnStart,
+                            gridColumnEnd: calculateShiftPosition(rule).gridColumnEnd,
                             width: '100%'
                           }}
                         >
@@ -330,7 +332,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                 <TableBody>
                   {staffingByHour.map((hour, index) => (
                     <TableRow key={index}>
-                      <TableCell className="py-1 px-2 text-left">{hour.hour}:00</TableCell>
+                      <TableCell className="py-1 px-2 text-left">{formatHourDisplay(hour.hour)}:00</TableCell>
                       <TableCell className="py-1 px-2 text-right">
                         {hour.foh.min === hour.foh.max ? 
                           hour.foh.min : 
