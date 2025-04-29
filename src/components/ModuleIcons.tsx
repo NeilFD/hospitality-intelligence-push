@@ -1,37 +1,39 @@
 
 import React from 'react';
+import { Calendar, Chart, CheckCircle, Code, DollarSign, Home, Menu, MessageCircle, MonitorDollar, PieChart, Settings, ShoppingCart, SprayCan, Users, Wallet } from 'lucide-react';
 import { ModuleType } from '@/types/kitchen-ledger';
-import { Sandwich, Wine, Clock, ChartBar, BarChart, Users, ConciergeBell, Home, Brain, MessageSquare } from 'lucide-react';
 
 interface ModuleIconProps {
-  type: ModuleType | 'hospitality' | 'message-square';
+  type: ModuleType | 'hospitality' | 'message-square' | 'calendar';
   className?: string;
 }
 
-export const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
+const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
   switch (type) {
-    case 'home':
-      return <Home className={className} />;
     case 'food':
-      return <Sandwich className={className} />;
+      return <ShoppingCart className={className} />;
     case 'beverage':
-      return <Wine className={className} />;
+      return <SprayCan className={className} />;
     case 'pl':
-      return <span className={className || "text-lg font-bold"}>£</span>;
+      return <MonitorDollar className={className} />;
     case 'wages':
-      return <Clock className={className} />;
-    case 'performance':
-      return <BarChart className={className} />;
+      return <Wallet className={className} />;
     case 'team':
       return <Users className={className} />;
+    case 'home':
+      return <Home className={className} />;
     case 'hiq':
-      return <Brain className={className} />;
+      return <PieChart className={className} />;
+    case 'performance':
+      return <Chart className={className} />;
     case 'hospitality':
-      return <ConciergeBell className={className} />;
+      return <CheckCircle className={className} />;
     case 'message-square':
-      return <MessageSquare className={className} />;
+      return <MessageCircle className={className} />;
+    case 'calendar':
+      return <Calendar className={className} />;
     default:
-      return <ChartBar className={className} />;
+      return <Settings className={className} />;
   }
 };
 

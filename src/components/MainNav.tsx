@@ -56,6 +56,8 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
         setActiveHiqItem('performance');
       } else if (path.includes('/hiq/chat')) {
         setActiveHiqItem('chat');
+      } else if (path.includes('/hiq/rotas')) {
+        setActiveHiqItem('rotas');
       } else {
         setActiveHiqItem('dashboard');
       }
@@ -94,6 +96,12 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           label="Chat Assistant" 
           icon="message-square" 
           active={activeHiqItem === 'chat'} 
+        />
+        <NavItem 
+          to="/hiq/rotas" 
+          label="Staff Rotas" 
+          icon="calendar" 
+          active={activeHiqItem === 'rotas'} 
         />
       </div>
     );

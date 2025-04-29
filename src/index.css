@@ -7,7 +7,7 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
- 
+
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
  
@@ -28,23 +28,12 @@
  
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
  
     --radius: 0.5rem;
-    
-    --app-font-family: system-ui, sans-serif;
-    
-    /* Berry Purple theme colors as fallback values */
-    --custom-primary-color: #9d89c9;
-    --custom-secondary-color: #f3e5f5; 
-    --custom-accent-color: #ab47bc;
-    --custom-sidebar-color: #8e24aa;
-    --custom-button-color: #7e57c2;
-    --custom-text-color: #333333;
-    --sidebar-color: #8e24aa;
   }
  
   .dark {
@@ -76,304 +65,83 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
-
-  /* NFD Theme - Define clear values with !important to override any defaults */
-  .theme-nfd-theme {
-    --primary: 0 93% 47%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 300 10% 95%;
-    --accent: 300 59% 51%;
-    --muted: 300 10% 95%;
-    --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
-    --sidebar-color: #ec193a !important;
-    --button-color: #ec193a !important;
-    --custom-primary-color: #ec193a !important;
-    --custom-secondary-color: #ffebee !important;
-    --custom-accent-color: #d81b60 !important;
-    --custom-sidebar-color: #ec193a !important;
-    --custom-button-color: #ec193a !important;
-    --custom-text-color: #212121 !important;
-  }
-  
-  /* Berry Purple Theme - Define explicit values */
-  .theme-berry-purple {
-    --primary: 271 61% 48%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 300 100% 97%;
-    --accent: 302 59% 41%;
-    --muted: 300 10% 95%;
-    --background: 0 0% 100%;
-    --foreground: 0 0% 20%;
-    --sidebar-color: #8e24aa !important;
-    --button-color: #7e57c2 !important;
-    --custom-primary-color: #9d89c9 !important;
-    --custom-secondary-color: #f3e5f5 !important;
-    --custom-accent-color: #ab47bc !important;
-    --custom-sidebar-color: #8e24aa !important;
-    --custom-button-color: #7e57c2 !important;
-    --custom-text-color: #333333 !important;
-  }
-  
-  /* Theme class for custom themes */
-  .theme-custom {
-    /* Force direct color values with !important for all theme properties without any preset colors */
-    --primary: var(--custom-primary-color) !important;
-    --primary-foreground: 0 0% 100% !important;
-    --secondary: var(--custom-secondary-color) !important;
-    --accent: var(--custom-accent-color) !important;
-    --background: 0 0% 100% !important;
-    --foreground: var(--custom-text-color) !important;
-    --sidebar-color: var(--custom-sidebar-color) !important;
-    --button-color: var(--custom-button-color) !important;
-    
-    /* Apply direct colors without preset purple fallbacks */
-    background-color: var(--background) !important;
-    color: var(--custom-text-color) !important;
-    
-    /* Special handling for custom themes - direct color values */
-    color-scheme: light;
-  }
-  
-  /* Forest Green Theme */
-  .theme-forest-green {
-    --primary: 122 44% 41%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 120 25% 95%;
-    --accent: 120 29% 43%;
-    --muted: 120 16% 93%;
-    --background: 0 0% 100%;
-    --foreground: 0 0% 20%;
-    --sidebar-color: #2e7d32 !important;
-    --button-color: #2e7d32 !important;
-    --custom-primary-color: #1b5e20 !important;
-    --custom-secondary-color: #e8f5e9 !important;
-    --custom-accent-color: #66bb6a !important;
-    --custom-sidebar-color: #2e7d32 !important;
-    --custom-button-color: #43a047 !important;
-    --custom-text-color: #212121 !important;
-  }
-  
-  /* Ocean Blue Theme */
-  .theme-ocean-blue {
-    --primary: 210 79% 46%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 100% 97%;
-    --accent: 210 79% 46%;
-    --muted: 210 20% 90%;
-    --background: 0 0% 100%;
-    --foreground: 0 0% 20%;
-    --sidebar-color: #1976d2 !important;
-    --button-color: #1976d2 !important;
-    --custom-primary-color: #1565c0 !important;
-    --custom-secondary-color: #e3f2fd !important;
-    --custom-accent-color: #42a5f5 !important;
-    --custom-sidebar-color: #1976d2 !important;
-    --custom-button-color: #2196f3 !important;
-    --custom-text-color: #212121 !important;
-  }
-  
-  /* Sunset Orange Theme */
-  .theme-sunset-orange {
-    --primary: 30 100% 45%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 30 100% 96%;
-    --accent: 30 100% 50%;
-    --muted: 30 30% 90%;
-    --background: 0 0% 100%;
-    --foreground: 0 0% 20%;
-    --sidebar-color: #ef6c00 !important;
-    --button-color: #ef6c00 !important;
-    --custom-primary-color: #e65100 !important;
-    --custom-secondary-color: #fff3e0 !important;
-    --custom-accent-color: #ff9800 !important;
-    --custom-sidebar-color: #ef6c00 !important;
-    --custom-button-color: #f57c00 !important;
-    --custom-text-color: #212121 !important;
-  }
-  
-  /* Dark Mode Theme */
-  .theme-dark-mode {
-    --primary: 0 0% 20%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 93%;
-    --accent: 0 0% 25%;
-    --muted: 0 0% 15%;
-    --background: 0 0% 95%;
-    --foreground: 0 0% 10%;
-    --sidebar-color: #333333 !important;
-    --button-color: #333333 !important;
-    --custom-primary-color: #333333 !important;
-    --custom-secondary-color: #f5f5f5 !important;
-    --custom-accent-color: #757575 !important;
-    --custom-sidebar-color: #333333 !important;
-    --custom-button-color: #424242 !important;
-    --custom-text-color: #212121 !important;
-  }
 }
  
 @layer base {
   * {
     @apply border-border;
   }
-  
   body {
     @apply bg-background text-foreground;
-    font-family: var(--app-font-family, system-ui, sans-serif);
-  }
-  
-  html {
-    font-family: var(--app-font-family, system-ui, sans-serif);
-  }
-  
-  .font-inherit * {
-    font-family: inherit;
-  }
-  
-  /* Ensure headings, buttons, and other elements inherit font family */
-  h1, h2, h3, h4, h5, h6, button, input, select, textarea {
-    font-family: inherit;
-  }
-  
-  /* Ensure theme persistence across page reloads */
-  body.theme-initializing {
-    opacity: 0;
-    transition: opacity 0.3s ease-in;
-  }
-  
-  body.theme-loaded {
-    opacity: 1;
-  }
-  
-  /* Apply sidebar styling directly for custom themes with !important */
-  .sidebar {
-    /* Berry Purple as fallback with !important to ensure it works */
-    background-color: var(--custom-sidebar-color, #8e24aa) !important;
-    transition: background-color 0.3s ease-in-out;
-  }
-  
-  /* Theme-specific sidebar colors with !important to ensure they override */
-  .theme-forest-green .sidebar,
-  html.theme-forest-green .sidebar {
-    background-color: #2e7d32 !important;
-  }
-  
-  .theme-ocean-blue .sidebar,
-  html.theme-ocean-blue .sidebar {
-    background-color: #1976d2 !important;
-  }
-  
-  .theme-sunset-orange .sidebar,
-  html.theme-sunset-orange .sidebar {
-    background-color: #ef6c00 !important;
-  }
-  
-  .theme-berry-purple .sidebar,
-  html.theme-berry-purple .sidebar {
-    background-color: #8e24aa !important;
-  }
-  
-  .theme-dark-mode .sidebar,
-  html.theme-dark-mode .sidebar {
-    background-color: #333333 !important;
-  }
-  
-  .theme-nfd-theme .sidebar,
-  html.theme-nfd-theme .sidebar {
-    background-color: #ec193a !important;
-  }
-  
-  /* Custom theme sidebar with highest specificity */
-  .theme-custom .sidebar,
-  html.theme-custom .sidebar,
-  body .theme-custom .sidebar,
-  body.theme-custom .sidebar,
-  *[class*="theme-custom"] .sidebar {
-    background-color: var(--custom-sidebar-color) !important;
-  }
-  
-  /* Apply direct inline styles to sidebar elements for custom themes */
-  html.theme-custom .sidebar {
-    background-color: var(--custom-sidebar-color) !important;
-  }
-  
-  body.theme-custom .sidebar {
-    background-color: var(--custom-sidebar-color) !important;
-  }
-  
-  /* Improve theme-specific button colors */
-  .theme-nfd-theme button[class*="bg-primary"],
-  .theme-nfd-theme a[class*="bg-primary"] {
-    background-color: #ec193a !important;
-  }
-  
-  .theme-berry-purple button[class*="bg-primary"],
-  .theme-berry-purple a[class*="bg-primary"] {
-    background-color: #7e57c2 !important;
-  }
-  
-  .theme-forest-green button[class*="bg-primary"],
-  .theme-forest-green a[class*="bg-primary"] {
-    background-color: #2e7d32 !important;
-  }
-  
-  .theme-ocean-blue button[class*="bg-primary"],
-  .theme-ocean-blue a[class*="bg-primary"] {
-    background-color: #1976d2 !important;
-  }
-  
-  .theme-sunset-orange button[class*="bg-primary"],
-  .theme-sunset-orange a[class*="bg-primary"] {
-    background-color: #ef6c00 !important;
-  }
-  
-  .theme-dark-mode button[class*="bg-primary"],
-  .theme-dark-mode a[class*="bg-primary"] {
-    background-color: #333333 !important;
-  }
-  
-  /* Buttons for custom themes - use direct CSS var reference */
-  .theme-custom button[class*="bg-primary"],
-  .theme-custom a[class*="bg-primary"],
-  html.theme-custom button[class*="bg-primary"],
-  html.theme-custom a[class*="bg-primary"],
-  body.theme-custom button[class*="bg-primary"],
-  body.theme-custom a[class*="bg-primary"] {
-    background-color: var(--custom-button-color) !important;
-  }
-  
-  /* Force text colors to match theme */
-  .theme-custom,
-  html.theme-custom,
-  body.theme-custom {
-    color: var(--custom-text-color) !important;
-  }
-  
-  /* Special case for navigation buttons in custom themes */
-  .theme-custom [role="tab"][data-state="active"] {
-    background-color: var(--custom-button-color) !important;
-    color: white !important;
-  }
-  
-  /* Tab styling for custom themes */
-  .theme-custom button[class*="shadow-md"] {
-    background-color: var(--custom-button-color) !important;
   }
 }
 
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.6s ease-out;
+/* Glass effect styling */
+.shadow-glass {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.glass-button {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(16px);
+}
+
+.neo-glass {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dark .neo-glass {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Image foreground overlay */
+.foreground-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+/* Animation utilities */
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
   }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
   }
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add grid-cols-24 for availability scheduler */
+.grid-cols-24 {
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+}
+

@@ -294,6 +294,50 @@ export type Database = {
           },
         ]
       }
+      global_constraints: {
+        Row: {
+          created_at: string
+          id: string
+          location_id: string
+          max_consecutive_days_worked: number
+          max_shifts_per_week: number
+          min_rest_hours_between_shifts: number
+          updated_at: string
+          wage_target_type: Database["public"]["Enums"]["wage_target_type"]
+          wage_target_value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_id: string
+          max_consecutive_days_worked?: number
+          max_shifts_per_week?: number
+          min_rest_hours_between_shifts?: number
+          updated_at?: string
+          wage_target_type?: Database["public"]["Enums"]["wage_target_type"]
+          wage_target_value?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_id?: string
+          max_consecutive_days_worked?: number
+          max_shifts_per_week?: number
+          min_rest_hours_between_shifts?: number
+          updated_at?: string
+          wage_target_type?: Database["public"]["Enums"]["wage_target_type"]
+          wage_target_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "global_constraints_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospitality_guides: {
         Row: {
           archived: boolean
@@ -338,6 +382,71 @@ export type Database = {
           required_resources?: string | null
           steps?: Json | null
           time_to_complete_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      job_roles: {
+        Row: {
+          created_at: string
+          default_wage_rate: number
+          id: string
+          is_kitchen: boolean
+          location_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_wage_rate?: number
+          id?: string
+          is_kitchen?: boolean
+          location_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_wage_rate?: number
+          id?: string
+          is_kitchen?: boolean
+          location_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_roles_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          opening_hours: Json
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          opening_hours?: Json
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          opening_hours?: Json
+          timezone?: string
           updated_at?: string
         }
         Relationships: []
@@ -1056,6 +1165,107 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_rules: {
+        Row: {
+          created_at: string
+          day_of_week: Database["public"]["Enums"]["day_of_week"]
+          end_time: string
+          id: string
+          job_role_id: string
+          location_id: string
+          max_staff: number
+          min_staff: number
+          priority: number
+          required_skill_level: number | null
+          revenue_to_staff_ratio: number | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: Database["public"]["Enums"]["day_of_week"]
+          end_time: string
+          id?: string
+          job_role_id: string
+          location_id: string
+          max_staff?: number
+          min_staff?: number
+          priority?: number
+          required_skill_level?: number | null
+          revenue_to_staff_ratio?: number | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: Database["public"]["Enums"]["day_of_week"]
+          end_time?: string
+          id?: string
+          job_role_id?: string
+          location_id?: string
+          max_staff?: number
+          min_staff?: number
+          priority?: number
+          required_skill_level?: number | null
+          revenue_to_staff_ratio?: number | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_rules_job_role_id_fkey"
+            columns: ["job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_rules_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_templates: {
+        Row: {
+          created_at: string
+          day_of_week: Database["public"]["Enums"]["day_of_week"]
+          id: string
+          location_id: string
+          name: string
+          shift_blocks: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: Database["public"]["Enums"]["day_of_week"]
+          id?: string
+          location_id: string
+          name: string
+          shift_blocks?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: Database["public"]["Enums"]["day_of_week"]
+          id?: string
+          location_id?: string
+          name?: string
+          shift_blocks?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_templates_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           contact_name: string | null
@@ -1159,6 +1369,85 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      team_members: {
+        Row: {
+          availability: Json | null
+          created_at: string
+          employment_type: Database["public"]["Enums"]["employment_type"]
+          full_name: string
+          id: string
+          job_role_id: string
+          location_id: string
+          max_hours_per_day: number
+          max_hours_per_week: number
+          min_hours_per_day: number
+          min_hours_per_week: number
+          performance_score: number | null
+          photo_url: string | null
+          updated_at: string
+          user_id: string | null
+          wage_rate: number
+        }
+        Insert: {
+          availability?: Json | null
+          created_at?: string
+          employment_type?: Database["public"]["Enums"]["employment_type"]
+          full_name: string
+          id?: string
+          job_role_id: string
+          location_id: string
+          max_hours_per_day?: number
+          max_hours_per_week?: number
+          min_hours_per_day?: number
+          min_hours_per_week?: number
+          performance_score?: number | null
+          photo_url?: string | null
+          updated_at?: string
+          user_id?: string | null
+          wage_rate?: number
+        }
+        Update: {
+          availability?: Json | null
+          created_at?: string
+          employment_type?: Database["public"]["Enums"]["employment_type"]
+          full_name?: string
+          id?: string
+          job_role_id?: string
+          location_id?: string
+          max_hours_per_day?: number
+          max_hours_per_week?: number
+          min_hours_per_day?: number
+          min_hours_per_week?: number
+          performance_score?: number | null
+          photo_url?: string | null
+          updated_at?: string
+          user_id?: string | null
+          wage_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_job_role_id_fkey"
+            columns: ["job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_messages: {
         Row: {
@@ -2304,6 +2593,8 @@ export type Database = {
       }
     }
     Enums: {
+      day_of_week: "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
+      employment_type: "hourly" | "salary" | "contractor"
       forecast_method: "fixed" | "discrete" | "fixed_plus"
       message_type: "text" | "image" | "voice" | "gif" | "file"
       module_type:
@@ -2318,6 +2609,7 @@ export type Database = {
       poll_option_type: "text" | "image"
       revenue_tag_scope: "food" | "beverage" | "both"
       user_role: "Owner" | "Manager" | "Team Member" | "GOD" | "Super User"
+      wage_target_type: "percent" | "absolute" | "hours"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2433,6 +2725,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      day_of_week: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+      employment_type: ["hourly", "salary", "contractor"],
       forecast_method: ["fixed", "discrete", "fixed_plus"],
       message_type: ["text", "image", "voice", "gif", "file"],
       module_type: [
@@ -2448,6 +2742,7 @@ export const Constants = {
       poll_option_type: ["text", "image"],
       revenue_tag_scope: ["food", "beverage", "both"],
       user_role: ["Owner", "Manager", "Team Member", "GOD", "Super User"],
+      wage_target_type: ["percent", "absolute", "hours"],
     },
   },
 } as const

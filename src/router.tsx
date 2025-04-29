@@ -1,3 +1,4 @@
+
 import {
   createBrowserRouter,
 } from "react-router-dom";
@@ -29,6 +30,7 @@ import MasterDaily from "@/pages/master/Dashboard";
 import HiQDashboard from "@/pages/hiq/Dashboard";
 import HiQPerformance from "@/pages/hiq/Performance";
 import HiQChat from "@/pages/hiq/Chat";
+import HiQRotas from "@/pages/hiq/Rotas";
 import HomeDashboard from "@/pages/home/Dashboard";
 
 export const router = createBrowserRouter([
@@ -265,6 +267,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <HiQChat />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/hiq/rotas",
+        element: (
+          <RequireAuth>
+            <HiQRotas />
           </RequireAuth>
         ),
       },
