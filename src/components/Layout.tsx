@@ -214,12 +214,6 @@ const Layout = ({
     } else if (path.includes('/wages')) {
       console.log('Layout: Setting current module to wages from path');
       setCurrentModule('wages');
-    } else if (path.includes('/performance')) {
-      console.log('Layout: Setting current module to performance from path');
-      setCurrentModule('performance');
-    } else if (path.includes('/master')) {
-      console.log('Layout: Setting current module to master from path');
-      setCurrentModule('master');
     } else if (path.includes('/team')) {
       console.log('Layout: Setting current module to team from path');
       setCurrentModule('team');
@@ -447,7 +441,8 @@ const Layout = ({
   }, []);
 
   const sortedModules = useMemo(() => {
-    return [...modules].sort((a, b) => a.displayOrder - b.displayOrder);
+    // Filter out 'performance' module so it doesn't show as a top-level item
+    return [...modules].filter(module => module.type !== 'performance').sort((a, b) => a.displayOrder - b.displayOrder);
   }, [modules]);
 
   const toggleSidebar = () => {
@@ -520,12 +515,6 @@ const Layout = ({
           path: "/wages/dashboard",
           icon: <Home className="mr-2 h-4 w-4" />
         }];
-      case 'performance':
-        return [{
-          name: "Performance Dashboard",
-          path: "/performance/dashboard",
-          icon: <Home className="mr-2 h-4 w-4" />
-        }];
       case 'master':
         return [{
           name: "Daily Dashboard",
@@ -574,12 +563,15 @@ const Layout = ({
   }, [currentModule, currentYear, currentMonth]);
 
   const moduleNavItems = useMemo(() => {
-    return sortedModules.map(module => ({
-      name: module.type === 'master' ? 'Daily Info' : module.type === 'team' ? 'Team' : module.type === 'pl' ? 'P&L Tracker' : module.type === 'wages' ? 'Wages Tracker' : module.type === 'food' ? 'Food Hub' : module.type === 'beverage' ? 'Beverage Hub' : module.type === 'performance' ? 'Performance and Analysis' : module.name,
-      path: `/${module.type}/dashboard`,
-      icon: <ModuleIcon type={module.type} className="mr-2 h-4 w-4" />,
-      type: module.type
-    }));
+    // Filter out any 'performance' module to avoid showing it as a top-level item
+    return sortedModules
+      .filter(module => module.type !== 'performance')
+      .map(module => ({
+        name: module.type === 'master' ? 'Daily Info' : module.type === 'team' ? 'Team' : module.type === 'pl' ? 'P&L Tracker' : module.type === 'wages' ? 'Wages Tracker' : module.type === 'food' ? 'Food Hub' : module.type === 'beverage' ? 'Beverage Hub' : module.name,
+        path: `/${module.type}/dashboard`,
+        icon: <ModuleIcon type={module.type} className="mr-2 h-4 w-4" />,
+        type: module.type
+      }));
   }, [sortedModules]);
 
   const filteredModuleNavItems = useMemo(() => {
@@ -805,58 +797,4 @@ const Layout = ({
               <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-primary">
                 {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
-              <TavernLogo size="lg" />
-              
-              <div className="flex items-center gap-3">
-                <NotificationsDropdown />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
-                      <ProfileAvatar />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
-                    {isAuthenticated && profile ? (
-                      <>
-                        <div className="flex items-center justify-start gap-2 p-2">
-                          <div className="flex flex-col space-y-0.5 leading-none">
-                            <p className="text-sm font-medium">
-                              {profile?.first_name} {profile?.last_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {user?.email} - {profile?.role || 'User'}
-                            </p>
-                          </div>
-                        </div>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link to="/profile" className="cursor-pointer flex w-full items-center">
-                            <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <div className="flex items-center justify-start gap-2 p-2">
-                        <div className="flex flex-col space-y-0.5 leading-none">
-                          <p className="text-sm font-medium">Not logged in</p>
-                        </div>
-                      </div>
-                    )}
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            {children}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
-
-export default Layout;
+              <TavernLogo size="
