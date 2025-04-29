@@ -1,4 +1,3 @@
-
 import {
   createBrowserRouter,
 } from "react-router-dom";
@@ -30,6 +29,7 @@ import MasterDaily from "@/pages/master/Dashboard";
 import HiQDashboard from "@/pages/hiq/Dashboard";
 import HiQInsights from "@/pages/hiq/Insights";
 import HiQAssistant from "@/pages/hiq/Assistant";
+import HomeDashboard from "@/pages/home/Dashboard";
 
 export const router = createBrowserRouter([
   {
@@ -65,6 +65,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <EditProfile />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/home/dashboard",
+        element: (
+          <RequireAuth>
+            <Dashboard />
           </RequireAuth>
         ),
       },
