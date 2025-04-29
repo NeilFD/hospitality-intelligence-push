@@ -6,6 +6,7 @@ import { ArrowLeft, MessageSquare } from 'lucide-react';
 import ChatInterface from '@/components/performance/ChatInterface';
 import { Card } from '@/components/ui/card';
 import { PerformanceLogo } from '@/components/PerformanceLogo';
+import { Brain } from 'lucide-react';
 
 export default function HiQChat() {
   return (
