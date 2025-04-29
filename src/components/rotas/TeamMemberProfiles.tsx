@@ -87,6 +87,46 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
     setViewingMember(member);
   };
 
+  const handleSaveMember = async (memberData) => {
+    try {
+      let operation;
+      if (memberData.id) {
+        operation = supabase
+          .from('team_members')
+          .update(memberData)
+          .eq('id', memberData.id);
+      } else {
+        operation = supabase
+          .from('team_members')
+          .insert([{ ...memberData, location_id: location.id }]);
+      }
+
+      const { error } = await operation;
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast(memberData.id ? "Team member updated" : "Team member added", {
+        description: memberData.id 
+          ? `${memberData.full_name}'s information has been updated.`
+          : `${memberData.full_name} has been added to the team.`,
+      });
+      
+      setIsAdding(false);
+      setIsEditing(false);
+      setCurrentMember(null);
+      
+      fetchTeamMembers();
+    } catch (error) {
+      console.error('Error saving team member:', error);
+      toast("Error saving team member", {
+        description: error.message || "There was a problem saving the team member data.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
+      });
+    }
+  };
+
   // Filter team members based on search term
   const filteredMembers = teamMembers.filter(member => 
     member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,11 +238,9 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
           setIsEditing(false);
           setCurrentMember(null);
         }}
-        onSubmitComplete={fetchTeamMembers}
-        locationId={location?.id}
+        member={currentMember}
+        onSave={handleSaveMember}
         jobRoles={jobRoles}
-        teamMember={currentMember}
-        isEditing={isEditing}
       />
       
       <TeamMemberDetails

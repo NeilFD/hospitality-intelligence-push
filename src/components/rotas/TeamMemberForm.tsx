@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -191,7 +192,7 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
                 type="number" 
                 id="wage_rate" 
                 value={formData.wage_rate}
-                onChange={(e) => setFormData({...formData, wage_rate: e.target.value})}
+                onChange={(e) => setFormData({...formData, wage_rate: parseFloat(e.target.value) || 0})}
               />
             </div>
           </div>
@@ -204,7 +205,7 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
                 type="number" 
                 id="min_hours_per_day" 
                 value={formData.min_hours_per_day}
-                onChange={(e) => setFormData({...formData, min_hours_per_day: e.target.value})}
+                onChange={(e) => setFormData({...formData, min_hours_per_day: parseFloat(e.target.value) || 0})}
               />
             </div>
             
@@ -215,7 +216,7 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
                 type="number" 
                 id="max_hours_per_day" 
                 value={formData.max_hours_per_day}
-                onChange={(e) => setFormData({...formData, max_hours_per_day: e.target.value})}
+                onChange={(e) => setFormData({...formData, max_hours_per_day: parseFloat(e.target.value) || 0})}
               />
             </div>
           </div>
@@ -228,7 +229,7 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
                 type="number" 
                 id="min_hours_per_week" 
                 value={formData.min_hours_per_week}
-                onChange={(e) => setFormData({...formData, min_hours_per_week: e.target.value})}
+                onChange={(e) => setFormData({...formData, min_hours_per_week: parseFloat(e.target.value) || 0})}
               />
             </div>
             
@@ -239,7 +240,7 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
                 type="number" 
                 id="max_hours_per_week" 
                 value={formData.max_hours_per_week}
-                onChange={(e) => setFormData({...formData, max_hours_per_week: e.target.value})}
+                onChange={(e) => setFormData({...formData, max_hours_per_week: parseFloat(e.target.value) || 0})}
               />
             </div>
           </div>
