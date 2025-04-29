@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages, refreshFinancialPerformanceAnalysis } from '@/services/wages-service';
@@ -65,22 +66,19 @@ export const useWagesStore = create<WagesStore>()(
       isSaving: false,
       needsRefresh: false,
       
-      // Direct approach to save wages data
+      // SIMPLIFIED: Direct approach to save wages data
       setDailyWages: async (data: DailyWages) => {
         try {
           const key = `${data.year}-${data.month}-${data.day}`;
-          console.log(`Saving wages data for ${key}`, data);
+          console.log(`SAVING WAGES DATA FOR: ${key}`, data);
           
           set({ isSaving: true });
           
-          // Save directly to the database with our simplified function
+          // Save with our ultra-direct RPC call
           await upsertDailyWages(data);
-          console.log(`Successfully saved wages data for ${key}`);
+          console.log(`SUCCESSFULLY SAVED WAGES DATA FOR: ${key}`);
           
-          // Mark as needing a refresh
-          set({ needsRefresh: true });
-          
-          // Update local state
+          // Update local state with the exact data we just saved
           set((state) => ({
             wagesData: {
               ...state.wagesData,
@@ -90,7 +88,7 @@ export const useWagesStore = create<WagesStore>()(
           }));
           
         } catch (error) {
-          console.error('Failed to save wages data', error);
+          console.error('FAILED TO SAVE WAGES DATA:', error);
           set({ isSaving: false });
           throw error;
         }
@@ -100,41 +98,46 @@ export const useWagesStore = create<WagesStore>()(
         const key = `${year}-${month}-${day}`;
         
         try {
-          // Always fetch fresh data from the server first
+          console.log(`FETCHING DAILY WAGES FROM SERVER: ${key}`);
+          // Always try to fetch fresh data from the server first
           const serverData = await fetchWagesByDay(year, month, day);
           
           if (serverData) {
-            // Update the cache with server data
+            // Update the cache with fresh server data
             set((state) => ({
               wagesData: {
                 ...state.wagesData,
                 [key]: serverData
               }
             }));
-            console.log(`Got fresh data from server for ${key}`);
+            console.log(`GOT FRESH DATA FROM SERVER FOR: ${key}`, serverData);
             return serverData;
           }
           
           // If no server data, check cache
           const cachedData = get().wagesData[key];
           if (cachedData) {
-            console.log(`Using cached data for ${key}`);
+            console.log(`USING CACHED DATA FOR: ${key}`, cachedData);
             return cachedData;
           }
           
           // If neither server nor cache has data, return empty data
-          return createEmptyDayData(year, month, day);
+          const emptyData = createEmptyDayData(year, month, day);
+          console.log(`NO DATA FOUND, RETURNING EMPTY DATA FOR: ${key}`, emptyData);
+          return emptyData;
         } catch (error) {
-          console.error('Failed to fetch daily wages', error);
+          console.error('FAILED TO FETCH DAILY WAGES:', error);
           
           // If error fetching from server, try to use cache
           const cachedData = get().wagesData[key];
           if (cachedData) {
-            console.log(`Using cached data for ${key} after fetch error`);
+            console.log(`USING CACHED DATA AFTER ERROR FOR: ${key}`, cachedData);
             return cachedData;
           }
           
-          return createEmptyDayData(year, month, day);
+          const emptyData = createEmptyDayData(year, month, day);
+          console.log(`ERROR FETCHING DATA, RETURNING EMPTY DATA FOR: ${key}`, emptyData);
+          return emptyData;
         }
       },
       
@@ -143,8 +146,9 @@ export const useWagesStore = create<WagesStore>()(
         
         try {
           // Always fetch fresh data from the database to ensure consistency
-          console.log(`Fetching fresh wages data for ${year}-${month}`);
+          console.log(`FETCHING FRESH MONTHLY WAGES DATA FOR ${year}-${month}`);
           const supabaseData = await fetchWagesByMonth(year, month);
+          console.log(`RECEIVED ${supabaseData.length} RECORDS FROM DATABASE`);
           
           // Create a map for easier lookup and update the local cache
           const dataMap: Record<number, DailyWages> = {};
@@ -176,10 +180,11 @@ export const useWagesStore = create<WagesStore>()(
             }
           }
           
+          console.log(`RETURNING COMPLETE MONTHLY DATA WITH ${result.length} DAYS`);
           set({ isLoading: false });
           return result;
         } catch (error) {
-          console.error('Failed to fetch monthly wages', error);
+          console.error('FAILED TO FETCH MONTHLY WAGES:', error);
           set({ isLoading: false });
           
           // Fallback: Create empty data for the month
@@ -203,7 +208,7 @@ export const useWagesStore = create<WagesStore>()(
       
       getWeekdayTotals: async (year: number, month: number) => {
         // Force fetch fresh data from the server
-        const monthlyData = await fetchWagesByMonth(year, month);
+        const monthlyData = await get().getMonthlyWages(year, month);
         
         const weekdayTotals: Record<string, {
           fohWages: number;
@@ -256,7 +261,7 @@ export const useWagesStore = create<WagesStore>()(
       },
       
       clearCache: () => {
-        console.log('Clearing wages data cache');
+        console.log('CLEARING WAGES DATA CACHE');
         set({ wagesData: {} });
       },
 
@@ -279,10 +284,11 @@ export const useWagesStore = create<WagesStore>()(
     }),
     {
       name: 'wages-tracker-storage',
-      // Only persist isLoading state and needsRefresh flag, not the actual wages data
+      // Store the entire wages data now to maintain a solid local cache
       partialize: (state) => ({ 
         isLoading: state.isLoading,
-        needsRefresh: state.needsRefresh
+        needsRefresh: state.needsRefresh,
+        wagesData: state.wagesData
       })
     }
   )

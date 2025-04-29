@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { DailyWages } from '@/components/wages/WagesStore';
 import { getCurrentUser } from '@/lib/supabase';
@@ -108,75 +107,38 @@ export const fetchTotalWagesForMonth = async (year: number, month: number): Prom
   }
 };
 
-// Simple, direct approach to save wages data
-export const upsertDailyWages = async (wages: DailyWages) => {
+// SIMPLEST POSSIBLE VERSION - Direct RPC call to the database function
+export const upsertDailyWages = async (wages: DailyWages): Promise<any> => {
   try {
-    console.log('Saving wages directly to database:', wages);
+    console.log('ATTEMPTING TO SAVE WAGES WITH DIRECT RPC:', wages);
     
-    // Format the date in YYYY-MM-DD format
+    // Format the date in YYYY-MM-DD format for consistency
     const formattedMonth = String(wages.month).padStart(2, '0');
     const formattedDay = String(wages.day).padStart(2, '0');
     const formattedDate = `${wages.year}-${formattedMonth}-${formattedDay}`;
     
-    // Check if record exists
-    const { data: existingRecord } = await supabase
-      .from('wages')
-      .select('id')
-      .eq('year', wages.year)
-      .eq('month', wages.month)
-      .eq('day', wages.day)
-      .maybeSingle();
-      
-    if (existingRecord) {
-      // Update existing record
-      console.log('Updating existing wage record');
-      const { data, error } = await supabase
-        .from('wages')
-        .update({
-          foh_wages: wages.fohWages || 0,
-          kitchen_wages: wages.kitchenWages || 0,
-          food_revenue: wages.foodRevenue || 0,
-          bev_revenue: wages.bevRevenue || 0,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingRecord.id)
-        .select();
-        
-      if (error) {
-        console.error('Error updating wages record:', error);
-        throw error;
-      }
-      
-      console.log('Successfully updated wages record:', data);
-      return data;
-    } else {
-      // Insert new record
-      console.log('Creating new wage record');
-      const { data, error } = await supabase
-        .from('wages')
-        .insert({
-          year: wages.year,
-          month: wages.month,
-          day: wages.day,
-          date: formattedDate,
-          day_of_week: wages.dayOfWeek,
-          foh_wages: wages.fohWages || 0,
-          kitchen_wages: wages.kitchenWages || 0,
-          food_revenue: wages.foodRevenue || 0,
-          bev_revenue: wages.bevRevenue || 0
-        })
-        .select();
-        
-      if (error) {
-        console.error('Error inserting wages record:', error);
-        throw error;
-      }
-      
-      console.log('Successfully created wages record:', data);
-      return data;
+    // Call the direct_upsert_wages RPC function
+    const { data, error } = await supabase.rpc('direct_upsert_wages', {
+      p_year: wages.year,
+      p_month: wages.month,
+      p_day: wages.day,
+      p_date: formattedDate,
+      p_day_of_week: wages.dayOfWeek,
+      p_foh_wages: wages.fohWages || 0,
+      p_kitchen_wages: wages.kitchenWages || 0,
+      p_food_revenue: wages.foodRevenue || 0,
+      p_bev_revenue: wages.bevRevenue || 0
+    });
+    
+    if (error) {
+      console.error('CRITICAL ERROR SAVING WAGES DATA:', error);
+      throw error;
     }
+    
+    console.log('SUCCESSFULLY SAVED WAGES WITH DIRECT RPC:', data);
+    return data;
   } catch (error) {
-    console.error('Failed to save wages:', error);
+    console.error('CRITICAL FAILURE IN WAGE SAVE:', error);
     throw error;
   }
 };

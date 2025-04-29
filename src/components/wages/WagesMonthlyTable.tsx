@@ -113,6 +113,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   }, [year, month, getMonthlyWages, clearCache]);
   
   useEffect(() => {
+    console.log("COMPONENT MOUNTED OR YEAR/MONTH CHANGED - LOADING FRESH DATA");
     loadWagesData();
   }, [loadWagesData]);
   
@@ -151,7 +152,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     // Set a new timeout to save after user stops typing
     const newTimeout = setTimeout(() => {
       saveData(day, field, value);
-    }, 1500); // 1.5 seconds delay
+    }, 500); // Reduce to 500ms for faster response
     
     setSaveTimeout(newTimeout);
   };
@@ -159,7 +160,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   // Function to save data after delay
   const saveData = async (day: number, field: string, value: string) => {
     try {
-      console.log(`Saving ${field} value for day ${day}: ${value}`);
+      console.log(`SAVING ${field} VALUE FOR DAY ${day}: ${value}`);
       
       // Parse value properly
       const numValue = parseFloat(value) || 0;
@@ -184,17 +185,17 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         [field]: numValue
       };
       
-      console.log(`Saving data for day ${day}:`, updatedDay);
+      console.log(`SAVING DATA FOR DAY ${day}:`, updatedDay);
       
-      // Update the UI immediately for better UX
-      setMonthlyData(prevData => 
-        prevData.map(d => d.day === day ? updatedDay : d)
-      );
-      
-      // Save to database with simple error handling
+      // Save immediately to database - no more delays
       try {
         setSaveError(null);
         await setDailyWages(updatedDay);
+        
+        // Update UI with saved data
+        setMonthlyData(prevData => 
+          prevData.map(d => d.day === day ? updatedDay : d)
+        );
         
         // Clear this field from dirty state
         setDirtyInputs(prev => {
@@ -210,13 +211,13 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         
         toast.success('Data saved successfully');
       } catch (saveError: any) {
-        console.error('Error saving data:', saveError);
+        console.error('ERROR SAVING DATA:', saveError);
         setSaveError(`Failed to save data: ${saveError.message || 'Unknown error'}`);
         toast.error('Failed to save data');
       }
       
     } catch (error: any) {
-      console.error('Failed to save data:', error);
+      console.error('FAILED TO SAVE DATA:', error);
       setSaveError(`Failed to save data: ${error.message || 'Unknown error'}`);
       toast.error('Failed to save data');
     }
@@ -242,6 +243,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   
   // Add a manual refresh function
   const handleManualRefresh = () => {
+    console.log("MANUALLY REFRESHING DATA");
     loadWagesData();
     toast.info('Refreshing wage data from database');
   };
@@ -300,6 +302,7 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
             onClick={handleManualRefresh} 
             className="mr-2"
           >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Data
           </Button>
           <Button 
