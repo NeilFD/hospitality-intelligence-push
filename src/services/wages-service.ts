@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { DailyWages } from '@/components/wages/WagesStore';
 import { getCurrentUser } from '@/lib/supabase';
@@ -213,6 +212,7 @@ export const refreshFinancialPerformanceAnalysis = async (): Promise<boolean> =>
   try {
     console.log('Manually triggering refresh of financial_performance_analysis materialized view');
     
+    // Use the security definer function we just created instead of direct RPC call
     const { error } = await supabase.rpc('refresh_financial_performance_analysis');
     
     if (error) {
