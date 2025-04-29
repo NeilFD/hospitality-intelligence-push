@@ -8,7 +8,7 @@ interface ModuleIconProps {
   className?: string;
 }
 
-const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
+export const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
   switch (type) {
     case 'food':
       return <ShoppingCart className={className} />;
