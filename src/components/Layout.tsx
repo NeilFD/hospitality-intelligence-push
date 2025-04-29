@@ -564,13 +564,9 @@ const Layout = ({
           path: "/hiq/dashboard",
           icon: <Home className="mr-2 h-4 w-4" />
         }, {
-          name: "AI Insights",
-          path: "/hiq/insights",
+          name: "Performance and Analysis",
+          path: "/hiq/performance",
           icon: <ChartBar className="mr-2 h-4 w-4" />
-        }, {
-          name: "AI Assistant",
-          path: "/hiq/assistant",
-          icon: <MessageSquare className="mr-2 h-4 w-4" />
         }];
       default:
         return [];
