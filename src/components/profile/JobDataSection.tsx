@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase, checkColumnExists } from '@/lib/supabase';
 
 interface JobDataSectionProps {
   profile: any;
@@ -30,30 +30,47 @@ export default function JobDataSection({
 }: JobDataSectionProps) {
   const { profile: currentUserProfile } = useAuthStore();
   const [hasEmploymentStartDateColumn, setHasEmploymentStartDateColumn] = useState(true);
+  const [hasEmploymentStatusColumn, setHasEmploymentStatusColumn] = useState(true);
   
   useEffect(() => {
     // Check if employment_start_date column exists
-    const checkColumn = async () => {
+    const checkColumns = async () => {
       try {
-        const { data, error } = await supabase.rpc('check_column_exists', { 
+        // Check employment_start_date column
+        const { data: startDateExists, error: startDateError } = await supabase.rpc('check_column_exists', { 
           p_table_name: 'profiles', 
           p_column_name: 'employment_start_date' 
         });
         
-        if (error) {
-          console.error('Error checking column:', error);
+        if (startDateError) {
+          console.error('Error checking start date column:', startDateError);
           setHasEmploymentStartDateColumn(false);
           return;
         }
         
-        setHasEmploymentStartDateColumn(!!data);
+        setHasEmploymentStartDateColumn(!!startDateExists);
+        
+        // Check employment_status column
+        const { data: statusExists, error: statusError } = await supabase.rpc('check_column_exists', { 
+          p_table_name: 'profiles', 
+          p_column_name: 'employment_status' 
+        });
+        
+        if (statusError) {
+          console.error('Error checking status column:', statusError);
+          setHasEmploymentStatusColumn(false);
+          return;
+        }
+        
+        setHasEmploymentStatusColumn(!!statusExists);
       } catch (e) {
-        console.error('Exception checking column:', e);
+        console.error('Exception checking columns:', e);
         setHasEmploymentStartDateColumn(false);
+        setHasEmploymentStatusColumn(false);
       }
     };
     
-    checkColumn();
+    checkColumns();
   }, []);
   
   // Check if the current user has manager permissions
@@ -168,21 +185,23 @@ export default function JobDataSection({
                 </div>
               )}
               
-              <div className="space-y-2">
-                <Label htmlFor="employmentStatus">Employment Status</Label>
-                <Select 
-                  value={editForm.employmentStatus} 
-                  onValueChange={(value) => handleChange('employmentStatus', value)}
-                >
-                  <SelectTrigger id="employmentStatus">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full-time">Full-Time</SelectItem>
-                    <SelectItem value="part-time">Part-Time</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {hasEmploymentStatusColumn && (
+                <div className="space-y-2">
+                  <Label htmlFor="employmentStatus">Employment Status</Label>
+                  <Select 
+                    value={editForm.employmentStatus} 
+                    onValueChange={(value) => handleChange('employmentStatus', value)}
+                  >
+                    <SelectTrigger id="employmentStatus">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full-time">Full-Time</SelectItem>
+                      <SelectItem value="part-time">Part-Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -294,10 +313,12 @@ export default function JobDataSection({
             <p className="font-medium">{getWageDisplay()}</p>
           </div>
           
-          <div>
-            <p className="text-sm text-gray-500">Status</p>
-            <p className="font-medium capitalize">{profile.employment_status || 'Not specified'}</p>
-          </div>
+          {hasEmploymentStatusColumn && (
+            <div>
+              <p className="text-sm text-gray-500">Status</p>
+              <p className="font-medium capitalize">{profile.employment_status || 'Not specified'}</p>
+            </div>
+          )}
           
           {hasEmploymentStartDateColumn && (
             <div>

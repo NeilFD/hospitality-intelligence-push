@@ -937,6 +937,7 @@ export type Database = {
           contractor_rate: number | null
           created_at: string
           email: string | null
+          employment_status: string | null
           employment_type: string | null
           enhanced_availability: Json | null
           favourite_dish: string | null
@@ -970,6 +971,7 @@ export type Database = {
           contractor_rate?: number | null
           created_at?: string
           email?: string | null
+          employment_status?: string | null
           employment_type?: string | null
           enhanced_availability?: Json | null
           favourite_dish?: string | null
@@ -1003,6 +1005,7 @@ export type Database = {
           contractor_rate?: number | null
           created_at?: string
           email?: string | null
+          employment_status?: string | null
           employment_type?: string | null
           enhanced_availability?: Json | null
           favourite_dish?: string | null
