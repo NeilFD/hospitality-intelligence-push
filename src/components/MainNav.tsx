@@ -118,7 +118,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
             <NavItem 
               to="/hiq/chat" 
               label="Chat Assistant" 
-              icon="hospitality" 
+              icon="message-square" 
               active={activeHiqItem === 'chat'} 
             />
           </div>
