@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -538,6 +539,7 @@ const ProfilePage = () => {
       });
     }
     setIsEditing(false);
+    setActiveTab('job-data');
   };
 
   const handleSaveProfile = async () => {
@@ -582,6 +584,7 @@ const ProfilePage = () => {
       });
       
       setIsEditing(false);
+      setActiveTab('job-data');
       toast.success('Profile updated successfully');
       
       if (!userId && currentUserProfile) {
@@ -868,6 +871,390 @@ const ProfilePage = () => {
                 <TabsContent value="job-data">
                   <div className="grid gap-6">
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Employment Details</h3>
+                      <h3 className="text-lg font-semibold mb-4 flex justify-between items-center">
+                        <span>Employment Details</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleEditJobDetails}
+                          className="flex items-center"
+                        >
+                          <Pencil className="h-4 w-4 mr-1" /> Edit Job Details
+                        </Button>
+                      </h3>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Job Title</h4>
+                            <p className="font-medium">{profile.job_title || 'Not specified'}</p>
+                          </div>
+                          
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Employment Type</h4>
+                            <p className="font-medium capitalize">{profile.employment_type || 'Not specified'}</p>
+                          </div>
+                          
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Wage Rate</h4>
+                            <p className="font-medium">{getWageDisplay()}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Working Hours</h4>
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                              <div>
+                                <p className="text-xs text-gray-500">Daily</p>
+                                <p className="font-medium">
+                                  {profile.min_hours_per_day !== undefined 
+                                    ? `${profile.min_hours_per_day}-${profile.max_hours_per_day} hrs` 
+                                    : 'Not set'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Weekly</p>
+                                <p className="font-medium">
+                                  {profile.min_hours_per_week !== undefined 
+                                    ? `${profile.min_hours_per_week}-${profile.max_hours_per_week} hrs` 
+                                    : 'Not set'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Rota Availability</h4>
+                            <div className="flex items-center mt-1">
+                              {profile.available_for_rota ? (
+                                <Badge variant="secondary" className="flex items-center">
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Available for scheduling
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="flex items-center text-gray-500 bg-gray-100">
+                                  <X className="h-3 w-3 mr-1" />
+                                  Not available for scheduling
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
+              
+              {hasJobDataAccess() && (
+                <TabsContent value="job-data-edit">
+                  <div className="grid gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Edit Employment Details</h3>
+                      <form className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="jobTitle">Job Title</Label>
+                              <Select 
+                                value={editForm.jobTitle} 
+                                onValueChange={(value) => setEditForm({...editForm, jobTitle: value})}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a job title" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <div className="p-2 border-b">
+                                    <p className="text-sm font-semibold text-gray-500">Front of House</p>
+                                  </div>
+                                  {FOH_JOB_TITLES.map(title => (
+                                    <SelectItem key={title} value={title}>{title}</SelectItem>
+                                  ))}
+                                  <div className="p-2 border-b border-t">
+                                    <p className="text-sm font-semibold text-gray-500">Back of House</p>
+                                  </div>
+                                  {BOH_JOB_TITLES.map(title => (
+                                    <SelectItem key={title} value={title}>{title}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="employmentType">Employment Type</Label>
+                              <Select 
+                                value={editForm.employmentType} 
+                                onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select employment type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="hourly">Hourly</SelectItem>
+                                  <SelectItem value="salary">Salary</SelectItem>
+                                  <SelectItem value="contractor">Contractor</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {editForm.employmentType === 'hourly' && (
+                              <div>
+                                <Label htmlFor="wageRate">Hourly Rate (£)</Label>
+                                <Input 
+                                  id="wageRate" 
+                                  type="number" 
+                                  value={editForm.wageRate} 
+                                  onChange={(e) => setEditForm({...editForm, wageRate: parseFloat(e.target.value) || 0})}
+                                  min="0"
+                                  step="0.01"
+                                />
+                              </div>
+                            )}
+                            
+                            {editForm.employmentType === 'salary' && (
+                              <div>
+                                <Label htmlFor="annualSalary">Annual Salary (£)</Label>
+                                <Input 
+                                  id="annualSalary" 
+                                  type="number" 
+                                  value={editForm.annualSalary} 
+                                  onChange={(e) => setEditForm({...editForm, annualSalary: parseFloat(e.target.value) || 0})}
+                                  min="0"
+                                  step="100"
+                                />
+                              </div>
+                            )}
+                            
+                            {editForm.employmentType === 'contractor' && (
+                              <div>
+                                <Label htmlFor="contractorRate">Contractor Rate (£ per hour)</Label>
+                                <Input 
+                                  id="contractorRate" 
+                                  type="number" 
+                                  value={editForm.contractorRate} 
+                                  onChange={(e) => setEditForm({...editForm, contractorRate: parseFloat(e.target.value) || 0})}
+                                  min="0"
+                                  step="0.01"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Daily Hours</Label>
+                              <div className="grid grid-cols-2 gap-4 mt-2">
+                                <div>
+                                  <Label htmlFor="minHoursPerDay" className="text-xs">Minimum</Label>
+                                  <Input 
+                                    id="minHoursPerDay" 
+                                    type="number" 
+                                    value={editForm.minHoursPerDay} 
+                                    onChange={(e) => setEditForm({...editForm, minHoursPerDay: parseInt(e.target.value) || 0})}
+                                    min="0"
+                                    max="24"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="maxHoursPerDay" className="text-xs">Maximum</Label>
+                                  <Input 
+                                    id="maxHoursPerDay" 
+                                    type="number" 
+                                    value={editForm.maxHoursPerDay} 
+                                    onChange={(e) => setEditForm({...editForm, maxHoursPerDay: parseInt(e.target.value) || 0})}
+                                    min="0"
+                                    max="24"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <Label>Weekly Hours</Label>
+                              <div className="grid grid-cols-2 gap-4 mt-2">
+                                <div>
+                                  <Label htmlFor="minHoursPerWeek" className="text-xs">Minimum</Label>
+                                  <Input 
+                                    id="minHoursPerWeek" 
+                                    type="number" 
+                                    value={editForm.minHoursPerWeek} 
+                                    onChange={(e) => setEditForm({...editForm, minHoursPerWeek: parseInt(e.target.value) || 0})}
+                                    min="0"
+                                    max="168"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="maxHoursPerWeek" className="text-xs">Maximum</Label>
+                                  <Input 
+                                    id="maxHoursPerWeek" 
+                                    type="number" 
+                                    value={editForm.maxHoursPerWeek} 
+                                    onChange={(e) => setEditForm({...editForm, maxHoursPerWeek: parseInt(e.target.value) || 0})}
+                                    min="0"
+                                    max="168"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between pt-2">
+                              <Label htmlFor="availableForRota" className="cursor-pointer">Available for rota scheduling</Label>
+                              <Switch 
+                                id="availableForRota" 
+                                checked={editForm.availableForRota} 
+                                onCheckedChange={(checked) => setEditForm({...editForm, availableForRota: checked})}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" onClick={handleCancelEdit} type="button">
+                            Cancel
+                          </Button>
+                          <Button onClick={handleSaveProfile} type="button">
+                            Save Changes
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
+
+              {isCurrentUser && (
+                <TabsContent value="settings">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Personal Details</h3>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="firstName">First Name</Label>
+                            <Input 
+                              id="firstName" 
+                              value={editForm.firstName} 
+                              onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                              placeholder="First Name"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input 
+                              id="lastName" 
+                              value={editForm.lastName} 
+                              onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                              placeholder="Last Name"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="birthDate">Birth Date</Label>
+                          <Input 
+                            id="birthDate" 
+                            value={editForm.birthDate} 
+                            onChange={(e) => setEditForm({...editForm, birthDate: e.target.value})}
+                            placeholder="DD/MM/YYYY"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="favouriteDish">Favourite Dish</Label>
+                          <Input 
+                            id="favouriteDish" 
+                            value={editForm.favouriteDish} 
+                            onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
+                            placeholder="What's your favourite dish?"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="favouriteDrink">Favourite Drink</Label>
+                          <Input 
+                            id="favouriteDrink" 
+                            value={editForm.favouriteDrink} 
+                            onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
+                            placeholder="What's your favourite drink?"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">About Me</h3>
+                      <div>
+                        <Label htmlFor="aboutMe">Bio</Label>
+                        <Textarea 
+                          id="aboutMe" 
+                          value={editForm.aboutMe} 
+                          onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
+                          placeholder="Tell us about yourself..."
+                          className="min-h-[150px]"
+                        />
+                      </div>
+                      
+                      <div className="mt-6 flex justify-end space-x-2">
+                        <Button variant="outline" onClick={handleCancelEdit}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleSaveProfile}>
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
+              
+              {isCurrentUser && (
+                <TabsContent value="notifications">
+                  <div className="grid gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Push Notifications</h3>
+                      
+                      <div className="bg-gray-50 p-6 rounded-lg">
+                        {!isSupported ? (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500">Push notifications are not supported on this device.</p>
+                          </div>
+                        ) : isPermissionBlocked ? (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500">Notifications are blocked. Please update your browser permissions.</p>
+                            <Button className="mt-4" variant="outline" size="sm" onClick={() => window.open('chrome://settings/content/notifications')}>
+                              Open Browser Settings
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">Enable Push Notifications</h4>
+                              <p className="text-sm text-gray-500">Get notified about important updates and messages</p>
+                            </div>
+                            <Switch 
+                              checked={isSubscribed}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  subscribeUser();
+                                } else {
+                                  unsubscribeUser();
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default ProfilePage;
