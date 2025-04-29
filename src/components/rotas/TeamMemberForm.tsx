@@ -229,12 +229,28 @@ export default function TeamMemberForm({
               
               <div className="space-y-2">
                 <Label htmlFor="job_title">Job Title</Label>
-                <Input
-                  id="job_title"
-                  value={formData.job_title}
-                  onChange={(e) => handleChange('job_title', e.target.value)}
-                  placeholder="Job Title"
-                />
+                <Select 
+                  value={formData.job_role_id} 
+                  onValueChange={(value) => {
+                    // When job_role_id changes, also update job_title with the selected role's title
+                    handleChange('job_role_id', value);
+                    const selectedRole = jobRoles?.find(role => role.id === value);
+                    if (selectedRole) {
+                      handleChange('job_title', selectedRole.title);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="job_title">
+                    <SelectValue placeholder="Select a job title" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobRoles?.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
@@ -245,25 +261,6 @@ export default function TeamMemberForm({
                   onChange={(e) => handleChange('avatar_url', e.target.value)}
                   placeholder="https://example.com/photo.jpg"
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="job_role_id">Job Role</Label>
-                <Select 
-                  value={formData.job_role_id} 
-                  onValueChange={(value) => handleChange('job_role_id', value)}
-                >
-                  <SelectTrigger id="job_role_id">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jobRoles?.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
               
               <div className="space-y-2">

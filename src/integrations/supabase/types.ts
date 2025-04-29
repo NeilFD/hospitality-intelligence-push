@@ -945,7 +945,6 @@ export type Database = {
           first_name: string | null
           id: string
           in_ft_education: boolean | null
-          job_role_id: string | null
           job_title: string | null
           last_name: string | null
           max_hours_per_day: number | null
@@ -979,7 +978,6 @@ export type Database = {
           first_name?: string | null
           id: string
           in_ft_education?: boolean | null
-          job_role_id?: string | null
           job_title?: string | null
           last_name?: string | null
           max_hours_per_day?: number | null
@@ -1013,7 +1011,6 @@ export type Database = {
           first_name?: string | null
           id?: string
           in_ft_education?: boolean | null
-          job_role_id?: string | null
           job_title?: string | null
           last_name?: string | null
           max_hours_per_day?: number | null
