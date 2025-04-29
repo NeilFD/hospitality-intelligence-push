@@ -416,6 +416,19 @@ export interface UserProfile {
   favourite_dish: string | null;
   favourite_drink: string | null;
   about_me: string | null;
+  // Add job data fields
+  employment_type?: string;
+  wage_rate?: number;
+  annual_salary?: number;
+  contractor_rate?: number;
+  employment_start_date?: string;
+  employment_status?: string;
+  min_hours_per_week?: number;
+  max_hours_per_week?: number;
+  min_hours_per_day?: number;
+  max_hours_per_day?: number;
+  available_for_rota?: boolean;
+  in_ft_education?: boolean;
 }
 
 export interface DBSupplier {
