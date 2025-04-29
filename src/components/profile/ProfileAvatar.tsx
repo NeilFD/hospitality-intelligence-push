@@ -22,6 +22,7 @@ export function ProfileAvatar({
   highScore: propHighScore 
 }: ProfileAvatarProps) {
   const [highScore, setHighScore] = useState<number | undefined>(propHighScore);
+  const [isLoading, setIsLoading] = useState<boolean>(propHighScore === undefined);
 
   // Calculate size class based on the size prop
   const sizeClass = {
@@ -30,26 +31,45 @@ export function ProfileAvatar({
     'lg': 'h-14 w-14'
   }[size];
 
+  // Get star badge position and size based on avatar size
+  const getStarPosition = () => {
+    switch(size) {
+      case 'sm':
+        return 'scale-75 -top-1.5 -right-1.5';
+      case 'lg':
+        return '-top-2 -right-2 scale-110';
+      case 'md':
+      default:
+        return '-top-1 -right-1';
+    }
+  };
+
   // Fetch high score if not provided as a prop
   useEffect(() => {
     if (propHighScore !== undefined) {
       setHighScore(propHighScore);
+      setIsLoading(false);
       return;
     }
 
     const fetchHighScore = async () => {
       try {
+        setIsLoading(true);
         const score = await getProfileHighScore(profileId);
         setHighScore(score);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching high score:', error);
+        setIsLoading(false);
       }
     };
 
-    fetchHighScore();
+    if (profileId) {
+      fetchHighScore();
+    }
   }, [profileId, propHighScore]);
 
-  const shouldShowStar = highScore !== undefined && highScore >= 85;
+  const shouldShowStar = !isLoading && highScore !== undefined && highScore >= 85;
 
   return (
     <div className="relative">
@@ -59,7 +79,7 @@ export function ProfileAvatar({
         ) : null}
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
-      {shouldShowStar && <StarBadge className={size === 'sm' ? 'scale-75' : ''} />}
+      {shouldShowStar && <StarBadge className={getStarPosition()} />}
     </div>
   );
 }
