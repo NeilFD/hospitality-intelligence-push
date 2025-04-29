@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -7,7 +6,7 @@ import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell, Pencil, BriefcaseBusiness } from 'lucide-react';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell, Pencil, BriefcaseBusiness, Star } from 'lucide-react';
 import { useAuthStore } from '@/services/auth-service';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -28,6 +27,8 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import JobDataSection from '@/components/profile/JobDataSection';
+import HiScoreSection from '@/components/profile/HiScoreSection';
 
 // Extend the UserProfile type with the job data properties
 interface ExtendedUserProfile extends UserProfile {
@@ -117,7 +118,7 @@ const ProfilePage = () => {
   // Check if user has permission to view job data tab (GOD, SuperUser, or Owner)
   const hasJobDataAccess = () => {
     if (!currentUserProfile?.role) return false;
-    return ['GOD', 'SuperUser', 'Owner'].includes(currentUserProfile.role.toString());
+    return ['GOD', 'Super User', 'Owner', 'Manager'].includes(currentUserProfile.role.toString());
   };
 
   useEffect(() => {
@@ -601,25 +602,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleUpdateAvatar = (newAvatarUrl: string) => {
-    if (profile) {
-      console.log("Updating profile avatar to:", newAvatarUrl);
-      setProfile({
-        ...profile,
-        avatar_url: newAvatarUrl
-      });
-      
-      if (isCurrentUser && currentUserProfile) {
-        useAuthStore.setState({
-          profile: {
-            ...currentUserProfile,
-            avatar_url: newAvatarUrl
-          }
-        });
-      }
-    }
-  };
-
   // New function to handle the "Edit Job Details" button click
   const handleEditJobDetails = () => {
     setActiveTab('job-data-edit');
@@ -643,19 +625,6 @@ const ProfilePage = () => {
   }
   
   const isCurrentUser = !userId || userId === currentUserProfile?.id;
-
-  // Function to get the wage display based on employment type
-  const getWageDisplay = () => {
-    const extendedProfile = profile as ExtendedUserProfile;
-    if (extendedProfile.employment_type === 'hourly') {
-      return `£${extendedProfile.wage_rate || 0}/hr`;
-    } else if (extendedProfile.employment_type === 'salary') {
-      return `£${extendedProfile.annual_salary?.toLocaleString() || 0}/year`;
-    } else if (extendedProfile.employment_type === 'contractor') {
-      return `£${extendedProfile.contractor_rate || 0}/hr (contractor)`;
-    }
-    return 'Not specified';
-  };
 
   return (
     <div className="container mx-auto p-4">
@@ -794,14 +763,23 @@ const ProfilePage = () => {
               <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg w-full">
                 <TabsTrigger value="about" className="rounded-md w-full">About</TabsTrigger>
                 
-                {/* Only show Job Data tab to users with appropriate permissions */}
+                {/* Only show Job Data tabs to users with appropriate permissions */}
                 {hasJobDataAccess() && (
-                  <TabsTrigger value="job-data" className="rounded-md w-full">
-                    <div className="flex items-center justify-center">
-                      <BriefcaseBusiness className="h-4 w-4 mr-2" />
-                      Job Data
-                    </div>
-                  </TabsTrigger>
+                  <>
+                    <TabsTrigger value="job-data" className="rounded-md w-full">
+                      <div className="flex items-center justify-center">
+                        <BriefcaseBusiness className="h-4 w-4 mr-2" />
+                        Job Data
+                      </div>
+                    </TabsTrigger>
+                    
+                    <TabsTrigger value="hi-score" className="rounded-md w-full">
+                      <div className="flex items-center justify-center">
+                        <Star className="h-4 w-4 mr-2" />
+                        Hi Score
+                      </div>
+                    </TabsTrigger>
+                  </>
                 )}
                 
                 {isCurrentUser && (
@@ -822,6 +800,7 @@ const ProfilePage = () => {
                 )}
               </TabsList>
               
+              {/* About Tab */}
               <TabsContent value="about">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
@@ -867,262 +846,49 @@ const ProfilePage = () => {
                 </div>
               </TabsContent>
               
+              {/* Job Data Tab */}
               {hasJobDataAccess() && (
                 <TabsContent value="job-data">
-                  <div className="grid gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4 flex justify-between items-center">
-                        <span>Employment Details</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={handleEditJobDetails}
-                          className="flex items-center"
-                        >
-                          <Pencil className="h-4 w-4 mr-1" /> Edit Job Details
-                        </Button>
-                      </h3>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Job Title</h4>
-                            <p className="font-medium">{profile.job_title || 'Not specified'}</p>
-                          </div>
-                          
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Employment Type</h4>
-                            <p className="font-medium capitalize">{profile.employment_type || 'Not specified'}</p>
-                          </div>
-                          
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Wage Rate</h4>
-                            <p className="font-medium">{getWageDisplay()}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Working Hours</h4>
-                            <div className="grid grid-cols-2 gap-2 mt-1">
-                              <div>
-                                <p className="text-xs text-gray-500">Daily</p>
-                                <p className="font-medium">
-                                  {profile.min_hours_per_day !== undefined 
-                                    ? `${profile.min_hours_per_day}-${profile.max_hours_per_day} hrs` 
-                                    : 'Not set'}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Weekly</p>
-                                <p className="font-medium">
-                                  {profile.min_hours_per_week !== undefined 
-                                    ? `${profile.min_hours_per_week}-${profile.max_hours_per_week} hrs` 
-                                    : 'Not set'}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Rota Availability</h4>
-                            <div className="flex items-center mt-1">
-                              {profile.available_for_rota ? (
-                                <Badge variant="secondary" className="flex items-center">
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Available for scheduling
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="flex items-center text-gray-500 bg-gray-100">
-                                  <X className="h-3 w-3 mr-1" />
-                                  Not available for scheduling
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  <JobDataSection
+                    profile={profile}
+                    isEditing={false}
+                    editForm={editForm}
+                    setEditForm={setEditForm}
+                    onCancel={handleCancelEdit}
+                    onEditJobDetails={handleEditJobDetails}
+                  />
+                </TabsContent>
+              )}
+              
+              {/* Job Data Edit Tab */}
+              {hasJobDataAccess() && (
+                <TabsContent value="job-data-edit">
+                  <JobDataSection
+                    profile={profile}
+                    isEditing={true}
+                    editForm={editForm}
+                    setEditForm={setEditForm}
+                    onCancel={() => setActiveTab('job-data')}
+                    onEditJobDetails={handleEditJobDetails}
+                  />
+                  
+                  <div className="flex justify-end mt-4">
+                    <Button onClick={handleSaveProfile} className="bg-hi-purple hover:bg-hi-purple-dark">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </Button>
                   </div>
                 </TabsContent>
               )}
               
+              {/* Hi Score Tab */}
               {hasJobDataAccess() && (
-                <TabsContent value="job-data-edit">
-                  <div className="grid gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Edit Employment Details</h3>
-                      <form className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="jobTitle">Job Title</Label>
-                              <Select 
-                                value={editForm.jobTitle} 
-                                onValueChange={(value) => setEditForm({...editForm, jobTitle: value})}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a job title" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <div className="p-2 border-b">
-                                    <p className="text-sm font-semibold text-gray-500">Front of House</p>
-                                  </div>
-                                  {FOH_JOB_TITLES.map(title => (
-                                    <SelectItem key={title} value={title}>{title}</SelectItem>
-                                  ))}
-                                  <div className="p-2 border-b border-t">
-                                    <p className="text-sm font-semibold text-gray-500">Back of House</p>
-                                  </div>
-                                  {BOH_JOB_TITLES.map(title => (
-                                    <SelectItem key={title} value={title}>{title}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="employmentType">Employment Type</Label>
-                              <Select 
-                                value={editForm.employmentType} 
-                                onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select employment type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="hourly">Hourly</SelectItem>
-                                  <SelectItem value="salary">Salary</SelectItem>
-                                  <SelectItem value="contractor">Contractor</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            {editForm.employmentType === 'hourly' && (
-                              <div>
-                                <Label htmlFor="wageRate">Hourly Rate (£)</Label>
-                                <Input 
-                                  id="wageRate" 
-                                  type="number" 
-                                  value={editForm.wageRate} 
-                                  onChange={(e) => setEditForm({...editForm, wageRate: parseFloat(e.target.value) || 0})}
-                                  min="0"
-                                  step="0.01"
-                                />
-                              </div>
-                            )}
-                            
-                            {editForm.employmentType === 'salary' && (
-                              <div>
-                                <Label htmlFor="annualSalary">Annual Salary (£)</Label>
-                                <Input 
-                                  id="annualSalary" 
-                                  type="number" 
-                                  value={editForm.annualSalary} 
-                                  onChange={(e) => setEditForm({...editForm, annualSalary: parseFloat(e.target.value) || 0})}
-                                  min="0"
-                                  step="100"
-                                />
-                              </div>
-                            )}
-                            
-                            {editForm.employmentType === 'contractor' && (
-                              <div>
-                                <Label htmlFor="contractorRate">Contractor Rate (£ per hour)</Label>
-                                <Input 
-                                  id="contractorRate" 
-                                  type="number" 
-                                  value={editForm.contractorRate} 
-                                  onChange={(e) => setEditForm({...editForm, contractorRate: parseFloat(e.target.value) || 0})}
-                                  min="0"
-                                  step="0.01"
-                                />
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div>
-                              <Label>Daily Hours</Label>
-                              <div className="grid grid-cols-2 gap-4 mt-2">
-                                <div>
-                                  <Label htmlFor="minHoursPerDay" className="text-xs">Minimum</Label>
-                                  <Input 
-                                    id="minHoursPerDay" 
-                                    type="number" 
-                                    value={editForm.minHoursPerDay} 
-                                    onChange={(e) => setEditForm({...editForm, minHoursPerDay: parseInt(e.target.value) || 0})}
-                                    min="0"
-                                    max="24"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="maxHoursPerDay" className="text-xs">Maximum</Label>
-                                  <Input 
-                                    id="maxHoursPerDay" 
-                                    type="number" 
-                                    value={editForm.maxHoursPerDay} 
-                                    onChange={(e) => setEditForm({...editForm, maxHoursPerDay: parseInt(e.target.value) || 0})}
-                                    min="0"
-                                    max="24"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <Label>Weekly Hours</Label>
-                              <div className="grid grid-cols-2 gap-4 mt-2">
-                                <div>
-                                  <Label htmlFor="minHoursPerWeek" className="text-xs">Minimum</Label>
-                                  <Input 
-                                    id="minHoursPerWeek" 
-                                    type="number" 
-                                    value={editForm.minHoursPerWeek} 
-                                    onChange={(e) => setEditForm({...editForm, minHoursPerWeek: parseInt(e.target.value) || 0})}
-                                    min="0"
-                                    max="168"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="maxHoursPerWeek" className="text-xs">Maximum</Label>
-                                  <Input 
-                                    id="maxHoursPerWeek" 
-                                    type="number" 
-                                    value={editForm.maxHoursPerWeek} 
-                                    onChange={(e) => setEditForm({...editForm, maxHoursPerWeek: parseInt(e.target.value) || 0})}
-                                    min="0"
-                                    max="168"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between pt-2">
-                              <Label htmlFor="availableForRota" className="cursor-pointer">Available for rota scheduling</Label>
-                              <Switch 
-                                id="availableForRota" 
-                                checked={editForm.availableForRota} 
-                                onCheckedChange={(checked) => setEditForm({...editForm, availableForRota: checked})}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="outline" onClick={handleCancelEdit} type="button">
-                            Cancel
-                          </Button>
-                          <Button onClick={handleSaveProfile} type="button">
-                            Save Changes
-                          </Button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
+                <TabsContent value="hi-score">
+                  {profile?.id && <HiScoreSection profileId={profile.id} />}
                 </TabsContent>
               )}
-
+              
+              {/* Settings Tab */}
               {isCurrentUser && (
                 <TabsContent value="settings">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

@@ -338,6 +338,90 @@ export type Database = {
           },
         ]
       }
+      hi_score_evaluations: {
+        Row: {
+          adaptability: number | null
+          cooking_skills: number | null
+          created_at: string
+          evaluation_date: string
+          evaluator_id: string
+          foh_knowledge: number | null
+          food_knowledge: number | null
+          friendliness: number | null
+          hospitality: number | null
+          id: string
+          internal_team_skills: number | null
+          is_signed_off: boolean
+          notes: string | null
+          profile_id: string
+          role_type: Database["public"]["Enums"]["role_type"]
+          service_skills: number | null
+          team_player: number | null
+          updated_at: string
+          weighted_score: number
+          work_ethic: number | null
+        }
+        Insert: {
+          adaptability?: number | null
+          cooking_skills?: number | null
+          created_at?: string
+          evaluation_date?: string
+          evaluator_id: string
+          foh_knowledge?: number | null
+          food_knowledge?: number | null
+          friendliness?: number | null
+          hospitality?: number | null
+          id?: string
+          internal_team_skills?: number | null
+          is_signed_off?: boolean
+          notes?: string | null
+          profile_id: string
+          role_type: Database["public"]["Enums"]["role_type"]
+          service_skills?: number | null
+          team_player?: number | null
+          updated_at?: string
+          weighted_score: number
+          work_ethic?: number | null
+        }
+        Update: {
+          adaptability?: number | null
+          cooking_skills?: number | null
+          created_at?: string
+          evaluation_date?: string
+          evaluator_id?: string
+          foh_knowledge?: number | null
+          food_knowledge?: number | null
+          friendliness?: number | null
+          hospitality?: number | null
+          id?: string
+          internal_team_skills?: number | null
+          is_signed_off?: boolean
+          notes?: string | null
+          profile_id?: string
+          role_type?: Database["public"]["Enums"]["role_type"]
+          service_skills?: number | null
+          team_player?: number | null
+          updated_at?: string
+          weighted_score?: number
+          work_ethic?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_score_evaluations_evaluator_id_fkey"
+            columns: ["evaluator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hi_score_evaluations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospitality_guides: {
         Row: {
           archived: boolean
@@ -866,6 +950,7 @@ export type Database = {
           password_hash: string | null
           performance_score: number | null
           role: Database["public"]["Enums"]["user_role"] | null
+          role_type: Database["public"]["Enums"]["role_type"] | null
           updated_at: string
           wage_rate: number | null
         }
@@ -894,6 +979,7 @@ export type Database = {
           password_hash?: string | null
           performance_score?: number | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          role_type?: Database["public"]["Enums"]["role_type"] | null
           updated_at?: string
           wage_rate?: number | null
         }
@@ -922,6 +1008,7 @@ export type Database = {
           password_hash?: string | null
           performance_score?: number | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          role_type?: Database["public"]["Enums"]["role_type"] | null
           updated_at?: string
           wage_rate?: number | null
         }
@@ -2641,6 +2728,7 @@ export type Database = {
         | "team"
       poll_option_type: "text" | "image"
       revenue_tag_scope: "food" | "beverage" | "both"
+      role_type: "foh" | "kitchen"
       user_role: "Owner" | "Manager" | "Team Member" | "GOD" | "Super User"
       wage_target_type: "percent" | "absolute" | "hours"
     }
@@ -2774,6 +2862,7 @@ export const Constants = {
       ],
       poll_option_type: ["text", "image"],
       revenue_tag_scope: ["food", "beverage", "both"],
+      role_type: ["foh", "kitchen"],
       user_role: ["Owner", "Manager", "Team Member", "GOD", "Super User"],
       wage_target_type: ["percent", "absolute", "hours"],
     },
