@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { formatTime } from '@/lib/date-utils';
 import {
@@ -49,10 +48,10 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return hours + (minutes / 60);
   };
   
-  // Handle 00:00 end time specially - always treat as hour 24
+  // CRITICAL: Ensure 00:00 end time is ALWAYS treated as hour 24.0 (end of day)
   const normalizeTime = (timeString: string, isEndTime = false): number => {
     if (isEndTime && timeString === "00:00") {
-      return 24.0; // Midnight end time is always hour 24 (end of day)
+      return 24.0;  // Midnight end time is ALWAYS the end of the day (hour 24)
     }
     return timeToDecimal(timeString);
   };
@@ -60,7 +59,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
   // Determine chart boundaries from opening hours
   const startHour = Math.floor(normalizeTime(openingHours.start));
   
-  // For the end hour, if it's 00:00, treat it as 24
+  // Ensure end hour properly handles midnight (00:00)
   const endHourRaw = normalizeTime(openingHours.end, true);
   const endHour = Math.ceil(endHourRaw);
   const totalHours = endHour - startHour;
@@ -80,7 +79,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
   const staffingByHour = useMemo(() => {
     const hours: StaffingByHour[] = [];
     
-    // Initialize each hour slot - make sure we have all needed hours
+    // Initialize all required hour slots - critical for correct chart display
     for (let i = 0; i <= totalHours; i++) {
       const hourValue = (startHour + i) % 24;
       hours.push({
@@ -108,8 +107,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
         const hourSlot = hours[i];
         const hourAbsolute = startHour + i;
         
-        // If this hour is within the shift timeframe, include it
-        // For midnight ending shifts (00:00/24.0), make sure to include the 23:00-00:00 hour
+        // CRITICAL: Ensure hours are included correctly, especially for midnight ending shifts
         if (ruleStart <= hourAbsolute && hourAbsolute < ruleEnd) {
           hourSlot[category].min += rule.min_staff;
           hourSlot[category].max += rule.max_staff;
@@ -124,6 +122,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Calculate totals for all hours
   const hourlyTotals = useMemo(() => {
+    // ... keep existing code (hourly totals calculation)
     let fohMinTotal = 0;
     let fohMaxTotal = 0;
     let kitchenMinTotal = 0;
@@ -147,13 +146,14 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     };
   }, [staffingByHour]);
 
-  // Calculate position for a shift block - ensure 00:00 is displayed at the end of the chart
+  // CRITICAL FIX: Calculate position for a shift block to correctly display 00:00 at the end of chart
   const getShiftStyle = (rule: ShiftRule) => {
-    // Critical: Normalize times correctly to handle 00:00 as hour 24
+    // Always normalize the times to ensure 00:00 end time is treated as hour 24.0
     const startDecimal = normalizeTime(rule.start_time);
     const endDecimal = normalizeTime(rule.end_time, true);
     
     // Calculate percentages based on chart boundaries
+    // This is what positions the shift blocks correctly on the chart
     const startPercent = ((startDecimal - startHour) / totalHours) * 100;
     const widthPercent = ((endDecimal - startDecimal) / totalHours) * 100;
     
