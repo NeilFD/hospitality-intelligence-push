@@ -110,13 +110,16 @@ export const fetchTotalWagesForMonth = async (year: number, month: number): Prom
 
 export const upsertDailyWages = async (wages: DailyWages) => {
   try {
-    console.log('Saving wages directly to "wages" table:', wages);
+    console.log('============= WAGE SAVE OPERATION START =============');
+    console.log('Wages data to be saved:', JSON.stringify(wages, null, 2));
 
     const formattedMonth = String(wages.month).padStart(2, '0');
     const formattedDay = String(wages.day).padStart(2, '0');
     const formattedDate = `${wages.year}-${formattedMonth}-${formattedDay}`;
+    console.log('Formatted date for record:', formattedDate);
 
     // Check if a record exists for this date
+    console.log(`Checking for existing record: year=${wages.year}, month=${wages.month}, day=${wages.day}`);
     const { data: existingRecord, error: selectError } = await supabase
       .from('wages')
       .select('id')
@@ -126,12 +129,24 @@ export const upsertDailyWages = async (wages: DailyWages) => {
       .maybeSingle();
 
     if (selectError) {
-      console.error('Error checking for existing wage record:', selectError);
+      console.error('ERROR checking for existing wage record:', selectError);
+      console.error('Error details:', JSON.stringify(selectError, null, 2));
       throw selectError;
     }
 
+    console.log('Existing record check result:', existingRecord);
+
     if (existingRecord) {
       // Update existing record
+      console.log(`Updating existing record with ID: ${existingRecord.id}`);
+      console.log('Update payload:', {
+        foh_wages: wages.fohWages || 0,
+        kitchen_wages: wages.kitchenWages || 0,
+        food_revenue: wages.foodRevenue || 0,
+        bev_revenue: wages.bevRevenue || 0,
+        updated_at: new Date().toISOString()
+      });
+      
       const { data: updateData, error: updateError } = await supabase
         .from('wages')
         .update({
@@ -145,39 +160,50 @@ export const upsertDailyWages = async (wages: DailyWages) => {
         .select();
 
       if (updateError) {
-        console.error('Error updating wage record:', updateError);
+        console.error('ERROR updating wage record:', updateError);
+        console.error('Error details:', JSON.stringify(updateError, null, 2));
         throw updateError;
       }
 
-      console.log('Successfully updated wage record:', updateData);
+      console.log('UPDATE SUCCESSFUL. Response data:', JSON.stringify(updateData, null, 2));
+      console.log('============= WAGE SAVE OPERATION END =============');
       return updateData;
     } else {
       // Insert new record
+      console.log('No existing record found. Creating new wage record');
+      const insertPayload = {
+        year: wages.year,
+        month: wages.month,
+        day: wages.day,
+        date: formattedDate,
+        day_of_week: wages.dayOfWeek,
+        foh_wages: wages.fohWages || 0,
+        kitchen_wages: wages.kitchenWages || 0,
+        food_revenue: wages.foodRevenue || 0,
+        bev_revenue: wages.bevRevenue || 0
+      };
+      console.log('Insert payload:', insertPayload);
+      
       const { data: insertData, error: insertError } = await supabase
         .from('wages')
-        .insert({
-          year: wages.year,
-          month: wages.month,
-          day: wages.day,
-          date: formattedDate,
-          day_of_week: wages.dayOfWeek,
-          foh_wages: wages.fohWages || 0,
-          kitchen_wages: wages.kitchenWages || 0,
-          food_revenue: wages.foodRevenue || 0,
-          bev_revenue: wages.bevRevenue || 0
-        })
+        .insert(insertPayload)
         .select();
 
       if (insertError) {
-        console.error('Error inserting wage record:', insertError);
+        console.error('ERROR inserting wage record:', insertError);
+        console.error('Error details:', JSON.stringify(insertError, null, 2));
         throw insertError;
       }
 
-      console.log('Successfully inserted wage record:', insertData);
+      console.log('INSERT SUCCESSFUL. Response data:', JSON.stringify(insertData, null, 2));
+      console.log('============= WAGE SAVE OPERATION END =============');
       return insertData;
     }
   } catch (error) {
-    console.error('Failed to upsert wages:', error);
+    console.error('CRITICAL FAILURE in upsertDailyWages function:', error);
+    console.error('Error object details:', JSON.stringify(error, null, 2));
+    console.error('Original wages data:', JSON.stringify(wages, null, 2));
+    console.error('============= WAGE SAVE OPERATION FAILED =============');
     throw error;
   }
 };
