@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -245,7 +246,7 @@ const TeamManagementPanel: React.FC = () => {
         min_hours_per_week: editForm.minHoursPerWeek,
         max_hours_per_week: editForm.maxHoursPerWeek,
         min_hours_per_day: editForm.minHoursPerDay,
-        max_hoursPerDay: editForm.maxHoursPerDay,
+        max_hours_per_day: editForm.maxHoursPerDay,
         available_for_rota: editForm.availableForRota,
         in_ft_education: editForm.inFtEducation
       };
@@ -905,4 +906,377 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                   value={editForm.aboutMe}
                   onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
                   placeholder="Share something about yourself"
-                  className="min-h-[10
+                  className="min-h-[100px]"
+                />
+              </div>
+              
+              {canManageUsers && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    value={editForm.password}
+                    onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                    placeholder="Enter new password"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave blank to keep current password. New password must be at least 8 characters.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="employment" className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg mb-4 flex items-start gap-2">
+                <BriefcaseBusiness className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-blue-800">Employment Details</h3>
+                  <p className="text-sm text-blue-700">
+                    This information is used for payroll, scheduling, and other administrative purposes.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="employmentType">Employment Type</Label>
+                <Select 
+                  value={editForm.employmentType} 
+                  onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
+                >
+                  <SelectTrigger id="employmentType">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                    <SelectItem value="salaried">Salaried</SelectItem>
+                    <SelectItem value="contractor">Contractor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {editForm.employmentType === 'hourly' && (
+                <div className="space-y-2">
+                  <Label htmlFor="wageRate">Hourly Wage Rate</Label>
+                  <Input 
+                    id="wageRate" 
+                    type="number" 
+                    value={editForm.wageRate}
+                    onChange={(e) => setEditForm({...editForm, wageRate: parseFloat(e.target.value) || 0})}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
+              
+              {editForm.employmentType === 'salaried' && (
+                <div className="space-y-2">
+                  <Label htmlFor="annualSalary">Annual Salary</Label>
+                  <Input 
+                    id="annualSalary" 
+                    type="number" 
+                    value={editForm.annualSalary}
+                    onChange={(e) => setEditForm({...editForm, annualSalary: parseFloat(e.target.value) || 0})}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
+              
+              {editForm.employmentType === 'contractor' && (
+                <div className="space-y-2">
+                  <Label htmlFor="contractorRate">Contractor Rate</Label>
+                  <Input 
+                    id="contractorRate" 
+                    type="number" 
+                    value={editForm.contractorRate}
+                    onChange={(e) => setEditForm({...editForm, contractorRate: parseFloat(e.target.value) || 0})}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="employmentStartDate">Employment Start Date</Label>
+                <Input 
+                  id="employmentStartDate" 
+                  type="date" 
+                  value={editForm.employmentStartDate}
+                  onChange={(e) => setEditForm({...editForm, employmentStartDate: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="employmentStatus">Employment Status</Label>
+                <Select 
+                  value={editForm.employmentStatus} 
+                  onValueChange={(value) => setEditForm({...editForm, employmentStatus: value})}
+                >
+                  <SelectTrigger id="employmentStatus">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full-time">Full-time</SelectItem>
+                    <SelectItem value="part-time">Part-time</SelectItem>
+                    <SelectItem value="seasonal">Seasonal</SelectItem>
+                    <SelectItem value="temporary">Temporary</SelectItem>
+                    <SelectItem value="probation">Probation</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minHoursPerWeek">Minimum Hours/Week</Label>
+                  <Input 
+                    id="minHoursPerWeek" 
+                    type="number" 
+                    value={editForm.minHoursPerWeek}
+                    onChange={(e) => setEditForm({...editForm, minHoursPerWeek: parseInt(e.target.value) || 0})}
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxHoursPerWeek">Maximum Hours/Week</Label>
+                  <Input 
+                    id="maxHoursPerWeek" 
+                    type="number" 
+                    value={editForm.maxHoursPerWeek}
+                    onChange={(e) => setEditForm({...editForm, maxHoursPerWeek: parseInt(e.target.value) || 0})}
+                    min="0"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minHoursPerDay">Minimum Hours/Day</Label>
+                  <Input 
+                    id="minHoursPerDay" 
+                    type="number" 
+                    value={editForm.minHoursPerDay}
+                    onChange={(e) => setEditForm({...editForm, minHoursPerDay: parseInt(e.target.value) || 0})}
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxHoursPerDay">Maximum Hours/Day</Label>
+                  <Input 
+                    id="maxHoursPerDay" 
+                    type="number" 
+                    value={editForm.maxHoursPerDay}
+                    onChange={(e) => setEditForm({...editForm, maxHoursPerDay: parseInt(e.target.value) || 0})}
+                    min="0"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="availableForRota"
+                  checked={editForm.availableForRota}
+                  onChange={(e) => setEditForm({...editForm, availableForRota: e.target.checked})}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="availableForRota" className="text-sm font-medium">
+                  Available for rota scheduling
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="inFtEducation"
+                  checked={editForm.inFtEducation}
+                  onChange={(e) => setEditForm({...editForm, inFtEducation: e.target.checked})}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="inFtEducation" className="text-sm font-medium">
+                  In full-time education
+                </Label>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setIsEditUserDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditUser}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {selectedUser?.first_name} {selectedUser?.last_name}'s profile from the system.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleDeleteUser}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete User'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <Dialog open={isAddProfileDialogOpen} onOpenChange={setIsAddProfileDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Team Member</DialogTitle>
+            <DialogDescription>
+              Create a new account for a team member. They will receive an email to set their password.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input 
+                  id="firstName" 
+                  value={newProfileForm.firstName}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, firstName: e.target.value})}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input 
+                  id="lastName" 
+                  value={newProfileForm.lastName}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, lastName: e.target.value})}
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                value={newProfileForm.email}
+                onChange={(e) => setNewProfileForm({...newProfileForm, email: e.target.value})}
+                placeholder="email@example.com"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select 
+                  value={newProfileForm.role} 
+                  onValueChange={(value: UserRoleType) => setNewProfileForm({...newProfileForm, role: value})}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isGod && (
+                      <>
+                        <SelectItem value="GOD">GOD</SelectItem>
+                        <SelectItem value="Super User">Super User</SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Team Member">Team Member</SelectItem>
+                    <SelectItem value="Owner">Owner</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input 
+                  id="jobTitle" 
+                  value={newProfileForm.jobTitle}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
+                  placeholder="Job title"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddProfileDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateProfile} disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Profile'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Account Instructions</DialogTitle>
+            <DialogDescription>
+              Send account setup instructions to {selectedUser?.first_name} {selectedUser?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Recipient:</span>
+              <span className="text-sm">{selectedUser?.email}</span>
+            </div>
+            
+            <div className="p-4 bg-gray-50 rounded-md border">
+              <pre className="whitespace-pre-wrap text-xs">
+                {getSignupInstructions(selectedUser)}
+              </pre>
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => handleCopyToClipboard(getSignupInstructions(selectedUser))}
+                className="flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                <span>Copy Text</span>
+              </Button>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => handleOpenEmail(selectedUser)}>
+              Open in Email Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default TeamManagementPanel;
