@@ -54,6 +54,12 @@ export default function HiScoreHistory({ profileId, onViewEvaluation }: HiScoreH
       fetchEvaluations();
     }
   }, [profileId]);
+
+  // Function to export latest high score for profile badge
+  const getLatestEvaluationScore = () => {
+    if (evaluations.length === 0) return 0;
+    return evaluations[0].weighted_score * 10;
+  };
   
   if (loading) {
     return (
@@ -140,3 +146,21 @@ export default function HiScoreHistory({ profileId, onViewEvaluation }: HiScoreH
     </Card>
   );
 }
+
+// Export the score function for other components to use
+export const getProfileHighScore = async (profileId: string): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('hi_score_evaluations')
+      .select('weighted_score')
+      .eq('profile_id', profileId)
+      .order('evaluation_date', { ascending: false })
+      .limit(1);
+    
+    if (error || !data || data.length === 0) return 0;
+    return data[0].weighted_score * 10;
+  } catch (error) {
+    console.error('Error fetching evaluation score:', error);
+    return 0;
+  }
+};

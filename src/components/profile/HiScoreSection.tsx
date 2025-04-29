@@ -6,20 +6,22 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { HiScoreMatrix } from './HiScoreMatrix';
-import HiScoreHistory from './HiScoreHistory';
+import HiScoreHistory, { getProfileHighScore } from './HiScoreHistory';
 import { Plus, Star } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface HiScoreSectionProps {
   profileId: string;
+  onScoreUpdate?: (highScore: number) => void;
 }
 
-export default function HiScoreSection({ profileId }: HiScoreSectionProps) {
+export default function HiScoreSection({ profileId, onScoreUpdate }: HiScoreSectionProps) {
   const { profile: currentUserProfile } = useAuthStore();
   const [isCreating, setIsCreating] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('history');
   const [roleType, setRoleType] = useState<'foh' | 'kitchen'>('foh');
+  const [highScore, setHighScore] = useState<number>(0);
   
   // Fetch the profile on mount to get the role_type
   useEffect(() => {
@@ -43,6 +45,19 @@ export default function HiScoreSection({ profileId }: HiScoreSectionProps) {
     
     fetchProfile();
   }, [profileId]);
+
+  // Fetch the latest high score when the component mounts
+  useEffect(() => {
+    const fetchHighScore = async () => {
+      const score = await getProfileHighScore(profileId);
+      setHighScore(score);
+      if (onScoreUpdate) {
+        onScoreUpdate(score);
+      }
+    };
+
+    fetchHighScore();
+  }, [profileId, onScoreUpdate]);
   
   // Check if the current user has manager permissions
   const hasManagerPermissions = currentUserProfile?.role && 

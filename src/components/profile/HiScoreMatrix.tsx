@@ -21,6 +21,7 @@ import { Heart, Smile, Handshake, Utensils, Book, BriefcaseBusiness, Brain } fro
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
 
 interface HiScoreMatrixProps {
   profileId: string;
@@ -61,6 +62,21 @@ export function HiScoreMatrix({
   
   const [comments, setComments] = useState(existingEvaluation?.comments || '');
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  
+  // State for category-specific feedback
+  const [categoryFeedback, setCategoryFeedback] = useState<Record<string, string>>({
+    hospitality: existingEvaluation?.hospitality_feedback || '',
+    friendliness: existingEvaluation?.friendliness_feedback || '',
+    internalTeamSkills: existingEvaluation?.internal_team_skills_feedback || '',
+    serviceSkills: existingEvaluation?.service_skills_feedback || '',
+    fohKnowledge: existingEvaluation?.foh_knowledge_feedback || '',
+    workEthic: existingEvaluation?.work_ethic_feedback || '',
+    teamPlayer: existingEvaluation?.team_player_feedback || '',
+    adaptability: existingEvaluation?.adaptability_feedback || '',
+    cookingSkills: existingEvaluation?.cooking_skills_feedback || '',
+    foodKnowledge: existingEvaluation?.food_knowledge_feedback || '',
+  });
   
   // Reset scores when role type changes
   useEffect(() => {
@@ -82,10 +98,48 @@ export function HiScoreMatrix({
     setComments(e.target.value);
   };
   
+  const handleCategoryFeedbackChange = (category: string, value: string) => {
+    setCategoryFeedback(prev => ({
+      ...prev,
+      [category]: value
+    }));
+    
+    // Clear error for this field if it exists
+    if (formErrors[category]) {
+      setFormErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[category];
+        return newErrors;
+      });
+    }
+  };
+  
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    const categories = roleType === 'foh' 
+      ? ['hospitality', 'friendliness', 'internalTeamSkills', 'serviceSkills', 'fohKnowledge']
+      : ['workEthic', 'teamPlayer', 'adaptability', 'cookingSkills', 'foodKnowledge'];
+    
+    categories.forEach(category => {
+      if (!categoryFeedback[category]?.trim()) {
+        errors[category] = 'Feedback is required for this category';
+      }
+    });
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
   const handleSave = async () => {
     try {
       if (!profile?.id) {
         toast.error('You must be logged in to submit evaluations');
+        return;
+      }
+      
+      // Validate form first
+      if (!validateForm()) {
+        toast.error('Please provide feedback for all categories');
         return;
       }
       
@@ -108,6 +162,11 @@ export function HiScoreMatrix({
           internal_team_skills: scores.internalTeamSkills,
           service_skills: scores.serviceSkills,
           foh_knowledge: scores.fohKnowledge,
+          hospitality_feedback: categoryFeedback.hospitality,
+          friendliness_feedback: categoryFeedback.friendliness,
+          internal_team_skills_feedback: categoryFeedback.internalTeamSkills,
+          service_skills_feedback: categoryFeedback.serviceSkills,
+          foh_knowledge_feedback: categoryFeedback.fohKnowledge,
           weighted_score: weightedScore,
           comments: comments,
           evaluation_date: new Date().toISOString(),
@@ -122,6 +181,11 @@ export function HiScoreMatrix({
           adaptability: scores.adaptability,
           cooking_skills: scores.cookingSkills,
           food_knowledge: scores.foodKnowledge,
+          work_ethic_feedback: categoryFeedback.workEthic,
+          team_player_feedback: categoryFeedback.teamPlayer,
+          adaptability_feedback: categoryFeedback.adaptability,
+          cooking_skills_feedback: categoryFeedback.cookingSkills,
+          food_knowledge_feedback: categoryFeedback.foodKnowledge,
           weighted_score: weightedScore,
           comments: comments,
           evaluation_date: new Date().toISOString(),
@@ -151,6 +215,18 @@ export function HiScoreMatrix({
       if (!existingEvaluation) {
         setScores(getEmptyScores(roleType));
         setComments('');
+        setCategoryFeedback({
+          hospitality: '',
+          friendliness: '',
+          internalTeamSkills: '',
+          serviceSkills: '',
+          fohKnowledge: '',
+          workEthic: '',
+          teamPlayer: '',
+          adaptability: '',
+          cookingSkills: '',
+          foodKnowledge: '',
+        });
       }
       
     } catch (error) {
@@ -171,6 +247,27 @@ export function HiScoreMatrix({
     
     // Convert to a 0-100 scale
     return (weightedScore * 10).toFixed(1);
+  };
+
+  const renderCategoryFeedback = (category: string, label: string) => {
+    return (
+      <div className="mt-2 mb-6">
+        <Label htmlFor={`${category}-feedback`} className="text-sm text-gray-600">
+          Feedback for {label} <span className="text-red-500">*</span>
+        </Label>
+        <Textarea
+          id={`${category}-feedback`}
+          placeholder={`Provide specific feedback about ${label.toLowerCase()}...`}
+          value={categoryFeedback[category] || ''}
+          onChange={(e) => handleCategoryFeedbackChange(category, e.target.value)}
+          disabled={isReadOnly}
+          className={formErrors[category] ? "border-red-500" : ""}
+        />
+        {formErrors[category] && (
+          <p className="text-sm text-red-500 mt-1">{formErrors[category]}</p>
+        )}
+      </div>
+    );
   };
   
   const renderMatrixItems = () => {
@@ -194,17 +291,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('hospitality' in scores) ? scores.hospitality : 0}</span>
+                <span className="text-lg font-bold">{'hospitality' in scores ? scores.hospitality : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('hospitality' in scores) ? scores.hospitality : 0]} 
+                value={['hospitality' in scores ? [scores.hospitality] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('hospitality', value)} 
               />
             </div>
+            {renderCategoryFeedback('hospitality', 'Hospitality')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -221,17 +319,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('friendliness' in scores) ? scores.friendliness : 0}</span>
+                <span className="text-lg font-bold">{'friendliness' in scores ? scores.friendliness : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('friendliness' in scores) ? scores.friendliness : 0]} 
+                value={['friendliness' in scores ? [scores.friendliness] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('friendliness', value)} 
               />
             </div>
+            {renderCategoryFeedback('friendliness', 'Friendliness')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -248,17 +347,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('internalTeamSkills' in scores) ? scores.internalTeamSkills : 0}</span>
+                <span className="text-lg font-bold">{'internalTeamSkills' in scores ? scores.internalTeamSkills : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('internalTeamSkills' in scores) ? scores.internalTeamSkills : 0]} 
+                value={['internalTeamSkills' in scores ? [scores.internalTeamSkills] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('internalTeamSkills', value)} 
               />
             </div>
+            {renderCategoryFeedback('internalTeamSkills', 'Internal Team Skills')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -275,17 +375,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('serviceSkills' in scores) ? scores.serviceSkills : 0}</span>
+                <span className="text-lg font-bold">{'serviceSkills' in scores ? scores.serviceSkills : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('serviceSkills' in scores) ? scores.serviceSkills : 0]} 
+                value={['serviceSkills' in scores ? [scores.serviceSkills] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('serviceSkills', value)} 
               />
             </div>
+            {renderCategoryFeedback('serviceSkills', 'Service Skills')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -302,17 +403,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('fohKnowledge' in scores) ? scores.fohKnowledge : 0}</span>
+                <span className="text-lg font-bold">{'fohKnowledge' in scores ? scores.fohKnowledge : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('fohKnowledge' in scores) ? scores.fohKnowledge : 0]} 
+                value={['fohKnowledge' in scores ? [scores.fohKnowledge] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('fohKnowledge', value)} 
               />
             </div>
+            {renderCategoryFeedback('fohKnowledge', 'Knowledge')}
           </div>
         </>
       );
@@ -336,17 +438,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('workEthic' in scores) ? scores.workEthic : 0}</span>
+                <span className="text-lg font-bold">{'workEthic' in scores ? scores.workEthic : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('workEthic' in scores) ? scores.workEthic : 0]} 
+                value={['workEthic' in scores ? [scores.workEthic] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('workEthic', value)} 
               />
             </div>
+            {renderCategoryFeedback('workEthic', 'Work Ethic & Discipline')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -363,17 +466,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('teamPlayer' in scores) ? scores.teamPlayer : 0}</span>
+                <span className="text-lg font-bold">{'teamPlayer' in scores ? scores.teamPlayer : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('teamPlayer' in scores) ? scores.teamPlayer : 0]} 
+                value={['teamPlayer' in scores ? [scores.teamPlayer] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('teamPlayer', value)} 
               />
             </div>
+            {renderCategoryFeedback('teamPlayer', 'Team Player Mentality')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -390,17 +494,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('adaptability' in scores) ? scores.adaptability : 0}</span>
+                <span className="text-lg font-bold">{'adaptability' in scores ? scores.adaptability : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('adaptability' in scores) ? scores.adaptability : 0]} 
+                value={['adaptability' in scores ? [scores.adaptability] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('adaptability', value)} 
               />
             </div>
+            {renderCategoryFeedback('adaptability', 'Adaptability & Attitude')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -417,17 +522,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('cookingSkills' in scores) ? scores.cookingSkills : 0}</span>
+                <span className="text-lg font-bold">{'cookingSkills' in scores ? scores.cookingSkills : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('cookingSkills' in scores) ? scores.cookingSkills : 0]} 
+                value={['cookingSkills' in scores ? [scores.cookingSkills] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('cookingSkills', value)} 
               />
             </div>
+            {renderCategoryFeedback('cookingSkills', 'Knife & Cooking Skills')}
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -444,17 +550,18 @@ export function HiScoreMatrix({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-lg font-bold">{('foodKnowledge' in scores) ? scores.foodKnowledge : 0}</span>
+                <span className="text-lg font-bold">{'foodKnowledge' in scores ? scores.foodKnowledge : 0}</span>
               </div>
               <Slider 
                 disabled={isReadOnly}
-                value={[('foodKnowledge' in scores) ? scores.foodKnowledge : 0]} 
+                value={['foodKnowledge' in scores ? [scores.foodKnowledge] : [0]][0]} 
                 min={0} 
                 max={10} 
                 step={1} 
                 onValueChange={(value) => handleScoreChange('foodKnowledge', value)} 
               />
             </div>
+            {renderCategoryFeedback('foodKnowledge', 'Food Knowledge')}
           </div>
         </>
       );
@@ -497,7 +604,7 @@ export function HiScoreMatrix({
         <div className="mt-8 space-y-4">
           <div>
             <label htmlFor="comments" className="block text-sm font-medium mb-2">
-              Comments
+              Additional Comments
             </label>
             <textarea
               id="comments"
