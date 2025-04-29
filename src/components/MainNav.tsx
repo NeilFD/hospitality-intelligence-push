@@ -45,6 +45,9 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
         setActiveHiqItem('dashboard');
       }
     }
+    
+    console.log('MainNav: Current path:', location.pathname);
+    console.log('MainNav: Active HiQ item set to:', activeHiqItem);
   }, [location.pathname]);
 
   // Force HiQ module visibility regardless of other settings
