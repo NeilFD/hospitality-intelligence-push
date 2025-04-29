@@ -245,7 +245,7 @@ const TeamManagementPanel: React.FC = () => {
         min_hours_per_week: editForm.minHoursPerWeek,
         max_hours_per_week: editForm.maxHoursPerWeek,
         min_hours_per_day: editForm.minHoursPerDay,
-        max_hours_per_day: editForm.maxHoursPerDay,
+        max_hoursPerDay: editForm.maxHoursPerDay,
         available_for_rota: editForm.availableForRota,
         in_ft_education: editForm.inFtEducation
       };
@@ -905,4 +905,4 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                   value={editForm.aboutMe}
                   onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
                   placeholder="Share something about yourself"
-                  className="min-h-[
+                  className="min-h-[10
