@@ -15,6 +15,7 @@ const TeamManagementPanel: React.FC = () => {
   useEffect(() => {
     const fetchLocationAndRoles = async () => {
       try {
+        console.log("Fetching location and job roles data...");
         // Fetch the default location
         const { data: locationData, error: locationError } = await supabase
           .from('locations')
@@ -22,7 +23,12 @@ const TeamManagementPanel: React.FC = () => {
           .limit(1)
           .single();
           
-        if (locationError) throw locationError;
+        if (locationError) {
+          console.error("Error fetching location:", locationError);
+          throw locationError;
+        }
+        
+        console.log("Location fetched:", locationData);
         
         // Fetch job roles
         const { data: rolesData, error: rolesError } = await supabase
@@ -30,7 +36,12 @@ const TeamManagementPanel: React.FC = () => {
           .select('*')
           .order('title', { ascending: true });
           
-        if (rolesError) throw rolesError;
+        if (rolesError) {
+          console.error("Error fetching job roles:", rolesError);
+          throw rolesError;
+        }
+        
+        console.log("Job roles fetched:", rolesData?.length || 0);
         
         setLocation(locationData);
         setJobRoles(rolesData || []);

@@ -30,6 +30,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   
   useEffect(() => {
     if (location?.id) {
+      console.log("Location ID received in TeamMemberProfiles:", location.id);
       fetchTeamMembers();
     }
   }, [location]);
@@ -47,6 +48,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
         .eq('location_id', location.id);
       
       if (error) {
+        console.error("Error details:", error);
         throw error;
       }
       
@@ -99,8 +101,8 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
 
   // Filter team members based on search term
   const filteredMembers = teamMembers.filter(member => 
-    member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.job_roles?.title.toLowerCase().includes(searchTerm.toLowerCase())
+    member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.job_roles?.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   const getInitials = (name) => {
