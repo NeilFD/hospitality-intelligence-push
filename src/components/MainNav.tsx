@@ -4,6 +4,7 @@ import NavItem from './NavItem';
 import { useCurrentModule } from '@/lib/store';
 import { getUserAccessibleModules } from '@/services/permissions-service';
 import { ModuleType } from '@/types/kitchen-ledger';
+import { useLocation } from 'react-router-dom';
 
 interface MainNavProps {
   className?: string;
@@ -12,6 +13,8 @@ interface MainNavProps {
 const MainNav: React.FC<MainNavProps> = ({ className }) => {
   const currentModule = useCurrentModule();
   const [accessibleModules, setAccessibleModules] = useState<ModuleType[]>([]);
+  const location = useLocation();
+  const [activeHiqItem, setActiveHiqItem] = useState<string>('dashboard');
 
   useEffect(() => {
     // Get the user role from localStorage
@@ -29,6 +32,21 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
         setAccessibleModules(['home', 'food', 'beverage', 'pl', 'wages', 'team', 'hiq']);
       });
   }, []);
+
+  // Determine active HiQ section based on current path
+  useEffect(() => {
+    if (location.pathname.includes('/hiq/')) {
+      if (location.pathname.includes('/hiq/insights')) {
+        setActiveHiqItem('insights');
+      } else if (location.pathname.includes('/hiq/assistant')) {
+        setActiveHiqItem('assistant');
+      } else if (location.pathname.includes('/hiq/performance')) {
+        setActiveHiqItem('performance');
+      } else {
+        setActiveHiqItem('dashboard');
+      }
+    }
+  }, [location.pathname]);
 
   // Force HiQ module visibility regardless of other settings
   useEffect(() => {
@@ -78,6 +96,36 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           icon="hiq" 
           active={currentModule === 'hiq'} 
         />
+        
+        {/* Show submenu items for HiQ when it's the active module */}
+        {currentModule === 'hiq' && (
+          <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
+            <NavItem 
+              to="/hiq/dashboard" 
+              label="Dashboard" 
+              icon="hospitality" 
+              active={activeHiqItem === 'dashboard'} 
+            />
+            <NavItem 
+              to="/hiq/insights" 
+              label="Insights" 
+              icon="hospitality" 
+              active={activeHiqItem === 'insights'} 
+            />
+            <NavItem 
+              to="/hiq/assistant" 
+              label="AI Assistant" 
+              icon="hospitality" 
+              active={activeHiqItem === 'assistant'} 
+            />
+            <NavItem 
+              to="/hiq/performance" 
+              label="Performance" 
+              icon="performance" 
+              active={activeHiqItem === 'performance'} 
+            />
+          </div>
+        )}
         
         <NavItem to="/control-centre" label="Control Centre" icon="performance" />
       </div>

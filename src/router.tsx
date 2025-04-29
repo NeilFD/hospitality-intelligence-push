@@ -30,6 +30,7 @@ import MasterDaily from "@/pages/master/Dashboard";
 import HiQDashboard from "@/pages/hiq/Dashboard";
 import HiQInsights from "@/pages/hiq/Insights";
 import HiQAssistant from "@/pages/hiq/Assistant";
+import HiQPerformance from "@/pages/hiq/Performance";
 import HomeDashboard from "@/pages/home/Dashboard";
 
 export const router = createBrowserRouter([
@@ -266,6 +267,22 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <HiQAssistant />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/hiq/performance",
+        element: (
+          <RequireAuth>
+            <HiQPerformance />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/hiq/conversation-history",
+        element: (
+          <RequireAuth>
+            <HiQPerformance />
           </RequireAuth>
         ),
       },
