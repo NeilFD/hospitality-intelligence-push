@@ -44,14 +44,20 @@ interface StaffingGanttChartProps {
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
   // Convert time strings like "09:00" to decimal hours (9.0)
-  const timeToDecimal = (timeString: string) => {
+  // Handle midnight (00:00) as 24.0 for end times
+  const timeToDecimal = (timeString: string, isEndTime: boolean = false) => {
+    if (isEndTime && timeString === "00:00") {
+      return 24.0; // Treat midnight as hour 24 when it's an end time
+    }
+    
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours + (minutes / 60);
   };
 
   // Determine chart boundaries from opening hours
   const startHour = Math.floor(timeToDecimal(openingHours.start));
-  const endHour = Math.ceil(timeToDecimal(openingHours.end));
+  // For the end hour, we need to consider if it's midnight
+  const endHour = Math.ceil(timeToDecimal(openingHours.end, true));
   const totalHours = endHour - startHour;
   
   // Group shifts by FOH and Kitchen
@@ -72,7 +78,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     // Initialize each hour slot
     for (let hour = startHour; hour <= endHour; hour++) {
       hours.push({
-        hour,
+        hour: hour % 24, // Convert 24 back to 0 for display
         foh: { min: 0, max: 0 },
         kitchen: { min: 0, max: 0 },
         total: { min: 0, max: 0 }
@@ -82,7 +88,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     // Process each rule and add to the appropriate hours
     rules.forEach(rule => {
       const ruleStart = timeToDecimal(rule.start_time);
-      const ruleEnd = timeToDecimal(rule.end_time);
+      const ruleEnd = timeToDecimal(rule.end_time, true); // Pass true for end time
       const role = jobRoles.find(r => r.id === rule.job_role_id);
       
       if (!role) return;
@@ -91,7 +97,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
       const category = isKitchen ? 'kitchen' : 'foh';
       
       hours.forEach(hourSlot => {
-        const hour = hourSlot.hour;
+        const hour = hourSlot.hour === 0 ? 24 : hourSlot.hour; // Convert hour 0 to 24 for comparison
         
         // Check if this rule applies to this hour
         if (hour >= ruleStart && hour < ruleEnd) {
@@ -134,7 +140,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
   // Calculate position for a shift block
   const getShiftStyle = (rule: ShiftRule) => {
     const startDecimal = timeToDecimal(rule.start_time);
-    const endDecimal = timeToDecimal(rule.end_time);
+    const endDecimal = timeToDecimal(rule.end_time, true); // Pass true for end time
     
     const startPercent = ((startDecimal - startHour) / totalHours) * 100;
     const widthPercent = ((endDecimal - startDecimal) / totalHours) * 100;
@@ -168,6 +174,11 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return days[dayCode] || dayCode;
   };
 
+  // Format hour for display (convert 24 back to 0)
+  const formatHourDisplay = (hour: number) => {
+    return hour === 24 ? "00" : hour;
+  };
+
   return (
     <TooltipProvider>
       <div className="mt-2 space-y-6">
@@ -184,7 +195,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                   className="absolute top-0 bottom-0 border-l text-xs text-muted-foreground"
                   style={{ left: `${(i / totalHours) * 100}%` }}
                 >
-                  <span className="absolute -top-4 -ml-2">{startHour + i}:00</span>
+                  <span className="absolute -top-4 -ml-2">{formatHourDisplay((startHour + i) % 24)}:00</span>
                 </div>
               ))}
             </div>
