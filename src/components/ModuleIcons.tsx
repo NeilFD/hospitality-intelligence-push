@@ -37,4 +37,5 @@ export const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
   }
 };
 
+// Export both as default and named export for compatibility
 export default ModuleIcon;
