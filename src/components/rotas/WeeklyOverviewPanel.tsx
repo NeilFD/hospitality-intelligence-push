@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -8,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ShiftRuleForm from './ShiftRuleForm';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { formatTime } from '@/lib/date-utils';
 
 const days = [
@@ -27,7 +26,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
   const [shiftRules, setShiftRules] = useState<Record<string, any[]>>({});
   const [isAddingShift, setIsAddingShift] = useState(false);
   const [currentDay, setCurrentDay] = useState('mon');
-  const { toast } = useToast();
   
   // Fetch shift rules when component mounts or location/jobRoles change
   useEffect(() => {
@@ -59,10 +57,9 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
       setShiftRules(rulesByDay);
     } catch (error) {
       console.error('Error fetching shift rules:', error);
-      toast({
-        title: 'Error loading shift rules',
-        description: 'There was a problem loading the shift rules.',
-        variant: 'destructive',
+      toast("Error loading shift rules", {
+        description: "There was a problem loading the shift rules.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     }
   };
@@ -78,18 +75,16 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
         throw error;
       }
       
-      toast({
-        title: 'Shift rule deleted',
-        description: 'The shift rule has been removed.',
+      toast("Shift rule deleted", {
+        description: "The shift rule has been removed.",
       });
       
       fetchShiftRules();
     } catch (error) {
       console.error('Error deleting shift rule:', error);
-      toast({
-        title: 'Error deleting shift rule',
-        description: 'There was a problem deleting the shift rule.',
-        variant: 'destructive',
+      toast("Error deleting shift rule", {
+        description: "There was a problem deleting the shift rule.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     }
   };

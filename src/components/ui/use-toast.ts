@@ -3,4 +3,7 @@
 import { toast } from "sonner";
 
 export { toast };
-export const useToast = () => ({ toasts: [] });
+export const useToast = () => ({ 
+  toast,
+  toasts: [] 
+});

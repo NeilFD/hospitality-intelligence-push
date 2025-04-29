@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, User, Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,6 @@ import TeamMemberForm from './TeamMemberForm';
 import TeamMemberDetails from './TeamMemberDetails';
 
 export default function TeamMemberProfiles({ location, jobRoles }) {
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,10 +43,9 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
       setTeamMembers(data || []);
     } catch (error) {
       console.error('Error fetching team members:', error);
-      toast({
-        title: 'Error loading team members',
-        description: 'There was a problem loading the team member data.',
-        variant: 'destructive',
+      toast("Error loading team members", {
+        description: "There was a problem loading the team member data.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
       setIsLoading(false);
@@ -66,18 +63,16 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
         throw error;
       }
       
-      toast({
-        title: 'Team member deleted',
-        description: 'The team member has been removed.',
+      toast("Team member deleted", {
+        description: "The team member has been removed.",
       });
       
       fetchTeamMembers();
     } catch (error) {
       console.error('Error deleting team member:', error);
-      toast({
-        title: 'Error deleting team member',
-        description: 'There was a problem deleting the team member.',
-        variant: 'destructive',
+      toast("Error deleting team member", {
+        description: "There was a problem deleting the team member.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     }
   };

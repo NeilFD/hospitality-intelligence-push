@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, Chart, CheckCircle, Code, DollarSign, Home, Menu, MessageCircle, MonitorDollar, PieChart, Settings, ShoppingCart, SprayCan, Users, Wallet } from 'lucide-react';
+import { Calendar, BarChart, CheckCircle, Code, DollarSign, Home, Menu, MessageCircle, LineChart, PieChart, Settings, ShoppingCart, SprayCan, Users, Wallet } from 'lucide-react';
 import { ModuleType } from '@/types/kitchen-ledger';
 
 interface ModuleIconProps {
@@ -15,7 +15,7 @@ const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
     case 'beverage':
       return <SprayCan className={className} />;
     case 'pl':
-      return <MonitorDollar className={className} />;
+      return <LineChart className={className} />;
     case 'wages':
       return <Wallet className={className} />;
     case 'team':
@@ -25,7 +25,7 @@ const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
     case 'hiq':
       return <PieChart className={className} />;
     case 'performance':
-      return <Chart className={className} />;
+      return <BarChart className={className} />;
     case 'hospitality':
       return <CheckCircle className={className} />;
     case 'message-square':

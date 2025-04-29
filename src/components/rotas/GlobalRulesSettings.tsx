@@ -4,13 +4,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { Save } from 'lucide-react';
 
 export default function GlobalRulesSettings({ location, globalConstraints, setGlobalConstraints }) {
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     wage_target_type: 'percent',
@@ -42,10 +41,9 @@ export default function GlobalRulesSettings({ location, globalConstraints, setGl
 
   const handleSave = async () => {
     if (!location?.id) {
-      toast({
-        title: 'Cannot save settings',
-        description: 'Location data is not available.',
-        variant: 'destructive',
+      toast("Cannot save settings - Location data is not available.", {
+        description: "Please try again later.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
       return;
     }
@@ -76,18 +74,16 @@ export default function GlobalRulesSettings({ location, globalConstraints, setGl
       
       if (error) throw error;
       
-      toast({
-        title: 'Settings saved',
-        description: 'The global rules have been updated successfully.',
+      toast("Settings saved", {
+        description: "The global rules have been updated successfully.",
       });
       
       setGlobalConstraints(data?.[0] || null);
     } catch (error) {
       console.error('Error saving global rules:', error);
-      toast({
-        title: 'Error saving settings',
-        description: error.message || 'There was a problem saving the settings.',
-        variant: 'destructive',
+      toast("Error saving settings", {
+        description: error.message || "There was a problem saving the settings.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
       setIsLoading(false);
@@ -114,7 +110,6 @@ export default function GlobalRulesSettings({ location, globalConstraints, setGl
           <div className="space-y-2">
             <Label htmlFor="wage_target_type">Wage Target Type</Label>
             <Select 
-              id="wage_target_type"
               value={formData.wage_target_type} 
               onValueChange={(value) => handleChange('wage_target_type', value)}
             >

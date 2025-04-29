@@ -1,4 +1,3 @@
-
 import { WeekDates, WeeklyRecord, DailyRecord, Supplier } from '@/types/kitchen-ledger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -194,3 +193,24 @@ export function getMonthName(month: number): string {
   ];
   return months[month - 1];
 }
+
+/**
+ * Format a time string from 24-hour format to 12-hour format
+ * @param timeString Time string in 24-hour format (HH:MM)
+ * @returns Formatted time string in 12-hour format
+ */
+export const formatTime = (timeString: string): string => {
+  if (!timeString) return '';
+  
+  try {
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12; // Convert 0 to 12
+    
+    return `${formattedHour}:${minutes} ${period}`;
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return timeString;
+  }
+};

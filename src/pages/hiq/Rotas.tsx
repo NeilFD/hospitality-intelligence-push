@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,13 +9,12 @@ import WeeklyOverviewPanel from '@/components/rotas/WeeklyOverviewPanel';
 import TeamMemberProfiles from '@/components/rotas/TeamMemberProfiles';
 import GlobalRulesSettings from '@/components/rotas/GlobalRulesSettings';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
 import { RotasLogo } from '@/components/RotasLogo';
 
 export default function HiQRotas() {
   const setCurrentModule = useSetCurrentModule();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('weekly-overview');
   const [location, setLocation] = useState<any>(null);
@@ -108,10 +106,9 @@ export default function HiQRotas() {
       
     } catch (error) {
       console.error('Error fetching rota data:', error);
-      toast({
-        title: 'Error loading data',
-        description: 'There was a problem loading rota configuration data.',
-        variant: 'destructive',
+      toast("Error loading data", {
+        description: "There was a problem loading rota configuration data.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
       setIsLoading(false);

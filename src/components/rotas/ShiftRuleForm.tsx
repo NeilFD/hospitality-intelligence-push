@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -7,10 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 
 export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locationId, jobRoles, day }) {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -35,9 +33,8 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     e.preventDefault();
     
     if (!formData.job_role_id) {
-      toast({
-        title: 'Please select a job role',
-        variant: 'destructive',
+      toast("Please select a job role", {
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
       return;
     }
@@ -55,19 +52,17 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
         
       if (error) throw error;
       
-      toast({
-        title: 'Shift rule created',
-        description: 'The shift rule has been added successfully.',
+      toast("Shift rule created", {
+        description: "The shift rule has been added successfully.",
       });
       
       onSubmitComplete();
       onClose();
     } catch (error) {
       console.error('Error creating shift rule:', error);
-      toast({
-        title: 'Error creating shift rule',
-        description: error.message || 'There was a problem creating the shift rule.',
-        variant: 'destructive',
+      toast("Error creating shift rule", {
+        description: error.message || "There was a problem creating the shift rule.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
       setIsSubmitting(false);

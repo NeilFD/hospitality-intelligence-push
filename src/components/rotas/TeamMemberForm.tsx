@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import AvailabilityScheduler from './AvailabilityScheduler';
@@ -21,7 +20,6 @@ export default function TeamMemberForm({
   teamMember,
   isEditing
 }) {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tab, setTab] = useState('basic');
 
@@ -87,17 +85,15 @@ export default function TeamMemberForm({
     e.preventDefault();
     
     if (!formData.full_name) {
-      toast({
-        title: 'Name is required',
-        variant: 'destructive',
+      toast("Name is required", {
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
       return;
     }
     
     if (!formData.job_role_id) {
-      toast({
-        title: 'Job role is required',
-        variant: 'destructive',
+      toast("Job role is required", {
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
       return;
     }
@@ -127,8 +123,7 @@ export default function TeamMemberForm({
       const { error } = result;
       if (error) throw error;
       
-      toast({
-        title: isEditing ? 'Team member updated' : 'Team member created',
+      toast(isEditing ? "Team member updated" : "Team member created", {
         description: `${formData.full_name} has been ${isEditing ? 'updated' : 'added'} successfully.`,
       });
       
@@ -136,10 +131,9 @@ export default function TeamMemberForm({
       onClose();
     } catch (error) {
       console.error('Error saving team member:', error);
-      toast({
-        title: 'Error saving team member',
-        description: error.message || 'There was a problem saving the team member.',
-        variant: 'destructive',
+      toast("Error saving team member", {
+        description: error.message || "There was a problem saving the team member.",
+        style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
       setIsSubmitting(false);
