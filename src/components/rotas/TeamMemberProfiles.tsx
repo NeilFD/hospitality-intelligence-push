@@ -204,7 +204,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All job titles</SelectItem>
+                  <SelectItem value="all">All job titles</SelectItem>
                   {uniqueJobTitles.map(title => (
                     <SelectItem key={title} value={title}>
                       {title}
