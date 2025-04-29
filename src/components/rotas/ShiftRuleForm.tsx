@@ -6,13 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
+
+const days = [
+  { id: 'mon', name: 'Monday' },
+  { id: 'tue', name: 'Tuesday' },
+  { id: 'wed', name: 'Wednesday' },
+  { id: 'thu', name: 'Thursday' },
+  { id: 'fri', name: 'Friday' },
+  { id: 'sat', name: 'Saturday' },
+  { id: 'sun', name: 'Sunday' }
+];
 
 export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locationId, jobRoles, day }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shiftTemplates, setShiftTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedDays, setSelectedDays] = useState({});
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,15 +39,21 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
   });
 
   useEffect(() => {
-    // Fetch available shift templates for this day when component loads
+    // Initialize selected days
+    const initialDays = {};
+    days.forEach(d => {
+      initialDays[d.id] = d.id === day;
+    });
+    setSelectedDays(initialDays);
+    
+    // Fetch available shift templates when component loads
     const fetchTemplates = async () => {
-      if (locationId && day) {
+      if (locationId) {
         try {
           const { data, error } = await supabase
             .from('shift_templates')
             .select('*')
-            .eq('location_id', locationId)
-            .eq('day_of_week', day);
+            .eq('location_id', locationId);
             
           if (error) throw error;
           setShiftTemplates(data || []);
@@ -47,6 +65,13 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     
     fetchTemplates();
   }, [locationId, day]);
+
+  const handleDayChange = (dayId, checked) => {
+    setSelectedDays(prev => ({
+      ...prev,
+      [dayId]: checked
+    }));
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({
@@ -91,18 +116,29 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
       return;
     }
     
+    // Check if at least one day is selected
+    const selectedDaysList = Object.keys(selectedDays).filter(dayId => selectedDays[dayId]);
+    if (selectedDaysList.length === 0) {
+      toast("Please select at least one day", {
+        style: { backgroundColor: "#f44336", color: "#fff" },
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      // Submit the shift rule
+      // Create shift rules for each selected day
+      const shiftRules = selectedDaysList.map(dayId => ({
+        location_id: locationId,
+        day_of_week: dayId,
+        name: formData.name,
+        ...formData
+      }));
+      
       const { data: shiftRuleData, error: shiftRuleError } = await supabase
         .from('shift_rules')
-        .insert({
-          location_id: locationId,
-          day_of_week: day,
-          name: formData.name,
-          ...formData
-        });
+        .insert(shiftRules);
         
       if (shiftRuleError) throw shiftRuleError;
       
@@ -127,7 +163,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
             .from('shift_templates')
             .insert({
               location_id: locationId,
-              day_of_week: day,
+              day_of_week: selectedDaysList[0], // Use the first selected day for the template
               name: formData.name,
               shift_blocks: [shiftBlock]
             });
@@ -138,16 +174,16 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
         }
       }
       
-      toast("Shift rule created", {
-        description: "The shift rule has been added successfully.",
+      toast("Shift rule(s) created", {
+        description: `Added shift rules for ${selectedDaysList.length} day(s).`,
       });
       
       onSubmitComplete();
       onClose();
     } catch (error) {
-      console.error('Error creating shift rule:', error);
-      toast("Error creating shift rule", {
-        description: error.message || "There was a problem creating the shift rule.",
+      console.error('Error creating shift rules:', error);
+      toast("Error creating shift rules", {
+        description: error.message || "There was a problem creating the shift rules.",
         style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
@@ -155,25 +191,11 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     }
   };
 
-  // Format day for display
-  const formatDay = (dayId) => {
-    const days = {
-      mon: 'Monday',
-      tue: 'Tuesday',
-      wed: 'Wednesday',
-      thu: 'Thursday',
-      fri: 'Friday',
-      sat: 'Saturday',
-      sun: 'Sunday'
-    };
-    return days[dayId] || dayId;
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Shift Rule for {formatDay(day)}</DialogTitle>
+          <DialogTitle>Add Shift Rule</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -205,6 +227,22 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
               </Select>
             </div>
           )}
+          
+          <div className="space-y-2">
+            <Label>Apply to Days</Label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {days.map((day) => (
+                <div key={day.id} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`day-${day.id}`} 
+                    checked={selectedDays[day.id]}
+                    onCheckedChange={(checked) => handleDayChange(day.id, checked)}
+                  />
+                  <Label htmlFor={`day-${day.id}`} className="text-sm">{day.name}</Label>
+                </div>
+              ))}
+            </div>
+          </div>
           
           <div className="space-y-2">
             <Label htmlFor="role">Job Role</Label>

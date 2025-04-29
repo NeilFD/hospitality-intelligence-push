@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -11,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import ShiftRuleForm from './ShiftRuleForm';
+import StaffingGanttChart from './StaffingGanttChart';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { formatTime } from '@/lib/date-utils';
@@ -469,134 +469,145 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                           </AlertDescription>
                         </Alert>
                       ) : (
-                        <div className="space-y-2">
-                          {dayRules.map((rule) => (
-                            <div
-                              key={rule.id}
-                              className="p-3 border rounded-lg bg-white dark:bg-slate-800 shadow-sm"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="font-medium">{rule.job_roles?.title || 'Unknown Role'}</div>
-                                  {rule.name && (
-                                    <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                                      {rule.name}
+                        <>
+                          <div className="space-y-2">
+                            {dayRules.map((rule) => (
+                              <div
+                                key={rule.id}
+                                className="p-3 border rounded-lg bg-white dark:bg-slate-800 shadow-sm"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-medium">{rule.job_roles?.title || 'Unknown Role'}</div>
+                                    {rule.name && (
+                                      <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                                        {rule.name}
+                                      </div>
+                                    )}
+                                    <div className="text-sm text-muted-foreground">
+                                      {formatTime(rule.start_time)} - {formatTime(rule.end_time)} • 
+                                      {rule.min_staff === rule.max_staff ? 
+                                        ` ${rule.min_staff} staff` : 
+                                        ` ${rule.min_staff}-${rule.max_staff} staff`
+                                      }
                                     </div>
-                                  )}
-                                  <div className="text-sm text-muted-foreground">
-                                    {formatTime(rule.start_time)} - {formatTime(rule.end_time)} • 
-                                    {rule.min_staff === rule.max_staff ? 
-                                      ` ${rule.min_staff} staff` : 
-                                      ` ${rule.min_staff}-${rule.max_staff} staff`
-                                    }
                                   </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleSaveAsTemplate(rule)}
-                                      >
-                                        <Save className="h-4 w-4" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-72 p-4">
-                                      {savingAsTemplate?.id === rule.id && (
+                                  <div className="flex gap-2">
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => handleSaveAsTemplate(rule)}
+                                        >
+                                          <Save className="h-4 w-4" />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-72 p-4">
+                                        {savingAsTemplate?.id === rule.id && (
+                                          <div className="space-y-4">
+                                            <h4 className="font-medium">Save as template</h4>
+                                            <div className="space-y-2">
+                                              <Label htmlFor="template-name">Template name</Label>
+                                              <Input 
+                                                id="template-name" 
+                                                value={templateName} 
+                                                placeholder="e.g. Manager Weekday - Day"
+                                                onChange={(e) => setTemplateName(e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="flex justify-between pt-2">
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => setSavingAsTemplate(null)}
+                                              >
+                                                Cancel
+                                              </Button>
+                                              <Button 
+                                                size="sm"
+                                                onClick={saveTemplate}
+                                              >
+                                                <Save className="mr-1 h-4 w-4" /> Save Template
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </PopoverContent>
+                                    </Popover>
+                                  
+                                    <Popover open={isCopyPopoverOpen && copyingShift?.id === rule.id}>
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => handleCopyShift(rule)}
+                                        >
+                                          <Copy className="h-4 w-4" />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-72 p-4">
                                         <div className="space-y-4">
-                                          <h4 className="font-medium">Save as template</h4>
+                                          <h4 className="font-medium">Copy shift to days</h4>
                                           <div className="space-y-2">
-                                            <Label htmlFor="template-name">Template name</Label>
-                                            <Input 
-                                              id="template-name" 
-                                              value={templateName} 
-                                              placeholder="e.g. Manager Weekday - Day"
-                                              onChange={(e) => setTemplateName(e.target.value)}
-                                            />
+                                            {days.map((day) => (
+                                              day.id !== rule.day_of_week && (
+                                                <div key={day.id} className="flex items-center space-x-2">
+                                                  <Checkbox 
+                                                    id={`copy-${day.id}`} 
+                                                    checked={!!selectedDays[day.id]}
+                                                    onCheckedChange={(checked) => 
+                                                      handleDaySelection(day.id, !!checked)
+                                                    }
+                                                  />
+                                                  <Label htmlFor={`copy-${day.id}`}>{day.name}</Label>
+                                                </div>
+                                              )
+                                            ))}
                                           </div>
                                           <div className="flex justify-between pt-2">
                                             <Button 
                                               variant="outline" 
                                               size="sm"
-                                              onClick={() => setSavingAsTemplate(null)}
+                                              onClick={() => {
+                                                setIsCopyPopoverOpen(false);
+                                                setCopyingShift(null);
+                                              }}
                                             >
                                               Cancel
                                             </Button>
                                             <Button 
                                               size="sm"
-                                              onClick={saveTemplate}
+                                              onClick={handleDuplicateToSelectedDays}
                                             >
-                                              <Save className="mr-1 h-4 w-4" /> Save Template
+                                              <Check className="mr-1 h-4 w-4" /> Copy
                                             </Button>
                                           </div>
                                         </div>
-                                      )}
-                                    </PopoverContent>
-                                  </Popover>
-                                
-                                  <Popover open={isCopyPopoverOpen && copyingShift?.id === rule.id}>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleCopyShift(rule)}
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-72 p-4">
-                                      <div className="space-y-4">
-                                        <h4 className="font-medium">Copy shift to days</h4>
-                                        <div className="space-y-2">
-                                          {days.map((day) => (
-                                            day.id !== rule.day_of_week && (
-                                              <div key={day.id} className="flex items-center space-x-2">
-                                                <Checkbox 
-                                                  id={`copy-${day.id}`} 
-                                                  checked={!!selectedDays[day.id]}
-                                                  onCheckedChange={(checked) => 
-                                                    handleDaySelection(day.id, !!checked)
-                                                  }
-                                                />
-                                                <Label htmlFor={`copy-${day.id}`}>{day.name}</Label>
-                                              </div>
-                                            )
-                                          ))}
-                                        </div>
-                                        <div className="flex justify-between pt-2">
-                                          <Button 
-                                            variant="outline" 
-                                            size="sm"
-                                            onClick={() => {
-                                              setIsCopyPopoverOpen(false);
-                                              setCopyingShift(null);
-                                            }}
-                                          >
-                                            Cancel
-                                          </Button>
-                                          <Button 
-                                            size="sm"
-                                            onClick={handleDuplicateToSelectedDays}
-                                          >
-                                            <Check className="mr-1 h-4 w-4" /> Copy
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDeleteShiftRule(rule.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
+                                      </PopoverContent>
+                                    </Popover>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleDeleteShiftRule(rule.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                          
+                          {/* Add Gantt chart for this day */}
+                          {dayRules.length > 0 && (
+                            <StaffingGanttChart
+                              rules={dayRules}
+                              jobRoles={jobRoles}
+                              openingHours={openingHours}
+                            />
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
