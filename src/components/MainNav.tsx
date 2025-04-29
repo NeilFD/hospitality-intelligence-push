@@ -16,6 +16,29 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
   const [accessibleModules, setAccessibleModules] = useState<ModuleType[]>([]);
   const location = useLocation();
   const [activeHiqItem, setActiveHiqItem] = useState<string>('dashboard');
+  const [showHiqSubmenu, setShowHiqSubmenu] = useState(false);
+
+  // Determine if we're on any HiQ page
+  const isHiqPath = location.pathname.includes('/hiq');
+  
+  // Force show HiQ submenu when on any HiQ page
+  useEffect(() => {
+    const isOnHiqPath = location.pathname.includes('/hiq');
+    console.log('MainNav: Checking HiQ path. Path:', location.pathname, 'Is HiQ path:', isOnHiqPath);
+    
+    if (isOnHiqPath) {
+      console.log('MainNav: On HiQ path, forcing HiQ submenu to show');
+      setShowHiqSubmenu(true);
+      
+      // Also ensure currentModule is set to 'hiq'
+      if (currentModule !== 'hiq') {
+        console.log('MainNav: Forcing currentModule to hiq');
+        setCurrentModule('hiq');
+      }
+    } else {
+      setShowHiqSubmenu(currentModule === 'hiq');
+    }
+  }, [location.pathname, currentModule, setCurrentModule]);
 
   useEffect(() => {
     // Get the user role from localStorage
@@ -39,7 +62,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
     const path = location.pathname;
     
     // Log the current path for debugging
-    console.log('MainNav: Current path:', path);
+    console.log('MainNav: Current path:', path, 'Current module:', currentModule);
     
     if (path.includes('/hiq/')) {
       if (path.includes('/hiq/performance')) {
@@ -49,13 +72,17 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
       } else {
         setActiveHiqItem('dashboard');
       }
+      
+      // When on any HiQ page, force the submenu to show
+      setShowHiqSubmenu(true);
     }
     
     console.log('MainNav: Active HiQ item set to:', 
       path.includes('/hiq/chat') ? 'chat' : 
-      path.includes('/hiq/performance') ? 'performance' : 'dashboard'
+      path.includes('/hiq/performance') ? 'performance' : 'dashboard',
+      'Show submenu:', showHiqSubmenu
     );
-  }, [location.pathname]);
+  }, [location.pathname, currentModule]);
 
   // Force HiQ module visibility regardless of other settings
   useEffect(() => {
@@ -67,8 +94,9 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
   
   // Debug function to help understand the current state
   const renderHiQSubmenu = () => {
+    console.log('MainNav: Rendering HiQ submenu. Active item:', activeHiqItem);
     return (
-      <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
+      <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3" data-hiq-submenu="true">
         <NavItem 
           to="/hiq/dashboard" 
           label="Dashboard" 
@@ -92,7 +120,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
   };
   
   return (
-    <nav className={className}>
+    <nav className={className} data-current-module={currentModule} data-hiq-path={isHiqPath}>
       <div className="space-y-1">
         {/* Always show Home */}
         <NavItem to="/home/dashboard" label="Home" icon="home" active={currentModule === 'home'} />
@@ -126,8 +154,8 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           active={currentModule === 'hiq'} 
         />
         
-        {/* HiQ submenu items - Only display when HiQ is the active module */}
-        {currentModule === 'hiq' && renderHiQSubmenu()}
+        {/* HiQ submenu items - Show when on HiQ path OR when HiQ is the active module */}
+        {(showHiqSubmenu || isHiqPath) && renderHiQSubmenu()}
         
         <NavItem to="/control-centre" label="Control Centre" icon="performance" />
       </div>

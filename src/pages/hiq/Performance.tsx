@@ -1,12 +1,12 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { History, AlertTriangle, Sparkles, MessageSquare } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
-import { useStore } from '@/lib/store';
-import { useState, useEffect } from 'react';
+import { useStore, useSetCurrentModule } from '@/lib/store';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
 import KeyInsights from '@/components/performance/KeyInsights';
@@ -15,6 +15,7 @@ import { PerformanceLogo } from '@/components/PerformanceLogo';
 import { Brain } from 'lucide-react';
 
 export default function HiQPerformance() {
+  const setCurrentModule = useSetCurrentModule();
   const {
     annualRecord,
     currentYear,
@@ -22,6 +23,44 @@ export default function HiQPerformance() {
   } = useStore();
   const [hasFoodData, setHasFoodData] = useState(false);
   const [hasBevData, setHasBevData] = useState(false);
+
+  // Force set current module to 'hiq' when component mounts
+  useEffect(() => {
+    console.log('HiQPerformance: Setting current module to hiq');
+    setCurrentModule('hiq');
+    
+    // Also update localStorage directly
+    try {
+      // Update tavern-kitchen-ledger store
+      const storeData = localStorage.getItem('tavern-kitchen-ledger');
+      if (storeData) {
+        const parsedData = JSON.parse(storeData);
+        if (parsedData.state) {
+          parsedData.state.currentModule = 'hiq';
+          localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+        }
+      }
+      
+      // Update hospitality-intelligence store
+      const hiData = localStorage.getItem('hospitality-intelligence');
+      if (hiData) {
+        const parsedData = JSON.parse(hiData);
+        if (parsedData.state) {
+          parsedData.state.currentModule = 'hiq';
+          localStorage.setItem('hospitality-intelligence', JSON.stringify(parsedData));
+        }
+      }
+    } catch (e) {
+      console.error('HiQPerformance: Error updating localStorage:', e);
+    }
+    
+    // Add a class to help with debugging
+    document.body.classList.add('hiq-performance-page');
+    
+    return () => {
+      document.body.classList.remove('hiq-performance-page');
+    };
+  }, [setCurrentModule]);
 
   // Query for food tracker data
   const {

@@ -16,13 +16,16 @@ export function SideNav({ className }: SideNavProps) {
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   
+  // Immediately determine if we're on a HiQ path
+  const isHiqPath = location.pathname.includes('/hiq');
+  
   // Aggressively enforce current module based on URL path
   useEffect(() => {
     const path = location.pathname;
-    console.log('SideNav: Current path:', path, 'Current module:', currentModule);
+    console.log('SideNav: Current path:', path, 'Current module:', currentModule, 'Is HiQ path:', isHiqPath);
     
-    // HiQ path detection
-    if (path.startsWith('/hiq') || path.includes('/hiq/')) {
+    // HiQ path detection - highest priority
+    if (path.includes('/hiq')) {
       console.log('SideNav: HiQ path detected, forcing currentModule to hiq');
       
       // Always set to HiQ when on HiQ pages, regardless of current state
@@ -39,6 +42,17 @@ export function SideNav({ className }: SideNavProps) {
               parsedData.state.currentModule = 'hiq';
               localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
               console.log('SideNav: Directly updated localStorage currentModule to hiq');
+            }
+          }
+          
+          // Also update the hospitality-intelligence store for redundancy
+          const hiData = localStorage.getItem('hospitality-intelligence');
+          if (hiData) {
+            const parsedData = JSON.parse(hiData);
+            if (parsedData.state) {
+              parsedData.state.currentModule = 'hiq';
+              localStorage.setItem('hospitality-intelligence', JSON.stringify(parsedData));
+              console.log('SideNav: Updated hospitality-intelligence localStorage');
             }
           }
         } catch (e) {
@@ -62,19 +76,45 @@ export function SideNav({ className }: SideNavProps) {
     // Only run this effect if we're on an HiQ page
     if (!location.pathname.includes('/hiq')) return;
     
-    // Double check after a short delay to make sure the module is set correctly
-    const timer = setTimeout(() => {
-      if (currentModule !== 'hiq') {
-        console.log('SideNav: Delayed check - forcing currentModule to hiq');
-        setCurrentModule('hiq');
-      }
-    }, 100);
+    // Ensure the module is set correctly even if the path changes within HiQ pages
+    console.log('SideNav: On HiQ page, ensuring module is set correctly');
     
-    return () => clearTimeout(timer);
-  }, [location, currentModule, setCurrentModule]);
+    // Force module to HiQ immediately and after a short delay
+    if (currentModule !== 'hiq') {
+      setCurrentModule('hiq');
+    }
+    
+    // Double check multiple times to handle race conditions
+    const timers = [
+      setTimeout(() => {
+        if (currentModule !== 'hiq') {
+          console.log('SideNav: Delayed check 50ms - forcing currentModule to hiq');
+          setCurrentModule('hiq');
+        }
+      }, 50),
+      setTimeout(() => {
+        if (currentModule !== 'hiq') {
+          console.log('SideNav: Delayed check 200ms - forcing currentModule to hiq');
+          setCurrentModule('hiq');
+        }
+      }, 200),
+      setTimeout(() => {
+        if (currentModule !== 'hiq') {
+          console.log('SideNav: Delayed check 500ms - forcing currentModule to hiq');
+          setCurrentModule('hiq');
+        }
+      }, 500)
+    ];
+    
+    return () => timers.forEach(timer => clearTimeout(timer));
+  }, [location.pathname, currentModule, setCurrentModule]);
   
   return (
-    <Sidebar className={cn("w-[250px] border-r", className)} data-hiq-path={location.pathname.includes('/hiq')}>
+    <Sidebar 
+      className={cn("w-[250px] border-r", className)} 
+      data-hiq-path={isHiqPath}
+      data-current-module={currentModule}
+    >
       <div className="flex h-full flex-col">
         <div className="p-6">
           <SidebarLogo />

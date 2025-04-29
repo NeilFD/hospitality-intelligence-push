@@ -1,11 +1,52 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, ChevronRight, Brain, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { useSetCurrentModule } from '@/lib/store';
 
 const HiQDashboard: React.FC = () => {
+  const setCurrentModule = useSetCurrentModule();
+  
+  // Force set current module to 'hiq' when component mounts
+  useEffect(() => {
+    console.log('HiQDashboard: Setting current module to hiq');
+    setCurrentModule('hiq');
+    
+    // Also update localStorage directly
+    try {
+      // Update tavern-kitchen-ledger store
+      const storeData = localStorage.getItem('tavern-kitchen-ledger');
+      if (storeData) {
+        const parsedData = JSON.parse(storeData);
+        if (parsedData.state) {
+          parsedData.state.currentModule = 'hiq';
+          localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+        }
+      }
+      
+      // Update hospitality-intelligence store
+      const hiData = localStorage.getItem('hospitality-intelligence');
+      if (hiData) {
+        const parsedData = JSON.parse(hiData);
+        if (parsedData.state) {
+          parsedData.state.currentModule = 'hiq';
+          localStorage.setItem('hospitality-intelligence', JSON.stringify(parsedData));
+        }
+      }
+    } catch (e) {
+      console.error('HiQDashboard: Error updating localStorage:', e);
+    }
+    
+    // Add a class to help with debugging
+    document.body.classList.add('hiq-dashboard-page');
+    
+    return () => {
+      document.body.classList.remove('hiq-dashboard-page');
+    };
+  }, [setCurrentModule]);
+
   return (
     <div className="container py-8">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">

@@ -17,6 +17,31 @@ export default function HiQChat() {
     console.log('HiQChat: Setting current module to hiq');
     setCurrentModule('hiq');
     
+    // Also update localStorage directly
+    try {
+      // Update tavern-kitchen-ledger store
+      const storeData = localStorage.getItem('tavern-kitchen-ledger');
+      if (storeData) {
+        const parsedData = JSON.parse(storeData);
+        if (parsedData.state) {
+          parsedData.state.currentModule = 'hiq';
+          localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+        }
+      }
+      
+      // Update hospitality-intelligence store
+      const hiData = localStorage.getItem('hospitality-intelligence');
+      if (hiData) {
+        const parsedData = JSON.parse(hiData);
+        if (parsedData.state) {
+          parsedData.state.currentModule = 'hiq';
+          localStorage.setItem('hospitality-intelligence', JSON.stringify(parsedData));
+        }
+      }
+    } catch (e) {
+      console.error('HiQChat: Error updating localStorage:', e);
+    }
+    
     // Add a class to the body to help with debugging
     document.body.classList.add('hiq-chat-page');
     
