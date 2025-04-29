@@ -223,6 +223,9 @@ const Layout = ({
     } else if (path.includes('/team')) {
       console.log('Layout: Setting current module to team from path');
       setCurrentModule('team');
+    } else if (path.includes('/hiq')) {
+      console.log('Layout: Setting current module to hiq from path');
+      setCurrentModule('hiq');
     }
   }, [location.pathname, setCurrentModule]);
 
@@ -555,6 +558,20 @@ const Layout = ({
           path: "/team/knowledge",
           icon: <Book className="mr-2 h-4 w-4" />
         }];
+      case 'hiq':
+        return [{
+          name: "HiQ Dashboard",
+          path: "/hiq/dashboard",
+          icon: <Home className="mr-2 h-4 w-4" />
+        }, {
+          name: "AI Insights",
+          path: "/hiq/insights",
+          icon: <ChartBar className="mr-2 h-4 w-4" />
+        }, {
+          name: "AI Assistant",
+          path: "/hiq/assistant",
+          icon: <MessageSquare className="mr-2 h-4 w-4" />
+        }];
       default:
         return [];
     }
@@ -590,6 +607,7 @@ const Layout = ({
   }, [getModuleNavItems, pagePermissions, permissionsLoaded, profile]);
 
   const handleModuleSelect = (moduleType: ModuleType) => {
+    console.log('Selected module:', moduleType);
     setCurrentModule(moduleType);
     handleMobileNavigation();
   };
