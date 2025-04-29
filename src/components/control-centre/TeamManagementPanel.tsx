@@ -93,7 +93,6 @@ const TeamManagementPanel: React.FC = () => {
   const isSuperUser = currentUserProfile?.role === 'Super User';
   const canManageUsers = isGod || isSuperUser;
   
-  
   useEffect(() => {
     fetchTeamMembers();
   }, []);
@@ -118,7 +117,6 @@ const TeamManagementPanel: React.FC = () => {
       setLoading(false);
     }
   };
-  
   
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!selectedUser) return;
@@ -168,7 +166,6 @@ const TeamManagementPanel: React.FC = () => {
       setUploadingAvatar(false);
     }
   };
-  
   
   const handleEditUser = async () => {
     if (!selectedUser) return;
@@ -247,7 +244,6 @@ const TeamManagementPanel: React.FC = () => {
           : member
       ));
       
-      
       setIsEditUserDialogOpen(false);
       setSelectedUser(null);
       
@@ -257,7 +253,6 @@ const TeamManagementPanel: React.FC = () => {
       toast.error('Failed to update user profile');
     }
   };
-  
   
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
@@ -296,7 +291,6 @@ const TeamManagementPanel: React.FC = () => {
     }
   };
   
-  
   const openEditDialog = (user: UserProfile) => {
     setSelectedUser(user);
     let birthDate: Date | undefined = undefined;
@@ -324,18 +318,15 @@ const TeamManagementPanel: React.FC = () => {
       password: ''
     });
     
-    
     setTimeout(() => {
       setIsEditUserDialogOpen(true);
     }, 0);
   };
   
-  
   const openDeleteDialog = (user: UserProfile) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
-  
   
   const handleCreateProfile = async () => {
     if (!newProfileForm.firstName || !newProfileForm.lastName || !newProfileForm.email) {
@@ -397,7 +388,6 @@ const TeamManagementPanel: React.FC = () => {
       setLoading(false);
     }
   };
-  
   
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -645,13 +635,11 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
         </CardContent>
       </Card>
 
-      
       <Dialog 
         open={isEditUserDialogOpen} 
         onOpenChange={(open) => {
           if (!open) {
             setIsEditUserDialogOpen(false);
-            
             setSelectedUser(null);
           }
         }}
@@ -856,7 +844,6 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
         onOpenChange={(open) => {
           if (!open) {
             setIsDeleteDialogOpen(false);
-            
             setSelectedUser(null);
           }
         }}
@@ -958,3 +945,48 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input 
+                  id="jobTitle" 
+                  value={newProfileForm.jobTitle}
+                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
+                  placeholder="Job title"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddProfileDialogOpen(false)}
+              type="button"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateProfile}
+              type="button"
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4" />
+                  <span>Create Profile</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default TeamManagementPanel;
