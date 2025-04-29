@@ -1,11 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from 'lucide-react';
+import { Calendar, ChevronDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatTime } from '@/lib/date-utils';
 import StaffingGanttChart from './StaffingGanttChart';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface WeeklyOverviewPanelProps {
   location: any;
@@ -16,6 +24,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const [shiftRules, setShiftRules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<'table' | 'gantt'>('table');
+  const [selectedDay, setSelectedDay] = useState<string>('all');
   
   useEffect(() => {
     if (location?.id) {
@@ -68,9 +77,15 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       'thu': 'Thursday',
       'fri': 'Friday',
       'sat': 'Saturday',
-      'sun': 'Sunday'
+      'sun': 'Sunday',
+      'all': 'All Days'
     };
     return days[dayCode] || dayCode;
+  };
+
+  // Get days to display based on filter
+  const getDaysToDisplay = () => {
+    return selectedDay === 'all' ? dayOrder : [selectedDay];
   };
 
   // Determine opening hours for the Gantt chart
@@ -133,7 +148,24 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
               <div className="p-4 text-center">Loading shift rules...</div>
             ) : (
               <>
-                {dayOrder.map(day => (
+                <div className="mb-4">
+                  <Select
+                    value={selectedDay}
+                    onValueChange={setSelectedDay}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Days</SelectItem>
+                      {dayOrder.map(day => (
+                        <SelectItem key={day} value={day}>{getDayName(day)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {getDaysToDisplay().map(day => (
                   <div key={day} className="border rounded-md overflow-hidden">
                     <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 font-medium">
                       {getDayName(day)} ({shiftsByDay[day].length})
