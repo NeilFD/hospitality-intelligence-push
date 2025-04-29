@@ -24,7 +24,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const [shiftRules, setShiftRules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<'table' | 'gantt'>('gantt');
-  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [selectedDay, setSelectedDay] = useState<string>('none');
   
   useEffect(() => {
     if (location?.id) {
@@ -79,13 +79,13 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       'sat': 'Saturday',
       'sun': 'Sunday',
       'all': 'All Days',
-      '': 'No view selected'
+      'none': 'No view selected'
     };
     return days[dayCode] || dayCode;
   };
 
   // Filter shifts by selected day
-  const filteredShiftRules = selectedDay === '' 
+  const filteredShiftRules = selectedDay === 'none' 
     ? [] 
     : selectedDay === 'all' 
       ? shiftRules 
@@ -93,7 +93,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
 
   // Get days to display based on filter
   const getDaysToDisplay = () => {
-    if (selectedDay === '') return [];
+    if (selectedDay === 'none') return [];
     return selectedDay === 'all' ? dayOrder : [selectedDay];
   };
 
@@ -160,7 +160,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
               <SelectValue placeholder="Select day" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No view selected</SelectItem>
+              <SelectItem value="none">No view selected</SelectItem>
               <SelectItem value="all">All Days</SelectItem>
               {dayOrder.map(day => (
                 <SelectItem key={day} value={day}>{getDayName(day)}</SelectItem>
@@ -169,7 +169,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
           </Select>
         </div>
         
-        {selectedDay === '' ? (
+        {selectedDay === 'none' ? (
           <div className="p-8 text-center border rounded-md bg-slate-50 dark:bg-slate-900">
             <p className="text-muted-foreground">Please select a day to view the schedule</p>
           </div>
