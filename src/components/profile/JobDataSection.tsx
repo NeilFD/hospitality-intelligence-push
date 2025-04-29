@@ -11,6 +11,29 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { supabase, checkColumnExists } from '@/lib/supabase';
 
+// Job title options
+const FOH_JOB_TITLES = [
+  "Owner",
+  "General Manager",
+  "Assistant Manager",
+  "Bar Supervisor",
+  "FOH Supervisor",
+  "FOH Team",
+  "Bar Team",
+  "Runner"
+];
+
+const BOH_JOB_TITLES = [
+  "Head Chef",
+  "Sous Chef",
+  "Chef de Partie",
+  "Commis Chef",
+  "KP"
+];
+
+// All job titles combined
+const JOB_TITLES = [...FOH_JOB_TITLES, ...BOH_JOB_TITLES];
+
 interface JobDataSectionProps {
   profile: any;
   isEditing: boolean;
@@ -111,6 +134,25 @@ export default function JobDataSection({
       <Card className="bg-white shadow-sm mb-6">
         <CardContent className="pt-6">
           <div className="grid gap-6">
+            {/* Job Title Field */}
+            <div className="space-y-2">
+              <Label htmlFor="jobTitle">Job Title</Label>
+              <Select 
+                value={editForm.jobTitle} 
+                onValueChange={(value) => handleChange('jobTitle', value)}
+              >
+                <SelectTrigger id="jobTitle">
+                  <SelectValue placeholder="Select a job title" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {JOB_TITLES.map((title) => (
+                    <SelectItem key={title} value={title}>{title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="employmentType">Employment Type</Label>
@@ -303,6 +345,11 @@ export default function JobDataSection({
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4">
+          <div>
+            <p className="text-sm text-gray-500">Job Title</p>
+            <p className="font-medium">{profile.job_title || 'Not specified'}</p>
+          </div>
+
           <div>
             <p className="text-sm text-gray-500">Employment Type</p>
             <p className="font-medium capitalize">{profile.employment_type || 'Not specified'}</p>
