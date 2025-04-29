@@ -37,10 +37,10 @@ export function ProfileAvatar({
       case 'sm':
         return 'scale-75 -top-1.5 -right-1.5';
       case 'lg':
-        return '-top-2 -right-2 scale-110';
+        return '-top-2.5 -right-2.5 scale-125';
       case 'md':
       default:
-        return '-top-1 -right-1';
+        return '-top-2 -right-2 scale-100';
     }
   };
 
@@ -76,13 +76,15 @@ export function ProfileAvatar({
 
   return (
     <div className="relative inline-block">
-      <Avatar className={`${sizeClass} ${className}`}>
+      <Avatar className={`${sizeClass} ${className} relative`}>
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt="Profile" />
         ) : null}
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
-      {shouldShowStar && <StarBadge className={getStarPosition()} />}
+      {shouldShowStar && (
+        <StarBadge className={getStarPosition()} />
+      )}
     </div>
   );
 }
