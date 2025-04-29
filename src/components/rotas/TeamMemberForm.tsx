@@ -256,17 +256,19 @@ export default function TeamMemberForm({
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="wage_rate">Wage Rate (£/hr)</Label>
-                <Input
-                  id="wage_rate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.wage_rate}
-                  onChange={(e) => handleChange('wage_rate', parseFloat(e.target.value))}
-                />
-              </div>
+              {formData.employment_type === 'hourly' && (
+                <div className="space-y-2">
+                  <Label htmlFor="wage_rate">Wage Rate (£/hr)</Label>
+                  <Input
+                    id="wage_rate"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.wage_rate}
+                    onChange={(e) => handleChange('wage_rate', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              )}
               
               {formData.employment_type === 'salary' && (
                 <div className="space-y-2">
@@ -277,7 +279,7 @@ export default function TeamMemberForm({
                     min="0"
                     step="100"
                     value={formData.annual_salary}
-                    onChange={(e) => handleChange('annual_salary', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('annual_salary', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
@@ -291,7 +293,7 @@ export default function TeamMemberForm({
                     min="0"
                     step="0.01"
                     value={formData.contractor_rate}
-                    onChange={(e) => handleChange('contractor_rate', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('contractor_rate', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
@@ -313,7 +315,7 @@ export default function TeamMemberForm({
                     type="number"
                     min="0"
                     value={formData.min_hours_per_week}
-                    onChange={(e) => handleChange('min_hours_per_week', parseInt(e.target.value))}
+                    onChange={(e) => handleChange('min_hours_per_week', parseInt(e.target.value) || 0)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -323,7 +325,7 @@ export default function TeamMemberForm({
                     type="number"
                     min={formData.min_hours_per_week}
                     value={formData.max_hours_per_week}
-                    onChange={(e) => handleChange('max_hours_per_week', parseInt(e.target.value))}
+                    onChange={(e) => handleChange('max_hours_per_week', parseInt(e.target.value) || 0)}
                   />
                 </div>
               </div>
@@ -336,7 +338,7 @@ export default function TeamMemberForm({
                     type="number"
                     min="0"
                     value={formData.min_hours_per_day}
-                    onChange={(e) => handleChange('min_hours_per_day', parseInt(e.target.value))}
+                    onChange={(e) => handleChange('min_hours_per_day', parseInt(e.target.value) || 0)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -346,7 +348,7 @@ export default function TeamMemberForm({
                     type="number"
                     min={formData.min_hours_per_day}
                     value={formData.max_hours_per_day}
-                    onChange={(e) => handleChange('max_hours_per_day', parseInt(e.target.value))}
+                    onChange={(e) => handleChange('max_hours_per_day', parseInt(e.target.value) || 0)}
                   />
                 </div>
               </div>

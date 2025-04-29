@@ -29,6 +29,7 @@ import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import JobDataSection from '@/components/profile/JobDataSection';
 import HiScoreSection from '@/components/profile/HiScoreSection';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Extend the UserProfile type with the job data properties
 interface ExtendedUserProfile extends UserProfile {
@@ -562,7 +563,9 @@ const ProfilePage = () => {
     if (!profile) return;
     
     try {
-      const updateData: any = {
+      console.log('Saving profile with data:', editForm);
+      
+      const updateData = {
         first_name: editForm.firstName,
         last_name: editForm.lastName,
         favourite_dish: editForm.favouriteDish,
@@ -581,21 +584,32 @@ const ProfilePage = () => {
         in_ft_education: editForm.inFtEducation
       };
       
-      // Add appropriate wage field based on employment type
+      // Add the appropriate wage field based on employment type
       if (editForm.employmentType === 'hourly') {
         updateData.wage_rate = editForm.wageRate;
+        updateData.annual_salary = 0;
+        updateData.contractor_rate = 0;
       } else if (editForm.employmentType === 'salary') {
         updateData.annual_salary = editForm.annualSalary;
+        updateData.wage_rate = 0;
+        updateData.contractor_rate = 0;
       } else if (editForm.employmentType === 'contractor') {
         updateData.contractor_rate = editForm.contractorRate;
+        updateData.wage_rate = 0;
+        updateData.annual_salary = 0;
       }
+      
+      console.log('Updating profile with data:', updateData);
       
       const { error } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', profile.id);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
       
       setProfile({
         ...profile,
@@ -616,7 +630,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error(`Failed to update profile: ${error.message || 'Unknown error'}`);
     }
   };
 

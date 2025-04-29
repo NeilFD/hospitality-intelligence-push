@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface JobDataSectionProps {
   profile: any;
@@ -27,6 +28,7 @@ export default function JobDataSection({
   onEditJobDetails
 }: JobDataSectionProps) {
   const { profile: currentUserProfile } = useAuthStore();
+  const isMobile = useIsMobile();
   
   // Check if the current user has manager permissions
   const hasManagerPermissions = currentUserProfile?.role && 
@@ -66,7 +68,7 @@ export default function JobDataSection({
       <Card className="bg-white shadow-sm mb-6">
         <CardContent className="pt-6">
           <div className="grid gap-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="employmentType">Employment Type</Label>
                 <Select 
@@ -93,7 +95,7 @@ export default function JobDataSection({
                     min="0"
                     step="0.01"
                     value={editForm.wageRate}
-                    onChange={(e) => handleChange('wageRate', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('wageRate', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
@@ -107,7 +109,7 @@ export default function JobDataSection({
                     min="0"
                     step="100"
                     value={editForm.annualSalary}
-                    onChange={(e) => handleChange('annualSalary', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('annualSalary', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
@@ -121,13 +123,13 @@ export default function JobDataSection({
                     min="0"
                     step="0.01"
                     value={editForm.contractorRate}
-                    onChange={(e) => handleChange('contractorRate', parseFloat(e.target.value))}
+                    onChange={(e) => handleChange('contractorRate', parseFloat(e.target.value) || 0)}
                   />
                 </div>
               )}
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="employmentStartDate">Employment Start Date</Label>
                 <Input
@@ -155,7 +157,7 @@ export default function JobDataSection({
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="minHoursPerWeek">Min Hours/Week</Label>
                 <Input
@@ -163,7 +165,7 @@ export default function JobDataSection({
                   type="number"
                   min="0"
                   value={editForm.minHoursPerWeek}
-                  onChange={(e) => handleChange('minHoursPerWeek', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('minHoursPerWeek', parseInt(e.target.value) || 0)}
                 />
               </div>
               <div className="space-y-2">
@@ -173,12 +175,12 @@ export default function JobDataSection({
                   type="number"
                   min={editForm.minHoursPerWeek}
                   value={editForm.maxHoursPerWeek}
-                  onChange={(e) => handleChange('maxHoursPerWeek', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('maxHoursPerWeek', parseInt(e.target.value) || 0)}
                 />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="minHoursPerDay">Min Hours/Day</Label>
                 <Input
@@ -186,7 +188,7 @@ export default function JobDataSection({
                   type="number"
                   min="0"
                   value={editForm.minHoursPerDay}
-                  onChange={(e) => handleChange('minHoursPerDay', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('minHoursPerDay', parseInt(e.target.value) || 0)}
                 />
               </div>
               <div className="space-y-2">
@@ -196,7 +198,7 @@ export default function JobDataSection({
                   type="number"
                   min={editForm.minHoursPerDay}
                   value={editForm.maxHoursPerDay}
-                  onChange={(e) => handleChange('maxHoursPerDay', parseInt(e.target.value))}
+                  onChange={(e) => handleChange('maxHoursPerDay', parseInt(e.target.value) || 0)}
                 />
               </div>
             </div>
@@ -253,7 +255,7 @@ export default function JobDataSection({
           )}
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4">
+        <div className={`grid grid-cols-1 ${isMobile ? 'grid-cols-2' : 'md:grid-cols-3'} gap-y-4`}>
           <div>
             <p className="text-sm text-gray-500">Employment Type</p>
             <p className="font-medium capitalize">{profile.employment_type || 'Not specified'}</p>
