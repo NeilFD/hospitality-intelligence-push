@@ -97,11 +97,14 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
       const category = isKitchen ? 'kitchen' : 'foh';
       
       hours.forEach(hourSlot => {
-        // For comparison purposes, convert hour 0 to 24 when we need to compare with shifts that cross midnight
-        const hourForComparison = hourSlot.hour === 0 && ruleEnd > 23 ? 24 : hourSlot.hour;
+        // Convert hourSlot.hour to a comparable value for shifts that cross midnight
+        // Only convert hour 0 to 24 when the rule ends after hour 23 (meaning it crosses midnight)
+        const hourForComparison = hourSlot.hour === 0 && ruleEnd === 24 ? 24 : hourSlot.hour;
         
         // Check if this rule applies to this hour
-        if (hourForComparison >= ruleStart && hourForComparison < ruleEnd) {
+        if ((ruleStart <= hourForComparison && hourForComparison < ruleEnd) || 
+            // Special case for midnight: if hourSlot is 0 and rule ends at 24 (midnight)
+            (hourSlot.hour === 0 && ruleEnd === 24)) {
           hourSlot[category].min += rule.min_staff;
           hourSlot[category].max += rule.max_staff;
           hourSlot.total.min += rule.min_staff;
