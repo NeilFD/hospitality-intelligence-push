@@ -75,7 +75,7 @@ export function ProfileAvatar({
   console.log(`Avatar for ${profileId}:`, { highScore, shouldShowStar, isLoading });
 
   return (
-    <div className="relative">
+    <div className="relative inline-block">
       <Avatar className={`${sizeClass} ${className}`}>
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt="Profile" />

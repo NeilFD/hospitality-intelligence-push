@@ -8,7 +8,7 @@ interface StarBadgeProps {
 
 export function StarBadge({ className = '' }: StarBadgeProps) {
   return (
-    <div className={`absolute z-20 ${className}`}>
+    <div className={`absolute ${className}`} style={{ zIndex: 50 }}>
       <div className="relative">
         {/* Enhanced glow effect behind the star */}
         <div className="absolute inset-0 blur-md text-yellow-300 scale-125">
