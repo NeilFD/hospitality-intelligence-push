@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { generateWeekDates } from '@/lib/date-utils';
 import { supabase } from '@/lib/supabase';
+import { calculateGrossProfit } from '@/utils/finance-utils';
 
 interface TrackerData {
   id: string;
@@ -222,7 +223,7 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
   };
   
   const calculateCost = (day: TrackerData) => {
-    return calculateNetPurchases(day) - day.staffFoodAllowance;
+    return calculateNetPurchases(day) + day.staffFoodAllowance;
   };
   
   const calculateGrossProfit = (day: TrackerData) => {
@@ -231,7 +232,7 @@ const WeeklyTracker = React.memo(({ modulePrefix, moduleType }: WeeklyTrackerPro
   
   const calculateGPPercentage = (day: TrackerData) => {
     if (day.revenue === 0) return 0;
-    return (calculateGrossProfit(day) / day.revenue) * 100;
+    return ((day.revenue - calculateCost(day)) / day.revenue) * 100;
   };
 
   const calculateWeeklyTotalForSupplier = (supplierId: string) => {

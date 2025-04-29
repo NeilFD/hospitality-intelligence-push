@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
@@ -13,6 +14,7 @@ import {
   fetchTrackerCreditNotes 
 } from '@/services/kitchen-service';
 import { TrackerSummary, ModuleType } from '@/types/kitchen-ledger';
+import { calculateGrossProfit } from '@/utils/finance-utils';
 
 interface WeeklySummary {
   week: string;
@@ -190,12 +192,12 @@ export default function KeyInsights() {
         const bevRevenue = bevWeekMap[week]?.revenue || 0;
         const bevCost = bevWeekMap[week]?.cost || 0;
         
-        const foodGP = foodRevenue > 0 ? ((foodRevenue - foodCost) / foodRevenue) * 100 : 0;
-        const bevGP = bevRevenue > 0 ? ((bevRevenue - bevCost) / bevRevenue) * 100 : 0;
+        // Calculate actual GP percentages from the true revenue and cost values
+        const foodGP = calculateGrossProfit(foodRevenue, foodCost);
+        const bevGP = calculateGrossProfit(bevRevenue, bevCost);
         const combinedRevenue = foodRevenue + bevRevenue;
-        const combinedGP = combinedRevenue > 0 
-          ? ((combinedRevenue - (foodCost + bevCost)) / combinedRevenue) * 100 
-          : 0;
+        const combinedCosts = foodCost + bevCost;
+        const combinedGP = calculateGrossProfit(combinedRevenue, combinedCosts);
         
         console.log(`${week} summary - Food: £${foodRevenue} (${foodGP.toFixed(1)}%), Bev: £${bevRevenue} (${bevGP.toFixed(1)}%), Combined: £${combinedRevenue} (${combinedGP.toFixed(1)}%)`);
         

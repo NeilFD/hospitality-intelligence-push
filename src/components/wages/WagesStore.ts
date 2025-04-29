@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages, refreshFinancialPerformanceAnalysis } from '@/services/wages-service';
+import { calculateGrossProfit } from '@/utils/finance-utils';
 
 export interface DailyWages {
   year: number;
@@ -237,24 +238,23 @@ export const useWagesStore = create<WagesStore>()(
         
         // Accumulate data by day of week
         monthlyData.forEach(day => {
-          const dayData = weekdayTotals[day.dayOfWeek];
-          if (dayData) {
-            dayData.fohWages += day.fohWages;
-            dayData.kitchenWages += day.kitchenWages;
-            dayData.foodRevenue += day.foodRevenue;
-            dayData.bevRevenue += day.bevRevenue;
-            dayData.totalWages += (day.fohWages + day.kitchenWages);
-            dayData.totalRevenue += (day.foodRevenue + day.bevRevenue);
-            dayData.count++;
+          const dayOfWeek = day.dayOfWeek;
+          if (weekdayTotals[dayOfWeek]) {
+            weekdayTotals[dayOfWeek].fohWages += day.fohWages;
+            weekdayTotals[dayOfWeek].kitchenWages += day.kitchenWages;
+            weekdayTotals[dayOfWeek].foodRevenue += day.foodRevenue;
+            weekdayTotals[dayOfWeek].bevRevenue += day.bevRevenue;
+            weekdayTotals[dayOfWeek].totalWages += (day.fohWages + day.kitchenWages);
+            weekdayTotals[dayOfWeek].totalRevenue += (day.foodRevenue + day.bevRevenue);
+            weekdayTotals[dayOfWeek].count++;
           }
         });
         
-        // Calculate percentages
+        // Calculate accurate percentages for each day of the week
         Object.keys(weekdayTotals).forEach(day => {
           const data = weekdayTotals[day];
-          data.wagesPercentage = data.totalRevenue > 0 
-            ? (data.totalWages / data.totalRevenue) * 100
-            : 0;
+          // Use calculateGrossProfit utility to get accurate wage percentage
+          data.wagesPercentage = calculateGrossProfit(data.totalWages, data.totalRevenue);
         });
         
         return weekdayTotals;
