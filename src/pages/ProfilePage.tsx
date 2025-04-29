@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -28,11 +27,20 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader';
 
+// Extend the UserProfile type with the job data properties
+interface ExtendedUserProfile extends UserProfile {
+  employment_type?: string;
+  min_hours_per_day?: number;
+  max_hours_per_day?: number;
+  min_hours_per_week?: number;
+  max_hours_per_week?: number;
+}
+
 const ProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { profile: currentUserProfile, isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -126,7 +134,7 @@ const ProfilePage = () => {
             console.log("Current user profile not available yet");
             return; // Will try again when currentUserProfile becomes available
           }
-          profileToLoad = currentUserProfile;
+          profileToLoad = currentUserProfile as ExtendedUserProfile;
         }
         
         console.log("Loaded profile:", profileToLoad);
@@ -179,7 +187,9 @@ const ProfilePage = () => {
       (!profile || profile.id !== currentUserProfile.id)
     ) {
       console.log("Updating profile from currentUserProfile change");
-      setProfile(currentUserProfile);
+      setProfile(currentUserProfile as ExtendedUserProfile);
+      
+      const extendedProfile = currentUserProfile as ExtendedUserProfile;
       
       setEditForm({
         firstName: currentUserProfile.first_name || '',
@@ -189,11 +199,11 @@ const ProfilePage = () => {
         favouriteDrink: currentUserProfile.favourite_drink || '',
         aboutMe: currentUserProfile.about_me || '',
         birthDate: currentUserProfile.birth_date || '',
-        employmentType: currentUserProfile.employment_type || 'hourly',
-        minHoursPerDay: currentUserProfile.min_hours_per_day || 0,
-        maxHoursPerDay: currentUserProfile.max_hours_per_day || 8,
-        minHoursPerWeek: currentUserProfile.min_hours_per_week || 0,
-        maxHoursPerWeek: currentUserProfile.max_hours_per_week || 40
+        employmentType: extendedProfile.employment_type || 'hourly',
+        minHoursPerDay: extendedProfile.min_hours_per_day || 0,
+        maxHoursPerDay: extendedProfile.max_hours_per_day || 8,
+        minHoursPerWeek: extendedProfile.min_hours_per_week || 0,
+        maxHoursPerWeek: extendedProfile.max_hours_per_week || 40
       });
     }
   }, [currentUserProfile, userId, loading, profile, isAuthenticated]);
@@ -530,13 +540,13 @@ const ProfilePage = () => {
             favourite_dish: editForm.favouriteDish,
             favourite_drink: editForm.favouriteDrink,
             about_me: editForm.aboutMe,
-            birth_date: editForm.birthDate,
+            // Need to cast to any since the original UserProfile type doesn't have these properties
             employment_type: editForm.employmentType,
             min_hours_per_day: editForm.minHoursPerDay,
             max_hours_per_day: editForm.maxHoursPerDay,
             min_hours_per_week: editForm.minHoursPerWeek,
             max_hours_per_week: editForm.maxHoursPerWeek
-          }
+          } as any
         });
       }
     } catch (error) {
@@ -674,7 +684,6 @@ const ProfilePage = () => {
                   </div>
                 )}
 
-                {/* Dark gradient overlay at the bottom of banner for better text visibility */}
                 <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent"></div>
               </div>
             )}
@@ -718,19 +727,24 @@ const ProfilePage = () => {
           
           <CardContent className="px-6 pb-6 pt-0">
             <Tabs defaultValue="about" className="mt-4">
-              <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg">
-                <TabsTrigger value="about" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">About</TabsTrigger>
-                <TabsTrigger value="job-data" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <div className="flex items-center">
+              <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg w-full">
+                <TabsTrigger value="about" className="rounded-md w-full">About</TabsTrigger>
+                <TabsTrigger value="job-data" className="rounded-md w-full">
+                  <div className="flex items-center justify-center">
                     <BriefcaseBusiness className="h-4 w-4 mr-2" />
                     Job Data
                   </div>
                 </TabsTrigger>
                 {isCurrentUser && (
                   <>
-                    <TabsTrigger value="settings" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">Edit Profile</TabsTrigger>
-                    <TabsTrigger value="notifications" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                      <div className="flex items-center">
+                    <TabsTrigger value="settings" className="rounded-md w-full">
+                      <div className="flex items-center justify-center">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Profile
+                      </div>
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="rounded-md w-full">
+                      <div className="flex items-center justify-center">
                         <Bell className="h-4 w-4 mr-2" />
                         Notifications
                       </div>
@@ -793,7 +807,7 @@ const ProfilePage = () => {
                       <div className="space-y-4">
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <div className="text-sm text-gray-500 mb-1">Employment Type</div>
-                          <div className="font-semibold capitalize">{profile.employment_type || 'Not specified'}</div>
+                          <div className="font-semibold capitalize">{(profile as ExtendedUserProfile).employment_type || 'Not specified'}</div>
                         </div>
                         
                         <div className="bg-gray-50 p-4 rounded-lg">
@@ -806,16 +820,16 @@ const ProfilePage = () => {
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <div className="text-sm text-gray-500 mb-2">Daily Hours</div>
                           <div className="flex items-center justify-between">
-                            <span>Min: <span className="font-semibold">{profile.min_hours_per_day || 0}</span></span>
-                            <span>Max: <span className="font-semibold">{profile.max_hours_per_day || 0}</span></span>
+                            <span>Min: <span className="font-semibold">{(profile as ExtendedUserProfile).min_hours_per_day || 0}</span></span>
+                            <span>Max: <span className="font-semibold">{(profile as ExtendedUserProfile).max_hours_per_day || 0}</span></span>
                           </div>
                         </div>
                         
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <div className="text-sm text-gray-500 mb-2">Weekly Hours</div>
                           <div className="flex items-center justify-between">
-                            <span>Min: <span className="font-semibold">{profile.min_hours_per_week || 0}</span></span>
-                            <span>Max: <span className="font-semibold">{profile.max_hours_per_week || 0}</span></span>
+                            <span>Min: <span className="font-semibold">{(profile as ExtendedUserProfile).min_hours_per_week || 0}</span></span>
+                            <span>Max: <span className="font-semibold">{(profile as ExtendedUserProfile).max_hours_per_week || 0}</span></span>
                           </div>
                         </div>
                       </div>
@@ -842,235 +856,3 @@ const ProfilePage = () => {
                         <Input 
                           id="firstName" 
                           value={editForm.firstName}
-                          onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
-                          placeholder="First name"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input 
-                          id="lastName" 
-                          value={editForm.lastName}
-                          onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
-                          placeholder="Last name"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="jobTitle">Job Title</Label>
-                      <Input 
-                        id="jobTitle" 
-                        value={editForm.jobTitle}
-                        onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
-                        placeholder="e.g. Head Chef, Server, Manager"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="birthDate">Birthday (MM-DD)</Label>
-                      <Input 
-                        id="birthDate" 
-                        value={editForm.birthDate}
-                        onChange={(e) => setEditForm({...editForm, birthDate: e.target.value})}
-                        placeholder="MM-DD (e.g. 05-15)"
-                      />
-                      <p className="text-sm text-muted-foreground">Format: MM-DD (e.g. 05-15)</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="employmentType">Employment Type</Label>
-                      <Select 
-                        value={editForm.employmentType} 
-                        onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select employment type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="hourly">Hourly</SelectItem>
-                          <SelectItem value="salary">Salary</SelectItem>
-                          <SelectItem value="contract">Contract</SelectItem>
-                          <SelectItem value="part-time">Part-time</SelectItem>
-                          <SelectItem value="full-time">Full-time</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Hours Per Day</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="minHoursPerDay" className="text-sm">Minimum</Label>
-                          <Input 
-                            id="minHoursPerDay" 
-                            type="number" 
-                            value={editForm.minHoursPerDay}
-                            onChange={(e) => setEditForm({...editForm, minHoursPerDay: parseInt(e.target.value) || 0})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="maxHoursPerDay" className="text-sm">Maximum</Label>
-                          <Input 
-                            id="maxHoursPerDay" 
-                            type="number" 
-                            value={editForm.maxHoursPerDay}
-                            onChange={(e) => setEditForm({...editForm, maxHoursPerDay: parseInt(e.target.value) || 0})}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Hours Per Week</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="minHoursPerWeek" className="text-sm">Minimum</Label>
-                          <Input 
-                            id="minHoursPerWeek" 
-                            type="number" 
-                            value={editForm.minHoursPerWeek}
-                            onChange={(e) => setEditForm({...editForm, minHoursPerWeek: parseInt(e.target.value) || 0})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="maxHoursPerWeek" className="text-sm">Maximum</Label>
-                          <Input 
-                            id="maxHoursPerWeek" 
-                            type="number" 
-                            value={editForm.maxHoursPerWeek}
-                            onChange={(e) => setEditForm({...editForm, maxHoursPerWeek: parseInt(e.target.value) || 0})}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="favouriteDish">Favourite Dish</Label>
-                      <Input 
-                        id="favouriteDish" 
-                        value={editForm.favouriteDish}
-                        onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
-                        placeholder="What's your favourite dish?"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="favouriteDrink">Favourite Drink</Label>
-                      <Input 
-                        id="favouriteDrink" 
-                        value={editForm.favouriteDrink}
-                        onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
-                        placeholder="What's your favourite drink?"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="aboutMe">About Me</Label>
-                      <Textarea 
-                        id="aboutMe" 
-                        value={editForm.aboutMe}
-                        onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
-                        placeholder="Tell us a bit about yourself..."
-                        className="min-h-[100px]"
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end space-x-2 mt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={handleCancelEdit}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSaveProfile}>
-                        Save Changes
-                      </Button>
-                    </div>
-                  </div>
-                </TabsContent>
-              )}
-              
-              {isCurrentUser && (
-                <TabsContent value="notifications">
-                  <div className="grid gap-4 py-4">
-                    <h3 className="text-lg font-semibold mb-4">Push Notifications</h3>
-                    {!isSupported ? (
-                      <div className="bg-amber-50 p-4 rounded-md border border-amber-200">
-                        <p className="text-amber-800">
-                          Push notifications are not supported on this browser or device.
-                        </p>
-                        <p className="text-sm text-amber-700 mt-2">
-                          Try using Chrome, Edge, or Firefox on a desktop or Android device for the best notification experience.
-                        </p>
-                      </div>
-                    ) : isPermissionBlocked ? (
-                      <div className="bg-red-50 p-4 rounded-md border border-red-200">
-                        <p className="text-red-800">
-                          Notification permissions are blocked in your browser settings.
-                        </p>
-                        <div className="text-sm text-red-700 mt-2 space-y-2">
-                          <p><strong>To enable notifications:</strong></p>
-                          <ul className="list-disc pl-5 space-y-1">
-                            <li>Look for the site settings icon in your browser's address bar</li>
-                            <li>Find "Notifications" in the permissions list</li>
-                            <li>Change the setting from "Block" to "Allow"</li>
-                            <li>Refresh this page after changing the setting</li>
-                          </ul>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="flex items-center space-x-2 mb-4">
-                          <Switch
-                            id="push-notifications"
-                            checked={isSubscribed}
-                            onCheckedChange={isSubscribed ? unsubscribeUser : subscribeUser}
-                          />
-                          <Label htmlFor="push-notifications">
-                            {isSubscribed ? 'Disable' : 'Enable'} Push Notifications
-                          </Label>
-                        </div>
-                        
-                        <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mt-2">
-                          <h4 className="font-medium text-blue-800">About Push Notifications</h4>
-                          <p className="text-sm text-blue-700 mt-1">
-                            When enabled, you'll receive notifications when:
-                          </p>
-                          <ul className="list-disc pl-5 text-sm text-blue-700 mt-2 space-y-1">
-                            <li>Someone mentions you in a chat message</li>
-                            <li>Important announcements are posted</li>
-                            <li>You're invited to team activities</li>
-                          </ul>
-                          
-                          <h4 className="font-medium text-blue-800 mt-4">Device-Specific Setup</h4>
-                          <div className="text-sm text-blue-700 mt-1 space-y-2">
-                            <p><strong>iOS (iPhone/iPad) Users:</strong></p>
-                            <ul className="list-disc pl-5 space-y-1">
-                              <li>Add this website to your home screen for better notification support</li>
-                              <li>Go to your device Settings &gt; Safari &gt; Advanced &gt; Experimental Features</li>
-                              <li>Enable "Push API" and "Web Push" if available</li>
-                              <li>You may need to explicitly allow notifications in Settings &gt; Safari &gt; Notifications</li>
-                            </ul>
-                            
-                            <p className="mt-2"><strong>Android Users:</strong></p>
-                            <ul className="list-disc pl-5 space-y-1">
-                              <li>Add to home screen for best experience</li>
-                              <li>Ensure Chrome/browser notifications are enabled in system settings</li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              )}
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-export default ProfilePage;
