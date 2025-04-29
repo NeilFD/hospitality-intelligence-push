@@ -12,6 +12,7 @@ interface MainNavProps {
 
 const MainNav: React.FC<MainNavProps> = ({ className }) => {
   const currentModule = useCurrentModule();
+  const setCurrentModule = useSetCurrentModule();
   const [accessibleModules, setAccessibleModules] = useState<ModuleType[]>([]);
   const location = useLocation();
   const [activeHiqItem, setActiveHiqItem] = useState<string>('dashboard');
@@ -93,7 +94,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           active={currentModule === 'hiq'} 
         />
         
-        {/* Only show Dashboard and Performance submenu items for HiQ */}
+        {/* EXPLICITLY only show Dashboard and Performance submenu items for HiQ */}
         {currentModule === 'hiq' && (
           <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
             <NavItem 
@@ -108,7 +109,6 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
               icon="performance" 
               active={activeHiqItem === 'performance'} 
             />
-            {/* AI menu items have been completely removed */}
           </div>
         )}
         

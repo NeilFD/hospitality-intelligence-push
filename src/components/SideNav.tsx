@@ -18,7 +18,7 @@ export function SideNav({ className }: SideNavProps) {
   
   // Add effect to handle HiQ module specifically
   useEffect(() => {
-    // Check if we're on an HiQ page
+    // Check if we're on an HiQ page and set the current module
     if (location.pathname.includes('/hiq')) {
       console.log('SideNav: HiQ path detected, setting currentModule to hiq');
       
@@ -26,7 +26,7 @@ export function SideNav({ className }: SideNavProps) {
         setCurrentModule('hiq');
       }
       
-      // Also update localStorage
+      // Update localStorage to persist the HiQ module settings
       try {
         const storeData = localStorage.getItem('tavern-kitchen-ledger');
         if (storeData) {
