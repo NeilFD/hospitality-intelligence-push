@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/services/auth-service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface JobDataSectionProps {
   profile: any;
@@ -27,6 +29,32 @@ export default function JobDataSection({
   onEditJobDetails
 }: JobDataSectionProps) {
   const { profile: currentUserProfile } = useAuthStore();
+  const [hasEmploymentStartDateColumn, setHasEmploymentStartDateColumn] = useState(true);
+  
+  useEffect(() => {
+    // Check if employment_start_date column exists
+    const checkColumn = async () => {
+      try {
+        const { data, error } = await supabase.rpc('check_column_exists', { 
+          p_table_name: 'profiles', 
+          p_column_name: 'employment_start_date' 
+        });
+        
+        if (error) {
+          console.error('Error checking column:', error);
+          setHasEmploymentStartDateColumn(false);
+          return;
+        }
+        
+        setHasEmploymentStartDateColumn(!!data);
+      } catch (e) {
+        console.error('Exception checking column:', e);
+        setHasEmploymentStartDateColumn(false);
+      }
+    };
+    
+    checkColumn();
+  }, []);
   
   // Check if the current user has manager permissions
   const hasManagerPermissions = currentUserProfile?.role && 
@@ -128,15 +156,17 @@ export default function JobDataSection({
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="employmentStartDate">Employment Start Date</Label>
-                <Input
-                  id="employmentStartDate"
-                  type="date"
-                  value={editForm.employmentStartDate}
-                  onChange={(e) => handleChange('employmentStartDate', e.target.value)}
-                />
-              </div>
+              {hasEmploymentStartDateColumn && (
+                <div className="space-y-2">
+                  <Label htmlFor="employmentStartDate">Employment Start Date</Label>
+                  <Input
+                    id="employmentStartDate"
+                    type="date"
+                    value={editForm.employmentStartDate}
+                    onChange={(e) => handleChange('employmentStartDate', e.target.value)}
+                  />
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="employmentStatus">Employment Status</Label>
@@ -269,10 +299,12 @@ export default function JobDataSection({
             <p className="font-medium capitalize">{profile.employment_status || 'Not specified'}</p>
           </div>
           
-          <div>
-            <p className="text-sm text-gray-500">Start Date</p>
-            <p className="font-medium">{formatDate(profile.employment_start_date)}</p>
-          </div>
+          {hasEmploymentStartDateColumn && (
+            <div>
+              <p className="text-sm text-gray-500">Start Date</p>
+              <p className="font-medium">{formatDate(profile.employment_start_date)}</p>
+            </div>
+          )}
           
           <div>
             <p className="text-sm text-gray-500">Weekly Hours</p>

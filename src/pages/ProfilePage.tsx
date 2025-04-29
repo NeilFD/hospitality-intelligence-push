@@ -576,10 +576,21 @@ const ProfilePage = () => {
         min_hours_per_week: editForm.minHoursPerWeek,
         max_hours_per_week: editForm.maxHoursPerWeek,
         available_for_rota: editForm.availableForRota,
-        employment_start_date: editForm.employmentStartDate,
         employment_status: editForm.employmentStatus,
         in_ft_education: editForm.inFtEducation
       };
+      
+      // Check if employment_start_date column exists before including it
+      const hasColumn = await supabase.rpc('check_column_exists', { 
+        p_table_name: 'profiles', 
+        p_column_name: 'employment_start_date' 
+      });
+      
+      if (hasColumn.data) {
+        updateData.employment_start_date = editForm.employmentStartDate;
+      } else {
+        console.log('employment_start_date column does not exist, skipping this field');
+      }
       
       // Add appropriate wage field based on employment type
       if (editForm.employmentType === 'hourly') {

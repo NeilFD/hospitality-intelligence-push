@@ -237,3 +237,24 @@ export const checkInvitationToken = async (token: string) => {
     return null;
   }
 };
+
+// New function to check if a column exists in Supabase
+export const checkColumnExists = async (tableName: string, columnName: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('check_column_exists', { 
+        p_table_name: tableName, 
+        p_column_name: columnName 
+      });
+    
+    if (error) {
+      console.error('Error checking column existence:', error);
+      return false;
+    }
+    
+    return data || false;
+  } catch (e) {
+    console.error('Exception checking column existence:', e);
+    return false;
+  }
+};
