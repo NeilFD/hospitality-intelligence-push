@@ -145,7 +145,7 @@ export default function JobDataSection({
                   <SelectValue placeholder="Select a job title" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {JOB_TITLES.map((title) => (
                     <SelectItem key={title} value={title}>{title}</SelectItem>
                   ))}
