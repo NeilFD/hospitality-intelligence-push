@@ -928,7 +928,6 @@ export type Database = {
         Row: {
           about_me: string | null
           annual_salary: number | null
-          available_for_rota: boolean | null
           avatar_url: string | null
           banner_position_y: number | null
           banner_url: string | null
@@ -961,7 +960,6 @@ export type Database = {
         Insert: {
           about_me?: string | null
           annual_salary?: number | null
-          available_for_rota?: boolean | null
           avatar_url?: string | null
           banner_position_y?: number | null
           banner_url?: string | null
@@ -994,7 +992,6 @@ export type Database = {
         Update: {
           about_me?: string | null
           annual_salary?: number | null
-          available_for_rota?: boolean | null
           avatar_url?: string | null
           banner_position_y?: number | null
           banner_url?: string | null
