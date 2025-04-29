@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
 import { RotasLogo } from '@/components/RotasLogo';
+import { updateJobRoles } from '@/components/rotas/JobRolesUtils';
 
 export default function HiQRotas() {
   const setCurrentModule = useSetCurrentModule();
@@ -78,7 +80,10 @@ export default function HiQRotas() {
       
       setLocation(locationData);
       
-      // Fetch job roles
+      // Update job roles (add Chef Manager and change Kitchen Assistant to Kitchen Porter)
+      await updateJobRoles(locationData.id);
+      
+      // Fetch job roles (after updating them)
       const { data: jobRolesData, error: jobRolesError } = await supabase
         .from('job_roles')
         .select('*')
@@ -106,9 +111,8 @@ export default function HiQRotas() {
       
     } catch (error) {
       console.error('Error fetching rota data:', error);
-      toast("Error loading data", {
-        description: "There was a problem loading rota configuration data.",
-        style: { backgroundColor: "#f44336", color: "#fff" },
+      toast.error("Error loading data", {
+        description: "There was a problem loading rota configuration data."
       });
     } finally {
       setIsLoading(false);
