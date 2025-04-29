@@ -111,7 +111,7 @@ export function SideNav({ className }: SideNavProps) {
   
   return (
     <Sidebar 
-      className={cn("w-[250px] border-r", className)} 
+      className={cn("w-[250px] border-r flex-shrink-0", className)} 
       data-hiq-path={isHiqPath}
       data-current-module={currentModule}
     >

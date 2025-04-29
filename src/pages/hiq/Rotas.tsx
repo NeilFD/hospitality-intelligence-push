@@ -121,9 +121,9 @@ export default function HiQRotas() {
   };
 
   return (
-    <div className="animate-fade-in h-full overflow-auto">
-      <div className="px-0 py-4 space-y-4">
-        <div className="flex items-center justify-between px-4">
+    <div className="animate-fade-in h-full w-full overflow-auto">
+      <div className="px-0 space-y-4">
+        <div className="flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-gradient-to-br from-[#3a86ff]/60 to-[#0072ff]/80 rounded-lg shadow-glass">
               <ClipboardList className="h-5 w-5 text-white/90" />
@@ -137,7 +137,7 @@ export default function HiQRotas() {
           </div>
         </div>
         
-        <Card className="shadow-md rounded-none border-x-0 m-0">
+        <Card className="shadow-md rounded-none border-x-0 m-0 w-full">
           <CardHeader className="pb-3 px-4">
             <div className="flex items-center justify-between">
               <div>
