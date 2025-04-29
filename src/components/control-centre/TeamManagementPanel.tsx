@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { 
   UserCheck, UserCog, UserPlus, Share2, Copy, AlertCircle, Trash2, 
   MoreVertical, CalendarIcon, Image, Upload, Mail, MessageSquare, 
-  Link2, Send, Loader2, Users, Clipboard 
+  Link2, Send, Loader2, Users, Clipboard, BriefcaseBusiness
 } from 'lucide-react';
 import { supabase, checkProfilesCount, directSignUp, adminUpdateUserPassword } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -68,8 +68,12 @@ const TeamManagementPanel: React.FC = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [invitationEmail, setInvitationEmail] = useState('');
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [hasEmploymentStartDateColumn, setHasEmploymentStartDateColumn] = useState(true);
+  const [hasEmploymentStatusColumn, setHasEmploymentStatusColumn] = useState(true);
+  const [activeTab, setActiveTab] = useState('profile');
   
   const [editForm, setEditForm] = useState({
+    // Basic profile info
     firstName: '',
     lastName: '',
     role: '' as UserRoleType,
@@ -78,7 +82,21 @@ const TeamManagementPanel: React.FC = () => {
     favouriteDish: '',
     favouriteDrink: '',
     aboutMe: '',
-    password: ''
+    password: '',
+    
+    // Job data fields
+    employmentType: 'hourly',
+    wageRate: 0,
+    annualSalary: 0,
+    contractorRate: 0,
+    employmentStartDate: '',
+    employmentStatus: 'full-time',
+    minHoursPerWeek: 0,
+    maxHoursPerWeek: 40,
+    minHoursPerDay: 0,
+    maxHoursPerDay: 8,
+    availableForRota: true,
+    inFtEducation: false
   });
   
   const [newProfileForm, setNewProfileForm] = useState({
@@ -95,6 +113,45 @@ const TeamManagementPanel: React.FC = () => {
   
   useEffect(() => {
     fetchTeamMembers();
+    
+    // Check if employment_start_date column exists
+    const checkColumns = async () => {
+      try {
+        // Check employment_start_date column
+        const { data: startDateExists, error: startDateError } = await supabase.rpc('check_column_exists', { 
+          p_table_name: 'profiles', 
+          p_column_name: 'employment_start_date' 
+        });
+        
+        if (startDateError) {
+          console.error('Error checking start date column:', startDateError);
+          setHasEmploymentStartDateColumn(false);
+          return;
+        }
+        
+        setHasEmploymentStartDateColumn(!!startDateExists);
+        
+        // Check employment_status column
+        const { data: statusExists, error: statusError } = await supabase.rpc('check_column_exists', { 
+          p_table_name: 'profiles', 
+          p_column_name: 'employment_status' 
+        });
+        
+        if (statusError) {
+          console.error('Error checking status column:', statusError);
+          setHasEmploymentStatusColumn(false);
+          return;
+        }
+        
+        setHasEmploymentStatusColumn(!!statusExists);
+      } catch (e) {
+        console.error('Exception checking columns:', e);
+        setHasEmploymentStartDateColumn(false);
+        setHasEmploymentStatusColumn(false);
+      }
+    };
+    
+    checkColumns();
   }, []);
   
   const fetchTeamMembers = async () => {
@@ -178,8 +235,28 @@ const TeamManagementPanel: React.FC = () => {
         job_title: editForm.jobTitle,
         favourite_dish: editForm.favouriteDish,
         favourite_drink: editForm.favouriteDrink,
-        about_me: editForm.aboutMe
+        about_me: editForm.aboutMe,
+        
+        // Job data fields
+        employment_type: editForm.employmentType,
+        wage_rate: editForm.wageRate,
+        annual_salary: editForm.annualSalary,
+        contractor_rate: editForm.contractorRate,
+        min_hours_per_week: editForm.minHoursPerWeek,
+        max_hours_per_week: editForm.maxHoursPerWeek,
+        min_hours_per_day: editForm.minHoursPerDay,
+        max_hours_per_day: editForm.maxHoursPerDay,
+        available_for_rota: editForm.availableForRota,
+        in_ft_education: editForm.inFtEducation
       };
+      
+      if (hasEmploymentStartDateColumn && editForm.employmentStartDate) {
+        updateData.employment_start_date = editForm.employmentStartDate;
+      }
+      
+      if (hasEmploymentStatusColumn && editForm.employmentStatus) {
+        updateData.employment_status = editForm.employmentStatus;
+      }
       
       if (editForm.birthDate) {
         const formattedBirthDate = format(editForm.birthDate, 'MM-dd');
@@ -239,7 +316,20 @@ const TeamManagementPanel: React.FC = () => {
               birth_date: updateData.birth_date,
               favourite_dish: editForm.favouriteDish,
               favourite_drink: editForm.favouriteDrink,
-              about_me: editForm.aboutMe
+              about_me: editForm.aboutMe,
+              // Job data fields
+              employment_type: editForm.employmentType,
+              wage_rate: editForm.wageRate,
+              annual_salary: editForm.annualSalary,
+              contractor_rate: editForm.contractorRate,
+              min_hours_per_week: editForm.minHoursPerWeek,
+              max_hours_per_week: editForm.maxHoursPerWeek,
+              min_hours_per_day: editForm.minHoursPerDay,
+              max_hours_per_day: editForm.maxHoursPerDay,
+              employment_start_date: updateData.employment_start_date,
+              employment_status: updateData.employment_status,
+              available_for_rota: editForm.availableForRota,
+              in_ft_education: editForm.inFtEducation
             } 
           : member
       ));
@@ -315,8 +405,25 @@ const TeamManagementPanel: React.FC = () => {
       favouriteDish: user.favourite_dish || '',
       favouriteDrink: user.favourite_drink || '',
       aboutMe: user.about_me || '',
-      password: ''
+      password: '',
+      
+      // Job data fields
+      employmentType: user.employment_type || 'hourly',
+      wageRate: user.wage_rate || 0,
+      annualSalary: user.annual_salary || 0,
+      contractorRate: user.contractor_rate || 0,
+      employmentStartDate: user.employment_start_date || '',
+      employmentStatus: user.employment_status || 'full-time',
+      minHoursPerWeek: user.min_hours_per_week || 0,
+      maxHoursPerWeek: user.max_hours_per_week || 40,
+      minHoursPerDay: user.min_hours_per_day || 0,
+      maxHoursPerDay: user.max_hours_per_day || 8,
+      availableForRota: user.available_for_rota !== false,
+      inFtEducation: user.in_ft_education || false
     });
+    
+    // Default to profile tab
+    setActiveTab('profile');
     
     setTimeout(() => {
       setIsEditUserDialogOpen(true);
@@ -652,173 +759,351 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="flex flex-col items-center mb-4">
-              <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={selectedUser?.avatar_url || undefined} alt={`${selectedUser?.first_name} ${selectedUser?.last_name}`} />
-                <AvatarFallback className="text-xl">{`${selectedUser?.first_name?.charAt(0) || ''} ${selectedUser?.last_name?.charAt(0) || ''}`}</AvatarFallback>
-              </Avatar>
-              
-              <div className="flex items-center">
-                <label htmlFor="avatar-upload" className="cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
-                    <Upload className="h-4 w-4" />
-                    <span>{uploadingAvatar ? 'Uploading...' : 'Upload Photo'}</span>
-                  </div>
-                  <input 
-                    id="avatar-upload" 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    disabled={uploadingAvatar}
-                  />
-                </label>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="profile">Personal Details</TabsTrigger>
+              <TabsTrigger value="employment">Employment Details</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="profile" className="space-y-4">
+              <div className="flex flex-col items-center mb-4">
+                <Avatar className="h-24 w-24 mb-4">
+                  <AvatarImage src={selectedUser?.avatar_url || undefined} alt={`${selectedUser?.first_name} ${selectedUser?.last_name}`} />
+                  <AvatarFallback className="text-xl">{`${selectedUser?.first_name?.charAt(0) || ''} ${selectedUser?.last_name?.charAt(0) || ''}`}</AvatarFallback>
+                </Avatar>
+                
+                <div className="flex items-center">
+                  <label htmlFor="avatar-upload" className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+                      <Upload className="h-4 w-4" />
+                      <span>{uploadingAvatar ? 'Uploading...' : 'Upload Photo'}</span>
+                    </div>
+                    <input 
+                      id="avatar-upload" 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={uploadingAvatar}
+                    />
+                  </label>
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="editFirstName">First Name</Label>
-                <Input 
-                  id="editFirstName" 
-                  value={editForm.firstName}
-                  onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
-                  placeholder="First name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editLastName">Last Name</Label>
-                <Input 
-                  id="editLastName" 
-                  value={editForm.lastName}
-                  onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
-                  placeholder="Last name"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="editRole">Role</Label>
-                <Select 
-                  value={editForm.role} 
-                  onValueChange={(value: UserRoleType) => setEditForm({...editForm, role: value})}
-                  disabled={selectedUser?.role === 'GOD' && !isGod}
-                >
-                  <SelectTrigger id="editRole">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isGod && (
-                      <>
-                        <SelectItem value="GOD">GOD</SelectItem>
-                        <SelectItem value="Super User">Super User</SelectItem>
-                      </>
-                    )}
-                    <SelectItem value="Manager">Manager</SelectItem>
-                    <SelectItem value="Team Member">Team Member</SelectItem>
-                    <SelectItem value="Owner">Owner</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editJobTitle">Job Title</Label>
-                <Input 
-                  id="editJobTitle" 
-                  value={editForm.jobTitle}
-                  onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
-                  placeholder="Job title"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="birthDate">Birthday (Month-Day)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                    id="birthDate"
-                    type="button"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {editForm.birthDate ? (
-                      format(editForm.birthDate, "MMMM d")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={editForm.birthDate}
-                    onSelect={(date) => setEditForm({...editForm, birthDate: date})}
-                    initialFocus
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editFirstName">First Name</Label>
+                  <Input 
+                    id="editFirstName" 
+                    value={editForm.firstName}
+                    onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                    placeholder="First name"
                   />
-                </PopoverContent>
-              </Popover>
-              <p className="text-xs text-muted-foreground">
-                Only month and day will be stored (not the year)
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="favouriteDish">Favourite Dish</Label>
-              <Input 
-                id="favouriteDish" 
-                value={editForm.favouriteDish}
-                onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
-                placeholder="Favourite dish"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="favouriteDrink">Favourite Drink</Label>
-              <Input 
-                id="favouriteDrink" 
-                value={editForm.favouriteDrink}
-                onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
-                placeholder="Favourite drink"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="aboutMe">About Me</Label>
-              <Textarea 
-                id="aboutMe" 
-                value={editForm.aboutMe}
-                onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
-                placeholder="Share something about yourself"
-                className="min-h-[100px]"
-              />
-            </div>
-            
-            {canManageUsers && (
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editLastName">Last Name</Label>
+                  <Input 
+                    id="editLastName" 
+                    value={editForm.lastName}
+                    onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                    placeholder="Last name"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editRole">Role</Label>
+                  <Select 
+                    value={editForm.role} 
+                    onValueChange={(value: UserRoleType) => setEditForm({...editForm, role: value})}
+                    disabled={selectedUser?.role === 'GOD' && !isGod}
+                  >
+                    <SelectTrigger id="editRole">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isGod && (
+                        <>
+                          <SelectItem value="GOD">GOD</SelectItem>
+                          <SelectItem value="Super User">Super User</SelectItem>
+                        </>
+                      )}
+                      <SelectItem value="Manager">Manager</SelectItem>
+                      <SelectItem value="Team Member">Team Member</SelectItem>
+                      <SelectItem value="Owner">Owner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editJobTitle">Job Title</Label>
+                  <Input 
+                    id="editJobTitle" 
+                    value={editForm.jobTitle}
+                    onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
+                    placeholder="Job title"
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="password">
-                  Set Password
-                  {selectedUser?.id && (
-                    <span className="text-xs text-muted-foreground ml-2">
-                      (Leave blank to keep unchanged)
-                    </span>
-                  )}
-                </Label>
-                <Input 
-                  id="password"
-                  type="password"
-                  value={editForm.password}
-                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
-                  placeholder="Enter new password"
-                />
+                <Label htmlFor="birthDate">Birthday (Month-Day)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                      id="birthDate"
+                      type="button"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {editForm.birthDate ? (
+                        format(editForm.birthDate, "MMMM d")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={editForm.birthDate}
+                      onSelect={(date) => setEditForm({...editForm, birthDate: date})}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 <p className="text-xs text-muted-foreground">
-                  Must contain at least 8 characters
+                  Only month and day will be stored (not the year)
                 </p>
               </div>
-            )}
-          </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="favouriteDish">Favourite Dish</Label>
+                <Input 
+                  id="favouriteDish" 
+                  value={editForm.favouriteDish}
+                  onChange={(e) => setEditForm({...editForm, favouriteDish: e.target.value})}
+                  placeholder="Favourite dish"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="favouriteDrink">Favourite Drink</Label>
+                <Input 
+                  id="favouriteDrink" 
+                  value={editForm.favouriteDrink}
+                  onChange={(e) => setEditForm({...editForm, favouriteDrink: e.target.value})}
+                  placeholder="Favourite drink"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="aboutMe">About Me</Label>
+                <Textarea 
+                  id="aboutMe" 
+                  value={editForm.aboutMe}
+                  onChange={(e) => setEditForm({...editForm, aboutMe: e.target.value})}
+                  placeholder="Share something about yourself"
+                  className="min-h-[100px]"
+                />
+              </div>
+              
+              {canManageUsers && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">
+                    Set Password
+                    {selectedUser?.id && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (Leave blank to keep unchanged)
+                      </span>
+                    )}
+                  </Label>
+                  <Input 
+                    id="password"
+                    type="password"
+                    value={editForm.password}
+                    onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                    placeholder="Enter new password"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Must contain at least 8 characters
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="employment" className="space-y-4">
+              <div className="flex items-start mb-4">
+                <BriefcaseBusiness className="h-5 w-5 mr-2 text-hi-purple mt-1" />
+                <div>
+                  <h3 className="text-lg font-semibold">Employment Details</h3>
+                  <p className="text-sm text-muted-foreground">Manage work-related information</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="employmentType">Employment Type</Label>
+                  <Select 
+                    value={editForm.employmentType} 
+                    onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
+                  >
+                    <SelectTrigger id="employmentType">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="salary">Salary</SelectItem>
+                      <SelectItem value="contractor">Contractor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {editForm.employmentType === 'hourly' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="wageRate">Hourly Rate (£)</Label>
+                    <Input 
+                      id="wageRate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editForm.wageRate}
+                      onChange={(e) => setEditForm({...editForm, wageRate: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                )}
+                
+                {editForm.employmentType === 'salary' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="annualSalary">Annual Salary (£)</Label>
+                    <Input 
+                      id="annualSalary"
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={editForm.annualSalary}
+                      onChange={(e) => setEditForm({...editForm, annualSalary: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                )}
+                
+                {editForm.employmentType === 'contractor' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="contractorRate">Contractor Rate (£/hr)</Label>
+                    <Input 
+                      id="contractorRate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editForm.contractorRate}
+                      onChange={(e) => setEditForm({...editForm, contractorRate: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {hasEmploymentStartDateColumn && (
+                  <div className="space-y-2">
+                    <Label htmlFor="employmentStartDate">Employment Start Date</Label>
+                    <Input
+                      id="employmentStartDate"
+                      type="date"
+                      value={editForm.employmentStartDate}
+                      onChange={(e) => setEditForm({...editForm, employmentStartDate: e.target.value})}
+                    />
+                  </div>
+                )}
+                
+                {hasEmploymentStatusColumn && (
+                  <div className="space-y-2">
+                    <Label htmlFor="employmentStatus">Employment Status</Label>
+                    <Select 
+                      value={editForm.employmentStatus} 
+                      onValueChange={(value) => setEditForm({...editForm, employmentStatus: value})}
+                    >
+                      <SelectTrigger id="employmentStatus">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full-time">Full-Time</SelectItem>
+                        <SelectItem value="part-time">Part-Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minHoursPerWeek">Min Hours/Week</Label>
+                  <Input
+                    id="minHoursPerWeek"
+                    type="number"
+                    min="0"
+                    value={editForm.minHoursPerWeek}
+                    onChange={(e) => setEditForm({...editForm, minHoursPerWeek: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxHoursPerWeek">Max Hours/Week</Label>
+                  <Input
+                    id="maxHoursPerWeek"
+                    type="number"
+                    min={editForm.minHoursPerWeek}
+                    value={editForm.maxHoursPerWeek}
+                    onChange={(e) => setEditForm({...editForm, maxHoursPerWeek: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minHoursPerDay">Min Hours/Day</Label>
+                  <Input
+                    id="minHoursPerDay"
+                    type="number"
+                    min="0"
+                    value={editForm.minHoursPerDay}
+                    onChange={(e) => setEditForm({...editForm, minHoursPerDay: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxHoursPerDay">Max Hours/Day</Label>
+                  <Input
+                    id="maxHoursPerDay"
+                    type="number"
+                    min={editForm.minHoursPerDay}
+                    value={editForm.maxHoursPerDay}
+                    onChange={(e) => setEditForm({...editForm, maxHoursPerDay: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="availableForRota"
+                  checked={editForm.availableForRota}
+                  onChange={(e) => setEditForm({...editForm, availableForRota: e.target.checked})}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="availableForRota">Available for scheduling</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="inFtEducation"
+                  checked={editForm.inFtEducation}
+                  onChange={(e) => setEditForm({...editForm, inFtEducation: e.target.checked})}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="inFtEducation">In Full-Time Education</Label>
+              </div>
+            </TabsContent>
+          </Tabs>
           
           <DialogFooter>
             <Button 
