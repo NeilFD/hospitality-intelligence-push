@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -6,18 +5,19 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { CalendarIcon, Loader } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { ReloadIcon } from '@radix-ui/react-icons';
 import { UserProfile } from '@/types/supabase-types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Define the structure of the user profile data
-interface UserProfileData extends Omit<UserProfile, 'role'> {
+interface UserProfileData extends UserProfile {
   id: string;
   first_name: string | null;
   last_name: string | null;
@@ -116,7 +116,7 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const birthDateInputRef = useRef<HTMLInputElement>(null);
   const employmentStartDateInputRef = useRef<HTMLInputElement>(null);
-  const { isSupported, isSubscribed, subscribeUser, unsubscribeUser } = usePushNotifications();
+  const { isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications();
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -212,20 +212,16 @@ const ProfilePage = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     
-    if (name === "availableForRota" || name === "inFtEducation") {
-      const target = e.target as HTMLInputElement;
-      setEditForm(prevForm => ({
+    setEditForm(prevForm => {
+      const newValue = type === 'checkbox' ? checked : value;
+      
+      return {
         ...prevForm,
-        [name]: target.checked
-      }));
-    } else {
-      setEditForm(prevForm => ({
-        ...prevForm,
-        [name]: value
-      }));
-    }
+        [name]: newValue,
+      };
+    });
   };
 
   const handleSaveProfile = async () => {
@@ -297,11 +293,11 @@ const ProfilePage = () => {
     }
 
     if (isSubscribed) {
-      await unsubscribeUser();
+      await unsubscribe();
       setIsPushEnabled(false);
       toast.success('Push notifications disabled.');
     } else {
-      await subscribeUser();
+      await subscribe();
       setIsPushEnabled(true);
       toast.success('Push notifications enabled.');
     }
@@ -310,7 +306,7 @@ const ProfilePage = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader className="mr-2 h-8 w-8 animate-spin" /> Loading profile...
+        <ReloadIcon className="mr-2 h-8 w-8 animate-spin" /> Loading profile...
       </div>
     );
   }
@@ -546,7 +542,7 @@ const ProfilePage = () => {
                 <Button onClick={handleSaveProfile} disabled={isSaving}>
                   {isSaving ? (
                     <>
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : 'Save Profile'}
