@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages, refreshFinancialPerformanceAnalysis } from '@/services/wages-service';
@@ -66,7 +65,7 @@ export const useWagesStore = create<WagesStore>()(
       isSaving: false,
       needsRefresh: false,
       
-      // SIMPLIFIED: Direct approach to save wages data
+      // Direct database approach to save wages data
       setDailyWages: async (data: DailyWages) => {
         try {
           const key = `${data.year}-${data.month}-${data.day}`;
@@ -74,7 +73,7 @@ export const useWagesStore = create<WagesStore>()(
           
           set({ isSaving: true });
           
-          // Save with our ultra-direct RPC call
+          // Save directly to Supabase
           await upsertDailyWages(data);
           console.log(`SUCCESSFULLY SAVED WAGES DATA FOR: ${key}`);
           
@@ -84,7 +83,8 @@ export const useWagesStore = create<WagesStore>()(
               ...state.wagesData,
               [key]: {...data}
             },
-            isSaving: false
+            isSaving: false,
+            needsRefresh: true
           }));
           
         } catch (error) {
