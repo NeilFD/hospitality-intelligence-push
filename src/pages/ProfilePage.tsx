@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -45,6 +46,29 @@ interface ExtendedUserProfile extends UserProfile {
   employment_start_date?: string;
   employment_status?: string;
   in_ft_education?: boolean;
+}
+
+// Create an interface for the edit form state
+interface EditFormState {
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
+  favouriteDish: string;
+  favouriteDrink: string;
+  aboutMe: string;
+  birthDate: string;
+  employmentType: string;
+  minHoursPerDay: number;
+  maxHoursPerDay: number;
+  minHoursPerWeek: number;
+  maxHoursPerWeek: number;
+  wageRate: number;
+  annualSalary: number;
+  contractorRate: number;
+  availableForRota: boolean;
+  employmentStartDate: string;
+  employmentStatus: string;
+  inFtEducation: boolean;
 }
 
 // Job title options
@@ -565,7 +589,7 @@ const ProfilePage = () => {
     try {
       console.log('Saving profile with data:', editForm);
       
-      const updateData = {
+      const updateData: any = {
         first_name: editForm.firstName,
         last_name: editForm.lastName,
         favourite_dish: editForm.favouriteDish,
@@ -581,22 +605,19 @@ const ProfilePage = () => {
         available_for_rota: editForm.availableForRota,
         employment_start_date: editForm.employmentStartDate,
         employment_status: editForm.employmentStatus,
-        in_ft_education: editForm.inFtEducation
+        in_ft_education: editForm.inFtEducation,
+        wage_rate: 0,
+        annual_salary: 0,
+        contractor_rate: 0
       };
       
       // Add the appropriate wage field based on employment type
       if (editForm.employmentType === 'hourly') {
         updateData.wage_rate = editForm.wageRate;
-        updateData.annual_salary = 0;
-        updateData.contractor_rate = 0;
       } else if (editForm.employmentType === 'salary') {
         updateData.annual_salary = editForm.annualSalary;
-        updateData.wage_rate = 0;
-        updateData.contractor_rate = 0;
       } else if (editForm.employmentType === 'contractor') {
         updateData.contractor_rate = editForm.contractorRate;
-        updateData.wage_rate = 0;
-        updateData.annual_salary = 0;
       }
       
       console.log('Updating profile with data:', updateData);

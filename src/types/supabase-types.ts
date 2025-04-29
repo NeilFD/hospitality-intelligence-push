@@ -1,4 +1,3 @@
-
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -416,6 +415,18 @@ export interface UserProfile {
   favourite_dish: string | null;
   favourite_drink: string | null;
   about_me: string | null;
+  employment_type?: string;
+  min_hours_per_day?: number;
+  max_hours_per_day?: number;
+  min_hours_per_week?: number;
+  max_hours_per_week?: number;
+  wage_rate?: number;
+  annual_salary?: number;
+  contractor_rate?: number;
+  available_for_rota?: boolean;
+  employment_start_date?: string;
+  employment_status?: string;
+  in_ft_education?: boolean;
 }
 
 export interface DBSupplier {
