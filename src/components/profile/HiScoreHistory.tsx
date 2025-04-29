@@ -35,10 +35,10 @@ export default function HiScoreHistory({ profileId, onViewEvaluation }: HiScoreH
         if (error) throw error;
         
         // Process data to include evaluator name
-        const processedData = data.map(eval => ({
-          ...eval,
-          evaluator_name: eval.evaluator ? 
-            `${eval.evaluator.first_name || ''} ${eval.evaluator.last_name || ''}`.trim() : 
+        const processedData = data.map(evaluation => ({
+          ...evaluation,
+          evaluator_name: evaluation.evaluator ? 
+            `${evaluation.evaluator.first_name || ''} ${evaluation.evaluator.last_name || ''}`.trim() : 
             'Unknown'
         }));
         

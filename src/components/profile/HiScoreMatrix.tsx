@@ -10,7 +10,10 @@ import {
   calculateWeightedScore, 
   FOH_WEIGHTS, 
   KITCHEN_WEIGHTS, 
-  getEmptyScores 
+  getEmptyScores,
+  FohScores,
+  KitchenScores,
+  ScoreType
 } from '@/utils/hiScoreCalculations';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -35,7 +38,7 @@ export default function HiScoreMatrix({
   const { profile: currentUserProfile } = useAuthStore();
   const [saving, setSaving] = useState(false);
   
-  const [scores, setScores] = useState(() => {
+  const [scores, setScores] = useState<ScoreType>(() => {
     if (existingEvaluation) {
       if (roleType === 'foh') {
         return {
@@ -44,7 +47,7 @@ export default function HiScoreMatrix({
           internalTeamSkills: existingEvaluation.internal_team_skills || 0,
           serviceSkills: existingEvaluation.service_skills || 0,
           fohKnowledge: existingEvaluation.foh_knowledge || 0,
-        };
+        } as FohScores;
       } else {
         return {
           workEthic: existingEvaluation.work_ethic || 0,
@@ -52,7 +55,7 @@ export default function HiScoreMatrix({
           adaptability: existingEvaluation.adaptability || 0,
           cookingSkills: existingEvaluation.cooking_skills || 0,
           foodKnowledge: existingEvaluation.food_knowledge || 0,
-        };
+        } as KitchenScores;
       }
     }
     return getEmptyScores(roleType);
@@ -72,7 +75,7 @@ export default function HiScoreMatrix({
     try {
       setSaving(true);
       
-      const evaluationData = {
+      const evaluationData: Record<string, any> = {
         profile_id: profileId,
         evaluator_id: currentUserProfile?.id,
         role_type: roleType,
@@ -83,20 +86,22 @@ export default function HiScoreMatrix({
       
       // Add role-specific scores
       if (roleType === 'foh') {
+        const fohScores = scores as FohScores;
         Object.assign(evaluationData, {
-          hospitality: scores.hospitality,
-          friendliness: scores.friendliness,
-          internal_team_skills: scores.internalTeamSkills,
-          service_skills: scores.serviceSkills,
-          foh_knowledge: scores.fohKnowledge,
+          hospitality: fohScores.hospitality,
+          friendliness: fohScores.friendliness,
+          internal_team_skills: fohScores.internalTeamSkills,
+          service_skills: fohScores.serviceSkills,
+          foh_knowledge: fohScores.fohKnowledge,
         });
       } else {
+        const kitchenScores = scores as KitchenScores;
         Object.assign(evaluationData, {
-          work_ethic: scores.workEthic,
-          team_player: scores.teamPlayer,
-          adaptability: scores.adaptability,
-          cooking_skills: scores.cookingSkills,
-          food_knowledge: scores.foodKnowledge,
+          work_ethic: kitchenScores.workEthic,
+          team_player: kitchenScores.teamPlayer,
+          adaptability: kitchenScores.adaptability,
+          cooking_skills: kitchenScores.cookingSkills,
+          food_knowledge: kitchenScores.foodKnowledge,
         });
       }
       
@@ -141,39 +146,40 @@ export default function HiScoreMatrix({
   
   const renderMatrixItems = () => {
     if (roleType === 'foh') {
+      const fohScores = scores as FohScores;
       return (
         <>
           <MatrixItem 
             label="Hospitality" 
-            value={scores.hospitality} 
+            value={fohScores.hospitality} 
             weight={weights.hospitality}
             onChange={(v) => handleScoreChange('hospitality', v)}
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Friendliness" 
-            value={scores.friendliness} 
+            value={fohScores.friendliness} 
             weight={weights.friendliness}
             onChange={(v) => handleScoreChange('friendliness', v)} 
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Internal Team Skills" 
-            value={scores.internalTeamSkills} 
+            value={fohScores.internalTeamSkills} 
             weight={weights.internalTeamSkills}
             onChange={(v) => handleScoreChange('internalTeamSkills', v)} 
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Service Skills" 
-            value={scores.serviceSkills} 
+            value={fohScores.serviceSkills} 
             weight={weights.serviceSkills}
             onChange={(v) => handleScoreChange('serviceSkills', v)} 
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Knowledge" 
-            value={scores.fohKnowledge} 
+            value={fohScores.fohKnowledge} 
             weight={weights.fohKnowledge}
             onChange={(v) => handleScoreChange('fohKnowledge', v)} 
             readOnly={isReadOnly}
@@ -181,39 +187,40 @@ export default function HiScoreMatrix({
         </>
       );
     } else {
+      const kitchenScores = scores as KitchenScores;
       return (
         <>
           <MatrixItem 
             label="Work Ethic & Discipline" 
-            value={scores.workEthic} 
+            value={kitchenScores.workEthic} 
             weight={weights.workEthic}
             onChange={(v) => handleScoreChange('workEthic', v)} 
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Team Player Mentality" 
-            value={scores.teamPlayer} 
+            value={kitchenScores.teamPlayer} 
             weight={weights.teamPlayer}
             onChange={(v) => handleScoreChange('teamPlayer', v)} 
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Adaptability & Attitude" 
-            value={scores.adaptability} 
+            value={kitchenScores.adaptability} 
             weight={weights.adaptability}
             onChange={(v) => handleScoreChange('adaptability', v)} 
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Knife & Cooking Skills" 
-            value={scores.cookingSkills} 
+            value={kitchenScores.cookingSkills} 
             weight={weights.cookingSkills}
             onChange={(v) => handleScoreChange('cookingSkills', v)} 
             readOnly={isReadOnly}
           />
           <MatrixItem 
             label="Food Knowledge" 
-            value={scores.foodKnowledge} 
+            value={kitchenScores.foodKnowledge} 
             weight={weights.foodKnowledge}
             onChange={(v) => handleScoreChange('foodKnowledge', v)} 
             readOnly={isReadOnly}

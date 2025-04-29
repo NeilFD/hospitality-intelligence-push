@@ -31,8 +31,27 @@ export const KITCHEN_WEIGHTS = {
   foodKnowledge: 0.1, // 10%
 };
 
+// Define types for our score objects
+export type FohScores = {
+  hospitality: number;
+  friendliness: number;
+  internalTeamSkills: number;
+  serviceSkills: number;
+  fohKnowledge: number;
+};
+
+export type KitchenScores = {
+  workEthic: number;
+  teamPlayer: number;
+  adaptability: number;
+  cookingSkills: number;
+  foodKnowledge: number;
+};
+
+export type ScoreType = FohScores | KitchenScores;
+
 // Helper function to initialize an empty score object
-export const getEmptyScores = (roleType: 'foh' | 'kitchen'): any => {
+export const getEmptyScores = (roleType: 'foh' | 'kitchen'): ScoreType => {
   if (roleType === 'foh') {
     return {
       hospitality: 0,
