@@ -1,13 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Plus, Copy, Calendar, Trash2, Clock, Edit } from 'lucide-react';
+import { Plus, Copy, Calendar, Trash2, Clock, Edit, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import ShiftRuleForm from './ShiftRuleForm';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
@@ -30,6 +31,9 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
   const [isAddingShift, setIsAddingShift] = useState(false);
   const [currentDay, setCurrentDay] = useState('mon');
   const [editingHours, setEditingHours] = useState<{day: string, start: string, end: string} | null>(null);
+  const [copyingShift, setCopyingShift] = useState<any>(null);
+  const [selectedDays, setSelectedDays] = useState<Record<string, boolean>>({});
+  const [isCopyPopoverOpen, setIsCopyPopoverOpen] = useState(false);
   
   // Fetch shift rules when component mounts or location/jobRoles change
   useEffect(() => {
@@ -96,22 +100,53 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
     setIsAddingShift(true);
   };
   
-  const handleDuplicateToOtherDays = async (rule) => {
+  const handleCopyShift = (rule) => {
+    // Initialize selectedDays with all days except the current one set to true
+    const initialSelectedDays = days.reduce((acc, day) => {
+      acc[day.id] = day.id !== rule.day_of_week;
+      return acc;
+    }, {});
+    
+    setSelectedDays(initialSelectedDays);
+    setCopyingShift(rule);
+    setIsCopyPopoverOpen(true);
+  };
+  
+  const handleDaySelection = (dayId, checked) => {
+    setSelectedDays(prev => ({
+      ...prev,
+      [dayId]: checked
+    }));
+  };
+  
+  const handleDuplicateToSelectedDays = async () => {
+    if (!copyingShift) return;
+    
     try {
-      // Create new shift rules for all other days
-      const otherDays = days.filter(day => day.id !== rule.day_of_week);
+      // Get array of day IDs that are selected
+      const selectedDayIds = Object.entries(selectedDays)
+        .filter(([_, isSelected]) => isSelected)
+        .map(([dayId]) => dayId);
       
-      const newRules = otherDays.map(day => ({
+      if (selectedDayIds.length === 0) {
+        toast.info("No days selected", {
+          description: "Please select at least one day to copy the shift to."
+        });
+        return;
+      }
+      
+      // Create new shift rules for selected days
+      const newRules = selectedDayIds.map(dayId => ({
         location_id: location.id,
-        day_of_week: day.id,
-        job_role_id: rule.job_role_id,
-        start_time: rule.start_time,
-        end_time: rule.end_time,
-        min_staff: rule.min_staff,
-        max_staff: rule.max_staff,
-        revenue_to_staff_ratio: rule.revenue_to_staff_ratio,
-        priority: rule.priority,
-        required_skill_level: rule.required_skill_level
+        day_of_week: dayId,
+        job_role_id: copyingShift.job_role_id,
+        start_time: copyingShift.start_time,
+        end_time: copyingShift.end_time,
+        min_staff: copyingShift.min_staff,
+        max_staff: copyingShift.max_staff,
+        revenue_to_staff_ratio: copyingShift.revenue_to_staff_ratio,
+        priority: copyingShift.priority,
+        required_skill_level: copyingShift.required_skill_level
       }));
       
       const { error } = await supabase
@@ -122,11 +157,17 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
         throw error;
       }
       
+      const selectedDayNames = selectedDayIds.map(id => 
+        days.find(day => day.id === id)?.name
+      ).join(', ');
+      
       toast.success("Shift rule duplicated", {
-        description: "The shift rule has been duplicated to all other days."
+        description: `The shift rule has been duplicated to: ${selectedDayNames}`
       });
       
       fetchShiftRules();
+      setIsCopyPopoverOpen(false);
+      setCopyingShift(null);
     } catch (error) {
       console.error('Error duplicating shift rules:', error);
       toast.error("Error duplicating shift rules", {
@@ -343,13 +384,56 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                                   </div>
                                 </div>
                                 <div className="flex gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDuplicateToOtherDays(rule)}
-                                  >
-                                    <Copy className="h-4 w-4" />
-                                  </Button>
+                                  <Popover open={isCopyPopoverOpen && copyingShift?.id === rule.id}>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleCopyShift(rule)}
+                                      >
+                                        <Copy className="h-4 w-4" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-72 p-4">
+                                      <div className="space-y-4">
+                                        <h4 className="font-medium">Copy shift to days</h4>
+                                        <div className="space-y-2">
+                                          {days.map((day) => (
+                                            day.id !== rule.day_of_week && (
+                                              <div key={day.id} className="flex items-center space-x-2">
+                                                <Checkbox 
+                                                  id={`copy-${day.id}`} 
+                                                  checked={!!selectedDays[day.id]}
+                                                  onCheckedChange={(checked) => 
+                                                    handleDaySelection(day.id, !!checked)
+                                                  }
+                                                />
+                                                <Label htmlFor={`copy-${day.id}`}>{day.name}</Label>
+                                              </div>
+                                            )
+                                          ))}
+                                        </div>
+                                        <div className="flex justify-between pt-2">
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm"
+                                            onClick={() => {
+                                              setIsCopyPopoverOpen(false);
+                                              setCopyingShift(null);
+                                            }}
+                                          >
+                                            Cancel
+                                          </Button>
+                                          <Button 
+                                            size="sm"
+                                            onClick={handleDuplicateToSelectedDays}
+                                          >
+                                            <Check className="mr-1 h-4 w-4" /> Copy
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                   <Button
                                     variant="ghost"
                                     size="icon"
