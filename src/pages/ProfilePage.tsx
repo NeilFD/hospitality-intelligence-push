@@ -16,8 +16,8 @@ import { ReloadIcon } from '@radix-ui/react-icons';
 import { UserProfile } from '@/types/supabase-types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Define the structure of the user profile data without extending UserProfile
-interface UserProfileData {
+// Define the structure of the user profile data
+interface UserProfileData extends UserProfile {
   id: string;
   first_name: string | null;
   last_name: string | null;
@@ -116,7 +116,7 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const birthDateInputRef = useRef<HTMLInputElement>(null);
   const employmentStartDateInputRef = useRef<HTMLInputElement>(null);
-  const { isSupported, isSubscribed, subscribeUser, unsubscribeUser } = usePushNotifications();
+  const { isSupported, isSubscribed, subscribe, unsubscribe } = usePushNotifications();
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -212,19 +212,10 @@ const ProfilePage = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    const target = e.target as HTMLInputElement; // Type assertion
-
+    const { name, value, type, checked } = e.target;
+    
     setEditForm(prevForm => {
-      const newValue = target.type === 'checkbox' ? target.checked : value;
-      
-      // Handle numeric inputs correctly
-      if (target.type === 'number') {
-        return {
-          ...prevForm,
-          [name]: Number(newValue),
-        };
-      }
+      const newValue = type === 'checkbox' ? checked : value;
       
       return {
         ...prevForm,
@@ -302,11 +293,11 @@ const ProfilePage = () => {
     }
 
     if (isSubscribed) {
-      await unsubscribeUser();
+      await unsubscribe();
       setIsPushEnabled(false);
       toast.success('Push notifications disabled.');
     } else {
-      await subscribeUser();
+      await subscribe();
       setIsPushEnabled(true);
       toast.success('Push notifications enabled.');
     }
