@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { formatTime } from '@/lib/date-utils';
 import {
@@ -42,17 +43,23 @@ interface StaffingGanttChartProps {
 }
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
-  // Time conversion function - updated to use the provided timeToDecimal function
+  // Time conversion function - updated to handle shifts that extend past midnight
   const timeToDecimal = (time: string, isEnd = false): number => {
     if (isEnd && time === "00:00") return 24;
     const [h, m] = time.split(":").map(Number);
     return h + m / 60;
   };
 
-  // Calculate chart boundaries - use a standard full-day display (00:01 - 00:00)
-  const chartStart = 0; // Start at midnight (00:00)
-  const chartEnd = 24; // End at midnight next day (00:00/24:00)
+  // Calculate chart boundaries - start from 8:00 and include hours past midnight
+  const chartStart = 8; // Start at 8:00
+  const chartEnd = 28; // End at 4:00 next day (24 + 4)
   const totalHours = chartEnd - chartStart;
+  
+  // Format hour for display - handles hours > 24 (next day)
+  const formatHourDisplay = (hour: number) => {
+    const adjustedHour = hour % 24;
+    return adjustedHour === 0 ? "00" : adjustedHour < 10 ? `0${adjustedHour}` : `${adjustedHour}`;
+  };
 
   // Group shifts by FOH and Kitchen
   const fohShifts = rules.filter(rule => {
@@ -65,15 +72,22 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return role && role.is_kitchen;
   });
 
-  // Calculate staffing requirements for each hour
+  // Adjust time calculations to handle shifts extending past midnight
+  const adjustTimeForDisplay = (time: number): number => {
+    // Adjust the decimal time to fit our display grid
+    // For example, if chartStart is 8:00, then 8:00 should be position 1 on the grid
+    return time - chartStart + 1;
+  };
+
+  // Calculate staffing requirements for each hour - handling hours past midnight
   const staffingByHour = useMemo(() => {
     const hours: StaffingByHour[] = [];
     
     // Initialize the hours array with every hour slot we need
-    for (let i = 0; i < totalHours; i++) {
-      const hourValue = i; // Hour value from 0 to 23
+    for (let i = chartStart; i < chartEnd; i++) {
+      const displayHour = i % 24; // Convert to 24-hour format for display
       hours.push({
-        hour: hourValue,
+        hour: displayHour,
         foh: { min: 0, max: 0 },
         kitchen: { min: 0, max: 0 },
         total: { min: 0, max: 0 }
@@ -82,8 +96,13 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     
     // Process each rule
     rules.forEach(rule => {
-      const ruleStart = timeToDecimal(rule.start_time, false);
-      const ruleEnd = timeToDecimal(rule.end_time, true);
+      let ruleStart = timeToDecimal(rule.start_time, false);
+      let ruleEnd = timeToDecimal(rule.end_time, true);
+      
+      // Handle shifts that go past midnight
+      if (ruleEnd < ruleStart) {
+        ruleEnd += 24; // Add 24 hours to make it the next day
+      }
       
       const role = jobRoles.find(r => r.id === rule.job_role_id);
       if (!role) return;
@@ -92,7 +111,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
       
       // For each hour in our chart, add appropriate staffing
       hours.forEach((hourSlot, index) => {
-        const absoluteHour = index;
+        const absoluteHour = index + chartStart; // Adjust for our chart starting at 8:00
         
         // An hour is covered by this shift if it starts at or after the shift start
         // and before the shift end
@@ -106,7 +125,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     });
     
     return hours;
-  }, [rules, jobRoles]);
+  }, [rules, jobRoles, chartStart]);
 
   // Calculate totals across all hours
   const hourlyTotals = useMemo(() => {
@@ -156,25 +175,23 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return days[dayCode] || dayCode;
   };
 
-  // Format hour display (ensures 0 is displayed as "00")
-  const formatHourDisplay = (hour: number) => {
-    return hour === 0 ? "00" : hour < 10 ? `0${hour}` : hour;
-  };
-
   return (
     <TooltipProvider>
       <div className="mt-2 space-y-6">
         <div className="border rounded-lg p-4 bg-white dark:bg-slate-900 shadow-sm">
           <h4 className="font-medium mb-3">Staffing Schedule</h4>
           
-          {/* Time scale with grid layout - improved based on provided snippet */}
+          {/* Time scale with grid layout - hours from 8:00 to 4:00 next day */}
           <div className="grid w-full border-b pb-2 text-xs text-muted-foreground"
                style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
-            {Array.from({ length: totalHours + 1 }).map((_, i) => (
-              <div key={i} className="text-center">
-                {formatHourDisplay(i)}:00
-              </div>
-            ))}
+            {Array.from({ length: totalHours }).map((_, i) => {
+              const hourValue = i + chartStart;
+              return (
+                <div key={i} className="text-center">
+                  {formatHourDisplay(hourValue)}:00
+                </div>
+              );
+            })}
           </div>
           
           {/* FOH section */}
@@ -186,10 +203,27 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
             </div>
           )}
           
-          {/* Individual FOH shifts - using the improved grid layout */}
+          {/* Individual FOH shifts - using the grid layout */}
           {fohShifts.map(rule => {
-            const start = timeToDecimal(rule.start_time);
-            const end = timeToDecimal(rule.end_time, true);
+            let start = timeToDecimal(rule.start_time);
+            let end = timeToDecimal(rule.end_time, true);
+            
+            // Handle shifts that cross midnight
+            if (end < start) {
+              end += 24; // Add 24 hours to make it the next day
+            }
+            
+            // Skip shifts that end before our chart starts or start after our chart ends
+            if (end <= chartStart || start >= chartEnd) {
+              return null;
+            }
+            
+            // Clamp times to our chart boundaries
+            start = Math.max(start, chartStart);
+            end = Math.min(end, chartEnd);
+            
+            // Adjust for grid positioning
+            const gridStart = adjustTimeForDisplay(start);
             const span = end - start;
             
             return (
@@ -209,7 +243,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                           <div
                             className="bg-blue-200 dark:bg-blue-700/40 border border-blue-300 dark:border-blue-600 rounded py-1 text-xs text-center flex items-center justify-center hover:bg-blue-300 dark:hover:bg-blue-700/60 transition-colors"
                             style={{
-                              gridColumnStart: Math.floor(start) + 1,
+                              gridColumnStart: Math.floor(gridStart),
                               gridColumnEnd: `span ${Math.ceil(span)}`,
                             }}
                           >
@@ -247,10 +281,27 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
             </div>
           )}
           
-          {/* Individual Kitchen shifts - using the improved grid layout */}
+          {/* Individual Kitchen shifts - using the grid layout */}
           {kitchenShifts.map(rule => {
-            const start = timeToDecimal(rule.start_time);
-            const end = timeToDecimal(rule.end_time, true);
+            let start = timeToDecimal(rule.start_time);
+            let end = timeToDecimal(rule.end_time, true);
+            
+            // Handle shifts that cross midnight
+            if (end < start) {
+              end += 24; // Add 24 hours to make it the next day
+            }
+            
+            // Skip shifts that end before our chart starts or start after our chart ends
+            if (end <= chartStart || start >= chartEnd) {
+              return null;
+            }
+            
+            // Clamp times to our chart boundaries
+            start = Math.max(start, chartStart);
+            end = Math.min(end, chartEnd);
+            
+            // Adjust for grid positioning
+            const gridStart = adjustTimeForDisplay(start);
             const span = end - start;
             
             return (
@@ -270,7 +321,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                           <div
                             className="bg-green-200 dark:bg-green-700/40 border border-green-300 dark:border-green-600 rounded py-1 text-xs text-center flex items-center justify-center hover:bg-green-300 dark:hover:bg-green-700/60 transition-colors"
                             style={{
-                              gridColumnStart: Math.floor(start) + 1,
+                              gridColumnStart: Math.floor(gridStart),
                               gridColumnEnd: `span ${Math.ceil(span)}`,
                             }}
                           >
@@ -313,26 +364,34 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {staffingByHour.map((hour, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="py-1 px-2 text-left">{formatHourDisplay(hour.hour)}:00</TableCell>
-                      <TableCell className="py-1 px-2 text-right">
-                        {hour.foh.min === hour.foh.max ? 
-                          hour.foh.min : 
-                          `${hour.foh.min}-${hour.foh.max}`}
-                      </TableCell>
-                      <TableCell className="py-1 px-2 text-right">
-                        {hour.kitchen.min === hour.kitchen.max ? 
-                          hour.kitchen.min : 
-                          `${hour.kitchen.min}-${hour.kitchen.max}`}
-                      </TableCell>
-                      <TableCell className="py-1 px-2 text-right font-bold">
-                        {hour.total.min === hour.total.max ? 
-                          hour.total.min : 
-                          `${hour.total.min}-${hour.total.max}`}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {staffingByHour.map((hour, index) => {
+                    const displayHour = formatHourDisplay(hour.hour);
+                    // Add "next day" indicator for hours past midnight
+                    const nextDay = hour.hour < chartStart % 24 ? " (next day)" : "";
+                    
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="py-1 px-2 text-left">
+                          {displayHour}:00{nextDay}
+                        </TableCell>
+                        <TableCell className="py-1 px-2 text-right">
+                          {hour.foh.min === hour.foh.max ? 
+                            hour.foh.min : 
+                            `${hour.foh.min}-${hour.foh.max}`}
+                        </TableCell>
+                        <TableCell className="py-1 px-2 text-right">
+                          {hour.kitchen.min === hour.kitchen.max ? 
+                            hour.kitchen.min : 
+                            `${hour.kitchen.min}-${hour.kitchen.max}`}
+                        </TableCell>
+                        <TableCell className="py-1 px-2 text-right font-bold">
+                          {hour.total.min === hour.total.max ? 
+                            hour.total.min : 
+                            `${hour.total.min}-${hour.total.max}`}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
                 <TableFooter className="bg-slate-100 dark:bg-slate-800 font-medium">
                   <TableRow>
