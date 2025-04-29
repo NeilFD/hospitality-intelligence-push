@@ -107,18 +107,6 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
               active={activeHiqItem === 'dashboard'} 
             />
             <NavItem 
-              to="/hiq/insights" 
-              label="Insights" 
-              icon="hospitality" 
-              active={activeHiqItem === 'insights'} 
-            />
-            <NavItem 
-              to="/hiq/assistant" 
-              label="AI Assistant" 
-              icon="hospitality" 
-              active={activeHiqItem === 'assistant'} 
-            />
-            <NavItem 
               to="/hiq/performance" 
               label="Performance" 
               icon="performance" 
