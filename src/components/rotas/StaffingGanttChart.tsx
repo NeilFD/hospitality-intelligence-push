@@ -43,7 +43,7 @@ interface StaffingGanttChartProps {
 }
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
-  // Simple conversion from "HH:MM" to decimal hours with special midnight handling
+  // Convert time string to decimal hours with special midnight handling
   const timeToHours = (timeString: string, isEndTime: boolean): number => {
     // Special case: If end time is "00:00", treat it as 24.0 (end of day)
     if (isEndTime && timeString === "00:00") {
@@ -56,8 +56,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Calculate chart boundaries
   const chartStart = Math.floor(timeToHours(openingHours.start, false));
-  const chartEndRaw = timeToHours(openingHours.end, true);
-  const chartEnd = Math.ceil(chartEndRaw);
+  const chartEnd = Math.ceil(timeToHours(openingHours.end, true));
   const totalHours = chartEnd - chartStart;
 
   // Group shifts by FOH and Kitchen
@@ -77,7 +76,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     
     // Initialize the hours array with every hour slot we need
     for (let i = 0; i <= totalHours; i++) {
-      const hourValue = (chartStart + i) % 24; // Wrap around at 24 to handle midnight correctly
+      const hourValue = (chartStart + i) % 24; // Wrap around at 24 for midnight
       hours.push({
         hour: hourValue,
         foh: { min: 0, max: 0 },
@@ -142,7 +141,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
   // Calculate shift position with proper midnight handling
   const calculateShiftPosition = (shift: ShiftRule) => {
     const startHour = timeToHours(shift.start_time, false);
-    const endHour = timeToHours(shift.end_time, true); // This will handle 00:00 as 24.0
+    const endHour = timeToHours(shift.end_time, true);
     
     // Calculate position as percentages of the total chart width
     const startPercent = ((startHour - chartStart) / totalHours) * 100;
@@ -188,17 +187,27 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
         <div className="border rounded-lg p-4 bg-white dark:bg-slate-900 shadow-sm">
           <h4 className="font-medium mb-3">Staffing Schedule</h4>
           
-          {/* Time scale - Fixed container with proper overflow handling */}
-          <div className="flex mb-4">
+          {/* Time scale with grid layout */}
+          <div className="flex mb-6">
             <div className="w-40 shrink-0"></div>
-            <div className="flex-1 relative overflow-hidden">
-              <div className="flex">
+            <div className="flex-1 relative h-8">
+              {/* Grid for hour markers */}
+              <div className="grid" style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
                 {Array.from({length: totalHours + 1}).map((_, i) => (
                   <div 
                     key={i} 
-                    className="border-l text-xs text-muted-foreground flex-1"
+                    className="relative"
+                    style={{ 
+                      gridColumn: i === totalHours ? 'span 1' : 'auto',
+                      left: i === totalHours ? 'auto' : `${(i / totalHours) * 100}%`,
+                      position: i === totalHours ? 'static' : 'absolute',
+                      height: '100%'
+                    }}
                   >
-                    <span className="absolute top-0 -ml-2">{formatHourDisplay((chartStart + i) % 24)}:00</span>
+                    <div className="absolute top-0 h-full border-l border-slate-200 dark:border-slate-700"></div>
+                    <span className="absolute -top-6 -ml-2 text-xs text-muted-foreground whitespace-nowrap">
+                      {formatHourDisplay((chartStart + i) % 24)}:00
+                    </span>
                   </div>
                 ))}
               </div>
