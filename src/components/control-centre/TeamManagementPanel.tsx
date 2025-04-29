@@ -55,6 +55,7 @@ import { SUPABASE_URL } from '@/lib/supabase';
 type UserRoleType = 'GOD' | 'Super User' | 'Manager' | 'Team Member' | 'Owner';
 
 const TeamManagementPanel: React.FC = () => {
+  
   const { profile: currentUserProfile } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<UserProfile[]>([]);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
@@ -92,6 +93,7 @@ const TeamManagementPanel: React.FC = () => {
   const isSuperUser = currentUserProfile?.role === 'Super User';
   const canManageUsers = isGod || isSuperUser;
   
+  
   useEffect(() => {
     fetchTeamMembers();
   }, []);
@@ -117,6 +119,7 @@ const TeamManagementPanel: React.FC = () => {
     }
   };
   
+  
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!selectedUser) return;
     const file = event.target.files?.[0];
@@ -134,7 +137,7 @@ const TeamManagementPanel: React.FC = () => {
       const fileName = `${selectedUser.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
       
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
         
@@ -165,6 +168,7 @@ const TeamManagementPanel: React.FC = () => {
       setUploadingAvatar(false);
     }
   };
+  
   
   const handleEditUser = async () => {
     if (!selectedUser) return;
@@ -206,17 +210,11 @@ const TeamManagementPanel: React.FC = () => {
         }
         
         try {
-          console.log('Attempting password update for user:', selectedUser.id);
-          
-          console.log('User ID type:', typeof selectedUser.id);
-          
           toast.loading('Updating password...', { id: 'password-update' });
           
           const result = await adminUpdateUserPassword(selectedUser.id, editForm.password);
           
           toast.dismiss('password-update');
-          
-          console.log('Password update result:', result);
           
           if (result === false) {
             toast.error('Password update failed - please contact your system administrator');
@@ -249,6 +247,7 @@ const TeamManagementPanel: React.FC = () => {
           : member
       ));
       
+      
       setIsEditUserDialogOpen(false);
       setSelectedUser(null);
       
@@ -258,6 +257,7 @@ const TeamManagementPanel: React.FC = () => {
       toast.error('Failed to update user profile');
     }
   };
+  
   
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
@@ -296,6 +296,7 @@ const TeamManagementPanel: React.FC = () => {
     }
   };
   
+  
   const openEditDialog = (user: UserProfile) => {
     setSelectedUser(user);
     let birthDate: Date | undefined = undefined;
@@ -323,13 +324,18 @@ const TeamManagementPanel: React.FC = () => {
       password: ''
     });
     
-    setIsEditUserDialogOpen(true);
+    
+    setTimeout(() => {
+      setIsEditUserDialogOpen(true);
+    }, 0);
   };
+  
   
   const openDeleteDialog = (user: UserProfile) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
+  
   
   const handleCreateProfile = async () => {
     if (!newProfileForm.firstName || !newProfileForm.lastName || !newProfileForm.email) {
@@ -391,6 +397,7 @@ const TeamManagementPanel: React.FC = () => {
       setLoading(false);
     }
   };
+  
   
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -638,8 +645,18 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
         </CardContent>
       </Card>
 
-      <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
-        <DialogContent>
+      
+      <Dialog 
+        open={isEditUserDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsEditUserDialogOpen(false);
+            
+            setSelectedUser(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Team Member</DialogTitle>
             <DialogDescription>
@@ -736,6 +753,7 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                     variant="outline"
                     className="w-full justify-start text-left font-normal"
                     id="birthDate"
+                    type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {editForm.birthDate ? (
@@ -818,11 +836,13 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
             <Button 
               variant="outline" 
               onClick={() => setIsEditUserDialogOpen(false)}
+              type="button"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleEditUser}
+              type="button"
             >
               <UserCog className="mr-2 h-4 w-4" />
               Update Profile
@@ -831,7 +851,16 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog 
+        open={isDeleteDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDeleteDialogOpen(false);
+            
+            setSelectedUser(null);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -853,8 +882,15 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
         </AlertDialogContent>
       </AlertDialog>
       
-      <Dialog open={isAddProfileDialogOpen} onOpenChange={setIsAddProfileDialogOpen}>
-        <DialogContent>
+      <Dialog 
+        open={isAddProfileDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddProfileDialogOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Team Member</DialogTitle>
             <DialogDescription>
@@ -922,35 +958,3 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="jobTitle">Job Title</Label>
-                <Input 
-                  id="jobTitle" 
-                  value={newProfileForm.jobTitle}
-                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
-                  placeholder="Job title"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddProfileDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateProfile}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Create Profile
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
-
-export default TeamManagementPanel;
