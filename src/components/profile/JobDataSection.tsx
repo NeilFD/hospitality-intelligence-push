@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useAuthStore } from '@/services/auth-service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tab } from '@radix-ui/react-tabs';
 import { BriefcaseBusiness, Pencil } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';

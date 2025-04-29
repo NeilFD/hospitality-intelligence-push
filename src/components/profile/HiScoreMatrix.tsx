@@ -146,6 +146,7 @@ export default function HiScoreMatrix({
   
   const renderMatrixItems = () => {
     if (roleType === 'foh') {
+      // Use type assertion to treat scores as FohScores
       const fohScores = scores as FohScores;
       return (
         <>
@@ -187,6 +188,7 @@ export default function HiScoreMatrix({
         </>
       );
     } else {
+      // Use type assertion to treat scores as KitchenScores
       const kitchenScores = scores as KitchenScores;
       return (
         <>

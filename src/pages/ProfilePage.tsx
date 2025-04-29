@@ -607,6 +607,26 @@ const ProfilePage = () => {
     setActiveTab('job-data-edit');
   };
 
+  const handleUpdateAvatar = (updatedProfile: any) => {
+    // Update the profile if it's been changed
+    if (updatedProfile && profile) {
+      setProfile({
+        ...profile,
+        avatar_url: updatedProfile.avatar_url
+      });
+      
+      // If this is the current user, update the auth store
+      if (!userId && currentUserProfile) {
+        useAuthStore.setState({
+          profile: {
+            ...currentUserProfile,
+            avatar_url: updatedProfile.avatar_url
+          } as any
+        });
+      }
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[70vh]">
