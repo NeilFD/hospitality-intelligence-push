@@ -43,24 +43,20 @@ interface StaffingGanttChartProps {
 }
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
-  // Simple conversion from "HH:MM" to decimal hours
-  const timeToHours = (timeString: string): number => {
+  // Simple conversion from "HH:MM" to decimal hours with special midnight handling
+  const timeToHours = (timeString: string, isEndTime: boolean): number => {
+    // Special case: If end time is "00:00", treat it as 24.0 (end of day)
+    if (isEndTime && timeString === "00:00") {
+      return 24.0;
+    }
+    
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours + minutes / 60;
   };
 
-  // NEW APPROACH: Explicitly handle midnight in a simpler, foolproof way
-  const processTime = (time: string, isEndTime: boolean): number => {
-    // Special case: If this is an end time of 00:00, it means end of day (24.0)
-    if (isEndTime && time === "00:00") {
-      return 24.0;
-    }
-    return timeToHours(time);
-  };
-
   // Calculate chart boundaries
-  const chartStart = Math.floor(processTime(openingHours.start, false));
-  const chartEndRaw = processTime(openingHours.end, true);
+  const chartStart = Math.floor(timeToHours(openingHours.start, false));
+  const chartEndRaw = timeToHours(openingHours.end, true);
   const chartEnd = Math.ceil(chartEndRaw);
   const totalHours = chartEnd - chartStart;
 
@@ -92,9 +88,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     
     // Process each rule
     rules.forEach(rule => {
-      // Always process start and end time consistently
-      const ruleStart = processTime(rule.start_time, false);
-      const ruleEnd = processTime(rule.end_time, true);
+      const ruleStart = timeToHours(rule.start_time, false);
+      const ruleEnd = timeToHours(rule.end_time, true);
       
       const role = jobRoles.find(r => r.id === rule.job_role_id);
       if (!role) return;
@@ -144,11 +139,10 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     };
   }, [staffingByHour]);
 
-  // SIMPLIFIED shift positioning calculation
+  // Calculate shift position with proper midnight handling
   const calculateShiftPosition = (shift: ShiftRule) => {
-    // Always process start and end times consistently
-    const startHour = processTime(shift.start_time, false);
-    const endHour = processTime(shift.end_time, true);
+    const startHour = timeToHours(shift.start_time, false);
+    const endHour = timeToHours(shift.end_time, true); // This will handle 00:00 as 24.0
     
     // Calculate position as percentages of the total chart width
     const startPercent = ((startHour - chartStart) / totalHours) * 100;
@@ -194,19 +188,20 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
         <div className="border rounded-lg p-4 bg-white dark:bg-slate-900 shadow-sm">
           <h4 className="font-medium mb-3">Staffing Schedule</h4>
           
-          {/* Time scale */}
+          {/* Time scale - Fixed container with proper overflow handling */}
           <div className="flex mb-4">
             <div className="w-40 shrink-0"></div>
-            <div className="flex-1 relative">
-              {Array.from({length: totalHours + 1}).map((_, i) => (
-                <div 
-                  key={i} 
-                  className="absolute top-0 bottom-0 border-l text-xs text-muted-foreground"
-                  style={{ left: `${(i / totalHours) * 100}%` }}
-                >
-                  <span className="absolute -top-4 -ml-2">{formatHourDisplay((chartStart + i) % 24)}:00</span>
-                </div>
-              ))}
+            <div className="flex-1 relative overflow-hidden">
+              <div className="flex">
+                {Array.from({length: totalHours + 1}).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="border-l text-xs text-muted-foreground flex-1"
+                  >
+                    <span className="absolute top-0 -ml-2">{formatHourDisplay((chartStart + i) % 24)}:00</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           
