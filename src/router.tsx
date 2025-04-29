@@ -8,7 +8,8 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import RequireAuth from "@/components/RequireAuth";
 import Profile from "@/pages/Profile";
-import Profile as EditProfile from "@/pages/Profile";
+// Fix the import syntax for EditProfile - using proper import alias syntax
+import { default as EditProfile } from "@/pages/Profile";
 import TeamDashboard from "@/pages/team/Dashboard";
 import Noticeboard from "@/pages/team/Noticeboard";
 import Knowledge from "@/pages/team/Knowledge";
