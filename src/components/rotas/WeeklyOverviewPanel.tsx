@@ -83,6 +83,11 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
     return days[dayCode] || dayCode;
   };
 
+  // Filter shifts by selected day
+  const filteredShiftRules = selectedDay === 'all' 
+    ? shiftRules 
+    : shiftRules.filter(rule => rule.day_of_week === selectedDay);
+
   // Get days to display based on filter
   const getDaysToDisplay = () => {
     return selectedDay === 'all' ? dayOrder : [selectedDay];
@@ -142,29 +147,29 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
           </TabsList>
         </Tabs>
         
+        <div className="mb-4">
+          <Select
+            value={selectedDay}
+            onValueChange={setSelectedDay}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select day" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Days</SelectItem>
+              {dayOrder.map(day => (
+                <SelectItem key={day} value={day}>{getDayName(day)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
         {activeView === 'table' ? (
           <div className="space-y-4">
             {isLoading ? (
               <div className="p-4 text-center">Loading shift rules...</div>
             ) : (
-              <>
-                <div className="mb-4">
-                  <Select
-                    value={selectedDay}
-                    onValueChange={setSelectedDay}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select day" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Days</SelectItem>
-                      {dayOrder.map(day => (
-                        <SelectItem key={day} value={day}>{getDayName(day)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
+              <>                
                 {getDaysToDisplay().map(day => (
                   <div key={day} className="border rounded-md overflow-hidden">
                     <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 font-medium">
@@ -212,7 +217,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
           </div>
         ) : (
           <StaffingGanttChart
-            rules={shiftRules}
+            rules={filteredShiftRules}
             jobRoles={jobRoles}
             openingHours={openingHours}
           />
