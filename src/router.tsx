@@ -1,30 +1,31 @@
+
 import {
   createBrowserRouter,
 } from "react-router-dom";
-import AppLayout from "@/components/AppLayout";
+import RootLayout from "@/components/RootLayout";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import RequireAuth from "@/components/RequireAuth";
 import Profile from "@/pages/Profile";
-import EditProfile from "@/pages/EditProfile";
+import Profile as EditProfile from "@/pages/Profile";
 import TeamDashboard from "@/pages/team/Dashboard";
 import Noticeboard from "@/pages/team/Noticeboard";
-import KnowledgeBase from "@/pages/team/KnowledgeBase";
+import Knowledge from "@/pages/team/Knowledge";
 import Chat from "@/pages/team/Chat";
 import ControlCentre from "@/pages/ControlCentre";
 import MonthSummary from "@/pages/MonthSummary";
-import WeekSummary from "@/pages/WeekSummary";
+import WeeklyTracker from "@/pages/WeeklyTracker";
 import PLDashboard from "@/pages/pl/Dashboard";
-import PLBudget from "@/pages/pl/Budget";
-import PLForecast from "@/pages/pl/Forecast";
+import PLBudget from "@/pages/pl/BudgetInput";
+import PLForecast from "@/pages/pl/FoodBeverageForecast";
 import WagesDashboard from "@/pages/wages/Dashboard";
-import WagesEmployees from "@/pages/wages/Employees";
-import WagesShifts from "@/pages/wages/Shifts";
+import WagesEmployees from "@/pages/wages/Dashboard";
+import WagesShifts from "@/pages/wages/Dashboard";
 import MasterDashboard from "@/pages/master/Dashboard";
-import MasterDaily from "@/pages/master/Daily";
-import MasterWeekly from "@/pages/master/Weekly";
-import MasterMonthly from "@/pages/master/Monthly";
+import MasterMonthly from "@/pages/master/MonthSummary";
+import MasterWeekly from "@/pages/master/WeeklyInput";
+import MasterDaily from "@/pages/master/Dashboard";
 import HiQDashboard from "@/pages/hiq/Dashboard";
 import HiQInsights from "@/pages/hiq/Insights";
 import HiQAssistant from "@/pages/hiq/Assistant";
@@ -32,7 +33,7 @@ import HiQAssistant from "@/pages/hiq/Assistant";
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <AppLayout />,
+    element: <RootLayout />,
     children: [
       {
         path: "/login",
@@ -86,7 +87,7 @@ export const router = createBrowserRouter([
         path: "/team/knowledge",
         element: (
           <RequireAuth>
-            <KnowledgeBase />
+            <Knowledge />
           </RequireAuth>
         ),
       },
@@ -126,7 +127,7 @@ export const router = createBrowserRouter([
         path: "/food/week/:year/:month/:week",
         element: (
           <RequireAuth>
-            <WeekSummary moduleType="food" modulePrefix="Food" />
+            <WeeklyTracker moduleType="food" modulePrefix="Food" />
           </RequireAuth>
         ),
       },
@@ -150,7 +151,7 @@ export const router = createBrowserRouter([
         path: "/beverage/week/:year/:month/:week",
         element: (
           <RequireAuth>
-            <WeekSummary moduleType="beverage" modulePrefix="Beverage" />
+            <WeeklyTracker moduleType="beverage" modulePrefix="Beverage" />
           </RequireAuth>
         ),
       },
