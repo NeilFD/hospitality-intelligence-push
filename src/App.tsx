@@ -7,6 +7,7 @@ import { ThemeProviderExtended } from './components/ui/theme-provider-extended';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from './components/ui/sonner';
+import { AuthProvider } from './contexts/AuthContext';
 import './theme-fixer';
 import './theme-sidebar-fixer';
 import './hiq-module-fixer'; // Import the HiQ module fixer
@@ -24,9 +25,11 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
-      <Sonner richColors closeButton position="bottom-right" />
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+        <Sonner richColors closeButton position="bottom-right" />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
