@@ -93,7 +93,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           active={currentModule === 'hiq'} 
         />
         
-        {/* Show submenu items for HiQ when it's the active module */}
+        {/* Show submenu items for HiQ when it's the active module - MODIFIED TO REMOVE AI ENTRIES */}
         {currentModule === 'hiq' && (
           <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
             <NavItem 
