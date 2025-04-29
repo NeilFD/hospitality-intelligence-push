@@ -492,7 +492,7 @@ export default function ShiftBuilder({ location, jobRoles }: ShiftBuilderProps) 
         onSubmitComplete={fetchShiftRules}
         locationId={location?.id}
         jobRoles={jobRoles}
-        day={null}
+        day={selectedDay !== 'all' ? selectedDay : null}
         editingShift={editingShift}
       />
     </Card>
