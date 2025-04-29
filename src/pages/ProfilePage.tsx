@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -27,6 +26,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 // Extend the UserProfile type with the job data properties
 interface ExtendedUserProfile extends UserProfile {
@@ -35,7 +35,34 @@ interface ExtendedUserProfile extends UserProfile {
   max_hours_per_day?: number;
   min_hours_per_week?: number;
   max_hours_per_week?: number;
+  wage_rate?: number;
+  annual_salary?: number;
+  contractor_rate?: number;
+  available_for_rota?: boolean;
 }
+
+// Job title options
+const FOH_JOB_TITLES = [
+  "Owner",
+  "General Manager",
+  "Assistant Manager",
+  "Bar Supervisor",
+  "FOH Supervisor",
+  "FOH Team",
+  "Bar Team",
+  "Runner"
+];
+
+const BOH_JOB_TITLES = [
+  "Head Chef",
+  "Sous Chef",
+  "Chef de Partie",
+  "Commis Chef",
+  "KP"
+];
+
+// All job titles combined
+const JOB_TITLES = [...FOH_JOB_TITLES, ...BOH_JOB_TITLES];
 
 const ProfilePage = () => {
   const { userId } = useParams();
@@ -58,7 +85,11 @@ const ProfilePage = () => {
     minHoursPerDay: 0,
     maxHoursPerDay: 0,
     minHoursPerWeek: 0,
-    maxHoursPerWeek: 0
+    maxHoursPerWeek: 0,
+    wageRate: 0,
+    annualSalary: 0,
+    contractorRate: 0,
+    availableForRota: true
   });
   
   const canvasRef = useRef<fabric.Canvas | null>(null);
@@ -78,6 +109,12 @@ const ProfilePage = () => {
     isSupported, 
     isPermissionBlocked 
   } = usePushNotifications();
+
+  // Check if user has permission to view job data tab (GOD, SuperUser, or Owner)
+  const hasJobDataAccess = () => {
+    if (!currentUserProfile?.role) return false;
+    return ['GOD', 'SuperUser', 'Owner'].includes(currentUserProfile.role.toString());
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -159,7 +196,11 @@ const ProfilePage = () => {
             minHoursPerDay: profileToLoad.min_hours_per_day || 0,
             maxHoursPerDay: profileToLoad.max_hours_per_day || 8,
             minHoursPerWeek: profileToLoad.min_hours_per_week || 0,
-            maxHoursPerWeek: profileToLoad.max_hours_per_week || 40
+            maxHoursPerWeek: profileToLoad.max_hours_per_week || 40,
+            wageRate: profileToLoad.wage_rate || 0,
+            annualSalary: profileToLoad.annual_salary || 0,
+            contractorRate: profileToLoad.contractor_rate || 0,
+            availableForRota: profileToLoad.available_for_rota !== undefined ? profileToLoad.available_for_rota : true
           });
         }
       } catch (error) {
@@ -204,7 +245,11 @@ const ProfilePage = () => {
         minHoursPerDay: extendedProfile.min_hours_per_day || 0,
         maxHoursPerDay: extendedProfile.max_hours_per_day || 8,
         minHoursPerWeek: extendedProfile.min_hours_per_week || 0,
-        maxHoursPerWeek: extendedProfile.max_hours_per_week || 40
+        maxHoursPerWeek: extendedProfile.max_hours_per_week || 40,
+        wageRate: extendedProfile.wage_rate || 0,
+        annualSalary: extendedProfile.annual_salary || 0,
+        contractorRate: extendedProfile.contractor_rate || 0,
+        availableForRota: extendedProfile.available_for_rota !== undefined ? extendedProfile.available_for_rota : true
       });
     }
   }, [currentUserProfile, userId, loading, profile, isAuthenticated]);
@@ -482,7 +527,11 @@ const ProfilePage = () => {
         minHoursPerDay: profile.min_hours_per_day || 0,
         maxHoursPerDay: profile.max_hours_per_day || 8,
         minHoursPerWeek: profile.min_hours_per_week || 0,
-        maxHoursPerWeek: profile.max_hours_per_week || 40
+        maxHoursPerWeek: profile.max_hours_per_week || 40,
+        wageRate: profile.wage_rate || 0,
+        annualSalary: profile.annual_salary || 0,
+        contractorRate: profile.contractor_rate || 0,
+        availableForRota: profile.available_for_rota !== undefined ? profile.available_for_rota : true
       });
     }
     setIsEditing(false);
@@ -492,40 +541,41 @@ const ProfilePage = () => {
     if (!profile) return;
     
     try {
+      const updateData: any = {
+        first_name: editForm.firstName,
+        last_name: editForm.lastName,
+        favourite_dish: editForm.favouriteDish,
+        favourite_drink: editForm.favouriteDrink,
+        about_me: editForm.aboutMe,
+        birth_date: editForm.birthDate,
+        job_title: editForm.jobTitle,
+        employment_type: editForm.employmentType,
+        min_hours_per_day: editForm.minHoursPerDay,
+        max_hours_per_day: editForm.maxHoursPerDay,
+        min_hours_per_week: editForm.minHoursPerWeek,
+        max_hours_per_week: editForm.maxHoursPerWeek,
+        available_for_rota: editForm.availableForRota
+      };
+      
+      // Add appropriate wage field based on employment type
+      if (editForm.employmentType === 'hourly') {
+        updateData.wage_rate = editForm.wageRate;
+      } else if (editForm.employmentType === 'salary') {
+        updateData.annual_salary = editForm.annualSalary;
+      } else if (editForm.employmentType === 'contractor') {
+        updateData.contractor_rate = editForm.contractorRate;
+      }
+      
       const { error } = await supabase
         .from('profiles')
-        .update({
-          first_name: editForm.firstName,
-          last_name: editForm.lastName,
-          job_title: editForm.jobTitle,
-          favourite_dish: editForm.favouriteDish,
-          favourite_drink: editForm.favouriteDrink,
-          about_me: editForm.aboutMe,
-          birth_date: editForm.birthDate,
-          employment_type: editForm.employmentType,
-          min_hours_per_day: editForm.minHoursPerDay,
-          max_hours_per_day: editForm.maxHoursPerDay,
-          min_hours_per_week: editForm.minHoursPerWeek,
-          max_hours_per_week: editForm.maxHoursPerWeek
-        })
+        .update(updateData)
         .eq('id', profile.id);
         
       if (error) throw error;
       
       setProfile({
         ...profile,
-        first_name: editForm.firstName,
-        last_name: editForm.lastName,
-        job_title: editForm.jobTitle,
-        favourite_dish: editForm.favouriteDish,
-        favourite_drink: editForm.favouriteDrink,
-        about_me: editForm.aboutMe,
-        birth_date: editForm.birthDate,
-        employment_type: editForm.employmentType,
-        min_hours_per_day: editForm.minHoursPerDay,
-        max_hours_per_day: editForm.maxHoursPerDay,
-        min_hours_per_week: editForm.minHoursPerWeek,
-        max_hours_per_week: editForm.maxHoursPerWeek
+        ...updateData
       });
       
       setIsEditing(false);
@@ -535,18 +585,7 @@ const ProfilePage = () => {
         useAuthStore.setState({
           profile: {
             ...currentUserProfile,
-            first_name: editForm.firstName,
-            last_name: editForm.lastName,
-            job_title: editForm.jobTitle,
-            favourite_dish: editForm.favouriteDish,
-            favourite_drink: editForm.favouriteDrink,
-            about_me: editForm.aboutMe,
-            // Need to cast to any since the original UserProfile type doesn't have these properties
-            employment_type: editForm.employmentType,
-            min_hours_per_day: editForm.minHoursPerDay,
-            max_hours_per_day: editForm.maxHoursPerDay,
-            min_hours_per_week: editForm.minHoursPerWeek,
-            max_hours_per_week: editForm.maxHoursPerWeek
+            ...updateData
           } as any
         });
       }
@@ -593,6 +632,19 @@ const ProfilePage = () => {
   }
   
   const isCurrentUser = !userId || userId === currentUserProfile?.id;
+
+  // Function to get the wage display based on employment type
+  const getWageDisplay = () => {
+    const extendedProfile = profile as ExtendedUserProfile;
+    if (extendedProfile.employment_type === 'hourly') {
+      return `£${extendedProfile.wage_rate || 0}/hr`;
+    } else if (extendedProfile.employment_type === 'salary') {
+      return `£${extendedProfile.annual_salary?.toLocaleString() || 0}/year`;
+    } else if (extendedProfile.employment_type === 'contractor') {
+      return `£${extendedProfile.contractor_rate || 0}/hr (contractor)`;
+    }
+    return 'Not specified';
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -730,12 +782,17 @@ const ProfilePage = () => {
             <Tabs defaultValue="about" className="mt-4">
               <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg w-full">
                 <TabsTrigger value="about" className="rounded-md w-full">About</TabsTrigger>
-                <TabsTrigger value="job-data" className="rounded-md w-full">
-                  <div className="flex items-center justify-center">
-                    <BriefcaseBusiness className="h-4 w-4 mr-2" />
-                    Job Data
-                  </div>
-                </TabsTrigger>
+                
+                {/* Only show Job Data tab to users with appropriate permissions */}
+                {hasJobDataAccess() && (
+                  <TabsTrigger value="job-data" className="rounded-md w-full">
+                    <div className="flex items-center justify-center">
+                      <BriefcaseBusiness className="h-4 w-4 mr-2" />
+                      Job Data
+                    </div>
+                  </TabsTrigger>
+                )}
+                
                 {isCurrentUser && (
                   <>
                     <TabsTrigger value="settings" className="rounded-md w-full">
@@ -799,54 +856,68 @@ const ProfilePage = () => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="job-data">
-                <div className="grid gap-6">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Employment Details</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <div className="text-sm text-gray-500 mb-1">Employment Type</div>
-                          <div className="font-semibold capitalize">{(profile as ExtendedUserProfile).employment_type || 'Not specified'}</div>
+              {hasJobDataAccess() && (
+                <TabsContent value="job-data">
+                  <div className="grid gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Employment Details</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500 mb-1">Job Title</div>
+                            <div className="font-semibold">{profile.job_title || 'Not specified'}</div>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500 mb-1">Employment Type</div>
+                            <div className="font-semibold capitalize">{(profile as ExtendedUserProfile).employment_type || 'Not specified'}</div>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500 mb-1">Wage Information</div>
+                            <div className="font-semibold">{getWageDisplay()}</div>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500 mb-1">Available for Rota</div>
+                            <div className="font-semibold">
+                              {(profile as ExtendedUserProfile).available_for_rota !== false ? 'Yes' : 'No'}
+                            </div>
+                          </div>
                         </div>
                         
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <div className="text-sm text-gray-500 mb-1">Position</div>
-                          <div className="font-semibold">{profile.job_title || 'Not specified'}</div>
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500 mb-2">Daily Hours</div>
+                            <div className="flex items-center justify-between">
+                              <span>Min: <span className="font-semibold">{(profile as ExtendedUserProfile).min_hours_per_day || 0}</span></span>
+                              <span>Max: <span className="font-semibold">{(profile as ExtendedUserProfile).max_hours_per_day || 0}</span></span>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500 mb-2">Weekly Hours</div>
+                            <div className="flex items-center justify-between">
+                              <span>Min: <span className="font-semibold">{(profile as ExtendedUserProfile).min_hours_per_week || 0}</span></span>
+                              <span>Max: <span className="font-semibold">{(profile as ExtendedUserProfile).max_hours_per_week || 0}</span></span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="space-y-4">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <div className="text-sm text-gray-500 mb-2">Daily Hours</div>
-                          <div className="flex items-center justify-between">
-                            <span>Min: <span className="font-semibold">{(profile as ExtendedUserProfile).min_hours_per_day || 0}</span></span>
-                            <span>Max: <span className="font-semibold">{(profile as ExtendedUserProfile).max_hours_per_day || 0}</span></span>
-                          </div>
+                      {isCurrentUser && (
+                        <div className="mt-6 flex justify-end">
+                          <Button className="flex items-center" onClick={() => setIsEditing(true)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit Job Details
+                          </Button>
                         </div>
-                        
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <div className="text-sm text-gray-500 mb-2">Weekly Hours</div>
-                          <div className="flex items-center justify-between">
-                            <span>Min: <span className="font-semibold">{(profile as ExtendedUserProfile).min_hours_per_week || 0}</span></span>
-                            <span>Max: <span className="font-semibold">{(profile as ExtendedUserProfile).max_hours_per_week || 0}</span></span>
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                    
-                    {isCurrentUser && (
-                      <div className="mt-6 flex justify-end">
-                        <Button className="flex items-center" onClick={() => setIsEditing(true)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit Job Details
-                        </Button>
-                      </div>
-                    )}
                   </div>
-                </div>
-              </TabsContent>
+                </TabsContent>
+              )}
               
               {isCurrentUser && (
                 <>
@@ -869,15 +940,6 @@ const ProfilePage = () => {
                             onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
                           />
                         </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="jobTitle">Job Title</Label>
-                        <Input 
-                          id="jobTitle" 
-                          value={editForm.jobTitle}
-                          onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
-                        />
                       </div>
                       
                       <div className="space-y-2">
@@ -919,8 +981,37 @@ const ProfilePage = () => {
                         />
                       </div>
                       
-                      <div className="space-y-4">
-                        <h3 className="font-medium text-lg">Job Information</h3>
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                        <Button onClick={handleSaveProfile}>Save Changes</Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  {hasJobDataAccess() && isCurrentUser && (
+                    <TabsContent value="job-data-edit">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="jobTitle">Job Title</Label>
+                          <Select 
+                            value={editForm.jobTitle} 
+                            onValueChange={(value) => setEditForm({...editForm, jobTitle: value})}
+                          >
+                            <SelectTrigger id="jobTitle">
+                              <SelectValue placeholder="Select job title" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">-- Select Job Title --</SelectItem>
+                              {FOH_JOB_TITLES.map((title) => (
+                                <SelectItem key={title} value={title}>{title}</SelectItem>
+                              ))}
+                              <SelectItem value="divider" disabled>──────────</SelectItem>
+                              {BOH_JOB_TITLES.map((title) => (
+                                <SelectItem key={title} value={title}>{title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                         
                         <div className="space-y-2">
                           <Label htmlFor="employmentType">Employment Type</Label>
@@ -934,11 +1025,62 @@ const ProfilePage = () => {
                             <SelectContent>
                               <SelectItem value="hourly">Hourly</SelectItem>
                               <SelectItem value="salary">Salary</SelectItem>
-                              <SelectItem value="part_time">Part Time</SelectItem>
-                              <SelectItem value="full_time">Full Time</SelectItem>
                               <SelectItem value="contractor">Contractor</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        
+                        {editForm.employmentType === 'hourly' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="wageRate">Hourly Rate (£)</Label>
+                            <Input 
+                              id="wageRate" 
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={editForm.wageRate}
+                              onChange={(e) => setEditForm({...editForm, wageRate: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+                        )}
+                        
+                        {editForm.employmentType === 'salary' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="annualSalary">Annual Salary (£)</Label>
+                            <Input 
+                              id="annualSalary" 
+                              type="number"
+                              min="0"
+                              step="100"
+                              value={editForm.annualSalary}
+                              onChange={(e) => setEditForm({...editForm, annualSalary: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+                        )}
+                        
+                        {editForm.employmentType === 'contractor' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="contractorRate">Contractor Rate (£/hr)</Label>
+                            <Input 
+                              id="contractorRate" 
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={editForm.contractorRate}
+                              onChange={(e) => setEditForm({...editForm, contractorRate: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="availableForRota">Available for Rota</Label>
+                            <Switch 
+                              id="availableForRota"
+                              checked={editForm.availableForRota}
+                              onCheckedChange={(checked) => setEditForm({...editForm, availableForRota: checked})}
+                            />
+                          </div>
                         </div>
                         
                         <div className="space-y-2">
@@ -1005,13 +1147,8 @@ const ProfilePage = () => {
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
-                        <Button onClick={handleSaveProfile}>Save Changes</Button>
-                      </div>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
+                  )}
                   
                   <TabsContent value="notifications">
                     <div className="space-y-6">
