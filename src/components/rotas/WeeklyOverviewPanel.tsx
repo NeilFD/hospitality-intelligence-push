@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, ChevronDown } from 'lucide-react';
@@ -23,7 +24,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const [shiftRules, setShiftRules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<'table' | 'gantt'>('gantt');
-  const [selectedDay, setSelectedDay] = useState<string>('all');
+  const [selectedDay, setSelectedDay] = useState<string>('');
   
   useEffect(() => {
     if (location?.id) {
@@ -77,18 +78,22 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       'fri': 'Friday',
       'sat': 'Saturday',
       'sun': 'Sunday',
-      'all': 'All Days'
+      'all': 'All Days',
+      '': 'No view selected'
     };
     return days[dayCode] || dayCode;
   };
 
   // Filter shifts by selected day
-  const filteredShiftRules = selectedDay === 'all' 
-    ? shiftRules 
-    : shiftRules.filter(rule => rule.day_of_week === selectedDay);
+  const filteredShiftRules = selectedDay === '' 
+    ? [] 
+    : selectedDay === 'all' 
+      ? shiftRules 
+      : shiftRules.filter(rule => rule.day_of_week === selectedDay);
 
   // Get days to display based on filter
   const getDaysToDisplay = () => {
+    if (selectedDay === '') return [];
     return selectedDay === 'all' ? dayOrder : [selectedDay];
   };
 
@@ -155,6 +160,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
               <SelectValue placeholder="Select day" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="">No view selected</SelectItem>
               <SelectItem value="all">All Days</SelectItem>
               {dayOrder.map(day => (
                 <SelectItem key={day} value={day}>{getDayName(day)}</SelectItem>
@@ -163,7 +169,11 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
           </Select>
         </div>
         
-        {activeView === 'table' ? (
+        {selectedDay === '' ? (
+          <div className="p-8 text-center border rounded-md bg-slate-50 dark:bg-slate-900">
+            <p className="text-muted-foreground">Please select a day to view the schedule</p>
+          </div>
+        ) : activeView === 'table' ? (
           <div className="space-y-4">
             {isLoading ? (
               <div className="p-4 text-center">Loading shift rules...</div>
