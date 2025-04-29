@@ -1176,6 +1176,7 @@ export type Database = {
           location_id: string
           max_staff: number
           min_staff: number
+          name: string | null
           priority: number
           required_skill_level: number | null
           revenue_to_staff_ratio: number | null
@@ -1192,6 +1193,7 @@ export type Database = {
           location_id: string
           max_staff?: number
           min_staff?: number
+          name?: string | null
           priority?: number
           required_skill_level?: number | null
           revenue_to_staff_ratio?: number | null
@@ -1208,6 +1210,7 @@ export type Database = {
           location_id?: string
           max_staff?: number
           min_staff?: number
+          name?: string | null
           priority?: number
           required_skill_level?: number | null
           revenue_to_staff_ratio?: number | null
