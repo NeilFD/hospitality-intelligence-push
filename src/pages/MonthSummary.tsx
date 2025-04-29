@@ -16,6 +16,7 @@ import { ModuleType } from '@/types/kitchen-ledger';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth, fetchTrackerPurchases, fetchTrackerCreditNotes, getTrackerSummaryByMonth } from '@/services/kitchen-service';
 import { supabase } from '@/lib/supabase';
+import { calculateGrossProfit } from '@/utils/finance-utils';
 
 interface MonthSummaryProps {
   modulePrefix?: string;
@@ -190,32 +191,24 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             });
           }
           
-          if (totalRevenueFromWeeks > 0 && Math.abs(totalCostsFromTrackers - trackerSummary.totalCost) > 0.01) {
-            console.log(`Normalizing weekly costs to match tracker summary: ${totalCostsFromTrackers} -> ${trackerSummary.totalCost}`);
-            
-            Object.values(weekMap).forEach(week => {
-              if (totalRevenueFromWeeks > 0) {
-                const revenueRatio = week.revenue / revenueToUse;
-                week.costs = trackerSummary.totalCost * revenueRatio;
-              }
-              week.gp = calculateGP(week.revenue, week.costs);
-            });
-          } else {
-            Object.values(weekMap).forEach(week => {
-              week.gp = calculateGP(week.revenue, week.costs);
-            });
-          }
+          // IMPORTANT FIX - Remove normalization of costs and calculate GP directly
+          // Removed the normalization code and calculate GP for each week based on its actual revenue and costs
+          Object.values(weekMap).forEach(week => {
+            // Calculate the GP directly using calculateGrossProfit for consistency
+            week.gp = calculateGrossProfit(week.revenue, week.costs);
+            console.log(`Week ${week.weekNumber} GP calculation: (${week.revenue} - ${week.costs}) / ${week.revenue} * 100 = ${week.gp}%`);
+          });
           
           const weeklyDataArray = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
           
           console.log('Weekly breakdown:', weeklyDataArray.map(w => 
-            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}`
+            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}%`
           ));
           
           setWeeklyData(weeklyDataArray);
           setTotalRevenue(revenueToUse);
           setTotalCosts(trackerSummary.totalCost);
-          setGpPercentage(calculateGP(revenueToUse, trackerSummary.totalCost));
+          setGpPercentage(calculateGrossProfit(revenueToUse, trackerSummary.totalCost));
           
           return;
         }
@@ -298,26 +291,31 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         let monthTotalRevenue = 0;
         let monthTotalCosts = 0;
         
+        // IMPORTANT FIX: Calculate GP directly based on each week's actual revenue and costs
         const weeklyDataArray: WeekSummary[] = Object.values(weekMap).map(week => {
           monthTotalRevenue += week.revenue;
           monthTotalCosts += week.costs;
           
+          // Use calculateGrossProfit from finance-utils for consistency
+          const weekGp = calculateGrossProfit(week.revenue, week.costs);
+          console.log(`Week ${week.weekNumber} (fallback) GP calculation: (${week.revenue} - ${week.costs}) / ${week.revenue} * 100 = ${weekGp}%`);
+          
           return {
             ...week,
-            gp: calculateGP(week.revenue, week.costs)
+            gp: weekGp
           };
         });
         
         weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
         
-        console.log('Weekly breakdown:', weeklyDataArray.map(w => 
-          `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}`
+        console.log('Weekly breakdown (fallback):', weeklyDataArray.map(w => 
+          `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}%`
         ));
         
         setWeeklyData(weeklyDataArray);
         setTotalRevenue(monthTotalRevenue);
         setTotalCosts(monthTotalCosts);
-        setGpPercentage(calculateGP(monthTotalRevenue, monthTotalCosts));
+        setGpPercentage(calculateGrossProfit(monthTotalRevenue, monthTotalCosts));
         
       } catch (error) {
         console.error("Error calculating from master records:", error);
@@ -384,7 +382,10 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             
             weekMap[weekNumber].revenue += weekRevenue;
             weekMap[weekNumber].costs += weekCosts;
-            weekMap[weekNumber].gp = calculateGP(weekMap[weekNumber].revenue, weekMap[weekNumber].costs);
+            
+            // IMPORTANT FIX: Use consistent GP calculation
+            weekMap[weekNumber].gp = calculateGrossProfit(weekMap[weekNumber].revenue, weekMap[weekNumber].costs);
+            console.log(`Week ${weekNumber} (local) GP calculation: (${weekMap[weekNumber].revenue} - ${weekMap[weekNumber].costs}) / ${weekMap[weekNumber].revenue} * 100 = ${weekMap[weekNumber].gp}%`);
           });
           
           console.log(`Total costs calculated from local store: ${totalCostsFromLocal}`);
@@ -401,13 +402,13 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           });
           
           console.log('Local weekly breakdown:', localWeeklyData.map(w => 
-            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}`
+            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}%`
           ));
           
           setWeeklyData(localWeeklyData);
           setTotalRevenue(localTotalRevenue);
           setTotalCosts(localTotalCosts);
-          setGpPercentage(calculateGP(localTotalRevenue, localTotalCosts));
+          setGpPercentage(calculateGrossProfit(localTotalRevenue, localTotalCosts));
         };
         
         calculateFromLocalStore();
