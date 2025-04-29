@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Clock, CalendarRange, DollarSign, BarChart3 } from 'lucide-react';
+import { Pencil, Trash2, Clock, CalendarRange, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import AvailabilityViewer from './AvailabilityViewer';
 
@@ -50,16 +50,6 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
               <div>
                 <div className="text-sm text-muted-foreground">Wage Rate</div>
                 <div className="font-medium">£{member.wage_rate?.toFixed(2) || '0.00'}/hour</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
-                <BarChart3 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Performance</div>
-                <div className="font-medium">{member.performance_score?.toFixed(0) || '0'}%</div>
               </div>
             </div>
           </div>

@@ -5,7 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,7 +36,6 @@ export default function TeamMemberForm({
     max_hours_per_week: 40,
     min_hours_per_day: 0,
     max_hours_per_day: 8,
-    performance_score: 50,
     availability: [],
     employment_start_date: '',
     employment_status: 'full-time',
@@ -67,7 +65,6 @@ export default function TeamMemberForm({
         max_hours_per_week: teamMember.max_hours_per_week || 40,
         min_hours_per_day: teamMember.min_hours_per_day || 0,
         max_hours_per_day: teamMember.max_hours_per_day || 8,
-        performance_score: teamMember.performance_score || 50,
         availability: teamMember.availability || teamMember.enhanced_availability || [],
         employment_start_date: teamMember.employment_start_date || '',
         employment_status: teamMember.employment_status || 'full-time',
@@ -94,7 +91,6 @@ export default function TeamMemberForm({
         max_hours_per_week: 40,
         min_hours_per_day: 0,
         max_hours_per_day: 8,
-        performance_score: 50,
         availability: [],
         employment_start_date: '',
         employment_status: 'full-time',
@@ -148,7 +144,6 @@ export default function TeamMemberForm({
         max_hours_per_week: formData.max_hours_per_week,
         min_hours_per_day: formData.min_hours_per_day,
         max_hours_per_day: formData.max_hours_per_day,
-        performance_score: formData.performance_score,
         enhanced_availability: formData.availability,
         employment_status: formData.employment_status,
         in_ft_education: formData.in_ft_education,
@@ -253,12 +248,12 @@ export default function TeamMemberForm({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="job_role">Job Role</Label>
+                <Label htmlFor="job_role_id">Job Role</Label>
                 <Select 
                   value={formData.job_role_id} 
                   onValueChange={(value) => handleChange('job_role_id', value)}
                 >
-                  <SelectTrigger id="job_role">
+                  <SelectTrigger id="job_role_id">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -409,22 +404,6 @@ export default function TeamMemberForm({
                     onChange={(e) => handleChange('max_hours_per_day', parseInt(e.target.value))}
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label htmlFor="performance_score">Performance Score</Label>
-                  <span className="text-sm text-muted-foreground">{formData.performance_score}%</span>
-                </div>
-                <Slider
-                  id="performance_score"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[formData.performance_score]}
-                  onValueChange={(value) => handleChange('performance_score', value[0])}
-                  className="pt-2"
-                />
               </div>
 
               <div className="space-y-2">
