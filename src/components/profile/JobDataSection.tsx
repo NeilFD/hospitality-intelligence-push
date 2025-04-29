@@ -210,6 +210,15 @@ export default function JobDataSection({
               <Label htmlFor="availableForRota">Available for scheduling</Label>
             </div>
             
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="inFtEducation"
+                checked={editForm.inFtEducation}
+                onCheckedChange={(checked) => handleChange('inFtEducation', checked)}
+              />
+              <Label htmlFor="inFtEducation">In Full-Time Education</Label>
+            </div>
+            
             <div className="flex justify-end space-x-2 pt-4 border-t">
               <Button variant="outline" onClick={onCancel}>
                 Cancel
@@ -283,6 +292,11 @@ export default function JobDataSection({
           <div>
             <p className="text-sm text-gray-500">Available for Scheduling</p>
             <p className="font-medium">{profile.available_for_rota !== false ? 'Yes' : 'No'}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm text-gray-500">In Full-Time Education</p>
+            <p className="font-medium">{profile.in_ft_education === true ? 'Yes' : 'No'}</p>
           </div>
         </div>
       </CardContent>

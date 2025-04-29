@@ -43,6 +43,7 @@ interface ExtendedUserProfile extends UserProfile {
   available_for_rota?: boolean;
   employment_start_date?: string;
   employment_status?: string;
+  in_ft_education?: boolean;
 }
 
 // Job title options
@@ -95,7 +96,8 @@ const ProfilePage = () => {
     contractorRate: 0,
     availableForRota: true,
     employmentStartDate: '',
-    employmentStatus: 'full-time'
+    employmentStatus: 'full-time',
+    inFtEducation: false
   });
   
   // State for managing active tab
@@ -211,7 +213,8 @@ const ProfilePage = () => {
             contractorRate: profileToLoad.contractor_rate || 0,
             availableForRota: profileToLoad.available_for_rota !== undefined ? profileToLoad.available_for_rota : true,
             employmentStartDate: profileToLoad.employment_start_date || '',
-            employmentStatus: profileToLoad.employment_status || 'full-time'
+            employmentStatus: profileToLoad.employment_status || 'full-time',
+            inFtEducation: profileToLoad.in_ft_education === true
           });
         }
       } catch (error) {
@@ -262,7 +265,8 @@ const ProfilePage = () => {
         contractorRate: extendedProfile.contractor_rate || 0,
         availableForRota: extendedProfile.available_for_rota !== undefined ? extendedProfile.available_for_rota : true,
         employmentStartDate: extendedProfile.employment_start_date || '',
-        employmentStatus: extendedProfile.employment_status || 'full-time'
+        employmentStatus: extendedProfile.employment_status || 'full-time',
+        inFtEducation: extendedProfile.in_ft_education === true
       });
     }
   }, [currentUserProfile, userId, loading, profile, isAuthenticated]);
@@ -546,7 +550,8 @@ const ProfilePage = () => {
         contractorRate: profile.contractor_rate || 0,
         availableForRota: profile.available_for_rota !== undefined ? profile.available_for_rota : true,
         employmentStartDate: profile.employment_start_date || '',
-        employmentStatus: profile.employment_status || 'full-time'
+        employmentStatus: profile.employment_status || 'full-time',
+        inFtEducation: profile.in_ft_education === true
       });
     }
     setIsEditing(false);
@@ -572,7 +577,8 @@ const ProfilePage = () => {
         max_hours_per_week: editForm.maxHoursPerWeek,
         available_for_rota: editForm.availableForRota,
         employment_start_date: editForm.employmentStartDate,
-        employment_status: editForm.employmentStatus
+        employment_status: editForm.employmentStatus,
+        in_ft_education: editForm.inFtEducation
       };
       
       // Add appropriate wage field based on employment type
@@ -783,7 +789,8 @@ const ProfilePage = () => {
                 </Badge>
                 {profile.job_title && (
                   <div className="flex items-center text-gray-500">
-                    <Briefcase className="h-4 w-4 mr-1" /> {profile.job_title}
+                    <Briefcase className="h-4 w-4 mr-2" />
+                    {profile.job_title}
                   </div>
                 )}
               </div>

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import AvailabilityScheduler from './AvailabilityScheduler';
+import { Switch } from '@/components/ui/switch';
 
 export default function TeamMemberForm({ 
   isOpen, 
@@ -29,6 +30,8 @@ export default function TeamMemberForm({
     photo_url: '',
     employment_type: 'hourly',
     wage_rate: 0,
+    annual_salary: 0,
+    contractor_rate: 0,
     min_hours_per_week: 0,
     max_hours_per_week: 40,
     min_hours_per_day: 0,
@@ -36,7 +39,8 @@ export default function TeamMemberForm({
     performance_score: 50,
     availability: [],
     employment_start_date: '',
-    employment_status: 'full-time'
+    employment_status: 'full-time',
+    in_ft_education: false
   });
 
   // If editing, populate the form with the team member data
@@ -48,6 +52,8 @@ export default function TeamMemberForm({
         photo_url: teamMember.photo_url || '',
         employment_type: teamMember.employment_type || 'hourly',
         wage_rate: teamMember.wage_rate || 0,
+        annual_salary: teamMember.annual_salary || 0,
+        contractor_rate: teamMember.contractor_rate || 0,
         min_hours_per_week: teamMember.min_hours_per_week || 0,
         max_hours_per_week: teamMember.max_hours_per_week || 40,
         min_hours_per_day: teamMember.min_hours_per_day || 0,
@@ -55,7 +61,8 @@ export default function TeamMemberForm({
         performance_score: teamMember.performance_score || 50,
         availability: teamMember.availability || [],
         employment_start_date: teamMember.employment_start_date || '',
-        employment_status: teamMember.employment_status || 'full-time'
+        employment_status: teamMember.employment_status || 'full-time',
+        in_ft_education: teamMember.in_ft_education || false
       });
     } else {
       // Reset form when adding a new member
@@ -65,6 +72,8 @@ export default function TeamMemberForm({
         photo_url: '',
         employment_type: 'hourly',
         wage_rate: 0,
+        annual_salary: 0,
+        contractor_rate: 0,
         min_hours_per_week: 0,
         max_hours_per_week: 40,
         min_hours_per_day: 0,
@@ -72,7 +81,8 @@ export default function TeamMemberForm({
         performance_score: 50,
         availability: [],
         employment_start_date: '',
-        employment_status: 'full-time'
+        employment_status: 'full-time',
+        in_ft_education: false
       });
     }
     
@@ -255,6 +265,43 @@ export default function TeamMemberForm({
                   value={formData.wage_rate}
                   onChange={(e) => handleChange('wage_rate', parseFloat(e.target.value))}
                 />
+              </div>
+              
+              {formData.employment_type === 'salary' && (
+                <div className="space-y-2">
+                  <Label htmlFor="annual_salary">Annual Salary (£)</Label>
+                  <Input
+                    id="annual_salary"
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={formData.annual_salary}
+                    onChange={(e) => handleChange('annual_salary', parseFloat(e.target.value))}
+                  />
+                </div>
+              )}
+              
+              {formData.employment_type === 'contractor' && (
+                <div className="space-y-2">
+                  <Label htmlFor="contractor_rate">Contractor Rate (£/hr)</Label>
+                  <Input
+                    id="contractor_rate"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.contractor_rate}
+                    onChange={(e) => handleChange('contractor_rate', parseFloat(e.target.value))}
+                  />
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="in_ft_education"
+                  checked={formData.in_ft_education}
+                  onCheckedChange={(checked) => handleChange('in_ft_education', checked)}
+                />
+                <Label htmlFor="in_ft_education">In Full-Time Education</Label>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
