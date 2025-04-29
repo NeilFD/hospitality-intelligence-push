@@ -44,20 +44,22 @@ interface StaffingGanttChartProps {
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
   // Convert time strings like "09:00" to decimal hours (9.0)
-  // Handle midnight (00:00) as 24.0 for end times
-  const timeToDecimal = (timeString: string, isEndTime: boolean = false) => {
-    if (isEndTime && timeString === "00:00") {
-      return 24.0; // Treat midnight as hour 24 when it's an end time
-    }
-    
+  const timeToDecimal = (timeString: string) => {
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours + (minutes / 60);
   };
 
+  // Special handling for midnight - always treat 00:00 as hour 24 for end times
+  const getAdjustedTimeValue = (timeString: string, isEndTime: boolean = false) => {
+    if (isEndTime && timeString === "00:00") {
+      return 24.0; // Midnight as end time is treated as hour 24
+    }
+    return timeToDecimal(timeString);
+  };
+
   // Determine chart boundaries from opening hours
   const startHour = Math.floor(timeToDecimal(openingHours.start));
-  // For the end hour, we need to consider if it's midnight
-  const endHour = Math.ceil(timeToDecimal(openingHours.end, true));
+  const endHour = Math.ceil(getAdjustedTimeValue(openingHours.end, true));
   const totalHours = endHour - startHour;
   
   // Group shifts by FOH and Kitchen
@@ -87,8 +89,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     
     // Process each rule and add to the appropriate hours
     rules.forEach(rule => {
-      const ruleStart = timeToDecimal(rule.start_time);
-      const ruleEnd = timeToDecimal(rule.end_time, true); // Pass true for end time
+      const ruleStart = getAdjustedTimeValue(rule.start_time);
+      const ruleEnd = getAdjustedTimeValue(rule.end_time, true); // Pass true for end time
       const role = jobRoles.find(r => r.id === rule.job_role_id);
       
       if (!role) return;
@@ -96,15 +98,13 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
       const isKitchen = role.is_kitchen;
       const category = isKitchen ? 'kitchen' : 'foh';
       
+      // Process each hour slot
       hours.forEach(hourSlot => {
-        // Convert hourSlot.hour to a comparable value for shifts that cross midnight
-        // Only convert hour 0 to 24 when the rule ends after hour 23 (meaning it crosses midnight)
-        const hourForComparison = hourSlot.hour === 0 && ruleEnd === 24 ? 24 : hourSlot.hour;
+        const slotStartHour = hourSlot.hour === 0 ? 24 : hourSlot.hour;
+        const slotHourActual = startHour + (hours.indexOf(hourSlot));
         
-        // Check if this rule applies to this hour
-        if ((ruleStart <= hourForComparison && hourForComparison < ruleEnd) || 
-            // Special case for midnight: if hourSlot is 0 and rule ends at 24 (midnight)
-            (hourSlot.hour === 0 && ruleEnd === 24)) {
+        // Check if this shift applies to this hour
+        if (ruleStart <= slotHourActual && slotHourActual < ruleEnd) {
           hourSlot[category].min += rule.min_staff;
           hourSlot[category].max += rule.max_staff;
           hourSlot.total.min += rule.min_staff;
@@ -143,8 +143,8 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Calculate position for a shift block
   const getShiftStyle = (rule: ShiftRule) => {
-    const startDecimal = timeToDecimal(rule.start_time);
-    const endDecimal = timeToDecimal(rule.end_time, true); // Pass true for end time
+    const startDecimal = getAdjustedTimeValue(rule.start_time);
+    const endDecimal = getAdjustedTimeValue(rule.end_time, true);
     
     const startPercent = ((startDecimal - startHour) / totalHours) * 100;
     const widthPercent = ((endDecimal - startDecimal) / totalHours) * 100;
@@ -178,7 +178,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return days[dayCode] || dayCode;
   };
 
-  // Format hour for display (convert 24 back to 0)
+  // Format hour for display
   const formatHourDisplay = (hour: number) => {
     return hour === 24 ? "00" : hour;
   };
