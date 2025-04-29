@@ -30,11 +30,32 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
     } else if (path.includes('/team')) {
       setCurrentModule('team');
     } else if (path.includes('/hiq')) {
+      console.log('Sidebar detected HiQ path, setting currentModule to hiq');
       setCurrentModule('hiq');
     }
     
     console.log('Sidebar URL path check:', path, 'Current module set to:', currentModule);
-  }, [location.pathname, setCurrentModule]);
+    
+    // Force hiq module if on an HiQ page
+    if (path.includes('/hiq') && currentModule !== 'hiq') {
+      console.log('Sidebar forcing HiQ module due to path');
+      setCurrentModule('hiq');
+      
+      // Also update localStorage if needed
+      const storeData = localStorage.getItem('tavern-kitchen-ledger');
+      if (storeData) {
+        try {
+          const parsedData = JSON.parse(storeData);
+          if (parsedData.state) {
+            parsedData.state.currentModule = 'hiq';
+            localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+          }
+        } catch (e) {
+          console.error('Error updating localStorage:', e);
+        }
+      }
+    }
+  }, [location.pathname, currentModule, setCurrentModule]);
 
   useEffect(() => {
     // Special handling for Control Centre page
@@ -539,6 +560,7 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
         transition: 'background-color 0.3s ease',
       }}
       data-theme-sidebar="true"
+      data-current-module={currentModule}
     >
       {children}
     </div>

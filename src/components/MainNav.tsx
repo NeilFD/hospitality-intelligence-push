@@ -20,7 +20,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
     // Get the accessible modules for the user
     getUserAccessibleModules(userRole)
       .then(modules => {
-        console.log('Accessible modules:', modules);
+        console.log('MainNav: Accessible modules:', modules);
         setAccessibleModules(modules);
       })
       .catch(error => {
@@ -30,16 +30,19 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
       });
   }, []);
 
-  // Force HiQ to be visible for debugging
+  // Force HiQ module visibility regardless of other settings
   useEffect(() => {
-    console.log('Current accessible modules:', accessibleModules);
-    console.log('Is HiQ included?', accessibleModules.includes('hiq'));
-    
     if (!accessibleModules.includes('hiq')) {
-      console.log('Adding HiQ module to sidebar');
+      console.log('MainNav: Explicitly adding HiQ module to sidebar');
       setAccessibleModules(prev => [...prev, 'hiq']);
     }
   }, [accessibleModules]);
+  
+  // Add a console log to track module state
+  useEffect(() => {
+    console.log('MainNav: Current module in state:', currentModule);
+    console.log('MainNav: Current accessible modules:', accessibleModules);
+  }, [currentModule, accessibleModules]);
 
   return (
     <nav className={className}>
@@ -68,8 +71,13 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           <NavItem to="/team/dashboard" label="Team" icon="team" active={currentModule === 'team'} />
         )}
         
-        {/* Explicitly add HiQ with forced visibility */}
-        <NavItem to="/hiq/dashboard" label="HiQ" icon="hiq" active={currentModule === 'hiq'} />
+        {/* ALWAYS show HiQ regardless of permissions */}
+        <NavItem 
+          to="/hiq/dashboard" 
+          label="HiQ" 
+          icon="hiq" 
+          active={currentModule === 'hiq'} 
+        />
         
         <NavItem to="/control-centre" label="Control Centre" icon="performance" />
       </div>

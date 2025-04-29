@@ -13,6 +13,8 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ to, label, icon, active }) => {
+  console.log(`NavItem rendering: ${label}, active: ${active}`);
+  
   return (
     <NavLink
       to={to}
