@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import TeamMemberForm from './TeamMemberForm';
 import TeamMemberDetails from './TeamMemberDetails';
+import NewUserProfileForm from './NewUserProfileForm';
+import { useAuthStore } from '@/services/auth-service';
 
 export default function TeamMemberProfiles({ location, jobRoles }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -19,6 +21,12 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentMember, setCurrentMember] = useState(null);
   const [viewingMember, setViewingMember] = useState(null);
+  const [isCreatingNewProfile, setIsCreatingNewProfile] = useState(false);
+  const { profile } = useAuthStore();
+  const userRole = profile?.role;
+  
+  // Check if user has permission to create profiles
+  const canCreateProfiles = userRole === 'GOD' || userRole === 'Super User' || userRole === 'Owner';
   
   useEffect(() => {
     if (location?.id) {
@@ -106,14 +114,26 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
             <Users className="h-5 w-5 text-blue-500" />
             Team Members
           </CardTitle>
-          <Button 
-            variant="outline"
-            className="flex items-center gap-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-            onClick={() => setIsAdding(true)}
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Member</span>
-          </Button>
+          <div className="flex gap-2">
+            {canCreateProfiles && (
+              <Button 
+                variant="default"
+                className="flex items-center gap-1 hover:bg-blue-600"
+                onClick={() => setIsCreatingNewProfile(true)}
+              >
+                <Plus className="h-4 w-4" />
+                <span>Create New Profile</span>
+              </Button>
+            )}
+            <Button 
+              variant="outline"
+              className="flex items-center gap-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+              onClick={() => setIsAdding(true)}
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Member</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -218,6 +238,14 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
           handleDeleteMember(viewingMember.id);
           setViewingMember(null);
         }}
+      />
+
+      <NewUserProfileForm
+        isOpen={isCreatingNewProfile}
+        onClose={() => setIsCreatingNewProfile(false)}
+        onComplete={fetchTeamMembers}
+        jobRoles={jobRoles}
+        locationId={location?.id}
       />
     </Card>
   );
