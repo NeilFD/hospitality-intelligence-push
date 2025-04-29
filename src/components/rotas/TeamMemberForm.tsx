@@ -24,9 +24,9 @@ export default function TeamMemberForm({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tab, setTab] = useState('basic');
-
   const [formData, setFormData] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     job_role_id: '',
     photo_url: '',
     employment_type: 'hourly',
@@ -41,16 +41,24 @@ export default function TeamMemberForm({
     availability: [],
     employment_start_date: '',
     employment_status: 'full-time',
-    in_ft_education: false
+    in_ft_education: false,
+    favourite_dish: '',
+    favourite_drink: '',
+    about_me: '',
+    job_title: '',
+    avatar_url: ''
   });
 
   // If editing, populate the form with the team member data
   useEffect(() => {
+    console.log("TeamMemberForm received teamMember:", teamMember);
     if (teamMember && isEditing) {
+      // Map fields from profiles table to formData
       setFormData({
-        full_name: teamMember.full_name || '',
+        first_name: teamMember.first_name || '',
+        last_name: teamMember.last_name || '',
         job_role_id: teamMember.job_role_id || '',
-        photo_url: teamMember.photo_url || '',
+        photo_url: teamMember.photo_url || teamMember.avatar_url || '',
         employment_type: teamMember.employment_type || 'hourly',
         wage_rate: teamMember.wage_rate || 0,
         annual_salary: teamMember.annual_salary || 0,
@@ -60,15 +68,22 @@ export default function TeamMemberForm({
         min_hours_per_day: teamMember.min_hours_per_day || 0,
         max_hours_per_day: teamMember.max_hours_per_day || 8,
         performance_score: teamMember.performance_score || 50,
-        availability: teamMember.availability || [],
+        availability: teamMember.availability || teamMember.enhanced_availability || [],
         employment_start_date: teamMember.employment_start_date || '',
         employment_status: teamMember.employment_status || 'full-time',
-        in_ft_education: teamMember.in_ft_education || false
+        in_ft_education: teamMember.in_ft_education || false,
+        favourite_dish: teamMember.favourite_dish || '',
+        favourite_drink: teamMember.favourite_drink || '',
+        about_me: teamMember.about_me || '',
+        job_title: teamMember.job_title || '',
+        avatar_url: teamMember.avatar_url || teamMember.photo_url || ''
       });
+      console.log("Form data populated:", formData);
     } else {
       // Reset form when adding a new member
       setFormData({
-        full_name: '',
+        first_name: '',
+        last_name: '',
         job_role_id: '',
         photo_url: '',
         employment_type: 'hourly',
@@ -83,7 +98,12 @@ export default function TeamMemberForm({
         availability: [],
         employment_start_date: '',
         employment_status: 'full-time',
-        in_ft_education: false
+        in_ft_education: false,
+        favourite_dish: '',
+        favourite_drink: '',
+        about_me: '',
+        job_title: '',
+        avatar_url: ''
       });
     }
     
@@ -101,15 +121,9 @@ export default function TeamMemberForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.full_name) {
+    // Basic validation
+    if (!formData.first_name && !formData.last_name) {
       toast("Name is required", {
-        style: { backgroundColor: "#f44336", color: "#fff" },
-      });
-      return;
-    }
-    
-    if (!formData.job_role_id) {
-      toast("Job role is required", {
         style: { backgroundColor: "#f44336", color: "#fff" },
       });
       return;
@@ -120,20 +134,45 @@ export default function TeamMemberForm({
     try {
       let result;
       
-      if (isEditing) {
+      // Create the data object to update/insert
+      const profileData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        job_role_id: formData.job_role_id,
+        avatar_url: formData.photo_url || formData.avatar_url,
+        employment_type: formData.employment_type,
+        wage_rate: formData.wage_rate,
+        annual_salary: formData.annual_salary,
+        contractor_rate: formData.contractor_rate,
+        min_hours_per_week: formData.min_hours_per_week,
+        max_hours_per_week: formData.max_hours_per_week,
+        min_hours_per_day: formData.min_hours_per_day,
+        max_hours_per_day: formData.max_hours_per_day,
+        performance_score: formData.performance_score,
+        enhanced_availability: formData.availability,
+        employment_status: formData.employment_status,
+        in_ft_education: formData.in_ft_education,
+        favourite_dish: formData.favourite_dish,
+        favourite_drink: formData.favourite_drink,
+        about_me: formData.about_me,
+        job_title: formData.job_title
+      };
+      
+      console.log("Updating profile with data:", profileData);
+      
+      if (isEditing && teamMember) {
+        // Update existing profile
         result = await supabase
-          .from('team_members')
-          .update({
-            ...formData,
-            location_id: locationId,
-          })
+          .from('profiles')
+          .update(profileData)
           .eq('id', teamMember.id);
       } else {
+        // This is a new profile with no auth record
         result = await supabase
-          .from('team_members')
+          .from('profiles')
           .insert({
-            ...formData,
-            location_id: locationId,
+            ...profileData,
+            id: crypto.randomUUID() // Generate a UUID for the new profile
           });
       }
       
@@ -141,7 +180,7 @@ export default function TeamMemberForm({
       if (error) throw error;
       
       toast(isEditing ? "Team member updated" : "Team member created", {
-        description: `${formData.full_name} has been ${isEditing ? 'updated' : 'added'} successfully.`,
+        description: `${formData.first_name} ${formData.last_name} has been ${isEditing ? 'updated' : 'added'} successfully.`,
       });
       
       onSubmitComplete();
@@ -172,22 +211,43 @@ export default function TeamMemberForm({
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <TabsContent value="basic" className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => handleChange('first_name', e.target.value)}
+                    placeholder="First Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) => handleChange('last_name', e.target.value)}
+                    placeholder="Last Name"
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
+                <Label htmlFor="job_title">Job Title</Label>
                 <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => handleChange('full_name', e.target.value)}
-                  placeholder="John Smith"
+                  id="job_title"
+                  value={formData.job_title}
+                  onChange={(e) => handleChange('job_title', e.target.value)}
+                  placeholder="Job Title"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="photo_url">Photo URL</Label>
+                <Label htmlFor="avatar_url">Photo URL</Label>
                 <Input
-                  id="photo_url"
-                  value={formData.photo_url}
-                  onChange={(e) => handleChange('photo_url', e.target.value)}
+                  id="avatar_url"
+                  value={formData.avatar_url || formData.photo_url}
+                  onChange={(e) => handleChange('avatar_url', e.target.value)}
                   placeholder="https://example.com/photo.jpg"
                 />
               </div>
@@ -365,6 +425,37 @@ export default function TeamMemberForm({
                   onValueChange={(value) => handleChange('performance_score', value[0])}
                   className="pt-2"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="about_me">About Me</Label>
+                <Input
+                  id="about_me"
+                  value={formData.about_me}
+                  onChange={(e) => handleChange('about_me', e.target.value)}
+                  placeholder="A short bio"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="favourite_dish">Favourite Dish</Label>
+                  <Input
+                    id="favourite_dish"
+                    value={formData.favourite_dish}
+                    onChange={(e) => handleChange('favourite_dish', e.target.value)}
+                    placeholder="Favourite dish"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="favourite_drink">Favourite Drink</Label>
+                  <Input
+                    id="favourite_drink"
+                    value={formData.favourite_drink}
+                    onChange={(e) => handleChange('favourite_drink', e.target.value)}
+                    placeholder="Favourite drink"
+                  />
+                </div>
               </div>
             </TabsContent>
             

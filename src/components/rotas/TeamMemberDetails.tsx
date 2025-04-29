@@ -16,14 +16,20 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
     return name.split(' ').map(part => part[0]).join('').toUpperCase();
   };
 
+  const handleEdit = () => {
+    // Ensure we're passing the complete member object to the edit function
+    console.log("Passing member data to edit:", member);
+    onEdit(member);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] md:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={member.photo_url} alt={member.full_name} />
-              <AvatarFallback className="text-xl">{getInitials(`${member.first_name} ${member.last_name}`)}</AvatarFallback>
+              <AvatarImage src={member.photo_url || member.avatar_url} alt={member.first_name && member.last_name ? `${member.first_name} ${member.last_name}` : 'Profile'} />
+              <AvatarFallback className="text-xl">{getInitials(`${member.first_name || ''} ${member.last_name || ''}`)}</AvatarFallback>
             </Avatar>
             <div>
               <DialogTitle className="text-2xl">{`${member.first_name || ''} ${member.last_name || ''}`}</DialogTitle>
@@ -80,11 +86,11 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
             </div>
           </div>
           
-          {member.availability && (
+          {(member.availability || member.enhanced_availability) && (
             <Card>
               <CardContent className="pt-4">
                 <h3 className="font-medium mb-3">Weekly Availability</h3>
-                <AvailabilityViewer availability={member.availability} />
+                <AvailabilityViewer availability={member.availability || member.enhanced_availability} />
               </CardContent>
             </Card>
           )}
@@ -120,11 +126,11 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
         </div>
         
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onEdit} className="flex items-center gap-1">
+          <Button variant="outline" onClick={handleEdit} className="flex items-center gap-1">
             <Pencil className="h-4 w-4" />
             <span>Edit</span>
           </Button>
-          <Button variant="destructive" onClick={onDelete} className="flex items-center gap-1">
+          <Button variant="destructive" onClick={() => onDelete(member.id)} className="flex items-center gap-1">
             <Trash2 className="h-4 w-4" />
             <span>Delete</span>
           </Button>
