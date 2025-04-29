@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { 
@@ -32,7 +33,8 @@ const defaultModules: Module[] = [
   { id: '4', type: 'food', name: 'Food Hub', enabled: true, displayOrder: 5 },
   { id: '5', type: 'beverage', name: 'Beverage Hub', enabled: true, displayOrder: 6 },
   { id: '6', type: 'performance', name: 'Performance and Analysis', enabled: true, displayOrder: 7 },
-  { id: '7', type: 'team', name: 'Team Communication', enabled: true, displayOrder: 8 }
+  { id: '7', type: 'team', name: 'Team Communication', enabled: true, displayOrder: 8 },
+  { id: '8', type: 'hiq', name: 'HiQ', enabled: true, displayOrder: 9 }
 ];
 
 // Create initial month record with empty weeks
