@@ -17,7 +17,7 @@ import {
   type KitchenScores,
   type ScoreType
 } from '@/utils/hiScoreCalculations';
-import { Heart, Smile, Handshake, Utensils, Book, WorkIcon as Work, Brain } from 'lucide-react';
+import { Heart, Smile, Handshake, Utensils, Book, BriefcaseBusiness, Brain } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -69,7 +69,6 @@ export function HiScoreMatrix({
 
   const handleScoreChange = (category: string, value: number[]) => {
     setScores((prevScores) => {
-      // Create a new scores object with the updated value
       if (roleType === 'foh' && 'hospitality' in prevScores) {
         return { ...prevScores, [category]: value[0] } as FohScores;
       } else if (roleType === 'kitchen' && 'workEthic' in prevScores) {
@@ -328,7 +327,7 @@ export function HiScoreMatrix({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-2 cursor-help">
-                        <Work className="h-5 w-5 text-amber-600" />
+                        <BriefcaseBusiness className="h-5 w-5 text-amber-600" />
                         <span className="font-medium">Work Ethic & Discipline (35%)</span>
                       </div>
                     </TooltipTrigger>
