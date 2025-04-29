@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Plus, Copy, Calendar, Trash2 } from 'lucide-react';
+import { Plus, Copy, Calendar, Trash2, Clock, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ShiftRuleForm from './ShiftRuleForm';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
@@ -27,6 +29,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
   const [shiftRules, setShiftRules] = useState<Record<string, any[]>>({});
   const [isAddingShift, setIsAddingShift] = useState(false);
   const [currentDay, setCurrentDay] = useState('mon');
+  const [editingHours, setEditingHours] = useState<{day: string, start: string, end: string} | null>(null);
   
   // Fetch shift rules when component mounts or location/jobRoles change
   useEffect(() => {
@@ -58,9 +61,8 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
       setShiftRules(rulesByDay);
     } catch (error) {
       console.error('Error fetching shift rules:', error);
-      toast("Error loading shift rules", {
-        description: "There was a problem loading the shift rules.",
-        style: { backgroundColor: "#f44336", color: "#fff" },
+      toast.error("Error loading shift rules", {
+        description: "There was a problem loading the shift rules."
       });
     }
   };
@@ -76,16 +78,15 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
         throw error;
       }
       
-      toast("Shift rule deleted", {
-        description: "The shift rule has been removed.",
+      toast.success("Shift rule deleted", {
+        description: "The shift rule has been removed."
       });
       
       fetchShiftRules();
     } catch (error) {
       console.error('Error deleting shift rule:', error);
-      toast("Error deleting shift rule", {
-        description: "There was a problem deleting the shift rule.",
-        style: { backgroundColor: "#f44336", color: "#fff" },
+      toast.error("Error deleting shift rule", {
+        description: "There was a problem deleting the shift rule."
       });
     }
   };
@@ -121,18 +122,15 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
         throw error;
       }
       
-      toast({
-        title: 'Shift rule duplicated',
-        description: `The shift rule has been duplicated to all other days.`,
+      toast.success("Shift rule duplicated", {
+        description: "The shift rule has been duplicated to all other days."
       });
       
       fetchShiftRules();
     } catch (error) {
       console.error('Error duplicating shift rules:', error);
-      toast({
-        title: 'Error duplicating shift rules',
-        description: 'There was a problem duplicating the shift rules.',
-        variant: 'destructive',
+      toast.error("Error duplicating shift rules", {
+        description: "There was a problem duplicating the shift rules."
       });
     }
   };
@@ -145,6 +143,72 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
       };
     }
     return { start: '09:00', end: '23:00' };
+  };
+
+  const startEditingHours = (day) => {
+    const hours = getOpeningHours(day);
+    setEditingHours({
+      day,
+      start: hours.start,
+      end: hours.end
+    });
+  };
+
+  const handleTimeChange = (field, value) => {
+    if (!editingHours) return;
+    
+    setEditingHours({
+      ...editingHours,
+      [field]: value
+    });
+  };
+
+  const saveOpeningHours = async () => {
+    if (!editingHours || !location?.id) return;
+    
+    try {
+      // Get current opening hours or initialize empty object
+      const updatedOpeningHours = location.opening_hours ? 
+        { ...location.opening_hours } : 
+        days.reduce((acc, day) => {
+          acc[day.id] = {
+            start_time: '09:00',
+            end_time: '23:00'
+          };
+          return acc;
+        }, {});
+      
+      // Update the specific day's hours
+      updatedOpeningHours[editingHours.day] = {
+        start_time: editingHours.start,
+        end_time: editingHours.end
+      };
+      
+      // Update location in database
+      const { error } = await supabase
+        .from('locations')
+        .update({ opening_hours: updatedOpeningHours })
+        .eq('id', location.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      location.opening_hours = updatedOpeningHours;
+      
+      toast.success("Opening hours updated", {
+        description: `${days.find(d => d.id === editingHours.day)?.name} hours updated successfully.`
+      });
+      
+      // Reset editing state
+      setEditingHours(null);
+    } catch (error) {
+      console.error('Error updating opening hours:', error);
+      toast.error("Error updating hours", {
+        description: "There was a problem updating the opening hours."
+      });
+    }
   };
   
   return (
@@ -166,6 +230,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
           {days.map((day) => {
             const openingHours = getOpeningHours(day.id);
             const dayRules = shiftRules[day.id] || [];
+            const isEditing = editingHours?.day === day.id;
             
             return (
               <AccordionItem 
@@ -177,9 +242,16 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                   <div className="flex items-center justify-between w-full">
                     <span className="font-semibold">{day.name}</span>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {openingHours.start} - {openingHours.end}
-                      </Badge>
+                      {isEditing ? (
+                        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-3 py-1">
+                          <span>Editing...</span>
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="text-xs flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" />
+                          {openingHours.start} - {openingHours.end}
+                        </Badge>
+                      )}
                       <Badge variant="secondary" className="text-xs">
                         {dayRules.length} shift{dayRules.length !== 1 ? 's' : ''}
                       </Badge>
@@ -191,9 +263,46 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-sm font-medium">Opening Hours</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {openingHours.start} - {openingHours.end}
-                        </p>
+                        {isEditing ? (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="grid grid-cols-2 gap-2 w-56">
+                              <Input
+                                type="time"
+                                value={editingHours.start}
+                                onChange={(e) => handleTimeChange('start', e.target.value)}
+                                className="text-sm"
+                              />
+                              <Input
+                                type="time"
+                                value={editingHours.end}
+                                onChange={(e) => handleTimeChange('end', e.target.value)}
+                                className="text-sm"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" onClick={() => setEditingHours(null)}>
+                                Cancel
+                              </Button>
+                              <Button size="sm" onClick={saveOpeningHours}>
+                                Save
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <p className="text-sm text-muted-foreground">
+                              {openingHours.start} - {openingHours.end}
+                            </p>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 w-7 p-0"
+                              onClick={() => startEditingHours(day.id)}
+                            >
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       <Button 
                         size="sm" 
