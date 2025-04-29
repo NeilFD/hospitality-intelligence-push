@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -10,8 +11,11 @@ import { toast } from "sonner";
 
 export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locationId, jobRoles, day }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [shiftTemplates, setShiftTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   const [formData, setFormData] = useState({
+    name: '',
     job_role_id: '',
     start_time: '09:00',
     end_time: '17:00',
@@ -22,11 +26,59 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     required_skill_level: null
   });
 
+  useEffect(() => {
+    // Fetch available shift templates for this day when component loads
+    const fetchTemplates = async () => {
+      if (locationId && day) {
+        try {
+          const { data, error } = await supabase
+            .from('shift_templates')
+            .select('*')
+            .eq('location_id', locationId)
+            .eq('day_of_week', day);
+            
+          if (error) throw error;
+          setShiftTemplates(data || []);
+        } catch (error) {
+          console.error('Error fetching shift templates:', error);
+        }
+      }
+    };
+    
+    fetchTemplates();
+  }, [locationId, day]);
+
   const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleTemplateSelect = (templateId) => {
+    if (!templateId) {
+      setSelectedTemplate(null);
+      return;
+    }
+    
+    const template = shiftTemplates.find(t => t.id === templateId);
+    if (template && template.shift_blocks && template.shift_blocks.length > 0) {
+      // Use the first shift block as the template
+      const shiftBlock = template.shift_blocks[0];
+      setFormData(prev => ({
+        ...prev,
+        name: shiftBlock.name || template.name,
+        job_role_id: shiftBlock.job_role_id || '',
+        start_time: shiftBlock.start_time || '09:00',
+        end_time: shiftBlock.end_time || '17:00',
+        min_staff: shiftBlock.min_staff || 1,
+        max_staff: shiftBlock.max_staff || 1,
+        priority: shiftBlock.priority || 3,
+        revenue_to_staff_ratio: shiftBlock.revenue_to_staff_ratio || null,
+        required_skill_level: shiftBlock.required_skill_level || null
+      }));
+      setSelectedTemplate(template);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -42,15 +94,49 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
+      // Submit the shift rule
+      const { data: shiftRuleData, error: shiftRuleError } = await supabase
         .from('shift_rules')
         .insert({
           location_id: locationId,
           day_of_week: day,
+          name: formData.name,
           ...formData
         });
         
-      if (error) throw error;
+      if (shiftRuleError) throw shiftRuleError;
+      
+      // If this is a new template name that doesn't exist yet, save it as a template
+      if (formData.name && !selectedTemplate) {
+        const templateExists = shiftTemplates.some(t => t.name.toLowerCase() === formData.name.toLowerCase());
+        
+        if (!templateExists) {
+          const shiftBlock = {
+            name: formData.name,
+            job_role_id: formData.job_role_id,
+            start_time: formData.start_time,
+            end_time: formData.end_time,
+            min_staff: formData.min_staff,
+            max_staff: formData.max_staff,
+            priority: formData.priority,
+            revenue_to_staff_ratio: formData.revenue_to_staff_ratio,
+            required_skill_level: formData.required_skill_level
+          };
+          
+          const { error: templateError } = await supabase
+            .from('shift_templates')
+            .insert({
+              location_id: locationId,
+              day_of_week: day,
+              name: formData.name,
+              shift_blocks: [shiftBlock]
+            });
+            
+          if (templateError) {
+            console.error('Error saving shift template:', templateError);
+          }
+        }
+      }
       
       toast("Shift rule created", {
         description: "The shift rule has been added successfully.",
@@ -91,6 +177,35 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="name">Shift Name</Label>
+            <Input
+              id="name"
+              placeholder="e.g. Manager Weekday - Day"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+            />
+          </div>
+
+          {shiftTemplates.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="template">Use Template</Label>
+              <Select onValueChange={handleTemplateSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {shiftTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="role">Job Role</Label>
             <Select 

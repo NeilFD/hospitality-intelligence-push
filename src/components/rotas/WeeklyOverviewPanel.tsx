@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Plus, Copy, Calendar, Trash2, Clock, Edit, Check } from 'lucide-react';
+import { Plus, Copy, Calendar, Trash2, Clock, Edit, Check, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,8 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
   const [copyingShift, setCopyingShift] = useState<any>(null);
   const [selectedDays, setSelectedDays] = useState<Record<string, boolean>>({});
   const [isCopyPopoverOpen, setIsCopyPopoverOpen] = useState(false);
+  const [savingAsTemplate, setSavingAsTemplate] = useState<any>(null);
+  const [templateName, setTemplateName] = useState('');
   
   // Fetch shift rules when component mounts or location/jobRoles change
   useEffect(() => {
@@ -101,9 +104,10 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
   };
   
   const handleCopyShift = (rule) => {
-    // Initialize selectedDays with all days except the current one set to true
+    // Initialize selectedDays with all days except the current one set to false
+    // This way, user has to explicitly select which days to copy to
     const initialSelectedDays = days.reduce((acc, day) => {
-      acc[day.id] = day.id !== rule.day_of_week;
+      acc[day.id] = false;
       return acc;
     }, {});
     
@@ -140,6 +144,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
         location_id: location.id,
         day_of_week: dayId,
         job_role_id: copyingShift.job_role_id,
+        name: copyingShift.name,
         start_time: copyingShift.start_time,
         end_time: copyingShift.end_time,
         min_staff: copyingShift.min_staff,
@@ -172,6 +177,104 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
       console.error('Error duplicating shift rules:', error);
       toast.error("Error duplicating shift rules", {
         description: "There was a problem duplicating the shift rules."
+      });
+    }
+  };
+  
+  const handleSaveAsTemplate = (rule) => {
+    if (!rule.name) {
+      setTemplateName('');
+    } else {
+      setTemplateName(rule.name);
+    }
+    setSavingAsTemplate(rule);
+  };
+  
+  const saveTemplate = async () => {
+    if (!savingAsTemplate || !templateName.trim()) {
+      toast.error("Template name required", {
+        description: "Please provide a name for the template."
+      });
+      return;
+    }
+    
+    try {
+      // Check if template with this name already exists
+      const { data: existingTemplates, error: fetchError } = await supabase
+        .from('shift_templates')
+        .select('*')
+        .eq('location_id', location.id)
+        .eq('name', templateName.trim());
+        
+      if (fetchError) throw fetchError;
+      
+      // Create shift block from the current rule
+      const shiftBlock = {
+        name: templateName.trim(),
+        job_role_id: savingAsTemplate.job_role_id,
+        start_time: savingAsTemplate.start_time,
+        end_time: savingAsTemplate.end_time,
+        min_staff: savingAsTemplate.min_staff,
+        max_staff: savingAsTemplate.max_staff,
+        priority: savingAsTemplate.priority,
+        revenue_to_staff_ratio: savingAsTemplate.revenue_to_staff_ratio,
+        required_skill_level: savingAsTemplate.required_skill_level
+      };
+      
+      if (existingTemplates && existingTemplates.length > 0) {
+        // Update existing template
+        const template = existingTemplates[0];
+        const updatedBlocks = [...(template.shift_blocks || []), shiftBlock];
+        
+        const { error: updateError } = await supabase
+          .from('shift_templates')
+          .update({ shift_blocks: updatedBlocks })
+          .eq('id', template.id);
+          
+        if (updateError) throw updateError;
+        
+        toast.success("Template updated", {
+          description: `The shift has been added to the template "${templateName}".`
+        });
+      } else {
+        // Create new template
+        const { error: insertError } = await supabase
+          .from('shift_templates')
+          .insert({
+            location_id: location.id,
+            day_of_week: savingAsTemplate.day_of_week,
+            name: templateName.trim(),
+            shift_blocks: [shiftBlock]
+          });
+          
+        if (insertError) throw insertError;
+        
+        toast.success("Template created", {
+          description: `The shift template "${templateName}" has been created.`
+        });
+      }
+      
+      // Update the shift rule name if it doesn't already have one
+      if (!savingAsTemplate.name) {
+        const { error: updateRuleError } = await supabase
+          .from('shift_rules')
+          .update({ name: templateName.trim() })
+          .eq('id', savingAsTemplate.id);
+          
+        if (updateRuleError) {
+          console.error('Error updating shift rule name:', updateRuleError);
+        } else {
+          // Refresh shift rules to show the updated name
+          fetchShiftRules();
+        }
+      }
+      
+      setSavingAsTemplate(null);
+      setTemplateName('');
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast.error("Error saving template", {
+        description: "There was a problem saving the shift template."
       });
     }
   };
@@ -375,6 +478,11 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <div className="font-medium">{rule.job_roles?.title || 'Unknown Role'}</div>
+                                  {rule.name && (
+                                    <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                                      {rule.name}
+                                    </div>
+                                  )}
                                   <div className="text-sm text-muted-foreground">
                                     {formatTime(rule.start_time)} - {formatTime(rule.end_time)} • 
                                     {rule.min_staff === rule.max_staff ? 
@@ -384,6 +492,49 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                                   </div>
                                 </div>
                                 <div className="flex gap-2">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleSaveAsTemplate(rule)}
+                                      >
+                                        <Save className="h-4 w-4" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-72 p-4">
+                                      {savingAsTemplate?.id === rule.id && (
+                                        <div className="space-y-4">
+                                          <h4 className="font-medium">Save as template</h4>
+                                          <div className="space-y-2">
+                                            <Label htmlFor="template-name">Template name</Label>
+                                            <Input 
+                                              id="template-name" 
+                                              value={templateName} 
+                                              placeholder="e.g. Manager Weekday - Day"
+                                              onChange={(e) => setTemplateName(e.target.value)}
+                                            />
+                                          </div>
+                                          <div className="flex justify-between pt-2">
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm"
+                                              onClick={() => setSavingAsTemplate(null)}
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button 
+                                              size="sm"
+                                              onClick={saveTemplate}
+                                            >
+                                              <Save className="mr-1 h-4 w-4" /> Save Template
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </PopoverContent>
+                                  </Popover>
+                                
                                   <Popover open={isCopyPopoverOpen && copyingShift?.id === rule.id}>
                                     <PopoverTrigger asChild>
                                       <Button
