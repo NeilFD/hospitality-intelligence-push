@@ -43,14 +43,10 @@ interface StaffingGanttChartProps {
 }
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
-  // Convert time string to decimal hours with special midnight handling
+  // Improved time conversion function as recommended
   const timeToHours = (timeString: string, isEndTime: boolean): number => {
-    // Special case: If end time is "00:00", treat it as 24.0 (end of day)
-    if (isEndTime && timeString === "00:00") {
-      return 24.0;
-    }
-    
-    const [hours, minutes] = timeString.split(':').map(Number);
+    if (isEndTime && timeString === "00:00") return 24.0;
+    const [hours, minutes] = timeString.split(":").map(Number);
     return hours + minutes / 60;
   };
 
@@ -138,18 +134,15 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     };
   }, [staffingByHour]);
 
-  // Calculate shift position with proper midnight handling
+  // New shift position calculation based on recommended code
   const calculateShiftPosition = (shift: ShiftRule) => {
-    const startHour = timeToHours(shift.start_time, false);
-    const endHour = timeToHours(shift.end_time, true);
-    
-    // Calculate position as percentages of the total chart width
-    const startPercent = ((startHour - chartStart) / totalHours) * 100;
-    const width = ((endHour - startHour) / totalHours) * 100;
-    
+    const startHour = timeToHours(shift.start_time, false) - chartStart;
+    const endHour = timeToHours(shift.end_time, true) - chartStart;
+    const duration = endHour - startHour;
+
     return {
-      left: `${startPercent}%`,
-      width: `${width}%`
+      gridColumnStart: Math.floor(startHour) + 1,
+      gridColumnEnd: `span ${Math.ceil(duration)}`
     };
   };
 
@@ -187,24 +180,15 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
         <div className="border rounded-lg p-4 bg-white dark:bg-slate-900 shadow-sm">
           <h4 className="font-medium mb-3">Staffing Schedule</h4>
           
-          {/* Time scale with grid layout */}
+          {/* Time scale with proper grid layout */}
           <div className="flex mb-6">
             <div className="w-40 shrink-0"></div>
-            <div className="flex-1 relative h-8">
-              {/* Grid for hour markers */}
+            <div className="flex-1 relative">
+              {/* Time markers */}
               <div className="grid" style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
                 {Array.from({length: totalHours + 1}).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="relative"
-                    style={{ 
-                      gridColumn: i === totalHours ? 'span 1' : 'auto',
-                      left: i === totalHours ? 'auto' : `${(i / totalHours) * 100}%`,
-                      position: i === totalHours ? 'static' : 'absolute',
-                      height: '100%'
-                    }}
-                  >
-                    <div className="absolute top-0 h-full border-l border-slate-200 dark:border-slate-700"></div>
+                  <div key={i} className="relative">
+                    <div className="absolute left-0 h-8 border-l border-slate-200 dark:border-slate-700"></div>
                     <span className="absolute -top-6 -ml-2 text-xs text-muted-foreground whitespace-nowrap">
                       {formatHourDisplay((chartStart + i) % 24)}:00
                     </span>
@@ -234,32 +218,40 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                   </span>
                 </div>
                 <div className="flex-1 relative h-8 bg-slate-50 dark:bg-slate-800 rounded overflow-hidden">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="absolute h-full bg-blue-200 dark:bg-blue-700/40 border border-blue-300 dark:border-blue-600 rounded flex items-center justify-center hover:bg-blue-300 dark:hover:bg-blue-700/60 transition-colors"
-                        style={calculateShiftPosition(rule)}
-                      >
-                        <div className="px-1 text-xs truncate max-w-full">
-                          {rule.min_staff === rule.max_staff ? 
-                            `${rule.min_staff}` : 
-                            `${rule.min_staff}-${rule.max_staff}`
-                          }
+                  <div 
+                    className="grid" 
+                    style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="absolute h-full bg-blue-200 dark:bg-blue-700/40 border border-blue-300 dark:border-blue-600 rounded flex items-center justify-center hover:bg-blue-300 dark:hover:bg-blue-700/60 transition-colors"
+                          style={{
+                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / ${calculateShiftPosition(rule).gridColumnEnd}`,
+                            width: '100%'
+                          }}
+                        >
+                          <div className="px-1 text-xs truncate max-w-full">
+                            {rule.min_staff === rule.max_staff ? 
+                              `${rule.min_staff}` : 
+                              `${rule.min_staff}-${rule.max_staff}`
+                            }
+                          </div>
                         </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="text-sm">
-                        <div className="font-bold">{rule.name || getRoleName(rule)}</div>
-                        <div>{formatTime(rule.start_time)} - {formatTime(rule.end_time)}</div>
-                        <div>Staff: {rule.min_staff === rule.max_staff ? 
-                          rule.min_staff : 
-                          `${rule.min_staff}-${rule.max_staff}`}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-sm">
+                          <div className="font-bold">{rule.name || getRoleName(rule)}</div>
+                          <div>{formatTime(rule.start_time)} - {formatTime(rule.end_time)}</div>
+                          <div>Staff: {rule.min_staff === rule.max_staff ? 
+                            rule.min_staff : 
+                            `${rule.min_staff}-${rule.max_staff}`}
+                          </div>
+                          {rule.day_of_week && <div>{formatDayName(rule.day_of_week)}</div>}
                         </div>
-                        {rule.day_of_week && <div>{formatDayName(rule.day_of_week)}</div>}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
               </div>
             </div>
@@ -285,32 +277,40 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                   </span>
                 </div>
                 <div className="flex-1 relative h-8 bg-slate-50 dark:bg-slate-800 rounded overflow-hidden">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="absolute h-full bg-green-200 dark:bg-green-700/40 border border-green-300 dark:border-green-600 rounded flex items-center justify-center hover:bg-green-300 dark:hover:bg-green-700/60 transition-colors"
-                        style={calculateShiftPosition(rule)}
-                      >
-                        <div className="px-1 text-xs truncate max-w-full">
-                          {rule.min_staff === rule.max_staff ? 
-                            `${rule.min_staff}` : 
-                            `${rule.min_staff}-${rule.max_staff}`
-                          }
+                  <div 
+                    className="grid" 
+                    style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="absolute h-full bg-green-200 dark:bg-green-700/40 border border-green-300 dark:border-green-600 rounded flex items-center justify-center hover:bg-green-300 dark:hover:bg-green-700/60 transition-colors"
+                          style={{
+                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / ${calculateShiftPosition(rule).gridColumnEnd}`,
+                            width: '100%'
+                          }}
+                        >
+                          <div className="px-1 text-xs truncate max-w-full">
+                            {rule.min_staff === rule.max_staff ? 
+                              `${rule.min_staff}` : 
+                              `${rule.min_staff}-${rule.max_staff}`
+                            }
+                          </div>
                         </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="text-sm">
-                        <div className="font-bold">{rule.name || getRoleName(rule)}</div>
-                        <div>{formatTime(rule.start_time)} - {formatTime(rule.end_time)}</div>
-                        <div>Staff: {rule.min_staff === rule.max_staff ? 
-                          rule.min_staff : 
-                          `${rule.min_staff}-${rule.max_staff}`}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-sm">
+                          <div className="font-bold">{rule.name || getRoleName(rule)}</div>
+                          <div>{formatTime(rule.start_time)} - {formatTime(rule.end_time)}</div>
+                          <div>Staff: {rule.min_staff === rule.max_staff ? 
+                            rule.min_staff : 
+                            `${rule.min_staff}-${rule.max_staff}`}
+                          </div>
+                          {rule.day_of_week && <div>{formatDayName(rule.day_of_week)}</div>}
                         </div>
-                        {rule.day_of_week && <div>{formatDayName(rule.day_of_week)}</div>}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
               </div>
             </div>
