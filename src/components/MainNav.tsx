@@ -65,6 +65,32 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
     }
   }, [accessibleModules]);
   
+  // Debug function to help understand the current state
+  const renderHiQSubmenu = () => {
+    return (
+      <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
+        <NavItem 
+          to="/hiq/dashboard" 
+          label="Dashboard" 
+          icon="hospitality" 
+          active={activeHiqItem === 'dashboard'} 
+        />
+        <NavItem 
+          to="/hiq/performance" 
+          label="Performance and Analysis" 
+          icon="performance" 
+          active={activeHiqItem === 'performance'} 
+        />
+        <NavItem 
+          to="/hiq/chat" 
+          label="Chat Assistant" 
+          icon="message-square" 
+          active={activeHiqItem === 'chat'} 
+        />
+      </div>
+    );
+  };
+  
   return (
     <nav className={className}>
       <div className="space-y-1">
@@ -101,28 +127,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
         />
         
         {/* HiQ submenu items - Only display when HiQ is the active module */}
-        {currentModule === 'hiq' && (
-          <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
-            <NavItem 
-              to="/hiq/dashboard" 
-              label="Dashboard" 
-              icon="hospitality" 
-              active={activeHiqItem === 'dashboard'} 
-            />
-            <NavItem 
-              to="/hiq/performance" 
-              label="Performance and Analysis" 
-              icon="performance" 
-              active={activeHiqItem === 'performance'} 
-            />
-            <NavItem 
-              to="/hiq/chat" 
-              label="Chat Assistant" 
-              icon="message-square" 
-              active={activeHiqItem === 'chat'} 
-            />
-          </div>
-        )}
+        {currentModule === 'hiq' && renderHiQSubmenu()}
         
         <NavItem to="/control-centre" label="Control Centre" icon="performance" />
       </div>

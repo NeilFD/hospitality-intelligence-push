@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
@@ -7,8 +7,24 @@ import ChatInterface from '@/components/performance/ChatInterface';
 import { Card } from '@/components/ui/card';
 import { PerformanceLogo } from '@/components/PerformanceLogo';
 import { Brain } from 'lucide-react';
+import { useSetCurrentModule } from '@/lib/store';
 
 export default function HiQChat() {
+  const setCurrentModule = useSetCurrentModule();
+  
+  // Force set current module to 'hiq' when component mounts
+  useEffect(() => {
+    console.log('HiQChat: Setting current module to hiq');
+    setCurrentModule('hiq');
+    
+    // Add a class to the body to help with debugging
+    document.body.classList.add('hiq-chat-page');
+    
+    return () => {
+      document.body.classList.remove('hiq-chat-page');
+    };
+  }, [setCurrentModule]);
+  
   return (
     <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-2">

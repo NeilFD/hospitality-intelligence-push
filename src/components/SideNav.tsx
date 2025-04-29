@@ -16,19 +16,37 @@ export function SideNav({ className }: SideNavProps) {
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   
-  // Force set current module based on URL path
+  // Aggressively enforce current module based on URL path
   useEffect(() => {
     const path = location.pathname;
+    console.log('SideNav: Current path:', path, 'Current module:', currentModule);
     
-    // Check if we're on any HiQ page
-    if (path.startsWith('/hiq')) {
-      console.log('SideNav: HiQ path detected, setting currentModule to hiq');
+    // HiQ path detection
+    if (path.startsWith('/hiq') || path.includes('/hiq/')) {
+      console.log('SideNav: HiQ path detected, forcing currentModule to hiq');
       
+      // Always set to HiQ when on HiQ pages, regardless of current state
       if (currentModule !== 'hiq') {
+        console.log('SideNav: Updating module from', currentModule, 'to hiq');
         setCurrentModule('hiq');
+        
+        // Force update localStorage directly for maximum compatibility
+        try {
+          const storeData = localStorage.getItem('tavern-kitchen-ledger');
+          if (storeData) {
+            const parsedData = JSON.parse(storeData);
+            if (parsedData.state) {
+              parsedData.state.currentModule = 'hiq';
+              localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+              console.log('SideNav: Directly updated localStorage currentModule to hiq');
+            }
+          }
+        } catch (e) {
+          console.error('SideNav: Error updating localStorage:', e);
+        }
       }
     }
-    // Handle other module paths similarly if needed
+    // Handle other module paths
     else if (path.startsWith('/food')) {
       currentModule !== 'food' && setCurrentModule('food');
     }
@@ -39,8 +57,24 @@ export function SideNav({ className }: SideNavProps) {
     
   }, [location.pathname, currentModule, setCurrentModule]);
   
+  // Add an additional effect to double-check that HiQ submenu is properly handled
+  useEffect(() => {
+    // Only run this effect if we're on an HiQ page
+    if (!location.pathname.includes('/hiq')) return;
+    
+    // Double check after a short delay to make sure the module is set correctly
+    const timer = setTimeout(() => {
+      if (currentModule !== 'hiq') {
+        console.log('SideNav: Delayed check - forcing currentModule to hiq');
+        setCurrentModule('hiq');
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [location, currentModule, setCurrentModule]);
+  
   return (
-    <Sidebar className={cn("w-[250px] border-r", className)}>
+    <Sidebar className={cn("w-[250px] border-r", className)} data-hiq-path={location.pathname.includes('/hiq')}>
       <div className="flex h-full flex-col">
         <div className="p-6">
           <SidebarLogo />
