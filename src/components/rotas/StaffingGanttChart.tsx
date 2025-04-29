@@ -181,61 +181,72 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
         <div className="border rounded-lg p-4 bg-white dark:bg-slate-900 shadow-sm">
           <h4 className="font-medium mb-3">Staffing Schedule</h4>
           
-          {/* Time scale with grid layout - hours from 8:00 to 4:00 next day */}
-          <div className="grid w-full border-b pb-2 text-xs text-muted-foreground"
-               style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
-            {Array.from({ length: totalHours }).map((_, i) => {
-              const hourValue = i + chartStart;
-              return (
-                <div key={i} className="text-center">
-                  {formatHourDisplay(hourValue)}:00
+          <div className="flex flex-col">
+            {/* Time scale header with grid layout */}
+            <div className="flex">
+              {/* Empty cell for shift names column */}
+              <div className="w-40 flex-shrink-0"></div>
+              
+              {/* Time scale */}
+              <div className="flex-1 overflow-x-auto">
+                <div className="grid w-full border-b pb-2 text-xs text-muted-foreground"
+                    style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
+                  {Array.from({ length: totalHours }).map((_, i) => {
+                    const hourValue = i + chartStart;
+                    return (
+                      <div key={i} className="text-center">
+                        {formatHourDisplay(hourValue)}:00
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-          
-          {/* FOH section */}
-          {fohShifts.length > 0 && (
-            <div className="mb-2 mt-6">
-              <h5 className="font-medium text-sm text-blue-600 dark:text-blue-400">
-                Front of House Shifts
-              </h5>
+              </div>
             </div>
-          )}
-          
-          {/* Individual FOH shifts - using the grid layout */}
-          {fohShifts.map(rule => {
-            let start = timeToDecimal(rule.start_time);
-            let end = timeToDecimal(rule.end_time, true);
             
-            // Handle shifts that cross midnight
-            if (end < start) {
-              end += 24; // Add 24 hours to make it the next day
-            }
+            {/* FOH section */}
+            {fohShifts.length > 0 && (
+              <div className="mb-2 mt-6">
+                <h5 className="font-medium text-sm text-blue-600 dark:text-blue-400">
+                  Front of House Shifts
+                </h5>
+              </div>
+            )}
             
-            // Skip shifts that end before our chart starts or start after our chart ends
-            if (end <= chartStart || start >= chartEnd) {
-              return null;
-            }
-            
-            // Clamp times to our chart boundaries
-            start = Math.max(start, chartStart);
-            end = Math.min(end, chartEnd);
-            
-            // Adjust for grid positioning
-            const gridStart = adjustTimeForDisplay(start);
-            const span = end - start;
-            
-            return (
-              <div key={rule.id} className="mb-3">
-                <div className="flex items-center mb-1">
-                  <div className="w-40 flex flex-col text-sm">
-                    <span className="font-medium">{rule.name || getRoleName(rule)}</span>
+            {/* Individual FOH shifts with shift names on the left */}
+            {fohShifts.map(rule => {
+              let start = timeToDecimal(rule.start_time);
+              let end = timeToDecimal(rule.end_time, true);
+              
+              // Handle shifts that cross midnight
+              if (end < start) {
+                end += 24; // Add 24 hours to make it the next day
+              }
+              
+              // Skip shifts that end before our chart starts or start after our chart ends
+              if (end <= chartStart || start >= chartEnd) {
+                return null;
+              }
+              
+              // Clamp times to our chart boundaries
+              start = Math.max(start, chartStart);
+              end = Math.min(end, chartEnd);
+              
+              // Adjust for grid positioning
+              const gridStart = adjustTimeForDisplay(start);
+              const span = end - start;
+              
+              return (
+                <div key={rule.id} className="mb-3 flex">
+                  {/* Shift name column */}
+                  <div className="w-40 flex-shrink-0 flex flex-col mr-2 pr-2 border-r">
+                    <span className="font-medium text-sm">{rule.name || getRoleName(rule)}</span>
                     <span className="text-xs text-muted-foreground">
                       {formatDayName(rule.day_of_week)}
                     </span>
                   </div>
-                  <div className="flex-1">
+                  
+                  {/* Gantt chart bars */}
+                  <div className="flex-1 overflow-x-auto">
                     <div className="grid w-full items-center" 
                          style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
                       <Tooltip>
@@ -268,52 +279,53 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                     </div>
                   </div>
                 </div>
+              );
+            })}
+            
+            {/* Kitchen section */}
+            {kitchenShifts.length > 0 && (
+              <div className="mb-2 mt-6">
+                <h5 className="font-medium text-sm text-green-600 dark:text-green-400">
+                  Kitchen Shifts
+                </h5>
               </div>
-            );
-          })}
-          
-          {/* Kitchen section */}
-          {kitchenShifts.length > 0 && (
-            <div className="mb-2 mt-6">
-              <h5 className="font-medium text-sm text-green-600 dark:text-green-400">
-                Kitchen Shifts
-              </h5>
-            </div>
-          )}
-          
-          {/* Individual Kitchen shifts - using the grid layout */}
-          {kitchenShifts.map(rule => {
-            let start = timeToDecimal(rule.start_time);
-            let end = timeToDecimal(rule.end_time, true);
+            )}
             
-            // Handle shifts that cross midnight
-            if (end < start) {
-              end += 24; // Add 24 hours to make it the next day
-            }
-            
-            // Skip shifts that end before our chart starts or start after our chart ends
-            if (end <= chartStart || start >= chartEnd) {
-              return null;
-            }
-            
-            // Clamp times to our chart boundaries
-            start = Math.max(start, chartStart);
-            end = Math.min(end, chartEnd);
-            
-            // Adjust for grid positioning
-            const gridStart = adjustTimeForDisplay(start);
-            const span = end - start;
-            
-            return (
-              <div key={rule.id} className="mb-3">
-                <div className="flex items-center mb-1">
-                  <div className="w-40 flex flex-col text-sm">
-                    <span className="font-medium">{rule.name || getRoleName(rule)}</span>
+            {/* Individual Kitchen shifts with shift names on the left */}
+            {kitchenShifts.map(rule => {
+              let start = timeToDecimal(rule.start_time);
+              let end = timeToDecimal(rule.end_time, true);
+              
+              // Handle shifts that cross midnight
+              if (end < start) {
+                end += 24; // Add 24 hours to make it the next day
+              }
+              
+              // Skip shifts that end before our chart starts or start after our chart ends
+              if (end <= chartStart || start >= chartEnd) {
+                return null;
+              }
+              
+              // Clamp times to our chart boundaries
+              start = Math.max(start, chartStart);
+              end = Math.min(end, chartEnd);
+              
+              // Adjust for grid positioning
+              const gridStart = adjustTimeForDisplay(start);
+              const span = end - start;
+              
+              return (
+                <div key={rule.id} className="mb-3 flex">
+                  {/* Shift name column */}
+                  <div className="w-40 flex-shrink-0 flex flex-col mr-2 pr-2 border-r">
+                    <span className="font-medium text-sm">{rule.name || getRoleName(rule)}</span>
                     <span className="text-xs text-muted-foreground">
                       {formatDayName(rule.day_of_week)}
                     </span>
                   </div>
-                  <div className="flex-1">
+                  
+                  {/* Gantt chart bars */}
+                  <div className="flex-1 overflow-x-auto">
                     <div className="grid w-full items-center"
                          style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
                       <Tooltip>
@@ -346,9 +358,9 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
           
           {/* Hourly staffing totals */}
           <div className="mt-8 border-t pt-3">
