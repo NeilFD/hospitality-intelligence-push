@@ -80,8 +80,50 @@ export function HiScoreMatrix({
   
   // Reset scores when role type changes
   useEffect(() => {
-    setScores(getEmptyScores(roleType));
-  }, [roleType]);
+    if (!existingEvaluation) {
+      setScores(getEmptyScores(roleType));
+    }
+  }, [roleType, existingEvaluation]);
+
+  // Update scores and feedback when existing evaluation changes
+  useEffect(() => {
+    if (existingEvaluation) {
+      if (roleType === 'foh') {
+        setScores({
+          hospitality: existingEvaluation.hospitality || 0,
+          friendliness: existingEvaluation.friendliness || 0,
+          internalTeamSkills: existingEvaluation.internal_team_skills || 0,
+          serviceSkills: existingEvaluation.service_skills || 0,
+          fohKnowledge: existingEvaluation.foh_knowledge || 0,
+        });
+        setCategoryFeedback(prev => ({
+          ...prev,
+          hospitality: existingEvaluation.hospitality_feedback || '',
+          friendliness: existingEvaluation.friendliness_feedback || '',
+          internalTeamSkills: existingEvaluation.internal_team_skills_feedback || '',
+          serviceSkills: existingEvaluation.service_skills_feedback || '',
+          fohKnowledge: existingEvaluation.foh_knowledge_feedback || '',
+        }));
+      } else {
+        setScores({
+          workEthic: existingEvaluation.work_ethic || 0,
+          teamPlayer: existingEvaluation.team_player || 0,
+          adaptability: existingEvaluation.adaptability || 0,
+          cookingSkills: existingEvaluation.cooking_skills || 0,
+          foodKnowledge: existingEvaluation.food_knowledge || 0,
+        });
+        setCategoryFeedback(prev => ({
+          ...prev,
+          workEthic: existingEvaluation.work_ethic_feedback || '',
+          teamPlayer: existingEvaluation.team_player_feedback || '',
+          adaptability: existingEvaluation.adaptability_feedback || '',
+          cookingSkills: existingEvaluation.cooking_skills_feedback || '',
+          foodKnowledge: existingEvaluation.food_knowledge_feedback || '',
+        }));
+      }
+      setComments(existingEvaluation.comments || '');
+    }
+  }, [existingEvaluation, roleType]);
 
   const handleScoreChange = (category: string, value: number[]) => {
     setScores((prevScores) => {

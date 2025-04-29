@@ -38,8 +38,12 @@ export function ProfileAvatar({
     }
 
     const fetchHighScore = async () => {
-      const score = await getProfileHighScore(profileId);
-      setHighScore(score);
+      try {
+        const score = await getProfileHighScore(profileId);
+        setHighScore(score);
+      } catch (error) {
+        console.error('Error fetching high score:', error);
+      }
     };
 
     fetchHighScore();
