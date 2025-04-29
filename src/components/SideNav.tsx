@@ -74,12 +74,12 @@ export function SideNav({ className }: SideNavProps) {
   // Add an additional effect to double-check that HiQ submenu is properly handled
   useEffect(() => {
     // Only run this effect if we're on an HiQ page
-    if (!location.pathname.includes('/hiq')) return;
+    if (!isHiqPath) return;
     
     // Ensure the module is set correctly even if the path changes within HiQ pages
     console.log('SideNav: On HiQ page, ensuring module is set correctly');
     
-    // Force module to HiQ immediately and after a short delay
+    // Force module to HiQ immediately 
     if (currentModule !== 'hiq') {
       setCurrentModule('hiq');
     }
@@ -87,27 +87,27 @@ export function SideNav({ className }: SideNavProps) {
     // Double check multiple times to handle race conditions
     const timers = [
       setTimeout(() => {
-        if (currentModule !== 'hiq') {
-          console.log('SideNav: Delayed check 50ms - forcing currentModule to hiq');
-          setCurrentModule('hiq');
+        if (!document.querySelector('[data-hiq-submenu="true"]')) {
+          console.log('SideNav: HiQ submenu not found in DOM after 50ms, forcing re-render');
+          setCurrentModule('hiq'); // Force re-render
+          
+          // Try to force the sidebar to update
+          const sidebar = document.querySelector('.sidebar');
+          if (sidebar) {
+            sidebar.setAttribute('data-force-update', Date.now().toString());
+          }
         }
       }, 50),
       setTimeout(() => {
-        if (currentModule !== 'hiq') {
-          console.log('SideNav: Delayed check 200ms - forcing currentModule to hiq');
-          setCurrentModule('hiq');
+        if (!document.querySelector('[data-hiq-submenu="true"]')) {
+          console.log('SideNav: HiQ submenu not found in DOM after 200ms, forcing re-render');
+          setCurrentModule('hiq'); // Force re-render
         }
-      }, 200),
-      setTimeout(() => {
-        if (currentModule !== 'hiq') {
-          console.log('SideNav: Delayed check 500ms - forcing currentModule to hiq');
-          setCurrentModule('hiq');
-        }
-      }, 500)
+      }, 200)
     ];
     
     return () => timers.forEach(timer => clearTimeout(timer));
-  }, [location.pathname, currentModule, setCurrentModule]);
+  }, [isHiqPath, currentModule, setCurrentModule]);
   
   return (
     <Sidebar 
