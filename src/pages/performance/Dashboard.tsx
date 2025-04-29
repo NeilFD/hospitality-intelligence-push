@@ -1,15 +1,13 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { History, AlertTriangle, Sparkles } from 'lucide-react';
+import { History, AlertTriangle, Sparkles, MessageSquare } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
-import ChatInterface from '@/components/performance/ChatInterface';
 import KeyInsights from '@/components/performance/KeyInsights';
 import AnalyticsModules from '@/components/performance/AnalyticsModules';
 import { PerformanceLogo } from '@/components/PerformanceLogo';
@@ -97,7 +95,7 @@ export default function PerformanceDashboard() {
           let hasData = false;
           for (const month of bevData.months) {
             if (month.weeks) {
-              for (const week of month.weeks) {
+              for (const week of bevData.weeks) {
                 if (week.days) {
                   for (const day of week.days) {
                     if (day.revenue && Number(day.revenue) > 0) {
@@ -124,7 +122,8 @@ export default function PerformanceDashboard() {
     }
   }, [annualRecord, foodTrackerData, bevTrackerData]);
 
-  return <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
+  return (
+    <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-gradient-to-br from-[#806cac]/60 to-[#705b9b]/80 rounded-lg shadow-glass">
@@ -139,6 +138,12 @@ export default function PerformanceDashboard() {
               <span>Chat History</span>
             </Link>
           </Button>
+          <Button variant="outline" className="hidden sm:flex items-center gap-2 glass-button" asChild>
+            <Link to="/hiq/chat">
+              <MessageSquare className="h-4 w-4 text-[#705b9b]" />
+              <span>Open AI Chat</span>
+            </Link>
+          </Button>
           <PerformanceLogo size="md" className="hidden md:block animate-float" />
         </div>
       </div>
@@ -147,17 +152,14 @@ export default function PerformanceDashboard() {
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertTitle>Data Availability Warning</AlertTitle>
           <AlertDescription>
-            No food or beverage data found for analysis. The AI assistant may have limited insights to offer.
+            No food or beverage data found for analysis. The insights may have limited information to offer.
             Please ensure you have entered data in the Food Tracker and Beverage Tracker.
           </AlertDescription>
         </Alert>}
       
-      <Card className="overflow-hidden border-none shadow-glass rounded-xl bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-md">
-        <ChatInterface className="w-full" />
-      </Card>
-      
       <KeyInsights />
       
       <AnalyticsModules />
-    </div>;
+    </div>
+  );
 }

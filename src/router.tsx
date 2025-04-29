@@ -28,6 +28,7 @@ import MasterWeekly from "@/pages/master/WeeklyInput";
 import MasterDaily from "@/pages/master/Dashboard";
 import HiQDashboard from "@/pages/hiq/Dashboard";
 import HiQPerformance from "@/pages/hiq/Performance";
+import HiQChat from "@/pages/hiq/Chat";
 import HomeDashboard from "@/pages/home/Dashboard";
 
 export const router = createBrowserRouter([
@@ -256,6 +257,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <HiQPerformance />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/hiq/chat",
+        element: (
+          <RequireAuth>
+            <HiQChat />
           </RequireAuth>
         ),
       },
