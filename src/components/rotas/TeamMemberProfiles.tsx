@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, User, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Users, User, Pencil, Trash2, Filter } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -12,6 +12,19 @@ import TeamMemberForm from './TeamMemberForm';
 import TeamMemberDetails from './TeamMemberDetails';
 import NewUserProfileForm from './NewUserProfileForm';
 import { useAuthStore } from '@/services/auth-service';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function TeamMemberProfiles({ location, jobRoles }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -23,6 +36,9 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const [viewingMember, setViewingMember] = useState(null);
   const [isCreatingNewProfile, setIsCreatingNewProfile] = useState(false);
   const { profile } = useAuthStore();
+  const [jobTitleFilter, setJobTitleFilter] = useState('');
+  const [uniqueJobTitles, setUniqueJobTitles] = useState([]);
+  
   const userRole = profile?.role;
   
   // Check if user has permission to create profiles
@@ -51,6 +67,16 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
       
       console.log("Profiles fetched:", data?.length || 0, "profiles");
       setTeamMembers(data || []);
+      
+      // Extract unique job titles for the filter
+      if (data && data.length > 0) {
+        const titles = data
+          .map(member => member.job_title)
+          .filter(title => title) // Remove null/undefined
+          .filter((value, index, self) => self.indexOf(value) === index) // Unique values
+          .sort();
+        setUniqueJobTitles(titles);
+      }
     } catch (error) {
       console.error('Error fetching profiles:', error);
       toast("Error loading profiles", {
@@ -96,13 +122,25 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
     setViewingMember(member);
   };
 
-  // Filter team members based on search term
-  const filteredMembers = teamMembers.filter(member => 
-    member.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.role?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Clear filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setJobTitleFilter('');
+  };
+
+  // Filter team members based on search term and job title filter
+  const filteredMembers = teamMembers.filter(member => {
+    const matchesSearch = 
+      member.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.role?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesJobTitle = jobTitleFilter ? 
+      member.job_title === jobTitleFilter : true;
+    
+    return matchesSearch && matchesJobTitle;
+  });
   
   const getInitials = (firstName, lastName) => {
     if (!firstName && !lastName) return '??';
@@ -145,12 +183,46 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Input
-            placeholder="Search team members..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-          />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <Input
+                placeholder="Search team members..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="w-full sm:w-64">
+              <Select
+                value={jobTitleFilter}
+                onValueChange={setJobTitleFilter}
+              >
+                <SelectTrigger className="w-full">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <SelectValue placeholder="Filter by job title" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All job titles</SelectItem>
+                  {uniqueJobTitles.map(title => (
+                    <SelectItem key={title} value={title}>
+                      {title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(searchTerm || jobTitleFilter) && (
+              <Button 
+                variant="ghost" 
+                onClick={clearFilters}
+                className="w-full sm:w-auto"
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
           
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
@@ -165,8 +237,8 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
             <div className="flex flex-col items-center justify-center p-8">
               <User className="h-12 w-12 text-muted-foreground mb-2" />
               <p className="text-muted-foreground">No team members match your search</p>
-              <Button variant="link" onClick={() => setSearchTerm('')}>
-                Clear search
+              <Button variant="link" onClick={clearFilters}>
+                Clear filters
               </Button>
             </div>
           ) : (
