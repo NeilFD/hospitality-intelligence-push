@@ -5,7 +5,7 @@ import { useAuthStore } from '@/services/auth-service';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import HiScoreMatrix from './HiScoreMatrix';
+import { HiScoreMatrix } from './HiScoreMatrix';
 import HiScoreHistory from './HiScoreHistory';
 import { Plus, Star } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
