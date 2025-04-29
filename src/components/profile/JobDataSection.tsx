@@ -48,6 +48,18 @@ export default function JobDataSection({
     return 'Not specified';
   };
   
+  // Format date for display
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Not specified';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
   // If editing job data, show the form
   if (isEditing) {
     return (
@@ -113,6 +125,34 @@ export default function JobDataSection({
                   />
                 </div>
               )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="employmentStartDate">Employment Start Date</Label>
+                <Input
+                  id="employmentStartDate"
+                  type="date"
+                  value={editForm.employmentStartDate}
+                  onChange={(e) => handleChange('employmentStartDate', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="employmentStatus">Employment Status</Label>
+                <Select 
+                  value={editForm.employmentStatus} 
+                  onValueChange={(value) => handleChange('employmentStatus', value)}
+                >
+                  <SelectTrigger id="employmentStatus">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full-time">Full-Time</SelectItem>
+                    <SelectItem value="part-time">Part-Time</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -213,6 +253,16 @@ export default function JobDataSection({
           <div>
             <p className="text-sm text-gray-500">Compensation</p>
             <p className="font-medium">{getWageDisplay()}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm text-gray-500">Status</p>
+            <p className="font-medium capitalize">{profile.employment_status || 'Not specified'}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm text-gray-500">Start Date</p>
+            <p className="font-medium">{formatDate(profile.employment_start_date)}</p>
           </div>
           
           <div>

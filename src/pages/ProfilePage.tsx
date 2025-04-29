@@ -41,6 +41,8 @@ interface ExtendedUserProfile extends UserProfile {
   annual_salary?: number;
   contractor_rate?: number;
   available_for_rota?: boolean;
+  employment_start_date?: string;
+  employment_status?: string;
 }
 
 // Job title options
@@ -91,7 +93,9 @@ const ProfilePage = () => {
     wageRate: 0,
     annualSalary: 0,
     contractorRate: 0,
-    availableForRota: true
+    availableForRota: true,
+    employmentStartDate: '',
+    employmentStatus: 'full-time'
   });
   
   // State for managing active tab
@@ -205,7 +209,9 @@ const ProfilePage = () => {
             wageRate: profileToLoad.wage_rate || 0,
             annualSalary: profileToLoad.annual_salary || 0,
             contractorRate: profileToLoad.contractor_rate || 0,
-            availableForRota: profileToLoad.available_for_rota !== undefined ? profileToLoad.available_for_rota : true
+            availableForRota: profileToLoad.available_for_rota !== undefined ? profileToLoad.available_for_rota : true,
+            employmentStartDate: profileToLoad.employment_start_date || '',
+            employmentStatus: profileToLoad.employment_status || 'full-time'
           });
         }
       } catch (error) {
@@ -254,7 +260,9 @@ const ProfilePage = () => {
         wageRate: extendedProfile.wage_rate || 0,
         annualSalary: extendedProfile.annual_salary || 0,
         contractorRate: extendedProfile.contractor_rate || 0,
-        availableForRota: extendedProfile.available_for_rota !== undefined ? extendedProfile.available_for_rota : true
+        availableForRota: extendedProfile.available_for_rota !== undefined ? extendedProfile.available_for_rota : true,
+        employmentStartDate: extendedProfile.employment_start_date || '',
+        employmentStatus: extendedProfile.employment_status || 'full-time'
       });
     }
   }, [currentUserProfile, userId, loading, profile, isAuthenticated]);
@@ -536,7 +544,9 @@ const ProfilePage = () => {
         wageRate: profile.wage_rate || 0,
         annualSalary: profile.annual_salary || 0,
         contractorRate: profile.contractor_rate || 0,
-        availableForRota: profile.available_for_rota !== undefined ? profile.available_for_rota : true
+        availableForRota: profile.available_for_rota !== undefined ? profile.available_for_rota : true,
+        employmentStartDate: profile.employment_start_date || '',
+        employmentStatus: profile.employment_status || 'full-time'
       });
     }
     setIsEditing(false);
@@ -560,7 +570,9 @@ const ProfilePage = () => {
         max_hours_per_day: editForm.maxHoursPerDay,
         min_hours_per_week: editForm.minHoursPerWeek,
         max_hours_per_week: editForm.maxHoursPerWeek,
-        available_for_rota: editForm.availableForRota
+        available_for_rota: editForm.availableForRota,
+        employment_start_date: editForm.employmentStartDate,
+        employment_status: editForm.employmentStatus
       };
       
       // Add appropriate wage field based on employment type
@@ -701,7 +713,7 @@ const ProfilePage = () => {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-all duration-300 shadow-md border border-white/50"
+                              className="bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors shadow-md border border-white/50"
                               onClick={handleStartRepositioning}
                             >
                               <Move className="h-4 w-4 mr-1" /> Reposition

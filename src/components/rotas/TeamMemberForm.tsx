@@ -34,7 +34,9 @@ export default function TeamMemberForm({
     min_hours_per_day: 0,
     max_hours_per_day: 8,
     performance_score: 50,
-    availability: []
+    availability: [],
+    employment_start_date: '',
+    employment_status: 'full-time'
   });
 
   // If editing, populate the form with the team member data
@@ -51,7 +53,9 @@ export default function TeamMemberForm({
         min_hours_per_day: teamMember.min_hours_per_day || 0,
         max_hours_per_day: teamMember.max_hours_per_day || 8,
         performance_score: teamMember.performance_score || 50,
-        availability: teamMember.availability || []
+        availability: teamMember.availability || [],
+        employment_start_date: teamMember.employment_start_date || '',
+        employment_status: teamMember.employment_status || 'full-time'
       });
     } else {
       // Reset form when adding a new member
@@ -66,7 +70,9 @@ export default function TeamMemberForm({
         min_hours_per_day: 0,
         max_hours_per_day: 8,
         performance_score: 50,
-        availability: []
+        availability: [],
+        employment_start_date: '',
+        employment_status: 'full-time'
       });
     }
     
@@ -195,20 +201,48 @@ export default function TeamMemberForm({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="employment_type">Employment Type</Label>
-                <Select 
-                  value={formData.employment_type} 
-                  onValueChange={(value) => handleChange('employment_type', value)}
-                >
-                  <SelectTrigger id="employment_type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hourly">Hourly</SelectItem>
-                    <SelectItem value="salary">Salary</SelectItem>
-                    <SelectItem value="contractor">Contractor</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="employment_start_date">Employment Start Date</Label>
+                <Input
+                  id="employment_start_date"
+                  type="date"
+                  value={formData.employment_start_date}
+                  onChange={(e) => handleChange('employment_start_date', e.target.value)}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="employment_type">Employment Type</Label>
+                  <Select 
+                    value={formData.employment_type} 
+                    onValueChange={(value) => handleChange('employment_type', value)}
+                  >
+                    <SelectTrigger id="employment_type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="salary">Salary</SelectItem>
+                      <SelectItem value="contractor">Contractor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="employment_status">Employment Status</Label>
+                  <Select 
+                    value={formData.employment_status} 
+                    onValueChange={(value) => handleChange('employment_status', value)}
+                  >
+                    <SelectTrigger id="employment_status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full-time">Full-Time</SelectItem>
+                      <SelectItem value="part-time">Part-Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               <div className="space-y-2">
