@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -6,8 +7,8 @@ import { UserProfile } from '@/types/supabase-types';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell, Hammer, Clock, DollarSign } from 'lucide-react';
-import { useAuthStore } from '@/services/auth-store';
+import { CalendarDays, Briefcase, Cake, Utensils, Wine, MessageSquare, Upload, Camera, Edit, Save, X, Move, Check, Bell } from 'lucide-react';
+import { useAuthStore } from '@/services/auth-service';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,8 +27,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader';
-import { useAuth } from '@/contexts/AuthContext';
-import ProfileJobDataTab from '@/components/profiles/ProfileJobDataTab';
 
 const ProfilePage = () => {
   const { id } = useParams();
@@ -57,11 +56,6 @@ const ProfilePage = () => {
   const profileLoadAttemptedRef = useRef(false);
   const initialRenderRef = useRef(true);
   const activeObjectRef = useRef<fabric.Object | null>(null);
-
-  const { userRole } = useAuth();
-  
-  // Check if the current user can view job data (GOD, OWNER, or SUPERUSER roles)
-  const canViewJobData = userRole === 'GOD' || userRole === 'Owner' || userRole === 'Super User';
 
   const { 
     isSubscribed, 
@@ -701,15 +695,6 @@ const ProfilePage = () => {
                     </TabsTrigger>
                   </>
                 )}
-                {/* Only show Job Data tab to authorized roles */}
-                {canViewJobData && (
-                  <TabsTrigger value="job-data">
-                    <div className="flex items-center">
-                      <Hammer className="h-4 w-4 mr-2" />
-                      Job Data
-                    </div>
-                  </TabsTrigger>
-                )}
               </TabsList>
               
               <TabsContent value="about">
@@ -746,11 +731,11 @@ const ProfilePage = () => {
                   
                   <div>
                     <h3 className="text-lg font-semibold mb-4">About Me</h3>
-                    <div className="text-gray-700">
+                    <div className="bg-gray-50 p-4 rounded-lg">
                       {profile.about_me ? (
-                        <p>{profile.about_me}</p>
+                        <p className="whitespace-pre-line">{profile.about_me}</p>
                       ) : (
-                        <p className="italic text-gray-500">No bio provided</p>
+                        <p className="text-gray-500 italic">No bio provided</p>
                       )}
                     </div>
                   </div>
@@ -920,17 +905,6 @@ const ProfilePage = () => {
                       </div>
                     )}
                   </div>
-                </TabsContent>
-              )}
-              
-              {/* Add Job Data tab */}
-              {canViewJobData && (
-                <TabsContent value="job-data">
-                  <ProfileJobDataTab 
-                    profile={profile} 
-                    setProfile={setProfile}
-                    jobRoles={[]} // We'll fetch job roles in the component
-                  />
                 </TabsContent>
               )}
             </Tabs>

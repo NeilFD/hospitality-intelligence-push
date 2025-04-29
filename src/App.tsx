@@ -10,7 +10,6 @@ import { Toaster as Sonner } from './components/ui/sonner';
 import './theme-fixer';
 import './theme-sidebar-fixer';
 import './hiq-module-fixer'; // Import the HiQ module fixer
-import { AuthProvider } from './contexts/AuthContext';
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -25,11 +24,9 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RouterProvider router={router} />
-        <Toaster />
-        <Sonner richColors closeButton position="bottom-right" />
-      </AuthProvider>
+      <RouterProvider router={router} />
+      <Toaster />
+      <Sonner richColors closeButton position="bottom-right" />
     </QueryClientProvider>
   );
 }

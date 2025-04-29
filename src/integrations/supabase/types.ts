@@ -850,24 +850,15 @@ export type Database = {
           birth_date_month: string | null
           created_at: string
           email: string | null
-          employment_type: string | null
-          enhanced_availability: Json | null
           favourite_dish: string | null
           favourite_drink: string | null
           first_name: string | null
           id: string
-          job_role_id: string | null
           job_title: string | null
           last_name: string | null
-          max_hours_per_day: number | null
-          max_hours_per_week: number | null
-          min_hours_per_day: number | null
-          min_hours_per_week: number | null
           password_hash: string | null
-          performance_score: number | null
           role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
-          wage_rate: number | null
         }
         Insert: {
           about_me?: string | null
@@ -878,24 +869,15 @@ export type Database = {
           birth_date_month?: string | null
           created_at?: string
           email?: string | null
-          employment_type?: string | null
-          enhanced_availability?: Json | null
           favourite_dish?: string | null
           favourite_drink?: string | null
           first_name?: string | null
           id: string
-          job_role_id?: string | null
           job_title?: string | null
           last_name?: string | null
-          max_hours_per_day?: number | null
-          max_hours_per_week?: number | null
-          min_hours_per_day?: number | null
-          min_hours_per_week?: number | null
           password_hash?: string | null
-          performance_score?: number | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
-          wage_rate?: number | null
         }
         Update: {
           about_me?: string | null
@@ -906,24 +888,15 @@ export type Database = {
           birth_date_month?: string | null
           created_at?: string
           email?: string | null
-          employment_type?: string | null
-          enhanced_availability?: Json | null
           favourite_dish?: string | null
           favourite_drink?: string | null
           first_name?: string | null
           id?: string
-          job_role_id?: string | null
           job_title?: string | null
           last_name?: string | null
-          max_hours_per_day?: number | null
-          max_hours_per_week?: number | null
-          min_hours_per_day?: number | null
-          min_hours_per_week?: number | null
           password_hash?: string | null
-          performance_score?: number | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
-          wage_rate?: number | null
         }
         Relationships: []
       }
