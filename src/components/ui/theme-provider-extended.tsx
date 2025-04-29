@@ -2,7 +2,18 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "react-router-dom";
 
-export function ThemeProviderExtended({ children }: { children: React.ReactNode }) {
+// Add interface to accept the props being passed from App.tsx
+interface ThemeProviderExtendedProps {
+  children: React.ReactNode;
+  defaultTheme?: string; // Make it optional
+  storageKey?: string; // Make it optional
+}
+
+export function ThemeProviderExtended({ 
+  children, 
+  defaultTheme = "system", // Default value if not provided
+  storageKey = "ui-theme" // Default value if not provided
+}: ThemeProviderExtendedProps) {
   const [themeLoaded, setThemeLoaded] = useState(false);
   const location = useLocation();
 
