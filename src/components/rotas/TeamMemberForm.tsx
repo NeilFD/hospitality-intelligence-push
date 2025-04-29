@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -7,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format, parse } from "date-fns";
+import { supabase } from '@/lib/supabase';
 
 const defaultLocationId = '08949a02-9400-4503-8a78-109458dc9c4d';
 
@@ -26,25 +28,31 @@ const defaultAvailability = {
   sun: { start: null, end: null },
 };
 
-export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRoles }) {
+export default function TeamMemberForm({ isOpen, onClose, onSubmitComplete, locationId, jobRoles, teamMember, isEditing }) {
   const [formData, setFormData] = useState({
     id: '',
     full_name: '',
     job_role_id: '',
-    location_id: defaultLocationId,
+    location_id: locationId || defaultLocationId,
     employment_type: 'hourly',
     min_hours_per_day: 0,
     max_hours_per_day: 8,
     min_hours_per_week: 0,
     max_hours_per_week: 40,
     wage_rate: 0,
+    annual_salary: 0,
+    contractor_rate: 0,
     performance_score: 0,
     photo_url: '',
     availability: defaultAvailability,
-    available_for_rota: true
+    available_for_rota: true,
+    employment_start_date: null,
+    employment_status: '',
+    in_ft_education: false
   });
   const [availability, setAvailability] = useState(defaultAvailability);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [startDate, setStartDate] = useState(null);
 
   const getInitials = (name) => {
     if (!name) return '??';
@@ -63,35 +71,59 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
 
   // Initialize form with member data when editing
   useEffect(() => {
-    if (member) {
+    if (teamMember) {
+      // Parse employment start date if it exists
+      let parsedStartDate = null;
+      if (teamMember.employment_start_date) {
+        try {
+          parsedStartDate = new Date(teamMember.employment_start_date);
+          setStartDate(parsedStartDate);
+        } catch (e) {
+          console.error("Error parsing employment start date:", e);
+        }
+      }
+
       setFormData({
-        id: member.id,
-        full_name: member.full_name,
-        job_role_id: member.job_role_id,
-        location_id: member.location_id || defaultLocationId,
-        employment_type: member.employment_type || 'hourly',
-        min_hours_per_day: member.min_hours_per_day || 0,
-        max_hours_per_day: member.max_hours_per_day || 8,
-        min_hours_per_week: member.min_hours_per_week || 0,
-        max_hours_per_week: member.max_hours_per_week || 40,
-        wage_rate: member.wage_rate || 0,
-        performance_score: member.performance_score || 0,
-        photo_url: member.photo_url || '',
-        availability: member.availability || defaultAvailability,
-        available_for_rota: member.available_for_rota !== false // Default to true if undefined
+        id: teamMember.id,
+        full_name: teamMember.full_name,
+        job_role_id: teamMember.job_role_id,
+        location_id: teamMember.location_id || locationId || defaultLocationId,
+        employment_type: teamMember.employment_type || 'hourly',
+        min_hours_per_day: teamMember.min_hours_per_day || 0,
+        max_hours_per_day: teamMember.max_hours_per_day || 8,
+        min_hours_per_week: teamMember.min_hours_per_week || 0,
+        max_hours_per_week: teamMember.max_hours_per_week || 40,
+        wage_rate: teamMember.wage_rate || 0,
+        annual_salary: teamMember.annual_salary || 0,
+        contractor_rate: teamMember.contractor_rate || 0,
+        performance_score: teamMember.performance_score || 0,
+        photo_url: teamMember.photo_url || '',
+        availability: teamMember.availability || defaultAvailability,
+        available_for_rota: teamMember.available_for_rota !== false, // Default to true if undefined
+        employment_start_date: parsedStartDate ? format(parsedStartDate, 'yyyy-MM-dd') : null,
+        employment_status: teamMember.employment_status || '',
+        in_ft_education: teamMember.in_ft_education || false
       });
       
       setLoadingAvailability(true);
-      if (member.availability) {
-        setAvailability(member.availability);
+      if (teamMember.availability) {
+        setAvailability(teamMember.availability);
       } else {
         setAvailability(defaultAvailability);
       }
       setLoadingAvailability(false);
     }
-  }, [member, defaultLocationId, defaultAvailability]);
+  }, [teamMember, locationId, defaultLocationId]);
 
-  const handleSubmit = (e) => {
+  const handleStartDateChange = (date) => {
+    setStartDate(date);
+    setFormData({
+      ...formData,
+      employment_start_date: date ? format(date, 'yyyy-MM-dd') : null
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate form data
@@ -108,10 +140,46 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
       min_hours_per_week: parseFloat(formData.min_hours_per_week?.toString() || '0'),
       max_hours_per_week: parseFloat(formData.max_hours_per_week?.toString() || '40'),
       wage_rate: parseFloat(formData.wage_rate?.toString() || '0'),
-      available_for_rota: formData.available_for_rota === true // Make sure it's a boolean
+      annual_salary: parseFloat(formData.annual_salary?.toString() || '0'),
+      contractor_rate: parseFloat(formData.contractor_rate?.toString() || '0'),
+      available_for_rota: formData.available_for_rota === true, // Make sure it's a boolean
+      in_ft_education: formData.in_ft_education === true,
+      availability: availability
     };
-    
-    onSave(processedData);
+
+    try {
+      if (isEditing) {
+        const { error } = await supabase
+          .from('team_members')
+          .update(processedData)
+          .eq('id', teamMember.id);
+
+        if (error) throw error;
+        toast("Team member updated", {
+          description: `${formData.full_name} has been updated.`
+        });
+      } else {
+        const { error } = await supabase
+          .from('team_members')
+          .insert([processedData]);
+
+        if (error) throw error;
+        toast("Team member added", {
+          description: `${formData.full_name} has been added to the team.`
+        });
+      }
+      
+      // Close dialog and refresh data
+      onClose();
+      if (onSubmitComplete) {
+        onSubmitComplete();
+      }
+    } catch (error) {
+      console.error('Error saving team member:', error);
+      toast.error("Error saving team member", {
+        description: error.message
+      });
+    }
   };
 
   const renderTimeSelect = (day, type) => (
@@ -134,9 +202,9 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[625px]">
+      <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{member ? 'Edit Team Member' : 'Add Team Member'}</DialogTitle>
+          <DialogTitle>{teamMember ? 'Edit Team Member' : 'Add Team Member'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
@@ -155,9 +223,12 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
             {/* Job Role */}
             <div>
               <Label htmlFor="job_role">Job Role</Label>
-              <Select onValueChange={(value) => setFormData({...formData, job_role_id: value})}>
+              <Select 
+                value={formData.job_role_id} 
+                onValueChange={(value) => setFormData({...formData, job_role_id: value})}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a job role" defaultValue={formData.job_role_id} />
+                  <SelectValue placeholder="Select a job role" />
                 </SelectTrigger>
                 <SelectContent>
                   {jobRoles?.map(role => (
@@ -172,9 +243,12 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
             {/* Employment Type */}
             <div>
               <Label htmlFor="employment_type">Employment Type</Label>
-              <Select onValueChange={(value) => setFormData({...formData, employment_type: value})}>
+              <Select 
+                value={formData.employment_type} 
+                onValueChange={(value) => setFormData({...formData, employment_type: value})}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select employment type" defaultValue={formData.employment_type} />
+                  <SelectValue placeholder="Select employment type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="hourly">Hourly</SelectItem>
@@ -184,15 +258,89 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
               </Select>
             </div>
             
-            {/* Wage Rate */}
+            {/* Employment Status */}
             <div>
-              <Label htmlFor="wage_rate">Wage Rate (£/hour)</Label>
-              <Input 
-                type="number" 
-                id="wage_rate" 
-                value={formData.wage_rate}
-                onChange={(e) => setFormData({...formData, wage_rate: e.target.value})}
-              />
+              <Label htmlFor="employment_status">Employment Status</Label>
+              <Select 
+                value={formData.employment_status || ""} 
+                onValueChange={(value) => setFormData({...formData, employment_status: value})}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select employment status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full-time">Full Time</SelectItem>
+                  <SelectItem value="part-time">Part Time</SelectItem>
+                  <SelectItem value="casual">Casual</SelectItem>
+                  <SelectItem value="seasonal">Seasonal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {/* Payment section - changes based on employment type */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {formData.employment_type === 'hourly' && (
+              <div>
+                <Label htmlFor="wage_rate">Hourly Rate (£)</Label>
+                <Input 
+                  type="number" 
+                  id="wage_rate" 
+                  value={formData.wage_rate}
+                  onChange={(e) => setFormData({...formData, wage_rate: e.target.value})}
+                />
+              </div>
+            )}
+            
+            {formData.employment_type === 'salary' && (
+              <div>
+                <Label htmlFor="annual_salary">Annual Salary (£)</Label>
+                <Input 
+                  type="number" 
+                  id="annual_salary" 
+                  value={formData.annual_salary}
+                  onChange={(e) => setFormData({...formData, annual_salary: e.target.value})}
+                />
+              </div>
+            )}
+            
+            {formData.employment_type === 'contractor' && (
+              <div>
+                <Label htmlFor="contractor_rate">Contractor Rate (£)</Label>
+                <Input 
+                  type="number" 
+                  id="contractor_rate" 
+                  value={formData.contractor_rate}
+                  onChange={(e) => setFormData({...formData, contractor_rate: e.target.value})}
+                />
+              </div>
+            )}
+            
+            {/* Employment Start Date - for all types */}
+            <div>
+              <Label htmlFor="employment_start_date">Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={handleStartDateChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           
@@ -243,21 +391,37 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
               />
             </div>
           </div>
-              
-              {/* Available for rota toggle */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <Label htmlFor="available-for-rota" className="text-base">Available for Rota</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Whether this team member is available for scheduling
-                  </p>
-                </div>
-                <Switch 
-                  id="available-for-rota"
-                  checked={formData.available_for_rota}
-                  onCheckedChange={(checked) => setFormData({...formData, available_for_rota: checked})}
-                />
+          
+          {/* Available for rota and In Full-time Education toggles */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="available-for-rota" className="text-base">Available for Rota</Label>
+                <p className="text-sm text-muted-foreground">
+                  Whether this team member is available for scheduling
+                </p>
               </div>
+              <Switch 
+                id="available-for-rota"
+                checked={formData.available_for_rota}
+                onCheckedChange={(checked) => setFormData({...formData, available_for_rota: checked})}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="in-ft-education" className="text-base">In Full-time Education</Label>
+                <p className="text-sm text-muted-foreground">
+                  Whether this team member is currently in full-time education
+                </p>
+              </div>
+              <Switch 
+                id="in-ft-education"
+                checked={formData.in_ft_education}
+                onCheckedChange={(checked) => setFormData({...formData, in_ft_education: checked})}
+              />
+            </div>
+          </div>
               
           {/* Availability */}
           <div>
@@ -287,7 +451,7 @@ export default function TeamMemberForm({ isOpen, onClose, member, onSave, jobRol
         
         <DialogFooter>
           <Button type="submit">
-            {member ? 'Update Team Member' : 'Add Team Member'}
+            {teamMember ? 'Update Team Member' : 'Add Team Member'}
           </Button>
         </DialogFooter>
         </form>
