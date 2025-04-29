@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useLocation } from "react-router-dom";
 
 // Add interface to accept the props being passed from App.tsx
 interface ThemeProviderExtendedProps {
@@ -15,9 +14,8 @@ export function ThemeProviderExtended({
   storageKey = "ui-theme" // Default value if not provided
 }: ThemeProviderExtendedProps) {
   const [themeLoaded, setThemeLoaded] = useState(false);
-  const location = useLocation();
-
-  console.log("ThemeProviderExtended rendered", location.pathname);
+  
+  console.log("ThemeProviderExtended rendered");
 
   useEffect(() => {
     const loadActiveTheme = async () => {
@@ -175,54 +173,6 @@ export function ThemeProviderExtended({
       }
     };
 
-    const applyThemeClass = (themeName: string) => {
-      const html = document.documentElement;
-      
-      // Remove all existing theme classes
-      const themeClasses = [
-        'theme-forest-green', 
-        'theme-ocean-blue', 
-        'theme-sunset-orange', 
-        'theme-berry-purple', 
-        'theme-dark-mode',
-        'theme-nfd-theme',
-        'theme-custom',
-        'theme-tavern-blue',
-        'tavern-blue',
-        'theme-hi',
-        'theme-hi-purple',
-        'theme-purple-700',
-        'purple-700'
-      ];
-      
-      themeClasses.forEach(cls => {
-        html.classList.remove(cls);
-      });
-      
-      // Map theme names to theme classes
-      const themeClassMap: {[key: string]: string} = {
-        'Berry Purple': 'theme-berry-purple',
-        'Forest Green': 'theme-forest-green',
-        'Ocean Blue': 'theme-ocean-blue',
-        'Sunset Orange': 'theme-sunset-orange',
-        'Dark Mode': 'theme-dark-mode',
-        'NFD Theme': 'theme-nfd-theme',
-        'NFD': 'theme-nfd-theme',
-        'Hi': 'theme-berry-purple', // Force Hi theme to use Berry Purple
-        'Tavern Blue': 'theme-berry-purple', // Force Tavern Blue to use Berry Purple
-        'Custom Theme': 'theme-custom', // Use theme-custom for custom themes
-        'nfd-theme': 'theme-nfd-theme' // Handle special case for NFD theme
-      };
-      
-      // Get the theme class or default to custom theme class
-      const themeClass = themeClassMap[themeName] || 'theme-custom';
-      html.classList.add(themeClass);
-      
-      // Trigger change event
-      document.dispatchEvent(new Event('themeClassChanged'));
-      console.log('Theme applied directly:', themeName, 'with class:', themeClass);
-    };
-    
     // Function to apply Berry Purple theme colors as fallback
     const applyBerryPurpleThemeColors = () => {
       applyCustomThemeColors({
@@ -270,6 +220,54 @@ export function ThemeProviderExtended({
       window.dispatchEvent(new CustomEvent('app-theme-updated', {
         detail: { colors }
       }));
+    };
+    
+    const applyThemeClass = (themeName: string) => {
+      const html = document.documentElement;
+      
+      // Remove all existing theme classes
+      const themeClasses = [
+        'theme-forest-green', 
+        'theme-ocean-blue', 
+        'theme-sunset-orange', 
+        'theme-berry-purple', 
+        'theme-dark-mode',
+        'theme-nfd-theme',
+        'theme-custom',
+        'theme-tavern-blue',
+        'tavern-blue',
+        'theme-hi',
+        'theme-hi-purple',
+        'theme-purple-700',
+        'purple-700'
+      ];
+      
+      themeClasses.forEach(cls => {
+        html.classList.remove(cls);
+      });
+      
+      // Map theme names to theme classes
+      const themeClassMap: {[key: string]: string} = {
+        'Berry Purple': 'theme-berry-purple',
+        'Forest Green': 'theme-forest-green',
+        'Ocean Blue': 'theme-ocean-blue',
+        'Sunset Orange': 'theme-sunset-orange',
+        'Dark Mode': 'theme-dark-mode',
+        'NFD Theme': 'theme-nfd-theme',
+        'NFD': 'theme-nfd-theme',
+        'Hi': 'theme-berry-purple', // Force Hi theme to use Berry Purple
+        'Tavern Blue': 'theme-berry-purple', // Force Tavern Blue to use Berry Purple
+        'Custom Theme': 'theme-custom', // Use theme-custom for custom themes
+        'nfd-theme': 'theme-nfd-theme' // Handle special case for NFD theme
+      };
+      
+      // Get the theme class or default to custom theme class
+      const themeClass = themeClassMap[themeName] || 'theme-custom';
+      html.classList.add(themeClass);
+      
+      // Trigger change event
+      document.dispatchEvent(new Event('themeClassChanged'));
+      console.log('Theme applied directly:', themeName, 'with class:', themeClass);
     };
     
     // Initial theme load
@@ -332,6 +330,6 @@ export function ThemeProviderExtended({
     };
   }, []);
 
-  // Make sure the Layout component has access to the router context
+  // Return children directly without needing router context
   return <>{children}</>;
 }

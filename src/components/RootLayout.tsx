@@ -2,18 +2,20 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Layout from "@/components/Layout";
+import { ThemeProviderExtended } from "@/components/ui/theme-provider-extended";
 
 interface RootLayoutProps {
   children?: React.ReactNode;
 }
 
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
-  // Render the Layout component with Outlet as its children
-  // This pattern allows the Layout to wrap all routed content
+  // Wrap the Layout component with ThemeProviderExtended inside the Router context
   return (
-    <Layout>
-      {children || <Outlet />}
-    </Layout>
+    <ThemeProviderExtended>
+      <Layout>
+        {children || <Outlet />}
+      </Layout>
+    </ThemeProviderExtended>
   );
 };
 

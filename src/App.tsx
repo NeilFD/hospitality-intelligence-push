@@ -24,11 +24,9 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProviderExtended defaultTheme="system" storageKey="ui-theme">
-        <RouterProvider router={router} />
-        <Toaster />
-        <Sonner richColors closeButton position="bottom-right" />
-      </ThemeProviderExtended>
+      <RouterProvider router={router} />
+      <Toaster />
+      <Sonner richColors closeButton position="bottom-right" />
     </QueryClientProvider>
   );
 }
