@@ -108,6 +108,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
               icon="performance" 
               active={activeHiqItem === 'performance'} 
             />
+            {/* Removed AI Insights and AI Assistant menu items */}
           </div>
         )}
         
