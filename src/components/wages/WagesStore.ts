@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages, refreshFinancialPerformanceAnalysis } from '@/services/wages-service';
@@ -66,21 +65,22 @@ export const useWagesStore = create<WagesStore>()(
       isSaving: false,
       needsRefresh: false,
       
+      // Simplified setDailyWages - just calls the direct upsert function
       setDailyWages: async (data: DailyWages) => {
         try {
           const key = `${data.year}-${data.month}-${data.day}`;
-          console.log(`[STORE] Saving wages data for ${key}`, data);
+          console.log(`Saving wages data for ${key}`, data);
           
           set({ isSaving: true });
           
-          // First persist to the wages table only
+          // Save directly to the database
           await upsertDailyWages(data);
-          console.log(`[STORE] Successfully sent wages data to server for ${key}`);
+          console.log(`Successfully saved wages data for ${key}`);
           
-          // Mark that we need a refresh of the analysis view
+          // Mark as needing a refresh
           set({ needsRefresh: true });
           
-          // Update local state to ensure UI consistency
+          // Update local state
           set((state) => ({
             wagesData: {
               ...state.wagesData,
@@ -89,24 +89,10 @@ export const useWagesStore = create<WagesStore>()(
             isSaving: false
           }));
           
-          // Explicitly fetch fresh data from server to ensure we have the latest
-          try {
-            const refreshedData = await fetchWagesByDay(data.year, data.month, data.day);
-            if (refreshedData) {
-              set((state) => ({
-                wagesData: {
-                  ...state.wagesData,
-                  [key]: refreshedData
-                }
-              }));
-              console.log(`[STORE] Refreshed data from database for ${key}`, refreshedData);
-            }
-          } catch (refreshError) {
-            console.warn('[STORE] Failed to refresh data after save, using local data:', refreshError);
-          }
+          // No need to refresh from the server every time
           
         } catch (error) {
-          console.error('[STORE] Failed to save wages data', error);
+          console.error('Failed to save wages data', error);
           set({ isSaving: false });
           throw error;
         }
@@ -276,7 +262,7 @@ export const useWagesStore = create<WagesStore>()(
         set({ wagesData: {} });
       },
 
-      // New function to manually refresh the financial performance analysis
+      // Simplified refresh function
       refreshAnalysis: async () => {
         try {
           if (get().needsRefresh) {
