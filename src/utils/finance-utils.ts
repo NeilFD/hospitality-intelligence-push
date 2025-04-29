@@ -11,7 +11,8 @@
  */
 export const calculateGrossProfit = (revenue: number, costs: number): number => {
   if (!revenue || revenue === 0) return 0;
-  return ((revenue - costs) / revenue) * 100;
+  // Return the percentage directly, not multiplied by 100
+  return ((revenue - costs) / revenue);
 };
 
 /**

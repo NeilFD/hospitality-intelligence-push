@@ -196,13 +196,13 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           Object.values(weekMap).forEach(week => {
             // Calculate the GP directly using calculateGrossProfit for consistency
             week.gp = calculateGrossProfit(week.revenue, week.costs);
-            console.log(`Week ${week.weekNumber} GP calculation: (${week.revenue} - ${week.costs}) / ${week.revenue} * 100 = ${week.gp}%`);
+            console.log(`Week ${week.weekNumber} GP calculation: (${week.revenue} - ${week.costs}) / ${week.revenue} = ${week.gp * 100}%`);
           });
           
           const weeklyDataArray = Object.values(weekMap).sort((a, b) => a.weekNumber - b.weekNumber);
           
           console.log('Weekly breakdown:', weeklyDataArray.map(w => 
-            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}%`
+            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp * 100}%`
           ));
           
           setWeeklyData(weeklyDataArray);
@@ -298,7 +298,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           
           // Use calculateGrossProfit from finance-utils for consistency
           const weekGp = calculateGrossProfit(week.revenue, week.costs);
-          console.log(`Week ${week.weekNumber} (fallback) GP calculation: (${week.revenue} - ${week.costs}) / ${week.revenue} * 100 = ${weekGp}%`);
+          console.log(`Week ${week.weekNumber} (fallback) GP calculation: (${week.revenue} - ${week.costs}) / ${week.revenue} = ${weekGp * 100}%`);
           
           return {
             ...week,
@@ -309,7 +309,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
         weeklyDataArray.sort((a, b) => a.weekNumber - b.weekNumber);
         
         console.log('Weekly breakdown (fallback):', weeklyDataArray.map(w => 
-          `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}%`
+          `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp * 100}%`
         ));
         
         setWeeklyData(weeklyDataArray);
@@ -385,7 +385,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
             
             // IMPORTANT FIX: Use consistent GP calculation
             weekMap[weekNumber].gp = calculateGrossProfit(weekMap[weekNumber].revenue, weekMap[weekNumber].costs);
-            console.log(`Week ${weekNumber} (local) GP calculation: (${weekMap[weekNumber].revenue} - ${weekMap[weekNumber].costs}) / ${weekMap[weekNumber].revenue} * 100 = ${weekMap[weekNumber].gp}%`);
+            console.log(`Week ${weekNumber} (local) GP calculation: (${weekMap[weekNumber].revenue} - ${weekMap[weekNumber].costs}) / ${weekMap[weekNumber].revenue} = ${weekMap[weekNumber].gp * 100}%`);
           });
           
           console.log(`Total costs calculated from local store: ${totalCostsFromLocal}`);
@@ -402,7 +402,7 @@ export default function MonthSummary({ modulePrefix = "", moduleType = "food" }:
           });
           
           console.log('Local weekly breakdown:', localWeeklyData.map(w => 
-            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp}%`
+            `Week ${w.weekNumber}: Revenue=${w.revenue}, Costs=${w.costs}, GP=${w.gp * 100}%`
           ));
           
           setWeeklyData(localWeeklyData);
