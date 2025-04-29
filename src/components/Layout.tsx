@@ -612,35 +612,50 @@ const Layout = ({
     return <>{children}</>;
   }
 
-  const ProfileAvatar = () => <div className="flex flex-col items-center">
+  const ProfileAvatar = () => (
+    <div className="flex flex-col items-center">
       <Avatar className="h-9 w-9 bg-primary text-white">
         {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="Profile" className="object-cover" /> : <AvatarFallback>{getUserInitials()}</AvatarFallback>}
       </Avatar>
-      {profile && <span className="text-primary hover:text-primary/80 transition-colors duration-300 text-xs mt-1 font-medium">
+      {profile && (
+        <span className="text-primary hover:text-primary/80 transition-colors duration-300 text-xs mt-1 font-medium">
           {profile.first_name || 'User'}
-        </span>}
-    </div>;
+        </span>
+      )}
+    </div>
+  );
 
-  const Sidebar = <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
+  const Sidebar = (
+    <div className={cn("h-full flex flex-col", getSidebarBgColor())}>
       <div className="p-4 flex flex-col items-center">
         <SidebarLogo size="md" className="mb-3" />
-        
       </div>
       
       <Separator className={getSeparatorBgColor()} />
       
       <div className="p-2 my-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className={cn("text-xs font-semibold uppercase tracking-wider", getTextColor())}>
+          {!sidebarCollapsed && (
+            <p className={cn("text-xs font-semibold uppercase tracking-wider", getTextColor())}>
               Modules
-            </p>}
+            </p>
+          )}
         </div>
         
         <nav className="space-y-1">
-          {filteredModuleNavItems.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
+          {filteredModuleNavItems.map(item => 
+            sidebarCollapsed ? (
+              <TooltipProvider key={item.path}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={() => handleModuleSelect(item.type as ModuleType)}>
+                    <Link 
+                      to={item.path} 
+                      className={cn(
+                        "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                        currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor()
+                      )} 
+                      onClick={() => handleModuleSelect(item.type as ModuleType)}
+                    >
                       <div className="mx-auto flex items-center">
                         {item.icon}
                       </div>
@@ -650,12 +665,24 @@ const Layout = ({
                     <p>{item.name}</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider> : <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={() => handleModuleSelect(item.type as ModuleType)}>
+              </TooltipProvider>
+            ) : (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                  currentModule === item.type ? getModuleActiveBgColor() + " font-medium" : "text-white hover:" + getSidebarHoverColor()
+                )} 
+                onClick={() => handleModuleSelect(item.type as ModuleType)}
+              >
                 <div className="flex items-center">
                   {item.icon}
                   <span className="ml-2">{item.name}</span>
                 </div>
-              </Link>)}
+              </Link>
+            )
+          )}
         </nav>
       </div>
       
@@ -663,16 +690,27 @@ const Layout = ({
       
       <div className="flex-1 p-2">
         <div className={cn("px-3 py-1", !sidebarCollapsed && "mb-2")}>
-          {!sidebarCollapsed && <p className={cn("text-xs font-semibold uppercase tracking-wider", getTextColor())}>
+          {!sidebarCollapsed && (
+            <p className={cn("text-xs font-semibold uppercase tracking-wider", getTextColor())}>
               {sortedModules.find(m => m.type === currentModule)?.name || 'Navigation'}
-            </p>}
+            </p>
+          )}
         </div>
         
         <nav className="space-y-1">
-          {filteredModuleNav.map(item => sidebarCollapsed ? <TooltipProvider key={item.path}>
+          {filteredModuleNav.map(item => 
+            sidebarCollapsed ? (
+              <TooltipProvider key={item.path}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={handleMobileNavigation}>
+                    <Link 
+                      to={item.path} 
+                      className={cn(
+                        "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                        location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
+                      )} 
+                      onClick={handleMobileNavigation}
+                    >
                       <div className="mx-auto">
                         {item.icon}
                       </div>
@@ -682,12 +720,24 @@ const Layout = ({
                     <p>{item.name}</p>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider> : <Link key={item.path} to={item.path} className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())} onClick={handleMobileNavigation}>
+              </TooltipProvider>
+            ) : (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                  location.pathname === item.path ? getActiveItemBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
+                )} 
+                onClick={handleMobileNavigation}
+              >
                 <div className="flex items-center">
                   {item.icon}
                   <span className="ml-2">{item.name}</span>
                 </div>
-              </Link>)}
+              </Link>
+            )
+          )}
         </nav>
       </div>
       
@@ -695,20 +745,30 @@ const Layout = ({
         <Separator className={getSeparatorBgColor()} />
         <div className="p-2">
           {hasControlCentreAccess() && (
-            sidebarCollapsed ? <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link to="/control-centre" className={cn("flex items-center px-3 py-2 rounded-md text-sm transition-colors", location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor())}>
-                    <div className="mx-auto">
-                      <Sliders className="h-4 w-4" />
-                    </div>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Control Centre</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider> : <ControlCentreLink />
+            sidebarCollapsed ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link 
+                      to="/control-centre" 
+                      className={cn(
+                        "flex items-center px-3 py-2 rounded-md text-sm transition-colors", 
+                        location.pathname === '/control-centre' ? getControlCenterBgColor() + " text-white font-medium" : "text-white hover:" + getSidebarHoverColor()
+                      )}
+                    >
+                      <div className="mx-auto">
+                        <Sliders className="h-4 w-4" />
+                      </div>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Control Centre</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <ControlCentreLink />
+            )
           )}
         </div>
       </>
@@ -716,7 +776,8 @@ const Layout = ({
       <div className="p-4">
         {!sidebarCollapsed && <p className={cn("text-xs", getTextColor())}>© 2025 Hi</p>}
       </div>
-    </div>;
+    </div>
+  );
 
   if (isAuthPage) {
     return <>{children}</>;
@@ -797,4 +858,57 @@ const Layout = ({
               <Button variant="outline" size="icon" onClick={toggleSidebar} className="z-40 text-primary">
                 {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
               </Button>
-              <TavernLogo size="
+              <TavernLogo size="md" />
+              <div className="flex items-center gap-2">
+                <NotificationsDropdown />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="p-0 h-auto bg-transparent hover:bg-transparent">
+                      <ProfileAvatar />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    {isAuthenticated && profile ? (
+                      <>
+                        <div className="flex items-center justify-start gap-2 p-2">
+                          <div className="flex flex-col space-y-0.5 leading-none">
+                            <p className="text-sm font-medium">
+                              {profile?.first_name} {profile?.last_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {user?.email} - {profile?.role || 'User'}
+                            </p>
+                          </div>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-start gap-2 p-2">
+                        <div className="flex flex-col space-y-0.5 leading-none">
+                          <p className="text-sm font-medium">Not logged in</p>
+                        </div>
+                      </div>
+                    )}
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>{isAuthenticated ? 'Logout' : 'Login'}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+            {children}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Layout;
