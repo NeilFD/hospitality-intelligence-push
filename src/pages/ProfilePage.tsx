@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { Switch } from '@/components/ui/switch';
@@ -6,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { CalendarIcon, ReloadIcon } from 'lucide-react';
+import { CalendarIcon, Loader } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -310,7 +309,7 @@ const ProfilePage = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <ReloadIcon className="mr-2 h-8 w-8 animate-spin" /> Loading profile...
+        <Loader className="mr-2 h-8 w-8 animate-spin" /> Loading profile...
       </div>
     );
   }
@@ -546,7 +545,7 @@ const ProfilePage = () => {
                 <Button onClick={handleSaveProfile} disabled={isSaving}>
                   {isSaving ? (
                     <>
-                      <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : 'Save Profile'}
