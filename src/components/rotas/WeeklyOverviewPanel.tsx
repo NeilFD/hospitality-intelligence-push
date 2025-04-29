@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
@@ -108,7 +107,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const openingHours = getOpeningHours();
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm border-0">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-blue-500" />
