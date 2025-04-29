@@ -57,7 +57,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
           job_role_id: editingShift.job_role_id || '',
           start_time: editingShift.start_time || '09:00',
           end_time: editingShift.end_time || '17:00',
-          min_staff: editingShift.min_staff || 1,
+          min_staff: editingShift.min_staff || 0, // Changed default to 0
           max_staff: editingShift.max_staff || 1,
           revenue_to_staff_ratio: editingShift.revenue_to_staff_ratio || null,
           priority: editingShift.priority || 3,
@@ -82,7 +82,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
           job_role_id: '',
           start_time: '09:00',
           end_time: '17:00',
-          min_staff: 1,
+          min_staff: 0, // Changed default to 0
           max_staff: 1,
           revenue_to_staff_ratio: null,
           priority: 3,
@@ -143,7 +143,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
         job_role_id: shiftBlock.job_role_id || '',
         start_time: shiftBlock.start_time || '09:00',
         end_time: shiftBlock.end_time || '17:00',
-        min_staff: shiftBlock.min_staff || 1,
+        min_staff: shiftBlock.min_staff ?? 0, // Use nullish coalescing to default to 0
         max_staff: shiftBlock.max_staff || 1,
         priority: shiftBlock.priority || 3,
         revenue_to_staff_ratio: shiftBlock.revenue_to_staff_ratio || null,
@@ -372,7 +372,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
               <Input
                 id="min_staff"
                 type="number"
-                min="1"
+                min="0" // Changed from 1 to 0
                 value={formData.min_staff}
                 onChange={(e) => {
                   const value = parseInt(e.target.value);
@@ -388,7 +388,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
               <Input
                 id="max_staff"
                 type="number"
-                min={formData.min_staff}
+                min={formData.min_staff} // This ensures max is never less than min
                 value={formData.max_staff}
                 onChange={(e) => handleChange('max_staff', parseInt(e.target.value))}
               />
