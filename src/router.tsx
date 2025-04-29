@@ -1,3 +1,4 @@
+
 import {
   createBrowserRouter,
 } from "react-router-dom";
@@ -20,8 +21,8 @@ import PLDashboard from "@/pages/pl/Dashboard";
 import PLBudget from "@/pages/pl/BudgetInput";
 import PLForecast from "@/pages/pl/FoodBeverageForecast";
 import WagesDashboard from "@/pages/wages/Dashboard";
-import WagesEmployees from "@/pages/wages/Dashboard";
-import WagesShifts from "@/pages/wages/Dashboard";
+import WagesEmployees from "@/pages/wages/Employees";
+import WagesShifts from "@/pages/wages/Shifts";
 import MasterDashboard from "@/pages/master/Dashboard";
 import MasterMonthly from "@/pages/master/MonthSummary";
 import MasterWeekly from "@/pages/master/WeeklyInput";
@@ -72,7 +73,7 @@ export const router = createBrowserRouter([
         path: "/home/dashboard",
         element: (
           <RequireAuth>
-            <Dashboard />
+            <HomeDashboard />
           </RequireAuth>
         ),
       },
@@ -168,7 +169,7 @@ export const router = createBrowserRouter([
         path: "/pl/dashboard",
         element: (
           <RequireAuth>
-            <Dashboard />
+            <PLDashboard />
           </RequireAuth>
         ),
       },
@@ -192,7 +193,7 @@ export const router = createBrowserRouter([
         path: "/wages/dashboard",
         element: (
           <RequireAuth>
-            <Dashboard />
+            <WagesDashboard />
           </RequireAuth>
         ),
       },
@@ -216,7 +217,7 @@ export const router = createBrowserRouter([
         path: "/master/dashboard",
         element: (
           <RequireAuth>
-            <Dashboard />
+            <MasterDashboard />
           </RequireAuth>
         ),
       },
@@ -248,7 +249,7 @@ export const router = createBrowserRouter([
         path: "/hiq/dashboard",
         element: (
           <RequireAuth>
-            <Dashboard />
+            <HiQDashboard />
           </RequireAuth>
         ),
       },
@@ -268,6 +269,14 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
+      {
+        path: "/master/weekly-input",
+        element: (
+          <RequireAuth>
+            <MasterWeekly />
+          </RequireAuth>
+        ),
+      }
     ],
   },
 ]);
