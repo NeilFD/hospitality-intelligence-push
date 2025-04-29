@@ -11,6 +11,9 @@ export const getHasAccessToModule = async (
     // If user is GOD, they have access to everything
     if (role === 'GOD') return true;
 
+    // HiQ is available to all users for now
+    if (moduleType === 'hiq') return true;
+
     // Get the permission matrix from the database
     const { data, error } = await supabase.rpc('get_permission_matrix');
     
@@ -60,11 +63,17 @@ export const getUserAccessibleModules = async (role: string): Promise<ModuleType
       .filter((m: any) => m.hasAccess)
       .map((m: any) => m.moduleType as ModuleType);
       
+    // Always include HiQ for now
+    if (!accessibleModules.includes('hiq')) {
+      accessibleModules.push('hiq');
+    }
+      
     console.log(`[permissions-service] Accessible modules for ${role}:`, accessibleModules);
     
     return accessibleModules;
   } catch (err) {
     console.error('Error fetching accessible modules:', err);
-    return [];
+    // Add default modules in case of error, including HiQ
+    return ['home', 'food', 'beverage', 'pl', 'wages', 'team', 'hiq'];
   }
 };

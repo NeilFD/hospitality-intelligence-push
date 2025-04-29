@@ -30,6 +30,17 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
       });
   }, []);
 
+  // Force HiQ to be visible for debugging
+  useEffect(() => {
+    console.log('Current accessible modules:', accessibleModules);
+    console.log('Is HiQ included?', accessibleModules.includes('hiq'));
+    
+    if (!accessibleModules.includes('hiq')) {
+      console.log('Adding HiQ module to sidebar');
+      setAccessibleModules(prev => [...prev, 'hiq']);
+    }
+  }, [accessibleModules]);
+
   return (
     <nav className={className}>
       <div className="space-y-1">
@@ -57,10 +68,8 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           <NavItem to="/team/dashboard" label="Team" icon="team" active={currentModule === 'team'} />
         )}
         
-        {/* Explicitly add HiQ */}
-        {accessibleModules.includes('hiq') && (
-          <NavItem to="/hiq/dashboard" label="HiQ" icon="hiq" active={currentModule === 'hiq'} />
-        )}
+        {/* Explicitly add HiQ with forced visibility */}
+        <NavItem to="/hiq/dashboard" label="HiQ" icon="hiq" active={currentModule === 'hiq'} />
         
         <NavItem to="/control-centre" label="Control Centre" icon="performance" />
       </div>

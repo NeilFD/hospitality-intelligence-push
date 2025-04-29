@@ -31,6 +31,9 @@ export default function Dashboard() {
     } else if (path.includes('/hiq/dashboard') && currentModule !== 'hiq') {
       console.log('Setting current module to hiq');
       setCurrentModule('hiq');
+    } else if (path.includes('/wages/dashboard') && currentModule !== 'wages') {
+      console.log('Setting current module to wages');
+      setCurrentModule('wages');
     }
   }, [path, currentModule, setCurrentModule]);
   
@@ -43,6 +46,9 @@ export default function Dashboard() {
     return <FoodDashboard />;
   } else if (path.includes('/hiq/dashboard')) {
     return <HiQDashboard />;
+  } else if (path.includes('/wages/dashboard')) {
+    // Let the wages dashboard component handle its own rendering
+    return null;
   }
   
   // If we're on the generic dashboard, redirect to the appropriate one
