@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
@@ -54,6 +53,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SUPABASE_URL } from '@/lib/supabase';
 
 type UserRoleType = 'GOD' | 'Super User' | 'Manager' | 'Team Member' | 'Owner';
+
+// Job title options - matching the same options from JobDataSection
+const FOH_JOB_TITLES = [
+  "Owner",
+  "General Manager",
+  "Assistant Manager",
+  "Bar Supervisor",
+  "FOH Supervisor",
+  "FOH Team",
+  "Bar Team",
+  "Runner"
+];
+
+const BOH_JOB_TITLES = [
+  "Head Chef",
+  "Sous Chef",
+  "Chef de Partie",
+  "Commis Chef",
+  "KP"
+];
+
+// All job titles combined
+const JOB_TITLES = [...FOH_JOB_TITLES, ...BOH_JOB_TITLES];
 
 const TeamManagementPanel: React.FC = () => {
   
@@ -838,12 +860,20 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editJobTitle">Job Title</Label>
-                  <Input 
-                    id="editJobTitle" 
-                    value={editForm.jobTitle}
-                    onChange={(e) => setEditForm({...editForm, jobTitle: e.target.value})}
-                    placeholder="Job title"
-                  />
+                  <Select 
+                    value={editForm.jobTitle} 
+                    onValueChange={(value) => setEditForm({...editForm, jobTitle: value})}
+                  >
+                    <SelectTrigger id="editJobTitle">
+                      <SelectValue placeholder="Select a job title" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {JOB_TITLES.map((title) => (
+                        <SelectItem key={title} value={title}>{title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
@@ -939,18 +969,19 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="employmentType">Employment Type</Label>
+                <Label htmlFor="jobTitle">Job Title</Label>
                 <Select 
-                  value={editForm.employmentType} 
-                  onValueChange={(value) => setEditForm({...editForm, employmentType: value})}
+                  value={editForm.jobTitle} 
+                  onValueChange={(value) => setEditForm({...editForm, jobTitle: value})}
                 >
-                  <SelectTrigger id="employmentType">
-                    <SelectValue placeholder="Select type" />
+                  <SelectTrigger id="jobTitle">
+                    <SelectValue placeholder="Select a job title" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="hourly">Hourly</SelectItem>
-                    <SelectItem value="salaried">Salaried</SelectItem>
-                    <SelectItem value="contractor">Contractor</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
+                    {JOB_TITLES.map((title) => (
+                      <SelectItem key={title} value={title}>{title}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1098,7 +1129,10 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
           </Tabs>
           
           <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={() => setIsEditUserDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsEditUserDialogOpen(false);
+              setSelectedUser(null);
+            }}>
               Cancel
             </Button>
             <Button onClick={handleEditUser}>
@@ -1111,27 +1145,22 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete {selectedUser?.first_name} {selectedUser?.last_name}'s profile from the system.
-              This action cannot be undone.
+              This action cannot be undone. This will permanently delete the user account for {selectedUser?.first_name} {selectedUser?.last_name}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setSelectedUser(null);
+            }}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              className="bg-red-600 hover:bg-red-700"
               onClick={handleDeleteUser}
               disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700"
             >
-              {deleteLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete User'
-              )}
+              {deleteLoading ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1204,18 +1233,29 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="jobTitle">Job Title</Label>
-                <Input 
-                  id="jobTitle" 
-                  value={newProfileForm.jobTitle}
-                  onChange={(e) => setNewProfileForm({...newProfileForm, jobTitle: e.target.value})}
-                  placeholder="Job title"
-                />
+                <Select 
+                  value={newProfileForm.jobTitle} 
+                  onValueChange={(value) => setNewProfileForm({...newProfileForm, jobTitle: value})}
+                >
+                  <SelectTrigger id="jobTitle">
+                    <SelectValue placeholder="Select a job title" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {JOB_TITLES.map((title) => (
+                      <SelectItem key={title} value={title}>{title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddProfileDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsAddProfileDialogOpen(false);
+              setSelectedUser(null);
+            }}>
               Cancel
             </Button>
             <Button onClick={handleCreateProfile} disabled={loading}>
@@ -1266,7 +1306,10 @@ ${currentUserProfile?.first_name || 'The Hi Team'}
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsEmailDialogOpen(false);
+              setSelectedUser(null);
+            }}>
               Cancel
             </Button>
             <Button onClick={() => handleOpenEmail(selectedUser)}>
