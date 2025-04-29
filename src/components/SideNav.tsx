@@ -16,55 +16,27 @@ export function SideNav({ className }: SideNavProps) {
   const currentModule = useCurrentModule();
   const setCurrentModule = useSetCurrentModule();
   
-  // Add effect to handle HiQ module specifically
+  // Force set current module based on URL path
   useEffect(() => {
-    // Check if we're on an HiQ page and set the current module
-    if (location.pathname.includes('/hiq')) {
+    const path = location.pathname;
+    
+    // Check if we're on any HiQ page
+    if (path.startsWith('/hiq')) {
       console.log('SideNav: HiQ path detected, setting currentModule to hiq');
       
       if (currentModule !== 'hiq') {
         setCurrentModule('hiq');
       }
-      
-      // Update localStorage to persist the HiQ module settings
-      try {
-        const storeData = localStorage.getItem('tavern-kitchen-ledger');
-        if (storeData) {
-          const parsedData = JSON.parse(storeData);
-          
-          if (parsedData.state) {
-            // Ensure HiQ is in the modules list
-            if (parsedData.state.modules) {
-              let hasHiq = false;
-              
-              for (const module of parsedData.state.modules) {
-                if (module.type === 'hiq') {
-                  hasHiq = true;
-                  break;
-                }
-              }
-              
-              if (!hasHiq) {
-                parsedData.state.modules.push({
-                  id: 'hiq',
-                  type: 'hiq',
-                  name: 'HiQ',
-                  displayOrder: 900
-                });
-              }
-            }
-            
-            // Set current module to hiq
-            parsedData.state.currentModule = 'hiq';
-            
-            localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
-            console.log('SideNav: Updated localStorage to force HiQ module');
-          }
-        }
-      } catch (e) {
-        console.error('Error updating localStorage:', e);
-      }
     }
+    // Handle other module paths similarly if needed
+    else if (path.startsWith('/food')) {
+      currentModule !== 'food' && setCurrentModule('food');
+    }
+    else if (path.startsWith('/beverage')) {
+      currentModule !== 'beverage' && setCurrentModule('beverage');
+    }
+    // Add other module paths as needed
+    
   }, [location.pathname, currentModule, setCurrentModule]);
   
   return (

@@ -36,18 +36,25 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
 
   // Determine active HiQ section based on current path
   useEffect(() => {
-    if (location.pathname.includes('/hiq/')) {
-      if (location.pathname.includes('/hiq/performance')) {
+    const path = location.pathname;
+    
+    // Log the current path for debugging
+    console.log('MainNav: Current path:', path);
+    
+    if (path.includes('/hiq/')) {
+      if (path.includes('/hiq/performance')) {
         setActiveHiqItem('performance');
-      } else if (location.pathname.includes('/hiq/chat')) {
+      } else if (path.includes('/hiq/chat')) {
         setActiveHiqItem('chat');
       } else {
         setActiveHiqItem('dashboard');
       }
     }
     
-    console.log('MainNav: Current path:', location.pathname);
-    console.log('MainNav: Active HiQ item set to:', activeHiqItem);
+    console.log('MainNav: Active HiQ item set to:', 
+      path.includes('/hiq/chat') ? 'chat' : 
+      path.includes('/hiq/performance') ? 'performance' : 'dashboard'
+    );
   }, [location.pathname]);
 
   // Force HiQ module visibility regardless of other settings
@@ -58,13 +65,6 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
     }
   }, [accessibleModules]);
   
-  // Add a console log to track module state
-  useEffect(() => {
-    console.log('MainNav: Current module in state:', currentModule);
-    console.log('MainNav: Current accessible modules:', accessibleModules);
-    console.log('MainNav: Active HiQ item:', activeHiqItem);
-  }, [currentModule, accessibleModules, activeHiqItem]);
-
   return (
     <nav className={className}>
       <div className="space-y-1">
