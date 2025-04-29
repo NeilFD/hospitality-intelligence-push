@@ -1,27 +1,37 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, User, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Users, User, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import TeamMemberForm from './TeamMemberForm';
 import TeamMemberDetails from './TeamMemberDetails';
+import UserProfilesTable from './UserProfilesTable';
 
 export default function TeamMemberProfiles({ location, jobRoles }) {
   const [isLoading, setIsLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [userProfiles, setUserProfiles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentMember, setCurrentMember] = useState(null);
   const [viewingMember, setViewingMember] = useState(null);
+  const [activeTab, setActiveTab] = useState('team-members');
+  const { userRole } = useAuth();
   
   useEffect(() => {
     if (location?.id) {
       fetchTeamMembers();
+      fetchUserProfiles();
     }
   }, [location]);
   
@@ -49,6 +59,25 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const fetchUserProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (error) {
+        throw error;
+      }
+      
+      setUserProfiles(data || []);
+    } catch (error) {
+      console.error('Error fetching user profiles:', error);
+      toast("Error loading user profiles", {
+        description: "There was a problem loading the user profiles data.",
+      });
     }
   };
   
@@ -92,6 +121,14 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
     member.job_roles?.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
+  // Filter user profiles based on search term
+  const filteredProfiles = userProfiles.filter(profile => 
+    (profile.first_name && profile.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (profile.last_name && profile.last_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (profile.job_title && profile.job_title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (profile.role && profile.role.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+  
   const getInitials = (name) => {
     if (!name) return '??';
     return name.split(' ').map(part => part[0]).join('').toUpperCase();
@@ -103,7 +140,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-500" />
-            Team Members
+            Team Management
           </CardTitle>
           <Button 
             variant="outline"
@@ -116,78 +153,105 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <Input
-            placeholder="Search team members..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4"
-          />
+        <Tabs defaultValue="team-members" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="team-members">Staff Roster</TabsTrigger>
+            <TabsTrigger value="user-profiles">User Profiles</TabsTrigger>
+          </TabsList>
           
-          {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <p>Loading team members...</p>
-            </div>
-          ) : filteredMembers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8">
-              <User className="h-12 w-12 text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">No team members found</p>
-              {searchTerm && (
-                <Button variant="link" onClick={() => setSearchTerm('')}>
-                  Clear search
-                </Button>
+          <TabsContent value="team-members">
+            <div className="space-y-4">
+              <Input
+                placeholder="Search team members..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mb-4"
+              />
+              
+              {isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <p>Loading team members...</p>
+                </div>
+              ) : filteredMembers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8">
+                  <User className="h-12 w-12 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">No team members found</p>
+                  {searchTerm && (
+                    <Button variant="link" onClick={() => setSearchTerm('')}>
+                      Clear search
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredMembers.map(member => (
+                    <div 
+                      key={member.id}
+                      className="p-4 border rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handleViewMember(member)}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={member.photo_url} alt={member.full_name} />
+                          <AvatarFallback>{getInitials(member.full_name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{member.full_name}</div>
+                          <div className="text-sm text-muted-foreground">{member.job_roles?.title}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                        <Badge variant="outline">
+                          {member.employment_type}
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditMember(member);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMember(member.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredMembers.map(member => (
-                <div 
-                  key={member.id}
-                  className="p-4 border rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleViewMember(member)}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.photo_url} alt={member.full_name} />
-                      <AvatarFallback>{getInitials(member.full_name)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{member.full_name}</div>
-                      <div className="text-sm text-muted-foreground">{member.job_roles?.title}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                    <Badge variant="outline">
-                      {member.employment_type}
-                    </Badge>
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditMember(member);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteMember(member.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          </TabsContent>
+          
+          <TabsContent value="user-profiles">
+            <div className="space-y-4">
+              <Input
+                placeholder="Search user profiles..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mb-4"
+              />
+              
+              <UserProfilesTable 
+                profiles={filteredProfiles} 
+                isLoading={isLoading} 
+                searchTerm={searchTerm}
+                onClearSearch={() => setSearchTerm('')}
+              />
             </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
       
       <TeamMemberForm

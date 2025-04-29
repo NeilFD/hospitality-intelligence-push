@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuthStore } from '@/services/auth-service';
+import { useAuthStore } from '@/services/auth-store';
 
 interface AuthContextType {
   isAuthenticated: boolean;
