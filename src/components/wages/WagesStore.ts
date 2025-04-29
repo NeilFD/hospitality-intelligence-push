@@ -65,7 +65,7 @@ export const useWagesStore = create<WagesStore>()(
       isSaving: false,
       needsRefresh: false,
       
-      // Simplified setDailyWages - just calls the direct upsert function
+      // Direct approach to save wages data
       setDailyWages: async (data: DailyWages) => {
         try {
           const key = `${data.year}-${data.month}-${data.day}`;
@@ -73,7 +73,7 @@ export const useWagesStore = create<WagesStore>()(
           
           set({ isSaving: true });
           
-          // Save directly to the database
+          // Save directly to the database with our simplified function
           await upsertDailyWages(data);
           console.log(`Successfully saved wages data for ${key}`);
           
@@ -88,8 +88,6 @@ export const useWagesStore = create<WagesStore>()(
             },
             isSaving: false
           }));
-          
-          // No need to refresh from the server every time
           
         } catch (error) {
           console.error('Failed to save wages data', error);
@@ -262,7 +260,6 @@ export const useWagesStore = create<WagesStore>()(
         set({ wagesData: {} });
       },
 
-      // Simplified refresh function
       refreshAnalysis: async () => {
         try {
           if (get().needsRefresh) {

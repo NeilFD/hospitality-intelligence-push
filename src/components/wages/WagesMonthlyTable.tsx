@@ -93,10 +93,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       const initialInputValues: Record<string, Record<string, string>> = {};
       updatedWagesData.forEach(day => {
         initialInputValues[day.day] = {
-          fohWages: day.fohWages ? day.fohWages.toString() : '',
-          kitchenWages: day.kitchenWages ? day.kitchenWages.toString() : ''
+          fohWages: day.fohWages !== undefined && day.fohWages !== null ? day.fohWages.toString() : '',
+          kitchenWages: day.kitchenWages !== undefined && day.kitchenWages !== null ? day.kitchenWages.toString() : ''
         };
       });
+      
+      console.log('Setting initial input values:', initialInputValues);
       setInputValues(initialInputValues);
       
       // Reset dirty inputs
@@ -238,6 +240,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
     }
   };
   
+  // Add a manual refresh function
+  const handleManualRefresh = () => {
+    loadWagesData();
+    toast.info('Refreshing wage data from database');
+  };
+  
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -286,6 +294,14 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
               Analysis needs refresh
             </div>
           )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleManualRefresh} 
+            className="mr-2"
+          >
+            Refresh Data
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
