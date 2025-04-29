@@ -59,7 +59,8 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
   useEffect(() => {
     console.log('MainNav: Current module in state:', currentModule);
     console.log('MainNav: Current accessible modules:', accessibleModules);
-  }, [currentModule, accessibleModules]);
+    console.log('MainNav: Active HiQ item:', activeHiqItem);
+  }, [currentModule, accessibleModules, activeHiqItem]);
 
   return (
     <nav className={className}>
@@ -96,7 +97,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           active={currentModule === 'hiq'} 
         />
         
-        {/* HiQ submenu items */}
+        {/* HiQ submenu items - Only display when HiQ is the active module */}
         {currentModule === 'hiq' && (
           <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
             <NavItem 
