@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, ChevronDown } from 'lucide-react';
@@ -23,7 +22,7 @@ interface WeeklyOverviewPanelProps {
 export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOverviewPanelProps) {
   const [shiftRules, setShiftRules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeView, setActiveView] = useState<'table' | 'gantt'>('table');
+  const [activeView, setActiveView] = useState<'table' | 'gantt'>('gantt');
   const [selectedDay, setSelectedDay] = useState<string>('all');
   
   useEffect(() => {
@@ -136,7 +135,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       </CardHeader>
       <CardContent>
         <Tabs 
-          defaultValue="table" 
+          defaultValue="gantt" 
           value={activeView} 
           onValueChange={(value) => setActiveView(value as 'table' | 'gantt')}
           className="mb-4"
