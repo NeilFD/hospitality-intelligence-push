@@ -56,6 +56,7 @@ export function ProfileAvatar({
       try {
         setIsLoading(true);
         const score = await getProfileHighScore(profileId);
+        console.log(`Fetched high score for ${profileId}:`, score);
         setHighScore(score);
         setIsLoading(false);
       } catch (error) {
@@ -70,6 +71,8 @@ export function ProfileAvatar({
   }, [profileId, propHighScore]);
 
   const shouldShowStar = !isLoading && highScore !== undefined && highScore >= 85;
+  
+  console.log(`Avatar for ${profileId}:`, { highScore, shouldShowStar, isLoading });
 
   return (
     <div className="relative">

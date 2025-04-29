@@ -42,6 +42,7 @@ export default function HiScoreHistory({ profileId, onViewEvaluation }: HiScoreH
             'Unknown'
         }));
         
+        console.log("Fetched evaluations:", processedData);
         setEvaluations(processedData);
       } catch (error) {
         console.error('Error fetching evaluations:', error);
@@ -160,6 +161,7 @@ export default function HiScoreHistory({ profileId, onViewEvaluation }: HiScoreH
 // Export the score function for other components to use
 export const getProfileHighScore = async (profileId: string): Promise<number> => {
   try {
+    console.log(`Fetching high score for profile ${profileId}`);
     const { data, error } = await supabase
       .from('hi_score_evaluations')
       .select('weighted_score')
@@ -167,10 +169,21 @@ export const getProfileHighScore = async (profileId: string): Promise<number> =>
       .order('evaluation_date', { ascending: false })
       .limit(1);
     
-    if (error || !data || data.length === 0) return 0;
-    return data[0].weighted_score * 10;
+    if (error) {
+      console.error('Error in getProfileHighScore:', error);
+      return 0;
+    }
+    
+    if (!data || data.length === 0) {
+      console.log(`No evaluation data found for profile ${profileId}`);
+      return 0;
+    }
+    
+    const score = data[0].weighted_score * 10;
+    console.log(`Retrieved high score for profile ${profileId}: ${score}`);
+    return score;
   } catch (error) {
-    console.error('Error fetching evaluation score:', error);
+    console.error('Exception in getProfileHighScore:', error);
     return 0;
   }
 };
