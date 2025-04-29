@@ -1,7 +1,10 @@
+
 import React, { useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import { useWagesStore } from './WagesStore';
 import { formatCurrency, getDayNameFromNumber } from '@/lib/date-utils';
 import { toast } from "sonner";
@@ -11,11 +14,12 @@ import { fetchMasterRecordsByMonth, fetchMasterDailyRecord } from '@/services/ma
 
 export function WagesMonthlyTable({ year, month }: { year: number, month: number }) {
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [monthlyData, setMonthlyData] = React.useState<any[]>([]);
   const [inputValues, setInputValues] = React.useState<Record<string, Record<string, string>>>({});
   const [dirtyInputs, setDirtyInputs] = React.useState<Record<string, Set<string>>>({});
   const [saveTimeout, setSaveTimeout] = React.useState<NodeJS.Timeout | null>(null);
-  const { getMonthlyWages, setDailyWages, clearCache } = useWagesStore();
+  const { getMonthlyWages, setDailyWages, clearCache, needsRefresh, refreshAnalysis } = useWagesStore();
   
   const loadWagesData = useCallback(async () => {
     setIsLoading(true);
@@ -227,6 +231,24 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       loadWagesData();
     }
   };
+
+  // Handle refresh of the materialized view
+  const handleRefreshAnalysis = async () => {
+    setIsRefreshing(true);
+    try {
+      const success = await refreshAnalysis();
+      if (success) {
+        toast.success('Financial performance analysis has been refreshed');
+      } else {
+        toast.error('Failed to refresh financial performance analysis');
+      }
+    } catch (error) {
+      console.error('Error refreshing analysis:', error);
+      toast.error('An error occurred while refreshing the analysis');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -268,15 +290,29 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Monthly Wages Tracker</span>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Monthly Wages Tracker</CardTitle>
+        <div className="flex items-center gap-4">
+          {needsRefresh && (
+            <div className="text-amber-600 text-sm font-medium">
+              Analysis needs refresh
+            </div>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefreshAnalysis} 
+            disabled={isRefreshing || !needsRefresh}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
+          </Button>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground text-sm">
               Total Wages: {formatCurrency(totals.totalWages)} ({totalPercentage.toFixed(1)}%)
             </span>
           </div>
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         {isLoading ? (

@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages } from '@/services/wages-service';
+import { fetchWagesByMonth, fetchWagesByDay, upsertDailyWages, refreshFinancialPerformanceAnalysis } from '@/services/wages-service';
 
 export interface DailyWages {
   year: number;
@@ -18,6 +18,8 @@ export interface DailyWages {
 interface WagesStore {
   wagesData: Record<string, DailyWages>;
   isLoading: boolean;
+  isSaving: boolean;
+  needsRefresh: boolean;
   setDailyWages: (data: DailyWages) => Promise<void>;
   getDailyWages: (year: number, month: number, day: number) => Promise<DailyWages>;
   getMonthlyWages: (year: number, month: number) => Promise<DailyWages[]>;
@@ -32,6 +34,7 @@ interface WagesStore {
     count: number;
   }>>;
   clearCache: () => void;
+  refreshAnalysis: () => Promise<boolean>;
 }
 
 const createEmptyDayData = (year: number, month: number, day: number): DailyWages => {
@@ -60,22 +63,30 @@ export const useWagesStore = create<WagesStore>()(
     (set, get) => ({
       wagesData: {},
       isLoading: false,
+      isSaving: false,
+      needsRefresh: false,
       
       setDailyWages: async (data: DailyWages) => {
         try {
           const key = `${data.year}-${data.month}-${data.day}`;
           console.log(`[STORE] Saving wages data for ${key}`, data);
           
-          // First persist to the database
+          set({ isSaving: true });
+          
+          // First persist to the wages table only
           await upsertDailyWages(data);
           console.log(`[STORE] Successfully sent wages data to server for ${key}`);
           
-          // Then update local state to ensure UI consistency
+          // Mark that we need a refresh of the analysis view
+          set({ needsRefresh: true });
+          
+          // Update local state to ensure UI consistency
           set((state) => ({
             wagesData: {
               ...state.wagesData,
               [key]: {...data}
-            }
+            },
+            isSaving: false
           }));
           
           // Explicitly fetch fresh data from server to ensure we have the latest
@@ -96,6 +107,7 @@ export const useWagesStore = create<WagesStore>()(
           
         } catch (error) {
           console.error('[STORE] Failed to save wages data', error);
+          set({ isSaving: false });
           throw error;
         }
       },
@@ -262,13 +274,33 @@ export const useWagesStore = create<WagesStore>()(
       clearCache: () => {
         console.log('Clearing wages data cache');
         set({ wagesData: {} });
+      },
+
+      // New function to manually refresh the financial performance analysis
+      refreshAnalysis: async () => {
+        try {
+          if (get().needsRefresh) {
+            const success = await refreshFinancialPerformanceAnalysis();
+            if (success) {
+              set({ needsRefresh: false });
+              console.log('Successfully refreshed financial performance analysis');
+            }
+            return success;
+          }
+          return true; // No refresh needed
+        } catch (error) {
+          console.error('Failed to refresh financial performance analysis:', error);
+          return false;
+        }
       }
     }),
     {
       name: 'wages-tracker-storage',
-      // Only persist isLoading state, not the actual wages data
-      // This forces fresh load from the server on page refresh
-      partialize: (state) => ({ isLoading: state.isLoading })
+      // Only persist isLoading state and needsRefresh flag, not the actual wages data
+      partialize: (state) => ({ 
+        isLoading: state.isLoading,
+        needsRefresh: state.needsRefresh
+      })
     }
   )
 );

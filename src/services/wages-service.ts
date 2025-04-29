@@ -146,87 +146,83 @@ export const upsertDailyWages = async (wages: DailyWages) => {
       throw checkError;
     }
 
-    // Use direct Supabase RPC function for upsert
-    try {
-      const { data, error } = await supabase.rpc('direct_upsert_wages', {
-        p_year: wages.year,
-        p_month: wages.month, 
-        p_day: wages.day,
-        p_date: formattedDate,
-        p_day_of_week: wages.dayOfWeek,
-        p_foh_wages: fohWages,
-        p_kitchen_wages: kitchenWages,
-        p_food_revenue: foodRevenue,
-        p_bev_revenue: bevRevenue
-      });
+    // Direct database operation approach
+    if (existing?.id) {
+      // Update the existing record
+      console.log(`[SAVE] Updating existing wages record with ID ${existing.id}`);
       
-      if (error) {
-        console.error('[SAVE] Error using direct_upsert_wages RPC:', error);
-        throw error;
+      const { data, error: updateError } = await supabase
+        .from('wages')
+        .update({
+          foh_wages: fohWages,
+          kitchen_wages: kitchenWages,
+          food_revenue: foodRevenue,
+          bev_revenue: bevRevenue,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id)
+        .select();
+
+      if (updateError) {
+        console.error('[SAVE] Error updating wages record:', updateError);
+        throw updateError;
       }
-      
-      console.log('[SAVE] Successfully saved wages via RPC:', data);
+
+      console.log(`[SAVE] Successfully updated wages record for ${dateKey}:`, data);
       return data;
-    } catch (rpcError) {
-      console.error('[SAVE] RPC method failed, falling back to standard approach:', rpcError);
+    } else {
+      // Insert a new record
+      console.log(`[SAVE] Creating new wages record for ${dateKey}`);
       
-      // Fallback to standard approach if RPC fails
-      if (existing?.id) {
-        // Update the existing record
-        console.log(`[SAVE] Updating existing wages record with ID ${existing.id}`);
-        
-        const { data, error: updateError } = await supabase
-          .from('wages')
-          .update({
-            foh_wages: fohWages,
-            kitchen_wages: kitchenWages,
-            food_revenue: foodRevenue,
-            bev_revenue: bevRevenue,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existing.id)
-          .select();
+      const { data, error: insertError } = await supabase
+        .from('wages')
+        .insert([{
+          year: wages.year,
+          month: wages.month,
+          day: wages.day,
+          date: formattedDate,
+          day_of_week: wages.dayOfWeek,
+          foh_wages: fohWages,
+          kitchen_wages: kitchenWages,
+          food_revenue: foodRevenue,
+          bev_revenue: bevRevenue,
+          created_by: user?.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select();
 
-        if (updateError) {
-          console.error('[SAVE] Error updating wages record:', updateError);
-          throw updateError;
-        }
-
-        console.log(`[SAVE] Successfully updated wages record for ${dateKey}:`, data);
-        return data;
-      } else {
-        // Insert a new record
-        console.log(`[SAVE] Creating new wages record for ${dateKey}`);
-        
-        const { data, error: insertError } = await supabase
-          .from('wages')
-          .insert([{
-            year: wages.year,
-            month: wages.month,
-            day: wages.day,
-            date: formattedDate,
-            day_of_week: wages.dayOfWeek,
-            foh_wages: fohWages,
-            kitchen_wages: kitchenWages,
-            food_revenue: foodRevenue,
-            bev_revenue: bevRevenue,
-            created_by: user?.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select();
-
-        if (insertError) {
-          console.error('[SAVE] Error inserting wages record:', insertError);
-          throw insertError;
-        }
-
-        console.log(`[SAVE] Successfully inserted wages record for ${dateKey}:`, data);
-        return data;
+      if (insertError) {
+        console.error('[SAVE] Error inserting wages record:', insertError);
+        throw insertError;
       }
+
+      console.log(`[SAVE] Successfully inserted wages record for ${dateKey}:`, data);
+      return data;
     }
+    
   } catch (error) {
     console.error('[SAVE] Error saving wages data:', error);
     throw error;
+  }
+};
+
+// Add a new function to manually refresh the financial performance analysis view
+export const refreshFinancialPerformanceAnalysis = async (): Promise<boolean> => {
+  try {
+    console.log('Manually triggering refresh of financial_performance_analysis materialized view');
+    
+    const { error } = await supabase.rpc('refresh_financial_performance_analysis');
+    
+    if (error) {
+      console.error('Error refreshing financial performance analysis:', error);
+      return false;
+    }
+    
+    console.log('Successfully refreshed financial_performance_analysis view');
+    return true;
+  } catch (err) {
+    console.error('Unexpected error refreshing financial performance analysis:', err);
+    return false;
   }
 };
