@@ -49,20 +49,20 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     return hours + (minutes / 60);
   };
   
-  // Special handling for end time midnight (00:00) - always treat as hour 24
+  // Special handling for end time midnight (00:00) - treat as hour 24
   const normalizeTime = (timeString: string, isEndTime = false): number => {
     if (isEndTime && timeString === "00:00") {
-      return 24.0; // Midnight end time is displayed at the end of the day
+      return 24.0; // Midnight end time is hour 24 (end of day)
     }
     return timeToDecimal(timeString);
   };
 
   // Determine chart boundaries from opening hours
   const startHour = Math.floor(normalizeTime(openingHours.start));
-  const endHour = Math.ceil(normalizeTime(openingHours.end, true));
+  // For the end hour, if it's 00:00, treat it as 24
+  const endHourRaw = normalizeTime(openingHours.end, true);
+  const endHour = Math.ceil(endHourRaw);
   const totalHours = endHour - startHour;
-  
-  console.log('Chart boundaries:', { startHour, endHour, totalHours });
   
   // Group shifts by FOH and Kitchen
   const fohShifts = rules.filter(rule => {
@@ -79,7 +79,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
   const staffingByHour = useMemo(() => {
     const hours: StaffingByHour[] = [];
     
-    // Initialize each hour slot
+    // Initialize each hour slot (include the exact number needed)
     for (let i = 0; i <= totalHours; i++) {
       const hourValue = (startHour + i) % 24;
       hours.push({
@@ -90,14 +90,10 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
       });
     }
     
-    console.log('Initialized hour slots:', hours.map(h => h.hour));
-    
     // Process each rule and add to the appropriate hours
     rules.forEach(rule => {
       const ruleStart = normalizeTime(rule.start_time);
       const ruleEnd = normalizeTime(rule.end_time, true);
-      
-      console.log(`Rule ${rule.name || 'unnamed'}: ${rule.start_time} (${ruleStart}) to ${rule.end_time} (${ruleEnd})`);
       
       const role = jobRoles.find(r => r.id === rule.job_role_id);
       
@@ -111,14 +107,13 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
         const hourSlot = hours[i];
         const hourAbsolute = startHour + i;
         
-        // If this hour is within the shift timeframe (inclusive at start, exclusive at end)
-        // This means a shift ending at 00:00 (24.0) will include the 23:00-00:00 hour
+        // If this hour is within the shift timeframe
+        // For shifts ending at midnight (00:00/24.0), we need to include the last hour block
         if (ruleStart <= hourAbsolute && hourAbsolute < ruleEnd) {
           hourSlot[category].min += rule.min_staff;
           hourSlot[category].max += rule.max_staff;
           hourSlot.total.min += rule.min_staff;
           hourSlot.total.max += rule.max_staff;
-          console.log(`Applied rule to hour ${hourAbsolute} (display: ${hourSlot.hour}:00)`);
         }
       }
     });
@@ -153,13 +148,13 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
 
   // Calculate position for a shift block
   const getShiftStyle = (rule: ShiftRule) => {
+    // Make sure to normalize times correctly, especially for 00:00
     const startDecimal = normalizeTime(rule.start_time);
     const endDecimal = normalizeTime(rule.end_time, true);
     
+    // Calculate percentages based on chart boundaries
     const startPercent = ((startDecimal - startHour) / totalHours) * 100;
     const widthPercent = ((endDecimal - startDecimal) / totalHours) * 100;
-    
-    console.log(`Shift ${rule.name || 'unnamed'}: ${startPercent}% to ${startPercent + widthPercent}%`);
     
     return {
       left: `${startPercent}%`,
