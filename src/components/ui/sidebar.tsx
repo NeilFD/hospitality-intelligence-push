@@ -30,6 +30,8 @@ export const Sidebar = ({ children, className = "" }: { children: React.ReactNod
       setCurrentModule('master');
     } else if (path.includes('/team')) {
       setCurrentModule('team');
+    } else if (path.includes('/hiq')) {
+      setCurrentModule('hiq');
     }
     
     console.log('Sidebar URL path check:', path, 'Current module set to:', currentModule);
