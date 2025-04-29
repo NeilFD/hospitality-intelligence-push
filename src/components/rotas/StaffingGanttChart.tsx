@@ -43,7 +43,7 @@ interface StaffingGanttChartProps {
 }
 
 const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChartProps) => {
-  // Improved time conversion function as recommended
+  // Time conversion function
   const timeToHours = (timeString: string, isEndTime: boolean): number => {
     if (isEndTime && timeString === "00:00") return 24.0;
     const [hours, minutes] = timeString.split(":").map(Number);
@@ -134,7 +134,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
     };
   }, [staffingByHour]);
 
-  // New shift position calculation based on recommended code
+  // Improved shift position calculation
   const calculateShiftPosition = (shift: ShiftRule) => {
     const startHour = timeToHours(shift.start_time, false) - chartStart;
     const endHour = timeToHours(shift.end_time, true) - chartStart;
@@ -183,18 +183,16 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
           {/* Time scale with proper grid layout */}
           <div className="flex mb-6">
             <div className="w-40 shrink-0"></div>
-            <div className="flex-1 relative">
-              {/* Time markers */}
-              <div className="grid" style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
-                {Array.from({length: totalHours + 1}).map((_, i) => (
-                  <div key={i} className="relative">
-                    <div className="absolute left-0 h-8 border-l border-slate-200 dark:border-slate-700"></div>
-                    <span className="absolute -top-6 -ml-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {formatHourDisplay((chartStart + i) % 24)}:00
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${totalHours}, 1fr)` }}>
+              {/* Generate hour markers */}
+              {Array.from({ length: totalHours + 1 }).map((_, i) => (
+                <div key={i} className="relative" style={{ gridColumnStart: i === 0 ? 1 : 'auto' }}>
+                  <div className="absolute left-0 h-8 border-l border-slate-200 dark:border-slate-700"></div>
+                  <span className="absolute -top-6 -ml-2 text-xs text-muted-foreground whitespace-nowrap">
+                    {formatHourDisplay((chartStart + i) % 24)}:00
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
           
@@ -227,7 +225,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                         <div
                           className="absolute h-full bg-blue-200 dark:bg-blue-700/40 border border-blue-300 dark:border-blue-600 rounded flex items-center justify-center hover:bg-blue-300 dark:hover:bg-blue-700/60 transition-colors"
                           style={{
-                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / ${calculateShiftPosition(rule).gridColumnEnd}`,
+                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / span ${Math.ceil(timeToHours(rule.end_time, true) - timeToHours(rule.start_time, false))}`,
                             width: '100%'
                           }}
                         >
@@ -286,7 +284,7 @@ const StaffingGanttChart = ({ rules, jobRoles, openingHours }: StaffingGanttChar
                         <div
                           className="absolute h-full bg-green-200 dark:bg-green-700/40 border border-green-300 dark:border-green-600 rounded flex items-center justify-center hover:bg-green-300 dark:hover:bg-green-700/60 transition-colors"
                           style={{
-                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / ${calculateShiftPosition(rule).gridColumnEnd}`,
+                            gridColumn: `${calculateShiftPosition(rule).gridColumnStart} / span ${Math.ceil(timeToHours(rule.end_time, true) - timeToHours(rule.start_time, false))}`,
                             width: '100%'
                           }}
                         >
