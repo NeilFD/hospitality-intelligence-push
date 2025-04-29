@@ -39,6 +39,8 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
     if (location.pathname.includes('/hiq/')) {
       if (location.pathname.includes('/hiq/performance')) {
         setActiveHiqItem('performance');
+      } else if (location.pathname.includes('/hiq/chat')) {
+        setActiveHiqItem('chat');
       } else {
         setActiveHiqItem('dashboard');
       }
@@ -94,7 +96,7 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           active={currentModule === 'hiq'} 
         />
         
-        {/* EXPLICITLY only show Dashboard and Performance submenu items for HiQ */}
+        {/* HiQ submenu items */}
         {currentModule === 'hiq' && (
           <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3">
             <NavItem 
@@ -108,6 +110,12 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
               label="Performance and Analysis" 
               icon="performance" 
               active={activeHiqItem === 'performance'} 
+            />
+            <NavItem 
+              to="/hiq/chat" 
+              label="Chat Assistant" 
+              icon="hospitality" 
+              active={activeHiqItem === 'chat'} 
             />
           </div>
         )}

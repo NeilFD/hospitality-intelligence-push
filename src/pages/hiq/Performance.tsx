@@ -2,14 +2,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { History, AlertTriangle, Sparkles } from 'lucide-react';
+import { History, AlertTriangle, Sparkles, MessageSquare } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrackerDataByMonth } from '@/services/kitchen-service';
-import ChatInterface from '@/components/performance/ChatInterface';
 import KeyInsights from '@/components/performance/KeyInsights';
 import AnalyticsModules from '@/components/performance/AnalyticsModules';
 import { PerformanceLogo } from '@/components/PerformanceLogo';
@@ -125,7 +124,8 @@ export default function HiQPerformance() {
     }
   }, [annualRecord, foodTrackerData, bevTrackerData]);
 
-  return <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
+  return (
+    <div className="container max-w-7xl py-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-gradient-to-br from-[#806cac]/60 to-[#705b9b]/80 rounded-lg shadow-glass">
@@ -135,9 +135,15 @@ export default function HiQPerformance() {
         </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" className="hidden sm:flex items-center gap-2 glass-button" asChild>
-            <Link to="/hiq/conversation-history">
+            <Link to="/performance/conversation-history">
               <History className="h-4 w-4 text-[#705b9b]" />
               <span>Chat History</span>
+            </Link>
+          </Button>
+          <Button variant="outline" className="hidden sm:flex items-center gap-2 glass-button" asChild>
+            <Link to="/hiq/chat">
+              <MessageSquare className="h-4 w-4 text-[#705b9b]" />
+              <span>Open AI Chat</span>
             </Link>
           </Button>
           <PerformanceLogo size="md" className="hidden md:block animate-float" />
@@ -153,12 +159,9 @@ export default function HiQPerformance() {
           </AlertDescription>
         </Alert>}
       
-      <Card className="overflow-hidden border-none shadow-glass rounded-xl bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-md">
-        <ChatInterface className="w-full" />
-      </Card>
-      
       <KeyInsights />
       
       <AnalyticsModules />
-    </div>;
+    </div>
+  );
 }
