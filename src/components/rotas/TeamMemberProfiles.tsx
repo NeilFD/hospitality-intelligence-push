@@ -37,6 +37,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const fetchTeamMembers = async () => {
     setIsLoading(true);
     try {
+      console.log("Fetching team members for location ID:", location.id);
       const { data, error } = await supabase
         .from('team_members')
         .select(`
@@ -49,6 +50,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
         throw error;
       }
       
+      console.log("Team members fetched:", data?.length || 0, "members");
       setTeamMembers(data || []);
     } catch (error) {
       console.error('Error fetching team members:', error);
@@ -149,15 +151,18 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
             <div className="flex items-center justify-center p-8">
               <p>Loading team members...</p>
             </div>
-          ) : teamMembers.length === 0 || filteredMembers.length === 0 ? (
+          ) : teamMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8">
               <User className="h-12 w-12 text-muted-foreground mb-2" />
               <p className="text-muted-foreground">No team members found</p>
-              {searchTerm && (
-                <Button variant="link" onClick={() => setSearchTerm('')}>
-                  Clear search
-                </Button>
-              )}
+            </div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8">
+              <User className="h-12 w-12 text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No team members match your search</p>
+              <Button variant="link" onClick={() => setSearchTerm('')}>
+                Clear search
+              </Button>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
