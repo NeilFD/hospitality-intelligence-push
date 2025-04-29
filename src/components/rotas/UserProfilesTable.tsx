@@ -21,9 +21,9 @@ export default function UserProfilesTable({ profiles, isLoading, searchTerm, onC
         return 'destructive';
       case 'Super User':
       case 'OWNER':
-        return 'purple';
+        return 'secondary'; // Changed from 'purple' to 'secondary'
       case 'Manager':
-        return 'blue';
+        return 'secondary'; // Changed from 'blue' to 'secondary'
       case 'Team Member':
         return 'default';
       default:
