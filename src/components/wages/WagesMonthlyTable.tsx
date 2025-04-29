@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { useWagesStore } from './WagesStore';
 import { formatCurrency, getDayNameFromNumber } from '@/lib/date-utils';
 import { toast } from "sonner";
@@ -19,10 +19,12 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
   const [inputValues, setInputValues] = React.useState<Record<string, Record<string, string>>>({});
   const [dirtyInputs, setDirtyInputs] = React.useState<Record<string, Set<string>>>({});
   const [saveTimeout, setSaveTimeout] = React.useState<NodeJS.Timeout | null>(null);
+  const [saveError, setSaveError] = React.useState<string | null>(null);
   const { getMonthlyWages, setDailyWages, clearCache, needsRefresh, refreshAnalysis } = useWagesStore();
   
   const loadWagesData = useCallback(async () => {
     setIsLoading(true);
+    setSaveError(null);
     try {
       // Clear cache to ensure we get fresh data
       clearCache();
@@ -147,10 +149,11 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       return newDirty;
     });
     
-    // Clear any existing timeout
+    // Clear any existing timeout and error message
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
+    setSaveError(null);
     
     // Set a new timeout to save after user stops typing
     const newTimeout = setTimeout(() => {
@@ -195,14 +198,22 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         prevData.map(d => d.day === day ? updatedDay : d)
       );
       
-      // Save to database with retry logic
+      // Save to database with retry logic and better error handling
       try {
+        setSaveError(null);
         await setDailyWages(updatedDay);
-      } catch (saveError) {
+      } catch (saveError: any) {
         console.error('First save attempt failed, retrying:', saveError);
         // Wait a moment and retry once
         await new Promise(r => setTimeout(r, 1000));
-        await setDailyWages(updatedDay);
+        try {
+          await setDailyWages(updatedDay);
+        } catch (retryError: any) {
+          console.error('Retry failed:', retryError);
+          setSaveError(`Failed to save data: ${retryError.message || 'Unknown error'}`);
+          toast.error('Failed to save data after retry');
+          return;
+        }
       }
 
       // Clear this field from dirty state
@@ -223,8 +234,9 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
       // Refresh data after a short delay to ensure UI is in sync with database
       setTimeout(() => loadWagesData(), 1500);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save data:', error);
+      setSaveError(`Failed to save data: ${error.message || 'Unknown error'}`);
       toast.error('Failed to save data');
       
       // Refresh data to ensure UI is in sync with database
@@ -315,6 +327,13 @@ export function WagesMonthlyTable({ year, month }: { year: number, month: number
         </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 p-3 mb-4 rounded-md flex items-start">
+            <AlertTriangle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+            <span className="text-sm text-red-700">{saveError}</span>
+          </div>
+        )}
+        
         {isLoading ? (
           <div className="py-10 text-center text-muted-foreground">Loading wages data...</div>
         ) : (

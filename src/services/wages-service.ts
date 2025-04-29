@@ -56,15 +56,14 @@ export const fetchWagesByDay = async (year: number, month: number, day: number):
     .eq('year', year)
     .eq('month', month)
     .eq('day', day)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code === 'PGRST116') { // No rows returned
-      return null;
-    }
     console.error('Error fetching daily wages:', error);
     throw error;
   }
+
+  if (!data) return null;
 
   console.log(`Found wage record for ${year}-${month}-${day}:`, data);
   
@@ -132,82 +131,103 @@ export const upsertDailyWages = async (wages: DailyWages) => {
     const user = await getCurrentUser();
     console.log('[SAVE] Current user:', user?.id || 'anonymous');
 
-    // First check if a record exists
-    const { data: existing, error: checkError } = await supabase
-      .from('wages')
-      .select('id')
-      .eq('year', wages.year)
-      .eq('month', wages.month)
-      .eq('day', wages.day)
-      .maybeSingle();
+    // Use the direct database function instead of the trigger-based approach
+    const { data, error } = await supabase.rpc('direct_upsert_wages', {
+      p_year: wages.year,
+      p_month: wages.month,
+      p_day: wages.day,
+      p_date: formattedDate,
+      p_day_of_week: wages.dayOfWeek,
+      p_foh_wages: fohWages,
+      p_kitchen_wages: kitchenWages,
+      p_food_revenue: foodRevenue,
+      p_bev_revenue: bevRevenue
+    });
 
-    if (checkError) {
-      console.error('[SAVE] Error checking for existing record:', checkError);
-      throw checkError;
-    }
-
-    // Direct database operation approach
-    if (existing?.id) {
-      // Update the existing record
-      console.log(`[SAVE] Updating existing wages record with ID ${existing.id}`);
+    if (error) {
+      console.error('[SAVE] Error upserting wages using RPC:', error);
       
-      const { data, error: updateError } = await supabase
+      // Fallback to direct insert/update if RPC fails
+      console.log('[SAVE] Falling back to direct database operations');
+      
+      // First check if a record exists
+      const { data: existing, error: checkError } = await supabase
         .from('wages')
-        .update({
-          foh_wages: fohWages,
-          kitchen_wages: kitchenWages,
-          food_revenue: foodRevenue,
-          bev_revenue: bevRevenue,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existing.id)
-        .select();
+        .select('id')
+        .eq('year', wages.year)
+        .eq('month', wages.month)
+        .eq('day', wages.day)
+        .maybeSingle();
 
-      if (updateError) {
-        console.error('[SAVE] Error updating wages record:', updateError);
-        throw updateError;
+      if (checkError) {
+        console.error('[SAVE] Error checking for existing record:', checkError);
+        throw checkError;
       }
 
-      console.log(`[SAVE] Successfully updated wages record for ${dateKey}:`, data);
-      return data;
-    } else {
-      // Insert a new record
-      console.log(`[SAVE] Creating new wages record for ${dateKey}`);
-      
-      const { data, error: insertError } = await supabase
-        .from('wages')
-        .insert([{
-          year: wages.year,
-          month: wages.month,
-          day: wages.day,
-          date: formattedDate,
-          day_of_week: wages.dayOfWeek,
-          foh_wages: fohWages,
-          kitchen_wages: kitchenWages,
-          food_revenue: foodRevenue,
-          bev_revenue: bevRevenue,
-          created_by: user?.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select();
+      if (existing?.id) {
+        // Update the existing record
+        console.log(`[SAVE] Updating existing wages record with ID ${existing.id}`);
+        
+        const { data: updateData, error: updateError } = await supabase
+          .from('wages')
+          .update({
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages,
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select();
 
-      if (insertError) {
-        console.error('[SAVE] Error inserting wages record:', insertError);
-        throw insertError;
+        if (updateError) {
+          console.error('[SAVE] Error updating wages record:', updateError);
+          throw updateError;
+        }
+
+        console.log(`[SAVE] Successfully updated wages record for ${dateKey}:`, updateData);
+        return updateData;
+      } else {
+        // Insert a new record
+        console.log(`[SAVE] Creating new wages record for ${dateKey}`);
+        
+        const { data: insertData, error: insertError } = await supabase
+          .from('wages')
+          .insert([{
+            year: wages.year,
+            month: wages.month,
+            day: wages.day,
+            date: formattedDate,
+            day_of_week: wages.dayOfWeek,
+            foh_wages: fohWages,
+            kitchen_wages: kitchenWages,
+            food_revenue: foodRevenue,
+            bev_revenue: bevRevenue,
+            created_by: user?.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select();
+
+        if (insertError) {
+          console.error('[SAVE] Error inserting wages record:', insertError);
+          throw insertError;
+        }
+
+        console.log(`[SAVE] Successfully inserted wages record for ${dateKey}:`, insertData);
+        return insertData;
       }
-
-      console.log(`[SAVE] Successfully inserted wages record for ${dateKey}:`, data);
-      return data;
     }
-    
+
+    console.log(`[SAVE] Successfully upserted wages record for ${dateKey} using RPC:`, data);
+    return data;
   } catch (error) {
     console.error('[SAVE] Error saving wages data:', error);
     throw error;
   }
 };
 
-// Add a new function to manually refresh the financial performance analysis view
+// Function to manually refresh the financial performance analysis view
 export const refreshFinancialPerformanceAnalysis = async (): Promise<boolean> => {
   try {
     console.log('Manually triggering refresh of financial_performance_analysis materialized view');
