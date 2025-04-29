@@ -298,7 +298,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
                   <SelectValue placeholder="Select a template (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {shiftTemplates.map((template) => (
                     <SelectItem key={template.id} value={template.id}>
                       {template.name}
