@@ -1,14 +1,14 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, ClipboardList, Settings, Users } from 'lucide-react';
+import { Calendar, ClipboardList, Settings, Users, FileEdit } from 'lucide-react';
 import WeeklyOverviewPanel from '@/components/rotas/WeeklyOverviewPanel';
 import TeamMemberProfiles from '@/components/rotas/TeamMemberProfiles';
 import GlobalRulesSettings from '@/components/rotas/GlobalRulesSettings';
+import ShiftBuilder from '@/components/rotas/ShiftBuilder';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -157,11 +157,16 @@ export default function HiQRotas() {
             </div>
           ) : (
             <Tabs defaultValue="weekly-overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-3 mb-6">
+              <TabsList className="w-full grid grid-cols-4 mb-6">
                 <TabsTrigger value="weekly-overview" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   <span className="hidden sm:inline">Weekly Overview</span>
                   <span className="sm:hidden">Overview</span>
+                </TabsTrigger>
+                <TabsTrigger value="shift-builder" className="flex items-center gap-2">
+                  <FileEdit className="h-4 w-4" />
+                  <span className="hidden sm:inline">Shift Builder</span>
+                  <span className="sm:hidden">Shifts</span>
                 </TabsTrigger>
                 <TabsTrigger value="team-members" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -183,6 +188,13 @@ export default function HiQRotas() {
                 <WeeklyOverviewPanel 
                   location={location} 
                   jobRoles={jobRoles} 
+                />
+              </TabsContent>
+              
+              <TabsContent value="shift-builder" className="mt-0 space-y-4">
+                <ShiftBuilder
+                  location={location}
+                  jobRoles={jobRoles}
                 />
               </TabsContent>
               

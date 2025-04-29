@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Plus, Copy, Calendar, Trash2, Clock, Edit, Check, Save } from 'lucide-react';
+import { Copy, Calendar, Clock, Edit, Check, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import ShiftRuleForm from './ShiftRuleForm';
 import StaffingGanttChart from './StaffingGanttChart';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
@@ -29,8 +28,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
   const [expandedDay, setExpandedDay] = useState('mon');
   const [openShiftRule, setOpenShiftRule] = useState<string | null>(null);
   const [shiftRules, setShiftRules] = useState<Record<string, any[]>>({});
-  const [isAddingShift, setIsAddingShift] = useState(false);
-  const [currentDay, setCurrentDay] = useState('mon');
   const [editingHours, setEditingHours] = useState<{day: string, start: string, end: string} | null>(null);
   const [copyingShift, setCopyingShift] = useState<any>(null);
   const [selectedDays, setSelectedDays] = useState<Record<string, boolean>>({});
@@ -53,7 +50,8 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
           *,
           job_roles (*)
         `)
-        .eq('location_id', location.id);
+        .eq('location_id', location.id)
+        .is('archived', null);
       
       if (error) {
         throw error;
@@ -96,11 +94,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
         description: "There was a problem deleting the shift rule."
       });
     }
-  };
-  
-  const handleAddShiftRule = (day) => {
-    setCurrentDay(day);
-    setIsAddingShift(true);
   };
   
   const handleCopyShift = (rule) => {
@@ -448,15 +441,9 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                           </div>
                         )}
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => handleAddShiftRule(day.id)}
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Add Shift</span>
-                      </Button>
+                      <div className="text-sm text-muted-foreground">
+                        Use the Shift Builder tab to create and manage shifts
+                      </div>
                     </div>
                     
                     <div className="space-y-2">
@@ -586,13 +573,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
                                         </div>
                                       </PopoverContent>
                                     </Popover>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleDeleteShiftRule(rule.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4 text-red-500" />
-                                    </Button>
                                   </div>
                                 </div>
                               </div>
@@ -617,15 +597,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }) {
           })}
         </Accordion>
       </CardContent>
-      
-      <ShiftRuleForm
-        isOpen={isAddingShift}
-        onClose={() => setIsAddingShift(false)}
-        onSubmitComplete={fetchShiftRules}
-        locationId={location?.id}
-        jobRoles={jobRoles}
-        day={currentDay}
-      />
     </Card>
   );
 }

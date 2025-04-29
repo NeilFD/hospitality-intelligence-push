@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 
@@ -20,11 +21,12 @@ const days = [
   { id: 'sun', name: 'Sunday' }
 ];
 
-export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locationId, jobRoles, day }) {
+export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locationId, jobRoles, day, editingShift }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shiftTemplates, setShiftTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedDays, setSelectedDays] = useState({});
+  const [isArchived, setIsArchived] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -35,36 +37,81 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     max_staff: 1,
     revenue_to_staff_ratio: null,
     priority: 3,
-    required_skill_level: null
+    required_skill_level: null,
+    archived: false
   });
 
   useEffect(() => {
-    // Initialize selected days
-    const initialDays = {};
-    days.forEach(d => {
-      initialDays[d.id] = d.id === day;
-    });
-    setSelectedDays(initialDays);
-    
-    // Fetch available shift templates when component loads
-    const fetchTemplates = async () => {
-      if (locationId) {
-        try {
-          const { data, error } = await supabase
-            .from('shift_templates')
-            .select('*')
-            .eq('location_id', locationId);
-            
-          if (error) throw error;
-          setShiftTemplates(data || []);
-        } catch (error) {
-          console.error('Error fetching shift templates:', error);
+    // Initialize selected days based on the provided day parameter
+    if (isOpen) {
+      const initialDays = {};
+      days.forEach(d => {
+        initialDays[d.id] = day ? d.id === day : false;
+      });
+      setSelectedDays(initialDays);
+      
+      // Initialize form with editingShift data if provided
+      if (editingShift) {
+        setFormData({
+          name: editingShift.name || '',
+          job_role_id: editingShift.job_role_id || '',
+          start_time: editingShift.start_time || '09:00',
+          end_time: editingShift.end_time || '17:00',
+          min_staff: editingShift.min_staff || 1,
+          max_staff: editingShift.max_staff || 1,
+          revenue_to_staff_ratio: editingShift.revenue_to_staff_ratio || null,
+          priority: editingShift.priority || 3,
+          required_skill_level: editingShift.required_skill_level || null,
+          archived: editingShift.archived || false
+        });
+        
+        setIsArchived(!!editingShift.archived);
+        
+        // When editing, select the day of the shift
+        if (editingShift.day_of_week) {
+          const editDays = {};
+          days.forEach(d => {
+            editDays[d.id] = d.id === editingShift.day_of_week;
+          });
+          setSelectedDays(editDays);
         }
+      } else {
+        // Reset form for new shift creation
+        setFormData({
+          name: '',
+          job_role_id: '',
+          start_time: '09:00',
+          end_time: '17:00',
+          min_staff: 1,
+          max_staff: 1,
+          revenue_to_staff_ratio: null,
+          priority: 3,
+          required_skill_level: null,
+          archived: false
+        });
+        setIsArchived(false);
       }
-    };
-    
-    fetchTemplates();
-  }, [locationId, day]);
+      
+      // Fetch available shift templates
+      fetchTemplates();
+    }
+  }, [isOpen, day, editingShift]);
+
+  const fetchTemplates = async () => {
+    if (locationId) {
+      try {
+        const { data, error } = await supabase
+          .from('shift_templates')
+          .select('*')
+          .eq('location_id', locationId);
+          
+        if (error) throw error;
+        setShiftTemplates(data || []);
+      } catch (error) {
+        console.error('Error fetching shift templates:', error);
+      }
+    }
+  };
 
   const handleDayChange = (dayId, checked) => {
     setSelectedDays(prev => ({
@@ -100,7 +147,8 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
         max_staff: shiftBlock.max_staff || 1,
         priority: shiftBlock.priority || 3,
         revenue_to_staff_ratio: shiftBlock.revenue_to_staff_ratio || null,
-        required_skill_level: shiftBlock.required_skill_level || null
+        required_skill_level: shiftBlock.required_skill_level || null,
+        archived: false
       }));
       setSelectedTemplate(template);
     }
@@ -128,26 +176,11 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     setIsSubmitting(true);
     
     try {
-      // Create shift rules for each selected day
-      const shiftRules = selectedDaysList.map(dayId => ({
-        location_id: locationId,
-        day_of_week: dayId,
-        name: formData.name,
-        ...formData
-      }));
-      
-      const { data: shiftRuleData, error: shiftRuleError } = await supabase
-        .from('shift_rules')
-        .insert(shiftRules);
-        
-      if (shiftRuleError) throw shiftRuleError;
-      
-      // If this is a new template name that doesn't exist yet, save it as a template
-      if (formData.name && !selectedTemplate) {
-        const templateExists = shiftTemplates.some(t => t.name.toLowerCase() === formData.name.toLowerCase());
-        
-        if (!templateExists) {
-          const shiftBlock = {
+      if (editingShift) {
+        // Update existing shift rule
+        const { error: shiftRuleError } = await supabase
+          .from('shift_rules')
+          .update({
             name: formData.name,
             job_role_id: formData.job_role_id,
             start_time: formData.start_time,
@@ -156,34 +189,82 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
             max_staff: formData.max_staff,
             priority: formData.priority,
             revenue_to_staff_ratio: formData.revenue_to_staff_ratio,
-            required_skill_level: formData.required_skill_level
-          };
+            required_skill_level: formData.required_skill_level,
+            archived: isArchived
+          })
+          .eq('id', editingShift.id);
           
-          const { error: templateError } = await supabase
-            .from('shift_templates')
-            .insert({
-              location_id: locationId,
-              day_of_week: selectedDaysList[0], // Use the first selected day for the template
+        if (shiftRuleError) throw shiftRuleError;
+        
+        toast.success("Shift rule updated", {
+          description: "The shift rule has been updated successfully.",
+        });
+      } else {
+        // Create shift rules for each selected day
+        const shiftRules = selectedDaysList.map(dayId => ({
+          location_id: locationId,
+          day_of_week: dayId,
+          name: formData.name,
+          job_role_id: formData.job_role_id,
+          start_time: formData.start_time,
+          end_time: formData.end_time,
+          min_staff: formData.min_staff,
+          max_staff: formData.max_staff,
+          priority: formData.priority,
+          revenue_to_staff_ratio: formData.revenue_to_staff_ratio,
+          required_skill_level: formData.required_skill_level,
+          archived: isArchived
+        }));
+        
+        const { data: shiftRuleData, error: shiftRuleError } = await supabase
+          .from('shift_rules')
+          .insert(shiftRules);
+          
+        if (shiftRuleError) throw shiftRuleError;
+        
+        // If this is a new template name that doesn't exist yet, save it as a template
+        if (formData.name && !selectedTemplate) {
+          const templateExists = shiftTemplates.some(t => t.name.toLowerCase() === formData.name.toLowerCase());
+          
+          if (!templateExists) {
+            const shiftBlock = {
               name: formData.name,
-              shift_blocks: [shiftBlock]
-            });
+              job_role_id: formData.job_role_id,
+              start_time: formData.start_time,
+              end_time: formData.end_time,
+              min_staff: formData.min_staff,
+              max_staff: formData.max_staff,
+              priority: formData.priority,
+              revenue_to_staff_ratio: formData.revenue_to_staff_ratio,
+              required_skill_level: formData.required_skill_level
+            };
             
-          if (templateError) {
-            console.error('Error saving shift template:', templateError);
+            const { error: templateError } = await supabase
+              .from('shift_templates')
+              .insert({
+                location_id: locationId,
+                day_of_week: selectedDaysList[0], // Use the first selected day for the template
+                name: formData.name,
+                shift_blocks: [shiftBlock]
+              });
+              
+            if (templateError) {
+              console.error('Error saving shift template:', templateError);
+            }
           }
         }
+        
+        toast.success("Shift rule(s) created", {
+          description: `Added shift rules for ${selectedDaysList.length} day(s).`,
+        });
       }
-      
-      toast("Shift rule(s) created", {
-        description: `Added shift rules for ${selectedDaysList.length} day(s).`,
-      });
       
       onSubmitComplete();
       onClose();
     } catch (error) {
-      console.error('Error creating shift rules:', error);
-      toast("Error creating shift rules", {
-        description: error.message || "There was a problem creating the shift rules.",
+      console.error('Error creating/updating shift rules:', error);
+      toast.error("Error with shift rules", {
+        description: error.message || "There was a problem with the shift rules.",
         style: { backgroundColor: "#f44336", color: "#fff" },
       });
     } finally {
@@ -195,7 +276,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Shift Rule</DialogTitle>
+          <DialogTitle>{editingShift ? 'Edit Shift Rule' : 'Add Shift Rule'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -209,7 +290,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
             />
           </div>
 
-          {shiftTemplates.length > 0 && (
+          {shiftTemplates.length > 0 && !editingShift && (
             <div className="space-y-2">
               <Label htmlFor="template">Use Template</Label>
               <Select onValueChange={handleTemplateSelect}>
@@ -236,6 +317,7 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
                   <Checkbox 
                     id={`day-${day.id}`} 
                     checked={selectedDays[day.id]}
+                    disabled={editingShift} // Disable day selection when editing
                     onCheckedChange={(checked) => handleDayChange(day.id, checked)}
                   />
                   <Label htmlFor={`day-${day.id}`} className="text-sm">{day.name}</Label>
@@ -346,11 +428,22 @@ export default function ShiftRuleForm({ isOpen, onClose, onSubmitComplete, locat
               }}
             />
           </div>
+
+          {editingShift && (
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="archived"
+                checked={isArchived}
+                onCheckedChange={setIsArchived}
+              />
+              <Label htmlFor="archived">Archive this shift</Label>
+            </div>
+          )}
           
           <DialogFooter>
             <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Shift Rule'}
+              {isSubmitting ? 'Saving...' : editingShift ? 'Update Shift Rule' : 'Save Shift Rule'}
             </Button>
           </DialogFooter>
         </form>
