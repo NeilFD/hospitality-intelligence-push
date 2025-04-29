@@ -927,11 +927,13 @@ export type Database = {
       profiles: {
         Row: {
           about_me: string | null
+          annual_salary: number | null
           avatar_url: string | null
           banner_position_y: number | null
           banner_url: string | null
           birth_date: string | null
           birth_date_month: string | null
+          contractor_rate: number | null
           created_at: string
           email: string | null
           employment_type: string | null
@@ -940,6 +942,7 @@ export type Database = {
           favourite_drink: string | null
           first_name: string | null
           id: string
+          in_ft_education: boolean | null
           job_role_id: string | null
           job_title: string | null
           last_name: string | null
@@ -956,11 +959,13 @@ export type Database = {
         }
         Insert: {
           about_me?: string | null
+          annual_salary?: number | null
           avatar_url?: string | null
           banner_position_y?: number | null
           banner_url?: string | null
           birth_date?: string | null
           birth_date_month?: string | null
+          contractor_rate?: number | null
           created_at?: string
           email?: string | null
           employment_type?: string | null
@@ -969,6 +974,7 @@ export type Database = {
           favourite_drink?: string | null
           first_name?: string | null
           id: string
+          in_ft_education?: boolean | null
           job_role_id?: string | null
           job_title?: string | null
           last_name?: string | null
@@ -985,11 +991,13 @@ export type Database = {
         }
         Update: {
           about_me?: string | null
+          annual_salary?: number | null
           avatar_url?: string | null
           banner_position_y?: number | null
           banner_url?: string | null
           birth_date?: string | null
           birth_date_month?: string | null
+          contractor_rate?: number | null
           created_at?: string
           email?: string | null
           employment_type?: string | null
@@ -998,6 +1006,7 @@ export type Database = {
           favourite_drink?: string | null
           first_name?: string | null
           id?: string
+          in_ft_education?: boolean | null
           job_role_id?: string | null
           job_title?: string | null
           last_name?: string | null
