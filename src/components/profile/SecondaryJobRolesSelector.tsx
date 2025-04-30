@@ -37,7 +37,7 @@ interface SecondaryJobRolesSelectorProps {
 }
 
 export default function SecondaryJobRolesSelector({ 
-  selectedRoles, 
+  selectedRoles = [], 
   onChange, 
   mainJobTitle, 
   disabled = false 
@@ -45,7 +45,9 @@ export default function SecondaryJobRolesSelector({
   const [open, setOpen] = React.useState(false);
   
   // Filter out the main job title from available options
-  const availableJobTitles = JOB_TITLES.filter(title => title !== mainJobTitle);
+  const availableJobTitles = React.useMemo(() => {
+    return JOB_TITLES.filter(title => title !== mainJobTitle);
+  }, [mainJobTitle]);
   
   const handleSelect = (role: string) => {
     if (selectedRoles.includes(role)) {
@@ -64,7 +66,7 @@ export default function SecondaryJobRolesSelector({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 mb-2">
-        {selectedRoles.map(role => (
+        {selectedRoles && selectedRoles.map(role => (
           <Badge 
             key={role} 
             variant="secondary" 
@@ -106,11 +108,14 @@ export default function SecondaryJobRolesSelector({
                   <CommandItem
                     key={role}
                     value={role}
-                    onSelect={() => handleSelect(role)}
+                    onSelect={() => {
+                      handleSelect(role);
+                      setOpen(false);
+                    }}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 flex items-center justify-center">
-                        {selectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                        {selectedRoles && selectedRoles.includes(role) && <Check className="h-3 w-3" />}
                       </div>
                       <span>{role}</span>
                     </div>
