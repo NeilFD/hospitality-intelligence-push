@@ -327,7 +327,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Hospitality (40%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>How well do they make people feel seen, heard, and valued? Think less 'technical waiter' and more 'warm human napkin'. 10 means guests leave grinning and glowing.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -355,7 +355,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Friendliness (20%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Are they a joy to work with and be served by? Would you sit at their section or avoid eye contact? A top score here means a magnetic smile, even on a double.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -383,7 +383,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Internal Team Skills (20%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Are they a glue or a grenade? Look for communication, calm under pressure, and being the kind of person others want in the trenches.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -411,7 +411,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Service Skills (10%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Can they carry three plates like a ballet dancer and upsell dessert without sounding like a robot? High marks go to those who move like pros and read the room.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -439,7 +439,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Knowledge (10%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Do they know the menu or wing it every shift? Full marks for people who know their barolo from their balsamic — and care enough to learn.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -474,7 +474,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Work Ethic & Discipline (35%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Do they turn up on time, sharp and clean? No sulking, no slack — just consistent graft. A 10 means you wish everyone worked like them.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -502,7 +502,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Team Player Mentality (25%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Do they back up others, clean down without being asked, and shout 'yes chef' without sarcasm? You know the score.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -530,7 +530,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Adaptability & Attitude (20%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>When things go sideways, do they roll with it or lose the plot? A 10 here means unflappable, fast-learning, drama-free operators.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -558,7 +558,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Knife & Cooking Skills (10%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Julienne like a dream? Sear without stress? A top mark reflects real, dependable kitchen chops. Basic competence starts at 5.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -586,7 +586,7 @@ export function HiScoreMatrix({
                         <span className="font-medium">Food Knowledge (10%)</span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-sm">
+                    <TooltipContent className="max-w-xs whitespace-normal break-words text-sm p-2" sideOffset={5}>
                       <p>Do they know what they're cooking and why it matters? From allergens to artistry, a high score goes to the curious cook, not just the fast one.</p>
                     </TooltipContent>
                   </Tooltip>
