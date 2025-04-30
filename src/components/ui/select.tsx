@@ -133,23 +133,58 @@ const SelectScrollableViewport = React.forwardRef<
         if (viewportRef) viewportRef.current = node as HTMLDivElement;
       }}
       className={cn(
-        "p-1 cursor-grab active:cursor-grabbing",
+        "p-1 pr-3 cursor-grab active:cursor-grabbing",
         position === "popper" &&
           "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
         className
       )}
       style={{
         maxHeight: "300px",
-        overflowY: "scroll", // Changed from "auto" to "scroll" to always show scrollbar
+        overflowY: "scroll",
         WebkitOverflowScrolling: "touch",
-        msOverflowStyle: "auto",
-        scrollbarWidth: "thin", // Changed from "auto" to "thin" for modern browsers
-        scrollbarColor: "#888 #f1f1f1" // Added scrollbar colors
+        msOverflowStyle: "-ms-autohiding-scrollbar",
+        scrollbarWidth: "auto",
+        scrollbarColor: "#9b87f5 #f1f1f1",
+        // Adding CSS variables for scrollbar styling
+        "--scrollbar-width": "12px",
+        "--scrollbar-height": "12px",
+        "--scrollbar-track-color": "#f1f1f1",
+        "--scrollbar-thumb-color": "#9b87f5",
+        "--scrollbar-thumb-hover-color": "#8B5CF6",
+        paddingRight: "16px"
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       {...props}
     >
+      <style jsx global>{`
+        /* Webkit scrollbar styles (Chrome, Safari, Edge) */
+        .p-1.pr-3::-webkit-scrollbar {
+          width: var(--scrollbar-width, 12px);
+          height: var(--scrollbar-height, 12px);
+        }
+        
+        .p-1.pr-3::-webkit-scrollbar-track {
+          background: var(--scrollbar-track-color, #f1f1f1);
+          border-radius: 10px;
+        }
+        
+        .p-1.pr-3::-webkit-scrollbar-thumb {
+          background: var(--scrollbar-thumb-color, #9b87f5);
+          border-radius: 10px;
+          border: 2px solid var(--scrollbar-track-color, #f1f1f1);
+        }
+        
+        .p-1.pr-3::-webkit-scrollbar-thumb:hover {
+          background: var(--scrollbar-thumb-hover-color, #8B5CF6);
+        }
+        
+        /* Firefox scrollbar styles */
+        .p-1.pr-3 {
+          scrollbar-width: auto;
+          scrollbar-color: var(--scrollbar-thumb-color, #9b87f5) var(--scrollbar-track-color, #f1f1f1);
+        }
+      `}</style>
       {children}
     </SelectPrimitive.Viewport>
   );
