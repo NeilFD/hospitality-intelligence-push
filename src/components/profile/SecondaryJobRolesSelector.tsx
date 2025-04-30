@@ -6,6 +6,7 @@ import { Command, CommandEmpty, CommandInput, CommandItem } from '@/components/u
 import { SafeCommandGroup } from '@/components/ui/safe-command-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { SafeErrorBoundary } from '@/components/ui/safe-error-boundary';
 
 // Job title options from the main profile
 const FOH_JOB_TITLES = [
@@ -80,28 +81,9 @@ export default function SecondaryJobRolesSelector({
     setLocalSelectedRoles(updatedRoles);
     onChange(updatedRoles);
   };
-
-  // Generate command items only when we have job titles available
-  const commandItems = React.useMemo(() => {
-    if (!availableJobTitles || availableJobTitles.length === 0) {
-      return null;
-    }
-    
-    return availableJobTitles.map(role => (
-      <CommandItem
-        key={role}
-        value={role}
-        onSelect={() => handleSelect(role)}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 flex items-center justify-center">
-            {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
-          </div>
-          <span>{role}</span>
-        </div>
-      </CommandItem>
-    ));
-  }, [availableJobTitles, localSelectedRoles]);
+  
+  // Pre-check if we have valid job titles to display
+  const hasAvailableJobTitles = availableJobTitles.length > 0;
 
   return (
     <div className="space-y-2">
@@ -129,7 +111,12 @@ export default function SecondaryJobRolesSelector({
       </div>
       
       {!disabled && (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open && hasAvailableJobTitles} onOpenChange={(isOpen) => {
+          // Only allow opening if we have job titles to display
+          if (!isOpen || hasAvailableJobTitles) {
+            setOpen(isOpen);
+          }
+        }}>
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
@@ -140,16 +127,30 @@ export default function SecondaryJobRolesSelector({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search for roles..." />
-              <CommandEmpty>No roles found.</CommandEmpty>
-              {/* Only render SafeCommandGroup when we have items to show */}
-              {commandItems && commandItems.length > 0 && (
-                <SafeCommandGroup className="max-h-64 overflow-y-auto">
-                  {commandItems}
-                </SafeCommandGroup>
+            <SafeErrorBoundary>
+              {hasAvailableJobTitles && (
+                <Command>
+                  <CommandInput placeholder="Search for roles..." />
+                  <CommandEmpty>No roles found.</CommandEmpty>
+                  <SafeCommandGroup className="max-h-64 overflow-y-auto">
+                    {availableJobTitles.map(role => (
+                      <CommandItem
+                        key={role}
+                        value={role}
+                        onSelect={() => handleSelect(role)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 flex items-center justify-center">
+                            {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                          </div>
+                          <span>{role}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </SafeCommandGroup>
+                </Command>
               )}
-            </Command>
+            </SafeErrorBoundary>
           </PopoverContent>
         </Popover>
       )}

@@ -7,24 +7,34 @@ export const SafeCommandGroup = React.forwardRef<
   React.ElementRef<typeof CommandGroup>,
   React.ComponentPropsWithoutRef<typeof CommandGroup>
 >(({ children, ...props }, ref) => {
-  // First, check if there are any children before processing
+  // First, check if children is undefined or null
   if (children === undefined || children === null) {
     return null;
   }
-
+  
   try {
-    // Convert children to array and filter out null/undefined values
-    const childArray = React.Children.toArray(children);
+    // Safely convert children to array - this is where the Array.from error happens
+    // We'll be extra cautious here
+    let childArray;
     
-    // If no valid children remain after filtering, return null
-    if (childArray.length === 0) {
+    if (Array.isArray(children)) {
+      childArray = children.filter(Boolean);
+    } else if (React.isValidElement(children)) {
+      childArray = [children];
+    } else {
+      // Normal approach that might throw with certain inputs
+      childArray = React.Children.toArray(children).filter(Boolean);
+    }
+    
+    // Extra safety check - if we end up with an empty array, don't render
+    if (!childArray || childArray.length === 0) {
       return null;
     }
-
-    // Render the CommandGroup with the safe children
+    
+    // Only render the CommandGroup when we have valid children
     return <CommandGroup ref={ref} {...props}>{childArray}</CommandGroup>;
   } catch (e) {
-    // Fallback in case of any errors during children processing
+    // Log error and return null if there was any issue
     console.error("Error in SafeCommandGroup:", e);
     return null;
   }
