@@ -38,7 +38,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const [jobTitleFilter, setJobTitleFilter] = useState('');
   const [uniqueJobTitles, setUniqueJobTitles] = useState([]);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
-  const [availabilityFilter, setAvailabilityFilter] = useState('all'); // 'all', 'available', 'unavailable'
+  const [availabilityFilter, setAvailabilityFilter] = useState('available'); // Changed from 'all' to 'available'
   
   const userRole = profile?.role;
   
@@ -132,7 +132,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const clearFilters = () => {
     setSearchTerm('');
     setJobTitleFilter('');
-    setAvailabilityFilter('all');
+    setAvailabilityFilter('available');
   };
 
   // Filter team members based on search term, job title filter and availability filter
@@ -280,7 +280,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
             </div>
           </div>
           
-          {(searchTerm || jobTitleFilter || availabilityFilter !== 'all') && (
+          {(searchTerm || jobTitleFilter || availabilityFilter !== 'available') && (
             <div className="flex justify-between items-center">
               <div className="text-sm text-muted-foreground">
                 Found {sortedMembers.length} team members matching your filters

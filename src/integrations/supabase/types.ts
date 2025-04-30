@@ -342,6 +342,7 @@ export type Database = {
         Row: {
           adaptability: number | null
           adaptability_feedback: string | null
+          comments: string | null
           cooking_skills: number | null
           cooking_skills_feedback: string | null
           created_at: string
@@ -374,6 +375,7 @@ export type Database = {
         Insert: {
           adaptability?: number | null
           adaptability_feedback?: string | null
+          comments?: string | null
           cooking_skills?: number | null
           cooking_skills_feedback?: string | null
           created_at?: string
@@ -406,6 +408,7 @@ export type Database = {
         Update: {
           adaptability?: number | null
           adaptability_feedback?: string | null
+          comments?: string | null
           cooking_skills?: number | null
           cooking_skills_feedback?: string | null
           created_at?: string
