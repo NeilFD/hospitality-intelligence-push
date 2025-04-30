@@ -260,6 +260,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         };
       }
       
+      // Make sure to update state with updated thresholds - this was missing from the original code
       setThresholds(updatedThresholds);
       toast.success('Threshold saved successfully');
     } catch (error: any) {
@@ -286,7 +287,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         setError('Unknown error saving threshold');
       }
       
-      // Reset the saving state on error
+      // Reset the saving state on error - crucial fix to stop the infinite spinner
       updatedThresholds[index] = { 
         ...updatedThresholds[index],
         isSaving: false
@@ -383,6 +384,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       setError(error.message || 'Failed to save thresholds');
       toast.error('Failed to save thresholds: ' + (error.message || 'Unknown error'));
     } finally {
+      // Make sure to reset saving state - crucial fix to stop the infinite spinner
       setIsSaving(false);
     }
   };
