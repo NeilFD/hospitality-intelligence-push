@@ -167,20 +167,33 @@ const SelectScrollableViewport = React.forwardRef<
         overflow: -webkit-scrollbars-vertical !important;
       }
       
-      /* Safari specific scrollbar styles */
+      /* Safari specific scrollbar styles with higher contrast */
       @supports (-webkit-overflow-scrolling: touch) {
         .select-scrollable-viewport {
           -webkit-overflow-scrolling: touch;
         }
         .select-scrollable-viewport::-webkit-scrollbar {
-          width: 18px;
-          background-color: rgba(0, 0, 0, 0.1);
+          width: 20px !important;
+          background-color: #e0e0e0 !important;
+          border-left: 1px solid #ccc !important;
         }
         .select-scrollable-viewport::-webkit-scrollbar-thumb {
-          background-color: rgba(155, 135, 245, 0.8);
+          background-color: #555555 !important;
           border-radius: 10px;
-          border: 2px solid transparent;
-          background-clip: padding-box;
+          border: 3px solid #e0e0e0;
+          box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
+        }
+        .select-scrollable-viewport::-webkit-scrollbar-thumb:hover {
+          background-color: #333333 !important;
+        }
+        .select-scrollable-viewport::-webkit-scrollbar-track {
+          background: #e0e0e0 !important;
+          border: 1px solid #ccc !important;
+        }
+        /* Force scrollbar to appear */
+        .safari-scrollbar {
+          overflow-y: scroll !important;
+          -webkit-overflow-scrolling: touch !important;
         }
       }
     `;
