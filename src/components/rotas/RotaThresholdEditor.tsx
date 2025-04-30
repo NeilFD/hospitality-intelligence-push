@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +18,8 @@ type RotaThresholdEditorProps = {
 type Threshold = {
   id?: string;
   name: string;
-  day_of_week?: string;
-  segment?: string;
+  day_of_week?: string | null;
+  segment?: string | null;
   revenue_min: number;
   revenue_max: number;
   foh_min_staff: number;
@@ -67,7 +68,9 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
           ...band,
           isExpanded: false,
           isNew: true,
-          location_id: location.id
+          location_id: location.id,
+          day_of_week: null, // Explicitly set to null for new bands
+          segment: null      // Explicitly set to null for new bands
         }));
       } else {
         // Format existing thresholds
@@ -106,7 +109,9 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       target_cost_percentage: 28,
       isNew: true,
       isExpanded: true,
-      location_id: location.id
+      location_id: location.id,
+      day_of_week: null, // Explicitly set to null for new threshold
+      segment: null      // Explicitly set to null for new threshold
     };
     
     setThresholds([...thresholds, newThreshold]);
@@ -194,7 +199,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     try {
       // Make sure location_id is set before saving
       const thresholdToSave = {
-        name: threshold.name || `Band: ${formatRevenueBand(threshold.revenue_min, threshold.revenue_max)}`, // Ensure name exists
+        name: threshold.name || `Band: ${formatRevenueBand(threshold.revenue_min, threshold.revenue_max)}`,
         revenue_min: threshold.revenue_min,
         revenue_max: threshold.revenue_max,
         foh_min_staff: threshold.foh_min_staff,
@@ -205,9 +210,11 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         kp_max_staff: threshold.kp_max_staff,
         target_cost_percentage: threshold.target_cost_percentage,
         location_id: location.id,
-        day_of_week: threshold.day_of_week || null, // Make sure day_of_week is null if not set
-        segment: threshold.segment || null // Make sure segment is null if not set
+        day_of_week: threshold.day_of_week || null, // Explicitly set null if empty
+        segment: threshold.segment || null // Explicitly set null if empty
       };
+      
+      console.log('Saving threshold:', thresholdToSave);
       
       // For new thresholds
       if (threshold.isNew) {
@@ -258,31 +265,33 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     } catch (error: any) {
       console.error('Error saving threshold:', error);
       
-      // Special handling for "name" column error - specific to our issue
-      if (error.message?.includes("column \"name\" of relation") || 
-          error.message?.includes("rota_revenue_thresholds") ||
-          error.message?.includes("field name does not exist") ||
-          error.message?.includes("schema cache")) {
-        
-        toast.error('Database schema issue. Please contact the administrator to add the "name" column to the revenue thresholds table.');
-        
-        updatedThresholds[index] = { 
-          ...updatedThresholds[index],
-          isSaving: false
-        };
-        setThresholds(updatedThresholds);
-        
-        // Set a more specific error message
-        setError('Missing "name" column in database schema. Please contact your administrator.');
+      // More detailed error handling
+      if (error.message) {
+        if (error.message?.includes("column \"name\" of relation") || 
+            error.message?.includes("rota_revenue_thresholds") ||
+            error.message?.includes("field name does not exist") ||
+            error.message?.includes("schema cache")) {
+          
+          toast.error('Database schema issue. Please contact the administrator to add the "name" column to the revenue thresholds table.');
+          setError('Missing "name" column in database schema. Please contact your administrator.');
+        } else if (error.message?.includes("violates not-null constraint")) {
+          toast.error('Required field missing. Please fill in all required fields.');
+          setError('Required field missing: ' + error.message);
+        } else {
+          toast.error(`Failed to save: ${error.message}`);
+          setError(error.message);
+        }
       } else {
-        // Reset the saving state on error
-        updatedThresholds[index] = { 
-          ...updatedThresholds[index],
-          isSaving: false
-        };
-        setThresholds(updatedThresholds);
-        toast.error(`Failed to save threshold: ${error.message || 'Unknown error'}`);
+        toast.error('Failed to save threshold');
+        setError('Unknown error saving threshold');
       }
+      
+      // Reset the saving state on error
+      updatedThresholds[index] = { 
+        ...updatedThresholds[index],
+        isSaving: false
+      };
+      setThresholds(updatedThresholds);
     }
   };
 
@@ -309,21 +318,24 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
           kp_max_staff: t.kp_max_staff,
           target_cost_percentage: t.target_cost_percentage,
           location_id: location.id,
-          day_of_week: t.day_of_week || null, // Make sure day_of_week is null if not set
-          segment: t.segment || null // Make sure segment is null if not set
+          day_of_week: t.day_of_week || null, // Explicitly set null if undefined or empty
+          segment: t.segment || null // Explicitly set null if undefined or empty
         }));
+        
+        console.log('Inserting new thresholds:', thresholdsToInsert);
         
         const { error } = await supabase
           .from('rota_revenue_thresholds')
           .insert(thresholdsToInsert);
           
         if (error) {
-          // Special handling for "name" column error - specific to our issue
+          // Better error handling
           if (error.message?.includes("column \"name\" of relation") || 
               error.message?.includes("rota_revenue_thresholds") ||
               error.message?.includes("field name does not exist")) {
-            
             throw new Error('Missing "name" column in database schema. Please ask your administrator to add this column.');
+          } else if (error.message?.includes("violates not-null constraint")) {
+            throw new Error('Required field missing: ' + error.message);
           }
           throw error;
         }
@@ -344,18 +356,19 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
             kp_min_staff: threshold.kp_min_staff,
             kp_max_staff: threshold.kp_max_staff,
             target_cost_percentage: threshold.target_cost_percentage,
-            day_of_week: threshold.day_of_week || null,
-            segment: threshold.segment || null
+            day_of_week: threshold.day_of_week || null, // Explicitly set null if undefined or empty
+            segment: threshold.segment || null // Explicitly set null if undefined or empty
           })
           .eq('id', threshold.id);
           
         if (error) {
-          // Special handling for "name" column error - specific to our issue
+          // Better error handling
           if (error.message?.includes("column \"name\" of relation") || 
               error.message?.includes("rota_revenue_thresholds") ||
               error.message?.includes("field name does not exist")) {
-            
             throw new Error('Missing "name" column in database schema. Please ask your administrator to add this column.');
+          } else if (error.message?.includes("violates not-null constraint")) {
+            throw new Error('Required field missing: ' + error.message);
           }
           throw error;
         }
@@ -368,7 +381,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     } catch (error: any) {
       console.error('Error saving thresholds:', error);
       setError(error.message || 'Failed to save thresholds');
-      toast.error('Failed to save thresholds');
+      toast.error('Failed to save thresholds: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }

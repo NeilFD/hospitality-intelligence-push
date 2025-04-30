@@ -1438,7 +1438,7 @@ export type Database = {
       rota_revenue_thresholds: {
         Row: {
           created_at: string
-          day_of_week: string
+          day_of_week: string | null
           foh_max_staff: number
           foh_min_staff: number
           id: string
@@ -1447,15 +1447,16 @@ export type Database = {
           kp_max_staff: number
           kp_min_staff: number
           location_id: string
+          name: string | null
           revenue_max: number
           revenue_min: number
-          segment: string
+          segment: string | null
           target_cost_percentage: number
           updated_at: string
         }
         Insert: {
           created_at?: string
-          day_of_week: string
+          day_of_week?: string | null
           foh_max_staff?: number
           foh_min_staff?: number
           id?: string
@@ -1464,15 +1465,16 @@ export type Database = {
           kp_max_staff?: number
           kp_min_staff?: number
           location_id: string
+          name?: string | null
           revenue_max: number
           revenue_min: number
-          segment: string
+          segment?: string | null
           target_cost_percentage?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
-          day_of_week?: string
+          day_of_week?: string | null
           foh_max_staff?: number
           foh_min_staff?: number
           id?: string
@@ -1481,9 +1483,10 @@ export type Database = {
           kp_max_staff?: number
           kp_min_staff?: number
           location_id?: string
+          name?: string | null
           revenue_max?: number
           revenue_min?: number
-          segment?: string
+          segment?: string | null
           target_cost_percentage?: number
           updated_at?: string
         }
