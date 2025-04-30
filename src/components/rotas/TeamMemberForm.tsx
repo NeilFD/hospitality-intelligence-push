@@ -12,6 +12,29 @@ import { Card } from '@/components/ui/card';
 import AvailabilityScheduler from './AvailabilityScheduler';
 import { Switch } from '@/components/ui/switch';
 
+// Full list of job titles from JobDataSection.tsx
+const FOH_JOB_TITLES = [
+  "Owner",
+  "General Manager",
+  "Assistant Manager",
+  "Bar Supervisor",
+  "FOH Supervisor",
+  "FOH Team",
+  "Bar Team",
+  "Runner"
+];
+
+const BOH_JOB_TITLES = [
+  "Head Chef",
+  "Sous Chef",
+  "Chef de Partie",
+  "Commis Chef",
+  "KP"
+];
+
+// All job titles combined
+const JOB_TITLES = [...FOH_JOB_TITLES, ...BOH_JOB_TITLES];
+
 export default function TeamMemberForm({ 
   isOpen, 
   onClose, 
@@ -26,7 +49,7 @@ export default function TeamMemberForm({
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
-    job_role_id: '',
+    job_title: '',
     photo_url: '',
     employment_type: 'hourly',
     wage_rate: 0,
@@ -43,7 +66,6 @@ export default function TeamMemberForm({
     favourite_dish: '',
     favourite_drink: '',
     about_me: '',
-    job_title: '',
     avatar_url: ''
   });
 
@@ -55,7 +77,7 @@ export default function TeamMemberForm({
       setFormData({
         first_name: teamMember.first_name || '',
         last_name: teamMember.last_name || '',
-        job_role_id: teamMember.job_role_id || '',
+        job_title: teamMember.job_title || '',
         photo_url: teamMember.photo_url || teamMember.avatar_url || '',
         employment_type: teamMember.employment_type || 'hourly',
         wage_rate: teamMember.wage_rate || 0,
@@ -72,7 +94,6 @@ export default function TeamMemberForm({
         favourite_dish: teamMember.favourite_dish || '',
         favourite_drink: teamMember.favourite_drink || '',
         about_me: teamMember.about_me || '',
-        job_title: teamMember.job_title || '',
         avatar_url: teamMember.avatar_url || teamMember.photo_url || ''
       });
       console.log("Form data populated:", formData);
@@ -81,7 +102,7 @@ export default function TeamMemberForm({
       setFormData({
         first_name: '',
         last_name: '',
-        job_role_id: '',
+        job_title: '',
         photo_url: '',
         employment_type: 'hourly',
         wage_rate: 0,
@@ -98,7 +119,6 @@ export default function TeamMemberForm({
         favourite_dish: '',
         favourite_drink: '',
         about_me: '',
-        job_title: '',
         avatar_url: ''
       });
     }
@@ -134,7 +154,7 @@ export default function TeamMemberForm({
       const profileData = {
         first_name: formData.first_name,
         last_name: formData.last_name,
-        job_role_id: formData.job_role_id,
+        job_title: formData.job_title,
         avatar_url: formData.photo_url || formData.avatar_url,
         employment_type: formData.employment_type,
         wage_rate: formData.wage_rate,
@@ -149,8 +169,7 @@ export default function TeamMemberForm({
         in_ft_education: formData.in_ft_education,
         favourite_dish: formData.favourite_dish,
         favourite_drink: formData.favourite_drink,
-        about_me: formData.about_me,
-        job_title: formData.job_title
+        about_me: formData.about_me
       };
       
       console.log("Updating profile with data:", profileData);
@@ -230,23 +249,16 @@ export default function TeamMemberForm({
               <div className="space-y-2">
                 <Label htmlFor="job_title">Job Title</Label>
                 <Select 
-                  value={formData.job_role_id} 
-                  onValueChange={(value) => {
-                    // When job_role_id changes, also update job_title with the selected role's title
-                    handleChange('job_role_id', value);
-                    const selectedRole = jobRoles?.find(role => role.id === value);
-                    if (selectedRole) {
-                      handleChange('job_title', selectedRole.title);
-                    }
-                  }}
+                  value={formData.job_title} 
+                  onValueChange={(value) => handleChange('job_title', value)}
                 >
                   <SelectTrigger id="job_title">
                     <SelectValue placeholder="Select a job title" />
                   </SelectTrigger>
                   <SelectContent>
-                    {jobRoles?.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.title}
+                    {JOB_TITLES.map((title) => (
+                      <SelectItem key={title} value={title}>
+                        {title}
                       </SelectItem>
                     ))}
                   </SelectContent>

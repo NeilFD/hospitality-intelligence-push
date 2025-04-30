@@ -15,6 +15,29 @@ import * as z from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 
+// Full list of job titles from JobDataSection.tsx
+const FOH_JOB_TITLES = [
+  "Owner",
+  "General Manager",
+  "Assistant Manager",
+  "Bar Supervisor",
+  "FOH Supervisor",
+  "FOH Team",
+  "Bar Team",
+  "Runner"
+];
+
+const BOH_JOB_TITLES = [
+  "Head Chef",
+  "Sous Chef",
+  "Chef de Partie",
+  "Commis Chef",
+  "KP"
+];
+
+// All job titles combined
+const JOB_TITLES = [...FOH_JOB_TITLES, ...BOH_JOB_TITLES];
+
 // Define the form validation schema
 const formSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -23,7 +46,6 @@ const formSchema = z.object({
   role: z.enum(['GOD', 'Super User', 'Manager', 'Team Member', 'Owner']),
   jobTitle: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  jobRoleId: z.string().optional(),
   employmentType: z.enum(['hourly', 'salaried', 'contract']),
   wageRate: z.number().min(0).optional(),
   annualSalary: z.number().min(0).optional(),
@@ -31,7 +53,7 @@ const formSchema = z.object({
   inFtEducation: z.boolean().default(false)
 });
 
-export default function NewUserProfileForm({ isOpen, onClose, onComplete, jobRoles, locationId }) {
+export default function NewUserProfileForm({ isOpen, onClose, onComplete, locationId }) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
   const [sendInvitation, setSendInvitation] = useState(true);
@@ -45,7 +67,6 @@ export default function NewUserProfileForm({ isOpen, onClose, onComplete, jobRol
       role: 'Team Member',
       jobTitle: '',
       password: '',
-      jobRoleId: '',
       employmentType: 'hourly',
       wageRate: 0,
       annualSalary: 0,
@@ -87,7 +108,7 @@ export default function NewUserProfileForm({ isOpen, onClose, onComplete, jobRol
       }
       
       // 2. Create a team member record linked to the user
-      const { employmentType, wageRate, annualSalary, contractorRate, inFtEducation, jobRoleId } = formData;
+      const { employmentType, wageRate, annualSalary, contractorRate, inFtEducation } = formData;
       
       // Create full name from first name and last name
       const fullName = `${firstName} ${lastName}`;
@@ -102,7 +123,6 @@ export default function NewUserProfileForm({ isOpen, onClose, onComplete, jobRol
           annual_salary: employmentType === 'salaried' ? annualSalary : 0,
           contractor_rate: employmentType === 'contract' ? contractorRate : 0,
           in_ft_education: inFtEducation,
-          job_role_id: jobRoleId || null,
           location_id: locationId,
         });
         
@@ -261,22 +281,22 @@ export default function NewUserProfileForm({ isOpen, onClose, onComplete, jobRol
                   
                   <FormField
                     control={form.control}
-                    name="jobRoleId"
+                    name="jobTitle"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Job Role</FormLabel>
+                        <FormLabel>Job Title</FormLabel>
                         <FormControl>
                           <Select 
                             value={field.value} 
                             onValueChange={field.onChange}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select job role" />
+                              <SelectValue placeholder="Select job title" />
                             </SelectTrigger>
                             <SelectContent>
-                              {jobRoles?.map(role => (
-                                <SelectItem key={role.id} value={role.id}>
-                                  {role.title}
+                              {JOB_TITLES.map(title => (
+                                <SelectItem key={title} value={title}>
+                                  {title}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -287,20 +307,6 @@ export default function NewUserProfileForm({ isOpen, onClose, onComplete, jobRol
                     )}
                   />
                 </div>
-                
-                <FormField
-                  control={form.control}
-                  name="jobTitle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Title</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Job title" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 
                 <Button type="button" onClick={() => setActiveTab('employment')} className="mt-2">
                   Next: Employment Details
