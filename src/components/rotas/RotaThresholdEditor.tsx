@@ -76,6 +76,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       
       const formattedThresholds = (data || []).map(threshold => ({
         ...threshold,
+        name: `${threshold.day_of_week.charAt(0).toUpperCase() + threshold.day_of_week.slice(1)} ${threshold.segment.charAt(0).toUpperCase() + threshold.segment.slice(1)}`,
         isExpanded: false
       }));
       
@@ -191,33 +192,29 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     try {
       // Make sure location_id is set before saving
       const thresholdToSave = {
-        ...threshold,
-        location_id: location.id,
-        isNew: undefined,
-        isExpanded: undefined,
-        isSaving: undefined
+        day_of_week: threshold.day_of_week,
+        segment: threshold.segment,
+        revenue_min: threshold.revenue_min,
+        revenue_max: threshold.revenue_max,
+        foh_min_staff: threshold.foh_min_staff,
+        foh_max_staff: threshold.foh_max_staff,
+        kitchen_min_staff: threshold.kitchen_min_staff,
+        kitchen_max_staff: threshold.kitchen_max_staff,
+        kp_min_staff: threshold.kp_min_staff,
+        kp_max_staff: threshold.kp_max_staff,
+        target_cost_percentage: threshold.target_cost_percentage,
+        location_id: location.id
       };
+      
+      // For debugging
+      console.log("Location ID:", location.id);
       
       // For new thresholds
       if (threshold.isNew) {
         console.log("Creating new threshold:", thresholdToSave);
         const { data, error } = await supabase
           .from('rota_revenue_thresholds')
-          .insert({
-            name: thresholdToSave.name,
-            location_id: location.id, 
-            day_of_week: thresholdToSave.day_of_week,
-            segment: thresholdToSave.segment,
-            revenue_min: thresholdToSave.revenue_min,
-            revenue_max: thresholdToSave.revenue_max,
-            foh_min_staff: thresholdToSave.foh_min_staff,
-            foh_max_staff: thresholdToSave.foh_max_staff,
-            kitchen_min_staff: thresholdToSave.kitchen_min_staff,
-            kitchen_max_staff: thresholdToSave.kitchen_max_staff,
-            kp_min_staff: thresholdToSave.kp_min_staff,
-            kp_max_staff: thresholdToSave.kp_max_staff,
-            target_cost_percentage: thresholdToSave.target_cost_percentage
-          })
+          .insert(thresholdToSave)
           .select('*')
           .single();
           
@@ -228,30 +225,20 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         
         // Update threshold with returned ID and mark as saved (not new anymore)
         updatedThresholds[index] = { 
+          ...updatedThresholds[index],
           ...data,
+          name: threshold.name, // Keep the name in our local state
           isExpanded: false,
-          isSaving: false
+          isSaving: false,
+          isNew: false
         };
       } 
       // For existing thresholds
       else {
-        console.log("Updating threshold:", thresholdToSave);
+        console.log("Updating threshold:", threshold.id, thresholdToSave);
         const { error } = await supabase
           .from('rota_revenue_thresholds')
-          .update({
-            name: thresholdToSave.name,
-            day_of_week: thresholdToSave.day_of_week,
-            segment: thresholdToSave.segment,
-            revenue_min: thresholdToSave.revenue_min,
-            revenue_max: thresholdToSave.revenue_max,
-            foh_min_staff: thresholdToSave.foh_min_staff,
-            foh_max_staff: thresholdToSave.foh_max_staff,
-            kitchen_min_staff: thresholdToSave.kitchen_min_staff,
-            kitchen_max_staff: thresholdToSave.kitchen_max_staff,
-            kp_min_staff: thresholdToSave.kp_min_staff,
-            kp_max_staff: thresholdToSave.kp_max_staff,
-            target_cost_percentage: thresholdToSave.target_cost_percentage
-          })
+          .update(thresholdToSave)
           .eq('id', threshold.id);
           
         if (error) {
@@ -270,7 +257,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       
       setThresholds(updatedThresholds);
       toast.success('Threshold saved successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving threshold:', error);
       // Reset the saving state on error
       updatedThresholds[index] = { 
@@ -278,7 +265,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         isSaving: false
       };
       setThresholds(updatedThresholds);
-      toast.error('Failed to save threshold');
+      toast.error(`Failed to save threshold: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -293,8 +280,6 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       // Insert new thresholds
       if (newThresholds.length > 0) {
         const thresholdsToInsert = newThresholds.map(t => ({
-          name: t.name,
-          location_id: location.id,
           day_of_week: t.day_of_week,
           segment: t.segment,
           revenue_min: t.revenue_min,
@@ -305,7 +290,8 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
           kitchen_max_staff: t.kitchen_max_staff,
           kp_min_staff: t.kp_min_staff,
           kp_max_staff: t.kp_max_staff,
-          target_cost_percentage: t.target_cost_percentage
+          target_cost_percentage: t.target_cost_percentage,
+          location_id: location.id
         }));
         
         const { error } = await supabase
@@ -320,7 +306,6 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         const { error } = await supabase
           .from('rota_revenue_thresholds')
           .update({
-            name: threshold.name,
             day_of_week: threshold.day_of_week,
             segment: threshold.segment,
             revenue_min: threshold.revenue_min,
@@ -389,7 +374,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                           )}
                         </Button>
                         <h3 className="text-lg font-medium">
-                          {threshold.name || `Threshold #${index + 1}`}
+                          {threshold.name}
                         </h3>
                       </div>
                       <div className="flex items-center gap-2">
