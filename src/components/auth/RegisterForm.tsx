@@ -145,20 +145,47 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             
           // If this invitation is linked to an existing profile, update the auth ID
           if (invitationData?.profile_id) {
-            // Update the profile ID to match the new auth user
-            await supabase
+            console.log("Linking existing profile:", invitationData.profile_id, "to new auth user:", data.user.id);
+            
+            // Get the existing profile data first
+            const { data: existingProfile, error: fetchError } = await supabase
               .from('profiles')
-              .update({ 
-                id: data.user.id,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', invitationData.profile_id);
+              .select('*')
+              .eq('id', invitationData.profile_id)
+              .single();
               
-            // Then delete the temporary profile entry
-            await supabase
-              .from('profiles')
-              .delete()
-              .eq('id', invitationData.profile_id);
+            if (fetchError) {
+              console.error("Error fetching existing profile:", fetchError);
+            } else if (existingProfile) {
+              console.log("Found existing profile:", existingProfile);
+              
+              // Create a new profile with the auth user ID and copy all the data from the existing profile
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  ...existingProfile,
+                  id: data.user.id, // Use the new auth user ID
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (insertError) {
+                console.error("Error creating new profile:", insertError);
+              } else {
+                console.log("Created new profile with auth ID");
+                
+                // Then delete the temporary profile entry
+                const { error: deleteError } = await supabase
+                  .from('profiles')
+                  .delete()
+                  .eq('id', invitationData.profile_id);
+                  
+                if (deleteError) {
+                  console.error("Error deleting temporary profile:", deleteError);
+                } else {
+                  console.log("Successfully deleted temporary profile");
+                }
+              }
+            }
           }
             
           console.log("Invitation marked as claimed and profile updated");
