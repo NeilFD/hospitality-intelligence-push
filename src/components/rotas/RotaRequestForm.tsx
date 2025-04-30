@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,12 +9,14 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Calendar as CalendarIcon, Loader2, Zap } from 'lucide-react';
-import { format, addDays, startOfWeek, parseISO } from 'date-fns';
+import { format, addDays, startOfWeek, parseISO, endOfWeek } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuthStore } from '@/services/auth-service';
+import { getRevenueForecastsForRange } from '@/services/forecast-service';
+import { RevenueForecast } from '@/types/master-record-types';
 
 type RotaRequestFormProps = {
   location: any;
@@ -29,6 +32,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
   const [thresholds, setThresholds] = useState<any[]>([]);
   const [previousRequests, setPreviousRequests] = useState<any[]>([]);
   const [loadingPrevious, setLoadingPrevious] = useState(true);
+  const [isFetchingForecasts, setIsFetchingForecasts] = useState(false);
   
   const { handleSubmit, reset } = useForm();
 
@@ -58,8 +62,49 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       });
       
       setRevenueForecasts(initialForecasts);
+      
+      // Fetch existing forecasts for this week
+      fetchExistingForecasts(weekStart, addDays(weekStart, 6));
     }
   }, [date]);
+
+  const fetchExistingForecasts = async (startDate: Date, endDate: Date) => {
+    try {
+      setIsFetchingForecasts(true);
+      
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
+      
+      // Get forecasts from the forecast service
+      const forecasts = await getRevenueForecastsForRange(startDateStr, endDateStr);
+      
+      if (forecasts && forecasts.length > 0) {
+        const formattedForecasts: {[key: string]: string} = {};
+        
+        // Pre-fill with existing forecast data
+        forecasts.forEach(forecast => {
+          formattedForecasts[forecast.date] = Math.round(forecast.totalRevenue).toString();
+        });
+        
+        // Update any empty values with defaults
+        weekDates.forEach(day => {
+          const dateKey = format(day, 'yyyy-MM-dd');
+          if (!formattedForecasts[dateKey]) {
+            formattedForecasts[dateKey] = '';
+          }
+        });
+        
+        setRevenueForecasts(formattedForecasts);
+        toast.info('Revenue forecasts loaded', {
+          description: 'Forecast data has been pre-filled from existing forecasts'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching revenue forecasts:', error);
+    } finally {
+      setIsFetchingForecasts(false);
+    }
+  };
 
   const fetchPreviousRequests = async () => {
     setLoadingPrevious(true);
@@ -314,7 +359,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
                           <p className="text-xs text-muted-foreground">{format(day, 'dd/MM')}</p>
                           <Input
                             id={`revenue-${index}`}
-                            placeholder="£"
+                            placeholder={isFetchingForecasts ? "Loading..." : "£"}
                             type="number"
                             min="0"
                             value={revenueForecasts[format(day, 'yyyy-MM-dd')] || ''}
