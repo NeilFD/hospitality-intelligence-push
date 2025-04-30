@@ -132,7 +132,10 @@ export class RotaSchedulingAlgorithm {
           continue;
         }
         
-        console.log(`Using threshold "${threshold.name}" for ${date} with revenue ${dayRevenue}`);
+        // For logging, use threshold name if available or create a formatted band name
+        const thresholdName = threshold.name || 
+          `Revenue Band: £${threshold.revenue_min} - £${threshold.revenue_max}`;
+        console.log(`Using threshold "${thresholdName}" for ${date} with revenue ${dayRevenue}`);
         
         // Process for day segment
         const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
@@ -380,7 +383,7 @@ export class RotaSchedulingAlgorithm {
     );
     
     if (applicableThreshold) {
-      console.log(`Found threshold "${applicableThreshold.name}" for revenue ${revenue}`);
+      console.log(`Found threshold "${applicableThreshold.name || 'Unnamed band'}" for revenue ${revenue}`);
       return applicableThreshold;
     }
     
