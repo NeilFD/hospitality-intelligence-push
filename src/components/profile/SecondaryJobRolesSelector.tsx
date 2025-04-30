@@ -42,6 +42,7 @@ export default function SecondaryJobRolesSelector({
   disabled = false 
 }: SecondaryJobRolesSelectorProps) {
   const [open, setOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
   
   // Create a safe local copy of the selected roles
   const [localSelectedRoles, setLocalSelectedRoles] = React.useState<string[]>([]);
@@ -61,6 +62,13 @@ export default function SecondaryJobRolesSelector({
     // Make sure JOB_TITLES exists and is an array
     return JOB_TITLES.filter(title => title !== mainJobTitle);
   }, [mainJobTitle]);
+
+  // Filter job titles based on search term
+  const filteredJobTitles = React.useMemo(() => {
+    return availableJobTitles.filter(title => 
+      title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [availableJobTitles, searchTerm]);
   
   const handleSelect = (role: string) => {
     // Use localSelectedRoles for consistent state management
@@ -71,6 +79,7 @@ export default function SecondaryJobRolesSelector({
     // Update both local state and parent component
     setLocalSelectedRoles(updatedRoles);
     onChange(updatedRoles);
+    // We no longer close the dropdown here
   };
 
   const handleRemove = (role: string) => {
@@ -127,20 +136,19 @@ export default function SecondaryJobRolesSelector({
                   type="text"
                   placeholder="Search for roles..."
                   className="w-full p-2 border border-gray-200 rounded-md text-sm mb-2"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               
               <div className="p-1">
-                {availableJobTitles.length === 0 ? (
-                  <div className="p-2 text-sm text-gray-500">No roles available.</div>
+                {filteredJobTitles.length === 0 ? (
+                  <div className="p-2 text-sm text-gray-500">No roles found.</div>
                 ) : (
-                  availableJobTitles.map(role => (
+                  filteredJobTitles.map(role => (
                     <div
                       key={role}
-                      onClick={() => {
-                        handleSelect(role);
-                        setOpen(false);
-                      }}
+                      onClick={() => handleSelect(role)}
                       className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-md cursor-pointer text-sm"
                     >
                       <div className="w-4 h-4 flex items-center justify-center">
