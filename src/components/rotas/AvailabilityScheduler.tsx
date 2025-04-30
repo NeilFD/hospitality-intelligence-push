@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -160,14 +161,19 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectTrigger className="w-[110px] h-8">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="max-h-[200px] overflow-auto" align="start">
-                          <ScrollArea className="h-[200px]">
-                            {timeSlots.map(slot => (
-                              <SelectItem key={slot.value} value={slot.value}>
-                                {slot.label}
-                              </SelectItem>
-                            ))}
-                          </ScrollArea>
+                        <SelectContent 
+                          className="max-h-[200px]" 
+                          style={{ overflowY: 'auto' }}
+                          align="start"
+                        >
+                          {timeSlots.map(slot => (
+                            <SelectItem 
+                              key={slot.value} 
+                              value={slot.value}
+                            >
+                              {slot.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       
@@ -180,18 +186,20 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectTrigger className="w-[110px] h-8">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="max-h-[200px] overflow-auto" align="start">
-                          <ScrollArea className="h-[200px]">
-                            {timeSlots.map(slot => (
-                              <SelectItem 
-                                key={slot.value} 
-                                value={slot.value}
-                                disabled={slot.value <= block.start}
-                              >
-                                {slot.label}
-                              </SelectItem>
-                            ))}
-                          </ScrollArea>
+                        <SelectContent 
+                          className="max-h-[200px]" 
+                          style={{ overflowY: 'auto' }}
+                          align="start"
+                        >
+                          {timeSlots.map(slot => (
+                            <SelectItem 
+                              key={slot.value} 
+                              value={slot.value}
+                              disabled={slot.value <= block.start}
+                            >
+                              {slot.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       
