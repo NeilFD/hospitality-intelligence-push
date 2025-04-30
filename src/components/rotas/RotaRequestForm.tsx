@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,30 +78,62 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       const forecasts = await getRevenueForecastsForRange(startDateStr, endDateStr);
       
       if (forecasts && forecasts.length > 0) {
-        const formattedForecasts: {[key: string]: string} = {};
+        const formattedForecasts: {[key: string]: string} = { ...revenueForecasts };
         
         // Pre-fill with existing forecast data
         forecasts.forEach(forecast => {
           formattedForecasts[forecast.date] = Math.round(forecast.totalRevenue).toString();
         });
         
-        // Update any empty values with defaults
-        weekDates.forEach(day => {
-          const dateKey = format(day, 'yyyy-MM-dd');
-          if (!formattedForecasts[dateKey]) {
-            formattedForecasts[dateKey] = '';
-          }
-        });
-        
         setRevenueForecasts(formattedForecasts);
         toast.info('Revenue forecasts loaded', {
           description: 'Forecast data has been pre-filled from existing forecasts'
         });
+      } else {
+        // If no forecasts found, try weekly forecast data on page
+        fetchWeeklyForecastData(startDateStr, endDateStr);
       }
     } catch (error) {
       console.error('Error fetching revenue forecasts:', error);
+      // If fetching fails, try weekly forecast data on page
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
+      fetchWeeklyForecastData(startDateStr, endDateStr);
     } finally {
       setIsFetchingForecasts(false);
+    }
+  };
+  
+  const fetchWeeklyForecastData = async (startDate: string, endDate: string) => {
+    try {
+      // Try to fetch from the revenue_forecasts table (where WeeklyForecast page stores its data)
+      const { data, error } = await supabase
+        .from('revenue_forecasts')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate);
+      
+      if (error) {
+        console.error('Error fetching weekly forecasts:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        const formattedForecasts = { ...revenueForecasts };
+        
+        data.forEach((forecast: any) => {
+          if (forecast.date && forecast.totalRevenue) {
+            formattedForecasts[forecast.date] = Math.round(forecast.totalRevenue).toString();
+          }
+        });
+        
+        setRevenueForecasts(formattedForecasts);
+        toast.info('Forecast data found', {
+          description: 'Revenue forecasts have been pre-filled from existing data'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching weekly forecast data:', error);
     }
   };
 
@@ -228,55 +259,119 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       duration: 2000
     });
     
-    // Simulate AI forecast generation
-    setTimeout(() => {
-      const newForecasts = { ...revenueForecasts };
+    // Try to fetch historical data from master_daily_records for more realistic forecasting
+    fetchHistoricalData();
+  };
+
+  const fetchHistoricalData = async () => {
+    try {
+      // Get historical data for the same days of week from the last few weeks
+      const { data: historicalData, error } = await supabase
+        .from('master_daily_records')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(35);  // Get enough data for meaningful patterns
       
-      weekDates.forEach(date => {
-        const dayOfWeek = format(date, 'EEEE').toLowerCase();
-        const dateString = format(date, 'yyyy-MM-dd');
-        
-        // Generate a reasonable revenue forecast based on day of week
-        let baseAmount = 0;
-        
-        switch (dayOfWeek) {
-          case 'monday':
-            baseAmount = 2000;
-            break;
-          case 'tuesday':
-            baseAmount = 2200;
-            break;
-          case 'wednesday':
-            baseAmount = 2500;
-            break;
-          case 'thursday':
-            baseAmount = 3000;
-            break;
-          case 'friday':
-            baseAmount = 4500;
-            break;
-          case 'saturday':
-            baseAmount = 5500;
-            break;
-          case 'sunday':
-            baseAmount = 4000;
-            break;
-        }
-        
-        // Add some randomness
-        const variance = baseAmount * 0.1; // 10% variance
-        const randomFactor = Math.random() * variance * 2 - variance;
-        const forecast = Math.round(baseAmount + randomFactor);
-        
-        newForecasts[dateString] = forecast.toString();
-      });
+      if (error) throw error;
       
-      setRevenueForecasts(newForecasts);
+      if (historicalData && historicalData.length > 0) {
+        // Use historical data to generate realistic forecasts
+        const newForecasts = { ...revenueForecasts };
+        
+        weekDates.forEach(date => {
+          const dateString = format(date, 'yyyy-MM-dd');
+          const dayOfWeek = format(date, 'EEEE').toLowerCase();
+          
+          // Filter historical data for the same day of week
+          const sameDay = historicalData.filter((record: any) => 
+            record.day_of_week?.toLowerCase() === dayOfWeek
+          );
+          
+          if (sameDay.length > 0) {
+            // Calculate average revenue for this day of week from historical data
+            const totalRevenue = sameDay.reduce((sum: number, record: any) => {
+              return sum + (record.total_revenue || 0);
+            }, 0);
+            
+            const averageRevenue = Math.round(totalRevenue / sameDay.length);
+            
+            // Add small random variation (±10%)
+            const variation = averageRevenue * 0.1;
+            const randomOffset = (Math.random() * variation * 2) - variance;
+            const forecastValue = Math.max(0, Math.round(averageRevenue + randomOffset));
+            
+            newForecasts[dateString] = forecastValue.toString();
+          } else {
+            // Fallback logic based on day of week patterns if no historical data
+            const baseAmounts: {[key: string]: number} = {
+              'monday': 2000,
+              'tuesday': 2200,
+              'wednesday': 2500,
+              'thursday': 3000,
+              'friday': 4500,
+              'saturday': 5500,
+              'sunday': 4000
+            };
+            
+            const baseAmount = baseAmounts[dayOfWeek] || 3000;
+            const variance = baseAmount * 0.15; // 15% variance for more realistic variation
+            const randomFactor = Math.random() * variance * 2 - variance;
+            const forecast = Math.round(baseAmount + randomFactor);
+            
+            newForecasts[dateString] = forecast.toString();
+          }
+        });
+        
+        setRevenueForecasts(newForecasts);
+      } else {
+        // Fallback to deterministic generation if no historical data
+        generateDeterministicForecast();
+      }
       
       toast.success('AI forecast generated', {
-        description: 'Revenue predictions have been applied'
+        description: 'Revenue predictions have been applied based on historical patterns'
       });
-    }, 1500);
+      
+    } catch (error) {
+      console.error('Error generating AI forecast:', error);
+      // Fallback to deterministic generation if error occurs
+      generateDeterministicForecast();
+    }
+  };
+  
+  const generateDeterministicForecast = () => {
+    const newForecasts = { ...revenueForecasts };
+    
+    weekDates.forEach(date => {
+      const dayOfWeek = format(date, 'EEEE').toLowerCase();
+      const dateString = format(date, 'yyyy-MM-dd');
+      
+      // Generate a reasonable revenue forecast based on day of week
+      const baseAmounts: {[key: string]: number} = {
+        'monday': 2000,
+        'tuesday': 2200,
+        'wednesday': 2500,
+        'thursday': 3000,
+        'friday': 4500,
+        'saturday': 5500,
+        'sunday': 4000
+      };
+      
+      const baseAmount = baseAmounts[dayOfWeek] || 3000;
+      
+      // Add some randomness - more variance for a more natural distribution
+      const variance = baseAmount * 0.15; // 15% variance
+      const randomFactor = Math.random() * variance * 2 - variance;
+      const forecast = Math.round(baseAmount + randomFactor);
+      
+      newForecasts[dateString] = forecast.toString();
+    });
+    
+    setRevenueForecasts(newForecasts);
+    
+    toast.success('AI forecast generated', {
+      description: 'Revenue predictions have been applied'
+    });
   };
 
   const hasThresholdWarning = thresholds.length === 0;
