@@ -124,7 +124,9 @@ const TeamDashboard: React.FC = () => {
             </div> : error ? <div className="w-full flex items-center justify-center py-4 text-red-500">
               <AlertCircle className="h-5 w-5 mr-2" />
               {error}
-            </div> : filteredMembers.length === 0 ? <p className="text-gray-500 italic">No team members found</p> : filteredMembers.map(member => <Link key={member.id} to={`/profile/${member.id}`} className="flex flex-col items-center gap-1 bg-gray-50 hover:bg-gray-100 transition-colors p-3 rounded-lg">
+            </div> : filteredMembers.length === 0 ? <p className="text-gray-500 italic">No team members found</p> : filteredMembers.map(member => (
+              // Fix the link to use absolute path starting with /profile/
+              <Link key={member.id} to={`/profile/${member.id}`} className="flex flex-col items-center gap-1 bg-gray-50 hover:bg-gray-100 transition-colors p-3 rounded-lg">
                 <Avatar className="h-16 w-16 border-2 border-hi-purple-light/30">
                   {member.avatar_url ? <AvatarImage src={member.avatar_url} alt={`${member.first_name} ${member.last_name}`} /> : <AvatarFallback className="bg-hi-purple-light/20 text-hi-purple text-lg">
                       {member.first_name?.[0] || ''}{member.last_name?.[0] || ''}
@@ -134,7 +136,8 @@ const TeamDashboard: React.FC = () => {
                   {member.first_name} {member.last_name}
                 </span>
                 <span className="text-xs text-gray-500">{member.role || 'Team Member'}</span>
-              </Link>)}
+              </Link>
+            ))}
         </div>
       </div>
       
