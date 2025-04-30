@@ -3,7 +3,6 @@ import React from 'react';
 import { Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Command, CommandEmpty, CommandInput, CommandItem } from '@/components/ui/command';
-import { SafeCommandGroup } from '@/components/ui/safe-command-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { SafeErrorBoundary } from '@/components/ui/safe-error-boundary';
@@ -61,7 +60,7 @@ export default function SecondaryJobRolesSelector({
   
   // Filter out the main job title from available options
   const availableJobTitles = React.useMemo(() => {
-    if (!JOB_TITLES || JOB_TITLES.length === 0) return [];
+    // Make sure JOB_TITLES exists and is an array
     return JOB_TITLES.filter(title => title !== mainJobTitle);
   }, [mainJobTitle]);
   
@@ -80,15 +79,6 @@ export default function SecondaryJobRolesSelector({
     const updatedRoles = localSelectedRoles.filter(r => r !== role);
     setLocalSelectedRoles(updatedRoles);
     onChange(updatedRoles);
-  };
-  
-  // Check if we have valid job titles to display - ensure we have an actual array with items
-  const hasAvailableJobTitles = Array.isArray(availableJobTitles) && availableJobTitles.length > 0;
-
-  // Force open state for debugging
-  const handleOpenPopover = () => {
-    setOpen(true);
-    console.log('Opening popover, available job titles:', availableJobTitles);
   };
 
   return (
@@ -117,58 +107,42 @@ export default function SecondaryJobRolesSelector({
       </div>
       
       {!disabled && (
-        <Popover 
-          open={open} 
-          onOpenChange={setOpen}
-        >
+        <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
               size="sm" 
               className="h-8 border-dashed"
-              onClick={handleOpenPopover}
             >
               Add secondary roles
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="p-0 z-50 bg-white shadow-md w-56" align="start">
-            {hasAvailableJobTitles ? (
-              <SafeErrorBoundary>
-                <Command>
-                  <CommandInput placeholder="Search for roles..." />
-                  <CommandEmpty>No roles found.</CommandEmpty>
-                  
-                  {/* Ensure we only render the command group when there are items */}
-                  <div className="max-h-[200px] overflow-y-auto overflow-x-hidden">
-                    {availableJobTitles.length > 0 && (
-                      <ul className="py-1">
-                        {availableJobTitles.map(role => (
-                          <CommandItem
-                            key={role}
-                            value={role}
-                            onSelect={() => {
-                              handleSelect(role);
-                              // Close popover after selection
-                              setOpen(false);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 flex items-center justify-center">
-                                {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
-                              </div>
-                              <span>{role}</span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </Command>
-              </SafeErrorBoundary>
-            ) : (
-              <div className="p-2 text-sm text-center">No available roles to select</div>
-            )}
+          
+          <PopoverContent className="p-0 w-56 bg-white shadow-md" align="start">
+            <Command>
+              <CommandInput placeholder="Search for roles..." />
+              <CommandEmpty>No roles found.</CommandEmpty>
+              
+              <div className="max-h-[200px] overflow-y-auto">
+                {availableJobTitles.map(role => (
+                  <CommandItem
+                    key={role}
+                    value={role}
+                    onSelect={() => {
+                      handleSelect(role);
+                      setOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                      </div>
+                      <span>{role}</span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </div>
+            </Command>
           </PopoverContent>
         </Popover>
       )}
