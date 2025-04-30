@@ -133,7 +133,8 @@ const SelectScrollableViewport = React.forwardRef<
       .select-scrollable-viewport::-webkit-scrollbar {
         width: 16px;
         height: 16px;
-        display: block;
+        display: block !important;
+        -webkit-appearance: none;
       }
       
       .select-scrollable-viewport::-webkit-scrollbar-track {
@@ -162,6 +163,25 @@ const SelectScrollableViewport = React.forwardRef<
       /* Make sure scrollbar is always visible */
       .select-scrollable-viewport {
         overflow-y: scroll !important;
+        overflow: -moz-scrollbars-vertical !important;
+        overflow: -webkit-scrollbars-vertical !important;
+      }
+      
+      /* Safari specific scrollbar styles */
+      @supports (-webkit-overflow-scrolling: touch) {
+        .select-scrollable-viewport {
+          -webkit-overflow-scrolling: touch;
+        }
+        .select-scrollable-viewport::-webkit-scrollbar {
+          width: 18px;
+          background-color: rgba(0, 0, 0, 0.1);
+        }
+        .select-scrollable-viewport::-webkit-scrollbar-thumb {
+          background-color: rgba(155, 135, 245, 0.8);
+          border-radius: 10px;
+          border: 2px solid transparent;
+          background-clip: padding-box;
+        }
       }
     `;
     
@@ -181,7 +201,7 @@ const SelectScrollableViewport = React.forwardRef<
         if (viewportRef) viewportRef.current = node as HTMLDivElement;
       }}
       className={cn(
-        "p-1 pr-3 cursor-grab active:cursor-grabbing select-scrollable-viewport",
+        "p-1 pr-3 cursor-grab active:cursor-grabbing select-scrollable-viewport safari-scrollbar",
         position === "popper" &&
           "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
         className
