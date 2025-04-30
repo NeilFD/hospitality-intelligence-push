@@ -66,7 +66,8 @@ export default function TeamMemberForm({
     favourite_dish: '',
     favourite_drink: '',
     about_me: '',
-    avatar_url: ''
+    avatar_url: '',
+    available_for_rota: true // Added default value for the new field
   });
 
   // If editing, populate the form with the team member data
@@ -94,7 +95,8 @@ export default function TeamMemberForm({
         favourite_dish: teamMember.favourite_dish || '',
         favourite_drink: teamMember.favourite_drink || '',
         about_me: teamMember.about_me || '',
-        avatar_url: teamMember.avatar_url || teamMember.photo_url || ''
+        avatar_url: teamMember.avatar_url || teamMember.photo_url || '',
+        available_for_rota: teamMember.available_for_rota !== undefined ? teamMember.available_for_rota : true // Add this line
       });
       console.log("Form data populated:", formData);
     } else {
@@ -119,7 +121,8 @@ export default function TeamMemberForm({
         favourite_dish: '',
         favourite_drink: '',
         about_me: '',
-        avatar_url: ''
+        avatar_url: '',
+        available_for_rota: true // Add this line
       });
     }
     
@@ -169,7 +172,8 @@ export default function TeamMemberForm({
         in_ft_education: formData.in_ft_education,
         favourite_dish: formData.favourite_dish,
         favourite_drink: formData.favourite_drink,
-        about_me: formData.about_me
+        about_me: formData.about_me,
+        available_for_rota: formData.available_for_rota // Add this line
       };
       
       console.log("Updating profile with data:", profileData);
@@ -367,6 +371,15 @@ export default function TeamMemberForm({
                   onCheckedChange={(checked) => handleChange('in_ft_education', checked)}
                 />
                 <Label htmlFor="in_ft_education">In Full-Time Education</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="available_for_rota"
+                  checked={formData.available_for_rota}
+                  onCheckedChange={(checked) => handleChange('available_for_rota', checked)}
+                />
+                <Label htmlFor="available_for_rota">Available for Scheduling</Label>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
