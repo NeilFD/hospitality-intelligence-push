@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, ChevronRight, Brain, MessageSquare, Calendar } from 'lucide-react';
+import { BarChart, ChevronRight, Brain, MessageSquare, Calendar, FileEdit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useSetCurrentModule } from '@/lib/store';
@@ -63,7 +63,7 @@ const HiQDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-purple-200 bg-gradient-to-br from-white to-purple-50">
           <CardHeader className="border-b border-purple-100 bg-purple-50/50">
             <CardTitle className="flex items-center gap-2">
@@ -141,7 +141,7 @@ const HiQDashboard: React.FC = () => {
               <span className="text-blue-900">Staff Rotas</span>
             </CardTitle>
             <CardDescription>
-              Intelligent staff scheduling and management
+              View and manage weekly staff schedules
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -153,7 +153,7 @@ const HiQDashboard: React.FC = () => {
                 <div className="space-y-1">
                   <p className="text-sm font-medium leading-none">Rota Manager</p>
                   <p className="text-sm text-muted-foreground">
-                    Configure and optimize staff schedules 
+                    View and manage weekly staff schedules
                   </p>
                 </div>
               </div>
@@ -161,6 +161,41 @@ const HiQDashboard: React.FC = () => {
                 <Button asChild variant="outline" className="border-blue-200 hover:bg-blue-100 hover:text-blue-900">
                   <Link to="/hiq/rotas">
                     Manage Rotas
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-green-200 bg-gradient-to-br from-white to-green-50">
+          <CardHeader className="border-b border-green-100 bg-green-50/50">
+            <CardTitle className="flex items-center gap-2">
+              <FileEdit className="h-5 w-5 text-green-600" />
+              <span className="text-green-900">Rota Scheduling</span>
+            </CardTitle>
+            <CardDescription>
+              AI-powered rota scheduling and optimization
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <FileEdit className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">AI Rota Engine</p>
+                  <p className="text-sm text-muted-foreground">
+                    Auto-generate optimal staff schedules
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button asChild variant="outline" className="border-green-200 hover:bg-green-100 hover:text-green-900">
+                  <Link to="/hiq/rota-scheduling">
+                    Schedule Rotas
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>

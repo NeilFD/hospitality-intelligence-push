@@ -58,6 +58,8 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
         setActiveHiqItem('chat');
       } else if (path.includes('/hiq/rotas')) {
         setActiveHiqItem('rotas');
+      } else if (path.includes('/hiq/rota-scheduling')) {
+        setActiveHiqItem('rota-scheduling');
       } else {
         setActiveHiqItem('dashboard');
       }
@@ -102,6 +104,12 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
           label="Staff Rotas" 
           icon="calendar" 
           active={activeHiqItem === 'rotas'} 
+        />
+        <NavItem 
+          to="/hiq/rota-scheduling" 
+          label="Rota Scheduling" 
+          icon="calendar" 
+          active={activeHiqItem === 'rota-scheduling'} 
         />
       </div>
     );
