@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,6 +53,24 @@ export default function RotaScheduling() {
       }
       
       setLocation(locationData);
+      
+      // Also fetch shift rules to ensure they're available
+      const { data: shiftRules, error: shiftRulesError } = await supabase
+        .from('shift_rules')
+        .select('id, name, job_role_id, day_of_week')
+        .eq('location_id', locationData.id)
+        .eq('archived', false);
+        
+      if (!shiftRulesError && shiftRules) {
+        console.log(`Found ${shiftRules.length} shift rules for scheduling`);
+        
+        if (shiftRules.length === 0) {
+          toast.info("No shift rules found", {
+            description: "You may want to create shift rules first for optimal scheduling."
+          });
+        }
+      }
+      
     } catch (error) {
       console.error('Error fetching location data:', error);
       toast.error("Error loading location data", {

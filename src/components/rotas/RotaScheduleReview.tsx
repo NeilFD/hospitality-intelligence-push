@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,7 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [jobRoles, setJobRoles] = useState<any[]>([]);
   const [thresholds, setThresholds] = useState<any[]>([]);
+  const [shiftRules, setShiftRules] = useState<any[]>([]);
   const [generatedSchedule, setGeneratedSchedule] = useState<any>(null);
   const [error, setError] = useState('');
   const [filterDate, setFilterDate] = useState<string | null>(null);
@@ -64,11 +64,12 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
 
       setRequest(requestData);
 
-      // Fetch staff, job roles, and thresholds
+      // Fetch staff, job roles, thresholds, and shift rules
       await Promise.all([
         fetchStaffMembers(),
         fetchJobRoles(),
-        fetchThresholds()
+        fetchThresholds(),
+        fetchShiftRules()
       ]);
 
       // Check if we already have a generated schedule for this request
@@ -136,8 +137,33 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     }
   };
 
+  /**
+   * Fetch all shift rules for the location
+   */
+  const fetchShiftRules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('shift_rules')
+        .select(`
+          *,
+          job_roles (*)
+        `)
+        .eq('location_id', location.id)
+        .order('priority', { ascending: false });
+
+      if (error) throw error;
+      console.log('Fetched shift rules:', data?.length);
+      setShiftRules(data || []);
+    } catch (error) {
+      console.error('Error fetching shift rules:', error);
+      toast.error("Error loading shift rules", {
+        description: "Shift rules will not be used in scheduling."
+      });
+    }
+  };
+
   const generateSchedule = async () => {
-    if (!request || !staffMembers.length || !jobRoles.length || !thresholds.length) {
+    if (!request || !staffMembers.length || !jobRoles.length) {
       toast.error('Missing required data to generate schedule');
       return;
     }
@@ -153,6 +179,11 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
         location
       });
 
+      // Set the shift rules to use for scheduling
+      scheduler.setShiftRules(shiftRules);
+      
+      console.log(`Using ${shiftRules.length} shift rules for scheduling`);
+      
       // Generate the schedule
       const schedule = await scheduler.generateSchedule();
 
@@ -312,6 +343,37 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  };
+
+  const getShiftRuleName = (shift: any) => {
+    if (shift.shift_rule_name) {
+      return shift.shift_rule_name;
+    }
+    return getJobRoleTitle(shift.job_role_id);
+  };
+
+  const renderShiftCell = (shift: any) => {
+    const isFromShiftRule = !!shift.shift_rule_id;
+    
+    return (
+      <>
+        <Badge variant={shift.is_secondary_role ? "outline" : "default"}>
+          {getJobRoleTitle(shift.job_role_id)}
+        </Badge>
+        
+        {isFromShiftRule && (
+          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+            From rule: {shift.shift_rule_name || "Unnamed rule"}
+          </div>
+        )}
+        
+        {shift.is_secondary_role && (
+          <div className="text-xs text-muted-foreground mt-1">
+            Secondary role
+          </div>
+        )}
+      </>
+    );
   };
 
   if (isLoading) {
@@ -495,14 +557,7 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <Badge variant={shift.is_secondary_role ? "outline" : "default"}>
-                                    {getJobRoleTitle(shift.job_role_id)}
-                                  </Badge>
-                                  {shift.is_secondary_role && (
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      Secondary role
-                                    </div>
-                                  )}
+                                  {renderShiftCell(shift)}
                                 </TableCell>
                                 <TableCell>
                                   {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
@@ -568,9 +623,7 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <Badge variant={shift.is_secondary_role ? "outline" : "default"}>
-                                    {getJobRoleTitle(shift.job_role_id)}
-                                  </Badge>
+                                  {renderShiftCell(shift)}
                                 </TableCell>
                                 <TableCell>
                                   {formatTime(shift.start_time)} - {formatTime(shift.end_time)}

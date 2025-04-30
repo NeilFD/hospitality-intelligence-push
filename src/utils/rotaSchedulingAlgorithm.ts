@@ -7,6 +7,7 @@ import { format, parseISO } from 'date-fns';
  * 2. Staff Hi Scores for skill rankings
  * 3. Labor cost targets
  * 4. UK employment regulations
+ * 5. Existing shift rules
  */
 export class RotaSchedulingAlgorithm {
   request: any;
@@ -14,6 +15,7 @@ export class RotaSchedulingAlgorithm {
   jobRoles: any[];
   thresholds: any[];
   location: any;
+  shiftRules: any[] = [];
 
   constructor({ request, staff, jobRoles, thresholds, location }: {
     request: any;
@@ -27,6 +29,13 @@ export class RotaSchedulingAlgorithm {
     this.jobRoles = jobRoles;
     this.thresholds = thresholds;
     this.location = location;
+  }
+
+  /**
+   * Set the shift rules to be used in scheduling
+   */
+  setShiftRules(shiftRules: any[]) {
+    this.shiftRules = shiftRules || [];
   }
 
   /**
@@ -77,59 +86,93 @@ export class RotaSchedulingAlgorithm {
     // Process each day
     for (const date of dates) {
       const dayOfWeek = format(new Date(date), 'EEEE').toLowerCase();
+      const dayCodeMap: Record<string, string> = {
+        'monday': 'mon',
+        'tuesday': 'tue',
+        'wednesday': 'wed',
+        'thursday': 'thu',
+        'friday': 'fri',
+        'saturday': 'sat',
+        'sunday': 'sun'
+      };
+      const dayCode = dayCodeMap[dayOfWeek];
       const dayRevenue = parseFloat(revenueForecast[date] || '0');
       totalRevenue += dayRevenue;
       
       if (dayRevenue <= 0) continue; // Skip days with no revenue forecast
       
-      // Process each segment: day and evening
-      for (const segment of ['day', 'evening']) {
-        // Find applicable threshold based on day, segment, and revenue
-        const threshold = this.findThreshold(dayOfWeek, segment, dayRevenue);
+      // Get all shift rules for this day
+      const dayShiftRules = this.getShiftRulesForDay(dayCode);
+      
+      if (dayShiftRules.length > 0) {
+        console.log(`Using ${dayShiftRules.length} shift rules for ${dayOfWeek}`);
         
-        if (!threshold) continue;
+        // Process each shift rule for this day
+        for (const rule of dayShiftRules) {
+          // Assign staff based on the shift rule
+          this.assignShiftRuleStaff({
+            date,
+            dayOfWeek,
+            rule,
+            rankedStaff,
+            staffWeeklyAllocations,
+            shifts,
+            totalCost
+          });
+        }
+      } else {
+        // Fallback to threshold-based staffing if no shift rules exist
+        console.log(`No shift rules found for ${dayOfWeek}, falling back to thresholds`);
         
-        // Assign FOH staff for this day/segment
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment,
-          staffType: 'foh',
-          minStaff: threshold.foh_min_staff,
-          maxStaff: threshold.foh_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost
-        });
-        
-        // Assign kitchen staff
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment,
-          staffType: 'kitchen',
-          minStaff: threshold.kitchen_min_staff,
-          maxStaff: threshold.kitchen_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost
-        });
-        
-        // Assign KP staff
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment,
-          staffType: 'kp',
-          minStaff: threshold.kp_min_staff,
-          maxStaff: threshold.kp_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost
-        });
+        // Process each segment: day and evening
+        for (const segment of ['day', 'evening']) {
+          // Find applicable threshold based on day, segment, and revenue
+          const threshold = this.findThreshold(dayOfWeek, segment, dayRevenue);
+          
+          if (!threshold) continue;
+          
+          // Assign FOH staff for this day/segment
+          this.assignStaff({
+            date,
+            dayOfWeek,
+            segment,
+            staffType: 'foh',
+            minStaff: threshold.foh_min_staff,
+            maxStaff: threshold.foh_max_staff,
+            rankedStaff,
+            staffWeeklyAllocations,
+            shifts,
+            totalCost
+          });
+          
+          // Assign kitchen staff
+          this.assignStaff({
+            date,
+            dayOfWeek,
+            segment,
+            staffType: 'kitchen',
+            minStaff: threshold.kitchen_min_staff,
+            maxStaff: threshold.kitchen_max_staff,
+            rankedStaff,
+            staffWeeklyAllocations,
+            shifts,
+            totalCost
+          });
+          
+          // Assign KP staff
+          this.assignStaff({
+            date,
+            dayOfWeek,
+            segment,
+            staffType: 'kp',
+            minStaff: threshold.kp_min_staff,
+            maxStaff: threshold.kp_max_staff,
+            rankedStaff,
+            staffWeeklyAllocations,
+            shifts,
+            totalCost
+          });
+        }
       }
     }
     
@@ -143,6 +186,123 @@ export class RotaSchedulingAlgorithm {
       cost_percentage: costPercentage
     };
   };
+
+  /**
+   * Get all shift rules that apply to a specific day
+   */
+  getShiftRulesForDay(dayCode: string) {
+    return this.shiftRules.filter(rule => 
+      rule.day_of_week === dayCode && 
+      rule.archived !== true
+    );
+  }
+
+  /**
+   * Assign staff based on a specific shift rule
+   */
+  assignShiftRuleStaff({
+    date,
+    dayOfWeek,
+    rule,
+    rankedStaff,
+    staffWeeklyAllocations,
+    shifts,
+    totalCost
+  }: {
+    date: string;
+    dayOfWeek: string;
+    rule: any;
+    rankedStaff: any[];
+    staffWeeklyAllocations: Record<string, any>;
+    shifts: any[];
+    totalCost: number;
+  }) {
+    // Filter staff by the job role required for this shift
+    const eligibleStaff = rankedStaff.filter(staff => {
+      // Check primary role
+      if (staff.job_title === rule.job_roles?.title) return true;
+      
+      // Check secondary roles if available
+      if (Array.isArray(staff.secondary_job_roles) && 
+          staff.secondary_job_roles.includes(rule.job_roles?.title)) {
+        return true;
+      }
+      
+      return false;
+    });
+
+    // If no staff match the exact job role, try to find staff with compatible roles
+    let compatibleStaff = eligibleStaff;
+    if (eligibleStaff.length === 0) {
+      // Check if the job role is kitchen or front of house
+      const isKitchenRole = rule.job_roles?.is_kitchen || false;
+      
+      // Find staff with compatible roles
+      compatibleStaff = rankedStaff.filter(staff => {
+        const role = this.jobRoles.find(r => r.title === staff.job_title);
+        return role && role.is_kitchen === isKitchenRole;
+      });
+    }
+    
+    // Calculate shift hours
+    const { startTime, endTime, breakMinutes } = {
+      startTime: rule.start_time,
+      endTime: rule.end_time,
+      breakMinutes: 30 // Default break time
+    };
+    
+    // Calculate shift hours
+    const shiftHours = this.calculateHours(startTime, endTime, breakMinutes);
+    
+    // Determine how many staff to assign (between min and max)
+    const staffToAssign = rule.min_staff;
+    
+    // Assign staff up to the required number
+    for (let i = 0; i < staffToAssign; i++) {
+      // Find the best available staff member for this shift
+      const staffMember = this.findBestStaffForShift(
+        compatibleStaff, 
+        date, 
+        shiftHours, 
+        staffWeeklyAllocations
+      );
+      
+      if (!staffMember) {
+        console.log(`Could not find available staff for ${rule.name} on ${date}`);
+        break; // No eligible staff available
+      }
+      
+      // Calculate costs for this staff member
+      const { shiftCost, niCost, pensionCost, totalShiftCost } = 
+        this.calculateCosts(staffMember, shiftHours);
+      
+      // Create the shift
+      const shift = {
+        profile_id: staffMember.id,
+        date,
+        day_of_week: dayOfWeek,
+        start_time: startTime,
+        end_time: endTime,
+        break_minutes: breakMinutes,
+        job_role_id: rule.job_role_id,
+        is_secondary_role: this.isSecondaryRole(staffMember, rule.job_roles),
+        hi_score: staffMember.hi_score || 0,
+        shift_cost: shiftCost,
+        employer_ni_cost: niCost,
+        employer_pension_cost: pensionCost,
+        total_cost: totalShiftCost,
+        shift_rule_id: rule.id,
+        shift_rule_name: rule.name
+      };
+      
+      // Add the shift
+      shifts.push(shift);
+      totalCost += totalShiftCost;
+      
+      // Update staff allocations
+      this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
+    }
+  }
 
   /**
    * Find the appropriate threshold based on day, segment, and revenue
