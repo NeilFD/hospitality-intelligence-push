@@ -73,7 +73,6 @@ export default function SecondaryJobRolesSelector({
     // Update both local state and parent component
     setLocalSelectedRoles(updatedRoles);
     onChange(updatedRoles);
-    setOpen(false);
   };
 
   const handleRemove = (role: string) => {
@@ -111,12 +110,10 @@ export default function SecondaryJobRolesSelector({
       </div>
       
       {!disabled && (
-        <Popover open={open && hasAvailableJobTitles} onOpenChange={(isOpen) => {
-          // Only allow opening if we have job titles to display
-          if (!isOpen || hasAvailableJobTitles) {
-            setOpen(isOpen);
-          }
-        }}>
+        <Popover 
+          open={open} 
+          onOpenChange={setOpen}
+        >
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
@@ -128,11 +125,11 @@ export default function SecondaryJobRolesSelector({
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
             <SafeErrorBoundary>
-              {hasAvailableJobTitles && (
+              {hasAvailableJobTitles && availableJobTitles.length > 0 && (
                 <Command>
                   <CommandInput placeholder="Search for roles..." />
                   <CommandEmpty>No roles found.</CommandEmpty>
-                  <SafeCommandGroup className="max-h-64 overflow-y-auto">
+                  <SafeCommandGroup>
                     {availableJobTitles.map(role => (
                       <CommandItem
                         key={role}
