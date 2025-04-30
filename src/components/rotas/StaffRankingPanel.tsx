@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { formatHiScore, getRoleColor, getInitials } from './StaffRankingUtils';
 
 type StaffRankingPanelProps = {
   location: any;
@@ -72,7 +72,7 @@ export default function StaffRankingPanel({ location }: StaffRankingPanelProps) 
         
         return {
           ...profile,
-          hi_score: avgHiScore,
+          hi_score: avgHiScore, // Ensure this has a valid number value
           total_cost_per_hour: totalCostPerHour,
           evaluations_count: profileEvaluations.length
         };
@@ -96,6 +96,17 @@ export default function StaffRankingPanel({ location }: StaffRankingPanelProps) 
       setSortBy(column);
       setSortDirection('desc');
     }
+  };
+
+  const renderSortIcon = (column: string) => {
+    if (sortBy === column) {
+      return sortDirection === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />;
+    }
+    return null;
+  };
+
+  const getInitialsFromNames = (firstName: string, lastName: string) => {
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   };
 
   const sortedStaff = [...staff].sort((a, b) => {
@@ -125,35 +136,6 @@ export default function StaffRankingPanel({ location }: StaffRankingPanelProps) 
     
     return matchesSearch && matchesAvailability;
   });
-
-  const renderSortIcon = (column: string) => {
-    if (sortBy === column) {
-      return sortDirection === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />;
-    }
-    return null;
-  };
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
-  };
-
-  const formatHiScore = (score: number) => {
-    if (score === 0) return 'N/A';
-    return score.toFixed(1);
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role?.toLowerCase()) {
-      case 'owner':
-        return 'bg-purple-100 text-purple-800';
-      case 'manager':
-        return 'bg-blue-100 text-blue-800';
-      case 'team member':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <Card>
@@ -249,7 +231,7 @@ export default function StaffRankingPanel({ location }: StaffRankingPanelProps) 
                         <div className="flex items-center space-x-2">
                           <Avatar>
                             <AvatarImage src={person.avatar_url} />
-                            <AvatarFallback>{getInitials(person.first_name, person.last_name)}</AvatarFallback>
+                            <AvatarFallback>{getInitialsFromNames(person.first_name, person.last_name)}</AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{person.first_name} {person.last_name}</p>
@@ -270,7 +252,7 @@ export default function StaffRankingPanel({ location }: StaffRankingPanelProps) 
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center">
-                                {formatHiScore(person.hi_score)}
+                                {person.hi_score ? person.hi_score.toFixed(1) : 'N/A'}
                                 {person.evaluations_count > 0 && (
                                   <Star className="ml-1 h-3 w-3 text-yellow-500" />
                                 )}
