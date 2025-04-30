@@ -162,6 +162,36 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     }
   };
 
+  const prepareShiftForDatabase = (shift: any) => {
+    // Create a new object with only the fields that exist in the database
+    const validFields = [
+      'profile_id',
+      'date',
+      'day_of_week',
+      'start_time',
+      'end_time',
+      'break_minutes',
+      'job_role_id',
+      'is_secondary_role',
+      'hi_score',
+      'shift_cost',
+      'employer_ni_cost',
+      'employer_pension_cost',
+      'total_cost',
+      'schedule_id' // This will be added later
+    ];
+    
+    const cleanedShift: Record<string, any> = {};
+    
+    validFields.forEach(field => {
+      if (shift[field] !== undefined) {
+        cleanedShift[field] = shift[field];
+      }
+    });
+    
+    return cleanedShift;
+  };
+
   const generateSchedule = async () => {
     if (!request || !staffMembers.length || !jobRoles.length) {
       toast.error('Missing required data to generate schedule');
@@ -186,6 +216,13 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
       
       // Generate the schedule
       const schedule = await scheduler.generateSchedule();
+      console.log(`Generated schedule with ${schedule.shifts?.length || 0} shifts`);
+      
+      if (!schedule.shifts || schedule.shifts.length === 0) {
+        toast.warning('No shifts were generated. Ensure staff and job roles are correctly configured.');
+        setIsGenerating(false);
+        return;
+      }
 
       // Create the schedule record in the database
       const { data: scheduleData, error: scheduleError } = await supabase
@@ -204,20 +241,39 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
         .select()
         .single();
 
-      if (scheduleError) throw scheduleError;
+      if (scheduleError) {
+        console.error('Error creating schedule:', scheduleError);
+        toast.error('Failed to create schedule record');
+        throw scheduleError;
+      }
 
-      // Insert all the shifts
+      console.log('Schedule record created:', scheduleData);
+
+      // Prepare shifts for database insertion - remove fields that don't exist in the database
       if (schedule.shifts && schedule.shifts.length > 0) {
-        const shiftsWithScheduleId = schedule.shifts.map((shift: any) => ({
-          ...shift,
-          schedule_id: scheduleData.id
-        }));
+        const cleanShifts = schedule.shifts.map((shift: any) => {
+          const cleanShift = prepareShiftForDatabase(shift);
+          cleanShift.schedule_id = scheduleData.id;
+          return cleanShift;
+        });
+
+        console.log(`Inserting ${cleanShifts.length} shifts into database`);
+        console.log('First shift example:', cleanShifts[0]);
 
         const { error: shiftsError } = await supabase
           .from('rota_schedule_shifts')
-          .insert(shiftsWithScheduleId);
+          .insert(cleanShifts);
 
-        if (shiftsError) throw shiftsError;
+        if (shiftsError) {
+          console.error('Error inserting shifts:', shiftsError);
+          toast.error('Error saving shifts', {
+            description: shiftsError.message || 'Database error occurred'
+          });
+          
+          // Continue execution to fetch what we can, even if some shifts failed
+        } else {
+          console.log('Successfully inserted shifts');
+        }
       }
 
       // Fetch the complete schedule with shifts
@@ -227,13 +283,25 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
         .eq('id', scheduleData.id)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching complete schedule:', fetchError);
+        toast.error('Error retrieving saved schedule');
+        throw fetchError;
+      }
 
+      console.log(`Retrieved schedule with ${completeSchedule.rota_schedule_shifts?.length || 0} shifts`);
       setGeneratedSchedule(completeSchedule);
-      toast.success('Schedule generated successfully');
+      
+      if (completeSchedule.rota_schedule_shifts?.length > 0) {
+        toast.success(`Schedule generated with ${completeSchedule.rota_schedule_shifts.length} shifts`);
+      } else {
+        toast.warning('Schedule created, but no shifts were saved');
+      }
     } catch (error) {
       console.error('Error generating schedule:', error);
-      toast.error('Failed to generate schedule');
+      toast.error('Failed to generate schedule', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
       setIsGenerating(false);
     }

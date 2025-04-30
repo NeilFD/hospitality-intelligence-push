@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -38,6 +39,16 @@ export default function RotaScheduling() {
     };
   }, [setCurrentModule]);
   
+  const validateLocationData = (locationData: any) => {
+    if (!locationData) {
+      return "No location data found.";
+    }
+    if (!locationData.id) {
+      return "Location data is missing an ID.";
+    }
+    return null; // No errors
+  };
+  
   const fetchLocationData = async () => {
     setIsLoading(true);
     try {
@@ -52,7 +63,35 @@ export default function RotaScheduling() {
         throw locationError;
       }
       
+      // Validate location data
+      const validationError = validateLocationData(locationData);
+      if (validationError) {
+        toast.error("Invalid location data", {
+          description: validationError
+        });
+        console.error("Location validation error:", validationError);
+        return;
+      }
+      
       setLocation(locationData);
+      
+      console.log("Location data loaded:", locationData);
+      
+      // Also fetch staff to check availability 
+      const { data: staffData, error: staffError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('available_for_rota', true);
+        
+      if (!staffError && staffData) {
+        console.log(`Found ${staffData.length} available staff members for scheduling`);
+        
+        if (staffData.length === 0) {
+          toast.warning("No available staff found", {
+            description: "Mark staff as available for rota to include them in scheduling."
+          });
+        }
+      }
       
       // Also fetch shift rules to ensure they're available
       const { data: shiftRules, error: shiftRulesError } = await supabase
@@ -67,6 +106,22 @@ export default function RotaScheduling() {
         if (shiftRules.length === 0) {
           toast.info("No shift rules found", {
             description: "You may want to create shift rules first for optimal scheduling."
+          });
+        }
+      }
+      
+      // Also check if job roles exist
+      const { data: jobRoles, error: jobRolesError } = await supabase
+        .from('job_roles')
+        .select('*')
+        .eq('location_id', locationData.id);
+        
+      if (!jobRolesError && jobRoles) {
+        console.log(`Found ${jobRoles.length} job roles for scheduling`);
+        
+        if (jobRoles.length === 0) {
+          toast.warning("No job roles defined", {
+            description: "You need to create job roles before scheduling can work properly."
           });
         }
       }

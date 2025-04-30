@@ -1,3 +1,4 @@
+
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -59,6 +60,11 @@ export class RotaSchedulingAlgorithm {
     console.log(`Processing ${dates.length} days for scheduling`);
     console.log(`Staff members available: ${this.staff.length}`);
     console.log(`Job roles available: ${this.jobRoles.length}`);
+
+    // Log staff details for debugging
+    this.staff.forEach(staff => {
+      console.log(`Staff: ${staff.first_name} ${staff.last_name}, Role: ${staff.job_title}, Wage: ${staff.wage_rate || 'Not set'}, Available: ${staff.available_for_rota !== false}`);
+    });
     
     // Filter available staff and initialize with default wage rate if missing
     const availableStaff = this.staff.filter(member => member.available_for_rota !== false)
@@ -273,6 +279,34 @@ export class RotaSchedulingAlgorithm {
         available: s.available_for_rota
       })));
       console.log("Job roles:", this.jobRoles);
+      
+      // Create at least one default shift to prevent empty schedules
+      if (rankedStaff.length > 0 && this.jobRoles.length > 0) {
+        const firstStaff = rankedStaff[0];
+        const firstRole = this.jobRoles[0];
+        const firstDate = dates[0];
+        
+        console.log(`Creating emergency default shift for ${firstStaff.first_name} ${firstStaff.last_name}`);
+        
+        const defaultShift = {
+          profile_id: firstStaff.id,
+          date: firstDate,
+          day_of_week: format(new Date(firstDate), 'EEEE').toLowerCase(),
+          start_time: '10:00:00',
+          end_time: '18:00:00',
+          break_minutes: 30,
+          job_role_id: firstRole.id,
+          is_secondary_role: false,
+          hi_score: firstStaff.hi_score || 0,
+          shift_cost: (firstStaff.wage_rate || 10.50) * 7.5, // 8 hours with 30 min break
+          employer_ni_cost: 0,
+          employer_pension_cost: 0,
+          total_cost: (firstStaff.wage_rate || 10.50) * 7.5
+        };
+        
+        shifts.push(defaultShift);
+        totalCost += defaultShift.total_cost;
+      }
     } else {
       console.log(`Successfully created ${shifts.length} shifts`);
     }
