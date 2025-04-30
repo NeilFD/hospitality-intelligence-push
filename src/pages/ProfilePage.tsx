@@ -157,24 +157,31 @@ const ProfilePage = () => {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <div className="flex justify-center">
-        <ProfileAvatar 
-          profileId={profile.id} 
-          avatarUrl={profile.avatar_url} 
-          fallback={`${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`}
-          size="lg"
-        />
-      </div>
-      
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle>
+      {/* Profile header with large avatar and name - Facebook style */}
+      <Card className="overflow-hidden relative">
+        {/* Banner area - could be a cover photo in the future */}
+        <div className="h-32 bg-gradient-to-r from-hi-purple/30 to-blue-400/30"></div>
+        
+        {/* Profile avatar positioned to overlap banner */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2" style={{ top: "32px" }}>
+          <ProfileAvatar 
+            profileId={profile.id} 
+            avatarUrl={profile.avatar_url} 
+            fallback={`${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`}
+            size="lg"
+          />
+        </div>
+        
+        {/* Name and role section */}
+        <div className="pt-16 pb-4 text-center">
+          <h1 className="text-3xl font-bold">
             {profile.first_name} {profile.last_name}
-          </CardTitle>
-          <p className="text-muted-foreground">{profile.role || "Team Member"}</p>
-        </CardHeader>
+          </h1>
+          <p className="text-gray-500 mt-1">{profile.role || "GOD"}</p>
+        </div>
       </Card>
       
+      {/* Availability toggle - only shown on own profile */}
       {isOwnProfile && (
         <Card>
           <CardContent className="py-6">
@@ -185,19 +192,28 @@ const ProfilePage = () => {
                 onCheckedChange={updateAvailability}
               />
               <Label htmlFor="availability" className="text-base font-medium cursor-pointer">
-                {profile.available_for_rota 
-                  ? "Available for rota scheduling" 
-                  : "Not available for rota scheduling"}
+                Available for rota scheduling
               </Label>
             </div>
           </CardContent>
         </Card>
       )}
       
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2">
-          <TabsTrigger value="personal">Personal</TabsTrigger>
-          <TabsTrigger value="job">Job & Performance</TabsTrigger>
+      {/* Profile content tabs */}
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 mb-6">
+          <TabsTrigger 
+            value="personal" 
+            className="py-3 data-[state=active]:bg-hi-purple data-[state=active]:text-white"
+          >
+            Personal
+          </TabsTrigger>
+          <TabsTrigger 
+            value="job" 
+            className="py-3 data-[state=active]:bg-hi-purple data-[state=active]:text-white"
+          >
+            Job & Performance
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="personal" className="space-y-6 mt-6">
@@ -206,16 +222,16 @@ const ProfilePage = () => {
               <CardTitle>About Me</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>{profile.about_me || "No information provided."}</p>
+              <p className="text-lg">{profile.about_me || "No information provided."}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                 <div className="space-y-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Favorite Dish</h4>
-                  <p>{profile.favourite_dish || "Not specified"}</p>
+                  <p className="text-lg">{profile.favourite_dish || "Not specified"}</p>
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Favorite Drink</h4>
-                  <p>{profile.favourite_drink || "Not specified"}</p>
+                  <p className="text-lg">{profile.favourite_drink || "Not specified"}</p>
                 </div>
               </div>
             </CardContent>
