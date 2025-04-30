@@ -125,30 +125,35 @@ export default function SecondaryJobRolesSelector({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="p-0 z-50 bg-white" align="start">
-            <SafeErrorBoundary>
-              {hasAvailableJobTitles && (
+            {hasAvailableJobTitles && (
+              <SafeErrorBoundary>
                 <Command>
                   <CommandInput placeholder="Search for roles..." />
                   <CommandEmpty>No roles found.</CommandEmpty>
-                  <SafeCommandGroup>
-                    {availableJobTitles.map(role => (
-                      <CommandItem
-                        key={role}
-                        value={role}
-                        onSelect={() => handleSelect(role)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 flex items-center justify-center">
-                            {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                  {availableJobTitles.length > 0 && (
+                    <SafeCommandGroup>
+                      {availableJobTitles.map(role => (
+                        <CommandItem
+                          key={role}
+                          value={role}
+                          onSelect={() => {
+                            handleSelect(role);
+                            setOpen(false); // Close popover after selection
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                              {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                            </div>
+                            <span>{role}</span>
                           </div>
-                          <span>{role}</span>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </SafeCommandGroup>
+                        </CommandItem>
+                      ))}
+                    </SafeCommandGroup>
+                  )}
                 </Command>
-              )}
-            </SafeErrorBoundary>
+              </SafeErrorBoundary>
+            )}
           </PopoverContent>
         </Popover>
       )}

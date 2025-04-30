@@ -24,9 +24,14 @@ export const SafeCommandGroup = React.forwardRef<
     } else if (typeof children === 'string' || typeof children === 'number') {
       safeChildren = [children];
     } else {
-      // Use React.Children API as a fallback
+      // Use React.Children API as a fallback - but make sure it's not null
       try {
-        safeChildren = React.Children.toArray(children).filter(Boolean);
+        const childrenArray = React.Children.toArray(children);
+        if (childrenArray && childrenArray.length > 0) {
+          safeChildren = childrenArray.filter(Boolean);
+        } else {
+          return null;
+        }
       } catch (e) {
         console.error("Error in SafeCommandGroup with React.Children:", e);
         return null;
