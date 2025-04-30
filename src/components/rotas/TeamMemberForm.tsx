@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import AvailabilityScheduler from './AvailabilityScheduler';
 import { Switch } from '@/components/ui/switch';
+import HiScoreSection from '@/components/profile/HiScoreSection';
 
 // Full list of job titles from JobDataSection.tsx
 const FOH_JOB_TITLES = [
@@ -67,7 +68,8 @@ export default function TeamMemberForm({
     favourite_drink: '',
     about_me: '',
     avatar_url: '',
-    available_for_rota: true // Added default value for the new field
+    available_for_rota: true,
+    role_type: 'foh' // Default role type for Hi Score evaluations
   });
 
   // If editing, populate the form with the team member data
@@ -222,9 +224,10 @@ export default function TeamMemberForm({
         </DialogHeader>
         
         <Tabs value={tab} onValueChange={setTab} className="mt-2">
-          <TabsList className="grid grid-cols-2 mb-4">
+          <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="basic">Basic Information</TabsTrigger>
             <TabsTrigger value="availability">Availability</TabsTrigger>
+            <TabsTrigger value="hiscore">Hi Score Evaluation</TabsTrigger>
           </TabsList>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -467,6 +470,46 @@ export default function TeamMemberForm({
                   onChange={(availability) => handleChange('availability', availability)}
                 />
               </Card>
+            </TabsContent>
+            
+            <TabsContent value="hiscore" className="space-y-4">
+              {isEditing && teamMember && (
+                <div className="space-y-4">
+                  <div className="flex space-x-6 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="foh-role"
+                        name="role-type"
+                        checked={formData.role_type === 'foh'}
+                        onChange={() => handleChange('role_type', 'foh')}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="foh-role" className="text-sm font-medium">Front of House</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="kitchen-role"
+                        name="role-type"
+                        checked={formData.role_type === 'kitchen'}
+                        onChange={() => handleChange('role_type', 'kitchen')}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="kitchen-role" className="text-sm font-medium">Kitchen</label>
+                    </div>
+                  </div>
+                  
+                  <Card className="p-4 bg-white shadow-sm">
+                    <HiScoreSection profileId={teamMember.id} />
+                  </Card>
+                </div>
+              )}
+              {!isEditing && (
+                <div className="flex items-center justify-center h-48 border border-dashed rounded-md">
+                  <p className="text-gray-500">Hi Score evaluations are available after saving the team member.</p>
+                </div>
+              )}
             </TabsContent>
             
             <DialogFooter>

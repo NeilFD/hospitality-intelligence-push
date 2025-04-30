@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import AvailabilityScheduler from './AvailabilityScheduler';
+import HiScoreSection from '@/components/profile/HiScoreSection';
 
 // Import the job titles from the same source as JobDataSection.tsx
 const FOH_JOB_TITLES = [
@@ -69,7 +70,9 @@ export default function NewUserProfileForm({
     favourite_drink: '',
     about_me: '',
     avatar_url: '',
-    available_for_rota: true
+    available_for_rota: true,
+    role_type: 'foh', // Default role type for Hi Score evaluations
+    profileId: null // Will be set when profile is created
   });
   
   const handleChange = (field, value) => {
@@ -106,6 +109,9 @@ export default function NewUserProfileForm({
       // Create a new UUID for the profile
       const profileId = crypto.randomUUID();
       
+      // Save the profileId in the form data for use in the Hi Score tab after creation
+      handleChange('profileId', profileId);
+      
       // Prepare profile data
       const profileData = {
         id: profileId,
@@ -129,7 +135,8 @@ export default function NewUserProfileForm({
         favourite_dish: formData.favourite_dish,
         favourite_drink: formData.favourite_drink,
         about_me: formData.about_me,
-        available_for_rota: true // Default to available for scheduling
+        available_for_rota: true, // Default to available for scheduling
+        role_type: formData.role_type // Add role type for Hi Score evaluations
       };
       
       if (formData.sendInvitationNow) {
@@ -212,9 +219,10 @@ export default function NewUserProfileForm({
         </DialogHeader>
         
         <Tabs value={tab} onValueChange={setTab} className="mt-2">
-          <TabsList className="grid grid-cols-2 mb-4">
+          <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="basic">Basic Information</TabsTrigger>
             <TabsTrigger value="availability">Availability</TabsTrigger>
+            <TabsTrigger value="hiscore">Hi Score Evaluation</TabsTrigger>
           </TabsList>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -499,6 +507,43 @@ export default function NewUserProfileForm({
                   onChange={(availability) => handleChange('availability', availability)}
                 />
               </Card>
+            </TabsContent>
+            
+            <TabsContent value="hiscore" className="space-y-4">
+              <div className="flex space-x-6 mb-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="foh-role"
+                    name="role-type"
+                    checked={formData.role_type === 'foh'}
+                    onChange={() => handleChange('role_type', 'foh')}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="foh-role" className="text-sm font-medium">Front of House</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="kitchen-role"
+                    name="role-type"
+                    checked={formData.role_type === 'kitchen'}
+                    onChange={() => handleChange('role_type', 'kitchen')}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="kitchen-role" className="text-sm font-medium">Kitchen</label>
+                </div>
+              </div>
+              
+              {formData.profileId ? (
+                <Card className="p-4 bg-white shadow-sm">
+                  <HiScoreSection profileId={formData.profileId} />
+                </Card>
+              ) : (
+                <div className="flex items-center justify-center h-48 border border-dashed rounded-md">
+                  <p className="text-gray-500">Hi Score evaluations are available after saving the team member.</p>
+                </div>
+              )}
             </TabsContent>
             
             <DialogFooter>
