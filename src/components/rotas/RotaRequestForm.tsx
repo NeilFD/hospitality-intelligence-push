@@ -297,7 +297,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
             
             // Add small random variation (±10%)
             const variation = averageRevenue * 0.1;
-            const randomOffset = (Math.random() * variation * 2) - variance;
+            const randomOffset = (Math.random() * variation * 2) - variation;
             const forecastValue = Math.max(0, Math.round(averageRevenue + randomOffset));
             
             newForecasts[dateString] = forecastValue.toString();
@@ -314,8 +314,8 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
             };
             
             const baseAmount = baseAmounts[dayOfWeek] || 3000;
-            const variance = baseAmount * 0.15; // 15% variance for more realistic variation
-            const randomFactor = Math.random() * variance * 2 - variance;
+            const variation = baseAmount * 0.15; // 15% variance for more realistic variation
+            const randomFactor = Math.random() * variation * 2 - variation;
             const forecast = Math.round(baseAmount + randomFactor);
             
             newForecasts[dateString] = forecast.toString();
