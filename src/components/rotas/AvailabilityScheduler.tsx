@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -161,7 +160,7 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectTrigger className="w-[110px] h-8">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-[200px] overflow-auto" align="start">
                           <ScrollArea className="h-[200px]">
                             {timeSlots.map(slot => (
                               <SelectItem key={slot.value} value={slot.value}>
@@ -181,7 +180,7 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectTrigger className="w-[110px] h-8">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-[200px] overflow-auto" align="start">
                           <ScrollArea className="h-[200px]">
                             {timeSlots.map(slot => (
                               <SelectItem 
