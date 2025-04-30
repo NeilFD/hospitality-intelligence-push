@@ -215,7 +215,7 @@ export const checkInvitationToken = async (token: string) => {
     
     const { data, error } = await supabase
       .from('user_invitations')
-      .select('*')
+      .select('*, profiles:profile_id(*)')
       .eq('invitation_token', token)
       .single();
       
@@ -256,5 +256,52 @@ export const checkColumnExists = async (tableName: string, columnName: string): 
   } catch (e) {
     console.error('Exception checking column existence:', e);
     return false;
+  }
+};
+
+// New function to send invitation email to existing profiles
+export const sendInvitationToProfile = async (profileId: string) => {
+  try {
+    // First get the profile data
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', profileId)
+      .single();
+      
+    if (profileError || !profile) {
+      console.error('Error fetching profile:', profileError);
+      return { success: false, error: 'Profile not found' };
+    }
+    
+    if (!profile.email) {
+      return { success: false, error: 'Profile has no email address' };
+    }
+    
+    // Generate invitation token
+    const invitationToken = crypto.randomUUID();
+    
+    // Call the send-user-invitation function
+    const { data, error } = await supabase.functions.invoke('send-user-invitation', {
+      body: {
+        email: profile.email,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        invitationToken,
+        role: profile.role,
+        jobTitle: profile.job_title,
+        profile_id: profile.id
+      }
+    });
+    
+    if (error) {
+      console.error('Error sending invitation:', error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, data };
+  } catch (err: any) {
+    console.error('Exception in sendInvitationToProfile:', err);
+    return { success: false, error: err.message };
   }
 };

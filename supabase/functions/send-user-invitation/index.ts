@@ -15,6 +15,7 @@ interface InvitationRequest {
   role?: string;
   jobTitle?: string;
   created_by?: string;
+  profile_id?: string; // Add profile_id to link the invitation to an existing profile
 }
 
 // Use application URL
@@ -28,7 +29,7 @@ serve(async (req) => {
   
   try {
     const requestData: InvitationRequest = await req.json();
-    const { email, firstName, lastName, invitationToken, role, jobTitle, created_by } = requestData;
+    const { email, firstName, lastName, invitationToken, role, jobTitle, created_by, profile_id } = requestData;
     
     // Basic validation
     if (!email || !invitationToken) {
@@ -109,15 +110,30 @@ serve(async (req) => {
     }
     
     // Use a direct SQL query with the service role to bypass RLS policies
-    const { error: insertError } = await supabase.rpc('create_user_invitation', {
-      p_email: email,
-      p_first_name: firstName,
-      p_last_name: lastName,
-      p_role: role || 'Team Member',
-      p_job_title: jobTitle || null,
-      p_created_by: created_by || null,
-      p_invitation_token: invitationToken
-    });
+    // Add the profile_id if it was provided
+    const { error: insertError } = profile_id ? 
+      await supabase
+        .from('user_invitations')
+        .insert({
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          role: role || 'Team Member',
+          job_title: jobTitle || null,
+          created_by: created_by || null,
+          invitation_token: invitationToken,
+          profile_id // Add the profile_id reference
+        })
+      :
+      await supabase.rpc('create_user_invitation', {
+        p_email: email,
+        p_first_name: firstName,
+        p_last_name: lastName,
+        p_role: role || 'Team Member',
+        p_job_title: jobTitle || null,
+        p_created_by: created_by || null,
+        p_invitation_token: invitationToken
+      });
         
     if (insertError) {
       throw new Error('Failed to create invitation record: ' + insertError.message);

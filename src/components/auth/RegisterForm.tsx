@@ -137,14 +137,33 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       // If there was an invitation token, mark it as claimed
       if (invitationToken) {
         try {
+          // First, mark the invitation as claimed
           await supabase
             .from('user_invitations')
             .update({ is_claimed: true })
             .eq('invitation_token', invitationToken);
             
-          console.log("Invitation marked as claimed");
+          // If this invitation is linked to an existing profile, update the auth ID
+          if (invitationData?.profile_id) {
+            // Update the profile ID to match the new auth user
+            await supabase
+              .from('profiles')
+              .update({ 
+                id: data.user.id,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', invitationData.profile_id);
+              
+            // Then delete the temporary profile entry
+            await supabase
+              .from('profiles')
+              .delete()
+              .eq('id', invitationData.profile_id);
+          }
+            
+          console.log("Invitation marked as claimed and profile updated");
         } catch (updateErr) {
-          console.error("Error marking invitation as claimed:", updateErr);
+          console.error("Error handling invitation claim:", updateErr);
         }
       }
       
