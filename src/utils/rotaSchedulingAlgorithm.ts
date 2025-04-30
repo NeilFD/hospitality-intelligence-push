@@ -363,10 +363,12 @@ export class RotaSchedulingAlgorithm {
     
     // Filter staff by the job role required for this shift
     let eligibleStaff = rankedStaff.filter(staff => {
-      // Check primary role
-      if (staff.job_title === jobRoleTitle) return true;
+      // Check primary role - exact match on job title
+      if (staff.job_title === jobRoleTitle) {
+        return true;
+      }
       
-      // Check secondary roles if available
+      // Check secondary roles - must be explicitly included in the secondary_job_roles array
       if (Array.isArray(staff.secondary_job_roles) && 
           staff.secondary_job_roles.includes(jobRoleTitle)) {
         return true;
@@ -375,46 +377,11 @@ export class RotaSchedulingAlgorithm {
       return false;
     });
 
-    // If no staff match the exact job role, try to find staff with compatible roles
+    // If no staff match the exact job role or secondary roles, log this but don't try to find "compatible" staff
+    // This change ensures we only assign staff to roles they are explicitly qualified for
     if (eligibleStaff.length === 0) {
-      console.log(`No exact role matches for ${jobRoleTitle}, finding compatible staff`);
-      
-      // Check if the job role is kitchen or front of house
-      const isKitchenRole = jobRole?.is_kitchen || false;
-      
-      // Find staff with compatible roles
-      eligibleStaff = rankedStaff.filter(staff => {
-        // First try to match based on a matching job role in the jobRoles array
-        const staffJobRole = this.jobRoles.find(r => r.title === staff.job_title);
-        if (staffJobRole && staffJobRole.is_kitchen === isKitchenRole) return true;
-        
-        // If staff doesn't have a matching job role, use heuristics
-        if (!staffJobRole) {
-          // Try to determine role type from job title
-          const jobTitleLower = (staff.job_title || '').toLowerCase();
-          
-          if (isKitchenRole) {
-            return jobTitleLower.includes('chef') || 
-                   jobTitleLower.includes('cook') || 
-                   jobTitleLower.includes('kitchen') ||
-                   jobTitleLower.includes('porter');
-          } else {
-            return jobTitleLower.includes('server') || 
-                   jobTitleLower.includes('waiter') || 
-                   jobTitleLower.includes('waitress') ||
-                   jobTitleLower.includes('host') ||
-                   jobTitleLower.includes('bartender') ||
-                   !jobTitleLower.includes('chef');  // Default non-kitchen roles to FOH
-          }
-        }
-        
-        return false;
-      });
-    }
-    
-    // Log the eligible staff for debugging
-    if (eligibleStaff.length === 0) {
-      console.log(`No eligible staff found for ${jobRoleTitle}`);
+      console.log(`No eligible staff found for ${jobRoleTitle} - no staff have this as primary or secondary role`);
+      return; // Exit early - don't try to assign staff who don't have the required role
     } else {
       console.log(`Found ${eligibleStaff.length} eligible staff for ${jobRoleTitle}`);
     }
@@ -660,85 +627,135 @@ export class RotaSchedulingAlgorithm {
     shifts: any[];
     totalCost: number;
   }) {
-    // Filter staff by job role
-    let eligibleStaff = [];
-    
-    if (staffType === 'foh') {
-      // Front of House staff - more flexible matching
-      eligibleStaff = rankedStaff.filter(s => {
-        const jobTitle = (s.job_title || '').toLowerCase();
-        const isKitchenStaff = 
-          jobTitle.includes('chef') || 
-          jobTitle.includes('kitchen') || 
-          jobTitle.includes('porter');
-        
-        // If they have a job_role in our jobRoles list, check that directly
-        const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
-        if (staffJobRole) return !staffJobRole.is_kitchen;
-        
-        // Otherwise use job title keywords
-        return !isKitchenStaff;
-      });
-    } else if (staffType === 'kitchen') {
-      // Kitchen staff (chefs) - more flexible matching
-      eligibleStaff = rankedStaff.filter(s => {
-        const jobTitle = (s.job_title || '').toLowerCase();
-        
-        // If they have a job_role in our jobRoles list, check that directly
-        const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
-        if (staffJobRole) return staffJobRole.is_kitchen && !jobTitle.includes('porter');
-        
-        // Otherwise use job title keywords
-        return jobTitle.includes('chef') || 
-              jobTitle.includes('cook') || 
-              (jobTitle.includes('kitchen') && !jobTitle.includes('porter'));
-      });
-    } else if (staffType === 'kp') {
-      // Kitchen porters - more flexible matching
-      eligibleStaff = rankedStaff.filter(s => {
-        const jobTitle = (s.job_title || '').toLowerCase();
-        
-        // If they have a job_role in our jobRoles list, check that directly
-        const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
-        if (staffJobRole) return staffJobRole.is_kitchen && jobTitle.includes('porter');
-        
-        // Otherwise use job title keywords
-        return jobTitle.includes('porter');
-      });
-    }
-    
-    // If no eligible staff for the specific role type, use broader categorization
-    if (eligibleStaff.length === 0) {
-      console.log(`No eligible staff found for ${staffType} role, using broader matching`);
+    // Find the relevant job role ID
+    const jobRole = this.findJobRole(staffType);
+    if (!jobRole) {
+      console.log(`No job role found for ${staffType}, creating default`);
+      // Instead of returning, create a default job role
+      // This will be used in the shift creation but won't modify the database
+      const defaultJobRole = {
+        id: `default-${staffType}`,
+        title: staffType === 'foh' ? 'Server' : (staffType === 'kitchen' ? 'Chef' : 'Kitchen Porter'),
+        is_kitchen: staffType !== 'foh'
+      };
       
-      if (staffType === 'foh') {
-        // Try to find any non-kitchen staff
-        eligibleStaff = rankedStaff.filter(s => {
-          // If they have a job_role in our jobRoles list, check that directly
-          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
-          if (staffJobRole) return !staffJobRole.is_kitchen;
-          
-          // If we still don't have staff, just get anyone not explicitly kitchen
-          const jobTitle = (s.job_title || '').toLowerCase();
-          return !jobTitle.includes('chef') && !jobTitle.includes('kitchen') && !jobTitle.includes('porter');
-        });
-      } else if (staffType === 'kitchen' || staffType === 'kp') {
-        // For kitchen/kp roles, try to find any kitchen staff
-        eligibleStaff = rankedStaff.filter(s => {
-          // If they have a job_role in our jobRoles list, check that directly
-          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
-          if (staffJobRole) return staffJobRole.is_kitchen;
-          
-          // Otherwise just get anyone with kitchen-related title
-          const jobTitle = (s.job_title || '').toLowerCase();
-          return jobTitle.includes('chef') || jobTitle.includes('kitchen') || jobTitle.includes('porter');
-        });
+      // Calculate shift times based on segment
+      const { startTime, endTime, breakMinutes } = this.calculateShiftTimes(segment, dayOfWeek);
+      
+      // Calculate shift hours
+      const shiftHours = this.calculateHours(startTime, endTime, breakMinutes);
+      
+      // Assign staff up to the minimum required
+      for (let i = 0; i < minStaff; i++) {
+        // Find the best available staff member for this shift
+        const staffMember = this.findBestStaffForShift(
+          eligibleStaff, 
+          date, 
+          shiftHours, 
+          staffWeeklyAllocations
+        );
+        
+        if (!staffMember) break; // No eligible staff available
+        
+        // Calculate costs for this staff member
+        const { shiftCost, niCost, pensionCost, totalShiftCost } = 
+          this.calculateCosts(staffMember, shiftHours);
+        
+        // Create the shift
+        const shift = {
+          profile_id: staffMember.id,
+          date,
+          day_of_week: dayOfWeek,
+          start_time: startTime,
+          end_time: endTime,
+          break_minutes: breakMinutes,
+          job_role_id: defaultJobRole.id,
+          is_secondary_role: true,
+          hi_score: staffMember.hi_score || 0,
+          shift_cost: shiftCost,
+          employer_ni_cost: niCost,
+          employer_pension_cost: pensionCost,
+          total_cost: totalShiftCost
+        };
+        
+        // Add the shift
+        shifts.push(shift);
+        totalCost += totalShiftCost;
+        
+        console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to default ${defaultJobRole.title} role (${startTime}-${endTime}) on ${date}`);
+        
+        // Update staff allocations
+        this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
       }
       
-      // If still no eligible staff, just use all staff as a last resort
-      if (eligibleStaff.length === 0) {
-        console.log(`Still no staff found for ${staffType} role, using all available staff`);
-        eligibleStaff = rankedStaff;
+      return;
+    }
+    
+    // Filter staff by job role - only include those with matching primary job title or explicit secondary role
+    let eligibleStaff = rankedStaff.filter(s => {
+      // Primary role match - exact match on job title
+      if (s.job_title === jobRole.title) {
+        return true;
+      }
+      
+      // Secondary role match - must be explicitly in secondary_job_roles array
+      if (Array.isArray(s.secondary_job_roles) && s.secondary_job_roles.includes(jobRole.title)) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    // If no eligible staff for the specific role title, try broader matching based on job role categories
+    if (eligibleStaff.length === 0) {
+      console.log(`No exact title matches for ${jobRole.title}, trying category-based matching`);
+      
+      if (staffType === 'foh') {
+        // Front of House roles - look for FOH staff based on known FOH role titles or not being kitchen
+        eligibleStaff = rankedStaff.filter(s => {
+          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
+          
+          // If we have job role data for this staff member, use that
+          if (staffJobRole) {
+            return !staffJobRole.is_kitchen;
+          }
+          
+          // Otherwise make a best-guess based on common job title keywords
+          const jobTitle = (s.job_title || '').toLowerCase();
+          return !jobTitle.includes('chef') && 
+                 !jobTitle.includes('kitchen') && 
+                 !jobTitle.includes('porter');
+        });
+      } else if (staffType === 'kitchen') {
+        // Kitchen roles (excluding porters) - look for chef roles
+        eligibleStaff = rankedStaff.filter(s => {
+          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
+          
+          // If we have job role data for this staff member, use that
+          if (staffJobRole) {
+            return staffJobRole.is_kitchen && !s.job_title.toLowerCase().includes('porter');
+          }
+          
+          // Otherwise make a best-guess based on common job title keywords
+          const jobTitle = (s.job_title || '').toLowerCase();
+          return (jobTitle.includes('chef') || 
+                 jobTitle.includes('cook') || 
+                 jobTitle.includes('kitchen')) && 
+                 !jobTitle.includes('porter');
+        });
+      } else if (staffType === 'kp') {
+        // Kitchen porter roles - look for porter specific roles
+        eligibleStaff = rankedStaff.filter(s => {
+          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
+          
+          // If we have job role data for this staff member, use that
+          if (staffJobRole) {
+            return staffJobRole.is_kitchen && s.job_title.toLowerCase().includes('porter');
+          }
+          
+          // Otherwise check job title directly
+          return s.job_title?.toLowerCase().includes('porter');
+        });
       }
     }
     
