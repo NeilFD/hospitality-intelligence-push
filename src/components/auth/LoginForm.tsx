@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/services/auth-service';
+import { toast } from 'sonner';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -27,10 +27,15 @@ export default function LoginForm() {
     try {
       await login(email, password);
       
-      // Navigate to dashboard on successful login
-      navigate('/');
+      // Login successful, toast notification
+      toast.success("Login successful!");
+      
+      // Navigate to home dashboard on successful login
+      navigate('/home/dashboard');
     } catch (err) {
       console.error('Login form error:', err);
+      toast.error("Login failed. Please check your credentials.");
+    } finally {
       setIsSubmitting(false);
     }
   };
