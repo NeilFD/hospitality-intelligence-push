@@ -248,7 +248,7 @@ const ProfilePage = () => {
             onEditJobDetails={handleEditJobDetails}
           />
           <HiScoreSection 
-            profileId={profileId} 
+            profileId={profileId}
             onScoreUpdate={(score) => console.log("High score updated:", score)}
           />
         </TabsContent>
