@@ -24,6 +24,8 @@ const TooltipContent = React.forwardRef<
     align="center"
     side="top"
     alignOffset={0}
+    avoidCollisions={true}
+    collisionPadding={10}
     {...props}
   />
 ))
