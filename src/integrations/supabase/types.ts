@@ -988,6 +988,7 @@ export type Database = {
           performance_score: number | null
           role: Database["public"]["Enums"]["user_role"] | null
           role_type: Database["public"]["Enums"]["role_type"] | null
+          secondary_job_roles: string[] | null
           updated_at: string
           wage_rate: number | null
         }
@@ -1021,6 +1022,7 @@ export type Database = {
           performance_score?: number | null
           role?: Database["public"]["Enums"]["user_role"] | null
           role_type?: Database["public"]["Enums"]["role_type"] | null
+          secondary_job_roles?: string[] | null
           updated_at?: string
           wage_rate?: number | null
         }
@@ -1054,6 +1056,7 @@ export type Database = {
           performance_score?: number | null
           role?: Database["public"]["Enums"]["user_role"] | null
           role_type?: Database["public"]["Enums"]["role_type"] | null
+          secondary_job_roles?: string[] | null
           updated_at?: string
           wage_rate?: number | null
         }

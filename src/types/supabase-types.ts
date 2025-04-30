@@ -1,4 +1,3 @@
-
 import type { WeeklyRecord, DailyRecord, MonthlyRecord } from './kitchen-ledger';
 import { ModuleType } from './kitchen-ledger';
 
@@ -347,7 +346,7 @@ export interface Database {
         Update: {
           id?: string;
           tracker_data_id?: string;
-          credit_index?: number;
+          credit_index?: string;
           amount?: number;
           created_at?: string;
           updated_at?: string;
@@ -429,6 +428,7 @@ export interface UserProfile {
   max_hours_per_day?: number;
   available_for_rota?: boolean;
   in_ft_education?: boolean;
+  secondary_job_roles?: string[] | null;
 }
 
 export interface DBSupplier {

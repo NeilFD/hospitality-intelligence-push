@@ -29,6 +29,7 @@ import { ProfilePictureUploader } from '@/components/team/ProfilePictureUploader
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import JobDataSection from '@/components/profile/JobDataSection';
 import HiScoreSection from '@/components/profile/HiScoreSection';
+import SecondaryJobRolesSelector from '@/components/profile/SecondaryJobRolesSelector';
 
 // Extend the UserProfile type with the job data properties
 interface ExtendedUserProfile extends UserProfile {
@@ -44,6 +45,7 @@ interface ExtendedUserProfile extends UserProfile {
   employment_start_date?: string;
   employment_status?: string;
   in_ft_education?: boolean;
+  secondary_job_roles?: string[];
 }
 
 // Job title options
@@ -82,6 +84,7 @@ const ProfilePage = () => {
     firstName: '',
     lastName: '',
     jobTitle: '',
+    secondaryJobRoles: [] as string[],
     favouriteDish: '',
     favouriteDrink: '',
     aboutMe: '',
@@ -199,6 +202,7 @@ const ProfilePage = () => {
             firstName: profileToLoad.first_name || '',
             lastName: profileToLoad.last_name || '',
             jobTitle: profileToLoad.job_title || '',
+            secondaryJobRoles: profileToLoad.secondary_job_roles || [],
             favouriteDish: profileToLoad.favourite_dish || '',
             favouriteDrink: profileToLoad.favourite_drink || '',
             aboutMe: profileToLoad.about_me || '',
@@ -251,6 +255,7 @@ const ProfilePage = () => {
         firstName: currentUserProfile.first_name || '',
         lastName: currentUserProfile.last_name || '',
         jobTitle: currentUserProfile.job_title || '',
+        secondaryJobRoles: currentUserProfile.secondary_job_roles || [],
         favouriteDish: currentUserProfile.favourite_dish || '',
         favouriteDrink: currentUserProfile.favourite_drink || '',
         aboutMe: currentUserProfile.about_me || '',
@@ -536,6 +541,7 @@ const ProfilePage = () => {
         firstName: profile.first_name || '',
         lastName: profile.last_name || '',
         jobTitle: profile.job_title || '',
+        secondaryJobRoles: profile.secondary_job_roles || [],
         favouriteDish: profile.favourite_dish || '',
         favouriteDrink: profile.favourite_drink || '',
         aboutMe: profile.about_me || '',
@@ -570,6 +576,7 @@ const ProfilePage = () => {
         about_me: editForm.aboutMe,
         birth_date: editForm.birthDate,
         job_title: editForm.jobTitle,
+        secondary_job_roles: editForm.secondaryJobRoles,
         employment_type: editForm.employmentType,
         min_hours_per_day: editForm.minHoursPerDay,
         max_hours_per_day: editForm.maxHoursPerDay,
@@ -801,14 +808,28 @@ const ProfilePage = () => {
               <h1 className="text-3xl font-bold">
                 {profile.first_name} {profile.last_name}
               </h1>
-              <div className="flex items-center gap-3 mt-1 mb-4">
-                <Badge variant="outline" className="border-hi-purple-light/50 text-hi-purple">
-                  {profile.role || 'Team Member'}
-                </Badge>
-                {profile.job_title && (
-                  <div className="flex items-center text-gray-500">
-                    <Briefcase className="h-4 w-4 mr-2" />
-                    {profile.job_title}
+              <div className="flex flex-col gap-2 mt-1 mb-4">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="border-hi-purple-light/50 text-hi-purple">
+                    {profile.role || 'Team Member'}
+                  </Badge>
+                  {profile.job_title && (
+                    <div className="flex items-center text-gray-500">
+                      <Briefcase className="h-4 w-4 mr-2" />
+                      {profile.job_title}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Secondary Job Roles Display */}
+                {profile.secondary_job_roles && profile.secondary_job_roles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-sm text-gray-500">Can also work as:</span>
+                    {profile.secondary_job_roles.map(role => (
+                      <Badge key={role} variant="secondary" className="bg-gray-100">
+                        {role}
+                      </Badge>
+                    ))}
                   </div>
                 )}
               </div>
@@ -971,6 +992,36 @@ const ProfilePage = () => {
                               placeholder="Last Name"
                             />
                           </div>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="jobTitle">Primary Job Title</Label>
+                          <Select 
+                            value={editForm.jobTitle} 
+                            onValueChange={(value) => setEditForm({...editForm, jobTitle: value})}
+                          >
+                            <SelectTrigger id="jobTitle">
+                              <SelectValue placeholder="Select a job title" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {JOB_TITLES.map((title) => (
+                                <SelectItem key={title} value={title}>{title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="secondaryRoles">Secondary Job Roles</Label>
+                          <SecondaryJobRolesSelector
+                            selectedRoles={editForm.secondaryJobRoles}
+                            onChange={(roles) => setEditForm({...editForm, secondaryJobRoles: roles})}
+                            mainJobTitle={editForm.jobTitle}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Select additional roles you can perform if needed
+                          </p>
                         </div>
                         
                         <div>

@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase, checkColumnExists } from '@/lib/supabase';
+import SecondaryJobRolesSelector from './SecondaryJobRolesSelector';
 
 // Job title options
 const FOH_JOB_TITLES = [
@@ -136,7 +138,7 @@ export default function JobDataSection({
           <div className="grid gap-6">
             {/* Job Title Field */}
             <div className="space-y-2">
-              <Label htmlFor="jobTitle">Job Title</Label>
+              <Label htmlFor="jobTitle">Primary Job Title</Label>
               <Select 
                 value={editForm.jobTitle} 
                 onValueChange={(value) => handleChange('jobTitle', value)}
@@ -151,6 +153,19 @@ export default function JobDataSection({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            
+            {/* Secondary Job Roles Field */}
+            <div className="space-y-2">
+              <Label htmlFor="secondaryJobRoles">Secondary Job Roles</Label>
+              <SecondaryJobRolesSelector
+                selectedRoles={editForm.secondaryJobRoles || []}
+                onChange={(roles) => handleChange('secondaryJobRoles', roles)}
+                mainJobTitle={editForm.jobTitle}
+              />
+              <p className="text-xs text-gray-500">
+                Select additional roles this person can perform if needed
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -350,6 +365,19 @@ export default function JobDataSection({
             <p className="font-medium">{profile.job_title || 'Not specified'}</p>
           </div>
 
+          {profile.secondary_job_roles && profile.secondary_job_roles.length > 0 && (
+            <div className="col-span-2">
+              <p className="text-sm text-gray-500">Secondary Job Roles</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {profile.secondary_job_roles.map((role: string) => (
+                  <Badge key={role} variant="secondary" className="bg-gray-100">
+                    {role}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div>
             <p className="text-sm text-gray-500">Employment Type</p>
             <p className="font-medium capitalize">{profile.employment_type || 'Not specified'}</p>
