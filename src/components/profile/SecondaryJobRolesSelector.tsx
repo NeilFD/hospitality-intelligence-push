@@ -44,13 +44,17 @@ export default function SecondaryJobRolesSelector({
 }: SecondaryJobRolesSelectorProps) {
   const [open, setOpen] = React.useState(false);
   
-  // Ensure we always have a valid array to work with
-  const safeSelectedRoles = React.useMemo(() => {
-    // Check if selectedRoles is an array and not null/undefined
+  // Create a safe local copy of the selected roles
+  const [localSelectedRoles, setLocalSelectedRoles] = React.useState<string[]>([]);
+  
+  // Sync local state with props whenever selectedRoles changes
+  React.useEffect(() => {
+    // Safely handle the incoming selectedRoles
     if (Array.isArray(selectedRoles)) {
-      return selectedRoles;
+      setLocalSelectedRoles(selectedRoles);
+    } else {
+      setLocalSelectedRoles([]);
     }
-    return [];
   }, [selectedRoles]);
   
   // Filter out the main job title from available options
@@ -59,30 +63,27 @@ export default function SecondaryJobRolesSelector({
   }, [mainJobTitle]);
   
   const handleSelect = (role: string) => {
-    // Always work with a fresh copy of the array
-    const currentRoles = [...safeSelectedRoles];
-    
-    if (currentRoles.includes(role)) {
-      // Remove role if already selected
-      onChange(currentRoles.filter(r => r !== role));
-    } else {
-      // Add role if not selected
-      onChange([...currentRoles, role]);
-    }
-    
-    // Close the popover after selection
+    // Use localSelectedRoles for consistent state management
+    const updatedRoles = localSelectedRoles.includes(role)
+      ? localSelectedRoles.filter(r => r !== role)
+      : [...localSelectedRoles, role];
+      
+    // Update both local state and parent component
+    setLocalSelectedRoles(updatedRoles);
+    onChange(updatedRoles);
     setOpen(false);
   };
 
   const handleRemove = (role: string) => {
-    const updatedRoles = safeSelectedRoles.filter(r => r !== role);
+    const updatedRoles = localSelectedRoles.filter(r => r !== role);
+    setLocalSelectedRoles(updatedRoles);
     onChange(updatedRoles);
   };
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 mb-2">
-        {safeSelectedRoles.map(role => (
+        {localSelectedRoles.map(role => (
           <Badge 
             key={role} 
             variant="secondary" 
@@ -128,7 +129,7 @@ export default function SecondaryJobRolesSelector({
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 flex items-center justify-center">
-                        {safeSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                        {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
                       </div>
                       <span>{role}</span>
                     </div>
