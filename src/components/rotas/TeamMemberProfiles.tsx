@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, User, Pencil, Trash2, Filter } from 'lucide-react';
+import { Plus, Users, User, Pencil, Trash2, Filter, ArrowUpAZ, ArrowDownAZ, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -38,6 +37,8 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   const { profile } = useAuthStore();
   const [jobTitleFilter, setJobTitleFilter] = useState('');
   const [uniqueJobTitles, setUniqueJobTitles] = useState([]);
+  const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
+  const [availabilityFilter, setAvailabilityFilter] = useState('all'); // 'all', 'available', 'unavailable'
   
   const userRole = profile?.role;
   
@@ -122,13 +123,19 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
     setViewingMember(member);
   };
 
+  // Toggle sort direction
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
   // Clear filters
   const clearFilters = () => {
     setSearchTerm('');
     setJobTitleFilter('');
+    setAvailabilityFilter('all');
   };
 
-  // Filter team members based on search term and job title filter
+  // Filter team members based on search term, job title filter and availability filter
   const filteredMembers = teamMembers.filter(member => {
     const matchesSearch = 
       member.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -139,7 +146,33 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
     const matchesJobTitle = jobTitleFilter ? 
       member.job_title === jobTitleFilter : true;
     
-    return matchesSearch && matchesJobTitle;
+    const matchesAvailability = availabilityFilter === 'all' ? true :
+      availabilityFilter === 'available' ? 
+        member.available_for_rota === true : 
+        member.available_for_rota === false;
+    
+    return matchesSearch && matchesJobTitle && matchesAvailability;
+  });
+
+  // Sort the filtered members by last name (then first name) in the specified direction
+  const sortedMembers = [...filteredMembers].sort((a, b) => {
+    const lastNameA = (a.last_name || '').toLowerCase();
+    const lastNameB = (b.last_name || '').toLowerCase();
+    
+    // First sort by last name
+    if (lastNameA !== lastNameB) {
+      return sortDirection === 'asc' ? 
+        lastNameA.localeCompare(lastNameB) : 
+        lastNameB.localeCompare(lastNameA);
+    }
+    
+    // If last names are the same, sort by first name
+    const firstNameA = (a.first_name || '').toLowerCase();
+    const firstNameB = (b.first_name || '').toLowerCase();
+    
+    return sortDirection === 'asc' ? 
+      firstNameA.localeCompare(firstNameB) : 
+      firstNameB.localeCompare(firstNameA);
   });
   
   const getInitials = (firstName, lastName) => {
@@ -148,7 +181,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
   };
   
   const getFullName = (member) => {
-    return `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Unnamed User';
+    return `${member.last_name || ''}, ${member.first_name || ''}`.trim() || 'Unnamed User';
   };
   
   return (
@@ -192,37 +225,75 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
                 className="border-gray-300 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <div className="w-full sm:w-64">
-              <Select
-                value={jobTitleFilter}
-                onValueChange={setJobTitleFilter}
+            <div className="flex gap-2">
+              <div className="w-full sm:w-[150px]">
+                <Select
+                  value={jobTitleFilter}
+                  onValueChange={setJobTitleFilter}
+                >
+                  <SelectTrigger className="w-full">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <SelectValue placeholder="Job title" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All job titles</SelectItem>
+                    {uniqueJobTitles.map(title => (
+                      <SelectItem key={title} value={title}>
+                        {title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-full sm:w-[150px]">
+                <Select
+                  value={availabilityFilter}
+                  onValueChange={setAvailabilityFilter}
+                >
+                  <SelectTrigger className="w-full">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <SelectValue placeholder="Availability" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All availability</SelectItem>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="unavailable">Unavailable</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                variant="outline"
+                size="icon"
+                onClick={toggleSortDirection}
+                title={sortDirection === 'asc' ? 'Sort A-Z' : 'Sort Z-A'}
               >
-                <SelectTrigger className="w-full">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
-                    <SelectValue placeholder="Filter by job title" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All job titles</SelectItem>
-                  {uniqueJobTitles.map(title => (
-                    <SelectItem key={title} value={title}>
-                      {title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {sortDirection === 'asc' ? (
+                  <ArrowUpAZ className="h-4 w-4" />
+                ) : (
+                  <ArrowDownAZ className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-            {(searchTerm || jobTitleFilter) && (
+          </div>
+          
+          {(searchTerm || jobTitleFilter || availabilityFilter !== 'all') && (
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                Found {sortedMembers.length} team members matching your filters
+              </div>
               <Button 
                 variant="ghost" 
                 onClick={clearFilters}
-                className="w-full sm:w-auto"
+                className="text-xs h-8"
               >
                 Clear filters
               </Button>
-            )}
-          </div>
+            </div>
+          )}
           
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
@@ -233,7 +304,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
               <User className="h-12 w-12 text-muted-foreground mb-2" />
               <p className="text-muted-foreground">No team members found</p>
             </div>
-          ) : filteredMembers.length === 0 ? (
+          ) : sortedMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8">
               <User className="h-12 w-12 text-muted-foreground mb-2" />
               <p className="text-muted-foreground">No team members match your search</p>
@@ -243,7 +314,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredMembers.map(member => (
+              {sortedMembers.map(member => (
                 <div 
                   key={member.id}
                   className="p-4 border rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
@@ -260,9 +331,16 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                    <Badge variant="secondary" className="bg-gray-100">
-                      {member.role || 'No role'}
-                    </Badge>
+                    <div className="flex gap-1">
+                      <Badge variant="secondary" className="bg-gray-100">
+                        {member.role || 'No role'}
+                      </Badge>
+                      {member.available_for_rota !== undefined && (
+                        <Badge variant={member.available_for_rota ? "success" : "destructive"} className={member.available_for_rota ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                          {member.available_for_rota ? 'Available' : 'Unavailable'}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button 
                         variant="ghost" 
