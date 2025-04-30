@@ -98,7 +98,8 @@ export default function TeamMemberForm({
         favourite_drink: teamMember.favourite_drink || '',
         about_me: teamMember.about_me || '',
         avatar_url: teamMember.avatar_url || teamMember.photo_url || '',
-        available_for_rota: teamMember.available_for_rota !== undefined ? teamMember.available_for_rota : true // Add this line
+        available_for_rota: teamMember.available_for_rota !== undefined ? teamMember.available_for_rota : true,
+        role_type: teamMember.role_type || 'foh' // Add this line with default
       });
       console.log("Form data populated:", formData);
     } else {
@@ -124,7 +125,8 @@ export default function TeamMemberForm({
         favourite_drink: '',
         about_me: '',
         avatar_url: '',
-        available_for_rota: true // Add this line
+        available_for_rota: true,
+        role_type: 'foh' // Add this line with default
       });
     }
     
