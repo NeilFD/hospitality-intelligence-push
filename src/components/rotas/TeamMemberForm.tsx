@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -12,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import AvailabilityScheduler from './AvailabilityScheduler';
 import { Switch } from '@/components/ui/switch';
 import HiScoreSection from '@/components/profile/HiScoreSection';
+import SecondaryJobRolesSelector from '@/components/profile/SecondaryJobRolesSelector';
 
 // Full list of job titles from JobDataSection.tsx
 const FOH_JOB_TITLES = [
@@ -69,7 +69,8 @@ export default function TeamMemberForm({
     about_me: '',
     avatar_url: '',
     available_for_rota: true,
-    role_type: 'foh' // Default role type for Hi Score evaluations
+    role_type: 'foh', // Default role type for Hi Score evaluations
+    secondary_job_roles: [] // Add secondary job roles to formData
   });
 
   // If editing, populate the form with the team member data
@@ -99,7 +100,8 @@ export default function TeamMemberForm({
         about_me: teamMember.about_me || '',
         avatar_url: teamMember.avatar_url || teamMember.photo_url || '',
         available_for_rota: teamMember.available_for_rota !== undefined ? teamMember.available_for_rota : true,
-        role_type: teamMember.role_type || 'foh' // Add this line with default
+        role_type: teamMember.role_type || 'foh',
+        secondary_job_roles: teamMember.secondary_job_roles || [] // Add secondary job roles from team member data
       });
       console.log("Form data populated:", formData);
     } else {
@@ -126,7 +128,8 @@ export default function TeamMemberForm({
         about_me: '',
         avatar_url: '',
         available_for_rota: true,
-        role_type: 'foh' // Add this line with default
+        role_type: 'foh',
+        secondary_job_roles: [] // Initialize as empty array
       });
     }
     
@@ -177,7 +180,8 @@ export default function TeamMemberForm({
         favourite_dish: formData.favourite_dish,
         favourite_drink: formData.favourite_drink,
         about_me: formData.about_me,
-        available_for_rota: formData.available_for_rota // Add this line
+        available_for_rota: formData.available_for_rota,
+        secondary_job_roles: formData.secondary_job_roles // Include secondary job roles in profile data
       };
       
       console.log("Updating profile with data:", profileData);
@@ -272,6 +276,17 @@ export default function TeamMemberForm({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              
+              {/* Add SecondaryJobRolesSelector right after Job Title */}
+              <div className="space-y-2">
+                <Label htmlFor="secondary_job_roles">Secondary Job Roles</Label>
+                <SecondaryJobRolesSelector
+                  selectedRoles={formData.secondary_job_roles}
+                  onChange={(roles) => handleChange('secondary_job_roles', roles)}
+                  mainJobTitle={formData.job_title}
+                  disabled={false}
+                />
               </div>
               
               <div className="space-y-2">
