@@ -18,6 +18,22 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('personal');
+  const [isEditingJob, setIsEditingJob] = useState(false);
+  const [editJobForm, setEditJobForm] = useState({
+    jobTitle: '',
+    employmentType: 'hourly',
+    wageRate: 0,
+    annualSalary: 0,
+    contractorRate: 0,
+    employmentStartDate: '',
+    employmentStatus: 'full-time',
+    minHoursPerWeek: 0,
+    maxHoursPerWeek: 40,
+    minHoursPerDay: 0,
+    maxHoursPerDay: 8,
+    availableForRota: true,
+    inFtEducation: false
+  });
   
   // If no userId is provided, use the current user's profile
   const profileId = userId || currentUserProfile?.id;
@@ -53,6 +69,25 @@ const ProfilePage = () => {
       
       console.log("Loaded profile:", data);
       setProfile(data);
+
+      // Initialize the edit form with current profile data
+      if (data) {
+        setEditJobForm({
+          jobTitle: data.job_title || '',
+          employmentType: data.employment_type || 'hourly',
+          wageRate: data.wage_rate || 0,
+          annualSalary: data.annual_salary || 0,
+          contractorRate: data.contractor_rate || 0,
+          employmentStartDate: data.employment_start_date || '',
+          employmentStatus: data.employment_status || 'full-time',
+          minHoursPerWeek: data.min_hours_per_week || 0,
+          maxHoursPerWeek: data.max_hours_per_week || 40,
+          minHoursPerDay: data.min_hours_per_day || 0,
+          maxHoursPerDay: data.max_hours_per_day || 8,
+          availableForRota: data.available_for_rota !== false,
+          inFtEducation: data.in_ft_education === true
+        });
+      }
     } catch (error) {
       console.error('Error loading profile data:', error);
       toast("Failed to load profile", {
@@ -89,6 +124,14 @@ const ProfilePage = () => {
     }
   };
 
+  const handleEditJobDetails = () => {
+    setIsEditingJob(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingJob(false);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
@@ -114,7 +157,23 @@ const ProfilePage = () => {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <ProfileAvatar profile={profile} isOwnProfile={isOwnProfile} />
+      <div className="flex justify-center">
+        <ProfileAvatar 
+          profileId={profile.id} 
+          avatarUrl={profile.avatar_url} 
+          fallback={`${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`}
+          size="lg"
+        />
+      </div>
+      
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle>
+            {profile.first_name} {profile.last_name}
+          </CardTitle>
+          <p className="text-muted-foreground">{profile.role || "Team Member"}</p>
+        </CardHeader>
+      </Card>
       
       {isOwnProfile && (
         <Card>
@@ -164,8 +223,18 @@ const ProfilePage = () => {
         </TabsContent>
         
         <TabsContent value="job" className="space-y-6 mt-6">
-          <JobDataSection profile={profile} />
-          <HiScoreSection profileId={profileId} isOwnProfile={isOwnProfile} />
+          <JobDataSection 
+            profile={profile} 
+            isEditing={isEditingJob}
+            editForm={editJobForm}
+            setEditForm={setEditJobForm}
+            onCancel={handleCancelEdit}
+            onEditJobDetails={handleEditJobDetails}
+          />
+          <HiScoreSection 
+            profileId={profileId} 
+            onScoreUpdate={(score) => console.log("High score updated:", score)}
+          />
         </TabsContent>
       </Tabs>
     </div>
