@@ -161,9 +161,10 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectTrigger className="w-[110px] h-8">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent 
-                          className="max-h-[200px]" 
-                          style={{ overflowY: 'auto' }}
+                        <SelectContent
+                          position="popper"
+                          sideOffset={5}
+                          className="max-h-[300px] overflow-y-auto"
                           align="start"
                         >
                           {timeSlots.map(slot => (
@@ -186,9 +187,10 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectTrigger className="w-[110px] h-8">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent 
-                          className="max-h-[200px]" 
-                          style={{ overflowY: 'auto' }}
+                        <SelectContent
+                          position="popper"
+                          sideOffset={5}
+                          className="max-h-[300px] overflow-y-auto"
                           align="start"
                         >
                           {timeSlots.map(slot => (
