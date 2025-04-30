@@ -1,291 +1,104 @@
-
+import React, { lazy, Suspense } from 'react';
 import {
   createBrowserRouter,
-} from "react-router-dom";
-import RootLayout from "@/components/RootLayout";
-import Dashboard from "@/pages/Dashboard";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import RequireAuth from "@/components/RequireAuth";
-import Profile from "@/pages/Profile";
-// Fix the import syntax for EditProfile - using proper import alias syntax
-import { default as EditProfile } from "@/pages/Profile";
-import TeamDashboard from "@/pages/team/Dashboard";
-import Noticeboard from "@/pages/team/Noticeboard";
-import Knowledge from "@/pages/team/Knowledge";
-import Chat from "@/pages/team/Chat";
-import ControlCentre from "@/pages/ControlCentre";
-import MonthSummary from "@/pages/MonthSummary";
-import WeeklyTracker from "@/pages/WeeklyTracker";
-import PLDashboard from "@/pages/pl/Dashboard";
-import PLBudget from "@/pages/pl/BudgetInput";
-import PLForecast from "@/pages/pl/FoodBeverageForecast";
-import WagesDashboard from "@/pages/wages/Dashboard";
-import WagesEmployees from "@/pages/wages/Employees";
-import WagesShifts from "@/pages/wages/Shifts";
-import MasterDashboard from "@/pages/master/Dashboard";
-import MasterMonthly from "@/pages/master/MonthSummary";
-import MasterWeekly from "@/pages/master/WeeklyInput";
-import MasterDaily from "@/pages/master/Dashboard";
-import HiQDashboard from "@/pages/hiq/Dashboard";
-import HiQPerformance from "@/pages/hiq/Performance";
-import HiQChat from "@/pages/hiq/Chat";
-import HiQRotas from "@/pages/hiq/Rotas";
-import HomeDashboard from "@/pages/home/Dashboard";
+  createRoutesFromElements,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+import { MainLayout } from '@/layouts/MainLayout';
+import { AuthLayout } from '@/layouts/AuthLayout';
+import { RotasLayout } from '@/layouts/RotasLayout';
+import Loading from '@/components/ui/loading';
+import Index from './pages/Index';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import HomeDashboard from './pages/home/Dashboard';
+import ControlCentre from './pages/ControlCentre';
+import HiQKitchenLedger from './pages/hiq/KitchenLedger';
+import HiQRotas from './pages/hiq/Rotas';
+import RotaScheduling from './pages/hiq/RotaScheduling';
 
-export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <RootLayout />,
-    children: [
-      {
-        path: "/login",
-        element: <Login />,
-      },
-      {
-        path: "/register",
-        element: <Register />,
-      },
-      {
-        path: "/profile",
-        element: (
-          <RequireAuth>
-            <Profile />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/profile/:userId",
-        element: (
-          <RequireAuth>
-            <Profile />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/edit-profile",
-        element: (
-          <RequireAuth>
-            <EditProfile />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/home/dashboard",
-        element: (
-          <RequireAuth>
-            <HomeDashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/team/dashboard",
-        element: (
-          <RequireAuth>
-            <TeamDashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/team/noticeboard",
-        element: (
-          <RequireAuth>
-            <Noticeboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/team/knowledge",
-        element: (
-          <RequireAuth>
-            <Knowledge />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/team/chat",
-        element: (
-          <RequireAuth>
-            <Chat />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/control-centre",
-        element: (
-          <RequireAuth requiredRole="Super User">
-            <ControlCentre />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/food/dashboard",
-        element: (
-          <RequireAuth>
-            <Dashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/food/month/:year/:month",
-        element: (
-          <RequireAuth>
-            <MonthSummary moduleType="food" modulePrefix="Food" />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/food/week/:year/:month/:week",
-        element: (
-          <RequireAuth>
-            <WeeklyTracker moduleType="food" modulePrefix="Food" />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/beverage/dashboard",
-        element: (
-          <RequireAuth>
-            <Dashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/beverage/month/:year/:month",
-        element: (
-          <RequireAuth>
-            <MonthSummary moduleType="beverage" modulePrefix="Beverage" />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/beverage/week/:year/:month/:week",
-        element: (
-          <RequireAuth>
-            <WeeklyTracker moduleType="beverage" modulePrefix="Beverage" />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/pl/dashboard",
-        element: (
-          <RequireAuth>
-            <PLDashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/pl/budget",
-        element: (
-          <RequireAuth>
-            <PLBudget />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/pl/forecast",
-        element: (
-          <RequireAuth>
-            <PLForecast />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/wages/dashboard",
-        element: (
-          <RequireAuth>
-            <WagesDashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/wages/employees",
-        element: (
-          <RequireAuth>
-            <WagesEmployees />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/wages/shifts",
-        element: (
-          <RequireAuth>
-            <WagesShifts />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/master/dashboard",
-        element: (
-          <RequireAuth>
-            <MasterDashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/master/daily/:year/:month/:day",
-        element: (
-          <RequireAuth>
-            <MasterDaily />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/master/weekly/:year/:month/:week",
-        element: (
-          <RequireAuth>
-            <MasterWeekly />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/master/monthly/:year/:month",
-        element: (
-          <RequireAuth>
-            <MasterMonthly />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/hiq/dashboard",
-        element: (
-          <RequireAuth>
-            <HiQDashboard />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/hiq/performance",
-        element: (
-          <RequireAuth>
-            <HiQPerformance />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/hiq/chat",
-        element: (
-          <RequireAuth>
-            <HiQChat />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/hiq/rotas",
-        element: (
-          <RequireAuth>
-            <HiQRotas />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: "/master/weekly-input",
-        element: (
-          <RequireAuth>
-            <MasterWeekly />
-          </RequireAuth>
-        ),
-      }
-    ],
-  },
-]);
+// Lazy load components for Kitchen Ledger
+const KitchenLedgerDashboard = lazy(() => import('./pages/kitchen-ledger/Dashboard'));
+const KitchenLedgerSuppliers = lazy(() => import('./pages/kitchen-ledger/Suppliers'));
+const KitchenLedgerPurchases = lazy(() => import('./pages/kitchen-ledger/Purchases'));
+const KitchenLedgerCreditNotes = lazy(() => import('./pages/kitchen-ledger/CreditNotes'));
+const KitchenLedgerSettings = lazy(() => import('./pages/kitchen-ledger/Settings'));
+const KitchenLedgerBudgeting = lazy(() => import('./pages/kitchen-ledger/Budgeting'));
+
+// Lazy load components for Settings
+const SettingsProfile = lazy(() => import('./pages/settings/Profile'));
+const SettingsAccount = lazy(() => import('./pages/settings/Account'));
+const SettingsAppearance = lazy(() => import('./pages/settings/Appearance'));
+const SettingsNotifications = lazy(() => import('./pages/settings/Notifications'));
+const SettingsDisplay = lazy(() => import('./pages/settings/Display'));
+
+// Lazy load components for HiQ
+const HiQDashboard = lazy(() => import('./pages/hiq/Dashboard'));
+const HiQBudgets = lazy(() => import('./pages/hiq/Budgets'));
+const HiQReports = lazy(() => import('./pages/hiq/Reports'));
+
+// Lazy load components for Team
+const TeamDashboard = lazy(() => import('./pages/team/Dashboard'));
+const TeamRoster = lazy(() => import('./pages/team/Roster'));
+const TeamAvailability = lazy(() => import('./pages/team/Availability'));
+const TeamTraining = lazy(() => import('./pages/team/Training'));
+const TeamPerformance = lazy(() => import('./pages/team/Performance'));
+
+// Lazy load components for Kitchen Ledger Module
+const KitchenLedgerModule = lazy(() => import('./pages/modules/KitchenLedgerModule'));
+const HiQModule = lazy(() => import('./pages/modules/HiQModule'));
+const TeamModule = lazy(() => import('./pages/modules/TeamModule'));
+
+export const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      <Route element={<MainLayout />}>
+        <Route path="/home" element={<Navigate to="home/dashboard" replace />} />
+        <Route path="/home/dashboard" element={<HomeDashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/control-centre" element={<ControlCentre />} />
+
+        <Route path="/settings" element={<Navigate to="settings/profile" replace />} />
+        <Route path="/settings/profile" element={<Suspense fallback={<Loading />}><SettingsProfile /></Suspense>} />
+        <Route path="/settings/account" element={<Suspense fallback={<Loading />}><SettingsAccount /></Suspense>} />
+        <Route path="/settings/appearance" element={<Suspense fallback={<Loading />}><SettingsAppearance /></Suspense>} />
+        <Route path="/settings/notifications" element={<Suspense fallback={<Loading />}><SettingsNotifications /></Suspense>} />
+        <Route path="/settings/display" element={<Suspense fallback={<Loading />}><SettingsDisplay /></Suspense>} />
+
+        <Route path="/kitchen-ledger" element={<KitchenLedgerModule />} />
+        <Route path="/kitchen-ledger/dashboard" element={<Suspense fallback={<Loading />}><KitchenLedgerDashboard /></Suspense>} />
+        <Route path="/kitchen-ledger/suppliers" element={<Suspense fallback={<Loading />}><KitchenLedgerSuppliers /></Suspense>} />
+        <Route path="/kitchen-ledger/purchases" element={<Suspense fallback={<Loading />}><KitchenLedgerPurchases /></Suspense>} />
+        <Route path="/kitchen-ledger/credit-notes" element={<Suspense fallback={<Loading />}><KitchenLedgerCreditNotes /></Suspense>} />
+        <Route path="/kitchen-ledger/budgeting" element={<Suspense fallback={<Loading />}><KitchenLedgerBudgeting /></Suspense>} />
+        <Route path="/kitchen-ledger/settings" element={<Suspense fallback={<Loading />}><KitchenLedgerSettings /></Suspense>} />
+
+        <Route path="/team" element={<TeamModule />} />
+        <Route path="/team/dashboard" element={<Suspense fallback={<Loading />}><TeamDashboard /></Suspense>} />
+        <Route path="/team/roster" element={<Suspense fallback={<Loading />}><TeamRoster /></Suspense>} />
+        <Route path="/team/availability" element={<Suspense fallback={<Loading />}><TeamAvailability /></Suspense>} />
+        <Route path="/team/training" element={<Suspense fallback={<Loading />}><TeamTraining /></Suspense>} />
+        <Route path="/team/performance" element={<Suspense fallback={<Loading />}><TeamPerformance /></Suspense>} />
+
+        <Route path="/hiq" element={<HiQModule />} />
+        <Route path="/hiq/dashboard" element={<Suspense fallback={<Loading />}><HiQDashboard /></Suspense>} />
+        <Route path="/hiq/kitchen-ledger" element={<HiQKitchenLedger />} />
+        <Route path="/hiq/budgets" element={<Suspense fallback={<Loading />}><HiQBudgets /></Suspense>} />
+        <Route path="/hiq/reports" element={<Suspense fallback={<Loading />}><HiQReports /></Suspense>} />
+        <Route path="/hiq/rotas" element={<RotasLayout />}>
+          <Route index element={<Navigate to="weekly" replace />} />
+          <Route path="weekly" element={<HiQRotas />} />
+        </Route>
+        <Route path="/hiq/rota-scheduling" element={<RotasLayout />}>
+          <Route index element={<RotaScheduling />} />
+        </Route>
+      </Route>
+    </>
+  )
+);

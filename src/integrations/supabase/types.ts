@@ -1327,6 +1327,338 @@ export type Database = {
         }
         Relationships: []
       }
+      rota_forecast_factors: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          local_events: string | null
+          location_id: string
+          special_notes: string | null
+          updated_at: string
+          weather_forecast: Json | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          local_events?: string | null
+          location_id: string
+          special_notes?: string | null
+          updated_at?: string
+          weather_forecast?: Json | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          local_events?: string | null
+          location_id?: string
+          special_notes?: string | null
+          updated_at?: string
+          weather_forecast?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rota_forecast_factors_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rota_requests: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          id: string
+          location_id: string
+          requested_by: string
+          revenue_forecast: Json | null
+          staffing_cost: number | null
+          staffing_cost_percentage: number | null
+          status: string
+          updated_at: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          location_id: string
+          requested_by: string
+          revenue_forecast?: Json | null
+          staffing_cost?: number | null
+          staffing_cost_percentage?: number | null
+          status?: string
+          updated_at?: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          location_id?: string
+          requested_by?: string
+          revenue_forecast?: Json | null
+          staffing_cost?: number | null
+          staffing_cost_percentage?: number | null
+          status?: string
+          updated_at?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rota_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rota_requests_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rota_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rota_revenue_thresholds: {
+        Row: {
+          created_at: string
+          day_of_week: string
+          foh_max_staff: number
+          foh_min_staff: number
+          id: string
+          kitchen_max_staff: number
+          kitchen_min_staff: number
+          kp_max_staff: number
+          kp_min_staff: number
+          location_id: string
+          revenue_max: number
+          revenue_min: number
+          segment: string
+          target_cost_percentage: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: string
+          foh_max_staff?: number
+          foh_min_staff?: number
+          id?: string
+          kitchen_max_staff?: number
+          kitchen_min_staff?: number
+          kp_max_staff?: number
+          kp_min_staff?: number
+          location_id: string
+          revenue_max: number
+          revenue_min: number
+          segment: string
+          target_cost_percentage?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string
+          foh_max_staff?: number
+          foh_min_staff?: number
+          id?: string
+          kitchen_max_staff?: number
+          kitchen_min_staff?: number
+          kp_max_staff?: number
+          kp_min_staff?: number
+          location_id?: string
+          revenue_max?: number
+          revenue_min?: number
+          segment?: string
+          target_cost_percentage?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rota_revenue_thresholds_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rota_schedule_shifts: {
+        Row: {
+          break_minutes: number
+          created_at: string
+          date: string
+          day_of_week: string
+          employer_ni_cost: number
+          employer_pension_cost: number
+          end_time: string
+          hi_score: number | null
+          id: string
+          is_secondary_role: boolean
+          job_role_id: string
+          profile_id: string
+          schedule_id: string
+          shift_cost: number
+          start_time: string
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          break_minutes?: number
+          created_at?: string
+          date: string
+          day_of_week: string
+          employer_ni_cost?: number
+          employer_pension_cost?: number
+          end_time: string
+          hi_score?: number | null
+          id?: string
+          is_secondary_role?: boolean
+          job_role_id: string
+          profile_id: string
+          schedule_id: string
+          shift_cost: number
+          start_time: string
+          total_cost: number
+          updated_at?: string
+        }
+        Update: {
+          break_minutes?: number
+          created_at?: string
+          date?: string
+          day_of_week?: string
+          employer_ni_cost?: number
+          employer_pension_cost?: number
+          end_time?: string
+          hi_score?: number | null
+          id?: string
+          is_secondary_role?: boolean
+          job_role_id?: string
+          profile_id?: string
+          schedule_id?: string
+          shift_cost?: number
+          start_time?: string
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rota_schedule_shifts_job_role_id_fkey"
+            columns: ["job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rota_schedule_shifts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rota_schedule_shifts_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "rota_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rota_schedules: {
+        Row: {
+          cost_percentage: number
+          created_at: string
+          created_by: string | null
+          id: string
+          location_id: string
+          published_at: string | null
+          published_by: string | null
+          request_id: string
+          revenue_forecast: number
+          status: string
+          total_cost: number
+          updated_at: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          cost_percentage?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_id: string
+          published_at?: string | null
+          published_by?: string | null
+          request_id: string
+          revenue_forecast?: number
+          status?: string
+          total_cost?: number
+          updated_at?: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          cost_percentage?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          location_id?: string
+          published_at?: string | null
+          published_by?: string | null
+          request_id?: string
+          revenue_forecast?: number
+          status?: string
+          total_cost?: number
+          updated_at?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rota_schedules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rota_schedules_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rota_schedules_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rota_schedules_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "rota_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_rules: {
         Row: {
           archived: boolean | null
@@ -2357,6 +2689,14 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      calculate_employer_costs: {
+        Args: {
+          wage_rate: number
+          hours_worked: number
+          employment_type?: string
+        }
+        Returns: Json
       }
       check_and_clean_auth_user: {
         Args: { email_val: string; should_delete?: boolean }
