@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -19,8 +18,6 @@ import {
 } from '@/utils/hiScoreCalculations';
 import { Heart, Smile, Handshake, Utensils, Book, BriefcaseBusiness, Brain } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 
 interface HiScoreMatrixProps {
@@ -311,7 +308,7 @@ export function HiScoreMatrix({
       </div>
     );
   };
-  
+
   const renderMatrixItems = () => {
     if (roleType === 'foh') {
       return (
@@ -606,8 +603,7 @@ export function HiScoreMatrix({
             {renderCategoryFeedback('foodKnowledge', 'Food Knowledge')}
           </div>
         </>
-      );
-    }
+      }
   };
   
   return (
