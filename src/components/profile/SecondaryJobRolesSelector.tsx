@@ -70,24 +70,32 @@ export default function SecondaryJobRolesSelector({
   }, [availableJobTitles, searchTerm]);
   
   const handleSelect = (role: string) => {
-    if (localSelectedRoles.includes(role)) {
-      // If already selected, remove it
-      const updatedRoles = localSelectedRoles.filter(r => r !== role);
-      setLocalSelectedRoles(updatedRoles);
-      onChange(updatedRoles);
-    } else {
-      // If not selected, add it
-      const updatedRoles = [...localSelectedRoles, role];
-      setLocalSelectedRoles(updatedRoles);
-      onChange(updatedRoles);
+    try {
+      if (localSelectedRoles.includes(role)) {
+        // If already selected, remove it
+        const updatedRoles = localSelectedRoles.filter(r => r !== role);
+        setLocalSelectedRoles(updatedRoles);
+        onChange(updatedRoles);
+      } else {
+        // If not selected, add it
+        const updatedRoles = [...localSelectedRoles, role];
+        setLocalSelectedRoles(updatedRoles);
+        onChange(updatedRoles);
+      }
+      // Don't close the popover to allow multiple selections
+    } catch (error) {
+      console.error("Error in handleSelect:", error);
     }
-    // Don't close the popover to allow multiple selections
   };
 
   const handleRemove = (role: string) => {
-    const updatedRoles = localSelectedRoles.filter(r => r !== role);
-    setLocalSelectedRoles(updatedRoles);
-    onChange(updatedRoles);
+    try {
+      const updatedRoles = localSelectedRoles.filter(r => r !== role);
+      setLocalSelectedRoles(updatedRoles);
+      onChange(updatedRoles);
+    } catch (error) {
+      console.error("Error in handleRemove:", error);
+    }
   };
 
   return (
@@ -128,7 +136,12 @@ export default function SecondaryJobRolesSelector({
           </PopoverTrigger>
           
           <SafeErrorBoundary>
-            <PopoverContent className="p-4 w-56 bg-white shadow-md" align="start">
+            <PopoverContent 
+              className="p-4 w-56 bg-white shadow-md border border-gray-200" 
+              align="start"
+              sideOffset={4}
+              style={{ zIndex: 1000 }}
+            >
               <div className="space-y-4">
                 {/* Search input */}
                 <div>
