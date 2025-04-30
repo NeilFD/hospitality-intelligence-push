@@ -2,7 +2,8 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandInput, CommandItem } from '@/components/ui/command';
+import { SafeCommandGroup } from '@/components/ui/safe-command-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 
@@ -120,7 +121,8 @@ export default function SecondaryJobRolesSelector({
             <Command>
               <CommandInput placeholder="Search for roles..." />
               <CommandEmpty>No roles found.</CommandEmpty>
-              <CommandGroup className="max-h-64 overflow-y-auto">
+              {/* Replace CommandGroup with our SafeCommandGroup */}
+              <SafeCommandGroup className="max-h-64 overflow-y-auto">
                 {availableJobTitles.map(role => (
                   <CommandItem
                     key={role}
@@ -135,7 +137,7 @@ export default function SecondaryJobRolesSelector({
                     </div>
                   </CommandItem>
                 ))}
-              </CommandGroup>
+              </SafeCommandGroup>
             </Command>
           </PopoverContent>
         </Popover>
