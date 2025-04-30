@@ -237,7 +237,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
                       <SelectValue placeholder="Job title" />
                     </div>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     <SelectItem value="all-titles">All job titles</SelectItem>
                     {uniqueJobTitles.map(title => (
                       <SelectItem key={title} value={title}>
