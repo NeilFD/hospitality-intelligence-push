@@ -119,13 +119,14 @@ export default function SecondaryJobRolesSelector({
               variant="outline" 
               size="sm" 
               className="h-8 border-dashed"
+              onClick={() => setOpen(true)} 
             >
               Add secondary roles
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="p-0" align="start">
+          <PopoverContent className="p-0 z-50 bg-white" align="start">
             <SafeErrorBoundary>
-              {hasAvailableJobTitles && availableJobTitles.length > 0 && (
+              {hasAvailableJobTitles && (
                 <Command>
                   <CommandInput placeholder="Search for roles..." />
                   <CommandEmpty>No roles found.</CommandEmpty>
