@@ -336,7 +336,7 @@ export default function TeamMemberProfiles({ location, jobRoles }) {
                         {member.role || 'No role'}
                       </Badge>
                       {member.available_for_rota !== undefined && (
-                        <Badge variant={member.available_for_rota ? "success" : "destructive"} className={member.available_for_rota ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        <Badge variant={member.available_for_rota ? "secondary" : "destructive"} className={member.available_for_rota ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
                           {member.available_for_rota ? 'Available' : 'Unavailable'}
                         </Badge>
                       )}
