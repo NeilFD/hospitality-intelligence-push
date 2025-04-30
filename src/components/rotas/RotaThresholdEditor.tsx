@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Save, Trash2, Loader2, Copy } from 'lucide-react';
+import { Plus, Save, Trash2, Loader2, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
@@ -45,6 +45,8 @@ type Threshold = {
   kp_max_staff: number;
   target_cost_percentage: number;
   isNew?: boolean;
+  isExpanded?: boolean;
+  isSaving?: boolean;
 };
 
 export default function RotaThresholdEditor({ location }: RotaThresholdEditorProps) {
@@ -71,7 +73,12 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         
       if (error) throw error;
       
-      setThresholds(data || []);
+      const formattedThresholds = (data || []).map(threshold => ({
+        ...threshold,
+        isExpanded: false
+      }));
+      
+      setThresholds(formattedThresholds);
     } catch (error) {
       console.error('Error fetching thresholds:', error);
       toast.error('Failed to load revenue thresholds');
@@ -94,7 +101,8 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       kp_min_staff: 0,
       kp_max_staff: 1,
       target_cost_percentage: 28,
-      isNew: true
+      isNew: true,
+      isExpanded: true
     };
     
     setThresholds([...thresholds, newThreshold]);
@@ -106,7 +114,8 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       ...thresholdToDuplicate,
       name: `Copy of ${thresholdToDuplicate.name}`,
       isNew: true,
-      id: undefined // Remove id to ensure it's treated as new
+      id: undefined, // Remove id to ensure it's treated as new
+      isExpanded: true
     };
     
     setThresholds([...thresholds, duplicatedThreshold]);
@@ -158,7 +167,98 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     setThresholds(updatedThresholds);
   };
 
-  const saveThresholds = async () => {
+  const toggleThresholdExpansion = (index: number) => {
+    const updatedThresholds = [...thresholds];
+    updatedThresholds[index] = { 
+      ...updatedThresholds[index], 
+      isExpanded: !updatedThresholds[index].isExpanded 
+    };
+    setThresholds(updatedThresholds);
+  };
+
+  const saveThreshold = async (index: number) => {
+    const threshold = thresholds[index];
+    const updatedThresholds = [...thresholds];
+    
+    // Set saving indicator for this specific threshold
+    updatedThresholds[index] = { 
+      ...updatedThresholds[index],
+      isSaving: true 
+    };
+    setThresholds(updatedThresholds);
+    
+    try {
+      // For new thresholds
+      if (threshold.isNew) {
+        const thresholdToInsert = {
+          ...threshold,
+          location_id: location.id,
+          isNew: undefined,
+          isExpanded: undefined,
+          isSaving: undefined
+        };
+        
+        const { data, error } = await supabase
+          .from('rota_revenue_thresholds')
+          .insert(thresholdToInsert)
+          .select('*')
+          .single();
+          
+        if (error) throw error;
+        
+        // Update threshold with returned ID and mark as saved (not new anymore)
+        updatedThresholds[index] = { 
+          ...data,
+          isExpanded: false,
+          isSaving: false
+        };
+      } 
+      // For existing thresholds
+      else {
+        const { error } = await supabase
+          .from('rota_revenue_thresholds')
+          .update({
+            name: threshold.name,
+            day_of_week: threshold.day_of_week,
+            segment: threshold.segment,
+            revenue_min: threshold.revenue_min,
+            revenue_max: threshold.revenue_max,
+            foh_min_staff: threshold.foh_min_staff,
+            foh_max_staff: threshold.foh_max_staff,
+            kitchen_min_staff: threshold.kitchen_min_staff,
+            kitchen_max_staff: threshold.kitchen_max_staff,
+            kp_min_staff: threshold.kp_min_staff,
+            kp_max_staff: threshold.kp_max_staff,
+            target_cost_percentage: threshold.target_cost_percentage
+          })
+          .eq('id', threshold.id);
+          
+        if (error) throw error;
+        
+        // Mark as saved and collapse
+        updatedThresholds[index] = { 
+          ...updatedThresholds[index],
+          isExpanded: false,
+          isSaving: false
+        };
+      }
+      
+      setThresholds(updatedThresholds);
+      toast.success('Threshold saved successfully');
+    } catch (error) {
+      console.error('Error saving threshold:', error);
+      toast.error('Failed to save threshold');
+      
+      // Reset saving state
+      updatedThresholds[index] = { 
+        ...updatedThresholds[index],
+        isSaving: false
+      };
+      setThresholds(updatedThresholds);
+    }
+  };
+
+  const saveAllThresholds = async () => {
     setIsSaving(true);
     
     try {
@@ -171,7 +271,9 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         const thresholdsToInsert = newThresholds.map(t => ({
           ...t,
           location_id: location.id,
-          isNew: undefined // Remove isNew flag
+          isNew: undefined,
+          isExpanded: undefined,
+          isSaving: undefined
         }));
         
         const { error } = await supabase
@@ -204,9 +306,9 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         if (error) throw error;
       }
       
-      toast.success('Thresholds saved successfully');
+      toast.success('All thresholds saved successfully');
       
-      // Refresh the data
+      // Refresh the data and collapse all thresholds
       fetchThresholds();
     } catch (error) {
       console.error('Error saving thresholds:', error);
@@ -241,8 +343,42 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                 {thresholds.map((threshold, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Threshold #{index + 1}</h3>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleThresholdExpansion(index)}
+                          className="h-8 w-8"
+                        >
+                          {threshold.isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <h3 className="text-lg font-medium">
+                          {threshold.name || `Threshold #${index + 1}`}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {threshold.isExpanded && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => saveThreshold(index)}
+                            disabled={threshold.isSaving}
+                          >
+                            {threshold.isSaving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-1" /> Save
+                              </>
+                            )}
+                          </Button>
+                        )}
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -269,174 +405,190 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor={`name-${index}`}>Threshold Name</Label>
-                      <Input
-                        id={`name-${index}`}
-                        value={threshold.name}
-                        onChange={(e) => updateThreshold(index, 'name', e.target.value)}
-                        placeholder="Enter a name for this threshold"
-                      />
-                    </div>
-                    
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`day-${index}`}>Day of Week</Label>
-                        <Select
-                          value={threshold.day_of_week}
-                          onValueChange={(value) => updateThreshold(index, 'day_of_week', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select day" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {daysOfWeek.map((day) => (
-                              <SelectItem key={day.value} value={day.value}>
-                                {day.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`segment-${index}`}>Shift Segment</Label>
-                        <Select
-                          value={threshold.segment}
-                          onValueChange={(value) => updateThreshold(index, 'segment', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select segment" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {segments.map((segment) => (
-                              <SelectItem key={segment.value} value={segment.value}>
-                                {segment.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`revMin-${index}`}>Revenue Minimum (£)</Label>
-                        <Input
-                          id={`revMin-${index}`}
-                          type="number"
-                          min="0"
-                          value={threshold.revenue_min}
-                          onChange={(e) => updateThreshold(index, 'revenue_min', parseFloat(e.target.value))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`revMax-${index}`}>Revenue Maximum (£)</Label>
-                        <Input
-                          id={`revMax-${index}`}
-                          type="number"
-                          min={threshold.revenue_min}
-                          value={threshold.revenue_max}
-                          onChange={(e) => updateThreshold(index, 'revenue_max', parseFloat(e.target.value))}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor={`target-${index}`}>Target Labour Cost (%)</Label>
-                      <div className="flex items-center space-x-4">
-                        <Slider
-                          id={`target-${index}`}
-                          defaultValue={[threshold.target_cost_percentage]}
-                          min={15}
-                          max={50}
-                          step={0.5}
-                          value={[threshold.target_cost_percentage]}
-                          onValueChange={(values) => updateThreshold(index, 'target_cost_percentage', values[0])}
-                          className="flex-1"
-                        />
-                        <div className="w-12 text-center font-mono">
-                          {threshold.target_cost_percentage}%
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="border-t pt-4">
-                      <h4 className="text-sm font-medium mb-4">Front of House Staffing</h4>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                    {threshold.isExpanded ? (
+                      <>
                         <div className="space-y-2">
-                          <Label htmlFor={`fohMin-${index}`}>Minimum FOH Staff</Label>
+                          <Label htmlFor={`name-${index}`}>Threshold Name</Label>
                           <Input
-                            id={`fohMin-${index}`}
-                            type="number"
-                            min="0"
-                            value={threshold.foh_min_staff}
-                            onChange={(e) => updateThreshold(index, 'foh_min_staff', parseInt(e.target.value))}
+                            id={`name-${index}`}
+                            value={threshold.name}
+                            onChange={(e) => updateThreshold(index, 'name', e.target.value)}
+                            placeholder="Enter a name for this threshold"
                           />
                         </div>
+                        
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`day-${index}`}>Day of Week</Label>
+                            <Select
+                              value={threshold.day_of_week}
+                              onValueChange={(value) => updateThreshold(index, 'day_of_week', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select day" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {daysOfWeek.map((day) => (
+                                  <SelectItem key={day.value} value={day.value}>
+                                    {day.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`segment-${index}`}>Shift Segment</Label>
+                            <Select
+                              value={threshold.segment}
+                              onValueChange={(value) => updateThreshold(index, 'segment', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select segment" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {segments.map((segment) => (
+                                  <SelectItem key={segment.value} value={segment.value}>
+                                    {segment.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`revMin-${index}`}>Revenue Minimum (£)</Label>
+                            <Input
+                              id={`revMin-${index}`}
+                              type="number"
+                              min="0"
+                              value={threshold.revenue_min}
+                              onChange={(e) => updateThreshold(index, 'revenue_min', parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`revMax-${index}`}>Revenue Maximum (£)</Label>
+                            <Input
+                              id={`revMax-${index}`}
+                              type="number"
+                              min={threshold.revenue_min}
+                              value={threshold.revenue_max}
+                              onChange={(e) => updateThreshold(index, 'revenue_max', parseFloat(e.target.value))}
+                            />
+                          </div>
+                        </div>
+                        
                         <div className="space-y-2">
-                          <Label htmlFor={`fohMax-${index}`}>Maximum FOH Staff</Label>
-                          <Input
-                            id={`fohMax-${index}`}
-                            type="number"
-                            min={threshold.foh_min_staff}
-                            value={threshold.foh_max_staff}
-                            onChange={(e) => updateThreshold(index, 'foh_max_staff', parseInt(e.target.value))}
-                          />
+                          <Label htmlFor={`target-${index}`}>Target Labour Cost (%)</Label>
+                          <div className="flex items-center space-x-4">
+                            <Slider
+                              id={`target-${index}`}
+                              defaultValue={[threshold.target_cost_percentage]}
+                              min={15}
+                              max={50}
+                              step={0.5}
+                              value={[threshold.target_cost_percentage]}
+                              onValueChange={(values) => updateThreshold(index, 'target_cost_percentage', values[0])}
+                              className="flex-1"
+                            />
+                            <div className="w-12 text-center font-mono">
+                              {threshold.target_cost_percentage}%
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="border-t pt-4">
+                          <h4 className="text-sm font-medium mb-4">Front of House Staffing</h4>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`fohMin-${index}`}>Minimum FOH Staff</Label>
+                              <Input
+                                id={`fohMin-${index}`}
+                                type="number"
+                                min="0"
+                                value={threshold.foh_min_staff}
+                                onChange={(e) => updateThreshold(index, 'foh_min_staff', parseInt(e.target.value))}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`fohMax-${index}`}>Maximum FOH Staff</Label>
+                              <Input
+                                id={`fohMax-${index}`}
+                                type="number"
+                                min={threshold.foh_min_staff}
+                                value={threshold.foh_max_staff}
+                                onChange={(e) => updateThreshold(index, 'foh_max_staff', parseInt(e.target.value))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="border-t pt-4">
+                          <h4 className="text-sm font-medium mb-4">Kitchen Staffing</h4>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`kitchenMin-${index}`}>Minimum Kitchen Staff</Label>
+                              <Input
+                                id={`kitchenMin-${index}`}
+                                type="number"
+                                min="0"
+                                value={threshold.kitchen_min_staff}
+                                onChange={(e) => updateThreshold(index, 'kitchen_min_staff', parseInt(e.target.value))}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`kitchenMax-${index}`}>Maximum Kitchen Staff</Label>
+                              <Input
+                                id={`kitchenMax-${index}`}
+                                type="number"
+                                min={threshold.kitchen_min_staff}
+                                value={threshold.kitchen_max_staff}
+                                onChange={(e) => updateThreshold(index, 'kitchen_max_staff', parseInt(e.target.value))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="border-t pt-4">
+                          <h4 className="text-sm font-medium mb-4">Kitchen Porter Staffing</h4>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`kpMin-${index}`}>Minimum KP Staff</Label>
+                              <Input
+                                id={`kpMin-${index}`}
+                                type="number"
+                                min="0"
+                                value={threshold.kp_min_staff}
+                                onChange={(e) => updateThreshold(index, 'kp_min_staff', parseInt(e.target.value))}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`kpMax-${index}`}>Maximum KP Staff</Label>
+                              <Input
+                                id={`kpMax-${index}`}
+                                type="number"
+                                min={threshold.kp_min_staff}
+                                value={threshold.kp_max_staff}
+                                onChange={(e) => updateThreshold(index, 'kp_max_staff', parseInt(e.target.value))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-muted-foreground grid grid-cols-3 gap-2">
+                        <div>
+                          <span className="font-medium">Day:</span> {daysOfWeek.find(d => d.value === threshold.day_of_week)?.label}
+                        </div>
+                        <div>
+                          <span className="font-medium">Segment:</span> {segments.find(s => s.value === threshold.segment)?.label}
+                        </div>
+                        <div>
+                          <span className="font-medium">Revenue:</span> £{threshold.revenue_min} - £{threshold.revenue_max}
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="border-t pt-4">
-                      <h4 className="text-sm font-medium mb-4">Kitchen Staffing</h4>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor={`kitchenMin-${index}`}>Minimum Kitchen Staff</Label>
-                          <Input
-                            id={`kitchenMin-${index}`}
-                            type="number"
-                            min="0"
-                            value={threshold.kitchen_min_staff}
-                            onChange={(e) => updateThreshold(index, 'kitchen_min_staff', parseInt(e.target.value))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`kitchenMax-${index}`}>Maximum Kitchen Staff</Label>
-                          <Input
-                            id={`kitchenMax-${index}`}
-                            type="number"
-                            min={threshold.kitchen_min_staff}
-                            value={threshold.kitchen_max_staff}
-                            onChange={(e) => updateThreshold(index, 'kitchen_max_staff', parseInt(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="border-t pt-4">
-                      <h4 className="text-sm font-medium mb-4">Kitchen Porter Staffing</h4>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor={`kpMin-${index}`}>Minimum KP Staff</Label>
-                          <Input
-                            id={`kpMin-${index}`}
-                            type="number"
-                            min="0"
-                            value={threshold.kp_min_staff}
-                            onChange={(e) => updateThreshold(index, 'kp_min_staff', parseInt(e.target.value))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`kpMax-${index}`}>Maximum KP Staff</Label>
-                          <Input
-                            id={`kpMax-${index}`}
-                            type="number"
-                            min={threshold.kp_min_staff}
-                            value={threshold.kp_max_staff}
-                            onChange={(e) => updateThreshold(index, 'kp_max_staff', parseInt(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ))}
 
@@ -457,13 +609,13 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       <CardFooter>
         <div className="flex justify-end w-full">
           <Button 
-            onClick={saveThresholds}
+            onClick={saveAllThresholds}
             disabled={isLoading || isSaving || thresholds.length === 0}
             className="flex items-center gap-1"
           >
             {isSaving ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+                <Loader2 className="h-4 w-4 animate-spin" /> Saving All...
               </>
             ) : (
               <>
