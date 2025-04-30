@@ -46,7 +46,7 @@ const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
-      <SelectScrollableViewport>
+      <SelectScrollableViewport position={position}>
         {children}
       </SelectScrollableViewport>
     </SelectPrimitive.Content>
@@ -57,8 +57,10 @@ SelectContent.displayName = SelectPrimitive.Content.displayName
 // Create a draggable viewport component with touch and mouse drag scroll support
 const SelectScrollableViewport = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Viewport>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Viewport>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Viewport> & {
+    position?: "popper" | "item-aligned";
+  }
+>(({ className, children, position = "popper", ...props }, ref) => {
   const viewportRef = React.useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [startY, setStartY] = React.useState(0);
