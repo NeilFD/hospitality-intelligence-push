@@ -6,6 +6,7 @@ import { Command, CommandEmpty, CommandInput, CommandItem } from '@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { SafeErrorBoundary } from '@/components/ui/safe-error-boundary';
+import { SafeCommandGroup } from '@/components/ui/safe-command-group';
 
 // Job title options from the main profile
 const FOH_JOB_TITLES = [
@@ -118,32 +119,34 @@ export default function SecondaryJobRolesSelector({
             </Button>
           </PopoverTrigger>
           
-          <PopoverContent className="p-0 w-56 bg-white shadow-md" align="start">
-            <Command>
-              <CommandInput placeholder="Search for roles..." />
-              <CommandEmpty>No roles found.</CommandEmpty>
-              
-              <div className="max-h-[200px] overflow-y-auto">
-                {availableJobTitles.map(role => (
-                  <CommandItem
-                    key={role}
-                    value={role}
-                    onSelect={() => {
-                      handleSelect(role);
-                      setOpen(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+          <SafeErrorBoundary>
+            <PopoverContent className="p-0 w-56 bg-white shadow-md border border-gray-200 z-50" align="start">
+              <Command>
+                <CommandInput placeholder="Search for roles..." />
+                <CommandEmpty>No roles found.</CommandEmpty>
+                
+                <SafeCommandGroup>
+                  {availableJobTitles.map(role => (
+                    <CommandItem
+                      key={role}
+                      value={role}
+                      onSelect={() => {
+                        handleSelect(role);
+                        setOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 flex items-center justify-center">
+                          {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                        </div>
+                        <span>{role}</span>
                       </div>
-                      <span>{role}</span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </div>
-            </Command>
-          </PopoverContent>
+                    </CommandItem>
+                  ))}
+                </SafeCommandGroup>
+              </Command>
+            </PopoverContent>
+          </SafeErrorBoundary>
         </Popover>
       )}
     </div>
