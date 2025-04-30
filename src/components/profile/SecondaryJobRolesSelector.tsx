@@ -81,6 +81,28 @@ export default function SecondaryJobRolesSelector({
     onChange(updatedRoles);
   };
 
+  // Generate command items only when we have job titles available
+  const commandItems = React.useMemo(() => {
+    if (!availableJobTitles || availableJobTitles.length === 0) {
+      return null;
+    }
+    
+    return availableJobTitles.map(role => (
+      <CommandItem
+        key={role}
+        value={role}
+        onSelect={() => handleSelect(role)}
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 flex items-center justify-center">
+            {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+          </div>
+          <span>{role}</span>
+        </div>
+      </CommandItem>
+    ));
+  }, [availableJobTitles, localSelectedRoles]);
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 mb-2">
@@ -121,23 +143,12 @@ export default function SecondaryJobRolesSelector({
             <Command>
               <CommandInput placeholder="Search for roles..." />
               <CommandEmpty>No roles found.</CommandEmpty>
-              {/* Replace CommandGroup with our SafeCommandGroup */}
-              <SafeCommandGroup className="max-h-64 overflow-y-auto">
-                {availableJobTitles.map(role => (
-                  <CommandItem
-                    key={role}
-                    value={role}
-                    onSelect={() => handleSelect(role)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
-                      </div>
-                      <span>{role}</span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </SafeCommandGroup>
+              {/* Only render SafeCommandGroup when we have items to show */}
+              {commandItems && commandItems.length > 0 && (
+                <SafeCommandGroup className="max-h-64 overflow-y-auto">
+                  {commandItems}
+                </SafeCommandGroup>
+              )}
             </Command>
           </PopoverContent>
         </Popover>
