@@ -52,7 +52,8 @@ export default function StaffRankingPanel({ location }: StaffRankingPanelProps) 
       
       // Process and combine the data
       const processedStaff = profilesData?.map(profile => {
-        const profileEvaluations = evaluationsData?.filter(eval => eval.profile_id === profile.id) || [];
+        // Changed "eval" to "evaluation" to avoid using the reserved word
+        const profileEvaluations = evaluationsData?.filter(evaluation => evaluation.profile_id === profile.id) || [];
         
         // Calculate average hi score from evaluations
         let avgHiScore = 0;

@@ -7,7 +7,7 @@ import {
   Navigate,
 } from 'react-router-dom';
 import RootLayout from '@/components/RootLayout';
-import Loading from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton'; // Fixed import using named import
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -32,7 +32,7 @@ export const router = createBrowserRouter(
         <Route path="/control-centre" element={<ControlCentre />} />
 
         <Route path="/hiq" element={<Navigate to="/hiq/dashboard" replace />} />
-        <Route path="/hiq/dashboard" element={<React.Suspense fallback={<Loading />}><HiQDashboard /></React.Suspense>} />
+        <Route path="/hiq/dashboard" element={<React.Suspense fallback={<Skeleton />}><HiQDashboard /></React.Suspense>} />
         <Route path="/hiq/rotas" element={<HiQRotas />}>
           <Route index element={<Navigate to="weekly" replace />} />
           <Route path="weekly" element={<HiQRotas />} />
