@@ -124,6 +124,40 @@ const SelectScrollableViewport = React.forwardRef<
     };
   }, [isDragging, startY, scrollTop]);
 
+  // Add scrollbar styles to the document head
+  React.useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.type = 'text/css';
+    styleElement.textContent = `
+      /* Webkit scrollbar styles (Chrome, Safari, Edge) */
+      .select-scrollable-viewport::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+      }
+      
+      .select-scrollable-viewport::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      
+      .select-scrollable-viewport::-webkit-scrollbar-thumb {
+        background: #9b87f5;
+        border-radius: 10px;
+        border: 2px solid #f1f1f1;
+      }
+      
+      .select-scrollable-viewport::-webkit-scrollbar-thumb:hover {
+        background: #8B5CF6;
+      }
+    `;
+    
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   return (
     <SelectPrimitive.Viewport
       ref={(node) => {
@@ -133,7 +167,7 @@ const SelectScrollableViewport = React.forwardRef<
         if (viewportRef) viewportRef.current = node as HTMLDivElement;
       }}
       className={cn(
-        "p-1 pr-3 cursor-grab active:cursor-grabbing",
+        "p-1 pr-3 cursor-grab active:cursor-grabbing select-scrollable-viewport",
         position === "popper" &&
           "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
         className
@@ -145,46 +179,12 @@ const SelectScrollableViewport = React.forwardRef<
         msOverflowStyle: "-ms-autohiding-scrollbar",
         scrollbarWidth: "auto",
         scrollbarColor: "#9b87f5 #f1f1f1",
-        // Adding CSS variables for scrollbar styling
-        "--scrollbar-width": "12px",
-        "--scrollbar-height": "12px",
-        "--scrollbar-track-color": "#f1f1f1",
-        "--scrollbar-thumb-color": "#9b87f5",
-        "--scrollbar-thumb-hover-color": "#8B5CF6",
         paddingRight: "16px"
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       {...props}
     >
-      <style jsx global>{`
-        /* Webkit scrollbar styles (Chrome, Safari, Edge) */
-        .p-1.pr-3::-webkit-scrollbar {
-          width: var(--scrollbar-width, 12px);
-          height: var(--scrollbar-height, 12px);
-        }
-        
-        .p-1.pr-3::-webkit-scrollbar-track {
-          background: var(--scrollbar-track-color, #f1f1f1);
-          border-radius: 10px;
-        }
-        
-        .p-1.pr-3::-webkit-scrollbar-thumb {
-          background: var(--scrollbar-thumb-color, #9b87f5);
-          border-radius: 10px;
-          border: 2px solid var(--scrollbar-track-color, #f1f1f1);
-        }
-        
-        .p-1.pr-3::-webkit-scrollbar-thumb:hover {
-          background: var(--scrollbar-thumb-hover-color, #8B5CF6);
-        }
-        
-        /* Firefox scrollbar styles */
-        .p-1.pr-3 {
-          scrollbar-width: auto;
-          scrollbar-color: var(--scrollbar-thumb-color, #9b87f5) var(--scrollbar-track-color, #f1f1f1);
-        }
-      `}</style>
       {children}
     </SelectPrimitive.Viewport>
   );
