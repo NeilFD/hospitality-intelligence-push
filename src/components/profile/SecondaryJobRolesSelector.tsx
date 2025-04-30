@@ -128,7 +128,7 @@ export default function SecondaryJobRolesSelector({
           </PopoverTrigger>
           
           <SafeErrorBoundary>
-            <PopoverContent className="p-4 w-56 bg-white shadow-md" align="start">
+            <PopoverContent className="p-4 w-56 bg-white shadow-md z-50" align="start">
               <div className="space-y-4">
                 {/* Search input */}
                 <div>
