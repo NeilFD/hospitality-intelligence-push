@@ -47,6 +47,7 @@ type Threshold = {
   isNew?: boolean;
   isExpanded?: boolean;
   isSaving?: boolean;
+  location_id?: string;
 };
 
 export default function RotaThresholdEditor({ location }: RotaThresholdEditorProps) {
@@ -188,23 +189,42 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     setThresholds(updatedThresholds);
     
     try {
+      // Make sure location_id is set before saving
+      const thresholdToSave = {
+        ...threshold,
+        location_id: location.id,
+        isNew: undefined,
+        isExpanded: undefined,
+        isSaving: undefined
+      };
+      
       // For new thresholds
       if (threshold.isNew) {
-        const thresholdToInsert = {
-          ...threshold,
-          location_id: location.id,
-          isNew: undefined,
-          isExpanded: undefined,
-          isSaving: undefined
-        };
-        
+        console.log("Creating new threshold:", thresholdToSave);
         const { data, error } = await supabase
           .from('rota_revenue_thresholds')
-          .insert(thresholdToInsert)
+          .insert({
+            name: thresholdToSave.name,
+            location_id: location.id, 
+            day_of_week: thresholdToSave.day_of_week,
+            segment: thresholdToSave.segment,
+            revenue_min: thresholdToSave.revenue_min,
+            revenue_max: thresholdToSave.revenue_max,
+            foh_min_staff: thresholdToSave.foh_min_staff,
+            foh_max_staff: thresholdToSave.foh_max_staff,
+            kitchen_min_staff: thresholdToSave.kitchen_min_staff,
+            kitchen_max_staff: thresholdToSave.kitchen_max_staff,
+            kp_min_staff: thresholdToSave.kp_min_staff,
+            kp_max_staff: thresholdToSave.kp_max_staff,
+            target_cost_percentage: thresholdToSave.target_cost_percentage
+          })
           .select('*')
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error saving new threshold:", error);
+          throw error;
+        }
         
         // Update threshold with returned ID and mark as saved (not new anymore)
         updatedThresholds[index] = { 
@@ -215,31 +235,36 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       } 
       // For existing thresholds
       else {
+        console.log("Updating threshold:", thresholdToSave);
         const { error } = await supabase
           .from('rota_revenue_thresholds')
           .update({
-            name: threshold.name,
-            day_of_week: threshold.day_of_week,
-            segment: threshold.segment,
-            revenue_min: threshold.revenue_min,
-            revenue_max: threshold.revenue_max,
-            foh_min_staff: threshold.foh_min_staff,
-            foh_max_staff: threshold.foh_max_staff,
-            kitchen_min_staff: threshold.kitchen_min_staff,
-            kitchen_max_staff: threshold.kitchen_max_staff,
-            kp_min_staff: threshold.kp_min_staff,
-            kp_max_staff: threshold.kp_max_staff,
-            target_cost_percentage: threshold.target_cost_percentage
+            name: thresholdToSave.name,
+            day_of_week: thresholdToSave.day_of_week,
+            segment: thresholdToSave.segment,
+            revenue_min: thresholdToSave.revenue_min,
+            revenue_max: thresholdToSave.revenue_max,
+            foh_min_staff: thresholdToSave.foh_min_staff,
+            foh_max_staff: thresholdToSave.foh_max_staff,
+            kitchen_min_staff: thresholdToSave.kitchen_min_staff,
+            kitchen_max_staff: thresholdToSave.kitchen_max_staff,
+            kp_min_staff: thresholdToSave.kp_min_staff,
+            kp_max_staff: thresholdToSave.kp_max_staff,
+            target_cost_percentage: thresholdToSave.target_cost_percentage
           })
           .eq('id', threshold.id);
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating threshold:", error);
+          throw error;
+        }
         
         // Mark as saved and collapse
         updatedThresholds[index] = { 
           ...updatedThresholds[index],
           isExpanded: false,
-          isSaving: false
+          isSaving: false,
+          isNew: false
         };
       }
       
@@ -247,14 +272,13 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       toast.success('Threshold saved successfully');
     } catch (error) {
       console.error('Error saving threshold:', error);
-      toast.error('Failed to save threshold');
-      
-      // Reset saving state
+      // Reset the saving state on error
       updatedThresholds[index] = { 
         ...updatedThresholds[index],
         isSaving: false
       };
       setThresholds(updatedThresholds);
+      toast.error('Failed to save threshold');
     }
   };
 
@@ -269,11 +293,19 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       // Insert new thresholds
       if (newThresholds.length > 0) {
         const thresholdsToInsert = newThresholds.map(t => ({
-          ...t,
+          name: t.name,
           location_id: location.id,
-          isNew: undefined,
-          isExpanded: undefined,
-          isSaving: undefined
+          day_of_week: t.day_of_week,
+          segment: t.segment,
+          revenue_min: t.revenue_min,
+          revenue_max: t.revenue_max,
+          foh_min_staff: t.foh_min_staff,
+          foh_max_staff: t.foh_max_staff,
+          kitchen_min_staff: t.kitchen_min_staff,
+          kitchen_max_staff: t.kitchen_max_staff,
+          kp_min_staff: t.kp_min_staff,
+          kp_max_staff: t.kp_max_staff,
+          target_cost_percentage: t.target_cost_percentage
         }));
         
         const { error } = await supabase
