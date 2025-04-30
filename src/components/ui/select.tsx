@@ -46,26 +46,112 @@ const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
-      <SelectPrimitive.Viewport
-        className={cn(
-          "p-1",
-          position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
-        )}
-        style={{
-          maxHeight: "300px",
-          overflowY: "auto",
-          WebkitOverflowScrolling: "touch",
-          msOverflowStyle: "auto",
-          scrollbarWidth: "auto"
-        }}
-      >
+      <SelectScrollableViewport>
         {children}
-      </SelectPrimitive.Viewport>
+      </SelectScrollableViewport>
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ))
 SelectContent.displayName = SelectPrimitive.Content.displayName
+
+// Create a draggable viewport component with touch and mouse drag scroll support
+const SelectScrollableViewport = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Viewport>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Viewport>
+>(({ className, children, ...props }, ref) => {
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [startY, setStartY] = React.useState(0);
+  const [scrollTop, setScrollTop] = React.useState(0);
+
+  // Handle mouse events for drag scrolling
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!viewportRef.current) return;
+    setIsDragging(true);
+    setStartY(e.clientY);
+    setScrollTop(viewportRef.current.scrollTop);
+    // Prevent text selection during drag
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || !viewportRef.current) return;
+    const deltaY = startY - e.clientY;
+    viewportRef.current.scrollTop = scrollTop + deltaY;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    document.body.style.userSelect = '';
+  };
+
+  // Handle touch events for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!viewportRef.current) return;
+    setIsDragging(true);
+    setStartY(e.touches[0].clientY);
+    setScrollTop(viewportRef.current.scrollTop);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging || !viewportRef.current) return;
+    const deltaY = startY - e.touches[0].clientY;
+    viewportRef.current.scrollTop = scrollTop + deltaY;
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Add and remove event listeners
+  React.useEffect(() => {
+    const viewport = viewportRef.current;
+    
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDragging, startY, scrollTop]);
+
+  return (
+    <SelectPrimitive.Viewport
+      ref={(node) => {
+        // Merge refs
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+        if (viewportRef) viewportRef.current = node as HTMLDivElement;
+      }}
+      className={cn(
+        "p-1 cursor-grab active:cursor-grabbing",
+        position === "popper" &&
+          "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
+        className
+      )}
+      style={{
+        maxHeight: "300px",
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch",
+        msOverflowStyle: "auto",
+        scrollbarWidth: "auto"
+      }}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      {...props}
+    >
+      {children}
+    </SelectPrimitive.Viewport>
+  );
+});
+SelectScrollableViewport.displayName = "SelectScrollableViewport";
 
 const SelectLabel = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Label>,
