@@ -341,69 +341,99 @@ export type Database = {
       hi_score_evaluations: {
         Row: {
           adaptability: number | null
+          adaptability_feedback: string | null
           cooking_skills: number | null
+          cooking_skills_feedback: string | null
           created_at: string
           evaluation_date: string
           evaluator_id: string
           foh_knowledge: number | null
+          foh_knowledge_feedback: string | null
           food_knowledge: number | null
+          food_knowledge_feedback: string | null
           friendliness: number | null
+          friendliness_feedback: string | null
           hospitality: number | null
+          hospitality_feedback: string | null
           id: string
           internal_team_skills: number | null
+          internal_team_skills_feedback: string | null
           is_signed_off: boolean
           notes: string | null
           profile_id: string
           role_type: Database["public"]["Enums"]["role_type"]
           service_skills: number | null
+          service_skills_feedback: string | null
           team_player: number | null
+          team_player_feedback: string | null
           updated_at: string
           weighted_score: number
           work_ethic: number | null
+          work_ethic_feedback: string | null
         }
         Insert: {
           adaptability?: number | null
+          adaptability_feedback?: string | null
           cooking_skills?: number | null
+          cooking_skills_feedback?: string | null
           created_at?: string
           evaluation_date?: string
           evaluator_id: string
           foh_knowledge?: number | null
+          foh_knowledge_feedback?: string | null
           food_knowledge?: number | null
+          food_knowledge_feedback?: string | null
           friendliness?: number | null
+          friendliness_feedback?: string | null
           hospitality?: number | null
+          hospitality_feedback?: string | null
           id?: string
           internal_team_skills?: number | null
+          internal_team_skills_feedback?: string | null
           is_signed_off?: boolean
           notes?: string | null
           profile_id: string
           role_type: Database["public"]["Enums"]["role_type"]
           service_skills?: number | null
+          service_skills_feedback?: string | null
           team_player?: number | null
+          team_player_feedback?: string | null
           updated_at?: string
           weighted_score: number
           work_ethic?: number | null
+          work_ethic_feedback?: string | null
         }
         Update: {
           adaptability?: number | null
+          adaptability_feedback?: string | null
           cooking_skills?: number | null
+          cooking_skills_feedback?: string | null
           created_at?: string
           evaluation_date?: string
           evaluator_id?: string
           foh_knowledge?: number | null
+          foh_knowledge_feedback?: string | null
           food_knowledge?: number | null
+          food_knowledge_feedback?: string | null
           friendliness?: number | null
+          friendliness_feedback?: string | null
           hospitality?: number | null
+          hospitality_feedback?: string | null
           id?: string
           internal_team_skills?: number | null
+          internal_team_skills_feedback?: string | null
           is_signed_off?: boolean
           notes?: string | null
           profile_id?: string
           role_type?: Database["public"]["Enums"]["role_type"]
           service_skills?: number | null
+          service_skills_feedback?: string | null
           team_player?: number | null
+          team_player_feedback?: string | null
           updated_at?: string
           weighted_score?: number
           work_ethic?: number | null
+          work_ethic_feedback?: string | null
         }
         Relationships: [
           {
