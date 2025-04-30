@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -162,20 +161,19 @@ export default function AvailabilityScheduler({ value, onChange }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent
+                          className="h-[300px]"
                           position="popper"
                           sideOffset={5}
-                          className="max-h-[300px]"
                         >
-                          <div className="overflow-y-auto max-h-[300px]">
-                            {timeSlots.map(slot => (
-                              <SelectItem 
-                                key={slot.value} 
-                                value={slot.value}
-                              >
-                                {slot.label}
-                              </SelectItem>
-                            ))}
-                          </div>
+                          {timeSlots.map(slot => (
+                            <SelectItem 
+                              key={slot.value} 
+                              value={slot.value}
+                              style={{ height: '35px' }}
+                            >
+                              {slot.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       
@@ -189,21 +187,20 @@ export default function AvailabilityScheduler({ value, onChange }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent
+                          className="h-[300px]"
                           position="popper"
                           sideOffset={5}
-                          className="max-h-[300px]"
                         >
-                          <div className="overflow-y-auto max-h-[300px]">
-                            {timeSlots.map(slot => (
-                              <SelectItem 
-                                key={slot.value} 
-                                value={slot.value}
-                                disabled={slot.value <= block.start}
-                              >
-                                {slot.label}
-                              </SelectItem>
-                            ))}
-                          </div>
+                          {timeSlots.map(slot => (
+                            <SelectItem 
+                              key={slot.value} 
+                              value={slot.value}
+                              disabled={slot.value <= block.start}
+                              style={{ height: '35px' }}
+                            >
+                              {slot.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       
