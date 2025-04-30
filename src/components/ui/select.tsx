@@ -140,10 +140,11 @@ const SelectScrollableViewport = React.forwardRef<
       )}
       style={{
         maxHeight: "300px",
-        overflowY: "auto",
+        overflowY: "scroll", // Changed from "auto" to "scroll" to always show scrollbar
         WebkitOverflowScrolling: "touch",
         msOverflowStyle: "auto",
-        scrollbarWidth: "auto"
+        scrollbarWidth: "thin", // Changed from "auto" to "thin" for modern browsers
+        scrollbarColor: "#888 #f1f1f1" // Added scrollbar colors
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
