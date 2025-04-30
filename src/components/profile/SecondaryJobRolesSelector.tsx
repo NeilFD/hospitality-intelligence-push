@@ -119,34 +119,34 @@ export default function SecondaryJobRolesSelector({
             </Button>
           </PopoverTrigger>
           
-          <SafeErrorBoundary>
-            <PopoverContent className="p-0 w-56 bg-white shadow-md border border-gray-200 z-50" align="start">
-              <Command>
-                <CommandInput placeholder="Search for roles..." />
-                <CommandEmpty>No roles found.</CommandEmpty>
-                
-                <SafeCommandGroup>
-                  {availableJobTitles.map(role => (
-                    <CommandItem
-                      key={role}
-                      value={role}
-                      onSelect={() => {
-                        handleSelect(role);
-                        setOpen(false);
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 flex items-center justify-center">
-                          {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
-                        </div>
-                        <span>{role}</span>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </SafeCommandGroup>
-              </Command>
-            </PopoverContent>
-          </SafeErrorBoundary>
+          <PopoverContent 
+            className="p-0 w-[200px] bg-white shadow-lg z-50" 
+            align="start"
+            sideOffset={5}
+          >
+            <Command className="rounded-lg border border-gray-200">
+              <CommandInput placeholder="Search for roles..." />
+              <CommandEmpty>No roles found.</CommandEmpty>
+              <div className="max-h-[200px] overflow-y-auto p-1">
+                {availableJobTitles.map(role => (
+                  <CommandItem
+                    key={role}
+                    value={role}
+                    onSelect={() => {
+                      handleSelect(role);
+                      setOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md cursor-pointer"
+                  >
+                    <div className="w-4 h-4 flex items-center justify-center">
+                      {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                    </div>
+                    <span>{role}</span>
+                  </CommandItem>
+                ))}
+              </div>
+            </Command>
+          </PopoverContent>
         </Popover>
       )}
     </div>
