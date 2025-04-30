@@ -131,23 +131,37 @@ const SelectScrollableViewport = React.forwardRef<
     styleElement.textContent = `
       /* Webkit scrollbar styles (Chrome, Safari, Edge) */
       .select-scrollable-viewport::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
+        width: 16px;
+        height: 16px;
+        display: block;
       }
       
       .select-scrollable-viewport::-webkit-scrollbar-track {
         background: #f1f1f1;
         border-radius: 10px;
+        border: 1px solid #ddd;
       }
       
       .select-scrollable-viewport::-webkit-scrollbar-thumb {
         background: #9b87f5;
         border-radius: 10px;
         border: 2px solid #f1f1f1;
+        box-shadow: 0 0 3px rgba(0,0,0,0.3);
       }
       
       .select-scrollable-viewport::-webkit-scrollbar-thumb:hover {
         background: #8B5CF6;
+      }
+
+      /* Firefox scrollbar */
+      .select-scrollable-viewport {
+        scrollbar-width: auto !important;
+        scrollbar-color: #9b87f5 #f1f1f1 !important;
+      }
+      
+      /* Make sure scrollbar is always visible */
+      .select-scrollable-viewport {
+        overflow-y: scroll !important;
       }
     `;
     
@@ -176,10 +190,11 @@ const SelectScrollableViewport = React.forwardRef<
         maxHeight: "300px",
         overflowY: "scroll",
         WebkitOverflowScrolling: "touch",
-        msOverflowStyle: "-ms-autohiding-scrollbar",
+        msOverflowStyle: "scrollbar", /* for IE and Edge */
         scrollbarWidth: "auto",
         scrollbarColor: "#9b87f5 #f1f1f1",
-        paddingRight: "16px"
+        paddingRight: "24px", /* Increase padding to accommodate the scrollbar */
+        boxSizing: "border-box"
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
