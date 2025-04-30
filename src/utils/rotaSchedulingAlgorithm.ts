@@ -124,55 +124,105 @@ export class RotaSchedulingAlgorithm {
         // Fallback to threshold-based staffing if no shift rules exist
         console.log(`No shift rules found for ${dayOfWeek}, falling back to thresholds`);
         
-        // Process each segment: day and evening
-        for (const segment of ['day', 'evening']) {
-          // Find applicable threshold based on day, segment, and revenue
-          const threshold = this.findThreshold(dayOfWeek, segment, dayRevenue);
-          
-          if (!threshold) continue;
-          
-          // Assign FOH staff for this day/segment
-          this.assignStaff({
-            date,
-            dayOfWeek,
-            segment,
-            staffType: 'foh',
-            minStaff: threshold.foh_min_staff,
-            maxStaff: threshold.foh_max_staff,
-            rankedStaff,
-            staffWeeklyAllocations,
-            shifts,
-            totalCost
-          });
-          
-          // Assign kitchen staff
-          this.assignStaff({
-            date,
-            dayOfWeek,
-            segment,
-            staffType: 'kitchen',
-            minStaff: threshold.kitchen_min_staff,
-            maxStaff: threshold.kitchen_max_staff,
-            rankedStaff,
-            staffWeeklyAllocations,
-            shifts,
-            totalCost
-          });
-          
-          // Assign KP staff
-          this.assignStaff({
-            date,
-            dayOfWeek,
-            segment,
-            staffType: 'kp',
-            minStaff: threshold.kp_min_staff,
-            maxStaff: threshold.kp_max_staff,
-            rankedStaff,
-            staffWeeklyAllocations,
-            shifts,
-            totalCost
-          });
+        // Find applicable threshold based on revenue
+        const threshold = this.findThreshold(dayRevenue);
+        
+        if (!threshold) {
+          console.log(`No applicable threshold found for revenue: ${dayRevenue}`);
+          continue;
         }
+        
+        console.log(`Using threshold "${threshold.name}" for ${date} with revenue ${dayRevenue}`);
+        
+        // Process for day segment
+        const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+        
+        // Assign FOH staff for this day/segment
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: daySegment,
+          staffType: 'foh',
+          minStaff: threshold.foh_min_staff,
+          maxStaff: threshold.foh_max_staff,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost
+        });
+        
+        // Assign kitchen staff
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: daySegment,
+          staffType: 'kitchen',
+          minStaff: threshold.kitchen_min_staff,
+          maxStaff: threshold.kitchen_max_staff,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost
+        });
+        
+        // Assign KP staff
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: daySegment,
+          staffType: 'kp',
+          minStaff: threshold.kp_min_staff,
+          maxStaff: threshold.kp_max_staff,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost
+        });
+        
+        // Process for evening segment
+        const eveningSegment = this.isWeekend(dayOfWeek) ? 'weekend-evening' : 'weekday-evening';
+        
+        // Assign FOH staff for evening
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: eveningSegment,
+          staffType: 'foh',
+          minStaff: threshold.foh_min_staff,
+          maxStaff: threshold.foh_max_staff,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost
+        });
+        
+        // Assign kitchen staff for evening
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: eveningSegment,
+          staffType: 'kitchen',
+          minStaff: threshold.kitchen_min_staff,
+          maxStaff: threshold.kitchen_max_staff,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost
+        });
+        
+        // Assign KP staff for evening
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: eveningSegment,
+          staffType: 'kp',
+          minStaff: threshold.kp_min_staff,
+          maxStaff: threshold.kp_max_staff,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost
+        });
       }
     }
     
@@ -186,6 +236,13 @@ export class RotaSchedulingAlgorithm {
       cost_percentage: costPercentage
     };
   };
+
+  /**
+   * Helper to check if a day is a weekend
+   */
+  isWeekend(dayOfWeek: string) {
+    return dayOfWeek === 'saturday' || dayOfWeek === 'sunday';
+  }
 
   /**
    * Get all shift rules that apply to a specific day
@@ -305,19 +362,36 @@ export class RotaSchedulingAlgorithm {
   }
 
   /**
-   * Find the appropriate threshold based on day, segment, and revenue
+   * Find the appropriate threshold based on revenue
+   * Now simplified to only consider revenue bands, not day/segment
    */
-  findThreshold(dayOfWeek: string, segment: string, revenue: number) {
-    // Filter thresholds by day and segment
-    const applicableThresholds = this.thresholds.filter(t => 
-      t.day_of_week.toLowerCase() === dayOfWeek && 
-      t.segment === segment && 
-      revenue >= t.revenue_min && 
-      revenue <= t.revenue_max
+  findThreshold(revenue: number) {
+    // Sort thresholds by revenue_min to ensure we get the correct band
+    const sortedThresholds = [...this.thresholds].sort((a, b) => a.revenue_min - b.revenue_min);
+    
+    // Find the first threshold where the revenue falls within its range
+    const applicableThreshold = sortedThresholds.find(t => 
+      revenue >= t.revenue_min && revenue <= t.revenue_max
     );
     
-    // Return the first applicable threshold, or a default if none found
-    return applicableThresholds[0] || null;
+    if (applicableThreshold) {
+      console.log(`Found threshold "${applicableThreshold.name}" for revenue ${revenue}`);
+      return applicableThreshold;
+    }
+    
+    // If no exact match, find closest threshold
+    if (sortedThresholds.length > 0) {
+      if (revenue < sortedThresholds[0].revenue_min) {
+        // Revenue is below the minimum threshold, use the lowest
+        return sortedThresholds[0];
+      } else {
+        // Revenue is above the maximum threshold, use the highest
+        return sortedThresholds[sortedThresholds.length - 1];
+      }
+    }
+    
+    // Return a default if no thresholds are configured
+    return null;
   }
 
   /**
@@ -527,7 +601,7 @@ export class RotaSchedulingAlgorithm {
     let endTime = '';
     let breakMinutes = 30;
     
-    if (segment === 'day') {
+    if (segment === 'weekday-day' || segment === 'weekend-day') {
       startTime = isWeekend ? '10:00:00' : '11:00:00';
       endTime = isWeekend ? '17:00:00' : '16:00:00';
       breakMinutes = 30;

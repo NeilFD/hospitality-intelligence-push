@@ -4,37 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Save, Trash2, Loader2, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getDefaultRevenueBands, formatRevenueBand, getStaffSummary } from './StaffRankingUtils';
 
 type RotaThresholdEditorProps = {
   location: any;
 };
 
-const daysOfWeek = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-  { value: 'sunday', label: 'Sunday' },
-];
-
-const segments = [
-  { value: 'day', label: 'Day Shift' },
-  { value: 'evening', label: 'Evening Shift' },
-];
-
 type Threshold = {
   id?: string;
   name: string;
-  day_of_week: string;
-  segment: string;
+  day_of_week?: string;
+  segment?: string;
   revenue_min: number;
   revenue_max: number;
   foh_min_staff: number;
@@ -64,21 +49,34 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
   const fetchThresholds = async () => {
     setIsLoading(true);
     try {
+      // Fetch the latest thresholds
       const { data, error } = await supabase
         .from('rota_revenue_thresholds')
         .select('*')
         .eq('location_id', location.id)
-        .order('day_of_week')
-        .order('segment')
         .order('revenue_min');
         
       if (error) throw error;
       
-      const formattedThresholds = (data || []).map(threshold => ({
-        ...threshold,
-        name: `${threshold.day_of_week.charAt(0).toUpperCase() + threshold.day_of_week.slice(1)} ${threshold.segment.charAt(0).toUpperCase() + threshold.segment.slice(1)}`,
-        isExpanded: false
-      }));
+      let formattedThresholds: Threshold[];
+      
+      // If no thresholds exist, set up default ones
+      if (!data || data.length === 0) {
+        formattedThresholds = getDefaultRevenueBands().map(band => ({
+          ...band,
+          isExpanded: false,
+          isNew: true,
+          location_id: location.id
+        }));
+      } else {
+        // Format existing thresholds
+        formattedThresholds = data.map(threshold => ({
+          ...threshold,
+          // If name doesn't exist, generate one from revenue band
+          name: threshold.name || `Band: ${formatRevenueBand(threshold.revenue_min, threshold.revenue_max)}`,
+          isExpanded: false
+        }));
+      }
       
       setThresholds(formattedThresholds);
     } catch (error) {
@@ -90,13 +88,14 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
   };
 
   const addNewThreshold = () => {
+    // Get the highest max revenue to determine new band
+    const highestMax = thresholds.reduce((max, t) => Math.max(max, t.revenue_max || 0), 0);
+    
     const newThreshold: Threshold = {
-      name: `Threshold ${thresholds.length + 1}`,
-      day_of_week: 'monday',
-      segment: 'day',
-      revenue_min: 0,
-      revenue_max: 2000,
-      foh_min_staff: 1,
+      name: `New Revenue Band`,
+      revenue_min: highestMax + 1,
+      revenue_max: highestMax + 1000,
+      foh_min_staff: 2,
       foh_max_staff: 4,
       kitchen_min_staff: 1,
       kitchen_max_staff: 2,
@@ -104,7 +103,8 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       kp_max_staff: 1,
       target_cost_percentage: 28,
       isNew: true,
-      isExpanded: true
+      isExpanded: true,
+      location_id: location.id
     };
     
     setThresholds([...thresholds, newThreshold]);
@@ -192,8 +192,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     try {
       // Make sure location_id is set before saving
       const thresholdToSave = {
-        day_of_week: threshold.day_of_week,
-        segment: threshold.segment,
+        name: threshold.name,
         revenue_min: threshold.revenue_min,
         revenue_max: threshold.revenue_max,
         foh_min_staff: threshold.foh_min_staff,
@@ -206,12 +205,8 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         location_id: location.id
       };
       
-      // For debugging
-      console.log("Location ID:", location.id);
-      
       // For new thresholds
       if (threshold.isNew) {
-        console.log("Creating new threshold:", thresholdToSave);
         const { data, error } = await supabase
           .from('rota_revenue_thresholds')
           .insert(thresholdToSave)
@@ -235,7 +230,6 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       } 
       // For existing thresholds
       else {
-        console.log("Updating threshold:", threshold.id, thresholdToSave);
         const { error } = await supabase
           .from('rota_revenue_thresholds')
           .update(thresholdToSave)
@@ -280,8 +274,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       // Insert new thresholds
       if (newThresholds.length > 0) {
         const thresholdsToInsert = newThresholds.map(t => ({
-          day_of_week: t.day_of_week,
-          segment: t.segment,
+          name: t.name,
           revenue_min: t.revenue_min,
           revenue_max: t.revenue_max,
           foh_min_staff: t.foh_min_staff,
@@ -306,8 +299,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         const { error } = await supabase
           .from('rota_revenue_thresholds')
           .update({
-            day_of_week: threshold.day_of_week,
-            segment: threshold.segment,
+            name: threshold.name,
             revenue_min: threshold.revenue_min,
             revenue_max: threshold.revenue_max,
             foh_min_staff: threshold.foh_min_staff,
@@ -335,10 +327,13 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     }
   };
 
+  // Sort thresholds by revenue range
+  const sortedThresholds = [...thresholds].sort((a, b) => a.revenue_min - b.revenue_min);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Revenue Thresholds Configuration</CardTitle>
+        <CardTitle>Revenue Bands Configuration</CardTitle>
         <CardDescription>
           Set staffing requirements based on revenue bands. The AI Rota Engine uses these thresholds to determine optimal staffing levels.
         </CardDescription>
@@ -350,14 +345,14 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
           </div>
         ) : (
           <div className="space-y-8">
-            {thresholds.length === 0 ? (
+            {sortedThresholds.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No thresholds configured yet</p>
-                <Button onClick={addNewThreshold}>Add First Threshold</Button>
+                <p className="text-muted-foreground mb-4">No revenue bands configured yet</p>
+                <Button onClick={addNewThreshold}>Add First Revenue Band</Button>
               </div>
             ) : (
               <>
-                {thresholds.map((threshold, index) => (
+                {sortedThresholds.map((threshold, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
@@ -373,9 +368,14 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                             <ChevronDown className="h-4 w-4" />
                           )}
                         </Button>
-                        <h3 className="text-lg font-medium">
-                          {threshold.name}
-                        </h3>
+                        <div>
+                          <h3 className="text-lg font-medium">
+                            {threshold.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {formatRevenueBand(threshold.revenue_min, threshold.revenue_max)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {threshold.isExpanded && (
@@ -408,7 +408,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Duplicate this threshold</p>
+                              <p>Duplicate this revenue band</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -425,52 +425,13 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                     {threshold.isExpanded ? (
                       <>
                         <div className="space-y-2">
-                          <Label htmlFor={`name-${index}`}>Threshold Name</Label>
+                          <Label htmlFor={`name-${index}`}>Band Name</Label>
                           <Input
                             id={`name-${index}`}
                             value={threshold.name}
                             onChange={(e) => updateThreshold(index, 'name', e.target.value)}
-                            placeholder="Enter a name for this threshold"
+                            placeholder="Enter a name for this revenue band"
                           />
-                        </div>
-                        
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label htmlFor={`day-${index}`}>Day of Week</Label>
-                            <Select
-                              value={threshold.day_of_week}
-                              onValueChange={(value) => updateThreshold(index, 'day_of_week', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select day" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {daysOfWeek.map((day) => (
-                                  <SelectItem key={day.value} value={day.value}>
-                                    {day.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`segment-${index}`}>Shift Segment</Label>
-                            <Select
-                              value={threshold.segment}
-                              onValueChange={(value) => updateThreshold(index, 'segment', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select segment" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {segments.map((segment) => (
-                                  <SelectItem key={segment.value} value={segment.value}>
-                                    {segment.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
                         </div>
                         
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -594,15 +555,22 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                         </div>
                       </>
                     ) : (
-                      <div className="text-sm text-muted-foreground grid grid-cols-3 gap-2">
+                      <div className="text-sm text-muted-foreground grid sm:grid-cols-2 gap-2">
                         <div>
-                          <span className="font-medium">Day:</span> {daysOfWeek.find(d => d.value === threshold.day_of_week)?.label}
+                          <span className="font-medium">Revenue Range:</span> £{threshold.revenue_min} - £{threshold.revenue_max}
                         </div>
                         <div>
-                          <span className="font-medium">Segment:</span> {segments.find(s => s.value === threshold.segment)?.label}
+                          <span className="font-medium">Target Labour:</span> {threshold.target_cost_percentage}%
                         </div>
-                        <div>
-                          <span className="font-medium">Revenue:</span> £{threshold.revenue_min} - £{threshold.revenue_max}
+                        <div className="sm:col-span-2">
+                          <span className="font-medium">Staffing:</span> {getStaffSummary(
+                            threshold.foh_min_staff,
+                            threshold.foh_max_staff,
+                            threshold.kitchen_min_staff,
+                            threshold.kitchen_max_staff,
+                            threshold.kp_min_staff,
+                            threshold.kp_max_staff
+                          )}
                         </div>
                       </div>
                     )}
@@ -615,7 +583,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                     onClick={addNewThreshold} 
                     className="flex items-center gap-1"
                   >
-                    <Plus className="h-4 w-4" /> Add Another Threshold
+                    <Plus className="h-4 w-4" /> Add Another Revenue Band
                   </Button>
                 </div>
               </>
@@ -636,7 +604,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
               </>
             ) : (
               <>
-                <Save className="h-4 w-4" /> Save All Thresholds
+                <Save className="h-4 w-4" /> Save All Bands
               </>
             )}
           </Button>
