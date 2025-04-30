@@ -199,13 +199,6 @@ const Layout = ({
     const path = location.pathname;
     console.log('Layout mounting with path:', path);
     
-    // Special handling for profile path - don't change the module
-    if (path.includes('/profile')) {
-      console.log('Layout: Profile path detected, not changing module');
-      // Don't set a module for profile pages
-      return;
-    }
-    
     if (path.includes('/home')) {
       console.log('Layout: Setting current module to home from path');
       setCurrentModule('home');
