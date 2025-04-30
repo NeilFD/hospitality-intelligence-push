@@ -1,4 +1,3 @@
-
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -1063,20 +1062,19 @@ export class RotaSchedulingAlgorithm {
 
   /**
    * Check if this is a secondary role for the staff member
+   * FIXED: Only consider a role secondary if it's explicitly in the secondary_job_roles array
    */
   isSecondaryRole(staffMember: any, jobRole: any) {
-    if (!jobRole) return true;
+    if (!jobRole) return false;
     
-    // Check if this job role is in the staff member's secondary_job_roles array
+    // Only mark as secondary if it's explicitly in the staff member's secondary_job_roles array
     if (Array.isArray(staffMember.secondary_job_roles) && 
         staffMember.secondary_job_roles.includes(jobRole.title)) {
       return true;
     }
     
-    // If their primary job title doesn't match this role's title
-    if (staffMember.job_title !== jobRole.title) {
-      return true;
-    }
+    // Do NOT consider a role secondary just because job titles don't match
+    // This was causing all roles to be marked as secondary incorrectly
     
     return false;
   }
