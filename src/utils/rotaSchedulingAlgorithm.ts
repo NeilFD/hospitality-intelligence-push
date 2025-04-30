@@ -27,7 +27,7 @@ export class RotaSchedulingAlgorithm {
     this.request = request;
     this.staff = staff;
     this.jobRoles = jobRoles;
-    this.thresholds = thresholds;
+    this.thresholds = thresholds || []; // Ensure thresholds is at least an empty array
     this.location = location;
   }
 
@@ -366,6 +366,11 @@ export class RotaSchedulingAlgorithm {
    * Now simplified to only consider revenue bands, not day/segment
    */
   findThreshold(revenue: number) {
+    if (!this.thresholds || this.thresholds.length === 0) {
+      console.warn("No thresholds available for scheduling");
+      return null;
+    }
+    
     // Sort thresholds by revenue_min to ensure we get the correct band
     const sortedThresholds = [...this.thresholds].sort((a, b) => a.revenue_min - b.revenue_min);
     

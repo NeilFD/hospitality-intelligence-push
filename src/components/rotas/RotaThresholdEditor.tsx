@@ -39,6 +39,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
   const [thresholds, setThresholds] = useState<Threshold[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (location) {
@@ -48,6 +49,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
 
   const fetchThresholds = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       // Fetch the latest thresholds
       const { data, error } = await supabase
@@ -79,8 +81,9 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       }
       
       setThresholds(formattedThresholds);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching thresholds:', error);
+      setError(error.message || 'Failed to load revenue thresholds');
       toast.error('Failed to load revenue thresholds');
     } finally {
       setIsLoading(false);
@@ -265,6 +268,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
 
   const saveAllThresholds = async () => {
     setIsSaving(true);
+    setError(null);
     
     try {
       // Separate new and existing thresholds
@@ -319,8 +323,9 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
       
       // Refresh the data and collapse all thresholds
       fetchThresholds();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving thresholds:', error);
+      setError(error.message || 'Failed to save thresholds');
       toast.error('Failed to save thresholds');
     } finally {
       setIsSaving(false);
@@ -342,6 +347,11 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-8 space-y-4">
+            <p className="text-destructive">{error}</p>
+            <Button onClick={fetchThresholds}>Try Again</Button>
           </div>
         ) : (
           <div className="space-y-8">
