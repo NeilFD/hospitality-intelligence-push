@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -230,6 +231,8 @@ export function HiScoreMatrix({
           evaluation_date: new Date().toISOString(),
         };
       }
+
+      console.log("Saving evaluation data:", evaluationData);
       
       if (existingEvaluation?.id) {
         // Update existing evaluation
