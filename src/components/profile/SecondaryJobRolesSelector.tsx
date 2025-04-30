@@ -37,25 +37,21 @@ interface SecondaryJobRolesSelectorProps {
 }
 
 export default function SecondaryJobRolesSelector({ 
-  selectedRoles: initialSelectedRoles = [], 
+  selectedRoles, 
   onChange, 
   mainJobTitle, 
   disabled = false 
 }: SecondaryJobRolesSelectorProps) {
-  // Ensure selectedRoles is always an array, even if it's null or undefined
   const [open, setOpen] = React.useState(false);
-  // Create a local state to ensure we always have an array
-  const [internalSelectedRoles, setInternalSelectedRoles] = React.useState<string[]>([]);
   
-  // Initialize internal state from props and handle updates
-  React.useEffect(() => {
-    if (Array.isArray(initialSelectedRoles)) {
-      setInternalSelectedRoles(initialSelectedRoles);
-    } else {
-      // If selectedRoles is null or undefined, use empty array
-      setInternalSelectedRoles([]);
+  // Ensure we always have a valid array to work with
+  const safeSelectedRoles = React.useMemo(() => {
+    // Check if selectedRoles is an array and not null/undefined
+    if (Array.isArray(selectedRoles)) {
+      return selectedRoles;
     }
-  }, [initialSelectedRoles]);
+    return [];
+  }, [selectedRoles]);
   
   // Filter out the main job title from available options
   const availableJobTitles = React.useMemo(() => {
@@ -63,30 +59,30 @@ export default function SecondaryJobRolesSelector({
   }, [mainJobTitle]);
   
   const handleSelect = (role: string) => {
-    let updatedRoles: string[];
+    // Always work with a fresh copy of the array
+    const currentRoles = [...safeSelectedRoles];
     
-    if (internalSelectedRoles.includes(role)) {
+    if (currentRoles.includes(role)) {
       // Remove role if already selected
-      updatedRoles = internalSelectedRoles.filter(r => r !== role);
+      onChange(currentRoles.filter(r => r !== role));
     } else {
       // Add role if not selected
-      updatedRoles = [...internalSelectedRoles, role];
+      onChange([...currentRoles, role]);
     }
     
-    setInternalSelectedRoles(updatedRoles);
-    onChange(updatedRoles);
+    // Close the popover after selection
+    setOpen(false);
   };
 
   const handleRemove = (role: string) => {
-    const updatedRoles = internalSelectedRoles.filter(r => r !== role);
-    setInternalSelectedRoles(updatedRoles);
+    const updatedRoles = safeSelectedRoles.filter(r => r !== role);
     onChange(updatedRoles);
   };
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 mb-2">
-        {internalSelectedRoles.map(role => (
+        {safeSelectedRoles.map(role => (
           <Badge 
             key={role} 
             variant="secondary" 
@@ -128,14 +124,11 @@ export default function SecondaryJobRolesSelector({
                   <CommandItem
                     key={role}
                     value={role}
-                    onSelect={() => {
-                      handleSelect(role);
-                      setOpen(false);
-                    }}
+                    onSelect={() => handleSelect(role)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 flex items-center justify-center">
-                        {internalSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                        {safeSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
                       </div>
                       <span>{role}</span>
                     </div>
