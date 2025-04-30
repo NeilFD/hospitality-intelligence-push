@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -247,7 +246,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
           <CardContent>
             <div className="space-y-6">
               {hasThresholdWarning && (
-                <Alert variant="warning" className="mb-4">
+                <Alert className="mb-4">
                   <AlertTitle>No revenue thresholds configured</AlertTitle>
                   <AlertDescription>
                     You haven't set up any revenue thresholds yet. The AI engine uses these to determine optimal staffing levels.

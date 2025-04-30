@@ -57,8 +57,8 @@ export default function StaffRankingPanel({ location }: StaffRankingPanelProps) 
         // Calculate average hi score from evaluations
         let avgHiScore = 0;
         if (profileEvaluations.length > 0) {
-          const sum = profileEvaluations.reduce((acc, eval) => {
-            return acc + (eval.weighted_score || 0);
+          const sum = profileEvaluations.reduce((acc, evaluation) => {
+            return acc + (evaluation.weighted_score || 0);
           }, 0);
           avgHiScore = sum / profileEvaluations.length;
         }
