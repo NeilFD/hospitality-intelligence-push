@@ -164,17 +164,18 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectContent
                           position="popper"
                           sideOffset={5}
-                          className="max-h-[300px] overflow-y-auto"
-                          align="start"
+                          className="max-h-[300px]"
                         >
-                          {timeSlots.map(slot => (
-                            <SelectItem 
-                              key={slot.value} 
-                              value={slot.value}
-                            >
-                              {slot.label}
-                            </SelectItem>
-                          ))}
+                          <div className="overflow-y-auto max-h-[300px]">
+                            {timeSlots.map(slot => (
+                              <SelectItem 
+                                key={slot.value} 
+                                value={slot.value}
+                              >
+                                {slot.label}
+                              </SelectItem>
+                            ))}
+                          </div>
                         </SelectContent>
                       </Select>
                       
@@ -190,18 +191,19 @@ export default function AvailabilityScheduler({ value, onChange }) {
                         <SelectContent
                           position="popper"
                           sideOffset={5}
-                          className="max-h-[300px] overflow-y-auto"
-                          align="start"
+                          className="max-h-[300px]"
                         >
-                          {timeSlots.map(slot => (
-                            <SelectItem 
-                              key={slot.value} 
-                              value={slot.value}
-                              disabled={slot.value <= block.start}
-                            >
-                              {slot.label}
-                            </SelectItem>
-                          ))}
+                          <div className="overflow-y-auto max-h-[300px]">
+                            {timeSlots.map(slot => (
+                              <SelectItem 
+                                key={slot.value} 
+                                value={slot.value}
+                                disabled={slot.value <= block.start}
+                              >
+                                {slot.label}
+                              </SelectItem>
+                            ))}
+                          </div>
                         </SelectContent>
                       </Select>
                       
