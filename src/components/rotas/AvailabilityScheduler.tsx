@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const days = [
   { id: 'mon', name: 'Monday' },
@@ -161,11 +162,13 @@ export default function AvailabilityScheduler({ value, onChange }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {timeSlots.map(slot => (
-                            <SelectItem key={slot.value} value={slot.value}>
-                              {slot.label}
-                            </SelectItem>
-                          ))}
+                          <ScrollArea className="h-[200px]">
+                            {timeSlots.map(slot => (
+                              <SelectItem key={slot.value} value={slot.value}>
+                                {slot.label}
+                              </SelectItem>
+                            ))}
+                          </ScrollArea>
                         </SelectContent>
                       </Select>
                       
@@ -179,15 +182,17 @@ export default function AvailabilityScheduler({ value, onChange }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {timeSlots.map(slot => (
-                            <SelectItem 
-                              key={slot.value} 
-                              value={slot.value}
-                              disabled={slot.value <= block.start}
-                            >
-                              {slot.label}
-                            </SelectItem>
-                          ))}
+                          <ScrollArea className="h-[200px]">
+                            {timeSlots.map(slot => (
+                              <SelectItem 
+                                key={slot.value} 
+                                value={slot.value}
+                                disabled={slot.value <= block.start}
+                              >
+                                {slot.label}
+                              </SelectItem>
+                            ))}
+                          </ScrollArea>
                         </SelectContent>
                       </Select>
                       
