@@ -603,7 +603,8 @@ export function HiScoreMatrix({
             {renderCategoryFeedback('foodKnowledge', 'Food Knowledge')}
           </div>
         </>
-      }
+      );
+    }
   };
   
   return (
