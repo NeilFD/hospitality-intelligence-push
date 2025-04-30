@@ -1,15 +1,11 @@
 
 import React from "react";
-import { CommandGroup, CommandGroupProps } from "@/components/ui/command";
-
-type SafeCommandGroupProps = CommandGroupProps & {
-  children: React.ReactNode;
-};
+import { CommandGroup } from "@/components/ui/command";
 
 // This component wraps CommandGroup to safely handle null/undefined children
 export const SafeCommandGroup = React.forwardRef<
   React.ElementRef<typeof CommandGroup>,
-  SafeCommandGroupProps
+  React.ComponentPropsWithoutRef<typeof CommandGroup>
 >(({ children, ...props }, ref) => {
   // Check if there are any children before rendering the CommandGroup
   if (!children) {
