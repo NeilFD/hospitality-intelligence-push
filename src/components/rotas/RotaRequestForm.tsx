@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,6 +75,8 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
       
+      console.log(`Fetching forecast data for range: ${startDateStr} to ${endDateStr}`);
+      
       // Get forecasts from the forecast service
       const forecasts = await getRevenueForecastsForRange(startDateStr, endDateStr);
       
@@ -91,6 +94,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
         });
       } else {
         // If no forecasts found, try weekly forecast data on page
+        console.log('No forecasts found from forecast service, trying weekly forecast data');
         fetchWeeklyForecastData(startDateStr, endDateStr);
       }
     } catch (error) {
@@ -98,6 +102,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       // If fetching fails, try weekly forecast data on page
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
+      console.log('Error fetching from forecast service, trying weekly forecast data');
       fetchWeeklyForecastData(startDateStr, endDateStr);
     } finally {
       setIsFetchingForecasts(false);
@@ -106,6 +111,8 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
   
   const fetchWeeklyForecastData = async (startDate: string, endDate: string) => {
     try {
+      console.log(`Trying to fetch weekly forecasts from revenue_forecasts table for ${startDate} to ${endDate}`);
+      
       // Try to fetch from the revenue_forecasts table (where WeeklyForecast page stores its data)
       const { data, error } = await supabase
         .from('revenue_forecasts')
@@ -115,6 +122,9 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       
       if (error) {
         console.error('Error fetching weekly forecasts:', error);
+        console.log('No data from revenue_forecasts, generating AI forecast automatically');
+        // No data found, auto-generate a forecast
+        generateAIForecast();
         return;
       }
       
@@ -131,9 +141,16 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
         toast.info('Forecast data found', {
           description: 'Revenue forecasts have been pre-filled from existing data'
         });
+      } else {
+        console.log('No data found in revenue_forecasts table, generating AI forecast automatically');
+        // No data found, auto-generate a forecast
+        generateAIForecast();
       }
     } catch (error) {
       console.error('Error fetching weekly forecast data:', error);
+      console.log('Error in weekly forecast fetch, generating AI forecast automatically');
+      // Error occurred, auto-generate a forecast
+      generateAIForecast();
     }
   };
 
@@ -360,8 +377,8 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       const baseAmount = baseAmounts[dayOfWeek] || 3000;
       
       // Add some randomness - more variance for a more natural distribution
-      const variance = baseAmount * 0.15; // 15% variance
-      const randomFactor = Math.random() * variance * 2 - variance;
+      const variation = baseAmount * 0.15; // 15% variance
+      const randomFactor = Math.random() * variation * 2 - variation;
       const forecast = Math.round(baseAmount + randomFactor);
       
       newForecasts[dateString] = forecast.toString();
