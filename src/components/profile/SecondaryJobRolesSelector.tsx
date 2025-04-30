@@ -2,11 +2,8 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Command, CommandEmpty, CommandInput, CommandItem } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { SafeErrorBoundary } from '@/components/ui/safe-error-boundary';
-import { SafeCommandGroup } from '@/components/ui/safe-command-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Job title options from the main profile
 const FOH_JOB_TITLES = [
@@ -120,32 +117,41 @@ export default function SecondaryJobRolesSelector({
           </PopoverTrigger>
           
           <PopoverContent 
-            className="p-0 w-[200px] bg-white shadow-lg z-50" 
+            className="p-0 w-[200px] bg-white shadow-lg border border-gray-200 rounded-md z-[100]" 
             align="start"
             sideOffset={5}
           >
-            <Command className="rounded-lg border border-gray-200">
-              <CommandInput placeholder="Search for roles..." />
-              <CommandEmpty>No roles found.</CommandEmpty>
-              <div className="max-h-[200px] overflow-y-auto p-1">
-                {availableJobTitles.map(role => (
-                  <CommandItem
-                    key={role}
-                    value={role}
-                    onSelect={() => {
-                      handleSelect(role);
-                      setOpen(false);
-                    }}
-                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-md cursor-pointer"
-                  >
-                    <div className="w-4 h-4 flex items-center justify-center">
-                      {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
-                    </div>
-                    <span>{role}</span>
-                  </CommandItem>
-                ))}
+            <div className="max-h-[200px] overflow-y-auto">
+              <div className="p-2">
+                <input
+                  type="text"
+                  placeholder="Search for roles..."
+                  className="w-full p-2 border border-gray-200 rounded-md text-sm mb-2"
+                />
               </div>
-            </Command>
+              
+              <div className="p-1">
+                {availableJobTitles.length === 0 ? (
+                  <div className="p-2 text-sm text-gray-500">No roles available.</div>
+                ) : (
+                  availableJobTitles.map(role => (
+                    <div
+                      key={role}
+                      onClick={() => {
+                        handleSelect(role);
+                        setOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-md cursor-pointer text-sm"
+                    >
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+                      </div>
+                      <span>{role}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
       )}
