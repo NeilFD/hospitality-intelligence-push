@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Command, CommandEmpty, CommandInput, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { SafeErrorBoundary } from '@/components/ui/safe-error-boundary';
@@ -44,13 +43,13 @@ export default function SecondaryJobRolesSelector({
   disabled = false 
 }: SecondaryJobRolesSelectorProps) {
   const [open, setOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
   
   // Create a safe local copy of the selected roles
   const [localSelectedRoles, setLocalSelectedRoles] = React.useState<string[]>([]);
   
   // Sync local state with props whenever selectedRoles changes
   React.useEffect(() => {
-    // Safely handle the incoming selectedRoles
     if (Array.isArray(selectedRoles)) {
       setLocalSelectedRoles(selectedRoles);
     } else {
@@ -60,19 +59,29 @@ export default function SecondaryJobRolesSelector({
   
   // Filter out the main job title from available options
   const availableJobTitles = React.useMemo(() => {
-    // Make sure JOB_TITLES exists and is an array
     return JOB_TITLES.filter(title => title !== mainJobTitle);
   }, [mainJobTitle]);
+
+  // Further filter by search term
+  const filteredJobTitles = React.useMemo(() => {
+    return availableJobTitles.filter(title => 
+      title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [availableJobTitles, searchTerm]);
   
   const handleSelect = (role: string) => {
-    // Use localSelectedRoles for consistent state management
-    const updatedRoles = localSelectedRoles.includes(role)
-      ? localSelectedRoles.filter(r => r !== role)
-      : [...localSelectedRoles, role];
-      
-    // Update both local state and parent component
-    setLocalSelectedRoles(updatedRoles);
-    onChange(updatedRoles);
+    if (localSelectedRoles.includes(role)) {
+      // If already selected, remove it
+      const updatedRoles = localSelectedRoles.filter(r => r !== role);
+      setLocalSelectedRoles(updatedRoles);
+      onChange(updatedRoles);
+    } else {
+      // If not selected, add it
+      const updatedRoles = [...localSelectedRoles, role];
+      setLocalSelectedRoles(updatedRoles);
+      onChange(updatedRoles);
+    }
+    // Don't close the popover to allow multiple selections
   };
 
   const handleRemove = (role: string) => {
@@ -118,32 +127,62 @@ export default function SecondaryJobRolesSelector({
             </Button>
           </PopoverTrigger>
           
-          <PopoverContent className="p-0 w-56 bg-white shadow-md" align="start">
-            <Command>
-              <CommandInput placeholder="Search for roles..." />
-              <CommandEmpty>No roles found.</CommandEmpty>
-              
-              <div className="max-h-[200px] overflow-y-auto">
-                {availableJobTitles.map(role => (
-                  <CommandItem
-                    key={role}
-                    value={role}
-                    onSelect={() => {
-                      handleSelect(role);
-                      setOpen(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        {localSelectedRoles.includes(role) && <Check className="h-3 w-3" />}
+          <SafeErrorBoundary>
+            <PopoverContent className="p-4 w-56 bg-white shadow-md" align="start">
+              <div className="space-y-4">
+                {/* Search input */}
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Search for roles"
+                    className="w-full px-3 py-1 text-sm border rounded"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                
+                {/* Role list */}
+                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                  {filteredJobTitles.length > 0 ? (
+                    filteredJobTitles.map(role => (
+                      <div 
+                        key={role} 
+                        className={`
+                          flex items-center gap-2 px-2 py-1 text-sm rounded cursor-pointer
+                          ${localSelectedRoles.includes(role) ? 'bg-green-50' : 'hover:bg-gray-100'}
+                        `}
+                        onClick={() => handleSelect(role)}
+                      >
+                        <div className={`
+                          w-4 h-4 border rounded flex items-center justify-center
+                          ${localSelectedRoles.includes(role) ? 'bg-green-500 border-green-500' : 'border-gray-300'}
+                        `}>
+                          {localSelectedRoles.includes(role) && (
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M8.5 2.5L3.5 7.5L1.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                        <span>{role}</span>
                       </div>
-                      <span>{role}</span>
-                    </div>
-                  </CommandItem>
-                ))}
+                    ))
+                  ) : (
+                    <div className="px-2 py-1 text-sm text-gray-500">No roles found</div>
+                  )}
+                </div>
+                
+                {/* Done button */}
+                <Button 
+                  variant="default"
+                  size="sm"
+                  className="w-full mt-2"
+                  onClick={() => setOpen(false)}
+                >
+                  Done
+                </Button>
               </div>
-            </Command>
-          </PopoverContent>
+            </PopoverContent>
+          </SafeErrorBoundary>
         </Popover>
       )}
     </div>
