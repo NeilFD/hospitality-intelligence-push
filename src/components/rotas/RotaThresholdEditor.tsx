@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Save, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Save, Trash2, Loader2, Copy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
@@ -32,6 +32,7 @@ const segments = [
 
 type Threshold = {
   id?: string;
+  name: string;
   day_of_week: string;
   segment: string;
   revenue_min: number;
@@ -81,6 +82,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
 
   const addNewThreshold = () => {
     const newThreshold: Threshold = {
+      name: `Threshold ${thresholds.length + 1}`,
       day_of_week: 'monday',
       segment: 'day',
       revenue_min: 0,
@@ -96,6 +98,28 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
     };
     
     setThresholds([...thresholds, newThreshold]);
+  };
+
+  const duplicateThreshold = (index: number) => {
+    const thresholdToDuplicate = thresholds[index];
+    const duplicatedThreshold: Threshold = {
+      ...thresholdToDuplicate,
+      name: `Copy of ${thresholdToDuplicate.name}`,
+      isNew: true,
+      id: undefined // Remove id to ensure it's treated as new
+    };
+    
+    setThresholds([...thresholds, duplicatedThreshold]);
+    
+    // Scroll to the bottom to see the new threshold
+    setTimeout(() => {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+    }, 100);
+    
+    toast.success('Threshold duplicated');
   };
 
   const removeThreshold = async (index: number) => {
@@ -162,6 +186,7 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
         const { error } = await supabase
           .from('rota_revenue_thresholds')
           .update({
+            name: threshold.name,
             day_of_week: threshold.day_of_week,
             segment: threshold.segment,
             revenue_min: threshold.revenue_min,
@@ -217,13 +242,41 @@ export default function RotaThresholdEditor({ location }: RotaThresholdEditorPro
                   <div key={index} className="border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Threshold #{index + 1}</h3>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => removeThreshold(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => duplicateThreshold(index)}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Duplicate this threshold</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => removeThreshold(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`name-${index}`}>Threshold Name</Label>
+                      <Input
+                        id={`name-${index}`}
+                        value={threshold.name}
+                        onChange={(e) => updateThreshold(index, 'name', e.target.value)}
+                        placeholder="Enter a name for this threshold"
+                      />
                     </div>
                     
                     <div className="grid gap-4 sm:grid-cols-2">
