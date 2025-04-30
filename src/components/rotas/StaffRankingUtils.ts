@@ -1,3 +1,4 @@
+
 /**
  * Format a revenue band range for display
  */
@@ -85,4 +86,42 @@ export const getStaffSummary = (
   kpMax: number
 ) => {
   return `FOH: ${fohMin}-${fohMax}, Kitchen: ${kitchenMin}-${kitchenMax}, KP: ${kpMin}-${kpMax}`;
+};
+
+/**
+ * Format Hi Score for display
+ */
+export const formatHiScore = (score: number | null | undefined): string => {
+  if (score === null || score === undefined) return 'N/A';
+  return score.toFixed(1);
+};
+
+/**
+ * Get color class for role badge based on role name
+ */
+export const getRoleColor = (role: string | null | undefined): string => {
+  if (!role) return '';
+  
+  const roleLower = role.toLowerCase();
+  
+  if (roleLower.includes('chef') || roleLower.includes('kitchen')) {
+    return 'bg-orange-100 text-orange-800 border-orange-300';
+  } else if (roleLower.includes('manager') || roleLower.includes('supervisor')) {
+    return 'bg-blue-100 text-blue-800 border-blue-300';
+  } else if (roleLower.includes('porter') || roleLower.includes('kp')) {
+    return 'bg-green-100 text-green-800 border-green-300';
+  } else if (roleLower.includes('bar') || roleLower.includes('tender')) {
+    return 'bg-purple-100 text-purple-800 border-purple-300';
+  } else if (roleLower.includes('wait') || roleLower.includes('server')) {
+    return 'bg-pink-100 text-pink-800 border-pink-300';
+  } else {
+    return 'bg-gray-100 text-gray-800 border-gray-300';
+  }
+};
+
+/**
+ * Get initials from a person's name
+ */
+export const getInitials = (firstName: string, lastName: string): string => {
+  return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
 };
