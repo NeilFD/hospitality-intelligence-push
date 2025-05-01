@@ -35,6 +35,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const fetchShiftRules = async () => {
     setIsLoading(true);
     try {
+      // Important: Using .order() was causing issues with Sunday shifts, so removing it
       const { data: rules, error } = await supabase
         .from('shift_rules')
         .select(`
@@ -59,6 +60,10 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       const sundayRules = rules?.filter(rule => rule.day_of_week === 'sun') || [];
       console.log('Sunday rules found:', sundayRules.length, sundayRules);
       
+      if (sundayRules.length > 0) {
+        console.log('Sunday rule details:', JSON.stringify(sundayRules, null, 2));
+      }
+      
       setShiftRules(rules || []);
     } catch (error) {
       console.error('Error fetching shift rules:', error);
@@ -70,9 +75,20 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
     }
   };
 
-  // This is the correct day order that includes 'sun'
+  // This is the correct day order that includes 'sun' at the end
   const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   
+  useEffect(() => {
+    // Log to check if shifts get properly distributed to each day
+    if (shiftRules.length > 0) {
+      console.log('Current shift rules count by day:');
+      dayOrder.forEach(day => {
+        const count = shiftRules.filter(rule => rule.day_of_week === day).length;
+        console.log(`${day}: ${count} shifts`);
+      });
+    }
+  }, [shiftRules]);
+
   // Group shifts by day - ensuring each day is properly represented
   const shiftsByDay = dayOrder.reduce<Record<string, any[]>>((acc, day) => {
     acc[day] = shiftRules.filter(rule => rule.day_of_week === day);
@@ -101,6 +117,20 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
     : selectedDay === 'all' 
       ? shiftRules 
       : shiftRules.filter(rule => rule.day_of_week === selectedDay);
+      
+  // Additional logging to debug filtering
+  useEffect(() => {
+    if (selectedDay !== 'none') {
+      const filtered = selectedDay === 'all' 
+        ? shiftRules 
+        : shiftRules.filter(rule => rule.day_of_week === selectedDay);
+        
+      console.log(`Filtered rules for selected day "${selectedDay}":`, filtered.length);
+      if (selectedDay === 'sun') {
+        console.log('Sunday filtered rules:', filtered);
+      }
+    }
+  }, [selectedDay, shiftRules]);
 
   // Get days to display based on filter
   const getDaysToDisplay = () => {
@@ -190,48 +220,51 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
               <div className="p-4 text-center">Loading shift rules...</div>
             ) : (
               <>                
-                {getDaysToDisplay().map(day => (
-                  <div key={day} className="border rounded-md overflow-hidden">
-                    <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 font-medium">
-                      {getDayName(day)} ({shiftsByDay[day]?.length || 0})
-                    </div>
-                    {shiftsByDay[day]?.length > 0 ? (
-                      <div className="divide-y">
-                        {shiftsByDay[day].map(rule => {
-                          const role = jobRoles.find(r => r.id === rule.job_role_id);
-                          return (
-                            <div key={rule.id} className="px-4 py-2 flex flex-wrap justify-between items-center">
-                              <div className="flex-grow mr-4 min-w-[200px]">
-                                <div className="font-medium">{rule.name || role?.title || 'Unnamed Shift'}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {formatTime(rule.start_time)} - {formatTime(rule.end_time)}
+                {getDaysToDisplay().map(day => {
+                  console.log(`Rendering day ${day}, has ${shiftsByDay[day]?.length || 0} shifts`);
+                  return (
+                    <div key={day} className="border rounded-md overflow-hidden">
+                      <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 font-medium">
+                        {getDayName(day)} ({shiftsByDay[day]?.length || 0})
+                      </div>
+                      {shiftsByDay[day] && shiftsByDay[day].length > 0 ? (
+                        <div className="divide-y">
+                          {shiftsByDay[day].map((rule: any) => {
+                            const role = jobRoles.find(r => r.id === rule.job_role_id);
+                            return (
+                              <div key={rule.id} className="px-4 py-2 flex flex-wrap justify-between items-center">
+                                <div className="flex-grow mr-4 min-w-[200px]">
+                                  <div className="font-medium">{rule.name || role?.title || 'Unnamed Shift'}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {formatTime(rule.start_time)} - {formatTime(rule.end_time)}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="text-sm text-right">
-                                  <div className="text-muted-foreground">Role</div>
-                                  <div>{role?.title || 'Unknown'}</div>
-                                </div>
-                                <div className="text-sm text-right">
-                                  <div className="text-muted-foreground">Staff</div>
-                                  <div>
-                                    {rule.min_staff === rule.max_staff
-                                      ? rule.min_staff
-                                      : `${rule.min_staff}-${rule.max_staff}`}
+                                <div className="flex items-center gap-3">
+                                  <div className="text-sm text-right">
+                                    <div className="text-muted-foreground">Role</div>
+                                    <div>{role?.title || 'Unknown'}</div>
+                                  </div>
+                                  <div className="text-sm text-right">
+                                    <div className="text-muted-foreground">Staff</div>
+                                    <div>
+                                      {rule.min_staff === rule.max_staff
+                                        ? rule.min_staff
+                                        : `${rule.min_staff}-${rule.max_staff}`}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="px-4 py-3 text-muted-foreground italic">
-                        No shifts scheduled
-                      </div>
-                    )}
-                  </div>
-                ))}
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-3 text-muted-foreground italic">
+                          No shifts scheduled
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </>
             )}
           </div>
