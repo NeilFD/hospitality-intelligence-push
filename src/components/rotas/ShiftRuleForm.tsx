@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -58,14 +59,14 @@ const troughPeriodSchema = z.object({
   max_staff_override: z.number().min(0, "Must be 0 or greater"),
 });
 
-// Updated form schema to include troughs
+// Updated form schema to include troughs and allow min_staff to be 0
 const formSchema = z.object({
   name: z.string().optional(),
   day_of_week: z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
   job_role_id: z.string().uuid(),
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
-  min_staff: z.number().min(1, "Must be at least 1"),
+  min_staff: z.number().min(0, "Must be 0 or greater"), // Changed from min(1) to min(0)
   max_staff: z.number().min(1, "Must be at least 1"),
   priority: z.number().min(1).max(5).default(3),
   troughPeriods: z.array(troughPeriodSchema).optional(),
@@ -106,7 +107,7 @@ export default function ShiftRuleForm({
       job_role_id: '',
       start_time: '09:00',
       end_time: '17:00',
-      min_staff: 1,
+      min_staff: 0, // Changed default from 1 to 0
       max_staff: 1,
       priority: 3,
       troughPeriods: [],
@@ -162,7 +163,7 @@ export default function ShiftRuleForm({
           job_role_id: jobRoles.length > 0 ? jobRoles[0].id : '',
           start_time: '09:00',
           end_time: '17:00',
-          min_staff: 1,
+          min_staff: 0, // Changed default from 1 to 0
           max_staff: 1,
           priority: 3,
           troughPeriods: [],
@@ -453,7 +454,7 @@ export default function ShiftRuleForm({
                         <Slider
                           value={[field.value]}
                           onValueChange={(values) => field.onChange(values[0])}
-                          min={1}
+                          min={0} // Changed min value from 1 to 0
                           max={10}
                           step={1}
                           className="flex-1 mr-4"
