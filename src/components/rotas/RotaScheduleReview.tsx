@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,17 @@ import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/date-utils';
 import { useAuthStore } from '@/services/auth-service';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type RotaScheduleReviewProps = {
   location: any;
   onApprovalRequest: () => void;
   roleMappings?: Record<string, any[]>;
+};
+
+// Let's also check and update the props for StaffingGanttChart
+type StaffingGanttChartProps = {
+  shifts: any[];
 };
 
 export default function RotaScheduleReview({ location, onApprovalRequest, roleMappings = {} }: RotaScheduleReviewProps) {
