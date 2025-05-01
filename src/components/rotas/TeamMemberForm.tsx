@@ -67,6 +67,15 @@ export default function TeamMemberForm({
     setAvailableForRota(true);
   };
   
+  // Handler functions for checkbox state changes
+  const handleFullTimeStudentChange = (checked) => {
+    setIsFullTimeStudent(checked === true);
+  };
+  
+  const handleAvailableForRotaChange = (checked) => {
+    setAvailableForRota(checked === true);
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -266,7 +275,7 @@ export default function TeamMemberForm({
               <Checkbox 
                 id="fullTimeStudent" 
                 checked={isFullTimeStudent}
-                onCheckedChange={setIsFullTimeStudent}
+                onCheckedChange={handleFullTimeStudentChange}
               />
               <Label htmlFor="fullTimeStudent" className="text-sm">
                 Full-time student (different NI calculation)
@@ -298,7 +307,7 @@ export default function TeamMemberForm({
               <Checkbox 
                 id="availableForRota" 
                 checked={availableForRota}
-                onCheckedChange={setAvailableForRota}
+                onCheckedChange={handleAvailableForRotaChange}
               />
               <Label htmlFor="availableForRota">
                 Available for scheduling
