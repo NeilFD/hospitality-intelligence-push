@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -212,7 +211,7 @@ export default function RotaScheduling() {
         
         {staffIssues.length > 0 && (
           <div className="px-4 mb-4">
-            <Alert variant="warning" className="bg-amber-50 border-amber-200">
+            <Alert variant="default" className="bg-amber-50 border-amber-200">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertDescription>
                 <div className="font-medium text-amber-800 mb-1">
