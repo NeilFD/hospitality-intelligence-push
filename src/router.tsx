@@ -33,6 +33,11 @@ import FoodAnnualSummary from './pages/food/AnnualSummary';
 import BeverageMonthSummary from './pages/beverage/MonthSummary';
 import BeverageAnnualSummary from './pages/beverage/AnnualSummary';
 import Dashboard from './pages/Dashboard';
+import WeeklyForecast from './pages/pl/WeeklyForecast';
+import FoodBeverageForecast from './pages/pl/FoodBeverageForecast';
+import FoodWeeklyTracker from './pages/food/WeeklyTracker';
+import BeverageWeeklyTracker from './pages/beverage/WeeklyTracker';
+import NotFound from './pages/NotFound';
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -40,6 +45,7 @@ export const router = createBrowserRouter(
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/not-found" element={<NotFound />} />
 
       <Route element={<RootLayout />}>
         <Route path="/home" element={<Navigate to="home/dashboard" replace />} />
@@ -60,6 +66,8 @@ export const router = createBrowserRouter(
         {/* P&L Routes */}
         <Route path="/pl" element={<Navigate to="/pl/dashboard" replace />} />
         <Route path="/pl/dashboard" element={<PLDashboard />} />
+        <Route path="/pl/weekly-forecast" element={<WeeklyForecast />} />
+        <Route path="/pl/food-beverage-forecast" element={<FoodBeverageForecast />} />
 
         {/* Wages Routes */}
         <Route path="/wages" element={<Navigate to="/wages/dashboard" replace />} />
@@ -70,12 +78,14 @@ export const router = createBrowserRouter(
         <Route path="/food/dashboard" element={<FoodDashboard />} />
         <Route path="/food/month/:year/:month" element={<FoodMonthSummary />} />
         <Route path="/food/annual-summary" element={<FoodAnnualSummary />} />
+        <Route path="/food/weekly-tracker" element={<FoodWeeklyTracker />} />
 
         {/* Beverage Hub Routes */}
         <Route path="/beverage" element={<Navigate to="/beverage/dashboard" replace />} />
         <Route path="/beverage/dashboard" element={<BeverageDashboard />} />
         <Route path="/beverage/month/:year/:month" element={<BeverageMonthSummary />} />
         <Route path="/beverage/annual-summary" element={<BeverageAnnualSummary />} />
+        <Route path="/beverage/weekly-tracker" element={<BeverageWeeklyTracker />} />
 
         {/* Team Routes */}
         <Route path="/team" element={<Navigate to="/team/dashboard" replace />} />
@@ -94,6 +104,9 @@ export const router = createBrowserRouter(
 
         {/* Generic dashboard handler - keep at the end */}
         <Route path="/:module/dashboard" element={<Dashboard />} />
+        
+        {/* 404 fallback */}
+        <Route path="*" element={<Navigate to="/not-found" replace />} />
       </Route>
     </>
   )
