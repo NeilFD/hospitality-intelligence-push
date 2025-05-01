@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { Calendar as CalendarIcon, Loader2, Zap } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, Zap, Trash2 } from 'lucide-react';
 import { format, addDays, startOfWeek, parseISO, endOfWeek } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -393,6 +392,69 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
 
   const hasThresholdWarning = thresholds.length === 0;
 
+  // Add function to delete rota request
+  const handleDeleteRequest = async (requestId: string) => {
+    try {
+      // First check if a schedule exists for this request
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('rota_schedules')
+        .select('id')
+        .eq('request_id', requestId);
+        
+      if (scheduleData && scheduleData.length > 0) {
+        // If schedules exist, we need to delete them first (and their shifts)
+        console.log("Deleting associated schedule shifts...");
+        
+        // First delete all shifts associated with these schedules
+        for (const schedule of scheduleData) {
+          const { error: shiftDeleteError } = await supabase
+            .from('rota_schedule_shifts')
+            .delete()
+            .eq('schedule_id', schedule.id);
+            
+          if (shiftDeleteError) {
+            console.error('Error deleting schedule shifts:', shiftDeleteError);
+            toast.error('Could not delete schedule shifts');
+            return;
+          }
+        }
+        
+        // Then delete the schedules
+        console.log("Deleting associated schedules...");
+        const { error: deleteScheduleError } = await supabase
+          .from('rota_schedules')
+          .delete()
+          .eq('request_id', requestId);
+          
+        if (deleteScheduleError) {
+          console.error('Error deleting schedules:', deleteScheduleError);
+          toast.error('Could not delete associated schedules');
+          return;
+        }
+      }
+      
+      // Now delete the rota request
+      console.log("Deleting rota request:", requestId);
+      const { error: deleteRequestError } = await supabase
+        .from('rota_requests')
+        .delete()
+        .eq('id', requestId);
+        
+      if (deleteRequestError) {
+        console.error('Error deleting rota request:', deleteRequestError);
+        toast.error('Failed to delete rota request');
+        return;
+      }
+      
+      // Refresh the previous requests list
+      toast.success('Rota request deleted successfully');
+      fetchPreviousRequests();
+    } catch (error) {
+      console.error('Error in delete operation:', error);
+      toast.error('An error occurred while deleting');
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="space-y-6">
@@ -517,7 +579,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
                         <p className="font-medium">{weekStart} - {weekEnd}</p>
                         <p className="text-sm text-muted-foreground">Requested by {requester}</p>
                       </div>
-                      <div className="flex items-center">
+                      <div className="flex items-center gap-2">
                         <div className={cn(
                           "px-2 py-1 text-xs rounded-full",
                           {
@@ -529,6 +591,14 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
                         )}>
                           {request.status.replace('_', ' ')}
                         </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteRequest(request.id)}
+                          title="Delete Rota Request"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       </div>
                     </div>
                   );
