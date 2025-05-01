@@ -126,6 +126,22 @@ export default function RotaScheduling() {
         }
       }
       
+      // Also fetch role mapping data to ensure we can use it in the algorithm
+      const { data: roleMappings, error: roleMappingsError } = await supabase
+        .from('job_role_mappings')
+        .select('*')
+        .eq('location_id', locationData.id);
+        
+      if (!roleMappingsError && roleMappings) {
+        console.log(`Found ${roleMappings.length} role mappings for scheduling`);
+        
+        if (roleMappings.length === 0) {
+          toast.warning("No role mappings defined", {
+            description: "You may want to set up role mappings for optimal staff assignment."
+          });
+        }
+      }
+      
     } catch (error) {
       console.error('Error fetching location data:', error);
       toast.error("Error loading location data", {
