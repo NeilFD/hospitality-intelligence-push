@@ -1769,6 +1769,44 @@ export type Database = {
           },
         ]
       }
+      shift_troughs: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          max_staff_override: number
+          shift_rule_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          max_staff_override?: number
+          shift_rule_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          max_staff_override?: number
+          shift_rule_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_troughs_shift_rule_id_fkey"
+            columns: ["shift_rule_id"]
+            isOneToOne: false
+            referencedRelation: "shift_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           contact_name: string | null
