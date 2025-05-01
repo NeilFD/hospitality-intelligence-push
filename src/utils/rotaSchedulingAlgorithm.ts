@@ -1,4 +1,3 @@
-
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -18,6 +17,7 @@ export class RotaSchedulingAlgorithm {
   location: any;
   shiftRules: any[] = [];
   troughPeriods: any[] = [];
+  roleMappings: Record<string, any[]> = {}; // Added role mappings property
 
   constructor({ request, staff, jobRoles, thresholds, location }: {
     request: any;
@@ -45,6 +45,14 @@ export class RotaSchedulingAlgorithm {
    */
   setTroughPeriods(troughPeriods: any[]) {
     this.troughPeriods = troughPeriods || [];
+  }
+
+  /**
+   * Set the role mappings to be used for job role assignments
+   */
+  setRoleMappings(roleMappings: Record<string, any[]>) {
+    this.roleMappings = roleMappings || {};
+    console.log(`Role mappings set for ${Object.keys(this.roleMappings).length} job roles`);
   }
 
   /**
@@ -510,64 +518,46 @@ export class RotaSchedulingAlgorithm {
   }) {
     // Get the job role info from the rule
     const jobRole = rule.job_roles;
+    const roleId = jobRole?.id;
     const jobRoleTitle = jobRole?.title || 'Unknown Role';
     
-    console.log(`Processing shift rule: ${rule.name || 'Unnamed'} for ${jobRoleTitle}`);
+    console.log(`Processing shift rule: ${rule.name || 'Unnamed'} for ${jobRoleTitle} (role ID: ${roleId})`);
     
-    // Filter staff by the job role required for this shift
+    if (!roleId) {
+      console.log(`Error: Cannot find role ID for role ${jobRoleTitle}`);
+      return;
+    }
+    
+    // Get the list of allowed job titles for this role from the role mapping matrix
+    const allowedJobTitles = this.getAllowedJobTitlesForRole(roleId);
+    
+    // If no allowed job titles found, log a warning and skip this rule
+    if (allowedJobTitles.length === 0) {
+      console.log(`Warning: No allowed job titles for ${jobRoleTitle}, cannot assign staff`);
+      return;
+    }
+    
+    // Filter staff by the allowed job titles for this role
     let eligibleStaff = rankedStaff.filter(staff => {
-      // Check primary role - exact match on job title
-      if (staff.job_title === jobRoleTitle) {
-        return true;
+      // Check primary role - must be in the allowed job titles list
+      const primaryMatch = staff.job_title && allowedJobTitles.includes(staff.job_title);
+      
+      // Check secondary roles - must be in the allowed job titles list
+      let secondaryMatch = false;
+      if (Array.isArray(staff.secondary_job_roles)) {
+        secondaryMatch = staff.secondary_job_roles.some((jobTitle: string) => 
+          allowedJobTitles.includes(jobTitle));
       }
       
-      // Check secondary roles - must be explicitly included in the secondary_job_roles array
-      if (Array.isArray(staff.secondary_job_roles) && 
-          staff.secondary_job_roles.includes(jobRoleTitle)) {
-        return true;
-      }
-      
-      return false;
+      return primaryMatch || secondaryMatch;
     });
 
-    // If no staff match the exact job role or secondary roles, try to find compatible staff
-    // This helps ensure we don't end up with empty shifts
+    // If no eligible staff found, log error but DO NOT use any available staff
     if (eligibleStaff.length === 0) {
-      console.log(`No eligible staff found for ${jobRoleTitle} - trying to find compatible staff`);
-      
-      // Look for staff with roles that might be compatible
-      if (jobRoleTitle.toLowerCase().includes('server') || 
-          jobRoleTitle.toLowerCase().includes('waiter') ||
-          jobRoleTitle.toLowerCase().includes('waitress') ||
-          jobRoleTitle.toLowerCase().includes('host')) {
-        // FOH roles might be compatible with each other
-        eligibleStaff = rankedStaff.filter(staff => 
-          staff.job_title?.toLowerCase().includes('server') ||
-          staff.job_title?.toLowerCase().includes('waiter') ||
-          staff.job_title?.toLowerCase().includes('waitress') ||
-          staff.job_title?.toLowerCase().includes('host') ||
-          staff.job_title?.toLowerCase().includes('bartender')
-        );
-      }
-      else if (jobRoleTitle.toLowerCase().includes('chef') || 
-               jobRoleTitle.toLowerCase().includes('cook')) {
-        // Kitchen roles might be compatible with each other  
-        eligibleStaff = rankedStaff.filter(staff => 
-          staff.job_title?.toLowerCase().includes('chef') ||
-          staff.job_title?.toLowerCase().includes('cook')
-        );
-      }
-      
-      if (eligibleStaff.length > 0) {
-        console.log(`Found ${eligibleStaff.length} compatible staff members for ${jobRoleTitle}`);
-      }
-      else {
-        console.log(`Could not find any compatible staff for ${jobRoleTitle}, using any available staff`);
-        // As a last resort, just use any staff
-        eligibleStaff = rankedStaff;
-      }
+      console.log(`No eligible staff found for ${jobRoleTitle} based on role mapping matrix. Cannot assign this shift.`);
+      return; // Exit without assigning anyone to this shift
     } else {
-      console.log(`Found ${eligibleStaff.length} eligible staff for ${jobRoleTitle}`);
+      console.log(`Found ${eligibleStaff.length} eligible staff for ${jobRoleTitle} based on role mapping matrix`);
     }
     
     // Calculate shift hours
@@ -626,6 +616,9 @@ export class RotaSchedulingAlgorithm {
       const { shiftCost, niCost, pensionCost, totalShiftCost } = 
         this.calculateCosts(staffMember, shiftHours);
       
+      // Determine if this is a secondary role for the staff member
+      const isSecondaryRole = this.isSecondaryRoleForStaff(staffMember, allowedJobTitles);
+      
       // Create the shift
       const shift = {
         profile_id: staffMember.id,
@@ -635,7 +628,7 @@ export class RotaSchedulingAlgorithm {
         end_time: endTime,
         break_minutes: breakMinutes,
         job_role_id: rule.job_role_id,
-        is_secondary_role: this.isSecondaryRole(staffMember, jobRole),
+        is_secondary_role: isSecondaryRole,
         hi_score: staffMember.hi_score || 0,
         shift_cost: shiftCost,
         employer_ni_cost: niCost,
@@ -1039,6 +1032,30 @@ export class RotaSchedulingAlgorithm {
   }
   
   /**
+   * Check if a role is a secondary role for a staff member
+   * based on the allowed job titles list
+   */
+  isSecondaryRoleForStaff(staff: any, allowedJobTitles: string[]): boolean {
+    // If staff's primary job title is in the allowed list, it's not a secondary role
+    if (staff.job_title && allowedJobTitles.includes(staff.job_title)) {
+      return false;
+    }
+    
+    // If staff's secondary job titles include one from the allowed list, it's a secondary role
+    if (Array.isArray(staff.secondary_job_roles)) {
+      const hasAllowedSecondary = staff.secondary_job_roles.some((jobTitle: string) => 
+        allowedJobTitles.includes(jobTitle));
+      if (hasAllowedSecondary) {
+        return true;
+      }
+    }
+    
+    // This should not happen since we've already filtered staff based on allowed job titles,
+    // but we'll return true as a fallback (treating it as a secondary role)
+    return true;
+  }
+  
+  /**
    * Update staff allocations to track hours worked and shifts
    */
   updateStaffAllocations(
@@ -1158,6 +1175,24 @@ export class RotaSchedulingAlgorithm {
     
     // Return the best available staff member
     return staffWithinDayLimits[0];
+  }
+  
+  /**
+   * Get allowed job titles for a specific job role based on the role mapping matrix
+   */
+  getAllowedJobTitlesForRole(roleId: string): string[] {
+    // Get mappings for this role
+    const mappings = this.roleMappings[roleId] || [];
+    
+    if (mappings.length === 0) {
+      console.log(`Warning: No role mappings found for role ID ${roleId}`);
+      return [];
+    }
+    
+    // Extract job titles from mappings
+    const jobTitles = mappings.map(mapping => mapping.job_title);
+    console.log(`Found ${jobTitles.length} allowed job titles for role ID ${roleId}: ${jobTitles.join(', ')}`);
+    return jobTitles;
   }
   
   /**

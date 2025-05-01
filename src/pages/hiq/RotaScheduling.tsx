@@ -23,6 +23,7 @@ export default function RotaScheduling() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('request');
   const [location, setLocation] = useState<any>(null);
+  const [roleMappings, setRoleMappings] = useState<Record<string, any[]>>({});
   
   // Check if user has permission to access this page
   const canAccessPage = profile?.role === 'Super User' || profile?.role === 'Owner' || profile?.role === 'GOD';
@@ -76,6 +77,33 @@ export default function RotaScheduling() {
       setLocation(locationData);
       
       console.log("Location data loaded:", locationData);
+      
+      // Fetch job role mappings
+      const { data: mappingsData, error: mappingsError } = await supabase
+        .from('job_role_mappings')
+        .select('*')
+        .eq('location_id', locationData.id)
+        .order('priority', { ascending: true });
+      
+      if (mappingsError) {
+        toast.error("Error loading role mappings", {
+          description: "There was a problem loading the job role mappings."
+        });
+        console.error("Role mappings error:", mappingsError);
+      } else if (mappingsData) {
+        // Group mappings by job_role_id
+        const mappingsByRole = mappingsData.reduce((acc: Record<string, any[]>, mapping: any) => {
+          const roleId = mapping.job_role_id;
+          if (!acc[roleId]) {
+            acc[roleId] = [];
+          }
+          acc[roleId].push(mapping);
+          return acc;
+        }, {});
+        
+        setRoleMappings(mappingsByRole);
+        console.log(`Loaded role mappings for ${Object.keys(mappingsByRole).length} job roles`);
+      }
       
       // Also fetch staff to check availability 
       const { data: staffData, error: staffError } = await supabase
@@ -221,7 +249,7 @@ export default function RotaScheduling() {
                 </div>
                 
                 <TabsContent value="request" className="mt-0 space-y-4">
-                  <RotaRequestForm location={location} onRequestComplete={() => setActiveTab('review')} />
+                  <RotaRequestForm location={location} roleMappings={roleMappings} onRequestComplete={() => setActiveTab('review')} />
                 </TabsContent>
                 
                 <TabsContent value="thresholds" className="mt-0 space-y-4">
@@ -231,6 +259,7 @@ export default function RotaScheduling() {
                 <TabsContent value="review" className="mt-0 space-y-4">
                   <RotaScheduleReview
                     location={location}
+                    roleMappings={roleMappings}
                     onApprovalRequest={() => setActiveTab('approval')}
                   />
                 </TabsContent>
@@ -238,6 +267,7 @@ export default function RotaScheduling() {
                 <TabsContent value="approval" className="mt-0 space-y-4">
                   <RotaScheduleApproval
                     location={location}
+                    roleMappings={roleMappings}
                   />
                 </TabsContent>
                 

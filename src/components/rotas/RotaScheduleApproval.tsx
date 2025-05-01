@@ -1,30 +1,24 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, AlertCircle, Calendar, FileBarChart, Users, CheckCircle, XCircle, Send, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { formatCurrency } from '@/lib/date-utils';
+import { Check, Loader2, Calendar, AlertTriangle, CheckCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/services/auth-service';
+import StaffingGanttChart from './StaffingGanttChart';
 
 type RotaScheduleApprovalProps = {
   location: any;
+  roleMappings?: Record<string, any[]>;
 };
 
-export default function RotaScheduleApproval({ location }: RotaScheduleApprovalProps) {
+export default function RotaScheduleApproval({ location, roleMappings = {} }: RotaScheduleApprovalProps) {
   const { profile } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
