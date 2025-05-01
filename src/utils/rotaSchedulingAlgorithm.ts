@@ -19,6 +19,13 @@ export class RotaSchedulingAlgorithm {
   troughPeriods: any[] = [];
   roleMapping: any[] = [];
   
+  // NEW: Configuration for part shifts
+  enablePartShifts = true; // Can be turned off via settings
+  minPartShiftHours = 3; // Minimum hours for a part shift
+  maxPartShiftHours = 5; // Maximum hours for a part shift
+  dayShiftLatestStartTime = '12:00:00'; // Latest start for day part shifts
+  eveningShiftLatestStartTime = '18:00:00'; // Latest start for evening part shifts
+  
   // Track daily allocations of staff to enable multiple shifts per day
   dailyStaffAllocations: Record<string, Record<string, {
     hoursWorked: number;
@@ -63,6 +70,31 @@ export class RotaSchedulingAlgorithm {
   setRoleMapping(roleMapping: any[]) {
     this.roleMapping = roleMapping || [];
     console.log(`Role mapping data loaded: ${roleMapping.length} entries`);
+  }
+  
+  /**
+   * NEW: Set part shift configuration options
+   */
+  setPartShiftConfig({
+    enable = true,
+    minHours = 3,
+    maxHours = 5,
+    dayLatestStart = '12:00:00',
+    eveningLatestStart = '18:00:00'
+  }: {
+    enable?: boolean;
+    minHours?: number;
+    maxHours?: number;
+    dayLatestStart?: string;
+    eveningLatestStart?: string;
+  }) {
+    this.enablePartShifts = enable;
+    this.minPartShiftHours = minHours;
+    this.maxPartShiftHours = maxHours;
+    this.dayShiftLatestStartTime = dayLatestStart;
+    this.eveningShiftLatestStartTime = eveningLatestStart;
+    
+    console.log(`Part shift configuration updated: enabled=${enable}, minHours=${minHours}, maxHours=${maxHours}`);
   }
 
   /**
@@ -243,9 +275,21 @@ export class RotaSchedulingAlgorithm {
             rankedStaff,
             staffWeeklyAllocations,
             shifts,
-            totalCost
+            totalCost,
+            dayRevenue
           });
         }
+        
+        // NEW: After processing all shift rules, check if we need to enforce threshold minimums
+        this.enforceThresholdMinimums({
+          date,
+          dayOfWeek,
+          dayRevenue,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost
+        });
       } else {
         // Fallback to threshold-based staffing if no shift rules exist
         console.log(`No shift rules found for ${dayOfWeek}, falling back to thresholds`);
@@ -279,7 +323,8 @@ export class RotaSchedulingAlgorithm {
           rankedStaff,
           staffWeeklyAllocations,
           shifts,
-          totalCost
+          totalCost,
+          dayRevenue
         });
         
         // Assign kitchen staff
@@ -293,7 +338,8 @@ export class RotaSchedulingAlgorithm {
           rankedStaff,
           staffWeeklyAllocations,
           shifts,
-          totalCost
+          totalCost,
+          dayRevenue
         });
         
         // Assign KP staff
@@ -307,7 +353,8 @@ export class RotaSchedulingAlgorithm {
           rankedStaff,
           staffWeeklyAllocations,
           shifts,
-          totalCost
+          totalCost,
+          dayRevenue
         });
         
         // Process for evening segment
@@ -324,7 +371,8 @@ export class RotaSchedulingAlgorithm {
           rankedStaff,
           staffWeeklyAllocations,
           shifts,
-          totalCost
+          totalCost,
+          dayRevenue
         });
         
         // Assign kitchen staff for evening
@@ -338,7 +386,8 @@ export class RotaSchedulingAlgorithm {
           rankedStaff,
           staffWeeklyAllocations,
           shifts,
-          totalCost
+          totalCost,
+          dayRevenue
         });
         
         // Assign KP staff for evening
@@ -352,7 +401,8 @@ export class RotaSchedulingAlgorithm {
           rankedStaff,
           staffWeeklyAllocations,
           shifts,
-          totalCost
+          totalCost,
+          dayRevenue
         });
       }
     }
@@ -424,6 +474,141 @@ export class RotaSchedulingAlgorithm {
       cost_percentage: costPercentage
     };
   };
+
+  /**
+   * NEW: Enforce minimum staff counts from thresholds if not met by shift rules
+   */
+  enforceThresholdMinimums({
+    date,
+    dayOfWeek,
+    dayRevenue,
+    rankedStaff,
+    staffWeeklyAllocations,
+    shifts,
+    totalCost
+  }: {
+    date: string;
+    dayOfWeek: string;
+    dayRevenue: number;
+    rankedStaff: any[];
+    staffWeeklyAllocations: Record<string, any>;
+    shifts: any[];
+    totalCost: number;
+  }) {
+    // Find applicable threshold based on revenue
+    const threshold = this.findThreshold(dayRevenue);
+    if (!threshold) return;
+    
+    // Check if we have the minimum required staff for each type
+    // Count existing staff by type for this date
+    const existingShifts = shifts.filter(s => s.date === date);
+    
+    // Count by staff type
+    const fohStaffCount = this.countStaffByType(existingShifts, 'foh', rankedStaff);
+    const kitchenStaffCount = this.countStaffByType(existingShifts, 'kitchen', rankedStaff);
+    const kpStaffCount = this.countStaffByType(existingShifts, 'kp', rankedStaff);
+    
+    console.log(`Staff count check for ${date}: FOH=${fohStaffCount}, Kitchen=${kitchenStaffCount}, KP=${kpStaffCount}`);
+    console.log(`Threshold minimums: FOH=${threshold.foh_min_staff}, Kitchen=${threshold.kitchen_min_staff}, KP=${threshold.kp_min_staff}`);
+    
+    // Check if we need to add kitchen staff to meet minimum
+    if (kitchenStaffCount < threshold.kitchen_min_staff) {
+      console.log(`Need to add ${threshold.kitchen_min_staff - kitchenStaffCount} more kitchen staff for ${date}`);
+      
+      // Determine segment based on day of week
+      const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+      
+      // Assign additional kitchen staff
+      this.assignStaff({
+        date,
+        dayOfWeek,
+        segment: daySegment,
+        staffType: 'kitchen',
+        minStaff: threshold.kitchen_min_staff - kitchenStaffCount,
+        maxStaff: threshold.kitchen_max_staff,
+        rankedStaff,
+        staffWeeklyAllocations,
+        shifts,
+        totalCost,
+        dayRevenue
+      });
+    }
+    
+    // Check if we need to add KP staff to meet minimum
+    if (kpStaffCount < threshold.kp_min_staff) {
+      console.log(`Need to add ${threshold.kp_min_staff - kpStaffCount} more kitchen porters for ${date}`);
+      
+      // Determine segment based on day of week
+      const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+      
+      // Assign additional KP staff
+      this.assignStaff({
+        date,
+        dayOfWeek,
+        segment: daySegment,
+        staffType: 'kp',
+        minStaff: threshold.kp_min_staff - kpStaffCount,
+        maxStaff: threshold.kp_max_staff,
+        rankedStaff,
+        staffWeeklyAllocations,
+        shifts,
+        totalCost,
+        dayRevenue
+      });
+    }
+    
+    // Check if we need to add FOH staff to meet minimum
+    if (fohStaffCount < threshold.foh_min_staff) {
+      console.log(`Need to add ${threshold.foh_min_staff - fohStaffCount} more FOH staff for ${date}`);
+      
+      // Determine segment based on day of week
+      const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+      
+      // Assign additional FOH staff
+      this.assignStaff({
+        date,
+        dayOfWeek,
+        segment: daySegment,
+        staffType: 'foh',
+        minStaff: threshold.foh_min_staff - fohStaffCount,
+        maxStaff: threshold.foh_max_staff,
+        rankedStaff,
+        staffWeeklyAllocations,
+        shifts,
+        totalCost,
+        dayRevenue
+      });
+    }
+  }
+  
+  /**
+   * NEW: Count staff of a specific type in existing shifts
+   */
+  countStaffByType(shifts: any[], staffType: string, allStaff: any[]): number {
+    // Get the profiles that match this staff type
+    const staffByType = allStaff.filter(staff => {
+      if (staffType === 'foh') {
+        return !this.isKitchenRole(staff.job_title) && !this.isKitchenPorterRole(staff.job_title);
+      } else if (staffType === 'kitchen') {
+        return this.isKitchenRole(staff.job_title) && !this.isKitchenPorterRole(staff.job_title);
+      } else if (staffType === 'kp') {
+        return this.isKitchenPorterRole(staff.job_title);
+      }
+      return false;
+    });
+    
+    const staffIds = staffByType.map(staff => staff.id);
+    
+    // Count unique staff members in the shifts that match the staff type
+    const uniqueStaff = new Set();
+    for (const shift of shifts) {
+      if (staffIds.includes(shift.profile_id)) {
+        uniqueStaff.add(shift.profile_id);
+      }
+    }
+    
+    return uniqueStaff.size;
+  }
 
   /**
    * Check if a job title is a management role
@@ -678,7 +863,8 @@ export class RotaSchedulingAlgorithm {
     rankedStaff,
     staffWeeklyAllocations,
     shifts,
-    totalCost
+    totalCost,
+    dayRevenue
   }: {
     date: string;
     dayOfWeek: string;
@@ -687,6 +873,7 @@ export class RotaSchedulingAlgorithm {
     staffWeeklyAllocations: Record<string, any>;
     shifts: any[];
     totalCost: number;
+    dayRevenue: number;
   }) {
     // Get the job role info from the rule
     const jobRole = rule.job_roles;
@@ -802,17 +989,43 @@ export class RotaSchedulingAlgorithm {
         eligibleStaff, 
         date, 
         shiftHours, 
-        staffWeeklyAllocations
+        staffWeeklyAllocations,
+        false // Don't yet consider part shifts when executing shift rule
       );
       
       if (!staffMember) {
         console.log(`Could not find available staff for ${rule.name || jobRoleTitle} on ${date}`);
         break; // No eligible staff available
       }
+
+      // NEW: Check if we should create a part shift for this staff member
+      // Only consider part shifts for hourly or contractor staff
+      const canDoPartShift = this.canCreatePartShift(staffMember);
+      const shouldCreatePartShift = canDoPartShift && 
+        this.enablePartShifts && 
+        this.wouldPartShiftHelpCostTarget(dayRevenue, shiftHours, staffMember);
       
       // Calculate costs for this staff member (pass date for salaried staff tracking)
+      // If a part shift is appropriate, calculate with adjusted hours
+      let actualStartTime = startTime;
+      let actualEndTime = endTime;
+      let actualShiftHours = shiftHours;
+      
+      // If part shift is appropriate, create a shortened shift
+      let isPartShift = false;
+      if (shouldCreatePartShift) {
+        const partShiftDetails = this.createPartShiftTimes(startTime, endTime, breakMinutes);
+        if (partShiftDetails) {
+          actualStartTime = partShiftDetails.startTime;
+          actualEndTime = partShiftDetails.endTime;
+          actualShiftHours = partShiftDetails.hours;
+          isPartShift = true;
+          console.log(`Creating part shift for ${staffMember.first_name} ${staffMember.last_name}: ${actualStartTime}-${actualEndTime} (${actualShiftHours} hours)`);
+        }
+      }
+      
       const { shiftCost, niCost, pensionCost, totalShiftCost, isSecondShift } = 
-        this.calculateCosts(staffMember, shiftHours, date);
+        this.calculateCosts(staffMember, actualShiftHours, date);
       
       // Check if this is a secondary role for the staff member
       const isSecondaryRole = this.isSecondaryRole(staffMember, jobRole);
@@ -822,8 +1035,8 @@ export class RotaSchedulingAlgorithm {
         profile_id: staffMember.id,
         date,
         day_of_week: dayOfWeek,
-        start_time: startTime,
-        end_time: endTime,
+        start_time: actualStartTime,
+        end_time: actualEndTime,
         break_minutes: breakMinutes,
         job_role_id: rule.job_role_id,
         is_secondary_role: isSecondaryRole,
@@ -834,18 +1047,19 @@ export class RotaSchedulingAlgorithm {
         total_cost: totalShiftCost,
         shift_rule_id: rule.id,
         shift_rule_name: rule.name || jobRoleTitle,
-        is_second_shift_of_day: isSecondShift // Mark if this is a second shift with zero cost
+        is_second_shift_of_day: isSecondShift, // Mark if this is a second shift with zero cost
+        is_part_shift: isPartShift // NEW: Mark if this is a part shift
       };
       
       // Add the shift
       shifts.push(shift);
       totalCost += totalShiftCost;
       
-      console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to ${rule.name || jobRoleTitle} (${startTime}-${endTime}) on ${date}`);
-      console.log(`Job title: ${staffMember.job_title}, Is secondary role: ${isSecondaryRole}, Is second shift of day: ${isSecondShift}`);
+      console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to ${rule.name || jobRoleTitle} (${actualStartTime}-${actualEndTime}) on ${date}`);
+      console.log(`Job title: ${staffMember.job_title}, Is secondary role: ${isSecondaryRole}, Is part shift: ${isPartShift}`);
       
       // Update staff allocations
-      this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
+      this.updateStaffAllocations(staffMember.id, date, actualShiftHours, shift, staffWeeklyAllocations);
       
       // Remove this staff member from eligible staff to prevent assigning again for this rule
       eligibleStaff = eligibleStaff.filter(staff => staff.id !== staffMember.id);
@@ -855,6 +1069,140 @@ export class RotaSchedulingAlgorithm {
         break;
       }
     }
+  }
+  
+  /**
+   * NEW: Check if a staff member can do part shifts based on employment type
+   */
+  canCreatePartShift(staffMember: any): boolean {
+    if (!staffMember) return false;
+    
+    // Only hourly or contractor staff can do part shifts
+    return staffMember.employment_type === 'hourly' || 
+           staffMember.employment_type === 'contractor';
+  }
+  
+  /**
+   * NEW: Check if creating a part shift would help meet cost targets
+   */
+  wouldPartShiftHelpCostTarget(revenue: number, fullShiftHours: number, staffMember: any): boolean {
+    if (!revenue || revenue === 0) return false;
+    if (!staffMember) return false;
+    
+    // Determine wage rate
+    const wageRate = staffMember.employment_type === 'contractor' 
+      ? (staffMember.contractor_rate || 0)
+      : (staffMember.wage_rate || 0);
+    
+    // Calculate full shift cost
+    const fullShiftCost = wageRate * fullShiftHours;
+    
+    // Calculate cost percentage
+    const fullShiftCostPercentage = (fullShiftCost / revenue) * 100;
+    
+    // If cost percentage is already low, no need for part shift
+    if (fullShiftCostPercentage < 15) {
+      return false;
+    }
+    
+    // If cost percentage is high, part shift might help
+    return fullShiftCostPercentage > 25;
+  }
+  
+  /**
+   * NEW: Create appropriate part shift times
+   */
+  createPartShiftTimes(startTime: string, endTime: string, breakMinutes: number): { 
+    startTime: string; 
+    endTime: string; 
+    hours: number;
+  } | null {
+    // Parse times
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    // Calculate full shift length in hours
+    const fullShiftMinutes = this.calculateHours(startTime, endTime, breakMinutes) * 60;
+    
+    // Determine if this is a day or evening shift
+    const isDayShift = startHours < 15; // Before 3pm is considered day shift
+    
+    // Check if part shift is within allowed hours range
+    const minPartMinutes = this.minPartShiftHours * 60;
+    if (fullShiftMinutes < minPartMinutes) {
+      // Shift is already shorter than minimum part shift
+      return null;
+    }
+    
+    // Calculate desired part shift length (target for 60-75% of full shift)
+    let partShiftMinutes = Math.round(fullShiftMinutes * 0.7);
+    
+    // Make sure part shift is at least minimum length
+    partShiftMinutes = Math.max(partShiftMinutes, minPartMinutes);
+    
+    // Make sure part shift is not longer than maximum length
+    const maxPartMinutes = this.maxPartShiftHours * 60;
+    partShiftMinutes = Math.min(partShiftMinutes, maxPartMinutes);
+    
+    // Calculate part shift hours with break minutes subtracted
+    const partShiftHours = (partShiftMinutes + breakMinutes) / 60;
+    
+    // Determine new start or end time based on shift type
+    let newStartTime = startTime;
+    let newEndTime = endTime;
+    
+    if (isDayShift) {
+      // For day shifts, keep start time and adjust end time
+      // Start time must be before latest allowed start
+      const [latestStartH, latestStartM] = this.dayShiftLatestStartTime.split(':').map(Number);
+      const latestStartDecimal = latestStartH + latestStartM / 60;
+      const startTimeDecimal = startHours + startMinutes / 60;
+      
+      if (startTimeDecimal > latestStartDecimal) {
+        // Can't do part shift because start time is already too late
+        return null;
+      }
+      
+      // Calculate new end time by adding part shift duration
+      const endTimeDecimal = startTimeDecimal + partShiftHours;
+      const newEndHours = Math.floor(endTimeDecimal);
+      const newEndMinutes = Math.round((endTimeDecimal - newEndHours) * 60);
+      
+      // Format new end time
+      newEndTime = `${newEndHours.toString().padStart(2, '0')}:${newEndMinutes.toString().padStart(2, '0')}:00`;
+    } else {
+      // For evening shifts, keep end time and adjust start time
+      // End time must allow for full part shift duration
+      const [latestStartH, latestStartM] = this.eveningShiftLatestStartTime.split(':').map(Number);
+      const latestStartDecimal = latestStartH + latestStartM / 60;
+      
+      // Calculate end time decimal
+      const endTimeDecimal = endHours + endMinutes / 60;
+      
+      // Calculate latest possible start time based on end time
+      const latestPossibleStart = endTimeDecimal - partShiftHours;
+      
+      if (latestPossibleStart > latestStartDecimal) {
+        // Can do part shift starting at the latest allowed start time
+        newStartTime = this.eveningShiftLatestStartTime;
+      } else {
+        // Calculate new start time
+        const newStartHours = Math.floor(endTimeDecimal - partShiftHours);
+        const newStartMinutes = Math.round((endTimeDecimal - partShiftHours - newStartHours) * 60);
+        
+        // Format new start time
+        newStartTime = `${newStartHours.toString().padStart(2, '0')}:${newStartMinutes.toString().padStart(2, '0')}:00`;
+      }
+    }
+    
+    // Calculate actual hours for the new part shift
+    const actualHours = this.calculateHours(newStartTime, newEndTime, breakMinutes);
+    
+    return {
+      startTime: newStartTime,
+      endTime: newEndTime,
+      hours: actualHours
+    };
   }
 
   /**
@@ -895,7 +1243,8 @@ export class RotaSchedulingAlgorithm {
       rankedStaff,
       staffWeeklyAllocations,
       shifts,
-      totalCost
+      totalCost,
+      dayRevenue: revenue
     });
     
     // Assign kitchen staff for day
@@ -909,7 +1258,8 @@ export class RotaSchedulingAlgorithm {
       rankedStaff,
       staffWeeklyAllocations,
       shifts,
-      totalCost
+      totalCost,
+      dayRevenue: revenue
     });
     
     // Assign KP staff for day
@@ -924,7 +1274,8 @@ export class RotaSchedulingAlgorithm {
         rankedStaff,
         staffWeeklyAllocations,
         shifts,
-        totalCost
+        totalCost,
+        dayRevenue: revenue
       });
     }
     
@@ -941,7 +1292,8 @@ export class RotaSchedulingAlgorithm {
         rankedStaff,
         staffWeeklyAllocations,
         shifts,
-        totalCost
+        totalCost,
+        dayRevenue: revenue
       });
       
       // Assign kitchen staff for evening
@@ -955,7 +1307,8 @@ export class RotaSchedulingAlgorithm {
         rankedStaff,
         staffWeeklyAllocations,
         shifts,
-        totalCost
+        totalCost,
+        dayRevenue: revenue
       });
       
       // Assign KP staff for evening
@@ -970,7 +1323,8 @@ export class RotaSchedulingAlgorithm {
           rankedStaff,
           staffWeeklyAllocations,
           shifts,
-          totalCost
+          totalCost,
+          dayRevenue: revenue
         });
       }
     }
@@ -1003,7 +1357,8 @@ export class RotaSchedulingAlgorithm {
     rankedStaff,
     staffWeeklyAllocations,
     shifts,
-    totalCost
+    totalCost,
+    dayRevenue
   }: {
     date: string;
     dayOfWeek: string;
@@ -1015,6 +1370,7 @@ export class RotaSchedulingAlgorithm {
     staffWeeklyAllocations: Record<string, any>;
     shifts: any[];
     totalCost: number;
+    dayRevenue: number;
   }) {
     // Skip if min staff is 0
     if (minStaff <= 0) return;
@@ -1054,7 +1410,8 @@ export class RotaSchedulingAlgorithm {
         eligibleStaff, 
         date, 
         shiftHours, 
-        staffWeeklyAllocations
+        staffWeeklyAllocations,
+        true // Consider part shifts for threshold-based assignments
       );
       
       if (!staffMember) {
@@ -1070,9 +1427,33 @@ export class RotaSchedulingAlgorithm {
         continue;
       }
       
+      // NEW: Check if we should create a part shift for this staff member
+      // Only consider part shifts for hourly or contractor staff
+      const canDoPartShift = this.canCreatePartShift(staffMember);
+      const shouldCreatePartShift = canDoPartShift && 
+        this.enablePartShifts && 
+        this.wouldPartShiftHelpCostTarget(dayRevenue, shiftHours, staffMember);
+      
+      // If part shift is appropriate, create a shortened shift
+      let actualStartTime = startTime;
+      let actualEndTime = endTime;
+      let actualShiftHours = shiftHours;
+      let isPartShift = false;
+      
+      if (shouldCreatePartShift) {
+        const partShiftDetails = this.createPartShiftTimes(startTime, endTime, breakMinutes);
+        if (partShiftDetails) {
+          actualStartTime = partShiftDetails.startTime;
+          actualEndTime = partShiftDetails.endTime;
+          actualShiftHours = partShiftDetails.hours;
+          isPartShift = true;
+          console.log(`Creating part shift for ${staffMember.first_name} ${staffMember.last_name}: ${actualStartTime}-${actualEndTime} (${actualShiftHours} hours)`);
+        }
+      }
+      
       // Calculate costs (pass date for salaried staff tracking)
       const { shiftCost, niCost, pensionCost, totalShiftCost, isSecondShift } = 
-        this.calculateCosts(staffMember, shiftHours, date);
+        this.calculateCosts(staffMember, actualShiftHours, date);
       
       // Check if this is a secondary role
       const isSecondaryRole = staffMember.job_title !== bestRole.title && 
@@ -1084,8 +1465,8 @@ export class RotaSchedulingAlgorithm {
         profile_id: staffMember.id,
         date,
         day_of_week: dayOfWeek,
-        start_time: startTime,
-        end_time: endTime,
+        start_time: actualStartTime,
+        end_time: actualEndTime,
         break_minutes: breakMinutes,
         job_role_id: bestRole.id,
         is_secondary_role: isSecondaryRole,
@@ -1094,17 +1475,18 @@ export class RotaSchedulingAlgorithm {
         employer_ni_cost: niCost,
         employer_pension_cost: pensionCost,
         total_cost: totalShiftCost,
-        is_second_shift_of_day: isSecondShift // Mark if this is a second shift with zero cost
+        is_second_shift_of_day: isSecondShift, // Mark if this is a second shift with zero cost
+        is_part_shift: isPartShift // NEW: Mark if this is a part shift
       };
       
       // Add the shift
       shifts.push(shift);
       totalCost += totalShiftCost;
       
-      console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to ${bestRole.title} (${startTime}-${endTime}) on ${date} (${segment})`);
+      console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to ${bestRole.title} (${actualStartTime}-${actualEndTime}) on ${date} (${segment})`);
       
       // Update weekly allocations for this staff member
-      this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
+      this.updateStaffAllocations(staffMember.id, date, actualShiftHours, shift, staffWeeklyAllocations);
       
       // Remove staff member from eligible staff to prevent assigning them twice in same segment
       const staffIndex = eligibleStaff.findIndex(s => s.id === staffMember.id);
@@ -1172,7 +1554,8 @@ export class RotaSchedulingAlgorithm {
     eligibleStaff: any[],
     date: string,
     hours: number,
-    staffWeeklyAllocations: Record<string, any>
+    staffWeeklyAllocations: Record<string, any>,
+    considerPartShifts: boolean = false
   ) {
     // Filter staff who are available for this shift
     const availableStaff = eligibleStaff.filter(staff => {
@@ -1185,7 +1568,15 @@ export class RotaSchedulingAlgorithm {
       
       // Check if adding this shift would exceed weekly hours
       const maxHoursPerWeek = staff.max_hours_per_week || 40;
-      if (weeklyAllocation.hoursWorked + hours > maxHoursPerWeek) {
+      
+      // If we're considering part shifts and this staff can do part shifts,
+      // use a lower hours threshold
+      let effectiveHours = hours;
+      if (considerPartShifts && this.canCreatePartShift(staff)) {
+        effectiveHours = Math.min(hours, this.maxPartShiftHours);
+      }
+      
+      if (weeklyAllocation.hoursWorked + effectiveHours > maxHoursPerWeek) {
         return false; // Would exceed max weekly hours
       }
       
@@ -1200,7 +1591,7 @@ export class RotaSchedulingAlgorithm {
       const dailyAllocation = this.dailyStaffAllocations[date]?.[staff.id];
       if (dailyAllocation) {
         const maxHoursPerDay = staff.max_hours_per_day || 12;
-        if (dailyAllocation.hoursWorked + hours > maxHoursPerDay) {
+        if (dailyAllocation.hoursWorked + effectiveHours > maxHoursPerDay) {
           return false; // Would exceed max hours per day
         }
       }
