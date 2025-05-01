@@ -375,8 +375,8 @@ export default function RotaScheduleReview({ location, onApprovalRequest, roleMa
         </CardContent>
         <CardFooter className="flex justify-end items-center p-4">
           {currentSchedule?.status === 'approved' ? (
-            <Alert variant="success">
-              <Check className="h-4 w-4" />
+            <Alert variant="default" className="bg-[#F2FCE2] border-green-200">
+              <Check className="h-4 w-4 text-green-500" />
               <AlertDescription>
                 This schedule has already been approved.
               </AlertDescription>
