@@ -1,23 +1,35 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { Loader2, AlertCircle, Calendar, ClipboardList } from 'lucide-react';
+import { Loader2, AlertCircle, Calendar, ClipboardList, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableStickyHeader } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RotaSchedulingAlgorithm } from '@/utils/rotaSchedulingAlgorithm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 type RotaScheduleReviewProps = {
   location: any;
   onApprovalRequest: () => void;
+};
+
+// Define job role priority for sorting
+const JOB_ROLE_PRIORITY = {
+  'Manager': 1,
+  'Bartender': 2,
+  'FOH': 3,
+  'Runner': 4,
+  'Chef Manager': 5,
+  'Chef': 6,
+  'KP': 7
 };
 
 export default function RotaScheduleReview({ location, onApprovalRequest }: RotaScheduleReviewProps) {
@@ -33,6 +45,8 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
   const [error, setError] = useState('');
   const [filterDate, setFilterDate] = useState<string | null>(null);
   const [filterStaff, setFilterStaff] = useState<string>('');
+  const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('staff');
 
   useEffect(() => {
@@ -420,17 +434,44 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     }
   };
 
-  // Filter shifts by date and/or staff member
+  // Modified function to include sorting and additional filtering
   const getFilteredShifts = () => {
     if (!generatedSchedule?.rota_schedule_shifts) return [];
 
-    return generatedSchedule.rota_schedule_shifts.filter((shift: any) => {
+    // First, filter the shifts based on filters
+    const filteredShifts = generatedSchedule.rota_schedule_shifts.filter((shift: any) => {
       const matchesDate = !filterDate || shift.date === filterDate;
       const matchesStaff = !filterStaff || 
         staffMembers.find(s => s.id === shift.profile_id)?.first_name?.toLowerCase().includes(filterStaff.toLowerCase()) ||
         staffMembers.find(s => s.id === shift.profile_id)?.last_name?.toLowerCase().includes(filterStaff.toLowerCase());
       
-      return matchesDate && matchesStaff;
+      // Additional department filter
+      const role = jobRoles.find(r => r.id === shift.job_role_id);
+      const isDepartmentMatch = filterDepartment === 'all' || 
+        (filterDepartment === 'foh' && !role?.is_kitchen) ||
+        (filterDepartment === 'kitchen' && role?.is_kitchen);
+
+      // Additional role filter
+      const isRoleMatch = filterRole === 'all' || role?.id === filterRole;
+      
+      return matchesDate && matchesStaff && isDepartmentMatch && isRoleMatch;
+    });
+    
+    // Then sort the filtered shifts by department (FOH first, then Kitchen) and role priority
+    return filteredShifts.sort((a: any, b: any) => {
+      const roleA = jobRoles.find(r => r.id === a.job_role_id);
+      const roleB = jobRoles.find(r => r.id === b.job_role_id);
+      
+      // First sort by department (FOH first)
+      if ((roleA?.is_kitchen || false) !== (roleB?.is_kitchen || false)) {
+        return (roleA?.is_kitchen || false) ? 1 : -1;
+      }
+      
+      // Then sort by role priority
+      const roleAPriority = JOB_ROLE_PRIORITY[roleA?.title] || 999;
+      const roleBPriority = JOB_ROLE_PRIORITY[roleB?.title] || 999;
+      
+      return roleAPriority - roleBPriority;
     });
   };
 
@@ -556,6 +597,19 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     );
   }
 
+  // Get unique job roles for filtering
+  const uniqueJobRoles = jobRoles.sort((a: any, b: any) => {
+    // Sort FOH first, then Kitchen
+    if (a.is_kitchen !== b.is_kitchen) {
+      return a.is_kitchen ? 1 : -1;
+    }
+    
+    // Then by role priority
+    const priorityA = JOB_ROLE_PRIORITY[a.title] || 999;
+    const priorityB = JOB_ROLE_PRIORITY[b.title] || 999;
+    return priorityA - priorityB;
+  });
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -603,28 +657,75 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
               <div className="space-y-2 flex-1">
-                <label className="text-sm font-medium">Filter by Date</label>
-                <select 
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                  value={filterDate || ''}
-                  onChange={e => setFilterDate(e.target.value || null)}
-                >
-                  <option value="">All Dates</option>
-                  {Object.keys(shiftsByDate()).map(date => (
-                    <option key={date} value={date}>
-                      {format(parseISO(date), 'EEE, dd MMM')}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Filter by Date</label>
+                    <Select
+                      value={filterDate || ''}
+                      onValueChange={(value) => setFilterDate(value || null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Dates" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Dates</SelectItem>
+                        {Object.keys(shiftsByDate()).map(date => (
+                          <SelectItem key={date} value={date}>
+                            {format(parseISO(date), 'EEE, dd MMM')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Filter by Staff</label>
+                    <Input
+                      type="text"
+                      placeholder="Search staff..."
+                      value={filterStaff}
+                      onChange={e => setFilterStaff(e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
               <div className="space-y-2 flex-1">
-                <label className="text-sm font-medium">Filter by Staff</label>
-                <Input
-                  type="text"
-                  placeholder="Search staff..."
-                  value={filterStaff}
-                  onChange={e => setFilterStaff(e.target.value)}
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Department</label>
+                    <Select
+                      value={filterDepartment}
+                      onValueChange={setFilterDepartment}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Departments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Departments</SelectItem>
+                        <SelectItem value="foh">FOH</SelectItem>
+                        <SelectItem value="kitchen">Kitchen</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Job Role</label>
+                    <Select 
+                      value={filterRole} 
+                      onValueChange={setFilterRole}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Roles" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        {uniqueJobRoles.map((role: any) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.title} {role.is_kitchen ? '(Kitchen)' : '(FOH)'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -682,14 +783,14 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
                       </CardHeader>
                       <div className="px-0">
                         <Table>
-                          <TableHeader>
+                          <TableStickyHeader>
                             <TableRow>
                               <TableHead>Staff</TableHead>
                               <TableHead>Role</TableHead>
                               <TableHead>Time</TableHead>
                               <TableHead className="text-right">Cost</TableHead>
                             </TableRow>
-                          </TableHeader>
+                          </TableStickyHeader>
                           <TableBody>
                             {shifts.map((shift: any) => (
                               <TableRow key={shift.id}>
@@ -767,14 +868,14 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
                       </CardHeader>
                       <div className="px-0">
                         <Table>
-                          <TableHeader>
+                          <TableStickyHeader>
                             <TableRow>
                               <TableHead>Day</TableHead>
                               <TableHead>Role</TableHead>
                               <TableHead>Time</TableHead>
                               <TableHead className="text-right">Cost</TableHead>
                             </TableRow>
-                          </TableHeader>
+                          </TableStickyHeader>
                           <TableBody>
                             {shifts.map((shift: any) => (
                               <TableRow key={shift.id}>
