@@ -1435,9 +1435,17 @@ export class RotaSchedulingAlgorithm {
         pensionCost = dailyRate * PENSION_RATE;
       }
     } else if (employmentType === 'contractor') {
-      // For contractors: Simple hourly rate * hours, no NI or pension
-      const wageRate = staffMember.wage_rate || 0;
-      shiftCost = wageRate * hours;
+      // For contractors: Use contractor_rate and hours, no NI or pension
+      const contractorRate = staffMember.contractor_rate || 0;
+      shiftCost = contractorRate * hours;
+      
+      // Log if contractor rate is missing
+      if (!contractorRate) {
+        console.warn(`Contractor ${staffMember.first_name} ${staffMember.last_name} has no contractor rate set. Using 0.`);
+      } else {
+        console.log(`Using contractor rate ${contractorRate} for ${staffMember.first_name} ${staffMember.last_name}`);
+      }
+      
       // No NI or pension for contractors
     } else {
       // For hourly staff: Wage rate * hours
@@ -1458,6 +1466,17 @@ export class RotaSchedulingAlgorithm {
     
     // Calculate total cost
     const totalShiftCost = shiftCost + niCost + pensionCost;
+    
+    // Log calculation details for debugging
+    console.log(`Cost calculation for ${staffMember.first_name} ${staffMember.last_name} (${employmentType}):`, {
+      shiftCost, niCost, pensionCost, totalShiftCost,
+      details: {
+        hours,
+        wage_rate: staffMember.wage_rate,
+        annual_salary: staffMember.annual_salary,
+        contractor_rate: staffMember.contractor_rate
+      }
+    });
     
     return {
       shiftCost,

@@ -8,6 +8,7 @@ export interface CostCalculationInput {
   employmentType: 'hourly' | 'salaried' | 'contractor';
   isFullTimeStudent?: boolean;
   annualSalary?: number;
+  contractorRate?: number; // Added contractor_rate field
 }
 
 // Interface for cost calculation results
@@ -25,7 +26,7 @@ export const calculateEmployerCosts = async (input: CostCalculationInput): Promi
   try {
     // Use Supabase function to calculate costs
     const { data, error } = await supabase.rpc('calculate_employer_costs', {
-      wage_rate: input.hourlyRate,
+      wage_rate: input.employmentType === 'contractor' ? (input.contractorRate || 0) : input.hourlyRate,
       hours_worked: input.hours,
       employment_type: input.employmentType,
       in_ft_education: input.isFullTimeStudent || false,
@@ -54,7 +55,7 @@ export const calculateEmployerCosts = async (input: CostCalculationInput): Promi
  * Fallback calculation if the RPC fails
  */
 const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationResult => {
-  const { hourlyRate, hours, employmentType, isFullTimeStudent, annualSalary } = input;
+  const { hourlyRate, hours, employmentType, isFullTimeStudent, annualSalary, contractorRate } = input;
   
   // Constants for UK employment costs
   const WEEKLY_NI_THRESHOLD = 175; // National Insurance weekly threshold
@@ -75,9 +76,10 @@ const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationRe
     basicPay = (dailyRate / 8) * hours; // Assuming 8-hour standard workday
     console.log(`Salaried staff cost calculation: annual=${annualSalary}, daily=${dailyRate}, hours=${hours}, basicPay=${basicPay}`);
   } else if (employmentType === 'contractor') {
-    // For contractors: Simple hourly rate * hours
-    basicPay = hourlyRate * hours;
-    console.log(`Contractor cost calculation: rate=${hourlyRate}, hours=${hours}, basicPay=${basicPay}`);
+    // For contractors: Use contractor_rate instead of hourly rate
+    const rate = contractorRate || hourlyRate || 0;
+    basicPay = rate * hours;
+    console.log(`Contractor cost calculation: rate=${rate}, hours=${hours}, basicPay=${basicPay}`);
     // No NI or pension for contractors
   } else {
     // For hourly staff: Hourly rate * hours
@@ -103,7 +105,7 @@ const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationRe
   // Debug logging
   console.log(`Cost calculation result for ${employmentType}:`, {
     basicPay, niCost, pensionCost, totalCost, 
-    details: { hourlyRate, hours, isFullTimeStudent, annualSalary }
+    details: { hourlyRate, hours, isFullTimeStudent, annualSalary, contractorRate }
   });
   
   return {
@@ -187,14 +189,26 @@ export const calculateShiftCost = (
   // Extract relevant information from staff member profile
   const employmentType = staffMember.employment_type || 'hourly';
   const isFullTimeStudent = staffMember.is_full_time_student || false;
-  const hourlyRate = staffMember.wage_rate || 0;
-  const annualSalary = staffMember.annual_salary || 0;
+  
+  // Use the correct rate field based on employment type
+  let hourlyRate = 0;
+  let annualSalary = 0;
+  let contractorRate = 0;
+  
+  if (employmentType === 'hourly') {
+    hourlyRate = staffMember.wage_rate || 0;
+  } else if (employmentType === 'salaried') {
+    annualSalary = staffMember.annual_salary || 0;
+  } else if (employmentType === 'contractor') {
+    contractorRate = staffMember.contractor_rate || 0;
+  }
 
   console.log(`Calculating shift cost for ${staffMember.first_name} ${staffMember.last_name}:`, {
     employmentType,
     isFullTimeStudent,
     hourlyRate,
     annualSalary,
+    contractorRate,
     shiftHours
   });
 
@@ -204,7 +218,8 @@ export const calculateShiftCost = (
     hours: shiftHours,
     employmentType,
     isFullTimeStudent,
-    annualSalary
+    annualSalary,
+    contractorRate
   };
 
   // Use local calculation instead of async Supabase RPC

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, ChevronDown } from 'lucide-react';
@@ -25,10 +24,15 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<'table' | 'gantt'>('gantt');
   const [selectedDay, setSelectedDay] = useState<string>('none');
+  const [averageRates, setAverageRates] = useState<{hourly: number; contractor: number}>({
+    hourly: 11.50,
+    contractor: 15.00
+  });
   
   useEffect(() => {
     if (location?.id) {
       fetchShiftRules();
+      fetchAverageRates();
     }
   }, [location]);
 
@@ -91,6 +95,40 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAverageRates = async () => {
+    try {
+      // Fetch all staff profiles to calculate average rates
+      const { data: staffData, error } = await supabase
+        .from('profiles')
+        .select('employment_type, wage_rate, contractor_rate')
+        .eq('available_for_rota', true);
+      
+      if (error) {
+        console.error('Error fetching staff data for rate calculation:', error);
+        return;
+      }
+      
+      // Calculate average hourly rate
+      const hourlyStaff = staffData.filter(s => s.employment_type === 'hourly' && s.wage_rate > 0);
+      const hourlySum = hourlyStaff.reduce((sum, staff) => sum + (staff.wage_rate || 0), 0);
+      const hourlyAvg = hourlyStaff.length > 0 ? hourlySum / hourlyStaff.length : 11.50;
+      
+      // Calculate average contractor rate
+      const contractorStaff = staffData.filter(s => s.employment_type === 'contractor' && s.contractor_rate > 0);
+      const contractorSum = contractorStaff.reduce((sum, staff) => sum + (staff.contractor_rate || 0), 0);
+      const contractorAvg = contractorStaff.length > 0 ? contractorSum / contractorStaff.length : 15.00;
+      
+      setAverageRates({
+        hourly: hourlyAvg,
+        contractor: contractorAvg
+      });
+      
+      console.log('Average rates calculated:', { hourlyAvg, contractorAvg });
+    } catch (error) {
+      console.error('Error calculating average rates:', error);
     }
   };
 
@@ -202,10 +240,22 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       hours += (endMin - startMin) / 60;
     }
     
-    // For now just use a simple estimate based on average hourly rate
-    // This is just a placeholder - the actual costs will be calculated when staff are assigned
-    const avgHourlyRate = 11.50; // Placeholder average hourly rate
-    const estimatedCost = minStaff * hours * avgHourlyRate;
+    // Get job role to determine if it's likely to be a contractor position
+    const role = jobRoles.find(r => r.id === shift.job_role_id);
+    const roleTitle = role?.title?.toLowerCase() || '';
+    
+    // Use contractor rate for roles that are typically contractors
+    const isLikelyContractor = 
+      roleTitle.includes('dj') || 
+      roleTitle.includes('entertainer') || 
+      roleTitle.includes('security') ||
+      roleTitle.includes('musician');
+    
+    // Use the appropriate rate based on the likely employment type
+    const rateToUse = isLikelyContractor ? averageRates.contractor : averageRates.hourly;
+    
+    // Calculate estimated cost
+    const estimatedCost = minStaff * hours * rateToUse;
     
     return `~£${estimatedCost.toFixed(2)}`;
   };
