@@ -116,7 +116,8 @@ export class RotaSchedulingAlgorithm {
       currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
     }
     
-    // NEW CODE: Sort dates by revenue forecast (highest to lowest)
+    // IMPROVED: Sort dates by revenue forecast (highest to lowest)
+    // This ensures high-revenue days get priority for staffing
     const sortedDates = [...dates].sort((dateA, dateB) => {
       const revenueA = parseFloat(revenueForecast[dateA] || '0');
       const revenueB = parseFloat(revenueForecast[dateB] || '0');
@@ -136,9 +137,13 @@ export class RotaSchedulingAlgorithm {
     console.log(`Shift rules available: ${this.shiftRules.length}`);
     console.log(`Role mapping entries: ${this.roleMapping.length}`);
 
-    // Log staff details for debugging
+    // FIX: Log detailed staff information including their secondary roles
     this.staff.forEach(staff => {
-      console.log(`Staff: ${staff.first_name} ${staff.last_name}, Role: ${staff.job_title}, Employment Type: ${staff.employment_type || 'Not set'}, Wage: ${staff.wage_rate || 'Not set'}, Salary: ${staff.annual_salary || 'Not set'}, Available: ${staff.available_for_rota !== false}`);
+      const secondaryRoles = Array.isArray(staff.secondary_job_roles) 
+        ? staff.secondary_job_roles.join(", ") 
+        : "None";
+        
+      console.log(`Staff: ${staff.first_name} ${staff.last_name}, Role: ${staff.job_title}, Secondary Roles: ${secondaryRoles}, Employment Type: ${staff.employment_type || 'Not set'}, Wage: ${staff.wage_rate || 'Not set'}, Salary: ${staff.annual_salary || 'Not set'}, Available: ${staff.available_for_rota !== false}`);
     });
     
     // Filter available staff - DO NOT set default wage rates
@@ -224,13 +229,13 @@ export class RotaSchedulingAlgorithm {
     let totalCost = 0;
     let totalRevenue = 0;
     
-    // NEW: Add all revenue to total
+    // Add all revenue to total
     dates.forEach(date => {
       const dayRevenue = parseFloat(revenueForecast[date] || '0');
       totalRevenue += dayRevenue;
     });
     
-    // Process each day by revenue priority order (NEW)
+    // Process each day by revenue priority order
     for (const date of sortedDates) {
       const dayOfWeek = format(new Date(date), 'EEEE').toLowerCase();
       // Fixed mapping that properly converts full day names to day codes
@@ -280,7 +285,7 @@ export class RotaSchedulingAlgorithm {
           });
         }
         
-        // NEW: After processing all shift rules, check if we need to enforce threshold minimums
+        // After processing all shift rules, check if we need to enforce threshold minimums
         this.enforceThresholdMinimums({
           date,
           dayOfWeek,
@@ -476,7 +481,7 @@ export class RotaSchedulingAlgorithm {
   };
 
   /**
-   * NEW: Enforce minimum staff counts from thresholds if not met by shift rules
+   * Enforce minimum staff counts from thresholds if not met by shift rules
    */
   enforceThresholdMinimums({
     date,
@@ -500,7 +505,7 @@ export class RotaSchedulingAlgorithm {
     if (!threshold) return;
     
     // Check if we have the minimum required staff for each type
-    // Count existing staff by type for this date
+    // Count existing shifts by type for this date
     const existingShifts = shifts.filter(s => s.date === date);
     
     // Count by staff type
@@ -582,7 +587,7 @@ export class RotaSchedulingAlgorithm {
   }
   
   /**
-   * NEW: Count staff of a specific type in existing shifts
+   * Count staff of a specific type in existing shifts
    */
   countStaffByType(shifts: any[], staffType: string, allStaff: any[]): number {
     // Get the profiles that match this staff type
@@ -762,10 +767,17 @@ export class RotaSchedulingAlgorithm {
   }
 
   /**
-   * Get staff eligible for a job role based on role mapping priorities
+   * FIXED: Get staff eligible for a job role based on role mapping priorities
+   * This is the main function that prevents incorrect role assignments
    */
-  getEligibleStaffForRole(jobRoleId: string, rankedStaff: any[]) {
+  getEligibleStaffForRole(jobRoleId: string, rankedStaff: any[]): any[] {
     console.log(`Finding eligible staff for job role ID: ${jobRoleId}`);
+    
+    // Get the job role title for logging
+    const jobRole = this.jobRoles.find(role => role.id === jobRoleId);
+    const jobRoleTitle = jobRole?.title || 'Unknown Role';
+    
+    console.log(`Job role title for ${jobRoleId}: ${jobRoleTitle}`);
     
     // Get role mappings for this job role, sorted by priority
     const relevantMappings = this.roleMapping
@@ -773,11 +785,11 @@ export class RotaSchedulingAlgorithm {
       .sort((a, b) => a.priority - b.priority);
     
     if (relevantMappings.length === 0) {
-      console.log(`No role mappings found for job role ID: ${jobRoleId}`);
+      console.log(`No role mappings found for job role ID: ${jobRoleId} (${jobRoleTitle})`);
       return [];
     }
     
-    console.log(`Found ${relevantMappings.length} role mappings for this job role`);
+    console.log(`Found ${relevantMappings.length} role mappings for ${jobRoleTitle}:`);
     relevantMappings.forEach((mapping, index) => {
       console.log(`Priority ${mapping.priority}: ${mapping.job_title}`);
     });
@@ -786,71 +798,152 @@ export class RotaSchedulingAlgorithm {
     const allowedJobTitles = relevantMappings.map(mapping => mapping.job_title);
     
     // Find staff with matching job titles (primary roles)
-    const eligibleStaff = rankedStaff.filter(staff => 
+    const staffWithPrimaryRoles = rankedStaff.filter(staff => 
       allowedJobTitles.includes(staff.job_title)
     );
     
-    // Then add staff with matching secondary roles
+    console.log(`Found ${staffWithPrimaryRoles.length} staff with primary role match for ${jobRoleTitle}`);
+    
+    // FIXED: Improved secondary role matching - strict checking
     const staffWithSecondaryRoles = rankedStaff.filter(staff => {
       // Skip if already included as primary role
-      if (eligibleStaff.some(s => s.id === staff.id)) {
+      if (staffWithPrimaryRoles.some(s => s.id === staff.id)) {
         return false;
       }
       
-      // Check if any secondary role matches allowed job titles
+      // FIXED: Proper check if secondary_job_roles is an array and contains the allowed job titles
       if (Array.isArray(staff.secondary_job_roles)) {
-        return staff.secondary_job_roles.some(role => 
-          allowedJobTitles.includes(role)
+        // Check each allowed job title against the secondary roles
+        const hasMatchingSecondaryRole = allowedJobTitles.some(allowedTitle => 
+          staff.secondary_job_roles.includes(allowedTitle)
         );
+        
+        if (hasMatchingSecondaryRole) {
+          // Log the match for debugging
+          const matchingTitles = allowedJobTitles.filter(title => 
+            staff.secondary_job_roles.includes(title)
+          );
+          
+          console.log(`${staff.first_name} ${staff.last_name} can do ${jobRoleTitle} as secondary role (matches: ${matchingTitles.join(', ')})`);
+          return true;
+        }
       }
       
       return false;
     });
     
+    console.log(`Found ${staffWithSecondaryRoles.length} staff with secondary role match for ${jobRoleTitle}`);
+    
     // Combine primary and secondary role matches
-    const allEligibleStaff = [...eligibleStaff, ...staffWithSecondaryRoles];
+    const allEligibleStaff = [...staffWithPrimaryRoles, ...staffWithSecondaryRoles];
     
-    console.log(`Found ${eligibleStaff.length} staff with primary role match and ${staffWithSecondaryRoles.length} with secondary role match`);
-    
-    // If we found eligible staff, sort them by priority based on the role mapping
+    // FIXED: Log detailed info about eligible staff
     if (allEligibleStaff.length > 0) {
+      console.log(`Total ${allEligibleStaff.length} eligible staff for ${jobRoleTitle}:`);
+      
+      // Sort by priority based on the role mapping
       allEligibleStaff.sort((staffA, staffB) => {
-        // Find the priority for each staff member's job title
-        const mappingA = relevantMappings.find(m => 
-          m.job_title === staffA.job_title || 
-          (Array.isArray(staffA.secondary_job_roles) && staffA.secondary_job_roles.includes(m.job_title))
-        );
+        // Find the priority for primary role matches
+        const mappingA = relevantMappings.find(m => m.job_title === staffA.job_title);
+        const mappingB = relevantMappings.find(m => m.job_title === staffB.job_title);
         
-        const mappingB = relevantMappings.find(m => 
-          m.job_title === staffB.job_title || 
-          (Array.isArray(staffB.secondary_job_roles) && staffB.secondary_job_roles.includes(m.job_title))
-        );
-        
-        // Get priorities (default to high number if not found)
-        const priorityA = mappingA ? mappingA.priority : 999;
-        const priorityB = mappingB ? mappingB.priority : 999;
-        
-        // First sort by priority
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
+        // If both have primary role matches, sort by priority
+        if (mappingA && mappingB) {
+          return mappingA.priority - mappingB.priority;
         }
         
-        // If same priority, sort by hi score
+        // If A has primary role match but B doesn't, A comes first
+        if (mappingA && !mappingB) {
+          return -1;
+        }
+        
+        // If B has primary role match but A doesn't, B comes first
+        if (!mappingA && mappingB) {
+          return 1;
+        }
+        
+        // For secondary role matches or if no direct match found, try to find best match
+        // in secondary roles based on priority
+        const bestSecondaryMatchA = this.findBestSecondaryRoleMatch(staffA, relevantMappings);
+        const bestSecondaryMatchB = this.findBestSecondaryRoleMatch(staffB, relevantMappings);
+        
+        // If both have secondary matches, compare their priorities
+        if (bestSecondaryMatchA && bestSecondaryMatchB) {
+          return bestSecondaryMatchA.priority - bestSecondaryMatchB.priority;
+        }
+        
+        // If only A has secondary match, A comes first
+        if (bestSecondaryMatchA && !bestSecondaryMatchB) {
+          return -1;
+        }
+        
+        // If only B has secondary match, B comes first
+        if (!bestSecondaryMatchA && bestSecondaryMatchB) {
+          return 1;
+        }
+        
+        // Finally sort by hi score
         return (staffB.hi_score || 0) - (staffA.hi_score || 0);
       });
       
-      // Log the sorted staff
-      console.log('Sorted eligible staff by priority and hi score:');
+      // Log sorted staff details
       allEligibleStaff.forEach((staff, index) => {
-        const mapping = relevantMappings.find(m => 
-          m.job_title === staff.job_title ||
-          (Array.isArray(staff.secondary_job_roles) && staff.secondary_job_roles.includes(m.job_title))
-        );
-        console.log(`${index + 1}. ${staff.first_name} ${staff.last_name}, Title: ${staff.job_title}, Priority: ${mapping ? mapping.priority : 'unknown'}, HiScore: ${staff.hi_score || 0}`);
+        const isPrimaryRole = staff.job_title === jobRoleTitle;
+        const secondaryMatch = Array.isArray(staff.secondary_job_roles) ? 
+          staff.secondary_job_roles.filter(title => allowedJobTitles.includes(title)).join(', ') : 
+          'None';
+          
+        console.log(`${index + 1}. ${staff.first_name} ${staff.last_name} - Primary: ${staff.job_title}, Secondary: ${secondaryMatch}, HiScore: ${staff.hi_score || 0}`);
       });
+    } else {
+      console.log(`WARNING: No eligible staff found for ${jobRoleTitle} - this shift cannot be filled properly`);
     }
     
     return allEligibleStaff;
+  }
+  
+  /**
+   * NEW: Helper function to find best secondary role match based on priority
+   */
+  findBestSecondaryRoleMatch(staff: any, roleMappings: any[]): any {
+    if (!Array.isArray(staff.secondary_job_roles) || staff.secondary_job_roles.length === 0) {
+      return null;
+    }
+    
+    // Find all mappings that match this staff's secondary roles
+    const matchingMappings = roleMappings.filter(mapping => 
+      staff.secondary_job_roles.includes(mapping.job_title)
+    );
+    
+    if (matchingMappings.length === 0) {
+      return null;
+    }
+    
+    // Return the mapping with the lowest priority (highest precedence)
+    return matchingMappings.reduce((best, current) => 
+      current.priority < best.priority ? current : best
+    );
+  }
+
+  /**
+   * FIXED: Check if a role is a secondary role for a staff member
+   */
+  isSecondaryRole(staff: any, jobRole: any): boolean {
+    // If no job role provided or no staff provided, cannot be a secondary role
+    if (!staff || !jobRole) return false;
+    
+    // If the staff's primary job title matches the role, it's not a secondary role
+    if (staff.job_title === jobRole.title) {
+      return false;
+    }
+    
+    // Check if the role is in the staff's secondary_job_roles array
+    if (Array.isArray(staff.secondary_job_roles)) {
+      return staff.secondary_job_roles.includes(jobRole.title);
+    }
+    
+    // If secondary_job_roles is not an array, cannot be a secondary role
+    return false;
   }
 
   /**
@@ -882,67 +975,13 @@ export class RotaSchedulingAlgorithm {
     
     console.log(`Processing shift rule: ${rule.name || 'Unnamed'} for ${jobRoleTitle} (ID: ${jobRoleId})`);
     
-    // Use the Role Mapping Matrix to find eligible staff
+    // FIXED: Use the Role Mapping Matrix to find eligible staff
     let eligibleStaff = this.getEligibleStaffForRole(jobRoleId, rankedStaff);
 
-    // If no eligible staff was found through the role mapping, use fallback methods
+    // FIXED: If no eligible staff found, log warning and return
     if (eligibleStaff.length === 0) {
-      console.log(`No eligible staff found through role mapping for ${jobRoleTitle} - trying fallback logic`);
-      
-      // Filter staff by the job role required for this shift (old method as fallback)
-      eligibleStaff = rankedStaff.filter(staff => {
-        // Check primary role - exact match on job title
-        if (staff.job_title === jobRoleTitle) {
-          return true;
-        }
-        
-        // Check secondary roles - must be explicitly included in the secondary_job_roles array
-        if (Array.isArray(staff.secondary_job_roles) && 
-            staff.secondary_job_roles.includes(jobRoleTitle)) {
-          return true;
-        }
-        
-        return false;
-      });
-
-      // If no staff match the exact job role or secondary roles, try to find compatible staff
-      if (eligibleStaff.length === 0) {
-        console.log(`No eligible staff found for ${jobRoleTitle} with fallback - trying to find compatible staff`);
-        
-        // Look for staff with roles that might be compatible
-        if (jobRoleTitle.toLowerCase().includes('server') || 
-            jobRoleTitle.toLowerCase().includes('waiter') ||
-            jobRoleTitle.toLowerCase().includes('waitress') ||
-            jobRoleTitle.toLowerCase().includes('host')) {
-          // FOH roles might be compatible with each other
-          eligibleStaff = rankedStaff.filter(staff => 
-            staff.job_title?.toLowerCase().includes('server') ||
-            staff.job_title?.toLowerCase().includes('waiter') ||
-            staff.job_title?.toLowerCase().includes('waitress') ||
-            staff.job_title?.toLowerCase().includes('host') ||
-            staff.job_title?.toLowerCase().includes('bartender')
-          );
-        }
-        else if (jobRoleTitle.toLowerCase().includes('chef') || 
-                 jobRoleTitle.toLowerCase().includes('cook')) {
-          // Kitchen roles might be compatible with each other  
-          eligibleStaff = rankedStaff.filter(staff => 
-            staff.job_title?.toLowerCase().includes('chef') ||
-            staff.job_title?.toLowerCase().includes('cook')
-          );
-        }
-        
-        if (eligibleStaff.length > 0) {
-          console.log(`Found ${eligibleStaff.length} compatible staff members for ${jobRoleTitle}`);
-        }
-        else {
-          console.log(`Could not find any compatible staff for ${jobRoleTitle}, using any available staff`);
-          // As a last resort, just use any staff
-          eligibleStaff = rankedStaff;
-        }
-      } else {
-        console.log(`Found ${eligibleStaff.length} eligible staff using fallback approach for ${jobRoleTitle}`);
-      }
+      console.log(`ERROR: No eligible staff found for ${jobRoleTitle} - skipping shift rule`);
+      return;
     }
     
     // Calculate shift hours
@@ -998,12 +1037,14 @@ export class RotaSchedulingAlgorithm {
         break; // No eligible staff available
       }
 
-      // NEW: Check if we should create a part shift for this staff member
-      // Only consider part shifts for hourly or contractor staff
+      // FIXED: Check if we should create a part shift for this staff member
+      // Only consider part shifts for hourly or contractor staff (not salaried)
       const canDoPartShift = this.canCreatePartShift(staffMember);
+      
+      // Determine if a part shift would help cost targets based on the day and revenue
       const shouldCreatePartShift = canDoPartShift && 
         this.enablePartShifts && 
-        this.wouldPartShiftHelpCostTarget(dayRevenue, shiftHours, staffMember);
+        this.wouldPartShiftHelpCostTarget(dayRevenue, shiftHours, staffMember, date);
       
       // Calculate costs for this staff member (pass date for salaried staff tracking)
       // If a part shift is appropriate, calculate with adjusted hours
@@ -1014,20 +1055,21 @@ export class RotaSchedulingAlgorithm {
       // If part shift is appropriate, create a shortened shift
       let isPartShift = false;
       if (shouldCreatePartShift) {
-        const partShiftDetails = this.createPartShiftTimes(startTime, endTime, breakMinutes);
+        // FIXED: Better part shift creation logic
+        const partShiftDetails = this.createPartShiftTimes(startTime, endTime, breakMinutes, date);
         if (partShiftDetails) {
           actualStartTime = partShiftDetails.startTime;
           actualEndTime = partShiftDetails.endTime;
           actualShiftHours = partShiftDetails.hours;
           isPartShift = true;
-          console.log(`Creating part shift for ${staffMember.first_name} ${staffMember.last_name}: ${actualStartTime}-${actualEndTime} (${actualShiftHours} hours)`);
+          console.log(`Creating part shift for ${staffMember.first_name} ${staffMember.last_name} on ${date}: ${actualStartTime}-${actualEndTime} (${actualShiftHours} hours)`);
         }
       }
       
       const { shiftCost, niCost, pensionCost, totalShiftCost, isSecondShift } = 
         this.calculateCosts(staffMember, actualShiftHours, date);
       
-      // Check if this is a secondary role for the staff member
+      // FIXED: Better check if this is a secondary role for the staff member
       const isSecondaryRole = this.isSecondaryRole(staffMember, jobRole);
       
       // Create the shift
@@ -1048,7 +1090,7 @@ export class RotaSchedulingAlgorithm {
         shift_rule_id: rule.id,
         shift_rule_name: rule.name || jobRoleTitle,
         is_second_shift_of_day: isSecondShift, // Mark if this is a second shift with zero cost
-        is_part_shift: isPartShift // NEW: Mark if this is a part shift
+        is_part_shift: isPartShift // Mark if this is a part shift
       };
       
       // Add the shift
@@ -1072,20 +1114,21 @@ export class RotaSchedulingAlgorithm {
   }
   
   /**
-   * NEW: Check if a staff member can do part shifts based on employment type
+   * FIXED: Check if a staff member can do part shifts based on employment type
    */
   canCreatePartShift(staffMember: any): boolean {
     if (!staffMember) return false;
     
-    // Only hourly or contractor staff can do part shifts
+    // Only hourly or contractor staff can do part shifts (not salaried)
     return staffMember.employment_type === 'hourly' || 
            staffMember.employment_type === 'contractor';
   }
   
   /**
-   * NEW: Check if creating a part shift would help meet cost targets
+   * FIXED: Check if creating a part shift would help meet cost targets
+   * Consider the specific date to make part shifts happen throughout the week
    */
-  wouldPartShiftHelpCostTarget(revenue: number, fullShiftHours: number, staffMember: any): boolean {
+  wouldPartShiftHelpCostTarget(revenue: number, fullShiftHours: number, staffMember: any, date?: string): boolean {
     if (!revenue || revenue === 0) return false;
     if (!staffMember) return false;
     
@@ -1100,19 +1143,41 @@ export class RotaSchedulingAlgorithm {
     // Calculate cost percentage
     const fullShiftCostPercentage = (fullShiftCost / revenue) * 100;
     
-    // If cost percentage is already low, no need for part shift
-    if (fullShiftCostPercentage < 15) {
+    // Get the day of week from the date
+    let dayOfWeek = '';
+    if (date) {
+      dayOfWeek = format(new Date(date), 'EEEE').toLowerCase();
+    }
+    
+    // FIXED: Make part shift logic work for all days of the week
+    // Lower threshold for weekends due to typically higher revenue
+    const isWeekend = dayOfWeek === 'saturday' || dayOfWeek === 'sunday';
+    const costThreshold = isWeekend ? 20 : 25;
+    
+    // If revenue is high enough to support full shifts, don't use part shifts
+    if (revenue > 3000 && fullShiftCostPercentage < 15) {
       return false;
     }
     
-    // If cost percentage is high, part shift might help
-    return fullShiftCostPercentage > 25;
+    // If we haven't determined the day (shouldn't happen) or for low revenue days
+    // use a stricter threshold to encourage part shifts
+    if (!dayOfWeek || revenue < 1000) {
+      return fullShiftCostPercentage > 20;
+    }
+    
+    // Increment counter for diagnostics on part shifts
+    if (fullShiftCostPercentage > costThreshold) {
+      console.log(`Part shift candidate for ${date} (${dayOfWeek}): Cost ${fullShiftCostPercentage.toFixed(1)}% > ${costThreshold}% threshold`);
+      return true;
+    }
+    
+    return false;
   }
   
   /**
-   * NEW: Create appropriate part shift times
+   * FIXED: Create appropriate part shift times that consider the date
    */
-  createPartShiftTimes(startTime: string, endTime: string, breakMinutes: number): { 
+  createPartShiftTimes(startTime: string, endTime: string, breakMinutes: number, date?: string): { 
     startTime: string; 
     endTime: string; 
     hours: number;
@@ -1134,8 +1199,27 @@ export class RotaSchedulingAlgorithm {
       return null;
     }
     
-    // Calculate desired part shift length (target for 60-75% of full shift)
-    let partShiftMinutes = Math.round(fullShiftMinutes * 0.7);
+    // Get the day of week from the date for different handling
+    let dayOfWeek = '';
+    if (date) {
+      dayOfWeek = format(new Date(date), 'EEEE').toLowerCase();
+    }
+    
+    // FIXED: Adjust part shift logic based on day of week
+    // Weekend days might need longer shifts - use 75-80% of full shift
+    // Weekdays might do well with shorter shifts - use 60-70% of full shift
+    let targetPercentage = 0.7; // Default 70%
+    
+    if (dayOfWeek === 'saturday' || dayOfWeek === 'sunday') {
+      targetPercentage = 0.8; // 80% for weekends
+    } else if (dayOfWeek === 'friday') {
+      targetPercentage = 0.75; // 75% for Friday
+    } else {
+      targetPercentage = 0.65; // 65% for other weekdays
+    }
+    
+    // Calculate desired part shift length based on the day
+    let partShiftMinutes = Math.round(fullShiftMinutes * targetPercentage);
     
     // Make sure part shift is at least minimum length
     partShiftMinutes = Math.max(partShiftMinutes, minPartMinutes);
@@ -1197,6 +1281,8 @@ export class RotaSchedulingAlgorithm {
     
     // Calculate actual hours for the new part shift
     const actualHours = this.calculateHours(newStartTime, newEndTime, breakMinutes);
+    
+    console.log(`Part shift created: ${newStartTime} to ${newEndTime} (${actualHours} hours, including ${breakMinutes} min break)`);
     
     return {
       startTime: newStartTime,
@@ -1432,7 +1518,7 @@ export class RotaSchedulingAlgorithm {
       const canDoPartShift = this.canCreatePartShift(staffMember);
       const shouldCreatePartShift = canDoPartShift && 
         this.enablePartShifts && 
-        this.wouldPartShiftHelpCostTarget(dayRevenue, shiftHours, staffMember);
+        this.wouldPartShiftHelpCostTarget(dayRevenue, shiftHours, staffMember, date);
       
       // If part shift is appropriate, create a shortened shift
       let actualStartTime = startTime;
@@ -1441,7 +1527,7 @@ export class RotaSchedulingAlgorithm {
       let isPartShift = false;
       
       if (shouldCreatePartShift) {
-        const partShiftDetails = this.createPartShiftTimes(startTime, endTime, breakMinutes);
+        const partShiftDetails = this.createPartShiftTimes(startTime, endTime, breakMinutes, date);
         if (partShiftDetails) {
           actualStartTime = partShiftDetails.startTime;
           actualEndTime = partShiftDetails.endTime;
@@ -1497,37 +1583,166 @@ export class RotaSchedulingAlgorithm {
   }
   
   /**
-   * Update staff allocations after assigning a shift
-   * Allows multiple shifts per day as long as maximum hours aren't exceeded
+   * FIXED: Find the best available staff for a shift based on eligibility
+   */
+  findBestStaffForShift(
+    eligibleStaff: any[],
+    date: string,
+    hours: number,
+    staffWeeklyAllocations: Record<string, any>,
+    considerPartShift: boolean = false
+  ): any {
+    if (eligibleStaff.length === 0) {
+      return null;
+    }
+    
+    // Create a copy of eligible staff to sort
+    const sortedStaff = [...eligibleStaff];
+    
+    // Sort by employment type and constraints
+    sortedStaff.sort((a, b) => {
+      // Get weekly allocations
+      const allocA = staffWeeklyAllocations[a.id] || { hoursWorked: 0, daysWorked: [] };
+      const allocB = staffWeeklyAllocations[b.id] || { hoursWorked: 0, daysWorked: [] };
+      
+      // Get daily allocations for this date
+      const dailyAllocA = this.dailyStaffAllocations[date]?.[a.id] || { hoursWorked: 0, shifts: [] };
+      const dailyAllocB = this.dailyStaffAllocations[date]?.[b.id] || { hoursWorked: 0, shifts: [] };
+      
+      // First, prioritize salaried staff who haven't been scheduled on this day
+      // This ensures salaried staff are used efficiently
+      if (a.employment_type === 'salaried' && b.employment_type !== 'salaried') {
+        // If A is salaried and B is not, prioritize A
+        if (dailyAllocA.hoursWorked === 0 && dailyAllocA.shifts.length === 0) {
+          return -1; // Prioritize unscheduled salaried staff
+        }
+      }
+      else if (a.employment_type !== 'salaried' && b.employment_type === 'salaried') {
+        // If B is salaried and A is not, prioritize B
+        if (dailyAllocB.hoursWorked === 0 && dailyAllocB.shifts.length === 0) {
+          return 1; // Prioritize unscheduled salaried staff
+        }
+      }
+      
+      // If both salaried, prioritize the one who has worked less days this week
+      if (a.employment_type === 'salaried' && b.employment_type === 'salaried') {
+        return allocA.daysWorked.length - allocB.daysWorked.length;
+      }
+      
+      // Next, check for days already worked and min/max days per week
+      const aHasReachedMaxDays = a.max_days_per_week && 
+        allocA.daysWorked.length >= a.max_days_per_week;
+      
+      const bHasReachedMaxDays = b.max_days_per_week && 
+        allocB.daysWorked.length >= b.max_days_per_week;
+      
+      if (aHasReachedMaxDays && !bHasReachedMaxDays) {
+        return 1; // B is preferred
+      }
+      
+      if (!aHasReachedMaxDays && bHasReachedMaxDays) {
+        return -1; // A is preferred
+      }
+      
+      // If A already has shifts on this day but B doesn't, prioritize B
+      if (dailyAllocA.shifts.length > 0 && dailyAllocB.shifts.length === 0) {
+        return 1;
+      }
+      
+      // If B already has shifts on this day but A doesn't, prioritize A
+      if (dailyAllocA.shifts.length === 0 && dailyAllocB.shifts.length > 0) {
+        return -1;
+      }
+      
+      // If we're considering part shifts and hours matter, check who is closest to their target
+      if (considerPartShift) {
+        const aPercentWorked = a.min_hours_per_week > 0 ? 
+          allocA.hoursWorked / a.min_hours_per_week : 0;
+        
+        const bPercentWorked = b.min_hours_per_week > 0 ? 
+          allocB.hoursWorked / b.min_hours_per_week : 0;
+          
+        // Prioritize staff who are further from their minimum hours
+        if (aPercentWorked < bPercentWorked) {
+          return -1;
+        }
+        
+        if (aPercentWorked > bPercentWorked) {
+          return 1;
+        }
+      }
+      
+      // Final tiebreaker: use hi score
+      return (b.hi_score || 0) - (a.hi_score || 0);
+    });
+    
+    // Check each staff member to find the best match
+    for (const staff of sortedStaff) {
+      // Get allocation
+      const allocation = staffWeeklyAllocations[staff.id] || { hoursWorked: 0, daysWorked: [] };
+      
+      // Check weekly constraints
+      const maxHoursPerWeek = staff.max_hours_per_week || 40;
+      if (allocation.hoursWorked + hours > maxHoursPerWeek) {
+        console.log(`${staff.first_name} ${staff.last_name} would exceed max weekly hours (${maxHoursPerWeek})`);
+        continue;
+      }
+      
+      // Check if already at max days per week
+      const maxDaysPerWeek = staff.max_days_per_week || 5;
+      if (allocation.daysWorked.length >= maxDaysPerWeek && 
+          !allocation.daysWorked.includes(date)) {
+        console.log(`${staff.first_name} ${staff.last_name} would exceed max days per week (${maxDaysPerWeek})`);
+        continue;
+      }
+      
+      // Check daily constraints
+      const dailyAllocation = this.dailyStaffAllocations[date]?.[staff.id] || { hoursWorked: 0, shifts: [] };
+      const maxHoursPerDay = staff.max_hours_per_day || 12;
+      if (dailyAllocation.hoursWorked + hours > maxHoursPerDay) {
+        console.log(`${staff.first_name} ${staff.last_name} would exceed max daily hours (${maxHoursPerDay})`);
+        continue;
+      }
+      
+      console.log(`Selected ${staff.first_name} ${staff.last_name} for shift on ${date}`);
+      return staff;
+    }
+    
+    console.log(`Could not find suitable staff for shift on ${date}`);
+    return null;
+  }
+
+  /**
+   * FIXED: Update staff allocations to track time worked per day and week
    */
   updateStaffAllocations(
     staffId: string,
     date: string,
     hours: number,
     shift: any,
-    staffWeeklyAllocations: Record<string, any>
-  ) {
-    // Initialize weekly allocations if not already done
-    if (!staffWeeklyAllocations[staffId]) {
-      staffWeeklyAllocations[staffId] = {
+    weeklyAllocations: Record<string, any>
+  ): void {
+    // Update weekly allocations
+    if (!weeklyAllocations[staffId]) {
+      weeklyAllocations[staffId] = {
         hoursWorked: 0,
         daysWorked: [],
         shifts: []
       };
     }
     
-    // Update hours worked for the week
-    staffWeeklyAllocations[staffId].hoursWorked += hours;
+    // Add hours
+    weeklyAllocations[staffId].hoursWorked += hours;
     
-    // Add day to days worked if not already present
-    if (!staffWeeklyAllocations[staffId].daysWorked.includes(date)) {
-      staffWeeklyAllocations[staffId].daysWorked.push(date);
+    // Add day if not already included
+    if (!weeklyAllocations[staffId].daysWorked.includes(date)) {
+      weeklyAllocations[staffId].daysWorked.push(date);
     }
     
-    // Add shift to weekly shifts
-    staffWeeklyAllocations[staffId].shifts.push(shift);
+    // Add shift
+    weeklyAllocations[staffId].shifts.push(shift);
     
-    // Update daily allocations - initialize if needed
+    // Update daily allocations
     if (!this.dailyStaffAllocations[date]) {
       this.dailyStaffAllocations[date] = {};
     }
@@ -1535,404 +1750,254 @@ export class RotaSchedulingAlgorithm {
     if (!this.dailyStaffAllocations[date][staffId]) {
       this.dailyStaffAllocations[date][staffId] = {
         hoursWorked: 0,
-        shifts: []
+        shifts: [],
+        salaryApplied: false
       };
     }
     
-    // Update daily hours and shifts
+    // Add hours and shift to daily allocation
     this.dailyStaffAllocations[date][staffId].hoursWorked += hours;
     this.dailyStaffAllocations[date][staffId].shifts.push(shift);
-    
-    console.log(`Staff ${staffId} now has ${this.dailyStaffAllocations[date][staffId].shifts.length} shifts on ${date} (${this.dailyStaffAllocations[date][staffId].hoursWorked} hours)`);
-  }
-  
-  /**
-   * Find the best staff member for a shift, allowing multiple shifts per day
-   * Prioritizes salaried staff and management roles
-   */
-  findBestStaffForShift(
-    eligibleStaff: any[],
-    date: string,
-    hours: number,
-    staffWeeklyAllocations: Record<string, any>,
-    considerPartShifts: boolean = false
-  ) {
-    // Filter staff who are available for this shift
-    const availableStaff = eligibleStaff.filter(staff => {
-      // Skip if staff doesn't exist or not available
-      if (!staff || staff.available_for_rota === false) return false;
-      
-      // Get current allocations
-      const weeklyAllocation = staffWeeklyAllocations[staff.id];
-      if (!weeklyAllocation) return true; // No allocations yet, so available
-      
-      // Check if adding this shift would exceed weekly hours
-      const maxHoursPerWeek = staff.max_hours_per_week || 40;
-      
-      // If we're considering part shifts and this staff can do part shifts,
-      // use a lower hours threshold
-      let effectiveHours = hours;
-      if (considerPartShifts && this.canCreatePartShift(staff)) {
-        effectiveHours = Math.min(hours, this.maxPartShiftHours);
-      }
-      
-      if (weeklyAllocation.hoursWorked + effectiveHours > maxHoursPerWeek) {
-        return false; // Would exceed max weekly hours
-      }
-      
-      // Check if this would exceed max consecutive days
-      const maxDaysPerWeek = staff.max_days_per_week || 5;
-      if (weeklyAllocation.daysWorked.length >= maxDaysPerWeek && 
-          !weeklyAllocation.daysWorked.includes(date)) {
-        return false; // Would exceed max days per week
-      }
-      
-      // Check if daily allocation would exceed max hours per day
-      const dailyAllocation = this.dailyStaffAllocations[date]?.[staff.id];
-      if (dailyAllocation) {
-        const maxHoursPerDay = staff.max_hours_per_day || 12;
-        if (dailyAllocation.hoursWorked + effectiveHours > maxHoursPerDay) {
-          return false; // Would exceed max hours per day
-        }
-      }
-      
-      // Check if this is a manager role - prioritize for multiple shifts
-      const isManager = this.isManagerRole(staff.job_title);
-      
-      // If not a manager, only allow one shift per day unless there's a specific override
-      if (!isManager && dailyAllocation && dailyAllocation.shifts.length > 0) {
-        // Special case: We're allowing all staff to have multiple shifts
-        // but we'll prioritize managers in the sorting below
-        // If you want to restrict non-managers to one shift, uncomment:
-        // return false;
-      }
-      
-      return true;
-    });
-    
-    // If no available staff, return null
-    if (availableStaff.length === 0) {
-      return null;
-    }
-    
-    // Sort available staff (prioritizing salaried staff and managers)
-    const sortedStaff = [...availableStaff].sort((a, b) => {
-      // Prioritize salaried staff first
-      if (a.employment_type === 'salaried' && b.employment_type !== 'salaried') {
-        return -1;
-      }
-      if (a.employment_type !== 'salaried' && b.employment_type === 'salaried') {
-        return 1;
-      }
-      
-      // Then prioritize managers
-      const aIsManager = this.isManagerRole(a.job_title);
-      const bIsManager = this.isManagerRole(b.job_title);
-      
-      if (aIsManager && !bIsManager) {
-        return -1;
-      }
-      if (!aIsManager && bIsManager) {
-        return 1;
-      }
-      
-      // Then sort by hi_score
-      return (b.hi_score || 0) - (a.hi_score || 0);
-    });
-    
-    // Return the best match
-    return sortedStaff[0];
-  }
-
-  /**
-   * Get staff filtered by staff type (foh, kitchen, kp)
-   */
-  getStaffForStaffType(staff: any[], staffType: string) {
-    return staff.filter(member => {
-      if (staffType === 'foh') {
-        // Front of house roles (non-kitchen)
-        return !this.isKitchenRole(member.job_title) && !this.isKitchenPorterRole(member.job_title);
-      } else if (staffType === 'kitchen') {
-        // Kitchen roles (excluding kitchen porters)
-        return this.isKitchenRole(member.job_title) && !this.isKitchenPorterRole(member.job_title);
-      } else if (staffType === 'kp') {
-        // Kitchen porter roles only
-        return this.isKitchenPorterRole(member.job_title);
-      }
-      return false;
-    });
-  }
-  
-  /**
-   * Check if a job role is a kitchen role
-   */
-  isKitchenRole(jobTitle: string) {
-    if (!jobTitle) return false;
-    const title = jobTitle.toLowerCase();
-    return title.includes('chef') ||
-           title.includes('cook') ||
-           title.includes('kitchen');
-  }
-  
-  /**
-   * Check if a job role is a kitchen porter role
-   */
-  isKitchenPorterRole(jobTitle: string) {
-    if (!jobTitle) return false;
-    const title = jobTitle.toLowerCase();
-    return title.includes('kitchen porter') ||
-           title.includes('kitchen assistant') ||
-           title.includes('kitchen porter') ||
-           title.includes('kp');
-  }
-  
-  /**
-   * Check if a role is secondary for a staff member
-   */
-  isSecondaryRole(staffMember: any, jobRole: any) {
-    if (!staffMember || !jobRole) return false;
-    
-    // Primary role matches
-    if (staffMember.job_title === jobRole.title) {
-      return false;
-    }
-    
-    // Check if it's in secondary roles
-    if (Array.isArray(staffMember.secondary_job_roles)) {
-      return staffMember.secondary_job_roles.includes(jobRole.title);
-    }
-    
-    return false;
-  }
-
-  /**
-   * Get job roles for a staff type
-   */
-  getJobRolesForStaffType(staffType: string) {
-    return this.jobRoles.filter(role => {
-      if (staffType === 'foh') {
-        return !role.is_kitchen;
-      } else if (staffType === 'kitchen') {
-        return role.is_kitchen && !this.isKitchenPorterRole(role.title);
-      } else if (staffType === 'kp') {
-        return this.isKitchenPorterRole(role.title);
-      }
-      return false;
-    });
-  }
-  
-  /**
-   * Find the best job role for a staff member
-   */
-  findBestJobRoleForStaff(staffMember: any, jobRoles: any[]) {
-    // First try to match primary job title
-    const primaryRoleMatch = jobRoles.find(role => role.title === staffMember.job_title);
-    if (primaryRoleMatch) {
-      return primaryRoleMatch;
-    }
-    
-    // Then try to match secondary job roles
-    if (Array.isArray(staffMember.secondary_job_roles)) {
-      const secondaryRoleMatch = jobRoles.find(role => 
-        staffMember.secondary_job_roles.includes(role.title)
-      );
-      if (secondaryRoleMatch) {
-        return secondaryRoleMatch;
-      }
-    }
-    
-    // If no matches, return any compatible role
-    if (this.isKitchenRole(staffMember.job_title)) {
-      // For kitchen staff, return a kitchen role
-      return jobRoles.find(role => role.is_kitchen);
-    } else {
-      // For FOH staff, return a FOH role
-      return jobRoles.find(role => !role.is_kitchen);
-    }
-  }
-  
-  /**
-   * Get start and end times for a segment
-   */
-  getSegmentTimes(segment: string) {
-    switch (segment) {
-      case 'weekday-day':
-        return {
-          startTime: '10:00:00',
-          endTime: '16:30:00'
-        };
-      case 'weekday-evening':
-        return {
-          startTime: '16:30:00',
-          endTime: '23:00:00'
-        };
-      case 'weekend-day':
-        return {
-          startTime: '10:00:00',
-          endTime: '16:30:00'
-        };
-      case 'weekend-evening':
-        return {
-          startTime: '16:30:00',
-          endTime: '23:00:00'
-        };
-      default:
-        return {
-          startTime: '10:00:00',
-          endTime: '18:00:00'
-        };
-    }
   }
 
   /**
    * Calculate hours for a shift
    */
-  calculateHours(startTime: string, endTime: string, breakMinutes: number) {
-    // Parse times
-    const startParts = startTime.split(':').map(Number);
-    const endParts = endTime.split(':').map(Number);
+  calculateHours(startTime: string, endTime: string, breakMinutes: number): number {
+    // Parse start time
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
     
-    // Calculate starting point in minutes
-    const startMinutes = startParts[0] * 60 + startParts[1];
+    // Parse end time
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
     
-    // Calculate ending point in minutes
-    const endMinutes = endParts[0] * 60 + endParts[1];
+    // Calculate start and end in decimal hours
+    const startDecimal = startHours + startMinutes / 60;
+    const endDecimal = endHours + endMinutes / 60;
     
-    // Calculate shift length in minutes
-    let shiftMinutes = endMinutes - startMinutes;
+    // Calculate total hours, including break
+    let totalHours = endDecimal - startDecimal;
     
-    // Handle overnight shifts
-    if (shiftMinutes < 0) {
-      shiftMinutes += 24 * 60; // Add a full day's worth of minutes
-    }
+    // Subtract break time (convert to hours)
+    totalHours -= breakMinutes / 60;
     
-    // Subtract break time
-    shiftMinutes -= breakMinutes || 0;
-    
-    // Convert to hours
-    return shiftMinutes / 60;
+    // Ensure non-negative result
+    return Math.max(totalHours, 0);
   }
 
   /**
-   * Calculate costs for a shift based on employment type
-   * Now checks if salary has already been applied for a salaried staff member on this day
+   * Calculate costs for a shift
    */
-  calculateCosts(staffMember: any, hours: number, date?: string) {
-    const employmentType = staffMember.employment_type || 'hourly';
-    const isFullTimeStudent = staffMember.is_full_time_student || false;
+  calculateCosts(staffMember: any, hours: number, date: string): {
+    shiftCost: number;
+    niCost: number;
+    pensionCost: number;
+    totalShiftCost: number;
+    isSecondShift: boolean;
+  } {
+    // Track if this is a second shift of the day (for salaried staff)
+    let isSecondShift = false;
     
-    // Initialize costs
+    // Default values
     let shiftCost = 0;
-    let niCost = 0;
-    let pensionCost = 0;
+    const niRate = 0.138; // Employer's NI rate
+    const pensionRate = 0.03; // Employer's pension contribution
     
-    // Constants for UK employment costs
-    const NI_RATE = 0.138; // Employer NI rate (13.8%)
-    const PENSION_RATE = 0.03; // Minimum employer pension contribution (3%)
-    const WEEKLY_NI_THRESHOLD = 175; // National Insurance weekly threshold
-    const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
-    
-    // Check if salaried (handle both 'salaried' and 'salary' values)
-    const isSalaried = employmentType === 'salaried' || employmentType === 'salary';
-    
-    // Calculate costs based on employment type
-    if (isSalaried) {
-      // For salaried staff: Check if we've already applied their salary for this day
-      if (date && this.dailyStaffAllocations[date]?.[staffMember.id]?.salaryApplied) {
-        // Salary already applied for today - don't double count the cost
-        console.log(`Salaried staff ${staffMember.first_name} ${staffMember.last_name} already paid for ${date} - not adding additional cost`);
-        
-        // Return zero costs since we've already accounted for this staff member today
-        return {
-          shiftCost: 0,
-          niCost: 0,
-          pensionCost: 0,
-          totalShiftCost: 0,
-          isSecondShift: true // Mark as a second shift for reporting
-        };
+    if (staffMember.employment_type === 'hourly') {
+      // Hourly staff - simple hourly rate
+      shiftCost = (staffMember.wage_rate || 0) * hours;
+    }
+    else if (staffMember.employment_type === 'contractor') {
+      // Contractor - use contractor rate
+      shiftCost = (staffMember.contractor_rate || 0) * hours;
+    }
+    else if (staffMember.employment_type === 'salaried') {
+      // For salaried staff, we only count their salary once per day
+      // Check if we've already applied salary for this day
+      if (this.dailyStaffAllocations[date]?.[staffMember.id]?.salaryApplied) {
+        // Already charged salary for this day, this shift is "free"
+        shiftCost = 0;
+        isSecondShift = true;
+        console.log(`${staffMember.first_name} ${staffMember.last_name} is salaried and already counted for ${date}`);
       }
-      
-      // For first shift of the day for salaried staff
-      const annualSalary = staffMember.annual_salary || 0;
-      const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
-      shiftCost = dailyRate;
-      
-      // Only calculate NI and pension if not a student
-      if (!isFullTimeStudent) {
-        // Calculate NI for salaried staff
-        if (dailyRate > WEEKLY_NI_THRESHOLD) {
-          niCost = (dailyRate - WEEKLY_NI_THRESHOLD) * NI_RATE;
+      else {
+        // First shift of the day for this salaried staff
+        // Calculate daily rate from annual salary (assuming 5 days per week, 52 weeks)
+        const annualSalary = staffMember.annual_salary || 0;
+        const dailyRate = annualSalary / (5 * 52);
+        
+        shiftCost = dailyRate;
+        
+        // Mark salary as applied for this day
+        if (this.dailyStaffAllocations[date]?.[staffMember.id]) {
+          this.dailyStaffAllocations[date][staffMember.id].salaryApplied = true;
         }
-        
-        // Calculate pension
-        pensionCost = dailyRate * PENSION_RATE;
-      }
-      
-      // Mark that we've applied the salary for this day if date is provided
-      if (date && this.dailyStaffAllocations[date]?.[staffMember.id]) {
-        this.dailyStaffAllocations[date][staffMember.id].salaryApplied = true;
-        console.log(`Marking salary as applied for ${staffMember.first_name} ${staffMember.last_name} on ${date}`);
-      }
-      
-      // Log the calculation details
-      console.log(`Salaried staff cost calculation for ${staffMember.first_name} ${staffMember.last_name} (${employmentType}):`, {
-        annualSalary,
-        dailyRate,
-        shiftCost,
-        niCost,
-        pensionCost
-      });
-    } else if (employmentType === 'contractor') {
-      // For contractors: Use contractor_rate and hours, no NI or pension
-      const contractorRate = staffMember.contractor_rate || 0;
-      shiftCost = contractorRate * hours;
-      
-      // Log if contractor rate is missing
-      if (!contractorRate) {
-        console.warn(`Contractor ${staffMember.first_name} ${staffMember.last_name} has no contractor rate set. Using 0.`);
-      } else {
-        console.log(`Using contractor rate ${contractorRate} for ${staffMember.first_name} ${staffMember.last_name}`);
-      }
-      
-      // No NI or pension for contractors
-    } else {
-      // For hourly staff: Wage rate * hours
-      const wageRate = staffMember.wage_rate || 0;
-      shiftCost = wageRate * hours;
-      
-      // Only calculate NI and pension if not a student
-      if (!isFullTimeStudent) {
-        // Calculate NI if pay exceeds threshold (simplified)
-        if (shiftCost > WEEKLY_NI_THRESHOLD) {
-          niCost = (shiftCost - WEEKLY_NI_THRESHOLD) * NI_RATE;
-        }
-        
-        // Calculate pension
-        pensionCost = shiftCost * PENSION_RATE;
       }
     }
     
+    // Calculate employer costs (NI and pension)
+    // Only apply to non-second shifts
+    const niCost = isSecondShift ? 0 : shiftCost * niRate;
+    const pensionCost = isSecondShift ? 0 : shiftCost * pensionRate;
+    
     // Calculate total cost
     const totalShiftCost = shiftCost + niCost + pensionCost;
-    
-    // Log calculation details for debugging
-    console.log(`Cost calculation for ${staffMember.first_name} ${staffMember.last_name} (${employmentType}):`, {
-      shiftCost, niCost, pensionCost, totalShiftCost,
-      details: {
-        hours,
-        wage_rate: staffMember.wage_rate,
-        annual_salary: staffMember.annual_salary,
-        contractor_rate: staffMember.contractor_rate,
-        is_salaried: isSalaried
-      }
-    });
     
     return {
       shiftCost,
       niCost,
       pensionCost,
       totalShiftCost,
-      isSecondShift: false
+      isSecondShift
+    };
+  }
+
+  /**
+   * Check if a job title is a kitchen role
+   */
+  isKitchenRole(jobTitle: string): boolean {
+    if (!jobTitle) return false;
+    const title = jobTitle.toLowerCase();
+    
+    return title.includes('chef') || 
+           title.includes('cook') || 
+           title.includes('kitchen') ||
+           title === 'kp';
+  }
+  
+  /**
+   * Check if a job title is a kitchen porter role
+   */
+  isKitchenPorterRole(jobTitle: string): boolean {
+    if (!jobTitle) return false;
+    const title = jobTitle.toLowerCase();
+    
+    return title === 'kp' || 
+           title.includes('kitchen porter') || 
+           title.includes('kitchen assistant') ||
+           title.includes('kitchen hand');
+  }
+
+  /**
+   * Find the best job role for a staff member
+   */
+  findBestJobRoleForStaff(staff: any, jobRoles: any[]): any {
+    // First look for a perfect match with primary job title
+    const primaryRoleMatch = jobRoles.find(role => role.title === staff.job_title);
+    if (primaryRoleMatch) {
+      console.log(`Found primary role match for ${staff.first_name}: ${primaryRoleMatch.title}`);
+      return primaryRoleMatch;
+    }
+    
+    // Then check for secondary roles
+    if (Array.isArray(staff.secondary_job_roles) && staff.secondary_job_roles.length > 0) {
+      for (const secondaryRole of staff.secondary_job_roles) {
+        const roleMatch = jobRoles.find(role => role.title === secondaryRole);
+        if (roleMatch) {
+          console.log(`Found secondary role match for ${staff.first_name}: ${roleMatch.title}`);
+          return roleMatch;
+        }
+      }
+    }
+    
+    // If no direct match, find compatible roles
+    if (this.isKitchenPorterRole(staff.job_title)) {
+      // KP can only do KP roles
+      const kpRole = jobRoles.find(role => this.isKitchenPorterRole(role.title));
+      if (kpRole) return kpRole;
+    }
+    else if (this.isKitchenRole(staff.job_title)) {
+      // Kitchen staff can do kitchen roles
+      const kitchenRole = jobRoles.find(role => this.isKitchenRole(role.title) && !this.isKitchenPorterRole(role.title));
+      if (kitchenRole) return kitchenRole;
+    }
+    else {
+      // FOH staff can do FOH roles
+      const fohRole = jobRoles.find(role => !this.isKitchenRole(role.title) && !this.isKitchenPorterRole(role.title));
+      if (fohRole) return fohRole;
+    }
+    
+    // If still no match, just return the first role
+    console.log(`No suitable role found for ${staff.first_name}`);
+    return jobRoles.length > 0 ? jobRoles[0] : null;
+  }
+
+  /**
+   * Get appropriate staff for a particular staff type
+   */
+  getStaffForStaffType(staff: any[], staffType: string): any[] {
+    if (staffType === 'foh') {
+      // FOH staff = not kitchen and not KP
+      return staff.filter(s => !this.isKitchenRole(s.job_title));
+    }
+    else if (staffType === 'kitchen') {
+      // Kitchen staff = kitchen but not KP
+      return staff.filter(s => 
+        this.isKitchenRole(s.job_title) && !this.isKitchenPorterRole(s.job_title)
+      );
+    }
+    else if (staffType === 'kp') {
+      // KP staff = KP roles only
+      return staff.filter(s => this.isKitchenPorterRole(s.job_title));
+    }
+    
+    return [];
+  }
+
+  /**
+   * Get job roles appropriate for a staff type
+   */
+  getJobRolesForStaffType(staffType: string): any[] {
+    if (staffType === 'foh') {
+      // FOH roles = roles with is_kitchen = false
+      return this.jobRoles.filter(role => !role.is_kitchen);
+    }
+    else if (staffType === 'kitchen') {
+      // Kitchen roles = roles with is_kitchen = true and not KP
+      return this.jobRoles.filter(role => 
+        role.is_kitchen && !this.isKitchenPorterRole(role.title)
+      );
+    }
+    else if (staffType === 'kp') {
+      // KP roles = roles with KP in title
+      return this.jobRoles.filter(role => this.isKitchenPorterRole(role.title));
+    }
+    
+    return [];
+  }
+  
+  /**
+   * Get segment times based on the segment name
+   */
+  getSegmentTimes(segment: string): { startTime: string; endTime: string } {
+    if (segment === 'weekday-day') {
+      return {
+        startTime: '09:00:00',
+        endTime: '17:00:00'
+      };
+    }
+    else if (segment === 'weekday-evening') {
+      return {
+        startTime: '17:00:00',
+        endTime: '23:00:00'
+      };
+    }
+    else if (segment === 'weekend-day') {
+      return {
+        startTime: '10:00:00',
+        endTime: '17:00:00'
+      };
+    }
+    else if (segment === 'weekend-evening') {
+      return {
+        startTime: '17:00:00',
+        endTime: '23:00:00'
+      };
+    }
+    
+    // Default
+    return {
+      startTime: '09:00:00',
+      endTime: '17:00:00'
     };
   }
 }
