@@ -661,14 +661,14 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
                   <div>
                     <label className="text-sm font-medium">Filter by Date</label>
                     <Select
-                      value={filterDate || ''}
-                      onValueChange={(value) => setFilterDate(value || null)}
+                      value={filterDate || 'all'}
+                      onValueChange={(value) => setFilterDate(value === 'all' ? null : value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="All Dates" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Dates</SelectItem>
+                        <SelectItem value="all">All Dates</SelectItem>
                         {Object.keys(shiftsByDate()).map(date => (
                           <SelectItem key={date} value={date}>
                             {format(parseISO(date), 'EEE, dd MMM')}
@@ -877,47 +877,4 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
                             </TableRow>
                           </TableStickyHeader>
                           <TableBody>
-                            {shifts.map((shift: any) => (
-                              <TableRow key={shift.id}>
-                                <TableCell>
-                                  <div>
-                                    {format(parseISO(shift.date), 'EEE, dd MMM')}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {renderShiftCell(shift)}
-                                </TableCell>
-                                <TableCell>
-                                  {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                  <div className="text-xs text-muted-foreground">
-                                    {shift.break_minutes}min break
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  £{shift.total_cost.toFixed(2)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Schedule Generated</h3>
-            <p className="text-muted-foreground max-w-md">
-              Click the "Generate Schedule" button to create an optimized staff schedule based on 
-              the revenue forecasts, staff Hi Scores, and configured thresholds.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+                            {shifts
