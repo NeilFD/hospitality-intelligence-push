@@ -77,6 +77,7 @@ const ProfilePage = () => {
   const { profile: currentUserProfile, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [profile, setProfile] = useState<ExtendedUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isRepositioningBanner, setIsRepositioningBanner] = useState(false);
@@ -130,6 +131,7 @@ const ProfilePage = () => {
     return ['GOD', 'Super User', 'Owner', 'Manager'].includes(currentUserProfile.role.toString());
   };
 
+  // Improved authentication check
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       console.log("User not authenticated in ProfilePage. Redirecting to login.");
@@ -138,26 +140,30 @@ const ProfilePage = () => {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
+  // Enhanced profile loading with better error handling
   useEffect(() => {
     const loadProfile = async () => {
-      if (authLoading || !isAuthenticated) {
-        console.log("Skipping profile load while authentication is loading or user not authenticated");
+      // Skip loading if authentication is still in progress
+      if (authLoading) {
+        console.log("Waiting for authentication to complete before loading profile");
         return;
       }
       
-      if (!currentUserProfile && userId === undefined) {
-        if (profileLoadAttemptedRef.current) {
-          console.log("Waiting for current user profile to be available");
-          return;
-        } else {
-          console.log("First attempt to load current user profile");
-        }
+      // Ensure user is authenticated
+      if (!isAuthenticated) {
+        console.log("User not authenticated, skipping profile load");
+        return;
       }
       
-      profileLoadAttemptedRef.current = true;
+      // For viewing own profile with no userId specified
+      if (!userId && !currentUserProfile) {
+        console.log("Waiting for current user profile to load");
+        return;
+      }
       
       if (initialRenderRef.current) {
         setLoading(true);
+        setError(null);
         initialRenderRef.current = false;
       }
       
@@ -165,31 +171,45 @@ const ProfilePage = () => {
         console.log("Loading profile data...", userId ? `for ID: ${userId}` : "for current user");
         let profileToLoad;
         
+        // Load specific user's profile by ID
         if (userId) {
+          console.log(`Fetching profile for userId: ${userId}`);
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', userId)
             .maybeSingle();
             
-          if (error) throw error;
+          if (error) {
+            console.error("Supabase error fetching profile:", error);
+            throw error;
+          }
           
           if (!data) {
-            toast.error("Profile not found");
-            navigate('/home/dashboard');
+            console.error("No profile found with ID:", userId);
+            setError(`Profile not found`);
+            setLoading(false);
             return;
           }
           
           profileToLoad = data;
+          console.log("Successfully fetched profile by ID:", profileToLoad);
         } else {
+          // Load current user's profile
           if (!currentUserProfile) {
             console.log("Current user profile not available yet");
-            return; // Will try again when currentUserProfile becomes available
+            return;
           }
           profileToLoad = currentUserProfile as ExtendedUserProfile;
+          console.log("Using current user profile:", profileToLoad);
         }
         
-        console.log("Loaded profile:", profileToLoad);
+        if (!profileToLoad) {
+          console.error("No profile data available to load");
+          setError("Failed to load profile data");
+          setLoading(false);
+          return;
+        }
         
         if (profileToLoad?.banner_position_y !== undefined && profileToLoad?.banner_position_y !== null) {
           setYPosition(profileToLoad.banner_position_y);
@@ -221,8 +241,11 @@ const ProfilePage = () => {
             inFtEducation: profileToLoad.in_ft_education === true
           });
         }
+        
+        setError(null);
       } catch (error) {
         console.error('Error loading profile:', error);
+        setError('Failed to load profile');
         toast.error('Failed to load profile');
       } finally {
         if (isMountedRef.current) {
@@ -670,10 +693,40 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading || authLoading) {
+  if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[70vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-hi-purple"></div>
+        <span className="ml-3 text-hi-purple">Loading user data...</span>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
+        <h2 className="text-2xl font-bold text-red-500 mb-2">Authentication Required</h2>
+        <p className="text-gray-600 mb-4">Please log in to view profiles.</p>
+        <Button onClick={() => navigate('/login')}>Go to Login</Button>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[70vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-hi-purple"></div>
+        <span className="ml-3 text-hi-purple">Loading profile...</span>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
+        <h2 className="text-2xl font-bold text-red-500 mb-2">Error Loading Profile</h2>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={() => navigate('/team/dashboard')}>Return to Team Dashboard</Button>
       </div>
     );
   }
@@ -683,6 +736,7 @@ const ProfilePage = () => {
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
         <h2 className="text-2xl font-bold text-red-500 mb-2">Profile Not Found</h2>
         <p className="text-gray-600 mb-4">The profile you're looking for doesn't exist or has been removed.</p>
+        <Button onClick={() => navigate('/team/dashboard')}>Return to Team Dashboard</Button>
       </div>
     );
   }
