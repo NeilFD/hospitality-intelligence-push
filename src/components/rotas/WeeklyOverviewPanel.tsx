@@ -42,8 +42,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
           job_roles (*)
         `)
         .eq('location_id', location.id)
-        .eq('archived', false) // Only fetch active shifts
-        .order('day_of_week');
+        .eq('archived', false); // Only fetch active shifts
       
       if (error) {
         throw error;
@@ -64,7 +63,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   // This is the correct day order that includes 'sun'
   const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   
-  // Group shifts by day
+  // Group shifts by day - ensuring each day is properly represented
   const shiftsByDay = dayOrder.reduce<Record<string, any[]>>((acc, day) => {
     acc[day] = shiftRules.filter(rule => rule.day_of_week === day);
     return acc;
@@ -86,7 +85,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
     return days[dayCode] || dayCode;
   };
 
-  // Filter shifts by selected day
+  // Filter shifts by selected day - ensuring Sunday is properly included
   const filteredShiftRules = selectedDay === 'none' 
     ? [] 
     : selectedDay === 'all' 
@@ -184,9 +183,9 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
                 {getDaysToDisplay().map(day => (
                   <div key={day} className="border rounded-md overflow-hidden">
                     <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 font-medium">
-                      {getDayName(day)} ({shiftsByDay[day].length})
+                      {getDayName(day)} ({shiftsByDay[day]?.length || 0})
                     </div>
-                    {shiftsByDay[day].length > 0 ? (
+                    {shiftsByDay[day]?.length > 0 ? (
                       <div className="divide-y">
                         {shiftsByDay[day].map(rule => {
                           const role = jobRoles.find(r => r.id === rule.job_role_id);
