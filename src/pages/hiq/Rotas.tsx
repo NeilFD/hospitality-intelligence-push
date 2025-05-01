@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, ClipboardList, Settings, Users, FileEdit } from 'lucide-react';
+import { Calendar, ClipboardList, Settings, Users, FileEdit, MapPin } from 'lucide-react';
 import WeeklyOverviewPanel from '@/components/rotas/WeeklyOverviewPanel';
 import TeamMemberProfiles from '@/components/rotas/TeamMemberProfiles';
 import GlobalRulesSettings from '@/components/rotas/GlobalRulesSettings';
 import ShiftBuilder from '@/components/rotas/ShiftBuilder';
+import RoleMappingPanel from '@/components/rotas/RoleMappingPanel';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -159,7 +160,7 @@ export default function HiQRotas() {
               </div>
             ) : (
               <Tabs defaultValue="weekly-overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full grid grid-cols-4 mb-6">
+                <TabsList className="w-full grid grid-cols-5 mb-6">
                   <TabsTrigger value="weekly-overview" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span className="hidden sm:inline">Weekly Overview</span>
@@ -174,6 +175,11 @@ export default function HiQRotas() {
                     <Users className="h-4 w-4" />
                     <span className="hidden sm:inline">Team Members</span>
                     <span className="sm:hidden">Team</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="role-mapping" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span className="hidden sm:inline">Role Mapping</span>
+                    <span className="sm:hidden">Roles</span>
                   </TabsTrigger>
                   <TabsTrigger value="global-rules" className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
@@ -203,6 +209,13 @@ export default function HiQRotas() {
                 <TabsContent value="team-members" className="mt-0 space-y-4">
                   <TeamMemberProfiles 
                     location={location} 
+                    jobRoles={jobRoles}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="role-mapping" className="mt-0 space-y-4">
+                  <RoleMappingPanel
+                    location={location}
                     jobRoles={jobRoles}
                   />
                 </TabsContent>

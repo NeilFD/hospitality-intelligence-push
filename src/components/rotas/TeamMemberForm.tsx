@@ -1,221 +1,122 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
-import AvailabilityScheduler from './AvailabilityScheduler';
-import { Switch } from '@/components/ui/switch';
-import HiScoreSection from '@/components/profile/HiScoreSection';
-import SecondaryJobRolesSelector from '@/components/profile/SecondaryJobRolesSelector';
-
-// Full list of job titles from JobDataSection.tsx
-const FOH_JOB_TITLES = [
-  "Owner",
-  "General Manager",
-  "Assistant Manager",
-  "Bar Supervisor",
-  "FOH Supervisor",
-  "FOH Team",
-  "Bar Team",
-  "Runner"
-];
-
-const BOH_JOB_TITLES = [
-  "Head Chef",
-  "Sous Chef",
-  "Chef de Partie",
-  "Commis Chef",
-  "KP"
-];
-
-// All job titles combined
-const JOB_TITLES = [...FOH_JOB_TITLES, ...BOH_JOB_TITLES];
+import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Slider } from '@/components/ui/slider';
 
 export default function TeamMemberForm({ 
   isOpen, 
   onClose, 
   onSubmitComplete, 
   locationId, 
-  jobRoles,
-  teamMember,
+  jobRoles, 
+  teamMember, 
   isEditing
 }) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [role, setRole] = useState('Team Member');
+  const [hourlyRate, setHourlyRate] = useState('10.50');
+  const [salary, setSalary] = useState('0');
+  const [isFullTimeStudent, setIsFullTimeStudent] = useState(false);
+  const [maxDaysPerWeek, setMaxDaysPerWeek] = useState(5);
+  const [employmentType, setEmploymentType] = useState('hourly');
+  const [availableForRota, setAvailableForRota] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tab, setTab] = useState('basic');
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    job_title: '',
-    photo_url: '',
-    employment_type: 'hourly',
-    wage_rate: 0,
-    annual_salary: 0,
-    contractor_rate: 0,
-    min_hours_per_week: 0,
-    max_hours_per_week: 40,
-    min_hours_per_day: 0,
-    max_hours_per_day: 8,
-    availability: [],
-    employment_start_date: '',
-    employment_status: 'full-time',
-    in_ft_education: false,
-    favourite_dish: '',
-    favourite_drink: '',
-    about_me: '',
-    avatar_url: '',
-    available_for_rota: true,
-    role_type: 'foh', // Default role type for Hi Score evaluations
-    secondary_job_roles: [] // Add secondary job roles to formData
-  });
-
-  // If editing, populate the form with the team member data
+  
+  // Reset form when opened with different team member
   useEffect(() => {
-    console.log("TeamMemberForm received teamMember:", teamMember);
-    if (teamMember && isEditing) {
-      // Map fields from profiles table to formData
-      setFormData({
-        first_name: teamMember.first_name || '',
-        last_name: teamMember.last_name || '',
-        job_title: teamMember.job_title || '',
-        photo_url: teamMember.photo_url || teamMember.avatar_url || '',
-        employment_type: teamMember.employment_type || 'hourly',
-        wage_rate: teamMember.wage_rate || 0,
-        annual_salary: teamMember.annual_salary || 0,
-        contractor_rate: teamMember.contractor_rate || 0,
-        min_hours_per_week: teamMember.min_hours_per_week || 0,
-        max_hours_per_week: teamMember.max_hours_per_week || 40,
-        min_hours_per_day: teamMember.min_hours_per_day || 0,
-        max_hours_per_day: teamMember.max_hours_per_day || 8,
-        availability: teamMember.availability || teamMember.enhanced_availability || [],
-        employment_start_date: teamMember.employment_start_date || '',
-        employment_status: teamMember.employment_status || 'full-time',
-        in_ft_education: teamMember.in_ft_education || false,
-        favourite_dish: teamMember.favourite_dish || '',
-        favourite_drink: teamMember.favourite_drink || '',
-        about_me: teamMember.about_me || '',
-        avatar_url: teamMember.avatar_url || teamMember.photo_url || '',
-        available_for_rota: teamMember.available_for_rota !== undefined ? teamMember.available_for_rota : true,
-        role_type: teamMember.role_type || 'foh',
-        secondary_job_roles: teamMember.secondary_job_roles || [] // Add secondary job roles from team member data
-      });
-      console.log("Form data populated:", formData);
+    if (teamMember) {
+      setFirstName(teamMember.first_name || '');
+      setLastName(teamMember.last_name || '');
+      setEmail(teamMember.email || '');
+      setJobTitle(teamMember.job_title || '');
+      setRole(teamMember.role || 'Team Member');
+      setHourlyRate(teamMember.hourly_rate?.toString() || '10.50');
+      setSalary(teamMember.salary?.toString() || '0');
+      setIsFullTimeStudent(teamMember.is_full_time_student || false);
+      setMaxDaysPerWeek(teamMember.max_days_per_week || 5);
+      setEmploymentType(teamMember.employment_type || 'hourly');
+      setAvailableForRota(teamMember.available_for_rota !== false);
     } else {
-      // Reset form when adding a new member
-      setFormData({
-        first_name: '',
-        last_name: '',
-        job_title: '',
-        photo_url: '',
-        employment_type: 'hourly',
-        wage_rate: 0,
-        annual_salary: 0,
-        contractor_rate: 0,
-        min_hours_per_week: 0,
-        max_hours_per_week: 40,
-        min_hours_per_day: 0,
-        max_hours_per_day: 8,
-        availability: [],
-        employment_start_date: '',
-        employment_status: 'full-time',
-        in_ft_education: false,
-        favourite_dish: '',
-        favourite_drink: '',
-        about_me: '',
-        avatar_url: '',
-        available_for_rota: true,
-        role_type: 'foh',
-        secondary_job_roles: [] // Initialize as empty array
-      });
+      resetForm();
     }
-    
-    // Reset to basic tab when opening
-    setTab('basic');
-  }, [teamMember, isEditing, isOpen]);
+  }, [teamMember, isOpen]);
 
-  const handleChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const resetForm = () => {
+    setFirstName('');
+    setLastName('');
+    setEmail('');
+    setJobTitle('');
+    setRole('Team Member');
+    setHourlyRate('10.50');
+    setSalary('0');
+    setIsFullTimeStudent(false);
+    setMaxDaysPerWeek(5);
+    setEmploymentType('hourly');
+    setAvailableForRota(true);
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!formData.first_name && !formData.last_name) {
-      toast("Name is required", {
-        style: { backgroundColor: "#f44336", color: "#fff" },
-      });
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
-      let result;
-      
-      // Create the data object to update/insert
-      const profileData = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        job_title: formData.job_title,
-        avatar_url: formData.photo_url || formData.avatar_url,
-        employment_type: formData.employment_type,
-        wage_rate: formData.wage_rate,
-        annual_salary: formData.annual_salary,
-        contractor_rate: formData.contractor_rate,
-        min_hours_per_week: formData.min_hours_per_week,
-        max_hours_per_week: formData.max_hours_per_week,
-        min_hours_per_day: formData.min_hours_per_day,
-        max_hours_per_day: formData.max_hours_per_day,
-        enhanced_availability: formData.availability,
-        employment_status: formData.employment_status,
-        in_ft_education: formData.in_ft_education,
-        favourite_dish: formData.favourite_dish,
-        favourite_drink: formData.favourite_drink,
-        about_me: formData.about_me,
-        available_for_rota: formData.available_for_rota,
-        secondary_job_roles: formData.secondary_job_roles // Include secondary job roles in profile data
+      const memberData = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
+        job_title: jobTitle.trim(),
+        role,
+        hourly_rate: parseFloat(hourlyRate) || 0,
+        salary: parseFloat(salary) || 0,
+        is_full_time_student: isFullTimeStudent,
+        max_days_per_week: maxDaysPerWeek,
+        employment_type: employmentType,
+        available_for_rota: availableForRota,
       };
       
-      console.log("Updating profile with data:", profileData);
-      
       if (isEditing && teamMember) {
-        // Update existing profile
-        result = await supabase
+        // Update existing team member
+        const { error } = await supabase
           .from('profiles')
-          .update(profileData)
+          .update(memberData)
           .eq('id', teamMember.id);
+        
+        if (error) throw error;
+        
+        toast.success('Team member updated successfully');
       } else {
-        // This is a new profile with no auth record
-        result = await supabase
+        // Create new team member
+        const { data, error } = await supabase
           .from('profiles')
           .insert({
-            ...profileData,
-            id: crypto.randomUUID() // Generate a UUID for the new profile
-          });
+            ...memberData,
+            location_id: locationId
+          })
+          .select();
+        
+        if (error) throw error;
+        
+        toast.success('Team member added successfully');
       }
-      
-      const { error } = result;
-      if (error) throw error;
-      
-      toast(isEditing ? "Team member updated" : "Team member created", {
-        description: `${formData.first_name} ${formData.last_name} has been ${isEditing ? 'updated' : 'added'} successfully.`,
-      });
       
       onSubmitComplete();
       onClose();
     } catch (error) {
       console.error('Error saving team member:', error);
-      toast("Error saving team member", {
-        description: error.message || "There was a problem saving the team member.",
-        style: { backgroundColor: "#f44336", color: "#fff" },
+      toast.error('Error saving team member', {
+        description: error.message
       });
     } finally {
       setIsSubmitting(false);
@@ -224,319 +125,195 @@ export default function TeamMemberForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] md:max-w-[850px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit' : 'Add'} Team Member</DialogTitle>
+          <DialogTitle>
+            {isEditing ? 'Edit Team Member' : 'Add Team Member'}
+          </DialogTitle>
         </DialogHeader>
         
-        <Tabs value={tab} onValueChange={setTab} className="mt-2">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="basic">Basic Information</TabsTrigger>
-            <TabsTrigger value="availability">Availability</TabsTrigger>
-            <TabsTrigger value="hiscore">Hi Score Evaluation</TabsTrigger>
-          </TabsList>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input 
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input 
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </div>
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <TabsContent value="basic" className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
-                  <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => handleChange('first_name', e.target.value)}
-                    placeholder="First Name"
-                  />
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input 
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="jobTitle">Job Title</Label>
+              <Input 
+                id="jobTitle"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="e.g., Bar Manager, Chef, Server"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="role">System Role</Label>
+              <Select 
+                value={role} 
+                onValueChange={setRole}
+              >
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Team Member">Team Member</SelectItem>
+                  <SelectItem value="Manager">Manager</SelectItem>
+                  <SelectItem value="Super User">Super User</SelectItem>
+                  <SelectItem value="Owner">Owner</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="border rounded-md p-4 space-y-4">
+            <h3 className="font-medium">Pay & Employment Details</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="employmentType">Employment Type</Label>
+              <RadioGroup 
+                value={employmentType} 
+                onValueChange={setEmploymentType}
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="hourly" id="hourly" />
+                  <Label htmlFor="hourly">Hourly</Label>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => handleChange('last_name', e.target.value)}
-                    placeholder="Last Name"
-                  />
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="salaried" id="salaried" />
+                  <Label htmlFor="salaried">Salaried</Label>
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="job_title">Job Title</Label>
-                <Select 
-                  value={formData.job_title} 
-                  onValueChange={(value) => handleChange('job_title', value)}
-                >
-                  <SelectTrigger id="job_title">
-                    <SelectValue placeholder="Select a job title" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {JOB_TITLES.map((title) => (
-                      <SelectItem key={title} value={title}>
-                        {title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Add SecondaryJobRolesSelector right after Job Title */}
-              <div className="space-y-2">
-                <Label htmlFor="secondary_job_roles">Secondary Job Roles</Label>
-                <SecondaryJobRolesSelector
-                  selectedRoles={formData.secondary_job_roles}
-                  onChange={(roles) => handleChange('secondary_job_roles', roles)}
-                  mainJobTitle={formData.job_title}
-                  disabled={false}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="avatar_url">Photo URL</Label>
-                <Input
-                  id="avatar_url"
-                  value={formData.avatar_url || formData.photo_url}
-                  onChange={(e) => handleChange('avatar_url', e.target.value)}
-                  placeholder="https://example.com/photo.jpg"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="employment_start_date">Employment Start Date</Label>
-                <Input
-                  id="employment_start_date"
-                  type="date"
-                  value={formData.employment_start_date}
-                  onChange={(e) => handleChange('employment_start_date', e.target.value)}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="employment_type">Employment Type</Label>
-                  <Select 
-                    value={formData.employment_type} 
-                    onValueChange={(value) => handleChange('employment_type', value)}
-                  >
-                    <SelectTrigger id="employment_type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hourly">Hourly</SelectItem>
-                      <SelectItem value="salary">Salary</SelectItem>
-                      <SelectItem value="contractor">Contractor</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="contractor" id="contractor" />
+                  <Label htmlFor="contractor">Contractor</Label>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="employment_status">Employment Status</Label>
-                  <Select 
-                    value={formData.employment_status} 
-                    onValueChange={(value) => handleChange('employment_status', value)}
-                  >
-                    <SelectTrigger id="employment_status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="full-time">Full-Time</SelectItem>
-                      <SelectItem value="part-time">Part-Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
+              </RadioGroup>
+            </div>
+
+            {employmentType === 'hourly' && (
               <div className="space-y-2">
-                <Label htmlFor="wage_rate">Wage Rate (£/hr)</Label>
-                <Input
-                  id="wage_rate"
+                <Label htmlFor="hourlyRate">Hourly Rate (£)</Label>
+                <Input 
+                  id="hourlyRate"
                   type="number"
-                  min="0"
                   step="0.01"
-                  value={formData.wage_rate}
-                  onChange={(e) => handleChange('wage_rate', parseFloat(e.target.value))}
+                  min="0"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
                 />
               </div>
-              
-              {formData.employment_type === 'salary' && (
-                <div className="space-y-2">
-                  <Label htmlFor="annual_salary">Annual Salary (£)</Label>
-                  <Input
-                    id="annual_salary"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.annual_salary}
-                    onChange={(e) => handleChange('annual_salary', parseFloat(e.target.value))}
-                  />
-                </div>
-              )}
-              
-              {formData.employment_type === 'contractor' && (
-                <div className="space-y-2">
-                  <Label htmlFor="contractor_rate">Contractor Rate (£/hr)</Label>
-                  <Input
-                    id="contractor_rate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.contractor_rate}
-                    onChange={(e) => handleChange('contractor_rate', parseFloat(e.target.value))}
-                  />
-                </div>
-              )}
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="in_ft_education"
-                  checked={formData.in_ft_education}
-                  onCheckedChange={(checked) => handleChange('in_ft_education', checked)}
-                />
-                <Label htmlFor="in_ft_education">In Full-Time Education</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="available_for_rota"
-                  checked={formData.available_for_rota}
-                  onCheckedChange={(checked) => handleChange('available_for_rota', checked)}
-                />
-                <Label htmlFor="available_for_rota">Available for Scheduling</Label>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="min_hours_per_week">Min Hours/Week</Label>
-                  <Input
-                    id="min_hours_per_week"
-                    type="number"
-                    min="0"
-                    value={formData.min_hours_per_week}
-                    onChange={(e) => handleChange('min_hours_per_week', parseInt(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="max_hours_per_week">Max Hours/Week</Label>
-                  <Input
-                    id="max_hours_per_week"
-                    type="number"
-                    min={formData.min_hours_per_week}
-                    value={formData.max_hours_per_week}
-                    onChange={(e) => handleChange('max_hours_per_week', parseInt(e.target.value))}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="min_hours_per_day">Min Hours/Day</Label>
-                  <Input
-                    id="min_hours_per_day"
-                    type="number"
-                    min="0"
-                    value={formData.min_hours_per_day}
-                    onChange={(e) => handleChange('min_hours_per_day', parseInt(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="max_hours_per_day">Max Hours/Day</Label>
-                  <Input
-                    id="max_hours_per_day"
-                    type="number"
-                    min={formData.min_hours_per_day}
-                    value={formData.max_hours_per_day}
-                    onChange={(e) => handleChange('max_hours_per_day', parseInt(e.target.value))}
-                  />
-                </div>
-              </div>
-
+            )}
+            
+            {employmentType === 'salaried' && (
               <div className="space-y-2">
-                <Label htmlFor="about_me">About Me</Label>
-                <Input
-                  id="about_me"
-                  value={formData.about_me}
-                  onChange={(e) => handleChange('about_me', e.target.value)}
-                  placeholder="A short bio"
+                <Label htmlFor="salary">Annual Salary (£)</Label>
+                <Input 
+                  id="salary"
+                  type="number"
+                  step="100"
+                  min="0"
+                  value={salary}
+                  onChange={(e) => setSalary(e.target.value)}
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="favourite_dish">Favourite Dish</Label>
-                  <Input
-                    id="favourite_dish"
-                    value={formData.favourite_dish}
-                    onChange={(e) => handleChange('favourite_dish', e.target.value)}
-                    placeholder="Favourite dish"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="favourite_drink">Favourite Drink</Label>
-                  <Input
-                    id="favourite_drink"
-                    value={formData.favourite_drink}
-                    onChange={(e) => handleChange('favourite_drink', e.target.value)}
-                    placeholder="Favourite drink"
-                  />
-                </div>
-              </div>
-            </TabsContent>
+            )}
             
-            <TabsContent value="availability" className="space-y-4">
-              <Card className="p-4">
-                <AvailabilityScheduler
-                  value={formData.availability}
-                  onChange={(availability) => handleChange('availability', availability)}
+            {employmentType === 'contractor' && (
+              <div className="space-y-2">
+                <Label htmlFor="hourlyRate">Contractor Rate (£)</Label>
+                <Input 
+                  id="hourlyRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
                 />
-              </Card>
-            </TabsContent>
+              </div>
+            )}
             
-            <TabsContent value="hiscore" className="space-y-4">
-              {isEditing && teamMember && (
-                <div className="space-y-4">
-                  <div className="flex space-x-6 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="foh-role"
-                        name="role-type"
-                        checked={formData.role_type === 'foh'}
-                        onChange={() => handleChange('role_type', 'foh')}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                      />
-                      <label htmlFor="foh-role" className="text-sm font-medium">Front of House</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="kitchen-role"
-                        name="role-type"
-                        checked={formData.role_type === 'kitchen'}
-                        onChange={() => handleChange('role_type', 'kitchen')}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                      />
-                      <label htmlFor="kitchen-role" className="text-sm font-medium">Kitchen</label>
-                    </div>
-                  </div>
-                  
-                  <Card className="p-4 bg-white shadow-sm">
-                    <HiScoreSection profileId={teamMember.id} />
-                  </Card>
-                </div>
-              )}
-              {!isEditing && (
-                <div className="flex items-center justify-center h-48 border border-dashed rounded-md">
-                  <p className="text-gray-500">Hi Score evaluations are available after saving the team member.</p>
-                </div>
-              )}
-            </TabsContent>
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox 
+                id="fullTimeStudent" 
+                checked={isFullTimeStudent}
+                onCheckedChange={setIsFullTimeStudent}
+              />
+              <Label htmlFor="fullTimeStudent" className="text-sm">
+                Full-time student (different NI calculation)
+              </Label>
+            </div>
+          </div>
+          
+          <div className="space-y-4 border rounded-md p-4">
+            <h3 className="font-medium">Scheduling Preferences</h3>
             
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Tabs>
+            <div className="space-y-2">
+              <Label htmlFor="maxDaysPerWeek" className="flex justify-between">
+                <span>Maximum Days Per Week</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {maxDaysPerWeek} days
+                </span>
+              </Label>
+              <Slider
+                id="maxDaysPerWeek"
+                min={1}
+                max={7}
+                step={1}
+                value={[maxDaysPerWeek]}
+                onValueChange={(values) => setMaxDaysPerWeek(values[0])}
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox 
+                id="availableForRota" 
+                checked={availableForRota}
+                onCheckedChange={setAvailableForRota}
+              />
+              <Label htmlFor="availableForRota">
+                Available for scheduling
+              </Label>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? 'Save Changes' : 'Add Team Member'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

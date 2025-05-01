@@ -503,6 +503,51 @@ export type Database = {
         }
         Relationships: []
       }
+      job_role_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          job_role_id: string
+          job_title: string
+          location_id: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_role_id: string
+          job_title: string
+          location_id: string
+          priority: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_role_id?: string
+          job_title?: string
+          location_id?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_role_mappings_job_role_id_fkey"
+            columns: ["job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_mappings_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           created_at: string
@@ -980,6 +1025,7 @@ export type Database = {
           in_ft_education: boolean | null
           job_title: string | null
           last_name: string | null
+          max_days_per_week: number | null
           max_hours_per_day: number | null
           max_hours_per_week: number | null
           min_hours_per_day: number | null
@@ -1014,6 +1060,7 @@ export type Database = {
           in_ft_education?: boolean | null
           job_title?: string | null
           last_name?: string | null
+          max_days_per_week?: number | null
           max_hours_per_day?: number | null
           max_hours_per_week?: number | null
           min_hours_per_day?: number | null
@@ -1048,6 +1095,7 @@ export type Database = {
           in_ft_education?: boolean | null
           job_title?: string | null
           last_name?: string | null
+          max_days_per_week?: number | null
           max_hours_per_day?: number | null
           max_hours_per_week?: number | null
           min_hours_per_day?: number | null
@@ -2732,11 +2780,18 @@ export type Database = {
         Returns: unknown
       }
       calculate_employer_costs: {
-        Args: {
-          wage_rate: number
-          hours_worked: number
-          employment_type?: string
-        }
+        Args:
+          | {
+              wage_rate: number
+              hours_worked: number
+              employment_type?: string
+            }
+          | {
+              wage_rate: number
+              hours_worked: number
+              employment_type?: string
+              in_ft_education?: boolean
+            }
         Returns: Json
       }
       check_and_clean_auth_user: {
