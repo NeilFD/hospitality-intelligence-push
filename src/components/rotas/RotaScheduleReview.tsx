@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
   const [jobRoles, setJobRoles] = useState<any[]>([]);
   const [thresholds, setThresholds] = useState<any[]>([]);
   const [shiftRules, setShiftRules] = useState<any[]>([]);
+  const [roleMappings, setRoleMappings] = useState<any[]>([]);
   const [generatedSchedule, setGeneratedSchedule] = useState<any>(null);
   const [error, setError] = useState('');
   const [filterDate, setFilterDate] = useState<string | null>(null);
@@ -64,12 +66,13 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
 
       setRequest(requestData);
 
-      // Fetch staff, job roles, thresholds, and shift rules
+      // Fetch staff, job roles, thresholds, shift rules and role mappings
       await Promise.all([
         fetchStaffMembers(),
         fetchJobRoles(),
         fetchThresholds(),
-        fetchShiftRules()
+        fetchShiftRules(),
+        fetchRoleMappings()
       ]);
 
       // Check if we already have a generated schedule for this request
@@ -189,6 +192,28 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     }
   };
 
+  /**
+   * Fetch role mappings for the location
+   */
+  const fetchRoleMappings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_role_mappings')
+        .select('*')
+        .eq('location_id', location.id)
+        .order('priority', { ascending: true });
+
+      if (error) throw error;
+      console.log('Fetched role mappings:', data?.length);
+      setRoleMappings(data || []);
+    } catch (error) {
+      console.error('Error fetching role mappings:', error);
+      toast.error("Error loading role mappings", {
+        description: "Role mappings will not be used in scheduling."
+      });
+    }
+  };
+
   const prepareShiftForDatabase = (shift: any) => {
     // Create a new object with only the fields that exist in the database
     const validFields = [
@@ -239,7 +264,10 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
       // Set the shift rules to use for scheduling
       scheduler.setShiftRules(shiftRules);
       
-      console.log(`Using ${shiftRules.length} shift rules for scheduling`);
+      // Set the role mappings to use for staff assignment
+      scheduler.setRoleMapping(roleMappings);
+      
+      console.log(`Using ${shiftRules.length} shift rules for scheduling and ${roleMappings.length} role mappings`);
       
       // Generate the schedule
       const schedule = await scheduler.generateSchedule();
