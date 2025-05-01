@@ -39,16 +39,16 @@ export const formatDate = (date: Date | string): string => {
 };
 
 /**
- * Formats a number as currency with $ symbol and 2 decimal places
+ * Formats a number as currency with £ symbol and 2 decimal places
  * @param amount Number to format as currency
  * @returns Formatted currency string
  */
 export const formatCurrency = (amount: number): string => {
-  if (amount === null || amount === undefined) return '$0.00';
+  if (amount === null || amount === undefined) return '£0.00';
   
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'GBP',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(amount);
@@ -62,7 +62,7 @@ export const formatCurrency = (amount: number): string => {
 export const formatPercentage = (value: number): string => {
   if (value === null || value === undefined) return '0%';
   
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GB', {
     style: 'percent',
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
