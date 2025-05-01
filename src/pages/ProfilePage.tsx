@@ -116,6 +116,7 @@ const ProfilePage = () => {
   const profileLoadAttemptedRef = useRef(false);
   const initialRenderRef = useRef(true);
   const activeObjectRef = useRef<fabric.Object | null>(null);
+  const profileFetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { 
     isSubscribed, 
@@ -131,7 +132,7 @@ const ProfilePage = () => {
     return ['GOD', 'Super User', 'Owner', 'Manager'].includes(currentUserProfile.role.toString());
   };
 
-  // Improved authentication check
+  // Early authentication check
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       console.log("User not authenticated in ProfilePage. Redirecting to login.");
@@ -140,7 +141,17 @@ const ProfilePage = () => {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
-  // Enhanced profile loading with better error handling
+  // Fix for infinite loading: Add timeout protection for profile fetching
+  useEffect(() => {
+    // Clear any existing timeout when component unmounts or when dependencies change
+    return () => {
+      if (profileFetchTimeoutRef.current) {
+        clearTimeout(profileFetchTimeoutRef.current);
+      }
+    };
+  }, [userId, currentUserProfile]);
+
+  // Enhanced profile loading with better error handling and timeout
   useEffect(() => {
     const loadProfile = async () => {
       // Skip loading if authentication is still in progress
@@ -152,6 +163,13 @@ const ProfilePage = () => {
       // Ensure user is authenticated
       if (!isAuthenticated) {
         console.log("User not authenticated, skipping profile load");
+        return;
+      }
+      
+      // Fix infinite loading: Use a unique condition to prevent re-fetching unnecessarily
+      if (profileLoadAttemptedRef.current && (userId ? profile?.id === userId : profile?.id === currentUserProfile?.id)) {
+        console.log("Profile already loaded, skipping fetch");
+        setLoading(false);
         return;
       }
       
@@ -168,85 +186,111 @@ const ProfilePage = () => {
       }
       
       try {
+        profileLoadAttemptedRef.current = true;
         console.log("Loading profile data...", userId ? `for ID: ${userId}` : "for current user");
         let profileToLoad;
         
-        // Load specific user's profile by ID
-        if (userId) {
-          console.log(`Fetching profile for userId: ${userId}`);
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
+        // Add timeout protection to prevent infinite loading
+        const fetchPromise = new Promise(async (resolve, reject) => {
+          try {
+            // Load specific user's profile by ID
+            if (userId) {
+              console.log(`Fetching profile for userId: ${userId}`);
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+                
+              if (error) {
+                console.error("Supabase error fetching profile:", error);
+                reject(error);
+                return;
+              }
+              
+              if (!data) {
+                console.error("No profile found with ID:", userId);
+                reject(new Error(`Profile not found with ID: ${userId}`));
+                return;
+              }
+              
+              profileToLoad = data;
+              console.log("Successfully fetched profile by ID:", profileToLoad);
+            } else {
+              // Load current user's profile
+              if (!currentUserProfile) {
+                console.log("Current user profile not available yet");
+                reject(new Error("Current user profile not available"));
+                return;
+              }
+              profileToLoad = currentUserProfile as ExtendedUserProfile;
+              console.log("Using current user profile:", profileToLoad);
+            }
             
-          if (error) {
-            console.error("Supabase error fetching profile:", error);
-            throw error;
+            if (!profileToLoad) {
+              console.error("No profile data available to load");
+              reject(new Error("Failed to load profile data"));
+              return;
+            }
+            
+            resolve(profileToLoad);
+          } catch (error) {
+            reject(error);
           }
-          
-          if (!data) {
-            console.error("No profile found with ID:", userId);
-            setError(`Profile not found`);
-            setLoading(false);
-            return;
-          }
-          
-          profileToLoad = data;
-          console.log("Successfully fetched profile by ID:", profileToLoad);
-        } else {
-          // Load current user's profile
-          if (!currentUserProfile) {
-            console.log("Current user profile not available yet");
-            return;
-          }
-          profileToLoad = currentUserProfile as ExtendedUserProfile;
-          console.log("Using current user profile:", profileToLoad);
+        });
+        
+        // Set a timeout to handle cases where the fetch might hang
+        const timeoutPromise = new Promise((_, reject) => {
+          profileFetchTimeoutRef.current = setTimeout(() => {
+            reject(new Error("Profile fetch timed out after 10 seconds"));
+          }, 10000);
+        });
+        
+        // Race between fetch and timeout
+        const result = await Promise.race([fetchPromise, timeoutPromise]) as ExtendedUserProfile;
+        
+        // Clear timeout since we got a result
+        if (profileFetchTimeoutRef.current) {
+          clearTimeout(profileFetchTimeoutRef.current);
+          profileFetchTimeoutRef.current = null;
         }
         
-        if (!profileToLoad) {
-          console.error("No profile data available to load");
-          setError("Failed to load profile data");
-          setLoading(false);
-          return;
+        if (result?.banner_position_y !== undefined && result?.banner_position_y !== null) {
+          setYPosition(result.banner_position_y);
         }
         
-        if (profileToLoad?.banner_position_y !== undefined && profileToLoad?.banner_position_y !== null) {
-          setYPosition(profileToLoad.banner_position_y);
-        }
+        setProfile(result);
         
-        setProfile(profileToLoad);
-        
-        if (profileToLoad) {
+        if (result) {
           setEditForm({
-            firstName: profileToLoad.first_name || '',
-            lastName: profileToLoad.last_name || '',
-            jobTitle: profileToLoad.job_title || '',
-            secondaryJobRoles: profileToLoad.secondary_job_roles || [],
-            favouriteDish: profileToLoad.favourite_dish || '',
-            favouriteDrink: profileToLoad.favourite_drink || '',
-            aboutMe: profileToLoad.about_me || '',
-            birthDate: profileToLoad.birth_date || '',
-            employmentType: profileToLoad.employment_type || 'hourly',
-            minHoursPerDay: profileToLoad.min_hours_per_day || 0,
-            maxHoursPerDay: profileToLoad.max_hours_per_day || 8,
-            minHoursPerWeek: profileToLoad.min_hours_per_week || 0,
-            maxHoursPerWeek: profileToLoad.max_hours_per_week || 40,
-            wageRate: profileToLoad.wage_rate || 0,
-            annualSalary: profileToLoad.annual_salary || 0,
-            contractorRate: profileToLoad.contractor_rate || 0,
-            availableForRota: profileToLoad.available_for_rota !== undefined ? profileToLoad.available_for_rota : true,
-            employmentStartDate: profileToLoad.employment_start_date || '',
-            employmentStatus: profileToLoad.employment_status || 'full-time',
-            inFtEducation: profileToLoad.in_ft_education === true
+            firstName: result.first_name || '',
+            lastName: result.last_name || '',
+            jobTitle: result.job_title || '',
+            secondaryJobRoles: result.secondary_job_roles || [],
+            favouriteDish: result.favourite_dish || '',
+            favouriteDrink: result.favourite_drink || '',
+            aboutMe: result.about_me || '',
+            birthDate: result.birth_date || '',
+            employmentType: result.employment_type || 'hourly',
+            minHoursPerDay: result.min_hours_per_day || 0,
+            maxHoursPerDay: result.max_hours_per_day || 8,
+            minHoursPerWeek: result.min_hours_per_week || 0,
+            maxHoursPerWeek: result.max_hours_per_week || 40,
+            wageRate: result.wage_rate || 0,
+            annualSalary: result.annual_salary || 0,
+            contractorRate: result.contractor_rate || 0,
+            availableForRota: result.available_for_rota !== undefined ? result.available_for_rota : true,
+            employmentStartDate: result.employment_start_date || '',
+            employmentStatus: result.employment_status || 'full-time',
+            inFtEducation: result.in_ft_education === true
           });
         }
         
         setError(null);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading profile:', error);
-        setError('Failed to load profile');
-        toast.error('Failed to load profile');
+        setError(`Failed to load profile: ${error.message || 'Unknown error'}`);
+        toast.error(`Failed to load profile: ${error.message || 'Unknown error'}`);
       } finally {
         if (isMountedRef.current) {
           setLoading(false);
@@ -259,8 +303,9 @@ const ProfilePage = () => {
     return () => {
       isMountedRef.current = false;
     };
-  }, [userId, currentUserProfile, isAuthenticated, authLoading, navigate]);
+  }, [userId, currentUserProfile, isAuthenticated, authLoading, navigate, profile]);
 
+  // Break circular dependencies - avoid updating state based on derived state
   useEffect(() => {
     if (
       !userId && 
