@@ -84,6 +84,33 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
       if (scheduleError) throw scheduleError;
 
       if (scheduleData) {
+        // Calculate and update the correct total cost if needed
+        const shifts = scheduleData.rota_schedule_shifts || [];
+        const calculatedTotalCost = shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
+        
+        // If there's a discrepancy between the stored total_cost and calculated value, update it
+        if (Math.abs((scheduleData.total_cost || 0) - calculatedTotalCost) > 0.01) {
+          console.log(`Updating total cost from ${scheduleData.total_cost} to ${calculatedTotalCost}`);
+          
+          // Update in the database
+          const { error: updateError } = await supabase
+            .from('rota_schedules')
+            .update({ 
+              total_cost: calculatedTotalCost,
+              cost_percentage: scheduleData.revenue_forecast ? (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0
+            })
+            .eq('id', scheduleData.id);
+            
+          if (updateError) {
+            console.error('Error updating schedule total cost:', updateError);
+          } else {
+            // Update in the local state too
+            scheduleData.total_cost = calculatedTotalCost;
+            scheduleData.cost_percentage = scheduleData.revenue_forecast ? 
+              (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0;
+          }
+        }
+        
         setGeneratedSchedule(scheduleData);
       }
 
@@ -224,6 +251,16 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
         return;
       }
 
+      // Calculate the actual total cost for accuracy
+      const calculatedTotalCost = schedule.shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
+      
+      // Ensure we use the accurately calculated cost
+      schedule.total_cost = calculatedTotalCost;
+      schedule.cost_percentage = schedule.revenue_forecast ? 
+        (calculatedTotalCost / schedule.revenue_forecast * 100) : 0;
+      
+      console.log(`Using calculated total cost: £${calculatedTotalCost.toFixed(2)} (${schedule.cost_percentage.toFixed(1)}%)`);
+
       // Create the schedule record in the database
       const { data: scheduleData, error: scheduleError } = await supabase
         .from('rota_schedules')
@@ -233,7 +270,7 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
           week_start_date: request.week_start_date,
           week_end_date: request.week_end_date,
           status: 'draft',
-          total_cost: schedule.total_cost,
+          total_cost: calculatedTotalCost, // Use the accurately calculated total cost
           revenue_forecast: schedule.revenue_forecast,
           cost_percentage: schedule.cost_percentage,
           created_by: (await supabase.auth.getUser()).data.user?.id
@@ -290,6 +327,34 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
       }
 
       console.log(`Retrieved schedule with ${completeSchedule.rota_schedule_shifts?.length || 0} shifts`);
+      
+      // Verify total cost again after fetching
+      const fetchedShifts = completeSchedule.rota_schedule_shifts || [];
+      const verifiedTotalCost = fetchedShifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
+      
+      // If there's still a discrepancy, update the total cost
+      if (Math.abs((completeSchedule.total_cost || 0) - verifiedTotalCost) > 0.01) {
+        console.log(`Fixing final total cost from ${completeSchedule.total_cost} to ${verifiedTotalCost}`);
+        
+        // Update in the database
+        const { error: updateError } = await supabase
+          .from('rota_schedules')
+          .update({ 
+            total_cost: verifiedTotalCost,
+            cost_percentage: completeSchedule.revenue_forecast ? (verifiedTotalCost / completeSchedule.revenue_forecast * 100) : 0
+          })
+          .eq('id', completeSchedule.id);
+          
+        if (updateError) {
+          console.error('Error updating final schedule total cost:', updateError);
+        } else {
+          // Update in the local state too
+          completeSchedule.total_cost = verifiedTotalCost;
+          completeSchedule.cost_percentage = completeSchedule.revenue_forecast ? 
+            (verifiedTotalCost / completeSchedule.revenue_forecast * 100) : 0;
+        }
+      }
+      
       setGeneratedSchedule(completeSchedule);
       
       if (completeSchedule.rota_schedule_shifts?.length > 0) {
@@ -539,7 +604,7 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
               <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50">
                 <div>
                   <p className="text-sm font-medium">Total Cost</p>
-                  <p className="text-2xl font-bold">£{generatedSchedule.total_cost?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">£{(generatedSchedule.total_cost || 0).toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Revenue Forecast</p>
@@ -548,9 +613,9 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
                 <div>
                   <p className="text-sm font-medium">Cost %</p>
                   <p className={`text-2xl font-bold ${
-                    (generatedSchedule.cost_percentage > 30) ? 'text-destructive' : 'text-green-600'
+                    ((generatedSchedule.cost_percentage || 0) > 30) ? 'text-destructive' : 'text-green-600'
                   }`}>
-                    {generatedSchedule.cost_percentage?.toFixed(1)}%
+                    {(generatedSchedule.cost_percentage || 0).toFixed(1)}%
                   </p>
                 </div>
               </div>
