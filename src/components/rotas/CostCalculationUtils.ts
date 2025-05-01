@@ -7,6 +7,7 @@ export interface CostCalculationInput {
   hours: number;
   employmentType: 'hourly' | 'salaried' | 'contractor';
   isFullTimeStudent?: boolean;
+  annualSalary?: number;
 }
 
 // Interface for cost calculation results
@@ -52,29 +53,42 @@ export const calculateEmployerCosts = async (input: CostCalculationInput): Promi
  * Fallback calculation if the RPC fails
  */
 const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationResult => {
-  const { hourlyRate, hours, employmentType, isFullTimeStudent } = input;
+  const { hourlyRate, hours, employmentType, isFullTimeStudent, annualSalary } = input;
   
   // Constants for UK employment costs
   const WEEKLY_NI_THRESHOLD = 175; // National Insurance weekly threshold
   const NI_RATE = 0.138; // Employer NI rate (13.8%)
   const PENSION_RATE = 0.03; // Minimum employer pension contribution (3%)
+  const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
   
-  // Calculate basic pay
-  const basicPay = hourlyRate * hours;
-  
-  // Initialize additional costs
+  // Initialize costs
+  let basicPay = 0;
   let niCost = 0;
   let pensionCost = 0;
   
-  // Calculate NI and pension only for employees (not contractors)
-  // and different calculation if in full time education
+  // Calculate basic pay based on employment type
+  if (employmentType === 'salaried' && annualSalary) {
+    // For salaried staff: Annual salary / working days per year
+    basicPay = annualSalary / WORKING_DAYS_PER_YEAR;
+  } else if (employmentType === 'contractor') {
+    // For contractors: Simple hourly rate * hours
+    basicPay = hourlyRate * hours;
+    // No NI or pension for contractors
+  } else {
+    // For hourly staff: Hourly rate * hours
+    basicPay = hourlyRate * hours;
+  }
+  
+  // Calculate NI and pension only if applicable:
+  // - Not for contractors
+  // - Not for full-time students
   if (employmentType !== 'contractor' && !isFullTimeStudent) {
     // Calculate NI if pay exceeds threshold
     if (basicPay > WEEKLY_NI_THRESHOLD) {
       niCost = (basicPay - WEEKLY_NI_THRESHOLD) * NI_RATE;
     }
     
-    // Calculate pension contribution
+    // Calculate pension contribution (only for eligible employees)
     pensionCost = basicPay * PENSION_RATE;
   }
   
@@ -133,14 +147,16 @@ export const getJobRoleIdForJobTitle = async (
 };
 
 /**
- * Calculate hourly cost for a salaried employee
+ * Calculate daily cost for a salaried employee
+ * Using 261 working days per year (365 days - 2 days off per week)
  */
 export const calculateHourlyRateFromSalary = (
   annualSalary: number,
-  hoursPerWeek: number = 40
+  hoursPerDay: number = 8
 ): number => {
-  const WEEKS_PER_YEAR = 52;
-  return annualSalary / (hoursPerWeek * WEEKS_PER_YEAR);
+  const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
+  const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
+  return dailyRate / hoursPerDay;
 };
 
 /**

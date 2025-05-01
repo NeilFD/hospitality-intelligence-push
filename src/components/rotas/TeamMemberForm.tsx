@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function TeamMemberForm({ 
   isOpen, 
@@ -33,6 +34,7 @@ export default function TeamMemberForm({
   const [employmentType, setEmploymentType] = useState('hourly');
   const [availableForRota, setAvailableForRota] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   
   // Reset form when opened with different team member
   useEffect(() => {
@@ -42,8 +44,8 @@ export default function TeamMemberForm({
       setEmail(teamMember.email || '');
       setJobTitle(teamMember.job_title || '');
       setRole(teamMember.role || 'Team Member');
-      setHourlyRate(teamMember.hourly_rate?.toString() || '10.50');
-      setSalary(teamMember.salary?.toString() || '0');
+      setHourlyRate(teamMember.wage_rate?.toString() || '10.50');
+      setSalary(teamMember.annual_salary?.toString() || '0');
       setIsFullTimeStudent(teamMember.is_full_time_student || false);
       setMaxDaysPerWeek(teamMember.max_days_per_week || 5);
       setEmploymentType(teamMember.employment_type || 'hourly');
@@ -65,6 +67,7 @@ export default function TeamMemberForm({
     setMaxDaysPerWeek(5);
     setEmploymentType('hourly');
     setAvailableForRota(true);
+    setValidationErrors([]);
   };
   
   // Handler functions for checkbox state changes
@@ -76,8 +79,40 @@ export default function TeamMemberForm({
     setAvailableForRota(checked === true);
   };
   
+  const validateForm = () => {
+    const errors = [];
+    
+    if (!firstName.trim()) {
+      errors.push('First name is required');
+    }
+    
+    if (!lastName.trim()) {
+      errors.push('Last name is required');
+    }
+    
+    if (employmentType === 'hourly' && (!hourlyRate || parseFloat(hourlyRate) <= 0)) {
+      errors.push('Please set a valid hourly rate for this team member');
+    }
+    
+    if (employmentType === 'salaried' && (!salary || parseFloat(salary) <= 0)) {
+      errors.push('Please set a valid annual salary for this team member');
+    }
+    
+    if (employmentType === 'contractor' && (!hourlyRate || parseFloat(hourlyRate) <= 0)) {
+      errors.push('Please set a valid contractor rate for this team member');
+    }
+    
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -87,8 +122,8 @@ export default function TeamMemberForm({
         email: email.trim(),
         job_title: jobTitle.trim(),
         role,
-        hourly_rate: parseFloat(hourlyRate) || 0,
-        salary: parseFloat(salary) || 0,
+        wage_rate: employmentType !== 'salaried' ? parseFloat(hourlyRate) || 0 : 0,
+        annual_salary: employmentType === 'salaried' ? parseFloat(salary) || 0 : 0,
         is_full_time_student: isFullTimeStudent,
         max_days_per_week: maxDaysPerWeek,
         employment_type: employmentType,
@@ -142,6 +177,19 @@ export default function TeamMemberForm({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {validationErrors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc pl-4 mt-2">
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -239,7 +287,11 @@ export default function TeamMemberForm({
                   min="0"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
+                  className={parseFloat(hourlyRate) <= 0 ? "border-red-400" : ""}
                 />
+                {parseFloat(hourlyRate) <= 0 && (
+                  <p className="text-xs text-red-500">This field is required for hourly staff</p>
+                )}
               </div>
             )}
             
@@ -253,7 +305,11 @@ export default function TeamMemberForm({
                   min="0"
                   value={salary}
                   onChange={(e) => setSalary(e.target.value)}
+                  className={parseFloat(salary) <= 0 ? "border-red-400" : ""}
                 />
+                {parseFloat(salary) <= 0 && (
+                  <p className="text-xs text-red-500">This field is required for salaried staff</p>
+                )}
               </div>
             )}
             
@@ -267,7 +323,11 @@ export default function TeamMemberForm({
                   min="0"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
+                  className={parseFloat(hourlyRate) <= 0 ? "border-red-400" : ""}
                 />
+                {parseFloat(hourlyRate) <= 0 && (
+                  <p className="text-xs text-red-500">This field is required for contractors</p>
+                )}
               </div>
             )}
             
@@ -278,7 +338,7 @@ export default function TeamMemberForm({
                 onCheckedChange={handleFullTimeStudentChange}
               />
               <Label htmlFor="fullTimeStudent" className="text-sm">
-                Full-time student (different NI calculation)
+                Full-time student (exempt from NI and pension calculations)
               </Label>
             </div>
           </div>

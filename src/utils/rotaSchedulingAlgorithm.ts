@@ -18,6 +18,12 @@ export class RotaSchedulingAlgorithm {
   shiftRules: any[] = [];
   troughPeriods: any[] = [];
   roleMapping: any[] = [];
+  
+  // Track daily allocations of staff to enable multiple shifts per day
+  dailyStaffAllocations: Record<string, Record<string, {
+    hoursWorked: number;
+    shifts: any[];
+  }>> = {};
 
   constructor({ request, staff, jobRoles, thresholds, location }: {
     request: any;
@@ -32,6 +38,7 @@ export class RotaSchedulingAlgorithm {
     this.thresholds = thresholds || []; // Ensure thresholds is at least an empty array
     this.location = location;
     this.roleMapping = []; // Initialize roleMapping as an empty array
+    this.dailyStaffAllocations = {}; // Initialize daily allocations tracking
   }
 
   /**
@@ -83,17 +90,21 @@ export class RotaSchedulingAlgorithm {
 
     // Log staff details for debugging
     this.staff.forEach(staff => {
-      console.log(`Staff: ${staff.first_name} ${staff.last_name}, Role: ${staff.job_title}, Wage: ${staff.wage_rate || 'Not set'}, Available: ${staff.available_for_rota !== false}`);
+      console.log(`Staff: ${staff.first_name} ${staff.last_name}, Role: ${staff.job_title}, Employment Type: ${staff.employment_type || 'Not set'}, Wage: ${staff.wage_rate || 'Not set'}, Salary: ${staff.annual_salary || 'Not set'}, Available: ${staff.available_for_rota !== false}`);
     });
     
-    // Filter available staff and initialize with default wage rate if missing
+    // Filter available staff - DO NOT set default wage rates
     const availableStaff = this.staff.filter(member => member.available_for_rota !== false)
       .map(staff => {
-        // Ensure wage_rate is set to a default if not defined
-        if (!staff.wage_rate && staff.wage_rate !== 0) {
-          const jobRole = this.jobRoles.find(role => role.title === staff.job_title);
-          staff.wage_rate = jobRole?.default_wage_rate || 10.50; // UK minimum wage fallback
-          console.log(`Set default wage rate ${staff.wage_rate} for ${staff.first_name} ${staff.last_name}`);
+        // Check for missing wage information
+        if (staff.employment_type === 'hourly' && !staff.wage_rate && staff.wage_rate !== 0) {
+          console.warn(`Warning: Hourly staff member ${staff.first_name} ${staff.last_name} has no wage rate set`);
+        }
+        else if (staff.employment_type === 'salaried' && !staff.annual_salary && staff.annual_salary !== 0) {
+          console.warn(`Warning: Salaried staff member ${staff.first_name} ${staff.last_name} has no annual salary set`);
+        }
+        else if (staff.employment_type === 'contractor' && !staff.wage_rate && staff.wage_rate !== 0) {
+          console.warn(`Warning: Contractor ${staff.first_name} ${staff.last_name} has no hourly rate set`);
         }
         return staff;
       });
@@ -108,8 +119,30 @@ export class RotaSchedulingAlgorithm {
       };
     }
     
-    // Sort staff by hi score (descending)
-    const rankedStaff = [...availableStaff].sort((a, b) => (b.hi_score || 0) - (a.hi_score || 0));
+    // Sort staff by employment type and hi score - prioritize salaried staff first
+    const rankedStaff = [...availableStaff].sort((a, b) => {
+      // First prioritize by employment type (salaried first)
+      if (a.employment_type === 'salaried' && b.employment_type !== 'salaried') {
+        return -1; // a comes first
+      }
+      if (a.employment_type !== 'salaried' && b.employment_type === 'salaried') {
+        return 1; // b comes first
+      }
+      
+      // Then prioritize management roles for multiple shifts
+      const aIsManager = this.isManagerRole(a.job_title);
+      const bIsManager = this.isManagerRole(b.job_title);
+      
+      if (aIsManager && !bIsManager) {
+        return -1; // a comes first
+      }
+      if (!aIsManager && bIsManager) {
+        return 1; // b comes first
+      }
+      
+      // Then sort by hi score
+      return (b.hi_score || 0) - (a.hi_score || 0);
+    });
     
     // Track staff allocations for the week to ensure we don't exceed constraints
     const staffWeeklyAllocations: Record<string, {
@@ -125,6 +158,17 @@ export class RotaSchedulingAlgorithm {
         daysWorked: [],
         shifts: []
       };
+    });
+    
+    // Initialize daily staff allocations for tracking multiple shifts per day
+    dates.forEach(date => {
+      this.dailyStaffAllocations[date] = {};
+      rankedStaff.forEach(staff => {
+        this.dailyStaffAllocations[date][staff.id] = {
+          hoursWorked: 0,
+          shifts: []
+        };
+      });
     });
     
     const shifts: any[] = [];
@@ -325,8 +369,8 @@ export class RotaSchedulingAlgorithm {
           
           // Check if adding a shift would exceed constraints
           const maxHoursPerWeek = staff.max_hours_per_week || 40;
-          return (allocation.hoursWorked < maxHoursPerWeek) && 
-                 (!allocation.daysWorked.includes(date));
+          return (allocation.hoursWorked < maxHoursPerWeek); 
+          // Note: Removed restriction preventing multiple shifts on the same day
         });
         
         if (availableStaffForDay.length === 0) {
@@ -361,6 +405,19 @@ export class RotaSchedulingAlgorithm {
       cost_percentage: costPercentage
     };
   };
+
+  /**
+   * Check if a job title is a management role
+   */
+  isManagerRole(jobTitle: string): boolean {
+    if (!jobTitle) return false;
+    
+    const title = jobTitle.toLowerCase();
+    return title.includes('manager') || 
+           title.includes('supervisor') || 
+           title.includes('head chef') ||
+           title.includes('chef manager');
+  }
 
   /**
    * Create an emergency shift for a date with no assignments
@@ -1036,6 +1093,7 @@ export class RotaSchedulingAlgorithm {
   
   /**
    * Update staff allocations after assigning a shift
+   * Allows multiple shifts per day as long as maximum hours aren't exceeded
    */
   updateStaffAllocations(
     staffId: string,
@@ -1044,7 +1102,7 @@ export class RotaSchedulingAlgorithm {
     shift: any,
     staffWeeklyAllocations: Record<string, any>
   ) {
-    // Initialize if not already done
+    // Initialize weekly allocations if not already done
     if (!staffWeeklyAllocations[staffId]) {
       staffWeeklyAllocations[staffId] = {
         hoursWorked: 0,
@@ -1053,7 +1111,7 @@ export class RotaSchedulingAlgorithm {
       };
     }
     
-    // Update hours worked
+    // Update hours worked for the week
     staffWeeklyAllocations[staffId].hoursWorked += hours;
     
     // Add day to days worked if not already present
@@ -1061,12 +1119,31 @@ export class RotaSchedulingAlgorithm {
       staffWeeklyAllocations[staffId].daysWorked.push(date);
     }
     
-    // Add shift to shifts
+    // Add shift to weekly shifts
     staffWeeklyAllocations[staffId].shifts.push(shift);
+    
+    // Update daily allocations - initialize if needed
+    if (!this.dailyStaffAllocations[date]) {
+      this.dailyStaffAllocations[date] = {};
+    }
+    
+    if (!this.dailyStaffAllocations[date][staffId]) {
+      this.dailyStaffAllocations[date][staffId] = {
+        hoursWorked: 0,
+        shifts: []
+      };
+    }
+    
+    // Update daily hours and shifts
+    this.dailyStaffAllocations[date][staffId].hoursWorked += hours;
+    this.dailyStaffAllocations[date][staffId].shifts.push(shift);
+    
+    console.log(`Staff ${staffId} now has ${this.dailyStaffAllocations[date][staffId].shifts.length} shifts on ${date} (${this.dailyStaffAllocations[date][staffId].hoursWorked} hours)`);
   }
   
   /**
-   * Find the best staff member for a shift
+   * Find the best staff member for a shift, allowing multiple shifts per day
+   * Prioritizes salaried staff and management roles
    */
   findBestStaffForShift(
     eligibleStaff: any[],
@@ -1074,30 +1151,46 @@ export class RotaSchedulingAlgorithm {
     hours: number,
     staffWeeklyAllocations: Record<string, any>
   ) {
-    // Filter staff who are available on this day and haven't exceeded weekly hours
+    // Filter staff who are available for this shift
     const availableStaff = eligibleStaff.filter(staff => {
       // Skip if staff doesn't exist or not available
       if (!staff || staff.available_for_rota === false) return false;
       
       // Get current allocations
-      const allocation = staffWeeklyAllocations[staff.id];
-      if (!allocation) return true; // No allocations yet, so available
-      
-      // Check if already working on this day
-      if (allocation.daysWorked.includes(date)) {
-        return false; // Already assigned to this day
-      }
+      const weeklyAllocation = staffWeeklyAllocations[staff.id];
+      if (!weeklyAllocation) return true; // No allocations yet, so available
       
       // Check if adding this shift would exceed weekly hours
       const maxHoursPerWeek = staff.max_hours_per_week || 40;
-      if (allocation.hoursWorked + hours > maxHoursPerWeek) {
+      if (weeklyAllocation.hoursWorked + hours > maxHoursPerWeek) {
         return false; // Would exceed max weekly hours
       }
       
       // Check if this would exceed max consecutive days
       const maxDaysPerWeek = staff.max_days_per_week || 5;
-      if (allocation.daysWorked.length >= maxDaysPerWeek) {
+      if (weeklyAllocation.daysWorked.length >= maxDaysPerWeek && 
+          !weeklyAllocation.daysWorked.includes(date)) {
         return false; // Would exceed max days per week
+      }
+      
+      // Check if daily allocation would exceed max hours per day
+      const dailyAllocation = this.dailyStaffAllocations[date]?.[staff.id];
+      if (dailyAllocation) {
+        const maxHoursPerDay = staff.max_hours_per_day || 12;
+        if (dailyAllocation.hoursWorked + hours > maxHoursPerDay) {
+          return false; // Would exceed max hours per day
+        }
+      }
+      
+      // Check if this is a manager role - prioritize for multiple shifts
+      const isManager = this.isManagerRole(staff.job_title);
+      
+      // If not a manager, only allow one shift per day unless there's a specific override
+      if (!isManager && dailyAllocation && dailyAllocation.shifts.length > 0) {
+        // Special case: We're allowing all staff to have multiple shifts
+        // but we'll prioritize managers in the sorting below
+        // If you want to restrict non-managers to one shift, uncomment:
+        // return false;
       }
       
       return true;
@@ -1108,8 +1201,33 @@ export class RotaSchedulingAlgorithm {
       return null;
     }
     
-    // Return the staff with highest hi_score
-    return availableStaff[0];
+    // Sort available staff (prioritizing salaried staff and managers)
+    const sortedStaff = [...availableStaff].sort((a, b) => {
+      // Prioritize salaried staff first
+      if (a.employment_type === 'salaried' && b.employment_type !== 'salaried') {
+        return -1;
+      }
+      if (a.employment_type !== 'salaried' && b.employment_type === 'salaried') {
+        return 1;
+      }
+      
+      // Then prioritize managers
+      const aIsManager = this.isManagerRole(a.job_title);
+      const bIsManager = this.isManagerRole(b.job_title);
+      
+      if (aIsManager && !bIsManager) {
+        return -1;
+      }
+      if (!aIsManager && bIsManager) {
+        return 1;
+      }
+      
+      // Then sort by hi_score
+      return (b.hi_score || 0) - (a.hi_score || 0);
+    });
+    
+    // Return the best match
+    return sortedStaff[0];
   }
 
   /**
@@ -1282,37 +1400,60 @@ export class RotaSchedulingAlgorithm {
   }
 
   /**
-   * Calculate costs for a shift
+   * Calculate costs for a shift based on employment type
    */
   calculateCosts(staffMember: any, hours: number) {
-    // Get wage rate (default to minimum wage if not set)
-    const wageRate = staffMember.wage_rate || 10.50;
+    const employmentType = staffMember.employment_type || 'hourly';
+    const isFullTimeStudent = staffMember.is_full_time_student || false;
     
-    // Calculate base shift cost
-    const shiftCost = wageRate * hours;
-    
-    // Calculate employer NI contribution (13.8% above threshold)
-    // Simplified calculation - in reality would depend on total earnings
-    const niRate = 0.138; // 13.8% 
-    const niThreshold = 169; // Weekly threshold
-    const weeklyHoursEstimate = 40; // Estimate full time hours
-    const weeklyRateEstimate = wageRate * weeklyHoursEstimate;
-    
+    // Initialize costs
+    let shiftCost = 0;
     let niCost = 0;
-    if (weeklyRateEstimate > niThreshold) {
-      const niableAmount = weeklyRateEstimate - niThreshold;
-      const niableRatio = niableAmount / weeklyRateEstimate;
-      niCost = shiftCost * niableRatio * niRate;
-    }
-    
-    // Calculate employer pension contribution (3% standard)
-    const pensionRate = 0.03; // 3%
     let pensionCost = 0;
     
-    // Only calculate pension for employees eligible for auto-enrollment
-    // Simplified - would depend on age and earnings in reality
-    if (wageRate * hours > 10) { // If shift pays more than £10
-      pensionCost = shiftCost * pensionRate;
+    // Constants for UK employment costs
+    const NI_RATE = 0.138; // Employer NI rate (13.8%)
+    const PENSION_RATE = 0.03; // Minimum employer pension contribution (3%)
+    const WEEKLY_NI_THRESHOLD = 175; // National Insurance weekly threshold
+    const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
+    
+    // Calculate costs based on employment type
+    if (employmentType === 'salaried') {
+      // For salaried staff: Annual salary / working days per year
+      const annualSalary = staffMember.annual_salary || 0;
+      const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
+      shiftCost = dailyRate;
+      
+      // Only calculate NI and pension if not a student
+      if (!isFullTimeStudent) {
+        // Calculate NI for salaried staff
+        if (dailyRate > WEEKLY_NI_THRESHOLD) {
+          niCost = (dailyRate - WEEKLY_NI_THRESHOLD) * NI_RATE;
+        }
+        
+        // Calculate pension
+        pensionCost = dailyRate * PENSION_RATE;
+      }
+    } else if (employmentType === 'contractor') {
+      // For contractors: Simple hourly rate * hours, no NI or pension
+      const wageRate = staffMember.wage_rate || 0;
+      shiftCost = wageRate * hours;
+      // No NI or pension for contractors
+    } else {
+      // For hourly staff: Wage rate * hours
+      const wageRate = staffMember.wage_rate || 0;
+      shiftCost = wageRate * hours;
+      
+      // Only calculate NI and pension if not a student
+      if (!isFullTimeStudent) {
+        // Calculate NI if pay exceeds threshold (simplified)
+        if (shiftCost > WEEKLY_NI_THRESHOLD) {
+          niCost = (shiftCost - WEEKLY_NI_THRESHOLD) * NI_RATE;
+        }
+        
+        // Calculate pension
+        pensionCost = shiftCost * PENSION_RATE;
+      }
     }
     
     // Calculate total cost
