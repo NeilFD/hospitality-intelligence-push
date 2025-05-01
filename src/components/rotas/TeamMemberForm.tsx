@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, InfoIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { calculateHourlyRateFromSalary } from './CostCalculationUtils';
 
 export default function TeamMemberForm({ 
   isOpen, 
@@ -35,6 +37,7 @@ export default function TeamMemberForm({
   const [availableForRota, setAvailableForRota] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [estimatedHourlyRate, setEstimatedHourlyRate] = useState<number | null>(null);
   
   // Reset form when opened with different team member
   useEffect(() => {
@@ -50,10 +53,26 @@ export default function TeamMemberForm({
       setMaxDaysPerWeek(teamMember.max_days_per_week || 5);
       setEmploymentType(teamMember.employment_type || 'hourly');
       setAvailableForRota(teamMember.available_for_rota !== false);
+      
+      // Calculate estimated hourly rate for salaried staff
+      if (teamMember.employment_type === 'salaried' && teamMember.annual_salary) {
+        const hourlyEstimate = calculateHourlyRateFromSalary(teamMember.annual_salary);
+        setEstimatedHourlyRate(hourlyEstimate);
+      }
     } else {
       resetForm();
     }
   }, [teamMember, isOpen]);
+
+  // Update estimated hourly rate when salary changes
+  useEffect(() => {
+    if (employmentType === 'salaried' && parseFloat(salary) > 0) {
+      const hourlyEstimate = calculateHourlyRateFromSalary(parseFloat(salary));
+      setEstimatedHourlyRate(hourlyEstimate);
+    } else {
+      setEstimatedHourlyRate(null);
+    }
+  }, [salary, employmentType]);
 
   const resetForm = () => {
     setFirstName('');
@@ -68,6 +87,7 @@ export default function TeamMemberForm({
     setEmploymentType('hourly');
     setAvailableForRota(true);
     setValidationErrors([]);
+    setEstimatedHourlyRate(null);
   };
   
   // Handler functions for checkbox state changes
@@ -77,6 +97,21 @@ export default function TeamMemberForm({
   
   const handleAvailableForRotaChange = (checked) => {
     setAvailableForRota(checked === true);
+  };
+
+  const handleEmploymentTypeChange = (value) => {
+    setEmploymentType(value);
+    
+    // Reset validation errors when employment type changes
+    setValidationErrors([]);
+    
+    // Calculate estimated hourly rate for salaried staff
+    if (value === 'salaried' && parseFloat(salary) > 0) {
+      const hourlyEstimate = calculateHourlyRateFromSalary(parseFloat(salary));
+      setEstimatedHourlyRate(hourlyEstimate);
+    } else {
+      setEstimatedHourlyRate(null);
+    }
   };
   
   const validateForm = () => {
@@ -129,6 +164,8 @@ export default function TeamMemberForm({
         employment_type: employmentType,
         available_for_rota: availableForRota,
       };
+
+      console.log('Saving team member with data:', memberData);
       
       if (isEditing && teamMember) {
         // Update existing team member
@@ -253,13 +290,28 @@ export default function TeamMemberForm({
           </div>
           
           <div className="border rounded-md p-4 space-y-4">
-            <h3 className="font-medium">Pay & Employment Details</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Pay & Employment Details</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center text-muted-foreground text-sm">
+                      <InfoIcon className="h-4 w-4 mr-1" />
+                      <span>Important for cost calculations</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">These details are crucial for accurate rota cost calculations. Ensure all values are set correctly.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             
             <div className="space-y-2">
               <Label htmlFor="employmentType">Employment Type</Label>
               <RadioGroup 
                 value={employmentType} 
-                onValueChange={setEmploymentType}
+                onValueChange={handleEmploymentTypeChange}
                 className="flex flex-col space-y-1"
               >
                 <div className="flex items-center space-x-2">
@@ -296,21 +348,28 @@ export default function TeamMemberForm({
             )}
             
             {employmentType === 'salaried' && (
-              <div className="space-y-2">
-                <Label htmlFor="salary">Annual Salary (£)</Label>
-                <Input 
-                  id="salary"
-                  type="number"
-                  step="100"
-                  min="0"
-                  value={salary}
-                  onChange={(e) => setSalary(e.target.value)}
-                  className={parseFloat(salary) <= 0 ? "border-red-400" : ""}
-                />
-                {parseFloat(salary) <= 0 && (
-                  <p className="text-xs text-red-500">This field is required for salaried staff</p>
-                )}
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="salary">Annual Salary (£)</Label>
+                  <Input 
+                    id="salary"
+                    type="number"
+                    step="100"
+                    min="0"
+                    value={salary}
+                    onChange={(e) => setSalary(e.target.value)}
+                    className={parseFloat(salary) <= 0 ? "border-red-400" : ""}
+                  />
+                  {parseFloat(salary) <= 0 && (
+                    <p className="text-xs text-red-500">This field is required for salaried staff</p>
+                  )}
+                  {estimatedHourlyRate !== null && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Estimated hourly rate: £{estimatedHourlyRate.toFixed(2)} (based on 261 working days/year)
+                    </p>
+                  )}
+                </div>
+              </>
             )}
             
             {employmentType === 'contractor' && (

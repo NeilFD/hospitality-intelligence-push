@@ -184,6 +184,32 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
     return daysToDisplay;
   };
 
+  // Calculate shift cost based on hours and required staff
+  const calculateEstimatedCost = (shift: any): string => {
+    // If we have no explicit min staff, assume 1
+    const minStaff = shift.min_staff || 1;
+    
+    // Calculate shift duration in hours
+    const startHour = parseInt(shift.start_time.split(':')[0]);
+    const startMin = parseInt(shift.start_time.split(':')[1]);
+    const endHour = parseInt(shift.end_time.split(':')[0]);
+    const endMin = parseInt(shift.end_time.split(':')[1]);
+    
+    let hours = endHour - startHour;
+    if (endMin < startMin) {
+      hours -= 1;
+    } else if (endMin > startMin) {
+      hours += (endMin - startMin) / 60;
+    }
+    
+    // For now just use a simple estimate based on average hourly rate
+    // This is just a placeholder - the actual costs will be calculated when staff are assigned
+    const avgHourlyRate = 11.50; // Placeholder average hourly rate
+    const estimatedCost = minStaff * hours * avgHourlyRate;
+    
+    return `~£${estimatedCost.toFixed(2)}`;
+  };
+
   // Determine opening hours for the Gantt chart
   const getOpeningHours = () => {
     // Default opening hours if none are specified
@@ -297,6 +323,12 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
                                       {rule.min_staff === rule.max_staff
                                         ? rule.min_staff
                                         : `${rule.min_staff}-${rule.max_staff}`}
+                                    </div>
+                                  </div>
+                                  <div className="text-sm text-right">
+                                    <div className="text-muted-foreground">Est. Cost</div>
+                                    <div className="font-medium">
+                                      {calculateEstimatedCost(rule)}
                                     </div>
                                   </div>
                                 </div>

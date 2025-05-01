@@ -28,7 +28,8 @@ export const calculateEmployerCosts = async (input: CostCalculationInput): Promi
       wage_rate: input.hourlyRate,
       hours_worked: input.hours,
       employment_type: input.employmentType,
-      in_ft_education: input.isFullTimeStudent || false
+      in_ft_education: input.isFullTimeStudent || false,
+      annual_salary: input.annualSalary || 0
     });
 
     if (error) {
@@ -68,11 +69,15 @@ const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationRe
   
   // Calculate basic pay based on employment type
   if (employmentType === 'salaried' && annualSalary) {
-    // For salaried staff: Annual salary / working days per year
-    basicPay = annualSalary / WORKING_DAYS_PER_YEAR;
+    // For salaried staff: Calculate daily rate based on annual salary
+    const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
+    // Convert daily rate to hours worked for this shift
+    basicPay = (dailyRate / 8) * hours; // Assuming 8-hour standard workday
+    console.log(`Salaried staff cost calculation: annual=${annualSalary}, daily=${dailyRate}, hours=${hours}, basicPay=${basicPay}`);
   } else if (employmentType === 'contractor') {
     // For contractors: Simple hourly rate * hours
     basicPay = hourlyRate * hours;
+    console.log(`Contractor cost calculation: rate=${hourlyRate}, hours=${hours}, basicPay=${basicPay}`);
     // No NI or pension for contractors
   } else {
     // For hourly staff: Hourly rate * hours
@@ -94,6 +99,12 @@ const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationRe
   
   // Calculate total cost
   const totalCost = basicPay + niCost + pensionCost;
+
+  // Debug logging
+  console.log(`Cost calculation result for ${employmentType}:`, {
+    basicPay, niCost, pensionCost, totalCost, 
+    details: { hourlyRate, hours, isFullTimeStudent, annualSalary }
+  });
   
   return {
     basicPay,
@@ -157,6 +168,47 @@ export const calculateHourlyRateFromSalary = (
   const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
   const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
   return dailyRate / hoursPerDay;
+};
+
+/**
+ * Calculate shift cost based on staff profile and shift hours
+ * This is a helper function to use in the rota scheduling components
+ */
+export const calculateShiftCost = (
+  staffMember: any, 
+  shiftHours: number
+): CostCalculationResult => {
+  // Ensure we have valid staff data
+  if (!staffMember) {
+    console.error('No staff member provided for cost calculation');
+    return { basicPay: 0, niCost: 0, pensionCost: 0, totalCost: 0 };
+  }
+
+  // Extract relevant information from staff member profile
+  const employmentType = staffMember.employment_type || 'hourly';
+  const isFullTimeStudent = staffMember.is_full_time_student || false;
+  const hourlyRate = staffMember.wage_rate || 0;
+  const annualSalary = staffMember.annual_salary || 0;
+
+  console.log(`Calculating shift cost for ${staffMember.first_name} ${staffMember.last_name}:`, {
+    employmentType,
+    isFullTimeStudent,
+    hourlyRate,
+    annualSalary,
+    shiftHours
+  });
+
+  // Create input for calculation
+  const input: CostCalculationInput = {
+    hourlyRate,
+    hours: shiftHours,
+    employmentType,
+    isFullTimeStudent,
+    annualSalary
+  };
+
+  // Use local calculation instead of async Supabase RPC
+  return fallbackCostCalculation(input);
 };
 
 /**

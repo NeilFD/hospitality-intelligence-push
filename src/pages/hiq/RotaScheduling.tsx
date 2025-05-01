@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, Settings, Users, FileEdit, BarChart, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, Settings, Users, FileEdit, BarChart, CheckCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +16,7 @@ import RotaScheduleReview from '@/components/rotas/RotaScheduleReview';
 import RotaScheduleApproval from '@/components/rotas/RotaScheduleApproval';
 import StaffRankingPanel from '@/components/rotas/StaffRankingPanel';
 import { useAuthStore } from '@/services/auth-service';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function RotaScheduling() {
   const setCurrentModule = useSetCurrentModule();
@@ -23,6 +24,7 @@ export default function RotaScheduling() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('request');
   const [location, setLocation] = useState<any>(null);
+  const [staffIssues, setStaffIssues] = useState<string[]>([]);
   
   // Check if user has permission to access this page
   const canAccessPage = profile?.role === 'Super User' || profile?.role === 'Owner' || profile?.role === 'GOD';
@@ -77,7 +79,7 @@ export default function RotaScheduling() {
       
       console.log("Location data loaded:", locationData);
       
-      // Also fetch staff to check availability 
+      // Also fetch staff to check availability and wage data issues
       const { data: staffData, error: staffError } = await supabase
         .from('profiles')
         .select('*')
@@ -89,6 +91,32 @@ export default function RotaScheduling() {
         if (staffData.length === 0) {
           toast.warning("No available staff found", {
             description: "Mark staff as available for rota to include them in scheduling."
+          });
+        }
+        
+        // Check for staff with missing wage information
+        const staffIssuesList: string[] = [];
+        staffData.forEach(staff => {
+          const name = `${staff.first_name} ${staff.last_name}`;
+          
+          if (staff.employment_type === 'hourly' && (!staff.wage_rate || staff.wage_rate <= 0)) {
+            staffIssuesList.push(`${name} (hourly) has no valid hourly rate set`);
+          }
+          
+          if (staff.employment_type === 'salaried' && (!staff.annual_salary || staff.annual_salary <= 0)) {
+            staffIssuesList.push(`${name} (salaried) has no valid annual salary set`);
+          }
+          
+          if (staff.employment_type === 'contractor' && (!staff.wage_rate || staff.wage_rate <= 0)) {
+            staffIssuesList.push(`${name} (contractor) has no valid contractor rate set`);
+          }
+        });
+        
+        setStaffIssues(staffIssuesList);
+        
+        if (staffIssuesList.length > 0) {
+          toast.warning(`${staffIssuesList.length} staff with missing wage data`, {
+            description: "Some staff members have missing or invalid wage information. This will affect cost calculations."
           });
         }
       }
@@ -181,6 +209,30 @@ export default function RotaScheduling() {
             <RotasLogo size="md" className="hidden md:block animate-float" />
           </div>
         </div>
+        
+        {staffIssues.length > 0 && (
+          <div className="px-4 mb-4">
+            <Alert variant="warning" className="bg-amber-50 border-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription>
+                <div className="font-medium text-amber-800 mb-1">
+                  Staff with missing wage information
+                </div>
+                <ul className="text-sm list-disc pl-5 text-amber-700 space-y-1">
+                  {staffIssues.slice(0, 3).map((issue, index) => (
+                    <li key={index}>{issue}</li>
+                  ))}
+                  {staffIssues.length > 3 && (
+                    <li>Plus {staffIssues.length - 3} more issues...</li>
+                  )}
+                </ul>
+                <p className="text-xs mt-2 text-amber-600">
+                  Missing wage information will result in £0.00 costs. Please update staff profiles with correct wage data.
+                </p>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
         
         <Card className="shadow-md rounded-none border-x-0 m-0 w-full">
           <CardHeader className="pb-3 px-4">
