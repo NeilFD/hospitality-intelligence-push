@@ -14,10 +14,13 @@ export function TimePickerInput({
   onChange,
   ...props
 }: TimePickerInputProps) {
+  // Ensure value is in proper HH:MM format
+  const formattedValue = value ? value.substring(0, 5) : '';
+  
   return (
     <Input
       type="time"
-      value={value}
+      value={formattedValue}
       onChange={(e) => onChange(e.target.value)}
       className={cn("w-full", className)}
       {...props}

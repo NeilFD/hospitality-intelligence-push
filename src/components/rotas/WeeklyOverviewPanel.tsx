@@ -49,6 +49,16 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       }
       
       console.log('Fetched shift rules:', rules); // Debug log to check fetched data
+      
+      // Log the days of the week to see which ones are present
+      const daysList = rules?.map(rule => rule.day_of_week) || [];
+      const uniqueDays = [...new Set(daysList)];
+      console.log('Days found in shift rules:', uniqueDays);
+      
+      // Check if any rules exist for Sunday specifically
+      const sundayRules = rules?.filter(rule => rule.day_of_week === 'sun') || [];
+      console.log('Sunday rules found:', sundayRules.length, sundayRules);
+      
       setShiftRules(rules || []);
     } catch (error) {
       console.error('Error fetching shift rules:', error);
