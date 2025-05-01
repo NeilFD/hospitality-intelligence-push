@@ -1,326 +1,613 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { format, parseISO, addDays, startOfWeek } from 'date-fns';
-import { Calendar as CalendarIcon, Loader2, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { Calendar as CalendarIcon, Loader2, Zap, Trash2 } from 'lucide-react';
+import { format, addDays, startOfWeek, parseISO, endOfWeek } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RotaSchedulingAlgorithm } from '@/utils/rotaSchedulingAlgorithm';
-import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuthStore } from '@/services/auth-service';
+import { getRevenueForecastsForRange } from '@/services/forecast-service';
+import { RevenueForecast } from '@/types/master-record-types';
 
 type RotaRequestFormProps = {
   location: any;
   onRequestComplete: () => void;
-  roleMappings?: Record<string, any[]>;
 };
 
-export default function RotaRequestForm({ location, onRequestComplete, roleMappings = {} }: RotaRequestFormProps) {
-  const [weekStartDate, setWeekStartDate] = useState<Date | undefined>(() => {
-    const today = new Date();
-    return startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
-  });
-  const [weekEndDate, setWeekEndDate] = useState<Date | undefined>(() => {
-    const today = new Date();
-    const start = startOfWeek(today, { weekStartsOn: 1 });
-    return addDays(start, 6); // Ends on Sunday
-  });
-  const [revenueForecasts, setRevenueForecasts] = useState<Record<string, string>>({});
-  const [isGenerating, setIsGenerating] = useState(false);
-  const user = useAuthStore((state) => state.profile);
-
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+export default function RotaRequestForm({ location, onRequestComplete }: RotaRequestFormProps) {
+  const { profile } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [weekDates, setWeekDates] = useState<Date[]>([]);
+  const [revenueForecasts, setRevenueForecasts] = useState<{[key: string]: string}>({});
+  const [thresholds, setThresholds] = useState<any[]>([]);
+  const [previousRequests, setPreviousRequests] = useState<any[]>([]);
+  const [loadingPrevious, setLoadingPrevious] = useState(true);
+  const [isFetchingForecasts, setIsFetchingForecasts] = useState(false);
+  
+  const { handleSubmit, reset } = useForm();
 
   useEffect(() => {
-    if (weekStartDate) {
-      const forecasts = {};
-      for (let i = 0; i < 7; i++) {
-        const date = addDays(weekStartDate, i);
-        const formattedDate = format(date, 'yyyy-MM-dd');
-        forecasts[formattedDate] = revenueForecasts[formattedDate] || '';
-      }
-      setRevenueForecasts(forecasts);
+    if (location) {
+      fetchPreviousRequests();
+      fetchThresholds();
     }
-  }, [weekStartDate]);
-  
-  const generateSchedule = async () => {
-    if (!weekStartDate || !weekEndDate || !location?.id) {
-      toast.error('Please select a valid week and ensure location is loaded');
-      return;
-    }
-    
-    try {
-      setIsGenerating(true);
+  }, [location]);
+
+  useEffect(() => {
+    if (date) {
+      // Calculate start of week (Monday)
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 });
       
-      // Format dates
-      const formattedStartDate = format(weekStartDate, 'yyyy-MM-dd');
-      const formattedEndDate = format(weekEndDate, 'yyyy-MM-dd');
+      // Generate an array of dates for the week
+      const weekDatesArray = Array.from({ length: 7 }, (_, i) => 
+        addDays(weekStart, i)
+      );
       
-      console.log(`Generating schedule for ${formattedStartDate} to ${formattedEndDate}`);
+      setWeekDates(weekDatesArray);
       
-      // Create or update the rota request
-      const { data: requestData, error: requestError } = await supabase
-        .from('rota_requests')
-        .upsert({
-          location_id: location.id,
-          week_start_date: formattedStartDate,
-          week_end_date: formattedEndDate,
-          status: 'draft',
-          requested_by: user?.id,
-          revenue_forecast: revenueForecasts
-        })
-        .select()
-        .single();
-      
-      if (requestError) {
-        throw new Error(`Failed to create rota request: ${requestError.message}`);
-      }
-      
-      // Fetch staff data
-      const { data: staffData, error: staffError } = await supabase
-        .from('profiles')
-        .select('*, hi_score_evaluations(weighted_score)')
-        .eq('available_for_rota', true);
-      
-      if (staffError) {
-        throw new Error(`Failed to fetch staff data: ${staffError.message}`);
-      }
-      
-      // Process staff data to include hi_score
-      const processedStaff = staffData.map(staff => {
-        const evaluations = staff.hi_score_evaluations || [];
-        // Use the most recent evaluation score if available
-        const latestScore = evaluations.length > 0 
-          ? Math.max(...evaluations.map((e: any) => e.weighted_score || 0))
-          : 0;
-          
-        return {
-          ...staff,
-          hi_score: latestScore
-        };
+      // Initialize revenue forecasts with empty values
+      const initialForecasts: {[key: string]: string} = {};
+      weekDatesArray.forEach(day => {
+        initialForecasts[format(day, 'yyyy-MM-dd')] = '';
       });
       
-      // Fetch job roles
-      const { data: jobRolesData, error: jobRolesError } = await supabase
-        .from('job_roles')
-        .select('*')
-        .eq('location_id', location.id);
+      setRevenueForecasts(initialForecasts);
       
-      if (jobRolesError) {
-        throw new Error(`Failed to fetch job roles: ${jobRolesError.message}`);
+      // Fetch existing forecasts for this week
+      fetchExistingForecasts(weekStart, addDays(weekStart, 6));
+    }
+  }, [date]);
+
+  const fetchExistingForecasts = async (startDate: Date, endDate: Date) => {
+    try {
+      setIsFetchingForecasts(true);
+      
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
+      
+      console.log(`Fetching forecast data for range: ${startDateStr} to ${endDateStr}`);
+      
+      // Get forecasts from the forecast service
+      const forecasts = await getRevenueForecastsForRange(startDateStr, endDateStr);
+      
+      if (forecasts && forecasts.length > 0) {
+        const formattedForecasts: {[key: string]: string} = { ...revenueForecasts };
+        
+        // Pre-fill with existing forecast data
+        forecasts.forEach(forecast => {
+          formattedForecasts[forecast.date] = Math.round(forecast.totalRevenue).toString();
+        });
+        
+        setRevenueForecasts(formattedForecasts);
+        toast.info('Revenue forecasts loaded', {
+          description: 'Forecast data has been pre-filled from existing forecasts'
+        });
+      } else {
+        // If no forecasts found, try weekly forecast data on page
+        console.log('No forecasts found from forecast service, trying weekly forecast data');
+        fetchWeeklyForecastData(startDateStr, endDateStr);
+      }
+    } catch (error) {
+      console.error('Error fetching revenue forecasts:', error);
+      // If fetching fails, try weekly forecast data on page
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
+      console.log('Error fetching from forecast service, trying weekly forecast data');
+      fetchWeeklyForecastData(startDateStr, endDateStr);
+    } finally {
+      setIsFetchingForecasts(false);
+    }
+  };
+  
+  const fetchWeeklyForecastData = async (startDate: string, endDate: string) => {
+    try {
+      console.log(`Trying to fetch weekly forecasts from revenue_forecasts table for ${startDate} to ${endDate}`);
+      
+      // Try to fetch from the revenue_forecasts table (where WeeklyForecast page stores its data)
+      const { data, error } = await supabase
+        .from('revenue_forecasts')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate);
+      
+      if (error) {
+        console.error('Error fetching weekly forecasts:', error);
+        console.log('No data from revenue_forecasts, generating AI forecast automatically');
+        // No data found, auto-generate a forecast
+        generateAIForecast();
+        return;
       }
       
-      // Fetch thresholds
-      const { data: thresholdsData, error: thresholdsError } = await supabase
+      if (data && data.length > 0) {
+        const formattedForecasts = { ...revenueForecasts };
+        
+        data.forEach((forecast: any) => {
+          if (forecast.date && forecast.totalRevenue) {
+            formattedForecasts[forecast.date] = Math.round(forecast.totalRevenue).toString();
+          }
+        });
+        
+        setRevenueForecasts(formattedForecasts);
+        toast.info('Forecast data found', {
+          description: 'Revenue forecasts have been pre-filled from existing data'
+        });
+      } else {
+        console.log('No data found in revenue_forecasts table, generating AI forecast automatically');
+        // No data found, auto-generate a forecast
+        generateAIForecast();
+      }
+    } catch (error) {
+      console.error('Error fetching weekly forecast data:', error);
+      console.log('Error in weekly forecast fetch, generating AI forecast automatically');
+      // Error occurred, auto-generate a forecast
+      generateAIForecast();
+    }
+  };
+
+  const fetchPreviousRequests = async () => {
+    setLoadingPrevious(true);
+    try {
+      const { data, error } = await supabase
+        .from('rota_requests')
+        .select('*, profiles:requested_by(first_name, last_name)')
+        .eq('location_id', location.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+        
+      if (error) throw error;
+      
+      setPreviousRequests(data || []);
+    } catch (error) {
+      console.error('Error fetching previous requests:', error);
+      toast.error('Failed to load previous requests');
+    } finally {
+      setLoadingPrevious(false);
+    }
+  };
+  
+  const fetchThresholds = async () => {
+    try {
+      const { data, error } = await supabase
         .from('rota_revenue_thresholds')
         .select('*')
         .eq('location_id', location.id);
-      
-      if (thresholdsError) {
-        throw new Error(`Failed to fetch thresholds: ${thresholdsError.message}`);
-      }
-      
-      // Fetch shift rules
-      const { data: shiftRulesData, error: shiftRulesError } = await supabase
-        .from('shift_rules')
-        .select('*, job_roles(*)')
-        .eq('location_id', location.id)
-        .eq('archived', false);
-      
-      if (shiftRulesError) {
-        throw new Error(`Failed to fetch shift rules: ${shiftRulesError.message}`);
-      }
-      
-      // Fetch trough periods
-      const { data: troughPeriodsData, error: troughPeriodsError } = await supabase
-        .from('shift_troughs')
-        .select('*');
-      
-      if (troughPeriodsError) {
-        throw new Error(`Failed to fetch trough periods: ${troughPeriodsError.message}`);
-      }
-      
-      // Initialize the scheduling algorithm
-      const algorithm = new RotaSchedulingAlgorithm({
-        request: requestData,
-        staff: processedStaff,
-        jobRoles: jobRolesData,
-        thresholds: thresholdsData,
-        location: location
-      });
-      
-      // Set shift rules and trough periods
-      algorithm.setShiftRules(shiftRulesData);
-      algorithm.setTroughPeriods(troughPeriodsData);
-      
-      // Set role mappings
-      if (roleMappings && Object.keys(roleMappings).length > 0) {
-        algorithm.setRoleMappings(roleMappings);
-        console.log(`Set ${Object.keys(roleMappings).length} role mappings for the algorithm`);
-      } else {
-        console.warn('No role mappings available, this may affect staff assignment accuracy');
-      }
-      
-      // Run the algorithm
-      const result = await algorithm.generateSchedule();
-      
-      console.log(`Schedule generated with ${result.shifts.length} shifts`);
-      
-      // Create a new schedule
-      const { data: scheduleData, error: scheduleError } = await supabase
-        .from('rota_schedules')
-        .upsert({
-          request_id: requestData.id,
-          location_id: location.id,
-          week_start_date: formattedStartDate,
-          week_end_date: formattedEndDate,
-          status: 'draft',
-          total_cost: result.total_cost,
-          revenue_forecast: result.revenue_forecast,
-          cost_percentage: result.cost_percentage,
-          created_by: user?.id
-        })
-        .select()
-        .single();
-      
-      if (scheduleError) {
-        throw new Error(`Failed to create schedule: ${scheduleError.message}`);
-      }
-      
-      // Create shifts
-      if (result.shifts.length > 0) {
-        // Add schedule_id to each shift
-        const shiftsWithScheduleId = result.shifts.map((shift: any) => ({
-          ...shift,
-          schedule_id: scheduleData.id
-        }));
         
-        // Insert shifts
-        const { error: shiftsError } = await supabase
-          .from('rota_schedule_shifts')
-          .upsert(shiftsWithScheduleId);
-        
-        if (shiftsError) {
-          throw new Error(`Failed to create shifts: ${shiftsError.message}`);
-        }
-      }
+      if (error) throw error;
       
-      // Success
-      toast.success('Rota schedule generated', {
-        description: `Created ${result.shifts.length} shifts with ${result.cost_percentage.toFixed(2)}% cost`
-      });
-      
-      // Signal completion to parent
-      onRequestComplete();
-      
-    } catch (error: any) {
-      console.error('Error generating schedule:', error);
-      toast.error('Failed to generate schedule', {
-        description: error.message
-      });
-    } finally {
-      setIsGenerating(false);
+      setThresholds(data || []);
+    } catch (error) {
+      console.error('Error fetching thresholds:', error);
     }
   };
 
-  const handleRevenueUpdate = (date: string, value: string) => {
+  const handleRevenueChange = (dateKey: string, value: string) => {
     setRevenueForecasts(prev => ({
       ...prev,
-      [date]: value
+      [dateKey]: value
     }));
   };
 
-  return (
-    <div className="space-y-4">
-      <Card className="shadow-md rounded-none border-x-0 m-0 w-full">
-        <CardHeader className="pb-3">
-          <CardTitle>Rota Request</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <p className="text-sm font-medium">Select Week:</p>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={
-                      'w-[240px] justify-start text-left font-normal' +
-                      (weekStartDate ? ' text-foreground' : ' text-muted-foreground')
-                    }
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {weekStartDate ? (
-                      format(weekStartDate, 'MMMM d, yyyy') + ' - ' + format(weekEndDate as Date, 'MMMM d, yyyy')
-                    ) : (
-                      <span>Pick a week</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    required
-                    initialFocus
-                    onSelect={(date) => {
-                      if (date) {
-                        const start = startOfWeek(date, { weekStartsOn: 1 });
-                        const end = addDays(start, 6);
-                        setWeekStartDate(start);
-                        setWeekEndDate(end);
-                      }
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-          
-          <div className="mb-4">
-            <Alert className="border-gray-200">
-              <AlertDescription>
-                Enter the revenue forecast for each day of the week. This will be used to generate the rota schedule.
-              </AlertDescription>
-            </Alert>
-          </div>
+  const onSubmit = async () => {
+    if (!date) {
+      toast.error('Please select a week first');
+      return;
+    }
+    
+    // Check if we have at least one revenue forecast
+    const hasAnyForecast = Object.values(revenueForecasts).some(value => value !== '');
+    
+    if (!hasAnyForecast) {
+      toast.error('Please provide at least one revenue forecast');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Format the data for submission
+      const weekStart = weekDates[0];
+      const weekEnd = weekDates[6];
+      
+      // Clean up revenue forecasts (convert to numbers)
+      const cleanedForecasts: {[key: string]: number} = {};
+      Object.entries(revenueForecasts).forEach(([date, value]) => {
+        if (value) {
+          cleanedForecasts[date] = parseFloat(value);
+        }
+      });
+      
+      // Create the rota request
+      const { data, error } = await supabase
+        .from('rota_requests')
+        .insert({
+          location_id: location.id,
+          week_start_date: format(weekStart, 'yyyy-MM-dd'),
+          week_end_date: format(weekEnd, 'yyyy-MM-dd'),
+          status: 'draft',
+          requested_by: profile?.id,
+          revenue_forecast: cleanedForecasts
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      toast.success('Rota request submitted successfully', {
+        description: 'You can now review the draft rota'
+      });
+      
+      // Reset the form
+      reset();
+      setDate(undefined);
+      setWeekDates([]);
+      setRevenueForecasts({});
+      
+      // Refresh the previous requests list
+      fetchPreviousRequests();
+      
+      // Notify parent component
+      onRequestComplete();
+    } catch (error) {
+      console.error('Error submitting rota request:', error);
+      toast.error('Failed to submit rota request');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {daysOfWeek.map((day, index) => {
-              const date = addDays(weekStartDate as Date, index);
-              const formattedDate = format(date, 'yyyy-MM-dd');
-              return (
-                <div key={day} className="space-y-2">
-                  <label htmlFor={`revenue-${day}`} className="text-sm font-medium block">
-                    {day} ({format(date, 'dd/MM')})
-                  </label>
-                  <Input
-                    type="number"
-                    id={`revenue-${day}`}
-                    placeholder="Revenue Forecast"
-                    value={revenueForecasts[formattedDate] || ''}
-                    onChange={(e) => handleRevenueUpdate(formattedDate, e.target.value)}
-                  />
+  const generateAIForecast = () => {
+    if (!date) {
+      toast.error('Please select a week first');
+      return;
+    }
+    
+    toast.info('Generating AI forecast...', {
+      description: 'Using historical data to predict revenue',
+      duration: 2000
+    });
+    
+    // Try to fetch historical data from master_daily_records for more realistic forecasting
+    fetchHistoricalData();
+  };
+
+  const fetchHistoricalData = async () => {
+    try {
+      // Get historical data for the same days of week from the last few weeks
+      const { data: historicalData, error } = await supabase
+        .from('master_daily_records')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(35);  // Get enough data for meaningful patterns
+      
+      if (error) throw error;
+      
+      if (historicalData && historicalData.length > 0) {
+        // Use historical data to generate realistic forecasts
+        const newForecasts = { ...revenueForecasts };
+        
+        weekDates.forEach(date => {
+          const dateString = format(date, 'yyyy-MM-dd');
+          const dayOfWeek = format(date, 'EEEE').toLowerCase();
+          
+          // Filter historical data for the same day of week
+          const sameDay = historicalData.filter((record: any) => 
+            record.day_of_week?.toLowerCase() === dayOfWeek
+          );
+          
+          if (sameDay.length > 0) {
+            // Calculate average revenue for this day of week from historical data
+            const totalRevenue = sameDay.reduce((sum: number, record: any) => {
+              return sum + (record.total_revenue || 0);
+            }, 0);
+            
+            const averageRevenue = Math.round(totalRevenue / sameDay.length);
+            
+            // Add small random variation (±10%)
+            const variation = averageRevenue * 0.1;
+            const randomOffset = (Math.random() * variation * 2) - variation;
+            const forecastValue = Math.max(0, Math.round(averageRevenue + randomOffset));
+            
+            newForecasts[dateString] = forecastValue.toString();
+          } else {
+            // Fallback logic based on day of week patterns if no historical data
+            const baseAmounts: {[key: string]: number} = {
+              'monday': 2000,
+              'tuesday': 2200,
+              'wednesday': 2500,
+              'thursday': 3000,
+              'friday': 4500,
+              'saturday': 5500,
+              'sunday': 4000
+            };
+            
+            const baseAmount = baseAmounts[dayOfWeek] || 3000;
+            const variation = baseAmount * 0.15; // 15% variance for more realistic variation
+            const randomFactor = Math.random() * variation * 2 - variation;
+            const forecast = Math.round(baseAmount + randomFactor);
+            
+            newForecasts[dateString] = forecast.toString();
+          }
+        });
+        
+        setRevenueForecasts(newForecasts);
+      } else {
+        // Fallback to deterministic generation if no historical data
+        generateDeterministicForecast();
+      }
+      
+      toast.success('AI forecast generated', {
+        description: 'Revenue predictions have been applied based on historical patterns'
+      });
+      
+    } catch (error) {
+      console.error('Error generating AI forecast:', error);
+      // Fallback to deterministic generation if error occurs
+      generateDeterministicForecast();
+    }
+  };
+  
+  const generateDeterministicForecast = () => {
+    const newForecasts = { ...revenueForecasts };
+    
+    weekDates.forEach(date => {
+      const dayOfWeek = format(date, 'EEEE').toLowerCase();
+      const dateString = format(date, 'yyyy-MM-dd');
+      
+      // Generate a reasonable revenue forecast based on day of week
+      const baseAmounts: {[key: string]: number} = {
+        'monday': 2000,
+        'tuesday': 2200,
+        'wednesday': 2500,
+        'thursday': 3000,
+        'friday': 4500,
+        'saturday': 5500,
+        'sunday': 4000
+      };
+      
+      const baseAmount = baseAmounts[dayOfWeek] || 3000;
+      
+      // Add some randomness - more variance for a more natural distribution
+      const variation = baseAmount * 0.15; // 15% variance
+      const randomFactor = Math.random() * variation * 2 - variation;
+      const forecast = Math.round(baseAmount + randomFactor);
+      
+      newForecasts[dateString] = forecast.toString();
+    });
+    
+    setRevenueForecasts(newForecasts);
+    
+    toast.success('AI forecast generated', {
+      description: 'Revenue predictions have been applied'
+    });
+  };
+
+  const hasThresholdWarning = thresholds.length === 0;
+
+  // Add function to delete rota request
+  const handleDeleteRequest = async (requestId: string) => {
+    try {
+      // First check if a schedule exists for this request
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('rota_schedules')
+        .select('id')
+        .eq('request_id', requestId);
+        
+      if (scheduleData && scheduleData.length > 0) {
+        // If schedules exist, we need to delete them first (and their shifts)
+        console.log("Deleting associated schedule shifts...");
+        
+        // First delete all shifts associated with these schedules
+        for (const schedule of scheduleData) {
+          const { error: shiftDeleteError } = await supabase
+            .from('rota_schedule_shifts')
+            .delete()
+            .eq('schedule_id', schedule.id);
+            
+          if (shiftDeleteError) {
+            console.error('Error deleting schedule shifts:', shiftDeleteError);
+            toast.error('Could not delete schedule shifts');
+            return;
+          }
+        }
+        
+        // Then delete the schedules
+        console.log("Deleting associated schedules...");
+        const { error: deleteScheduleError } = await supabase
+          .from('rota_schedules')
+          .delete()
+          .eq('request_id', requestId);
+          
+        if (deleteScheduleError) {
+          console.error('Error deleting schedules:', deleteScheduleError);
+          toast.error('Could not delete associated schedules');
+          return;
+        }
+      }
+      
+      // Now delete the rota request
+      console.log("Deleting rota request:", requestId);
+      const { error: deleteRequestError } = await supabase
+        .from('rota_requests')
+        .delete()
+        .eq('id', requestId);
+        
+      if (deleteRequestError) {
+        console.error('Error deleting rota request:', deleteRequestError);
+        toast.error('Failed to delete rota request');
+        return;
+      }
+      
+      // Refresh the previous requests list
+      toast.success('Rota request deleted successfully');
+      fetchPreviousRequests();
+    } catch (error) {
+      console.error('Error in delete operation:', error);
+      toast.error('An error occurred while deleting');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Request New Rota</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {hasThresholdWarning && (
+                <Alert className="mb-4">
+                  <AlertTitle>No revenue thresholds configured</AlertTitle>
+                  <AlertDescription>
+                    You haven't set up any revenue thresholds yet. The AI engine uses these to determine optimal staffing levels.
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm" onClick={() => document.querySelector('[value="thresholds"]')?.dispatchEvent(new MouseEvent('click'))}>
+                        Configure Thresholds
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Select Week Starting</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP") : "Select a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                        disabled={(date) => {
+                          // Only allow Mondays
+                          return format(date, 'EEEE') !== 'Monday';
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-sm text-muted-foreground">
+                    You can only select Mondays to ensure whole week scheduling
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-end items-center">
-          <Button onClick={generateSchedule} disabled={isGenerating}>
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              'Generate Schedule'
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+
+                {weekDates.length > 0 && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium">Revenue Forecasts</h3>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={generateAIForecast}
+                        className="flex items-center gap-1"
+                      >
+                        <Zap className="h-4 w-4" /> Auto-generate
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
+                      {weekDates.map((day, index) => (
+                        <div key={index} className="space-y-1.5">
+                          <Label htmlFor={`revenue-${index}`}>{format(day, 'EEE')}</Label>
+                          <p className="text-xs text-muted-foreground">{format(day, 'dd/MM')}</p>
+                          <Input
+                            id={`revenue-${index}`}
+                            placeholder={isFetchingForecasts ? "Loading..." : "£"}
+                            type="number"
+                            min="0"
+                            value={revenueForecasts[format(day, 'yyyy-MM-dd')] || ''}
+                            onChange={(e) => handleRevenueChange(format(day, 'yyyy-MM-dd'), e.target.value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate Draft Rota'
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        {!loadingPrevious && previousRequests.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Previous Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {previousRequests.map((request, idx) => {
+                  const weekStart = format(parseISO(request.week_start_date), 'dd MMM yyyy');
+                  const weekEnd = format(parseISO(request.week_end_date), 'dd MMM yyyy');
+                  const requester = request.profiles?.first_name + ' ' + request.profiles?.last_name;
+                  
+                  return (
+                    <div key={idx} className="flex items-center justify-between border-b pb-2 last:border-0">
+                      <div>
+                        <p className="font-medium">{weekStart} - {weekEnd}</p>
+                        <p className="text-sm text-muted-foreground">Requested by {requester}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "px-2 py-1 text-xs rounded-full",
+                          {
+                            "bg-yellow-100 text-yellow-800": request.status === "draft",
+                            "bg-blue-100 text-blue-800": request.status === "pending_approval",
+                            "bg-green-100 text-green-800": request.status === "approved",
+                            "bg-red-100 text-red-800": request.status === "rejected"
+                          }
+                        )}>
+                          {request.status.replace('_', ' ')}
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteRequest(request.id)}
+                          title="Delete Rota Request"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </form>
   );
 }

@@ -1,55 +1,291 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { format, parse } from 'date-fns';
+import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-type StaffingGanttChartProps = {
-  shifts?: any[];
-  rules?: any[];
-  jobRoles?: any[];
-  openingHours?: { start: string; end: string };
-};
+interface StaffingGanttChartProps {
+  rules: any[];
+  jobRoles: any[];
+  openingHours: { start: string; end: string };
+}
 
-const StaffingGanttChart: React.FC<StaffingGanttChartProps> = ({ 
-  shifts = [], 
-  rules = [], 
-  jobRoles = [], 
-  openingHours 
-}) => {
-  // Different rendering based on which props are provided
-  if (rules.length > 0) {
-    // Weekly overview panel mode - render shifts based on rules
+export default function StaffingGanttChart({ rules, jobRoles, openingHours }: StaffingGanttChartProps) {
+  const [troughData, setTroughData] = useState<Record<string, any[]>>({});
+  const [isLoadingTroughs, setIsLoadingTroughs] = useState(false);
+  
+  // Debug logging for incoming rules
+  useEffect(() => {
+    console.log('StaffingGanttChart: Received rules:', rules.length);
+    
+    // Group rules by day for debugging
+    const rulesByDay: Record<string, any[]> = {};
+    rules.forEach(rule => {
+      if (!rulesByDay[rule.day_of_week]) {
+        rulesByDay[rule.day_of_week] = [];
+      }
+      rulesByDay[rule.day_of_week].push(rule);
+    });
+    
+    // Log summary of rules by day
+    Object.entries(rulesByDay).forEach(([day, dayRules]) => {
+      console.log(`StaffingGanttChart: ${day} rules:`, dayRules.length);
+    });
+    
+    // Extra debug for rules with archived status
+    rules.forEach(rule => {
+      console.log(`StaffingGanttChart rule "${rule.name}" (${rule.day_of_week}): archived=${rule.archived}`, 
+        `(${rule.archived === null ? 'NULL' : rule.archived ? 'TRUE' : 'FALSE'})`);
+    });
+  }, [rules]);
+  
+  // Generate time slots based on opening hours
+  const startTime = openingHours.start.substring(0, 5);
+  const endTime = openingHours.end.substring(0, 5);
+  
+  const startHour = parseInt(startTime.split(':')[0]);
+  const endHour = parseInt(endTime.split(':')[0]);
+  
+  // Create array of hour slots
+  const hourSlots = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    hourSlots.push(hour);
+  }
+  
+  // Load troughs data for the displayed shift rules
+  useEffect(() => {
+    const loadTroughData = async () => {
+      // Only fetch if we have rules
+      if (rules.length === 0) return;
+      
+      setIsLoadingTroughs(true);
+      try {
+        // Get all shift rule IDs
+        const shiftRuleIds = rules.map(rule => rule.id);
+        console.log('StaffingGanttChart: Fetching troughs for shift rules:', shiftRuleIds);
+        
+        // Fetch trough data for these shifts
+        const { data: troughs, error } = await supabase
+          .from('shift_troughs')
+          .select('*')
+          .in('shift_rule_id', shiftRuleIds);
+          
+        if (error) {
+          console.error('Error fetching trough data:', error);
+          return;
+        }
+        
+        console.log('StaffingGanttChart: Trough data returned:', troughs?.length || 0);
+        
+        // Organize troughs by shift rule ID
+        const troughsByShiftId: Record<string, any[]> = {};
+        troughs?.forEach(trough => {
+          if (!troughsByShiftId[trough.shift_rule_id]) {
+            troughsByShiftId[trough.shift_rule_id] = [];
+          }
+          troughsByShiftId[trough.shift_rule_id].push(trough);
+        });
+        
+        setTroughData(troughsByShiftId);
+      } catch (error) {
+        console.error('Error in loadTroughData:', error);
+      } finally {
+        setIsLoadingTroughs(false);
+      }
+    };
+    
+    loadTroughData();
+  }, [rules]);
+  
+  // Format time for display (e.g., "9:00" -> "09:00")
+  const formatDisplayTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    return `${hours.padStart(2, '0')}:${minutes}`;
+  };
+  
+  // Parse time to get hour as number (e.g., "09:30" -> 9.5)
+  const parseTimeToHourDecimal = (timeStr: string) => {
+    // Assume timeStr is in "HH:MM:SS" format
+    const [hours, minutes] = timeStr.split(':');
+    return parseInt(hours) + parseInt(minutes) / 60;
+  };
+  
+  // Check if a given hour (like 9) is contained within a time range ("09:00" - "17:00")
+  const isHourInTimeRange = (hour: number, startTimeStr: string, endTimeStr: string) => {
+    const startHour = parseTimeToHourDecimal(startTimeStr);
+    const endHour = parseTimeToHourDecimal(endTimeStr);
+    return hour >= startHour && hour < endHour;
+  };
+  
+  // Check if an hour falls within a trough period
+  const isHourInTroughPeriod = (hour: number, shiftRuleId: string) => {
+    if (!troughData[shiftRuleId]) return false;
+    
+    for (const trough of troughData[shiftRuleId]) {
+      if (isHourInTimeRange(hour, trough.start_time, trough.end_time)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
+  // Get max staff override for an hour if it falls in a trough
+  const getMaxStaffOverride = (hour: number, shiftRuleId: string, defaultMaxStaff: number) => {
+    if (!troughData[shiftRuleId]) return defaultMaxStaff;
+    
+    for (const trough of troughData[shiftRuleId]) {
+      if (isHourInTimeRange(hour, trough.start_time, trough.end_time)) {
+        return trough.max_staff_override;
+      }
+    }
+    return defaultMaxStaff;
+  };
+
+  // Sort rules by job role and start time
+  const sortedRules = [...rules].sort((a, b) => {
+    // First by job role
+    const roleA = jobRoles.find(role => role.id === a.job_role_id)?.title || '';
+    const roleB = jobRoles.find(role => role.id === b.job_role_id)?.title || '';
+    const roleComparison = roleA.localeCompare(roleB);
+    
+    // Then by start time
+    if (roleComparison === 0) {
+      return a.start_time.localeCompare(b.start_time);
+    }
+    return roleComparison;
+  });
+
+  // Additional logging for sorted rules
+  useEffect(() => {
+    console.log('StaffingGanttChart: Sorted rules:', sortedRules.length);
+    const dayCount: Record<string, number> = {};
+    sortedRules.forEach(rule => {
+      dayCount[rule.day_of_week] = (dayCount[rule.day_of_week] || 0) + 1;
+    });
+    console.log('StaffingGanttChart: Rules by day after sorting:', dayCount);
+  }, [sortedRules]);
+
+  if (rules.length === 0) {
     return (
-      <div>
-        {/* Implement Gantt chart for rules */}
-        <p>Weekly Staffing Chart</p>
-        <ul>
-          {rules.map((rule, index) => {
-            const role = jobRoles.find(r => r.id === rule.job_role_id);
-            return (
-              <li key={index}>
-                {`${role?.title || 'Unknown Role'}: ${rule.name}, Day: ${rule.day_of_week}, Time: ${rule.start_time} - ${rule.end_time}`}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    );
-  } else {
-    // Rota schedule review mode - render shifts from schedule
-    return (
-      <div>
-        {/* Implement Gantt chart logic here */}
-        <p>Staffing Gantt Chart</p>
-        {/* Display shifts data */}
-        <ul>
-          {shifts.map((shift, index) => (
-            <li key={index}>
-              {`Shift ${index + 1}: Staff ID - ${shift.profile_id}, Date - ${shift.date}, Time - ${shift.start_time} - ${shift.end_time}`}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <Card>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          No shift rules found for the selected day.
+        </CardContent>
+      </Card>
     );
   }
-};
 
-export default StaffingGanttChart;
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            {/* Header row with hour markers */}
+            <div className="flex border-b">
+              <div className="w-48 p-2 font-medium bg-muted/30">Role / Time</div>
+              {hourSlots.map(hour => (
+                <div 
+                  key={hour} 
+                  className="flex-1 p-2 text-center border-l font-medium bg-muted/30"
+                >
+                  {hour}:00
+                </div>
+              ))}
+            </div>
+            
+            {/* Shift rules rows */}
+            <div>
+              {isLoadingTroughs ? (
+                <div className="p-4">
+                  <Skeleton className="h-20 w-full" />
+                </div>
+              ) : (
+                sortedRules.map((rule, ruleIndex) => {
+                  const jobRole = jobRoles.find(role => role.id === rule.job_role_id);
+                  const ruleTroughs = troughData[rule.id] || [];
+                  
+                  // Log each rule being rendered
+                  console.log(`StaffingGanttChart: Rendering rule ${ruleIndex}: ${rule.name} (${rule.day_of_week})`);
+                  
+                  return (
+                    <div key={ruleIndex} className="flex border-b hover:bg-muted/10">
+                      {/* Left column with rule info */}
+                      <div className="w-48 p-2 flex flex-col justify-center">
+                        <div className="font-medium">
+                          {rule.name || jobRole?.title || 'Unnamed Shift'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDisplayTime(rule.start_time)} - {formatDisplayTime(rule.end_time)}
+                        </div>
+                      </div>
+                      
+                      {/* Hours grid */}
+                      {hourSlots.map(hour => {
+                        const isInShift = isHourInTimeRange(hour, rule.start_time, rule.end_time);
+                        const isInTrough = isInShift && isHourInTroughPeriod(hour, rule.id);
+                        const maxStaff = isInTrough 
+                          ? getMaxStaffOverride(hour, rule.id, rule.max_staff)
+                          : rule.max_staff;
+                        
+                        // Don't show anything if the hour is not in the shift
+                        if (!isInShift) {
+                          return (
+                            <div 
+                              key={hour} 
+                              className="flex-1 border-l"
+                            />
+                          );
+                        }
+                        
+                        return (
+                          <TooltipProvider key={hour}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div 
+                                  className={`
+                                    flex-1 p-2 border-l flex items-center justify-center
+                                    ${isInShift ? 'bg-blue-100 dark:bg-blue-950/30' : ''}
+                                    ${isInTrough ? 'bg-blue-50 dark:bg-blue-950/20 border border-dashed border-blue-300 dark:border-blue-800' : ''}
+                                  `}
+                                >
+                                  <span className="font-medium">
+                                    {rule.min_staff === maxStaff 
+                                      ? maxStaff 
+                                      : `${rule.min_staff}-${maxStaff}`}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="text-sm">
+                                  <p className="font-medium">{rule.name || jobRole?.title}</p>
+                                  <p>Time: {hour}:00 - {hour + 1}:00</p>
+                                  <p>Staff Required: {rule.min_staff} - {maxStaff}</p>
+                                  {isInTrough && (
+                                    <p className="text-blue-600 dark:text-blue-400">
+                                      Trough period (reduced staffing)
+                                    </p>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
