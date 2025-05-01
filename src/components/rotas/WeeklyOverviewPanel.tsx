@@ -35,7 +35,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const fetchShiftRules = async () => {
     setIsLoading(true);
     try {
-      // Important: Using .order() was causing issues with Sunday shifts, so removing it
+      // Modified query: Using .not() instead of .eq() to handle NULL values in archived field
       const { data: rules, error } = await supabase
         .from('shift_rules')
         .select(`
@@ -43,7 +43,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
           job_roles (*)
         `)
         .eq('location_id', location.id)
-        .eq('archived', false); // Only fetch active shifts
+        .not('archived', 'eq', true); // This will include both false and NULL values
       
       if (error) {
         throw error;
@@ -60,8 +60,14 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       const sundayRules = rules?.filter(rule => rule.day_of_week === 'sun') || [];
       console.log('Sunday rules found:', sundayRules.length, sundayRules);
       
+      // Log each Sunday shift with its archived status for debugging
       if (sundayRules.length > 0) {
-        console.log('Sunday rule details:', JSON.stringify(sundayRules, null, 2));
+        sundayRules.forEach(rule => {
+          console.log(`Sunday shift "${rule.name}" archived status:`, rule.archived, 
+            `(${rule.archived === null ? 'NULL' : 
+               rule.archived === true ? 'TRUE' : 
+               'FALSE'})`);
+        });
       }
       
       setShiftRules(rules || []);
@@ -84,7 +90,8 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       console.log('Current shift rules count by day:');
       dayOrder.forEach(day => {
         const count = shiftRules.filter(rule => rule.day_of_week === day).length;
-        console.log(`${day}: ${count} shifts`);
+        const rules = shiftRules.filter(rule => rule.day_of_week === day);
+        console.log(`${day}: ${count} shifts`, rules.map(r => r.name));
       });
     }
   }, [shiftRules]);
@@ -128,6 +135,14 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       console.log(`Filtered rules for selected day "${selectedDay}":`, filtered.length);
       if (selectedDay === 'sun') {
         console.log('Sunday filtered rules:', filtered);
+        
+        // Check for any filtering issues
+        const allSunRules = shiftRules.filter(rule => rule.day_of_week === 'sun');
+        console.log('All Sunday rules before filtering:', allSunRules.length);
+        
+        if (filtered.length !== allSunRules.length) {
+          console.warn('Discrepancy in Sunday rules - some may be missing!');
+        }
       }
     }
   }, [selectedDay, shiftRules]);
