@@ -5,10 +5,10 @@ import { supabase } from "@/lib/supabase";
 export interface CostCalculationInput {
   hourlyRate: number;
   hours: number;
-  employmentType: 'hourly' | 'salaried' | 'contractor';
+  employmentType: 'hourly' | 'salaried' | 'salary' | 'contractor';
   isFullTimeStudent?: boolean;
   annualSalary?: number;
-  contractorRate?: number; // Added contractor_rate field
+  contractorRate?: number;
 }
 
 // Interface for cost calculation results
@@ -24,11 +24,14 @@ export interface CostCalculationResult {
  */
 export const calculateEmployerCosts = async (input: CostCalculationInput): Promise<CostCalculationResult> => {
   try {
+    // Normalize employment type to handle both 'salary' and 'salaried'
+    const normalizedEmploymentType = input.employmentType === 'salary' ? 'salaried' : input.employmentType;
+    
     // Use Supabase function to calculate costs
     const { data, error } = await supabase.rpc('calculate_employer_costs', {
-      wage_rate: input.employmentType === 'contractor' ? (input.contractorRate || 0) : input.hourlyRate,
+      wage_rate: normalizedEmploymentType === 'contractor' ? (input.contractorRate || 0) : input.hourlyRate,
       hours_worked: input.hours,
-      employment_type: input.employmentType,
+      employment_type: normalizedEmploymentType,
       in_ft_education: input.isFullTimeStudent || false,
       annual_salary: input.annualSalary || 0
     });
@@ -68,16 +71,19 @@ const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationRe
   let niCost = 0;
   let pensionCost = 0;
   
+  // Normalize employment type to handle both 'salary' and 'salaried'
+  const isSalaried = employmentType === 'salaried' || employmentType === 'salary';
+  
   // Calculate basic pay based on employment type
-  if (employmentType === 'salaried' && annualSalary) {
+  if (isSalaried && annualSalary) {
     // For salaried staff: Calculate daily rate based on annual salary
     const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
     // Convert daily rate to hours worked for this shift
     basicPay = (dailyRate / 8) * hours; // Assuming 8-hour standard workday
-    console.log(`Salaried staff cost calculation: annual=${annualSalary}, daily=${dailyRate}, hours=${hours}, basicPay=${basicPay}`);
+    console.log(`Salaried staff cost calculation (${employmentType}): annual=${annualSalary}, daily=${dailyRate}, hours=${hours}, basicPay=${basicPay}`);
   } else if (employmentType === 'contractor') {
     // For contractors: Use contractor_rate instead of hourly rate
-    const rate = contractorRate || hourlyRate || 0;
+    const rate = contractorRate || 0;
     basicPay = rate * hours;
     console.log(`Contractor cost calculation: rate=${rate}, hours=${hours}, basicPay=${basicPay}`);
     // No NI or pension for contractors
@@ -195,16 +201,20 @@ export const calculateShiftCost = (
   let annualSalary = 0;
   let contractorRate = 0;
   
-  if (employmentType === 'hourly') {
-    hourlyRate = staffMember.wage_rate || 0;
-  } else if (employmentType === 'salaried') {
+  // Normalize employment type check to handle both 'salary' and 'salaried'
+  const isSalaried = employmentType === 'salaried' || employmentType === 'salary';
+  
+  if (isSalaried) {
     annualSalary = staffMember.annual_salary || 0;
+  } else if (employmentType === 'hourly') {
+    hourlyRate = staffMember.wage_rate || 0;
   } else if (employmentType === 'contractor') {
     contractorRate = staffMember.contractor_rate || 0;
   }
 
   console.log(`Calculating shift cost for ${staffMember.first_name} ${staffMember.last_name}:`, {
     employmentType,
+    isSalaried,
     isFullTimeStudent,
     hourlyRate,
     annualSalary,

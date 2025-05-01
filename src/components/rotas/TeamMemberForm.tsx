@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -51,11 +50,18 @@ export default function TeamMemberForm({
       setSalary(teamMember.annual_salary?.toString() || '0');
       setIsFullTimeStudent(teamMember.is_full_time_student || false);
       setMaxDaysPerWeek(teamMember.max_days_per_week || 5);
-      setEmploymentType(teamMember.employment_type || 'hourly');
+      
+      // Normalize employment type - convert 'salary' to 'salaried' for consistency
+      let normalizedEmploymentType = teamMember.employment_type || 'hourly';
+      if (normalizedEmploymentType === 'salary') {
+        normalizedEmploymentType = 'salaried';
+      }
+      setEmploymentType(normalizedEmploymentType);
+      
       setAvailableForRota(teamMember.available_for_rota !== false);
       
       // Calculate estimated hourly rate for salaried staff
-      if (teamMember.employment_type === 'salaried' && teamMember.annual_salary) {
+      if ((teamMember.employment_type === 'salaried' || teamMember.employment_type === 'salary') && teamMember.annual_salary) {
         const hourlyEstimate = calculateHourlyRateFromSalary(teamMember.annual_salary);
         setEstimatedHourlyRate(hourlyEstimate);
       }
@@ -151,18 +157,24 @@ export default function TeamMemberForm({
     setIsSubmitting(true);
     
     try {
+      // Always normalize employment type to 'salaried' (not 'salary')
+      // to maintain consistency throughout the application
+      const normalizedEmploymentType = employmentType === 'salary' ? 'salaried' : employmentType;
+      
       const memberData = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: email.trim(),
         job_title: jobTitle.trim(),
         role,
-        wage_rate: employmentType !== 'salaried' ? parseFloat(hourlyRate) || 0 : 0,
-        annual_salary: employmentType === 'salaried' ? parseFloat(salary) || 0 : 0,
+        wage_rate: normalizedEmploymentType !== 'salaried' ? parseFloat(hourlyRate) || 0 : 0,
+        annual_salary: normalizedEmploymentType === 'salaried' ? parseFloat(salary) || 0 : 0,
         is_full_time_student: isFullTimeStudent,
         max_days_per_week: maxDaysPerWeek,
-        employment_type: employmentType,
+        employment_type: normalizedEmploymentType,
         available_for_rota: availableForRota,
+        // Make sure contractor rate is properly saved
+        contractor_rate: normalizedEmploymentType === 'contractor' ? parseFloat(hourlyRate) || 0 : 0
       };
 
       console.log('Saving team member with data:', memberData);

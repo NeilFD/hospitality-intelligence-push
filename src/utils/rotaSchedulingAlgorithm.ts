@@ -1417,8 +1417,11 @@ export class RotaSchedulingAlgorithm {
     const WEEKLY_NI_THRESHOLD = 175; // National Insurance weekly threshold
     const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
     
+    // Check if salaried (handle both 'salaried' and 'salary' values)
+    const isSalaried = employmentType === 'salaried' || employmentType === 'salary';
+    
     // Calculate costs based on employment type
-    if (employmentType === 'salaried') {
+    if (isSalaried) {
       // For salaried staff: Annual salary / working days per year
       const annualSalary = staffMember.annual_salary || 0;
       const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
@@ -1434,6 +1437,15 @@ export class RotaSchedulingAlgorithm {
         // Calculate pension
         pensionCost = dailyRate * PENSION_RATE;
       }
+      
+      // Log the calculation details
+      console.log(`Salaried staff cost calculation for ${staffMember.first_name} ${staffMember.last_name} (${employmentType}):`, {
+        annualSalary,
+        dailyRate,
+        shiftCost,
+        niCost,
+        pensionCost
+      });
     } else if (employmentType === 'contractor') {
       // For contractors: Use contractor_rate and hours, no NI or pension
       const contractorRate = staffMember.contractor_rate || 0;
@@ -1474,7 +1486,8 @@ export class RotaSchedulingAlgorithm {
         hours,
         wage_rate: staffMember.wage_rate,
         annual_salary: staffMember.annual_salary,
-        contractor_rate: staffMember.contractor_rate
+        contractor_rate: staffMember.contractor_rate,
+        is_salaried: isSalaried
       }
     });
     

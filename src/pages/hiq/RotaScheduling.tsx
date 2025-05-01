@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -103,11 +102,12 @@ export default function RotaScheduling() {
             staffIssuesList.push(`${name} (hourly) has no valid hourly rate set`);
           }
           
-          if (staff.employment_type === 'salaried' && (!staff.annual_salary || staff.annual_salary <= 0)) {
-            staffIssuesList.push(`${name} (salaried) has no valid annual salary set`);
+          // Check for both 'salaried' and 'salary' employment types
+          const isSalaried = staff.employment_type === 'salaried' || staff.employment_type === 'salary';
+          if (isSalaried && (!staff.annual_salary || staff.annual_salary <= 0)) {
+            staffIssuesList.push(`${name} (${staff.employment_type}) has no valid annual salary set`);
           }
           
-          // Updated to check for contractor_rate instead of wage_rate for contractors
           if (staff.employment_type === 'contractor' && (!staff.contractor_rate || staff.contractor_rate <= 0)) {
             staffIssuesList.push(`${name} (contractor) has no valid contractor rate set`);
           }
