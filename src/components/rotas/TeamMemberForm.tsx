@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -364,7 +363,7 @@ export default function TeamMemberForm({
                     id="annual_salary"
                     type="number"
                     min="0"
-                    step="100"
+                    step="0.01"
                     value={formData.annual_salary}
                     onChange={(e) => handleChange('annual_salary', parseFloat(e.target.value))}
                   />

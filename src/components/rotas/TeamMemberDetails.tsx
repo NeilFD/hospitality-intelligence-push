@@ -22,6 +22,20 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
     onEdit(member);
   };
 
+  // New function to get the appropriate wage display based on employment type
+  const getWageDisplay = () => {
+    if (!member) return '£0.00/hour';
+
+    if (member.employment_type === 'salary') {
+      return `£${member.annual_salary?.toLocaleString() || '0'}/year`;
+    } else if (member.employment_type === 'contractor') {
+      return `£${member.contractor_rate?.toFixed(2) || '0.00'}/hour (contractor)`;
+    } else {
+      // Default to hourly rate
+      return `£${member.wage_rate?.toFixed(2) || '0.00'}/hour`;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] md:max-w-[800px] max-h-[90vh] overflow-y-auto">
@@ -49,7 +63,7 @@ export default function TeamMemberDetails({ isOpen, onClose, member, onEdit, onD
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Wage Rate</div>
-                <div className="font-medium">£{member.wage_rate?.toFixed(2) || '0.00'}/hour</div>
+                <div className="font-medium">{getWageDisplay()}</div>
               </div>
             </div>
           </div>
