@@ -82,7 +82,21 @@ export class RotaSchedulingAlgorithm {
       currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
     }
     
-    console.log(`Processing ${dates.length} days for scheduling`);
+    // NEW CODE: Sort dates by revenue forecast (highest to lowest)
+    const sortedDates = [...dates].sort((dateA, dateB) => {
+      const revenueA = parseFloat(revenueForecast[dateA] || '0');
+      const revenueB = parseFloat(revenueForecast[dateB] || '0');
+      return revenueB - revenueA; // Sort in descending order
+    });
+    
+    console.log(`Processing ${dates.length} days for scheduling (prioritized by revenue)`);
+    console.log("Revenue-prioritized processing order:");
+    sortedDates.forEach(date => {
+      const dayOfWeek = format(new Date(date), 'EEEE');
+      const revenue = parseFloat(revenueForecast[date] || '0');
+      console.log(`- ${dayOfWeek} (${date}): £${revenue.toFixed(2)}`);
+    });
+    
     console.log(`Staff members available: ${this.staff.length}`);
     console.log(`Job roles available: ${this.jobRoles.length}`);
     console.log(`Shift rules available: ${this.shiftRules.length}`);
@@ -175,8 +189,14 @@ export class RotaSchedulingAlgorithm {
     let totalCost = 0;
     let totalRevenue = 0;
     
-    // Process each day
-    for (const date of dates) {
+    // NEW: Add all revenue to total
+    dates.forEach(date => {
+      const dayRevenue = parseFloat(revenueForecast[date] || '0');
+      totalRevenue += dayRevenue;
+    });
+    
+    // Process each day by revenue priority order (NEW)
+    for (const date of sortedDates) {
       const dayOfWeek = format(new Date(date), 'EEEE').toLowerCase();
       // Fixed mapping that properly converts full day names to day codes
       const dayCodeMap: Record<string, string> = {
@@ -191,12 +211,8 @@ export class RotaSchedulingAlgorithm {
       const dayCode = dayCodeMap[dayOfWeek];
       
       // Log the day being processed and the code being used
-      console.log(`Processing ${dayOfWeek} (${date}) with day code: ${dayCode}`);
-      
       const dayRevenue = parseFloat(revenueForecast[date] || '0');
-      totalRevenue += dayRevenue;
-      
-      console.log(`Day revenue for ${dayOfWeek} (${date}): ${dayRevenue}`);
+      console.log(`Processing ${dayOfWeek} (${date}) with day code: ${dayCode}, revenue: £${dayRevenue}`);
       
       if (dayRevenue <= 0) {
         console.log(`Skipping ${date} - no revenue forecast`);

@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, Settings, Users, FileEdit, BarChart, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, Settings, Users, FileEdit, BarChart, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -209,6 +210,15 @@ export default function RotaScheduling() {
           <div className="flex items-center gap-4">
             <RotasLogo size="md" className="hidden md:block animate-float" />
           </div>
+        </div>
+        
+        <div className="px-4 mb-4">
+          <Alert variant="default" className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700">
+              This rota engine now prioritizes days with higher revenue forecasts when scheduling staff, ensuring busier days receive optimal staffing allocation first.
+            </AlertDescription>
+          </Alert>
         </div>
         
         {staffIssues.length > 0 && (
