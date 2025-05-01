@@ -35,7 +35,9 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const fetchShiftRules = async () => {
     setIsLoading(true);
     try {
-      // Modified query: Using .not() instead of .eq() to handle NULL values in archived field
+      console.log('Fetching shift rules for location:', location.id);
+      
+      // CRITICAL FIX: Using .or() to explicitly handle both false and NULL values in archived column
       const { data: rules, error } = await supabase
         .from('shift_rules')
         .select(`
@@ -43,32 +45,43 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
           job_roles (*)
         `)
         .eq('location_id', location.id)
-        .not('archived', 'eq', true); // This will include both false and NULL values
+        .or('archived.is.null,archived.eq.false'); // This explicitly handles both false and NULL values
       
       if (error) {
         throw error;
       }
       
-      console.log('Fetched shift rules:', rules); // Debug log to check fetched data
+      console.log('Raw shift rules data returned from DB:', rules);
+      
+      // Log all shift rules with their archived status for thorough debugging
+      if (rules && rules.length > 0) {
+        rules.forEach(rule => {
+          console.log(`Shift "${rule.name}" (${rule.day_of_week}): archived=${rule.archived}`, 
+            `(${rule.archived === null ? 'NULL' : rule.archived ? 'TRUE' : 'FALSE'})`);
+        });
+      } else {
+        console.log('No shift rules returned from the database query');
+      }
       
       // Log the days of the week to see which ones are present
       const daysList = rules?.map(rule => rule.day_of_week) || [];
       const uniqueDays = [...new Set(daysList)];
       console.log('Days found in shift rules:', uniqueDays);
       
-      // Check if any rules exist for Sunday specifically
-      const sundayRules = rules?.filter(rule => rule.day_of_week === 'sun') || [];
-      console.log('Sunday rules found:', sundayRules.length, sundayRules);
-      
-      // Log each Sunday shift with its archived status for debugging
-      if (sundayRules.length > 0) {
-        sundayRules.forEach(rule => {
-          console.log(`Sunday shift "${rule.name}" archived status:`, rule.archived, 
-            `(${rule.archived === null ? 'NULL' : 
-               rule.archived === true ? 'TRUE' : 
-               'FALSE'})`);
-        });
-      }
+      // Check if any rules exist for each day specifically
+      const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      dayOrder.forEach(day => {
+        const dayRules = rules?.filter(rule => rule.day_of_week === day) || [];
+        console.log(`${day} rules found:`, dayRules.length);
+        
+        // For Sunday, do additional logging
+        if (day === 'sun') {
+          console.log('Full Sunday rules data:', dayRules);
+          dayRules.forEach(rule => {
+            console.log(`Sunday shift "${rule.name}": archived=${rule.archived} (${typeof rule.archived})`);
+          });
+        }
+      });
       
       setShiftRules(rules || []);
     } catch (error) {
@@ -98,9 +111,17 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
 
   // Group shifts by day - ensuring each day is properly represented
   const shiftsByDay = dayOrder.reduce<Record<string, any[]>>((acc, day) => {
-    acc[day] = shiftRules.filter(rule => rule.day_of_week === day);
+    const rulesForDay = shiftRules.filter(rule => rule.day_of_week === day);
+    console.log(`Grouping for day ${day}: found ${rulesForDay.length} shifts`);
+    acc[day] = rulesForDay;
     return acc;
   }, {});
+
+  // Extra verification logging for Sunday shifts
+  useEffect(() => {
+    console.log('shiftsByDay object:', shiftsByDay);
+    console.log('Sunday shifts in shiftsByDay:', shiftsByDay['sun']);
+  }, [shiftsByDay]);
 
   // Get day name
   const getDayName = (dayCode: string) => {
@@ -128,20 +149,27 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   // Additional logging to debug filtering
   useEffect(() => {
     if (selectedDay !== 'none') {
+      console.log(`Selected day: ${selectedDay} (${getDayName(selectedDay)})`);
+      
       const filtered = selectedDay === 'all' 
         ? shiftRules 
         : shiftRules.filter(rule => rule.day_of_week === selectedDay);
         
       console.log(`Filtered rules for selected day "${selectedDay}":`, filtered.length);
+      
+      // Extra logging for Sunday specifically
       if (selectedDay === 'sun') {
         console.log('Sunday filtered rules:', filtered);
         
         // Check for any filtering issues
         const allSunRules = shiftRules.filter(rule => rule.day_of_week === 'sun');
-        console.log('All Sunday rules before filtering:', allSunRules.length);
+        console.log('All Sunday rules before filtering:', allSunRules.length, allSunRules);
         
         if (filtered.length !== allSunRules.length) {
-          console.warn('Discrepancy in Sunday rules - some may be missing!');
+          console.warn('Discrepancy in Sunday rules - some may be missing!', {
+            filtered,
+            allSunRules
+          });
         }
       }
     }
@@ -150,7 +178,10 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   // Get days to display based on filter
   const getDaysToDisplay = () => {
     if (selectedDay === 'none') return [];
-    return selectedDay === 'all' ? dayOrder : [selectedDay];
+    
+    const daysToDisplay = selectedDay === 'all' ? dayOrder : [selectedDay];
+    console.log('Days to display:', daysToDisplay);
+    return daysToDisplay;
   };
 
   // Determine opening hours for the Gantt chart
@@ -244,7 +275,8 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
                       </div>
                       {shiftsByDay[day] && shiftsByDay[day].length > 0 ? (
                         <div className="divide-y">
-                          {shiftsByDay[day].map((rule: any) => {
+                          {shiftsByDay[day].map((rule: any, index: number) => {
+                            console.log(`Rendering shift ${index} for ${day}: ${rule.name}`);
                             const role = jobRoles.find(r => r.id === rule.job_role_id);
                             return (
                               <div key={rule.id} className="px-4 py-2 flex flex-wrap justify-between items-center">

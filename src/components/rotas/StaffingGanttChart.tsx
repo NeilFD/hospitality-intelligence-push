@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { format, parse } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,6 +20,31 @@ interface StaffingGanttChartProps {
 export default function StaffingGanttChart({ rules, jobRoles, openingHours }: StaffingGanttChartProps) {
   const [troughData, setTroughData] = useState<Record<string, any[]>>({});
   const [isLoadingTroughs, setIsLoadingTroughs] = useState(false);
+  
+  // Debug logging for incoming rules
+  useEffect(() => {
+    console.log('StaffingGanttChart: Received rules:', rules.length);
+    
+    // Group rules by day for debugging
+    const rulesByDay: Record<string, any[]> = {};
+    rules.forEach(rule => {
+      if (!rulesByDay[rule.day_of_week]) {
+        rulesByDay[rule.day_of_week] = [];
+      }
+      rulesByDay[rule.day_of_week].push(rule);
+    });
+    
+    // Log summary of rules by day
+    Object.entries(rulesByDay).forEach(([day, dayRules]) => {
+      console.log(`StaffingGanttChart: ${day} rules:`, dayRules.length);
+    });
+    
+    // Extra debug for rules with archived status
+    rules.forEach(rule => {
+      console.log(`StaffingGanttChart rule "${rule.name}" (${rule.day_of_week}): archived=${rule.archived}`, 
+        `(${rule.archived === null ? 'NULL' : rule.archived ? 'TRUE' : 'FALSE'})`);
+    });
+  }, [rules]);
   
   // Generate time slots based on opening hours
   const startTime = openingHours.start.substring(0, 5);
@@ -43,6 +69,7 @@ export default function StaffingGanttChart({ rules, jobRoles, openingHours }: St
       try {
         // Get all shift rule IDs
         const shiftRuleIds = rules.map(rule => rule.id);
+        console.log('StaffingGanttChart: Fetching troughs for shift rules:', shiftRuleIds);
         
         // Fetch trough data for these shifts
         const { data: troughs, error } = await supabase
@@ -54,6 +81,8 @@ export default function StaffingGanttChart({ rules, jobRoles, openingHours }: St
           console.error('Error fetching trough data:', error);
           return;
         }
+        
+        console.log('StaffingGanttChart: Trough data returned:', troughs?.length || 0);
         
         // Organize troughs by shift rule ID
         const troughsByShiftId: Record<string, any[]> = {};
@@ -133,6 +162,16 @@ export default function StaffingGanttChart({ rules, jobRoles, openingHours }: St
     return roleComparison;
   });
 
+  // Additional logging for sorted rules
+  useEffect(() => {
+    console.log('StaffingGanttChart: Sorted rules:', sortedRules.length);
+    const dayCount: Record<string, number> = {};
+    sortedRules.forEach(rule => {
+      dayCount[rule.day_of_week] = (dayCount[rule.day_of_week] || 0) + 1;
+    });
+    console.log('StaffingGanttChart: Rules by day after sorting:', dayCount);
+  }, [sortedRules]);
+
   if (rules.length === 0) {
     return (
       <Card>
@@ -171,6 +210,9 @@ export default function StaffingGanttChart({ rules, jobRoles, openingHours }: St
                 sortedRules.map((rule, ruleIndex) => {
                   const jobRole = jobRoles.find(role => role.id === rule.job_role_id);
                   const ruleTroughs = troughData[rule.id] || [];
+                  
+                  // Log each rule being rendered
+                  console.log(`StaffingGanttChart: Rendering rule ${ruleIndex}: ${rule.name} (${rule.day_of_week})`);
                   
                   return (
                     <div key={ruleIndex} className="flex border-b hover:bg-muted/10">
