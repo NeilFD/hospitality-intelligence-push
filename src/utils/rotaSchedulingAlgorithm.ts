@@ -628,8 +628,8 @@ export class RotaSchedulingAlgorithm {
     totalCost: number;
   }) {
     // Find the relevant job role ID
-    const jobRole = this.findJobRole(staffType);
-    if (!jobRole) {
+    const staffJobRole = this.findJobRole(staffType);
+    if (!staffJobRole) {
       console.log(`No job role found for ${staffType}, creating default`);
       // Instead of returning, create a default job role
       // This will be used in the shift creation but won't modify the database
@@ -644,6 +644,21 @@ export class RotaSchedulingAlgorithm {
       
       // Calculate shift hours
       const shiftHours = this.calculateHours(startTime, endTime, breakMinutes);
+
+      // Filter staff by job role - only include those with matching primary job title or explicit secondary role
+      let eligibleStaff = rankedStaff.filter(s => {
+        // Primary role match - exact match on job title
+        if (s.job_title === defaultJobRole.title) {
+          return true;
+        }
+        
+        // Secondary role match - must be explicitly in secondary_job_roles array
+        if (Array.isArray(s.secondary_job_roles) && s.secondary_job_roles.includes(defaultJobRole.title)) {
+          return true;
+        }
+        
+        return false;
+      });
       
       // Assign staff up to the minimum required
       for (let i = 0; i < minStaff; i++) {
@@ -694,12 +709,12 @@ export class RotaSchedulingAlgorithm {
     // Filter staff by job role - only include those with matching primary job title or explicit secondary role
     let eligibleStaff = rankedStaff.filter(s => {
       // Primary role match - exact match on job title
-      if (s.job_title === jobRole.title) {
+      if (s.job_title === staffJobRole.title) {
         return true;
       }
       
       // Secondary role match - must be explicitly in secondary_job_roles array
-      if (Array.isArray(s.secondary_job_roles) && s.secondary_job_roles.includes(jobRole.title)) {
+      if (Array.isArray(s.secondary_job_roles) && s.secondary_job_roles.includes(staffJobRole.title)) {
         return true;
       }
       
@@ -708,16 +723,16 @@ export class RotaSchedulingAlgorithm {
     
     // If no eligible staff for the specific role title, try broader matching based on job role categories
     if (eligibleStaff.length === 0) {
-      console.log(`No exact title matches for ${jobRole.title}, trying category-based matching`);
+      console.log(`No exact title matches for ${staffJobRole.title}, trying category-based matching`);
       
       if (staffType === 'foh') {
         // Front of House roles - look for FOH staff based on known FOH role titles or not being kitchen
         eligibleStaff = rankedStaff.filter(s => {
-          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
+          const staffJobRoleInfo = this.jobRoles.find(r => r.title === s.job_title);
           
           // If we have job role data for this staff member, use that
-          if (staffJobRole) {
-            return !staffJobRole.is_kitchen;
+          if (staffJobRoleInfo) {
+            return !staffJobRoleInfo.is_kitchen;
           }
           
           // Otherwise make a best-guess based on common job title keywords
@@ -729,11 +744,11 @@ export class RotaSchedulingAlgorithm {
       } else if (staffType === 'kitchen') {
         // Kitchen roles (excluding porters) - look for chef roles
         eligibleStaff = rankedStaff.filter(s => {
-          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
+          const staffJobRoleInfo = this.jobRoles.find(r => r.title === s.job_title);
           
           // If we have job role data for this staff member, use that
-          if (staffJobRole) {
-            return staffJobRole.is_kitchen && !s.job_title.toLowerCase().includes('porter');
+          if (staffJobRoleInfo) {
+            return staffJobRoleInfo.is_kitchen && !s.job_title.toLowerCase().includes('porter');
           }
           
           // Otherwise make a best-guess based on common job title keywords
@@ -746,11 +761,11 @@ export class RotaSchedulingAlgorithm {
       } else if (staffType === 'kp') {
         // Kitchen porter roles - look for porter specific roles
         eligibleStaff = rankedStaff.filter(s => {
-          const staffJobRole = this.jobRoles.find(r => r.title === s.job_title);
+          const staffJobRoleInfo = this.jobRoles.find(r => r.title === s.job_title);
           
           // If we have job role data for this staff member, use that
-          if (staffJobRole) {
-            return staffJobRole.is_kitchen && s.job_title.toLowerCase().includes('porter');
+          if (staffJobRoleInfo) {
+            return staffJobRoleInfo.is_kitchen && s.job_title.toLowerCase().includes('porter');
           }
           
           // Otherwise check job title directly
@@ -760,70 +775,6 @@ export class RotaSchedulingAlgorithm {
     }
     
     console.log(`Found ${eligibleStaff.length} eligible staff for ${staffType} roles`);
-    
-    // Find the relevant job role ID
-    const jobRole = this.findJobRole(staffType);
-    if (!jobRole) {
-      console.log(`No job role found for ${staffType}, creating default`);
-      // Instead of returning, create a default job role
-      // This will be used in the shift creation but won't modify the database
-      const defaultJobRole = {
-        id: `default-${staffType}`,
-        title: staffType === 'foh' ? 'Server' : (staffType === 'kitchen' ? 'Chef' : 'Kitchen Porter'),
-        is_kitchen: staffType !== 'foh'
-      };
-      
-      // Calculate shift times based on segment
-      const { startTime, endTime, breakMinutes } = this.calculateShiftTimes(segment, dayOfWeek);
-      
-      // Calculate shift hours
-      const shiftHours = this.calculateHours(startTime, endTime, breakMinutes);
-      
-      // Assign staff up to the minimum required
-      for (let i = 0; i < minStaff; i++) {
-        // Find the best available staff member for this shift
-        const staffMember = this.findBestStaffForShift(
-          eligibleStaff, 
-          date, 
-          shiftHours, 
-          staffWeeklyAllocations
-        );
-        
-        if (!staffMember) break; // No eligible staff available
-        
-        // Calculate costs for this staff member
-        const { shiftCost, niCost, pensionCost, totalShiftCost } = 
-          this.calculateCosts(staffMember, shiftHours);
-        
-        // Create the shift
-        const shift = {
-          profile_id: staffMember.id,
-          date,
-          day_of_week: dayOfWeek,
-          start_time: startTime,
-          end_time: endTime,
-          break_minutes: breakMinutes,
-          job_role_id: defaultJobRole.id,
-          is_secondary_role: true,
-          hi_score: staffMember.hi_score || 0,
-          shift_cost: shiftCost,
-          employer_ni_cost: niCost,
-          employer_pension_cost: pensionCost,
-          total_cost: totalShiftCost
-        };
-        
-        // Add the shift
-        shifts.push(shift);
-        totalCost += totalShiftCost;
-        
-        console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to default ${defaultJobRole.title} role (${startTime}-${endTime}) on ${date}`);
-        
-        // Update staff allocations
-        this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
-      }
-      
-      return;
-    }
     
     // Calculate shift times based on segment
     const { startTime, endTime, breakMinutes } = this.calculateShiftTimes(segment, dayOfWeek);
@@ -858,8 +809,8 @@ export class RotaSchedulingAlgorithm {
         start_time: startTime,
         end_time: endTime,
         break_minutes: breakMinutes,
-        job_role_id: jobRole.id,
-        is_secondary_role: this.isSecondaryRole(staffMember, jobRole),
+        job_role_id: staffJobRole.id,
+        is_secondary_role: this.isSecondaryRole(staffMember, staffJobRole),
         hi_score: staffMember.hi_score || 0,
         shift_cost: shiftCost,
         employer_ni_cost: niCost,
@@ -871,7 +822,7 @@ export class RotaSchedulingAlgorithm {
       shifts.push(shift);
       totalCost += totalShiftCost;
       
-      console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to ${jobRole.title} (${startTime}-${endTime}) on ${date}`);
+      console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to ${staffJobRole.title} (${startTime}-${endTime}) on ${date}`);
       
       // Update staff allocations
       this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
