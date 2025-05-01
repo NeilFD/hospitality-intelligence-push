@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -217,6 +216,15 @@ export default function RotaScheduling() {
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-700">
               This rota engine now prioritizes days with higher revenue forecasts when scheduling staff, ensuring busier days receive optimal staffing allocation first.
+            </AlertDescription>
+          </Alert>
+        </div>
+        
+        <div className="px-4 mb-4">
+          <Alert variant="default" className="bg-green-50 border-green-200">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700">
+              Salaried staff costs are now correctly calculated when assigned to multiple shifts in a single day, preventing cost duplication while maintaining accurate scheduling.
             </AlertDescription>
           </Alert>
         </div>

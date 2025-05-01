@@ -23,6 +23,8 @@ export class RotaSchedulingAlgorithm {
   dailyStaffAllocations: Record<string, Record<string, {
     hoursWorked: number;
     shifts: any[];
+    // Track if salaried staff has already been paid for this day
+    salaryApplied?: boolean;
   }>> = {};
 
   constructor({ request, staff, jobRoles, thresholds, location }: {
@@ -180,7 +182,8 @@ export class RotaSchedulingAlgorithm {
       rankedStaff.forEach(staff => {
         this.dailyStaffAllocations[date][staff.id] = {
           hoursWorked: 0,
-          shifts: []
+          shifts: [],
+          salaryApplied: false // Initialize salary tracking for each staff member per day
         };
       });
     });
@@ -466,9 +469,10 @@ export class RotaSchedulingAlgorithm {
     const endTime = isWeekend ? '18:00:00' : '17:00:00';
     const breakMinutes = 30;
     
-    // Calculate costs
+    // Calculate costs (pass date for salaried staff tracking)
     const hours = this.calculateHours(startTime, endTime, breakMinutes);
-    const { shiftCost, niCost, pensionCost, totalShiftCost } = this.calculateCosts(staffMember, hours);
+    const { shiftCost, niCost, pensionCost, totalShiftCost, isSecondShift } = 
+      this.calculateCosts(staffMember, hours, date);
     
     // Create the shift
     const emergencyShift = {
@@ -485,7 +489,8 @@ export class RotaSchedulingAlgorithm {
       employer_ni_cost: niCost,
       employer_pension_cost: pensionCost,
       total_cost: totalShiftCost,
-      is_emergency_shift: true  // Mark as emergency shift
+      is_emergency_shift: true,  // Mark as emergency shift
+      is_second_shift_of_day: isSecondShift // Mark if this is a second shift with zero cost
     };
     
     shifts.push(emergencyShift);
@@ -805,9 +810,9 @@ export class RotaSchedulingAlgorithm {
         break; // No eligible staff available
       }
       
-      // Calculate costs for this staff member
-      const { shiftCost, niCost, pensionCost, totalShiftCost } = 
-        this.calculateCosts(staffMember, shiftHours);
+      // Calculate costs for this staff member (pass date for salaried staff tracking)
+      const { shiftCost, niCost, pensionCost, totalShiftCost, isSecondShift } = 
+        this.calculateCosts(staffMember, shiftHours, date);
       
       // Check if this is a secondary role for the staff member
       const isSecondaryRole = this.isSecondaryRole(staffMember, jobRole);
@@ -828,7 +833,8 @@ export class RotaSchedulingAlgorithm {
         employer_pension_cost: pensionCost,
         total_cost: totalShiftCost,
         shift_rule_id: rule.id,
-        shift_rule_name: rule.name || jobRoleTitle
+        shift_rule_name: rule.name || jobRoleTitle,
+        is_second_shift_of_day: isSecondShift // Mark if this is a second shift with zero cost
       };
       
       // Add the shift
@@ -836,7 +842,7 @@ export class RotaSchedulingAlgorithm {
       totalCost += totalShiftCost;
       
       console.log(`Assigned ${staffMember.first_name} ${staffMember.last_name} to ${rule.name || jobRoleTitle} (${startTime}-${endTime}) on ${date}`);
-      console.log(`Job title: ${staffMember.job_title}, Is secondary role: ${isSecondaryRole}`);
+      console.log(`Job title: ${staffMember.job_title}, Is secondary role: ${isSecondaryRole}, Is second shift of day: ${isSecondShift}`);
       
       // Update staff allocations
       this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
@@ -1064,9 +1070,9 @@ export class RotaSchedulingAlgorithm {
         continue;
       }
       
-      // Calculate costs
-      const { shiftCost, niCost, pensionCost, totalShiftCost } = 
-        this.calculateCosts(staffMember, shiftHours);
+      // Calculate costs (pass date for salaried staff tracking)
+      const { shiftCost, niCost, pensionCost, totalShiftCost, isSecondShift } = 
+        this.calculateCosts(staffMember, shiftHours, date);
       
       // Check if this is a secondary role
       const isSecondaryRole = staffMember.job_title !== bestRole.title && 
@@ -1087,7 +1093,8 @@ export class RotaSchedulingAlgorithm {
         shift_cost: shiftCost,
         employer_ni_cost: niCost,
         employer_pension_cost: pensionCost,
-        total_cost: totalShiftCost
+        total_cost: totalShiftCost,
+        is_second_shift_of_day: isSecondShift // Mark if this is a second shift with zero cost
       };
       
       // Add the shift
@@ -1417,8 +1424,9 @@ export class RotaSchedulingAlgorithm {
 
   /**
    * Calculate costs for a shift based on employment type
+   * Now checks if salary has already been applied for a salaried staff member on this day
    */
-  calculateCosts(staffMember: any, hours: number) {
+  calculateCosts(staffMember: any, hours: number, date?: string) {
     const employmentType = staffMember.employment_type || 'hourly';
     const isFullTimeStudent = staffMember.is_full_time_student || false;
     
@@ -1438,7 +1446,22 @@ export class RotaSchedulingAlgorithm {
     
     // Calculate costs based on employment type
     if (isSalaried) {
-      // For salaried staff: Annual salary / working days per year
+      // For salaried staff: Check if we've already applied their salary for this day
+      if (date && this.dailyStaffAllocations[date]?.[staffMember.id]?.salaryApplied) {
+        // Salary already applied for today - don't double count the cost
+        console.log(`Salaried staff ${staffMember.first_name} ${staffMember.last_name} already paid for ${date} - not adding additional cost`);
+        
+        // Return zero costs since we've already accounted for this staff member today
+        return {
+          shiftCost: 0,
+          niCost: 0,
+          pensionCost: 0,
+          totalShiftCost: 0,
+          isSecondShift: true // Mark as a second shift for reporting
+        };
+      }
+      
+      // For first shift of the day for salaried staff
       const annualSalary = staffMember.annual_salary || 0;
       const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
       shiftCost = dailyRate;
@@ -1452,6 +1475,12 @@ export class RotaSchedulingAlgorithm {
         
         // Calculate pension
         pensionCost = dailyRate * PENSION_RATE;
+      }
+      
+      // Mark that we've applied the salary for this day if date is provided
+      if (date && this.dailyStaffAllocations[date]?.[staffMember.id]) {
+        this.dailyStaffAllocations[date][staffMember.id].salaryApplied = true;
+        console.log(`Marking salary as applied for ${staffMember.first_name} ${staffMember.last_name} on ${date}`);
       }
       
       // Log the calculation details
@@ -1511,7 +1540,8 @@ export class RotaSchedulingAlgorithm {
       shiftCost,
       niCost,
       pensionCost,
-      totalShiftCost
+      totalShiftCost,
+      isSecondShift: false
     };
   }
 }
