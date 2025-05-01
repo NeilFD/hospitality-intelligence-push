@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -47,6 +48,9 @@ import {
 } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+
+// Type for day of week
+type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 // Define schema for trough period
 const troughPeriodSchema = z.object({
@@ -99,7 +103,7 @@ export default function ShiftRuleForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      day_of_week: day || 'mon',
+      day_of_week: (day as DayOfWeek) || 'mon',
       job_role_id: '',
       start_time: '09:00',
       end_time: '17:00',
@@ -136,7 +140,7 @@ export default function ShiftRuleForm({
         // Load main shift data
         form.reset({
           name: editingShift.name || '',
-          day_of_week: editingShift.day_of_week,
+          day_of_week: editingShift.day_of_week as DayOfWeek,
           job_role_id: editingShift.job_role_id,
           start_time: editingShift.start_time,
           end_time: editingShift.end_time,
@@ -155,7 +159,7 @@ export default function ShiftRuleForm({
         // Reset form for a new shift
         form.reset({
           name: '',
-          day_of_week: day || 'mon',
+          day_of_week: (day as DayOfWeek) || 'mon',
           job_role_id: jobRoles.length > 0 ? jobRoles[0].id : '',
           start_time: '09:00',
           end_time: '17:00',
