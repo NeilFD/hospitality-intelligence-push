@@ -18,57 +18,59 @@ export function SideNav({ className }: SideNavProps) {
   
   // Immediately determine if we're on a HiQ path
   const isHiqPath = location.pathname.includes('/hiq');
+  const isMasterPath = location.pathname.includes('/master');
+  const isFoodPath = location.pathname.includes('/food');
+  const isBeveragePath = location.pathname.includes('/beverage');
+  const isTeamPath = location.pathname.includes('/team');
+  const isWagesPath = location.pathname.includes('/wages');
+  const isPLPath = location.pathname.includes('/pl');
   
   // Aggressively enforce current module based on URL path
   useEffect(() => {
     const path = location.pathname;
     console.log('SideNav: Current path:', path, 'Current module:', currentModule, 'Is HiQ path:', isHiqPath);
     
-    // HiQ path detection - highest priority
-    if (path.includes('/hiq')) {
+    // Module path detection - set currentModule based on path
+    if (path.includes('/hiq') && currentModule !== 'hiq') {
       console.log('SideNav: HiQ path detected, forcing currentModule to hiq');
-      
-      // Always set to HiQ when on HiQ pages, regardless of current state
-      if (currentModule !== 'hiq') {
-        console.log('SideNav: Updating module from', currentModule, 'to hiq');
-        setCurrentModule('hiq');
-        
-        // Force update localStorage directly for maximum compatibility
-        try {
-          const storeData = localStorage.getItem('tavern-kitchen-ledger');
-          if (storeData) {
-            const parsedData = JSON.parse(storeData);
-            if (parsedData.state) {
-              parsedData.state.currentModule = 'hiq';
-              localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
-              console.log('SideNav: Directly updated localStorage currentModule to hiq');
-            }
-          }
-          
-          // Also update the hospitality-intelligence store for redundancy
-          const hiData = localStorage.getItem('hospitality-intelligence');
-          if (hiData) {
-            const parsedData = JSON.parse(hiData);
-            if (parsedData.state) {
-              parsedData.state.currentModule = 'hiq';
-              localStorage.setItem('hospitality-intelligence', JSON.stringify(parsedData));
-              console.log('SideNav: Updated hospitality-intelligence localStorage');
-            }
-          }
-        } catch (e) {
-          console.error('SideNav: Error updating localStorage:', e);
+      setCurrentModule('hiq');
+    } else if (path.includes('/master') && currentModule !== 'master') {
+      console.log('SideNav: Master path detected, setting currentModule to master');
+      setCurrentModule('master');
+    } else if (path.includes('/home/dashboard') && currentModule !== 'home') {
+      console.log('SideNav: Setting current module to home');
+      setCurrentModule('home');
+    } else if (path.includes('/beverage') && currentModule !== 'beverage') {
+      console.log('SideNav: Setting current module to beverage');
+      setCurrentModule('beverage');
+    } else if (path.includes('/food') && currentModule !== 'food') {
+      console.log('SideNav: Setting current module to food');
+      setCurrentModule('food');
+    } else if (path.includes('/team') && currentModule !== 'team') {
+      console.log('SideNav: Setting current module to team');
+      setCurrentModule('team');
+    } else if (path.includes('/wages') && currentModule !== 'wages') {
+      console.log('SideNav: Setting current module to wages');
+      setCurrentModule('wages');
+    } else if (path.includes('/pl') && currentModule !== 'pl') {
+      console.log('SideNav: Setting current module to pl');
+      setCurrentModule('pl');
+    }
+    
+    // Ensure localStorage is updated for the current module
+    try {
+      const storeData = localStorage.getItem('tavern-kitchen-ledger');
+      if (storeData) {
+        const parsedData = JSON.parse(storeData);
+        if (parsedData.state && parsedData.state.currentModule !== currentModule) {
+          parsedData.state.currentModule = currentModule;
+          localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+          console.log('SideNav: Updated localStorage currentModule to', currentModule);
         }
       }
+    } catch (e) {
+      console.error('SideNav: Error updating localStorage:', e);
     }
-    // Handle other module paths
-    else if (path.startsWith('/food')) {
-      currentModule !== 'food' && setCurrentModule('food');
-    }
-    else if (path.startsWith('/beverage')) {
-      currentModule !== 'beverage' && setCurrentModule('beverage');
-    }
-    // Add other module paths as needed
-    
   }, [location.pathname, currentModule, setCurrentModule]);
   
   // Add an additional effect to double-check that HiQ submenu is properly handled
@@ -113,6 +115,12 @@ export function SideNav({ className }: SideNavProps) {
     <Sidebar 
       className={cn("w-[250px] border-r flex-shrink-0", className)} 
       data-hiq-path={isHiqPath}
+      data-master-path={isMasterPath}
+      data-food-path={isFoodPath}
+      data-beverage-path={isBeveragePath}
+      data-team-path={isTeamPath}
+      data-wages-path={isWagesPath}
+      data-pl-path={isPLPath}
       data-current-module={currentModule}
     >
       <div className="flex h-full flex-col">

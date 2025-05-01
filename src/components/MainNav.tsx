@@ -16,9 +16,13 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
   const [accessibleModules, setAccessibleModules] = useState<ModuleType[]>([]);
   const location = useLocation();
   const [activeHiqItem, setActiveHiqItem] = useState<string>('dashboard');
+  const [activeMasterItem, setActiveMasterItem] = useState<string>('dashboard');
+  const [activeTeamItem, setActiveTeamItem] = useState<string>('dashboard');
   
-  // Always determine if we're on any HiQ page directly from path
+  // Always determine if we're on any path directly from the location
   const isHiqPath = location.pathname.includes('/hiq');
+  const isMasterPath = location.pathname.includes('/master');
+  const isTeamPath = location.pathname.includes('/team');
   
   useEffect(() => {
     // Get the user role from localStorage
@@ -33,23 +37,46 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
       .catch(error => {
         console.error('Error fetching accessible modules:', error);
         // Fallback to showing all modules if there's an error
-        setAccessibleModules(['home', 'food', 'beverage', 'pl', 'wages', 'team', 'hiq']);
+        setAccessibleModules(['home', 'food', 'beverage', 'pl', 'wages', 'team', 'hiq', 'master']);
       });
   }, []);
 
-  // When on a HiQ page, set current module to 'hiq'
+  // When on a specific page, set current module accordingly
   useEffect(() => {
+    const path = location.pathname;
+    
     if (isHiqPath && currentModule !== 'hiq') {
-      console.log('MainNav: Setting currentModule to hiq because we are on a HiQ path');
+      console.log('MainNav: Setting currentModule to hiq');
       setCurrentModule('hiq');
+    } else if (isMasterPath && currentModule !== 'master') {
+      console.log('MainNav: Setting currentModule to master');
+      setCurrentModule('master');
+    } else if (path.includes('/team') && currentModule !== 'team') {
+      console.log('MainNav: Setting currentModule to team');
+      setCurrentModule('team');
+    } else if (path.includes('/food') && currentModule !== 'food') {
+      console.log('MainNav: Setting currentModule to food');
+      setCurrentModule('food');
+    } else if (path.includes('/beverage') && currentModule !== 'beverage') {
+      console.log('MainNav: Setting currentModule to beverage');
+      setCurrentModule('beverage');
+    } else if (path.includes('/pl') && currentModule !== 'pl') {
+      console.log('MainNav: Setting currentModule to pl');
+      setCurrentModule('pl');
+    } else if (path.includes('/wages') && currentModule !== 'wages') {
+      console.log('MainNav: Setting currentModule to wages');
+      setCurrentModule('wages');
+    } else if (path.includes('/home') && currentModule !== 'home') {
+      console.log('MainNav: Setting currentModule to home');
+      setCurrentModule('home');
     }
-  }, [isHiqPath, currentModule, setCurrentModule]);
+  }, [location.pathname, currentModule, setCurrentModule]);
 
   // Determine active HiQ section based on current path
   useEffect(() => {
     const path = location.pathname;
     
-    console.log('MainNav: Current path:', path, 'Current module:', currentModule, 'Is HiQ path:', isHiqPath);
+    console.log('MainNav: Current path:', path, 'Current module:', currentModule);
     
     if (path.includes('/hiq/')) {
       if (path.includes('/hiq/performance')) {
@@ -65,20 +92,45 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
       }
     }
     
-    console.log('MainNav: Active HiQ item set to:', activeHiqItem);
+    if (path.includes('/master/')) {
+      if (path.includes('/master/weekly-input')) {
+        setActiveMasterItem('weekly-input');
+      } else if (path.includes('/master/month-summary')) {
+        setActiveMasterItem('month-summary');
+      } else {
+        setActiveMasterItem('dashboard');
+      }
+    }
+    
+    if (path.includes('/team/')) {
+      if (path.includes('/team/chat')) {
+        setActiveTeamItem('chat');
+      } else if (path.includes('/team/noticeboard')) {
+        setActiveTeamItem('noticeboard');
+      } else if (path.includes('/team/knowledge')) {
+        setActiveTeamItem('knowledge');
+      } else {
+        setActiveTeamItem('dashboard');
+      }
+    }
+    
   }, [location.pathname, currentModule]);
 
-  // Force HiQ module visibility regardless of other settings
+  // Force module visibility regardless of other settings
   useEffect(() => {
-    if (!accessibleModules.includes('hiq')) {
-      console.log('MainNav: Explicitly adding HiQ module to sidebar');
-      setAccessibleModules(prev => [...prev, 'hiq']);
-    }
+    const requiredModules = ['hiq', 'master', 'food', 'beverage', 'pl', 'wages', 'team'];
+    
+    requiredModules.forEach(module => {
+      if (!accessibleModules.includes(module as ModuleType)) {
+        console.log(`MainNav: Explicitly adding ${module} module to sidebar`);
+        setAccessibleModules(prev => [...prev, module as ModuleType]);
+      }
+    });
   }, [accessibleModules]);
   
   // Debug function to help understand the current state
   const renderHiQSubmenu = () => {
-    console.log('MainNav: Rendering HiQ submenu. Active item:', activeHiqItem, 'isHiqPath:', isHiqPath);
+    console.log('MainNav: Rendering HiQ submenu. Active item:', activeHiqItem);
     return (
       <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3" data-hiq-submenu="true">
         <NavItem 
@@ -115,32 +167,91 @@ const MainNav: React.FC<MainNavProps> = ({ className }) => {
     );
   };
   
+  const renderMasterSubmenu = () => {
+    console.log('MainNav: Rendering Master submenu. Active item:', activeMasterItem);
+    return (
+      <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3" data-master-submenu="true">
+        <NavItem 
+          to="/master/dashboard" 
+          label="Dashboard" 
+          icon="hospitality" 
+          active={activeMasterItem === 'dashboard'} 
+        />
+        <NavItem 
+          to="/master/month-summary" 
+          label="Month Summary" 
+          icon="performance" 
+          active={activeMasterItem === 'month-summary'} 
+        />
+      </div>
+    );
+  };
+  
+  const renderTeamSubmenu = () => {
+    console.log('MainNav: Rendering Team submenu. Active item:', activeTeamItem);
+    return (
+      <div className="pl-6 mt-1 space-y-1 border-l-2 border-white/20 ml-3" data-team-submenu="true">
+        <NavItem 
+          to="/team/dashboard" 
+          label="Dashboard" 
+          icon="team" 
+          active={activeTeamItem === 'dashboard'} 
+        />
+        <NavItem 
+          to="/team/chat" 
+          label="Team Chat" 
+          icon="message-square" 
+          active={activeTeamItem === 'chat'} 
+        />
+        <NavItem 
+          to="/team/noticeboard" 
+          label="Noticeboard" 
+          icon="beverage" 
+          active={activeTeamItem === 'noticeboard'} 
+        />
+        <NavItem 
+          to="/team/knowledge" 
+          label="Knowledge Base" 
+          icon="food" 
+          active={activeTeamItem === 'knowledge'} 
+        />
+      </div>
+    );
+  };
+  
   return (
-    <nav className={className} data-current-module={currentModule} data-hiq-path={isHiqPath}>
+    <nav className={className} data-current-module={currentModule}>
       <div className="space-y-1">
         {/* Always show Home */}
         <NavItem to="/home/dashboard" label="Home" icon="home" active={currentModule === 'home'} />
         
+        {/* Daily Info (Master) */}
+        {accessibleModules.includes('master') && (
+          <NavItem to="/master/dashboard" label="Daily Info" icon="master" active={currentModule === 'master'} />
+        )}
+        {isMasterPath && renderMasterSubmenu()}
+        
         {/* Conditionally show other modules based on permissions */}
         {accessibleModules.includes('food') && (
-          <NavItem to="/food/dashboard" label="Food" icon="food" active={currentModule === 'food'} />
+          <NavItem to="/food/dashboard" label="Food Hub" icon="food" active={currentModule === 'food'} />
         )}
         
         {accessibleModules.includes('beverage') && (
-          <NavItem to="/beverage/dashboard" label="Beverage" icon="beverage" active={currentModule === 'beverage'} />
+          <NavItem to="/beverage/dashboard" label="Beverage Hub" icon="beverage" active={currentModule === 'beverage'} />
         )}
         
         {accessibleModules.includes('pl') && (
-          <NavItem to="/pl/dashboard" label="P&L" icon="pl" active={currentModule === 'pl'} />
+          <NavItem to="/pl/dashboard" label="P&L Tracker" icon="pl" active={currentModule === 'pl'} />
         )}
         
         {accessibleModules.includes('wages') && (
-          <NavItem to="/wages/dashboard" label="Wages" icon="wages" active={currentModule === 'wages'} />
+          <NavItem to="/wages/dashboard" label="Wages Tracker" icon="wages" active={currentModule === 'wages'} />
         )}
         
         {accessibleModules.includes('team') && (
           <NavItem to="/team/dashboard" label="Team" icon="team" active={currentModule === 'team'} />
         )}
+        {isTeamPath && renderTeamSubmenu()}
         
         {/* ALWAYS show HiQ regardless of permissions */}
         <NavItem 

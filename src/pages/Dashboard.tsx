@@ -6,6 +6,10 @@ import FoodDashboard from '@/pages/food/Dashboard';
 import BeverageDashboard from '@/pages/beverage/Dashboard';
 import HomeDashboard from '@/pages/home/Dashboard';
 import HiQDashboard from '@/pages/hiq/Dashboard';
+import MasterDashboard from '@/pages/master/Dashboard';
+import PLDashboard from '@/pages/pl/Dashboard';
+import WagesDashboard from '@/pages/wages/Dashboard';
+import TeamDashboard from '@/pages/team/Dashboard';
 
 export default function Dashboard() {
   const currentModule = useCurrentModule();
@@ -31,66 +35,35 @@ export default function Dashboard() {
     } else if (path.includes('/hiq/dashboard') && currentModule !== 'hiq') {
       console.log('Dashboard: Setting current module to hiq');
       setCurrentModule('hiq');
-      
-      // Force update localStorage too
-      try {
-        const storeData = localStorage.getItem('tavern-kitchen-ledger');
-        if (storeData) {
-          const parsedData = JSON.parse(storeData);
-          if (parsedData.state) {
-            parsedData.state.currentModule = 'hiq';
-            localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
-            console.log('Dashboard: Forced update of localStorage to set currentModule to hiq');
-          }
-        }
-      } catch (e) {
-        console.error('Error updating localStorage:', e);
-      }
+    } else if (path.includes('/master/dashboard') && currentModule !== 'master') {
+      console.log('Dashboard: Setting current module to master');
+      setCurrentModule('master');
+    } else if (path.includes('/pl/dashboard') && currentModule !== 'pl') {
+      console.log('Dashboard: Setting current module to pl');
+      setCurrentModule('pl');
     } else if (path.includes('/wages/dashboard') && currentModule !== 'wages') {
       console.log('Dashboard: Setting current module to wages');
       setCurrentModule('wages');
+    } else if (path.includes('/team/dashboard') && currentModule !== 'team') {
+      console.log('Dashboard: Setting current module to team');
+      setCurrentModule('team');
+    }
+    
+    // Update localStorage for persistence
+    try {
+      const storeData = localStorage.getItem('tavern-kitchen-ledger');
+      if (storeData) {
+        const parsedData = JSON.parse(storeData);
+        if (parsedData.state) {
+          parsedData.state.currentModule = currentModule;
+          localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
+          console.log('Dashboard: Updated localStorage currentModule to', currentModule);
+        }
+      }
+    } catch (e) {
+      console.error('Dashboard: Error updating localStorage:', e);
     }
   }, [path, currentModule, setCurrentModule]);
-  
-  // Add this effect to clear localStorage cache if needed
-  useEffect(() => {
-    // Special case for HiQ - force clear any cached state
-    if (path.includes('/hiq')) {
-      console.log('Dashboard: HiQ path detected, checking localStorage cache');
-      
-      try {
-        const storeData = localStorage.getItem('tavern-kitchen-ledger');
-        if (storeData) {
-          const parsedData = JSON.parse(storeData);
-          
-          // Check if the HiQ module exists in the state
-          if (parsedData.state && parsedData.state.modules) {
-            const hiqModule = parsedData.state.modules.find((m: any) => m.type === 'hiq');
-            
-            if (!hiqModule) {
-              console.log('Dashboard: HiQ module missing from localStorage, adding it');
-              parsedData.state.modules.push({
-                id: 'hiq',
-                type: 'hiq',
-                name: 'HiQ',
-                displayOrder: 900
-              });
-              localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
-            }
-            
-            // Force current module to be hiq
-            if (parsedData.state.currentModule !== 'hiq') {
-              console.log('Dashboard: Current module in localStorage is not hiq, forcing update');
-              parsedData.state.currentModule = 'hiq';
-              localStorage.setItem('tavern-kitchen-ledger', JSON.stringify(parsedData));
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error updating localStorage:', e);
-      }
-    }
-  }, [path]);
   
   // Route to the specific dashboard component based on the path
   if (path.includes('/home/dashboard')) {
@@ -102,9 +75,18 @@ export default function Dashboard() {
   } else if (path.includes('/hiq/dashboard')) {
     console.log('Dashboard: Rendering HiQ dashboard component');
     return <HiQDashboard />;
+  } else if (path.includes('/master/dashboard')) {
+    console.log('Dashboard: Rendering Master dashboard component');
+    return <MasterDashboard />;
+  } else if (path.includes('/pl/dashboard')) {
+    console.log('Dashboard: Rendering P&L dashboard component');
+    return <PLDashboard />;
   } else if (path.includes('/wages/dashboard')) {
-    // Let the wages dashboard component handle its own rendering
-    return null;
+    console.log('Dashboard: Rendering Wages dashboard component');
+    return <WagesDashboard />;
+  } else if (path.includes('/team/dashboard')) {
+    console.log('Dashboard: Rendering Team dashboard component');
+    return <TeamDashboard />;
   }
   
   // If we're on the generic dashboard, redirect to the appropriate one
