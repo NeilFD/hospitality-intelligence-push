@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -29,7 +28,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { TimePickerInput } from '@/components/ui/time-picker-input';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabase';
 import { Separator } from '@/components/ui/separator';
@@ -251,18 +250,17 @@ export default function ShiftRuleForm({
         if (insertTroughsError) throw insertTroughsError;
       }
       
+      // Fix: Update toast usage to match the imported useToast interface
       toast({
-        title: `Shift ${editingShift ? 'Updated' : 'Created'}`,
-        description: `The shift has been successfully ${editingShift ? 'updated' : 'created'}.`,
+        description: `The shift has been successfully ${editingShift ? 'updated' : 'created'}.`
       });
       
       onSubmitComplete();
       onClose();
     } catch (error) {
       console.error('Error saving shift rule:', error);
+      // Fix: Update toast usage to match the imported useToast interface
       toast({
-        variant: "destructive",
-        title: "Error Saving Shift",
         description: "There was a problem saving the shift rule.",
       });
     } finally {
