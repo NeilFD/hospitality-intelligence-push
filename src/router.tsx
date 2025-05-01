@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
@@ -6,7 +7,7 @@ import {
   Navigate,
 } from 'react-router-dom';
 import RootLayout from '@/components/RootLayout';
-import { Skeleton } from '@/components/ui/skeleton'; // Fixed import using named import
+import { Skeleton } from '@/components/ui/skeleton';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -43,7 +44,11 @@ export const router = createBrowserRouter(
       <Route element={<RootLayout />}>
         <Route path="/home" element={<Navigate to="home/dashboard" replace />} />
         <Route path="/home/dashboard" element={<HomeDashboard />} />
+        
+        {/* Profile Routes - Add support for both current user and specific user profiles */}
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:userId" element={<Profile />} />
+        
         <Route path="/control-centre" element={<ControlCentre />} />
 
         {/* Master/Daily Info Routes */}
