@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Loader2, AlertCircle, Calendar, ClipboardList, Filter } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInMinutes } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableStickyHeader } from '@/components/ui/table';
@@ -434,6 +434,39 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     }
   };
 
+  // Helper function to calculate hours for a shift
+  const calculateShiftHours = (shift: any): number => {
+    if (!shift.start_time || !shift.end_time) return 0;
+    
+    // Create date objects for start and end times 
+    const [startHours, startMins] = shift.start_time.split(':').map(Number);
+    const [endHours, endMins] = shift.end_time.split(':').map(Number);
+    
+    const startDate = new Date();
+    startDate.setHours(startHours, startMins, 0);
+    
+    const endDate = new Date();
+    endDate.setHours(endHours, endMins, 0);
+    
+    // Handle shifts that go past midnight
+    if (endDate < startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+    
+    // Calculate difference in minutes, subtract break time, convert to hours
+    const totalMinutes = differenceInMinutes(endDate, startDate) - (shift.break_minutes || 0);
+    return totalMinutes / 60;
+  };
+
+  // Calculate total weekly hours for a staff member
+  const calculateTotalWeeklyHours = (shifts: any[]): number => {
+    if (!shifts || shifts.length === 0) return 0;
+    
+    return shifts.reduce((total, shift) => {
+      return total + calculateShiftHours(shift);
+    }, 0);
+  };
+
   // Modified function to include sorting and additional filtering
   const getFilteredShifts = () => {
     if (!generatedSchedule?.rota_schedule_shifts) return [];
@@ -842,67 +875,83 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
 
               <TabsContent value="staff" className="mt-4">
                 <div className="space-y-4">
-                  {Object.entries(shiftsByStaff()).map(([staffId, shifts]) => (
-                    <Card key={staffId} className="overflow-hidden">
-                      <CardHeader className="bg-muted/50 py-2">
-                        <div className="flex items-center space-x-2">
-                          <Avatar>
-                            <AvatarImage 
-                              src={staffMembers.find(s => s.id === staffId)?.avatar_url}
-                              alt={getStaffName(staffId)} 
-                            />
-                            <AvatarFallback>
-                              {getInitials(
-                                staffMembers.find(s => s.id === staffId)?.first_name || '',
-                                staffMembers.find(s => s.id === staffId)?.last_name || ''
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-semibold">{getStaffName(staffId)}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {shifts.length} shift{shifts.length !== 1 ? 's' : ''}
-                            </p>
+                  {Object.entries(shiftsByStaff()).map(([staffId, shifts]) => {
+                    // Calculate total weekly hours for this staff member
+                    const totalWeeklyHours = calculateTotalWeeklyHours(shifts);
+                    
+                    return (
+                      <Card key={staffId} className="overflow-hidden">
+                        <CardHeader className="bg-muted/50 py-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Avatar>
+                                <AvatarImage 
+                                  src={staffMembers.find(s => s.id === staffId)?.avatar_url}
+                                  alt={getStaffName(staffId)} 
+                                />
+                                <AvatarFallback>
+                                  {getInitials(
+                                    staffMembers.find(s => s.id === staffId)?.first_name || '',
+                                    staffMembers.find(s => s.id === staffId)?.last_name || ''
+                                  )}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="font-semibold">{getStaffName(staffId)}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {shifts.length} shift{shifts.length !== 1 ? 's' : ''} 
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {totalWeeklyHours.toFixed(1)} hours/week
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(totalWeeklyHours / shifts.length).toFixed(1)} avg hours/shift
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <div className="px-0">
-                        <Table>
-                          <TableStickyHeader>
-                            <TableRow>
-                              <TableHead>Day</TableHead>
-                              <TableHead>Role</TableHead>
-                              <TableHead>Time</TableHead>
-                              <TableHead className="text-right">Cost</TableHead>
-                            </TableRow>
-                          </TableStickyHeader>
-                          <TableBody>
-                            {shifts.map((shift: any) => (
-                              <TableRow key={shift.id}>
-                                <TableCell>
-                                  <div>
-                                    {format(parseISO(shift.date), 'EEE, dd MMM')}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {renderShiftCell(shift)}
-                                </TableCell>
-                                <TableCell>
-                                  {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                                  <div className="text-xs text-muted-foreground">
-                                    {shift.break_minutes}min break
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  £{shift.total_cost.toFixed(2)}
-                                </TableCell>
+                        </CardHeader>
+                        <div className="px-0">
+                          <Table>
+                            <TableStickyHeader>
+                              <TableRow>
+                                <TableHead>Day</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead className="text-right">Cost</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </Card>
-                  ))}
+                            </TableStickyHeader>
+                            <TableBody>
+                              {shifts.map((shift: any) => (
+                                <TableRow key={shift.id}>
+                                  <TableCell>
+                                    <div>
+                                      {format(parseISO(shift.date), 'EEE, dd MMM')}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {renderShiftCell(shift)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                    <div className="text-xs text-muted-foreground">
+                                      {shift.break_minutes}min break
+                                      <span className="ml-1">({calculateShiftHours(shift).toFixed(1)} hrs)</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    £{shift.total_cost.toFixed(2)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               </TabsContent>
             </Tabs>
