@@ -49,6 +49,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
         throw error;
       }
       
+      console.log('Fetched shift rules:', rules); // Debug log to check fetched data
       setShiftRules(rules || []);
     } catch (error) {
       console.error('Error fetching shift rules:', error);
@@ -60,6 +61,7 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
     }
   };
 
+  // This is the correct day order that includes 'sun'
   const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   
   // Group shifts by day
