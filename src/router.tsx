@@ -62,7 +62,6 @@ export const router = createBrowserRouter(
         <Route path="/master/dashboard" element={<MasterDashboard />} />
         <Route path="/master/weekly-input/:year/:month/:week" element={<WeeklyInput />} />
         <Route path="/master/month-summary" element={<MonthSummary />} />
-        <Route path="/master/week/:year/:month/:week" element={<WeeklyInput />} />
 
         {/* P&L Routes */}
         <Route path="/pl" element={<Navigate to="/pl/dashboard" replace />} />
@@ -80,7 +79,6 @@ export const router = createBrowserRouter(
         <Route path="/food/month/:year/:month" element={<FoodMonthSummary />} />
         <Route path="/food/annual-summary" element={<FoodAnnualSummary />} />
         <Route path="/food/weekly-tracker" element={<FoodWeeklyTracker />} />
-        <Route path="/food/week/:year/:month/:week" element={<FoodWeeklyTracker />} />
 
         {/* Beverage Hub Routes */}
         <Route path="/beverage" element={<Navigate to="/beverage/dashboard" replace />} />
@@ -88,7 +86,6 @@ export const router = createBrowserRouter(
         <Route path="/beverage/month/:year/:month" element={<BeverageMonthSummary />} />
         <Route path="/beverage/annual-summary" element={<BeverageAnnualSummary />} />
         <Route path="/beverage/weekly-tracker" element={<BeverageWeeklyTracker />} />
-        <Route path="/beverage/week/:year/:month/:week" element={<BeverageWeeklyTracker />} />
 
         {/* Team Routes */}
         <Route path="/team" element={<Navigate to="/team/dashboard" replace />} />

@@ -1375,56 +1375,6 @@ export type Database = {
         }
         Relationships: []
       }
-      rota_algorithm_config: {
-        Row: {
-          day_latest_start: string | null
-          enable_part_shifts: boolean | null
-          evening_latest_start: string | null
-          hi_score_weight: number | null
-          id: string
-          last_updated: string | null
-          location_id: string
-          manager_weight: number | null
-          max_part_shift_hours: number | null
-          min_part_shift_hours: number | null
-          salaried_weight: number | null
-        }
-        Insert: {
-          day_latest_start?: string | null
-          enable_part_shifts?: boolean | null
-          evening_latest_start?: string | null
-          hi_score_weight?: number | null
-          id?: string
-          last_updated?: string | null
-          location_id: string
-          manager_weight?: number | null
-          max_part_shift_hours?: number | null
-          min_part_shift_hours?: number | null
-          salaried_weight?: number | null
-        }
-        Update: {
-          day_latest_start?: string | null
-          enable_part_shifts?: boolean | null
-          evening_latest_start?: string | null
-          hi_score_weight?: number | null
-          id?: string
-          last_updated?: string | null
-          location_id?: string
-          manager_weight?: number | null
-          max_part_shift_hours?: number | null
-          min_part_shift_hours?: number | null
-          salaried_weight?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rota_algorithm_config_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: true
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       rota_forecast_factors: {
         Row: {
           created_at: string

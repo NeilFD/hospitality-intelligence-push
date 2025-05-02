@@ -5,16 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Calendar, 
-  Settings, 
-  Users, 
-  FileEdit, 
-  BarChart, 
-  CheckCircle, 
-  AlertTriangle, 
-  Info 
-} from 'lucide-react';
+import { Calendar, Clock, Settings, Users, FileEdit, BarChart, CheckCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +15,6 @@ import RotaThresholdEditor from '@/components/rotas/RotaThresholdEditor';
 import RotaScheduleReview from '@/components/rotas/RotaScheduleReview';
 import RotaScheduleApproval from '@/components/rotas/RotaScheduleApproval';
 import StaffRankingPanel from '@/components/rotas/StaffRankingPanel';
-import RotaAlgorithmConfig from '@/components/rotas/RotaAlgorithmConfig';
 import { useAuthStore } from '@/services/auth-service';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -113,13 +103,11 @@ export default function RotaScheduling() {
             staffIssuesList.push(`${name} (hourly) has no valid hourly rate set`);
           }
           
-          // Check for both 'salaried' and 'salary' employment types
-          const isSalaried = staff.employment_type === 'salaried' || staff.employment_type === 'salary';
-          if (isSalaried && (!staff.annual_salary || staff.annual_salary <= 0)) {
-            staffIssuesList.push(`${name} (${staff.employment_type}) has no valid annual salary set`);
+          if (staff.employment_type === 'salaried' && (!staff.annual_salary || staff.annual_salary <= 0)) {
+            staffIssuesList.push(`${name} (salaried) has no valid annual salary set`);
           }
           
-          if (staff.employment_type === 'contractor' && (!staff.contractor_rate || staff.contractor_rate <= 0)) {
+          if (staff.employment_type === 'contractor' && (!staff.wage_rate || staff.wage_rate <= 0)) {
             staffIssuesList.push(`${name} (contractor) has no valid contractor rate set`);
           }
         });
@@ -222,27 +210,9 @@ export default function RotaScheduling() {
           </div>
         </div>
         
-        <div className="px-4 mb-4">
-          <Alert variant="default" className="bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-700">
-              Staff scheduling algorithm has been improved with better manager role detection and more balanced hour distribution.
-            </AlertDescription>
-          </Alert>
-        </div>
-        
-        <div className="px-4 mb-4">
-          <Alert variant="default" className="bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-700">
-              The scheduling engine now includes configurable priority weights to better balance shifts between managers and other staff members.
-            </AlertDescription>
-          </Alert>
-        </div>
-        
         {staffIssues.length > 0 && (
           <div className="px-4 mb-4">
-            <Alert variant="default" className="bg-amber-50 border-amber-200">
+            <Alert variant="warning" className="bg-amber-50 border-amber-200">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertDescription>
                 <div className="font-medium text-amber-800 mb-1">
@@ -286,7 +256,7 @@ export default function RotaScheduling() {
               </div>
             ) : (
               <Tabs defaultValue="request" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full grid grid-cols-6 mb-6">
+                <TabsList className="w-full grid grid-cols-5 mb-6">
                   <TabsTrigger value="request" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span className="hidden sm:inline">Request Rota</span>
@@ -295,7 +265,7 @@ export default function RotaScheduling() {
                   <TabsTrigger value="thresholds" className="flex items-center gap-2">
                     <BarChart className="h-4 w-4" />
                     <span className="hidden sm:inline">Thresholds</span>
-                    <span className="sm:hidden">Thresh.</span>
+                    <span className="sm:hidden">Thresholds</span>
                   </TabsTrigger>
                   <TabsTrigger value="review" className="flex items-center gap-2">
                     <FileEdit className="h-4 w-4" />
@@ -304,18 +274,13 @@ export default function RotaScheduling() {
                   </TabsTrigger>
                   <TabsTrigger value="approval" className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Approve</span>
+                    <span className="hidden sm:inline">Approve & Publish</span>
                     <span className="sm:hidden">Approve</span>
                   </TabsTrigger>
                   <TabsTrigger value="staff" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span className="hidden sm:inline">Staff Ranking</span>
                     <span className="sm:hidden">Staff</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="config" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">Algorithm Config</span>
-                    <span className="sm:hidden">Config</span>
                   </TabsTrigger>
                 </TabsList>
                 
@@ -346,10 +311,6 @@ export default function RotaScheduling() {
                 
                 <TabsContent value="staff" className="mt-0 space-y-4">
                   <StaffRankingPanel location={location} />
-                </TabsContent>
-                
-                <TabsContent value="config" className="mt-0 space-y-4">
-                  <RotaAlgorithmConfig location={location} />
                 </TabsContent>
               </Tabs>
             )}

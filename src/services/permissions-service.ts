@@ -47,7 +47,7 @@ export const getUserAccessibleModules = async (role: string): Promise<ModuleType
     // If user is GOD, they have access to everything
     if (role === 'GOD') {
       console.log('[permissions-service] GOD role detected, granting access to all modules including HiQ');
-      return ['home', 'food', 'beverage', 'pl', 'wages', 'performance', 'team', 'master', 'hiq', 'calendar'];
+      return ['home', 'food', 'beverage', 'pl', 'wages', 'performance', 'team', 'master', 'hiq'];
     }
 
     // Get the permission matrix from the database

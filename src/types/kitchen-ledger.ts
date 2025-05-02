@@ -1,40 +1,43 @@
+// Define the types for the Kitchen Ledger application
 
-// If this file doesn't exist yet, we'll create it with all necessary types
-
-export type ModuleType = 'home' | 'master' | 'pl' | 'wages' | 'food' | 'beverage' | 'team' | 'hiq' | 'performance' | 'calendar';
-
-export interface Module {
-  id: string;
-  type: ModuleType;
-  name: string;
-  enabled: boolean;
-  displayOrder: number;
-}
+// Module types available in the application
+export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'team' | 'performance' | 'master' | 'home' | 'hiq' | 'calendar';
 
 export interface Supplier {
   id: string;
   name: string;
 }
 
+export interface WeekDates {
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+}
+
+export interface DailyPurchase {
+  supplierId: string;
+  amount: number;
+}
+
 export interface DailyRecord {
-  date: string;
+  date: string; // YYYY-MM-DD
   dayOfWeek: string;
   revenue: number;
-  purchases: Record<string, number>;
+  purchases: Record<string, number>; // supplierId -> amount
   creditNotes: number[];
   staffFoodAllowance: number;
 }
 
 export interface WeeklyRecord {
+  id: string;
   weekNumber: number;
-  startDate: string;
-  endDate: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
   days: DailyRecord[];
 }
 
 export interface MonthlyRecord {
   year: number;
-  month: number;
+  month: number; // 1-12
   weeks: WeeklyRecord[];
   gpTarget: number;
   costTarget: number;
@@ -47,22 +50,28 @@ export interface AnnualRecord {
   months: MonthlyRecord[];
 }
 
+export interface Module {
+  id: string;
+  type: ModuleType;
+  name: string;
+  enabled: boolean;
+  displayOrder: number;
+}
+
 export interface AppState {
   currentYear: number;
   currentMonth: number;
   currentModule: ModuleType;
-  modules: Module[];
   annualRecord: AnnualRecord;
-  setState?: (updates: Partial<AppState>) => void;
+  modules: Module[];
 }
 
-// Add the TrackerSummary interface that was missing
 export interface TrackerSummary {
   year: number;
   month: number;
   moduleType: ModuleType;
   revenue: number;
-  cost: number;
+  cost: number; // Ensure this required property exists
   purchases: number;
   creditNotes: number;
   staffAllowance: number;
