@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { Calendar as CalendarIcon, Loader2, Zap, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, Zap, Trash2, CloudLightning } from 'lucide-react';
 import { format, addDays, startOfWeek, parseISO, endOfWeek } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,6 +22,9 @@ type RotaRequestFormProps = {
   location: any;
   onRequestComplete: () => void;
 };
+
+// N8N webhook URL
+const N8N_WEBHOOK_URL = 'https://neilfd.app.n8n.cloud/webhook/91a7e93e-82e3-4ce1-aed0-af96ca220f98';
 
 export default function RotaRequestForm({ location, onRequestComplete }: RotaRequestFormProps) {
   const { profile } = useAuthStore();
@@ -215,7 +219,7 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
     try {
       // Format the data for submission
       const weekStart = weekDates[0];
-      const weekEnd = weekDates[6];
+      const weekStartStr = format(weekStart, 'yyyy-MM-dd');
       
       // Clean up revenue forecasts (convert to numbers)
       const cleanedForecasts: {[key: string]: number} = {};
@@ -224,25 +228,53 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
           cleanedForecasts[date] = parseFloat(value);
         }
       });
+
+      // Create payload for n8n webhook
+      const webhookPayload = {
+        location_id: location.id,
+        week_start_date: weekStartStr,
+        requested_by: profile?.id,
+        revenue_forecast: cleanedForecasts
+      };
       
-      // Create the rota request
+      console.log("Sending webhook payload to n8n:", webhookPayload);
+      
+      // Send request to n8n webhook
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`N8N webhook responded with status: ${response.status}`);
+      }
+      
+      // Create a record in the rota_requests table to track the request
       const { data, error } = await supabase
         .from('rota_requests')
         .insert({
           location_id: location.id,
-          week_start_date: format(weekStart, 'yyyy-MM-dd'),
-          week_end_date: format(weekEnd, 'yyyy-MM-dd'),
-          status: 'draft',
+          week_start_date: weekStartStr,
+          week_end_date: format(addDays(weekStart, 6), 'yyyy-MM-dd'),
+          status: 'processing', // New status to indicate it's being processed by n8n
           requested_by: profile?.id,
           revenue_forecast: cleanedForecasts
         })
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving rota request:', error);
+        toast.warning('N8N webhook triggered but failed to save request record', {
+          description: 'The schedule will still be generated but tracking may be affected.'
+        });
+      }
       
-      toast.success('Rota request submitted successfully', {
-        description: 'You can now review the draft rota'
+      toast.success('Rota request sent to scheduling system', {
+        description: 'The schedule will be generated soon. Check the Review tab shortly.'
       });
       
       // Reset the form
@@ -257,8 +289,10 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       // Notify parent component
       onRequestComplete();
     } catch (error) {
-      console.error('Error submitting rota request:', error);
-      toast.error('Failed to submit rota request');
+      console.error('Error submitting rota request to n8n:', error);
+      toast.error('Failed to submit rota request', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -460,7 +494,12 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Request New Rota</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Request New Rota 
+              <span className="text-xs font-normal bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                Using N8N
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
@@ -548,14 +587,17 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Submitting...
                 </>
               ) : (
-                'Generate Draft Rota'
+                <>
+                  <CloudLightning className="h-4 w-4" />
+                  Send to N8N Scheduler
+                </>
               )}
             </Button>
           </CardFooter>
@@ -586,7 +628,8 @@ export default function RotaRequestForm({ location, onRequestComplete }: RotaReq
                             "bg-yellow-100 text-yellow-800": request.status === "draft",
                             "bg-blue-100 text-blue-800": request.status === "pending_approval",
                             "bg-green-100 text-green-800": request.status === "approved",
-                            "bg-red-100 text-red-800": request.status === "rejected"
+                            "bg-red-100 text-red-800": request.status === "rejected",
+                            "bg-purple-100 text-purple-800": request.status === "processing"
                           }
                         )}>
                           {request.status.replace('_', ' ')}

@@ -1,16 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { Loader2, AlertCircle, Calendar, ClipboardList, Filter } from 'lucide-react';
+import { Loader2, AlertCircle, Calendar, ClipboardList, Filter, RefreshCw, CloudLightning } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableStickyHeader } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RotaSchedulingAlgorithm } from '@/utils/rotaSchedulingAlgorithm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,13 +34,10 @@ const JOB_ROLE_PRIORITY = {
 
 export default function RotaScheduleReview({ location, onApprovalRequest }: RotaScheduleReviewProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [request, setRequest] = useState<any>(null);
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [jobRoles, setJobRoles] = useState<any[]>([]);
-  const [thresholds, setThresholds] = useState<any[]>([]);
-  const [shiftRules, setShiftRules] = useState<any[]>([]);
-  const [roleMappings, setRoleMappings] = useState<any[]>([]);
   const [generatedSchedule, setGeneratedSchedule] = useState<any>(null);
   const [error, setError] = useState('');
   const [filterDate, setFilterDate] = useState<string | null>(null);
@@ -58,20 +55,20 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
   const fetchLatestRequest = async () => {
     setIsLoading(true);
     try {
-      // Fetch the latest draft request
+      // Fetch the latest request with status "processing" or "draft"
       const { data: requestData, error: requestError } = await supabase
         .from('rota_requests')
         .select('*')
         .eq('location_id', location.id)
-        .eq('status', 'draft')
+        .in('status', ['processing', 'draft'])
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (requestError) {
         if (requestError.code === 'PGRST116') {
           // No content found
-          setError('No draft rota requests found. Please create a request first.');
+          setError('No draft or processing rota requests found. Please create a request first.');
           setIsLoading(false);
           return;
         }
@@ -80,56 +77,14 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
 
       setRequest(requestData);
 
-      // Fetch staff, job roles, thresholds, shift rules and role mappings
+      // Fetch staff, job roles
       await Promise.all([
         fetchStaffMembers(),
         fetchJobRoles(),
-        fetchThresholds(),
-        fetchShiftRules(),
-        fetchRoleMappings()
       ]);
 
       // Check if we already have a generated schedule for this request
-      const { data: scheduleData, error: scheduleError } = await supabase
-        .from('rota_schedules')
-        .select('*, rota_schedule_shifts(*)')
-        .eq('request_id', requestData.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (scheduleError) throw scheduleError;
-
-      if (scheduleData) {
-        // Calculate and update the correct total cost if needed
-        const shifts = scheduleData.rota_schedule_shifts || [];
-        const calculatedTotalCost = shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
-        
-        // If there's a discrepancy between the stored total_cost and calculated value, update it
-        if (Math.abs((scheduleData.total_cost || 0) - calculatedTotalCost) > 0.01) {
-          console.log(`Updating total cost from ${scheduleData.total_cost} to ${calculatedTotalCost}`);
-          
-          // Update in the database
-          const { error: updateError } = await supabase
-            .from('rota_schedules')
-            .update({ 
-              total_cost: calculatedTotalCost,
-              cost_percentage: scheduleData.revenue_forecast ? (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0
-            })
-            .eq('id', scheduleData.id);
-            
-          if (updateError) {
-            console.error('Error updating schedule total cost:', updateError);
-          } else {
-            // Update in the local state too
-            scheduleData.total_cost = calculatedTotalCost;
-            scheduleData.cost_percentage = scheduleData.revenue_forecast ? 
-              (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0;
-          }
-        }
-        
-        setGeneratedSchedule(scheduleData);
-      }
+      await checkForGeneratedSchedule(requestData?.id);
 
     } catch (error) {
       console.error('Error fetching request data:', error);
@@ -167,250 +122,80 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     }
   };
 
-  const fetchThresholds = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('rota_revenue_thresholds')
-        .select('*')
-        .eq('location_id', location.id);
-
-      if (error) throw error;
-      setThresholds(data || []);
-    } catch (error) {
-      console.error('Error fetching thresholds:', error);
-    }
-  };
-
-  /**
-   * Fetch all shift rules for the location
-   */
-  const fetchShiftRules = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('shift_rules')
-        .select(`
-          *,
-          job_roles (*)
-        `)
-        .eq('location_id', location.id)
-        .order('priority', { ascending: false });
-
-      if (error) throw error;
-      console.log('Fetched shift rules:', data?.length);
-      setShiftRules(data || []);
-    } catch (error) {
-      console.error('Error fetching shift rules:', error);
-      toast.error("Error loading shift rules", {
-        description: "Shift rules will not be used in scheduling."
-      });
-    }
-  };
-
-  /**
-   * Fetch role mappings for the location
-   */
-  const fetchRoleMappings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('job_role_mappings')
-        .select('*')
-        .eq('location_id', location.id)
-        .order('priority', { ascending: true });
-
-      if (error) throw error;
-      console.log('Fetched role mappings:', data?.length);
-      setRoleMappings(data || []);
-    } catch (error) {
-      console.error('Error fetching role mappings:', error);
-      toast.error("Error loading role mappings", {
-        description: "Role mappings will not be used in scheduling."
-      });
-    }
-  };
-
-  const prepareShiftForDatabase = (shift: any) => {
-    // Create a new object with only the fields that exist in the database
-    const validFields = [
-      'profile_id',
-      'date',
-      'day_of_week',
-      'start_time',
-      'end_time',
-      'break_minutes',
-      'job_role_id',
-      'is_secondary_role',
-      'hi_score',
-      'shift_cost',
-      'employer_ni_cost',
-      'employer_pension_cost',
-      'total_cost',
-      'schedule_id' // This will be added later
-    ];
-    
-    const cleanedShift: Record<string, any> = {};
-    
-    validFields.forEach(field => {
-      if (shift[field] !== undefined) {
-        cleanedShift[field] = shift[field];
-      }
-    });
-    
-    return cleanedShift;
-  };
-
-  const generateSchedule = async () => {
-    if (!request || !staffMembers.length || !jobRoles.length) {
-      toast.error('Missing required data to generate schedule');
+  const checkForGeneratedSchedule = async (requestId?: string) => {
+    if (!requestId) {
+      console.log('No request ID provided for schedule check');
       return;
     }
-
-    setIsGenerating(true);
+    
+    setIsChecking(true);
     try {
-      // Create scheduling algorithm instance
-      const scheduler = new RotaSchedulingAlgorithm({
-        request,
-        staff: staffMembers,
-        jobRoles,
-        thresholds,
-        location
-      });
-
-      // Set the shift rules to use for scheduling
-      scheduler.setShiftRules(shiftRules);
-      
-      // Set the role mappings to use for staff assignment
-      scheduler.setRoleMapping(roleMappings);
-      
-      console.log(`Using ${shiftRules.length} shift rules for scheduling and ${roleMappings.length} role mappings`);
-      
-      // Generate the schedule
-      const schedule = await scheduler.generateSchedule();
-      console.log(`Generated schedule with ${schedule.shifts?.length || 0} shifts`);
-      
-      if (!schedule.shifts || schedule.shifts.length === 0) {
-        toast.warning('No shifts were generated. Ensure staff and job roles are correctly configured.');
-        setIsGenerating(false);
-        return;
-      }
-
-      // Calculate the actual total cost for accuracy
-      const calculatedTotalCost = schedule.shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
-      
-      // Ensure we use the accurately calculated cost
-      schedule.total_cost = calculatedTotalCost;
-      schedule.cost_percentage = schedule.revenue_forecast ? 
-        (calculatedTotalCost / schedule.revenue_forecast * 100) : 0;
-      
-      console.log(`Using calculated total cost: £${calculatedTotalCost.toFixed(2)} (${schedule.cost_percentage.toFixed(1)}%)`);
-
-      // Create the schedule record in the database
       const { data: scheduleData, error: scheduleError } = await supabase
         .from('rota_schedules')
-        .insert({
-          request_id: request.id,
-          location_id: location.id,
-          week_start_date: request.week_start_date,
-          week_end_date: request.week_end_date,
-          status: 'draft',
-          total_cost: calculatedTotalCost, // Use the accurately calculated total cost
-          revenue_forecast: schedule.revenue_forecast,
-          cost_percentage: schedule.cost_percentage,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        })
-        .select()
-        .single();
-
-      if (scheduleError) {
-        console.error('Error creating schedule:', scheduleError);
-        toast.error('Failed to create schedule record');
-        throw scheduleError;
-      }
-
-      console.log('Schedule record created:', scheduleData);
-
-      // Prepare shifts for database insertion - remove fields that don't exist in the database
-      if (schedule.shifts && schedule.shifts.length > 0) {
-        const cleanShifts = schedule.shifts.map((shift: any) => {
-          const cleanShift = prepareShiftForDatabase(shift);
-          cleanShift.schedule_id = scheduleData.id;
-          return cleanShift;
-        });
-
-        console.log(`Inserting ${cleanShifts.length} shifts into database`);
-        console.log('First shift example:', cleanShifts[0]);
-
-        const { error: shiftsError } = await supabase
-          .from('rota_schedule_shifts')
-          .insert(cleanShifts);
-
-        if (shiftsError) {
-          console.error('Error inserting shifts:', shiftsError);
-          toast.error('Error saving shifts', {
-            description: shiftsError.message || 'Database error occurred'
-          });
-          
-          // Continue execution to fetch what we can, even if some shifts failed
-        } else {
-          console.log('Successfully inserted shifts');
-        }
-      }
-
-      // Fetch the complete schedule with shifts
-      const { data: completeSchedule, error: fetchError } = await supabase
-        .from('rota_schedules')
         .select('*, rota_schedule_shifts(*)')
-        .eq('id', scheduleData.id)
-        .single();
+        .eq('request_id', requestId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (fetchError) {
-        console.error('Error fetching complete schedule:', fetchError);
-        toast.error('Error retrieving saved schedule');
-        throw fetchError;
-      }
+      if (scheduleError) throw scheduleError;
 
-      console.log(`Retrieved schedule with ${completeSchedule.rota_schedule_shifts?.length || 0} shifts`);
-      
-      // Verify total cost again after fetching
-      const fetchedShifts = completeSchedule.rota_schedule_shifts || [];
-      const verifiedTotalCost = fetchedShifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
-      
-      // If there's still a discrepancy, update the total cost
-      if (Math.abs((completeSchedule.total_cost || 0) - verifiedTotalCost) > 0.01) {
-        console.log(`Fixing final total cost from ${completeSchedule.total_cost} to ${verifiedTotalCost}`);
+      if (scheduleData) {
+        // Calculate and update the correct total cost if needed
+        const shifts = scheduleData.rota_schedule_shifts || [];
+        const calculatedTotalCost = shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
         
-        // Update in the database
-        const { error: updateError } = await supabase
-          .from('rota_schedules')
-          .update({ 
-            total_cost: verifiedTotalCost,
-            cost_percentage: completeSchedule.revenue_forecast ? (verifiedTotalCost / completeSchedule.revenue_forecast * 100) : 0
-          })
-          .eq('id', completeSchedule.id);
+        // If there's a discrepancy between the stored total_cost and calculated value, update it
+        if (Math.abs((scheduleData.total_cost || 0) - calculatedTotalCost) > 0.01) {
+          console.log(`Updating total cost from ${scheduleData.total_cost} to ${calculatedTotalCost}`);
           
-        if (updateError) {
-          console.error('Error updating final schedule total cost:', updateError);
-        } else {
-          // Update in the local state too
-          completeSchedule.total_cost = verifiedTotalCost;
-          completeSchedule.cost_percentage = completeSchedule.revenue_forecast ? 
-            (verifiedTotalCost / completeSchedule.revenue_forecast * 100) : 0;
+          // Update in the database
+          const { error: updateError } = await supabase
+            .from('rota_schedules')
+            .update({ 
+              total_cost: calculatedTotalCost,
+              cost_percentage: scheduleData.revenue_forecast ? (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0
+            })
+            .eq('id', scheduleData.id);
+            
+          if (updateError) {
+            console.error('Error updating schedule total cost:', updateError);
+          } else {
+            // Update in the local state too
+            scheduleData.total_cost = calculatedTotalCost;
+            scheduleData.cost_percentage = scheduleData.revenue_forecast ? 
+              (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0;
+          }
         }
-      }
-      
-      setGeneratedSchedule(completeSchedule);
-      
-      if (completeSchedule.rota_schedule_shifts?.length > 0) {
-        toast.success(`Schedule generated with ${completeSchedule.rota_schedule_shifts.length} shifts`);
+        
+        setGeneratedSchedule(scheduleData);
+        
+        // If we found a schedule and the request is still in 'processing' status, update to 'pending_approval'
+        if (request?.status === 'processing') {
+          await supabase
+            .from('rota_requests')
+            .update({ status: 'pending_approval' })
+            .eq('id', requestId);
+            
+          // Update local state
+          setRequest({...request, status: 'pending_approval'});
+        }
+        
+        toast.success('Schedule found', {
+          description: `Found a schedule with ${shifts.length} shifts`
+        });
       } else {
-        toast.warning('Schedule created, but no shifts were saved');
+        toast.info('No schedule found yet', {
+          description: 'Check again in a moment or contact support if this persists'
+        });
       }
     } catch (error) {
-      console.error('Error generating schedule:', error);
-      toast.error('Failed to generate schedule', {
-        description: error instanceof Error ? error.message : 'Unknown error'
+      console.error('Error checking for generated schedule:', error);
+      toast.error('Error checking for schedule', {
+        description: 'Could not retrieve schedule information'
       });
     } finally {
-      setIsGenerating(false);
+      setIsChecking(false);
     }
   };
 
@@ -547,13 +332,6 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   };
 
-  const getShiftRuleName = (shift: any) => {
-    if (shift.shift_rule_name) {
-      return shift.shift_rule_name;
-    }
-    return getJobRoleTitle(shift.job_role_id);
-  };
-
   const renderShiftCell = (shift: any) => {
     const isFromShiftRule = !!shift.shift_rule_id;
     
@@ -614,7 +392,13 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
-          <CardTitle>Review Draft Rota</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Review Draft Rota
+            <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
+              <CloudLightning className="h-3 w-3 mr-1" />
+              N8N Generated
+            </Badge>
+          </CardTitle>
           {request && (
             <p className="text-sm text-muted-foreground">
               Week: {format(parseISO(request.week_start_date), 'dd MMM yyyy')} to {format(parseISO(request.week_end_date), 'dd MMM yyyy')}
@@ -624,25 +408,27 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
         <div className="flex space-x-2">
           {!generatedSchedule ? (
             <Button 
-              onClick={generateSchedule} 
-              disabled={isGenerating}
+              onClick={() => checkForGeneratedSchedule(request?.id)} 
+              disabled={isChecking || !request}
+              variant="outline"
               className="flex items-center"
             >
-              {isGenerating ? (
+              {isChecking ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <ClipboardList className="mr-2 h-4 w-4" />
+                <RefreshCw className="mr-2 h-4 w-4" />
               )}
-              {isGenerating ? 'Generating...' : 'Generate Schedule'}
+              {isChecking ? 'Checking...' : 'Check for Schedule'}
             </Button>
           ) : (
             <>
               <Button 
                 variant="outline" 
-                onClick={generateSchedule} 
-                disabled={isGenerating}
+                onClick={() => checkForGeneratedSchedule(request?.id)} 
+                disabled={isChecking}
               >
-                Regenerate
+                {isChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Refresh
               </Button>
               <Button onClick={handleApprovalRequest}>
                 Send for Approval
@@ -653,6 +439,17 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
       </CardHeader>
 
       <CardContent>
+        {request?.status === 'processing' && !generatedSchedule && (
+          <Alert className="mb-4 border-blue-200 bg-blue-50">
+            <CloudLightning className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800">Schedule is being generated</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              Your schedule request is being processed by N8N. Please check back in a few moments.
+              Use the "Check for Schedule" button to refresh.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {generatedSchedule ? (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
@@ -909,11 +706,19 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Schedule Generated</h3>
+            <CloudLightning className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Schedule Found</h3>
             <p className="text-muted-foreground max-w-md">
-              Click the "Generate Schedule" button to create an optimized staff schedule based on 
-              the revenue forecasts, staff Hi Scores, and configured thresholds.
+              {request ? (
+                <>
+                  Your schedule request has been sent to the N8N workflow for processing. 
+                  Click the "Check for Schedule" button to see if it's ready.
+                </>
+              ) : (
+                <>
+                  No rota request found. Please create a new rota request first.
+                </>
+              )}
             </p>
           </div>
         )}
