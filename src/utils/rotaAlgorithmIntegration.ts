@@ -66,7 +66,7 @@ export const loadShiftRules = async (
       .from('shift_rules')
       .select('*')
       .eq('location_id', locationId)
-      .eq('is_active', true);
+      .eq('archived', false);  // FIXED: Changed from 'is_active' to 'archived'
       
     if (error) {
       console.error("Error fetching shift rules:", error);
