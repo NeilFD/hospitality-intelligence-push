@@ -1,4 +1,3 @@
-
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -581,8 +580,7 @@ export class RotaSchedulingAlgorithm {
       const allocation = staffWeeklyAllocations[staffMember.id];
       const minHoursPerWeek = staffMember.min_hours_per_week || 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      // Use let instead of const for hourDeficit since we'll modify it
-      let hourDeficit = minHoursPerWeek - currentHours;
+      let hourDeficit = minHoursPerWeek - currentHours; // Changed from const to let
       
       console.log(`Attempting to balance hours for ${staffMember.first_name} ${staffMember.last_name}: needs ${hourDeficit.toFixed(1)} more hours`);
       
@@ -781,7 +779,6 @@ export class RotaSchedulingAlgorithm {
     const threshold = this.findThreshold(dayRevenue);
     if (!threshold) return;
     
-    // Check if we have the minimum required staff for each type
     // Count existing shifts by type for this date
     const existingShifts = shifts.filter(s => s.date === date);
     
@@ -942,6 +939,9 @@ export class RotaSchedulingAlgorithm {
   }) {
     // Implementation details would go here
     console.log(`Assigning staff for rule: ${rule.name || 'Unnamed'}`);
+    
+    // This is a stub implementation - replace with actual implementation if needed
+    // For now just log that we're processing this rule
   }
   
   /**
@@ -973,6 +973,8 @@ export class RotaSchedulingAlgorithm {
   ) {
     // Implementation details would go here
     console.log(`Using default staffing for ${date}`);
+    
+    // This is a stub implementation
   }
   
   /**
@@ -1084,6 +1086,8 @@ export class RotaSchedulingAlgorithm {
   }) {
     // Implementation details would go here
     console.log(`Assigning ${staffType} staff for ${date}, segment: ${segment}`);
+    
+    // This is a stub implementation
   }
   
   /**
@@ -1097,6 +1101,38 @@ export class RotaSchedulingAlgorithm {
   ) {
     // Implementation details would go here
     console.log(`Creating emergency shift for ${date} with ${staffMember.first_name}`);
+    
+    // Create a basic shift for this date with standard hours
+    const shift = {
+      profile_id: staffMember.id,
+      date: date,
+      day_of_week: dayOfWeek,
+      start_time: '09:00:00',
+      end_time: '17:00:00',
+      break_minutes: 30,
+      job_role_id: staffMember.primary_job_role_id || null,
+      is_secondary_role: false,
+      hi_score: staffMember.hi_score || 0,
+      shift_cost: 0,
+      employer_ni_cost: 0,
+      employer_pension_cost: 0,
+      total_cost: 0,
+      is_emergency_shift: true
+    };
+    
+    // Calculate costs based on employment type
+    const shiftHours = this.calculateHours(shift.start_time, shift.end_time, shift.break_minutes);
+    const { shiftCost, niCost, pensionCost, totalShiftCost } = this.calculateCosts(staffMember, shiftHours, date);
+    
+    shift.shift_cost = shiftCost;
+    shift.employer_ni_cost = niCost;
+    shift.employer_pension_cost = pensionCost;
+    shift.total_cost = totalShiftCost;
+    
+    // Add to shifts array
+    shifts.push(shift);
+    
+    return shift;
   }
   
   /**
@@ -1111,6 +1147,42 @@ export class RotaSchedulingAlgorithm {
   ) {
     // Implementation details would go here
     console.log(`Updating allocations for ${staffId} on ${date}, adding ${hours} hours`);
+    
+    // Update weekly allocations
+    if (!staffWeeklyAllocations[staffId]) {
+      staffWeeklyAllocations[staffId] = {
+        hoursWorked: 0,
+        daysWorked: [],
+        shifts: []
+      };
+    }
+    
+    // Add hours
+    staffWeeklyAllocations[staffId].hoursWorked += hours;
+    
+    // Add shift to list
+    staffWeeklyAllocations[staffId].shifts.push(shift);
+    
+    // Add day if not already worked
+    if (!staffWeeklyAllocations[staffId].daysWorked.includes(date)) {
+      staffWeeklyAllocations[staffId].daysWorked.push(date);
+    }
+    
+    // Update daily allocations
+    if (!this.dailyStaffAllocations[date]) {
+      this.dailyStaffAllocations[date] = {};
+    }
+    
+    if (!this.dailyStaffAllocations[date][staffId]) {
+      this.dailyStaffAllocations[date][staffId] = {
+        hoursWorked: 0,
+        shifts: [],
+        salaryApplied: false
+      };
+    }
+    
+    this.dailyStaffAllocations[date][staffId].hoursWorked += hours;
+    this.dailyStaffAllocations[date][staffId].shifts.push(shift);
   }
   
   /**
@@ -1121,12 +1193,84 @@ export class RotaSchedulingAlgorithm {
     hours: number,
     date: string
   ): { shiftCost: number; niCost: number; pensionCost: number; totalShiftCost: number } {
-    // Placeholder implementation
-    return {
-      shiftCost: 0,
-      niCost: 0,
-      pensionCost: 0,
-      totalShiftCost: 0
+    // Default values
+    let shiftCost = 0;
+    let niCost = 0;
+    let pensionCost = 0;
+    
+    try {
+      const employmentType = staffMember.employment_type?.toLowerCase() || 'hourly';
+      
+      // Check if we've already applied salary for this staff member today
+      const dailyAllocation = this.dailyStaffAllocations[date]?.[staffMember.id];
+      const salaryAlreadyApplied = dailyAllocation?.salaryApplied || false;
+      
+      // Calculate base shift cost based on employment type
+      if (employmentType === 'hourly') {
+        // Hourly paid staff - use hourly rate * hours
+        const hourlyRate = parseFloat(staffMember.wage_rate) || 0;
+        shiftCost = hourlyRate * hours;
+      } 
+      else if (employmentType === 'salaried' || employmentType === 'salary') {
+        // Salaried staff - distribute annual salary across days
+        if (salaryAlreadyApplied) {
+          // If we've already assigned a shift to this salaried staff member today,
+          // don't double count their salary cost
+          shiftCost = 0;
+        } else {
+          // Calculate daily rate from annual salary
+          const annualSalary = parseFloat(staffMember.annual_salary) || 0;
+          const dailyRate = annualSalary / 260; // Assuming 260 working days per year
+          shiftCost = dailyRate;
+          
+          // Mark salary as applied for today
+          if (dailyAllocation) {
+            this.dailyStaffAllocations[date][staffMember.id].salaryApplied = true;
+          }
+        }
+      } 
+      else if (employmentType === 'contractor') {
+        // Contractor - use contractor rate * hours
+        const contractorRate = parseFloat(staffMember.contractor_rate) || 0;
+        shiftCost = contractorRate * hours;
+      } 
+      else {
+        // Unknown employment type - default to zero cost
+        shiftCost = 0;
+      }
+      
+      // Calculate employer costs
+      if (employmentType === 'hourly' || employmentType === 'salary' || employmentType === 'salaried') {
+        // Calculate employer's NI (approximately 13.8% above threshold)
+        // This is a simplified calculation
+        niCost = shiftCost > 0 ? shiftCost * 0.138 : 0;
+        
+        // Calculate employer's pension contribution (approximately 3%)
+        // This is a simplified calculation
+        pensionCost = shiftCost > 0 ? shiftCost * 0.03 : 0;
+      }
+      
+      // Ensure all values are valid numbers
+      shiftCost = isNaN(shiftCost) ? 0 : shiftCost;
+      niCost = isNaN(niCost) ? 0 : niCost;
+      pensionCost = isNaN(pensionCost) ? 0 : pensionCost;
+    } 
+    catch (error) {
+      console.error('Error calculating shift costs:', error);
+      // Fall back to zeros if there's an error
+      shiftCost = 0;
+      niCost = 0;
+      pensionCost = 0;
+    }
+    
+    // Total cost is the sum of all components
+    const totalShiftCost = shiftCost + niCost + pensionCost;
+    
+    return { 
+      shiftCost, 
+      niCost, 
+      pensionCost, 
+      totalShiftCost 
     };
   }
   
@@ -1136,10 +1280,38 @@ export class RotaSchedulingAlgorithm {
   calculateHours(
     startTime: string,
     endTime: string,
-    breakMinutes: number
+    breakMinutes: number = 0
   ): number {
-    // Implementation details would go here
-    // For now, return a placeholder value
-    return 8;
+    if (!startTime || !endTime) return 0;
+    
+    try {
+      // Parse hours and minutes from start time
+      const [startHours, startMinutes] = startTime.split(':').map(Number);
+      const [endHours, endMinutes] = endTime.split(':').map(Number);
+      
+      // Create date objects for calculation
+      const startDate = new Date();
+      startDate.setHours(startHours, startMinutes, 0, 0);
+      
+      const endDate = new Date();
+      endDate.setHours(endHours, endMinutes, 0, 0);
+      
+      // Handle shifts that span midnight
+      if (endDate < startDate) {
+        endDate.setDate(endDate.getDate() + 1);
+      }
+      
+      // Calculate difference in milliseconds
+      const diffMs = endDate.getTime() - startDate.getTime();
+      
+      // Convert to hours and subtract break
+      const totalMinutes = diffMs / 60000 - (breakMinutes || 0);
+      const hours = totalMinutes / 60;
+      
+      return Math.max(0, hours); // Ensure we never return negative hours
+    } catch (error) {
+      console.error('Error calculating shift hours:', error);
+      return 0;
+    }
   }
 }
