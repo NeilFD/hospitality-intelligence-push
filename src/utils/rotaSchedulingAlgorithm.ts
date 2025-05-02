@@ -1,3 +1,4 @@
+
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -1639,6 +1640,7 @@ export class RotaSchedulingAlgorithm {
 
   /**
    * Assign a specific staff member to a role
+   * FIXED: Properly complete the implementation to actually return a staff member
    */
   assignStaffToRole({
     date,
@@ -1718,6 +1720,10 @@ export class RotaSchedulingAlgorithm {
     // Select best staff member for this role
     const selectedStaff = primaryRoleStaff.length > 0 ? primaryRoleStaff[0] : availableStaff[0];
     
+    // Log the staff assignment for debugging
+    console.log(`Selected ${selectedStaff.first_name} ${selectedStaff.last_name} for ${jobRole.title} shift on ${date}`);
+    
     return selectedStaff;
   }
 }
+
