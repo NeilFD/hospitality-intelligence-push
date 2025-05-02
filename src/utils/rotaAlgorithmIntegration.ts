@@ -29,19 +29,19 @@ export const applyAlgorithmConfiguration = async (
     
     console.log("Applying algorithm configuration:", configData);
     
-    // Apply staff priority weights
+    // Apply staff priority weights - ensure numeric values with defaults
     algorithm.setStaffPriorityConfig({
-      salariedWeight: configData.salaried_weight || 100,
-      managerWeight: configData.manager_weight || 50,
-      hiScoreWeight: configData.hi_score_weight || 1,
+      salariedWeight: typeof configData.salaried_weight === 'number' ? configData.salaried_weight : 100,
+      managerWeight: typeof configData.manager_weight === 'number' ? configData.manager_weight : 50,
+      hiScoreWeight: typeof configData.hi_score_weight === 'number' ? configData.hi_score_weight : 1,
     });
     
     // Apply part shift configuration if it exists in the config
     if ('enable_part_shifts' in configData) {
       algorithm.setPartShiftConfig({
         enable: configData.enable_part_shifts !== false,
-        minHours: configData.min_part_shift_hours || 3,
-        maxHours: configData.max_part_shift_hours || 5,
+        minHours: typeof configData.min_part_shift_hours === 'number' ? configData.min_part_shift_hours : 3,
+        maxHours: typeof configData.max_part_shift_hours === 'number' ? configData.max_part_shift_hours : 5,
         dayLatestStart: configData.day_latest_start || '12:00:00',
         eveningLatestStart: configData.evening_latest_start || '18:00:00',
       });

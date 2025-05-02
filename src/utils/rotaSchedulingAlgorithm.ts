@@ -1,4 +1,3 @@
-
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -118,6 +117,7 @@ export class RotaSchedulingAlgorithm {
   
   /**
    * Set staff priority configuration
+   * FIX: Ensure all parameters are properly typed as numbers
    */
   setStaffPriorityConfig({
     salariedWeight = 100,
@@ -128,10 +128,11 @@ export class RotaSchedulingAlgorithm {
     managerWeight?: number;
     hiScoreWeight?: number;
   }) {
+    // FIX: Ensure parameters are numbers before assigning
     this.staffPriorityConfig = {
-      salariedWeight,
-      managerWeight,
-      hiScoreWeight
+      salariedWeight: Number(salariedWeight),
+      managerWeight: Number(managerWeight),
+      hiScoreWeight: Number(hiScoreWeight)
     };
     console.log(`Staff priority config updated: salaried=${salariedWeight}, manager=${managerWeight}, hiScore=${hiScoreWeight}`);
   }
@@ -165,10 +166,7 @@ export class RotaSchedulingAlgorithm {
     }
     
     // Calculate total revenue forecast
-    const totalRevenueForecast = Object.values(this.request.revenue_forecast || {}).reduce(
-      (sum: number, val: any) => sum + Number(val || 0), 
-      0
-    );
+    const totalRevenueForecast = this.calculateTotalRevenue(this.request.revenue_forecast);
     result.revenue_forecast = totalRevenueForecast;
     
     console.log(`Total revenue forecast: £${totalRevenueForecast}`);
@@ -203,7 +201,7 @@ export class RotaSchedulingAlgorithm {
     let totalCost = 0;
     for (const date of dates) {
       const dayOfWeek = format(parseISO(date), 'EEEE').toLowerCase();
-      const dayRevenue = Number(this.request.revenue_forecast?.[date] || 0);
+      const dayRevenue = this.safelyGetRevenue(date);
       
       console.log(`\nProcessing ${dayOfWeek} ${date} - Revenue: £${dayRevenue}`);
       
@@ -671,13 +669,13 @@ export class RotaSchedulingAlgorithm {
       if (this.isManagerRole(staff.job_title)) return false;
       
       const allocation = staffWeeklyAllocations[staff.id];
-      const minHoursPerWeek = staff.min_hours_per_week || 0;
+      const minHoursPerWeek = typeof staff.min_hours_per_week === 'number' ? staff.min_hours_per_week : 0;
       
       // Only consider staff with minimum hour requirements
       if (minHoursPerWeek <= 0) return false;
       
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      // Check if they have less than 75% of their minimum hours
+      // FIX: Ensure numeric comparison
       return currentHours < (minHoursPerWeek * 0.75);
     }).sort((a, b) => {
       // Sort by percentage of minimum hours met (lowest first)
@@ -730,7 +728,7 @@ export class RotaSchedulingAlgorithm {
     // Step 3: Attempt to redistribute hours
     for (const nonManager of nonManagersWithLowHours) {
       const allocation = staffWeeklyAllocations[nonManager.id];
-      const minHoursPerWeek = nonManager.min_hours_per_week || 0;
+      const minHoursPerWeek = typeof nonManager.min_hours_per_week === 'number' ? nonManager.min_hours_per_week : 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
       const targetHours = minHoursPerWeek * 0.8; // Target at least 80% of minimum
       // Using let instead of const since we'll modify this value
@@ -746,7 +744,7 @@ export class RotaSchedulingAlgorithm {
         const managerHours = managerAlloc ? managerAlloc.hoursWorked : 0;
         
         // Don't reduce managers below 35 hours if they have minimum hours
-        const managerMinHours = manager.min_hours_per_week || 0;
+        const managerMinHours = typeof manager.min_hours_per_week === 'number' ? manager.min_hours_per_week : 0;
         const managerMinimum = managerMinHours > 35 ? managerMinHours : 35;
         
         if (managerHours <= managerMinimum) {
@@ -835,6 +833,30 @@ export class RotaSchedulingAlgorithm {
     }
     
     console.log("Redistribution from managers completed");
+  }
+  
+  /**
+   * Helper: Calculate total revenue from revenue forecast
+   * FIX: Ensure proper numeric handling
+   */
+  private calculateTotalRevenue(revenueForecast: Record<string, any> = {}): number {
+    return Object.values(revenueForecast).reduce((sum: number, val: any) => {
+      // FIX: Ensure val is converted to a number
+      const numVal = typeof val === 'number' ? val : Number(val || 0);
+      return sum + numVal;
+    }, 0);
+  }
+  
+  /**
+   * Helper: Process revenue forecasts safely
+   * FIX: Ensure proper numeric handling for revenue values
+   */
+  private safelyGetRevenue(date: string): number {
+    if (!this.request.revenue_forecast) return 0;
+    
+    const value = this.request.revenue_forecast[date];
+    // FIX: Ensure value is converted to a number
+    return typeof value === 'number' ? value : Number(value || 0);
   }
   
   /**
