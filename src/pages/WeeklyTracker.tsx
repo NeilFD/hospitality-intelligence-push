@@ -14,7 +14,8 @@ interface WeeklyTrackerProps {
 
 const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ modulePrefix, moduleType }) => {
   const { year: yearParam, month: monthParam, week: weekParam } = useParams();
-  const { setCurrentYear, setCurrentMonth, currentYear, currentMonth } = useStore();
+  const { currentYear, currentMonth } = useStore();
+  const setState = useStore(state => state.setState);
   
   // If URL params are provided, update the store
   useEffect(() => {
@@ -23,11 +24,10 @@ const WeeklyTracker: React.FC<WeeklyTrackerProps> = ({ modulePrefix, moduleType 
       const parsedMonth = parseInt(monthParam, 10);
       
       if (!isNaN(parsedYear) && !isNaN(parsedMonth)) {
-        setCurrentYear(parsedYear);
-        setCurrentMonth(parsedMonth);
+        setState({ currentYear: parsedYear, currentMonth: parsedMonth });
       }
     }
-  }, [yearParam, monthParam, setCurrentYear, setCurrentMonth]);
+  }, [yearParam, monthParam, setState]);
   
   // Use parameters from store if not provided in URL
   const year = yearParam ? parseInt(yearParam, 10) : currentYear;

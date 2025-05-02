@@ -62,7 +62,8 @@ const createInitialState = (): AppState => {
     annualRecord: {
       year: currentYear,
       months: [createInitialMonth(currentYear, currentMonth)]
-    }
+    },
+    setState: (updates) => useStore.setState(updates)
   };
 };
 
@@ -101,9 +102,16 @@ const handleRehydratedState = (state: AppState): AppState => {
   return newState;
 };
 
-export const useStore = create<AppState>()(
+export interface AppStateWithSetters extends AppState {
+  setState: (updates: Partial<AppState>) => void;
+}
+
+export const useStore = create<AppStateWithSetters>()(
   persist(
-    () => createInitialState(),
+    () => ({
+      ...createInitialState(),
+      setState: (updates) => useStore.setState(updates)
+    }),
     {
       name: 'hospitality-intelligence',
       onRehydrateStorage: () => (state) => {

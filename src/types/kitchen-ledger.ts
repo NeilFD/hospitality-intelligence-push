@@ -1,43 +1,40 @@
-// Define the types for the Kitchen Ledger application
 
-// Module types available in the application
-export type ModuleType = 'food' | 'beverage' | 'pl' | 'wages' | 'team' | 'performance' | 'master' | 'home' | 'hiq' | 'calendar';
+// If this file doesn't exist yet, we'll create it with all necessary types
+
+export type ModuleType = 'home' | 'master' | 'pl' | 'wages' | 'food' | 'beverage' | 'team' | 'hiq';
+
+export interface Module {
+  id: string;
+  type: ModuleType;
+  name: string;
+  enabled: boolean;
+  displayOrder: number;
+}
 
 export interface Supplier {
   id: string;
   name: string;
 }
 
-export interface WeekDates {
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
-}
-
-export interface DailyPurchase {
-  supplierId: string;
-  amount: number;
-}
-
 export interface DailyRecord {
-  date: string; // YYYY-MM-DD
+  date: string;
   dayOfWeek: string;
   revenue: number;
-  purchases: Record<string, number>; // supplierId -> amount
+  purchases: Record<string, number>;
   creditNotes: number[];
   staffFoodAllowance: number;
 }
 
 export interface WeeklyRecord {
-  id: string;
   weekNumber: number;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
+  startDate: string;
+  endDate: string;
   days: DailyRecord[];
 }
 
 export interface MonthlyRecord {
   year: number;
-  month: number; // 1-12
+  month: number;
   weeks: WeeklyRecord[];
   gpTarget: number;
   costTarget: number;
@@ -50,32 +47,11 @@ export interface AnnualRecord {
   months: MonthlyRecord[];
 }
 
-export interface Module {
-  id: string;
-  type: ModuleType;
-  name: string;
-  enabled: boolean;
-  displayOrder: number;
-}
-
 export interface AppState {
   currentYear: number;
   currentMonth: number;
   currentModule: ModuleType;
-  annualRecord: AnnualRecord;
   modules: Module[];
-}
-
-export interface TrackerSummary {
-  year: number;
-  month: number;
-  moduleType: ModuleType;
-  revenue: number;
-  cost: number; // Ensure this required property exists
-  purchases: number;
-  creditNotes: number;
-  staffAllowance: number;
-  totalCost: number;
-  gpAmount: number;
-  gpPercentage: number;
+  annualRecord: AnnualRecord;
+  setState?: (updates: Partial<AppState>) => void;
 }
