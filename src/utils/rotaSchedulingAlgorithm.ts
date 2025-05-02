@@ -1,3 +1,4 @@
+
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -819,4 +820,47 @@ export class RotaSchedulingAlgorithm {
       console.log(`Need to add ${threshold.kp_min_staff - kpStaffCount} more kitchen porters for ${date}`);
       
       // Determine segment based on day of week
-      const daySegment = this.isWeekend(
+      const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+      
+      // Assign additional KP staff
+      this.assignStaff({
+        date,
+        dayOfWeek,
+        segment: daySegment,
+        staffType: 'kp',
+        minStaff: threshold.kp_min_staff - kpStaffCount,
+        maxStaff: threshold.kp_max_staff,
+        rankedStaff,
+        staffWeeklyAllocations,
+        shifts,
+        totalCost,
+        dayRevenue
+      });
+    }
+    
+    // Check if we need to add FOH staff to meet minimum
+    if (fohStaffCount < threshold.foh_min_staff) {
+      console.log(`Need to add ${threshold.foh_min_staff - fohStaffCount} more FOH staff for ${date}`);
+      
+      // Determine segment based on day of week
+      const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+      
+      // Assign additional FOH staff
+      this.assignStaff({
+        date,
+        dayOfWeek,
+        segment: daySegment,
+        staffType: 'foh',
+        minStaff: threshold.foh_min_staff - fohStaffCount,
+        maxStaff: threshold.foh_max_staff,
+        rankedStaff,
+        staffWeeklyAllocations,
+        shifts,
+        totalCost,
+        dayRevenue
+      });
+    }
+  }
+  
+  // Additional methods would be here...
+}
