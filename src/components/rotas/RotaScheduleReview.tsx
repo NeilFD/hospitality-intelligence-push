@@ -1,393 +1,972 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { Loader2, AlertCircle, Calendar, ClipboardList, Filter } from 'lucide-react';
+import { format, parseISO, differenceInMinutes } from 'date-fns';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableStickyHeader } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RotaSchedulingAlgorithm } from '@/utils/rotaSchedulingAlgorithm';
-import { Loader2, RefreshCw, Check, X, Edit, Calendar } from 'lucide-react';
-import StaffingGanttChart from './StaffingGanttChart';
-import { format, parseISO } from 'date-fns';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency } from '@/lib/date-utils';
-import { useAuthStore } from '@/services/auth-service';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 type RotaScheduleReviewProps = {
   location: any;
   onApprovalRequest: () => void;
-  roleMappings?: Record<string, any[]>;
 };
 
-// Let's also check and update the props for StaffingGanttChart
-type StaffingGanttChartProps = {
-  shifts: any[];
+// Define job role priority for sorting
+const JOB_ROLE_PRIORITY = {
+  'Manager': 1,
+  'Bartender': 2,
+  'FOH': 3,
+  'Runner': 4,
+  'Chef Manager': 5,
+  'Chef': 6,
+  'KP': 7
 };
 
-export default function RotaScheduleReview({ location, onApprovalRequest, roleMappings = {} }: RotaScheduleReviewProps) {
+export default function RotaScheduleReview({ location, onApprovalRequest }: RotaScheduleReviewProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [currentSchedule, setCurrentSchedule] = useState<any>(null);
-  const [currentRequest, setCurrentRequest] = useState<any>(null);
-  const [shifts, setShifts] = useState<any[]>([]);
-  const { user } = useAuthStore();
-  
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [request, setRequest] = useState<any>(null);
+  const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [jobRoles, setJobRoles] = useState<any[]>([]);
+  const [thresholds, setThresholds] = useState<any[]>([]);
+  const [shiftRules, setShiftRules] = useState<any[]>([]);
+  const [roleMappings, setRoleMappings] = useState<any[]>([]);
+  const [generatedSchedule, setGeneratedSchedule] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [filterStaff, setFilterStaff] = useState<string>('');
+  const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('staff');
+
   useEffect(() => {
-    if (location?.id) {
-      fetchLatestSchedule();
+    if (location) {
+      fetchLatestRequest();
     }
   }, [location]);
-  
-  const fetchLatestSchedule = async () => {
+
+  const fetchLatestRequest = async () => {
     setIsLoading(true);
     try {
-      // Fetch the latest rota request for this location
+      // Fetch the latest draft request
       const { data: requestData, error: requestError } = await supabase
         .from('rota_requests')
         .select('*')
         .eq('location_id', location.id)
+        .eq('status', 'draft')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
-      
+
       if (requestError) {
-        throw new Error(`Failed to fetch rota request: ${requestError.message}`);
+        if (requestError.code === 'PGRST116') {
+          // No content found
+          setError('No draft rota requests found. Please create a request first.');
+          setIsLoading(false);
+          return;
+        }
+        throw requestError;
       }
-      
-      setCurrentRequest(requestData);
-      
-      // Fetch the latest rota schedule for this request
+
+      setRequest(requestData);
+
+      // Fetch staff, job roles, thresholds, shift rules and role mappings
+      await Promise.all([
+        fetchStaffMembers(),
+        fetchJobRoles(),
+        fetchThresholds(),
+        fetchShiftRules(),
+        fetchRoleMappings()
+      ]);
+
+      // Check if we already have a generated schedule for this request
       const { data: scheduleData, error: scheduleError } = await supabase
         .from('rota_schedules')
-        .select('*')
+        .select('*, rota_schedule_shifts(*)')
         .eq('request_id', requestData.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
-      
-      if (scheduleError) {
-        throw new Error(`Failed to fetch rota schedule: ${scheduleError.message}`);
+        .maybeSingle();
+
+      if (scheduleError) throw scheduleError;
+
+      if (scheduleData) {
+        // Calculate and update the correct total cost if needed
+        const shifts = scheduleData.rota_schedule_shifts || [];
+        const calculatedTotalCost = shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
+        
+        // If there's a discrepancy between the stored total_cost and calculated value, update it
+        if (Math.abs((scheduleData.total_cost || 0) - calculatedTotalCost) > 0.01) {
+          console.log(`Updating total cost from ${scheduleData.total_cost} to ${calculatedTotalCost}`);
+          
+          // Update in the database
+          const { error: updateError } = await supabase
+            .from('rota_schedules')
+            .update({ 
+              total_cost: calculatedTotalCost,
+              cost_percentage: scheduleData.revenue_forecast ? (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0
+            })
+            .eq('id', scheduleData.id);
+            
+          if (updateError) {
+            console.error('Error updating schedule total cost:', updateError);
+          } else {
+            // Update in the local state too
+            scheduleData.total_cost = calculatedTotalCost;
+            scheduleData.cost_percentage = scheduleData.revenue_forecast ? 
+              (calculatedTotalCost / scheduleData.revenue_forecast * 100) : 0;
+          }
+        }
+        
+        setGeneratedSchedule(scheduleData);
       }
-      
-      setCurrentSchedule(scheduleData);
-      
-      // Fetch the shifts for this schedule
-      const { data: shiftsData, error: shiftsError } = await supabase
-        .from('rota_schedule_shifts')
-        .select('*')
-        .eq('schedule_id', scheduleData.id);
-      
-      if (shiftsError) {
-        throw new Error(`Failed to fetch shifts: ${shiftsError.message}`);
-      }
-      
-      setShifts(shiftsData);
-      
-    } catch (error: any) {
-      console.error('Error fetching latest schedule:', error);
-      toast.error('Failed to load schedule', {
-        description: error.message
-      });
+
+    } catch (error) {
+      console.error('Error fetching request data:', error);
+      setError('Failed to load request data');
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const regenerateSchedule = async () => {
-    if (!currentRequest || !location?.id || !currentSchedule) {
-      toast.error('Please load a valid schedule before regenerating');
-      return;
-    }
-    
+
+  const fetchStaffMembers = async () => {
     try {
-      setIsRegenerating(true);
-      
-      // Fetch staff data
-      const { data: staffData, error: staffError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*, hi_score_evaluations(weighted_score)')
-        .eq('available_for_rota', true);
-      
-      if (staffError) {
-        throw new Error(`Failed to fetch staff data: ${staffError.message}`);
-      }
-      
-      // Process staff data to include hi_score
-      const processedStaff = staffData.map(staff => {
-        const evaluations = staff.hi_score_evaluations || [];
-        // Use the most recent evaluation score if available
-        const latestScore = evaluations.length > 0 
-          ? Math.max(...evaluations.map((e: any) => e.weighted_score || 0))
-          : 0;
-          
-        return {
-          ...staff,
-          hi_score: latestScore
-        };
-      });
-      
-      // Fetch job roles
-      const { data: jobRolesData, error: jobRolesError } = await supabase
-        .from('job_roles')
         .select('*')
-        .eq('location_id', location.id);
-      
-      if (jobRolesError) {
-        throw new Error(`Failed to fetch job roles: ${jobRolesError.message}`);
-      }
-      
-      // Fetch thresholds
-      const { data: thresholdsData, error: thresholdsError } = await supabase
+        .eq('available_for_rota', true)
+        .order('first_name');
+
+      if (error) throw error;
+      setStaffMembers(data || []);
+    } catch (error) {
+      console.error('Error fetching staff data:', error);
+    }
+  };
+
+  const fetchJobRoles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_roles')
+        .select('*');
+
+      if (error) throw error;
+      setJobRoles(data || []);
+    } catch (error) {
+      console.error('Error fetching job roles:', error);
+    }
+  };
+
+  const fetchThresholds = async () => {
+    try {
+      const { data, error } = await supabase
         .from('rota_revenue_thresholds')
         .select('*')
         .eq('location_id', location.id);
-      
-      if (thresholdsError) {
-        throw new Error(`Failed to fetch thresholds: ${thresholdsError.message}`);
-      }
-      
-      // Fetch shift rules
-      const { data: shiftRulesData, error: shiftRulesError } = await supabase
+
+      if (error) throw error;
+      setThresholds(data || []);
+    } catch (error) {
+      console.error('Error fetching thresholds:', error);
+    }
+  };
+
+  /**
+   * Fetch all shift rules for the location
+   */
+  const fetchShiftRules = async () => {
+    try {
+      const { data, error } = await supabase
         .from('shift_rules')
-        .select('*, job_roles(*)')
+        .select(`
+          *,
+          job_roles (*)
+        `)
         .eq('location_id', location.id)
-        .eq('archived', false);
-      
-      if (shiftRulesError) {
-        throw new Error(`Failed to fetch shift rules: ${shiftRulesError.message}`);
-      }
-      
-      // Fetch trough periods 
-      const { data: troughPeriodsData, error: troughPeriodsError } = await supabase
-        .from('shift_troughs')
-        .select('*');
-      
-      if (troughPeriodsError) {
-        throw new Error(`Failed to fetch trough periods: ${troughPeriodsError.message}`);
-      }
-      
-      // Initialize the scheduling algorithm
-      const algorithm = new RotaSchedulingAlgorithm({
-        request: currentRequest,
-        staff: processedStaff,
-        jobRoles: jobRolesData,
-        thresholds: thresholdsData,
-        location: location
+        .order('priority', { ascending: false });
+
+      if (error) throw error;
+      console.log('Fetched shift rules:', data?.length);
+      setShiftRules(data || []);
+    } catch (error) {
+      console.error('Error fetching shift rules:', error);
+      toast.error("Error loading shift rules", {
+        description: "Shift rules will not be used in scheduling."
       });
-      
-      // Set shift rules and trough periods
-      algorithm.setShiftRules(shiftRulesData);
-      algorithm.setTroughPeriods(troughPeriodsData);
-      
-      // Set role mappings
-      if (roleMappings && Object.keys(roleMappings).length > 0) {
-        algorithm.setRoleMappings(roleMappings);
-        console.log(`Set ${Object.keys(roleMappings).length} role mappings for the algorithm`);
-      } else {
-        console.warn('No role mappings available, this may affect staff assignment accuracy');
+    }
+  };
+
+  /**
+   * Fetch role mappings for the location
+   */
+  const fetchRoleMappings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_role_mappings')
+        .select('*')
+        .eq('location_id', location.id)
+        .order('priority', { ascending: true });
+
+      if (error) throw error;
+      console.log('Fetched role mappings:', data?.length);
+      setRoleMappings(data || []);
+    } catch (error) {
+      console.error('Error fetching role mappings:', error);
+      toast.error("Error loading role mappings", {
+        description: "Role mappings will not be used in scheduling."
+      });
+    }
+  };
+
+  const prepareShiftForDatabase = (shift: any) => {
+    // Create a new object with only the fields that exist in the database
+    const validFields = [
+      'profile_id',
+      'date',
+      'day_of_week',
+      'start_time',
+      'end_time',
+      'break_minutes',
+      'job_role_id',
+      'is_secondary_role',
+      'hi_score',
+      'shift_cost',
+      'employer_ni_cost',
+      'employer_pension_cost',
+      'total_cost',
+      'schedule_id' // This will be added later
+    ];
+    
+    const cleanedShift: Record<string, any> = {};
+    
+    validFields.forEach(field => {
+      if (shift[field] !== undefined) {
+        cleanedShift[field] = shift[field];
       }
+    });
+    
+    return cleanedShift;
+  };
+
+  const generateSchedule = async () => {
+    if (!request || !staffMembers.length || !jobRoles.length) {
+      toast.error('Missing required data to generate schedule');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Create scheduling algorithm instance
+      const scheduler = new RotaSchedulingAlgorithm({
+        request,
+        staff: staffMembers,
+        jobRoles,
+        thresholds,
+        location
+      });
+
+      // Set the shift rules to use for scheduling
+      scheduler.setShiftRules(shiftRules);
       
-      // Run the algorithm
-      const result = await algorithm.generateSchedule();
+      // Set the role mappings to use for staff assignment
+      scheduler.setRoleMapping(roleMappings);
       
-      console.log(`Schedule regenerated with ${result.shifts.length} shifts`);
+      console.log(`Using ${shiftRules.length} shift rules for scheduling and ${roleMappings.length} role mappings`);
       
-      // Update current schedule
-      const { error: scheduleError } = await supabase
+      // Generate the schedule
+      const schedule = await scheduler.generateSchedule();
+      console.log(`Generated schedule with ${schedule.shifts?.length || 0} shifts`);
+      
+      if (!schedule.shifts || schedule.shifts.length === 0) {
+        toast.warning('No shifts were generated. Ensure staff and job roles are correctly configured.');
+        setIsGenerating(false);
+        return;
+      }
+
+      // Calculate the actual total cost for accuracy
+      const calculatedTotalCost = schedule.shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
+      
+      // Ensure we use the accurately calculated cost
+      schedule.total_cost = calculatedTotalCost;
+      schedule.cost_percentage = schedule.revenue_forecast ? 
+        (calculatedTotalCost / schedule.revenue_forecast * 100) : 0;
+      
+      console.log(`Using calculated total cost: £${calculatedTotalCost.toFixed(2)} (${schedule.cost_percentage.toFixed(1)}%)`);
+
+      // Create the schedule record in the database
+      const { data: scheduleData, error: scheduleError } = await supabase
         .from('rota_schedules')
-        .update({
-          total_cost: result.total_cost,
-          revenue_forecast: result.revenue_forecast,
-          cost_percentage: result.cost_percentage
+        .insert({
+          request_id: request.id,
+          location_id: location.id,
+          week_start_date: request.week_start_date,
+          week_end_date: request.week_end_date,
+          status: 'draft',
+          total_cost: calculatedTotalCost, // Use the accurately calculated total cost
+          revenue_forecast: schedule.revenue_forecast,
+          cost_percentage: schedule.cost_percentage,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         })
-        .eq('id', currentSchedule.id);
-      
+        .select()
+        .single();
+
       if (scheduleError) {
-        throw new Error(`Failed to update schedule: ${scheduleError.message}`);
+        console.error('Error creating schedule:', scheduleError);
+        toast.error('Failed to create schedule record');
+        throw scheduleError;
       }
-      
-      // Delete existing shifts
-      const { error: deleteError } = await supabase
-        .from('rota_schedule_shifts')
-        .delete()
-        .eq('schedule_id', currentSchedule.id);
-      
-      if (deleteError) {
-        throw new Error(`Failed to delete existing shifts: ${deleteError.message}`);
-      }
-      
-      // Create new shifts
-      if (result.shifts.length > 0) {
-        // Add schedule_id to each shift
-        const shiftsWithScheduleId = result.shifts.map((shift: any) => ({
-          ...shift,
-          schedule_id: currentSchedule.id
-        }));
-        
-        // Insert shifts
+
+      console.log('Schedule record created:', scheduleData);
+
+      // Prepare shifts for database insertion - remove fields that don't exist in the database
+      if (schedule.shifts && schedule.shifts.length > 0) {
+        const cleanShifts = schedule.shifts.map((shift: any) => {
+          const cleanShift = prepareShiftForDatabase(shift);
+          cleanShift.schedule_id = scheduleData.id;
+          return cleanShift;
+        });
+
+        console.log(`Inserting ${cleanShifts.length} shifts into database`);
+        console.log('First shift example:', cleanShifts[0]);
+
         const { error: shiftsError } = await supabase
           .from('rota_schedule_shifts')
-          .upsert(shiftsWithScheduleId);
-        
+          .insert(cleanShifts);
+
         if (shiftsError) {
-          throw new Error(`Failed to create shifts: ${shiftsError.message}`);
+          console.error('Error inserting shifts:', shiftsError);
+          toast.error('Error saving shifts', {
+            description: shiftsError.message || 'Database error occurred'
+          });
+          
+          // Continue execution to fetch what we can, even if some shifts failed
+        } else {
+          console.log('Successfully inserted shifts');
+        }
+      }
+
+      // Fetch the complete schedule with shifts
+      const { data: completeSchedule, error: fetchError } = await supabase
+        .from('rota_schedules')
+        .select('*, rota_schedule_shifts(*)')
+        .eq('id', scheduleData.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching complete schedule:', fetchError);
+        toast.error('Error retrieving saved schedule');
+        throw fetchError;
+      }
+
+      console.log(`Retrieved schedule with ${completeSchedule.rota_schedule_shifts?.length || 0} shifts`);
+      
+      // Verify total cost again after fetching
+      const fetchedShifts = completeSchedule.rota_schedule_shifts || [];
+      const verifiedTotalCost = fetchedShifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
+      
+      // If there's still a discrepancy, update the total cost
+      if (Math.abs((completeSchedule.total_cost || 0) - verifiedTotalCost) > 0.01) {
+        console.log(`Fixing final total cost from ${completeSchedule.total_cost} to ${verifiedTotalCost}`);
+        
+        // Update in the database
+        const { error: updateError } = await supabase
+          .from('rota_schedules')
+          .update({ 
+            total_cost: verifiedTotalCost,
+            cost_percentage: completeSchedule.revenue_forecast ? (verifiedTotalCost / completeSchedule.revenue_forecast * 100) : 0
+          })
+          .eq('id', completeSchedule.id);
+          
+        if (updateError) {
+          console.error('Error updating final schedule total cost:', updateError);
+        } else {
+          // Update in the local state too
+          completeSchedule.total_cost = verifiedTotalCost;
+          completeSchedule.cost_percentage = completeSchedule.revenue_forecast ? 
+            (verifiedTotalCost / completeSchedule.revenue_forecast * 100) : 0;
         }
       }
       
-      // Success
-      toast.success('Rota schedule regenerated', {
-        description: `Created ${result.shifts.length} shifts with ${result.cost_percentage.toFixed(2)}% cost`
-      });
+      setGeneratedSchedule(completeSchedule);
       
-      // Refresh data
-      fetchLatestSchedule();
-      
-    } catch (error: any) {
-      console.error('Error regenerating schedule:', error);
-      toast.error('Failed to regenerate schedule', {
-        description: error.message
+      if (completeSchedule.rota_schedule_shifts?.length > 0) {
+        toast.success(`Schedule generated with ${completeSchedule.rota_schedule_shifts.length} shifts`);
+      } else {
+        toast.warning('Schedule created, but no shifts were saved');
+      }
+    } catch (error) {
+      console.error('Error generating schedule:', error);
+      toast.error('Failed to generate schedule', {
+        description: error instanceof Error ? error.message : 'Unknown error'
       });
     } finally {
-      setIsRegenerating(false);
+      setIsGenerating(false);
     }
-  };
-  
-  const handleApproval = () => {
-    if (!currentSchedule) {
-      toast.error('Please load a valid schedule before requesting approval');
-      return;
-    }
-    
-    // Signal completion to parent
-    onApprovalRequest();
   };
 
+  const handleApprovalRequest = async () => {
+    if (!generatedSchedule) return;
+
+    try {
+      // Update the request status
+      const { error } = await supabase
+        .from('rota_requests')
+        .update({ status: 'pending_approval' })
+        .eq('id', request.id);
+
+      if (error) throw error;
+
+      toast.success('Rota sent for approval');
+      onApprovalRequest();
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      toast.error('Failed to send rota for approval');
+    }
+  };
+
+  // Helper function to calculate hours for a shift
+  const calculateShiftHours = (shift: any): number => {
+    if (!shift.start_time || !shift.end_time) return 0;
+    
+    // Create date objects for start and end times 
+    const [startHours, startMins] = shift.start_time.split(':').map(Number);
+    const [endHours, endMins] = shift.end_time.split(':').map(Number);
+    
+    const startDate = new Date();
+    startDate.setHours(startHours, startMins, 0);
+    
+    const endDate = new Date();
+    endDate.setHours(endHours, endMins, 0);
+    
+    // Handle shifts that go past midnight
+    if (endDate < startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+    
+    // Calculate difference in minutes, subtract break time, convert to hours
+    const totalMinutes = differenceInMinutes(endDate, startDate) - (shift.break_minutes || 0);
+    return totalMinutes / 60;
+  };
+
+  // Calculate total weekly hours for a staff member
+  const calculateTotalWeeklyHours = (shifts: any[]): number => {
+    if (!shifts || shifts.length === 0) return 0;
+    
+    return shifts.reduce((total, shift) => {
+      return total + calculateShiftHours(shift);
+    }, 0);
+  };
+
+  // Modified function to include sorting and additional filtering
+  const getFilteredShifts = () => {
+    if (!generatedSchedule?.rota_schedule_shifts) return [];
+
+    // First, filter the shifts based on filters
+    const filteredShifts = generatedSchedule.rota_schedule_shifts.filter((shift: any) => {
+      const matchesDate = !filterDate || shift.date === filterDate;
+      const matchesStaff = !filterStaff || 
+        staffMembers.find(s => s.id === shift.profile_id)?.first_name?.toLowerCase().includes(filterStaff.toLowerCase()) ||
+        staffMembers.find(s => s.id === shift.profile_id)?.last_name?.toLowerCase().includes(filterStaff.toLowerCase());
+      
+      // Additional department filter
+      const role = jobRoles.find(r => r.id === shift.job_role_id);
+      const isDepartmentMatch = filterDepartment === 'all' || 
+        (filterDepartment === 'foh' && !role?.is_kitchen) ||
+        (filterDepartment === 'kitchen' && role?.is_kitchen);
+
+      // Additional role filter
+      const isRoleMatch = filterRole === 'all' || role?.id === filterRole;
+      
+      return matchesDate && matchesStaff && isDepartmentMatch && isRoleMatch;
+    });
+    
+    // Then sort the filtered shifts by department (FOH first, then Kitchen) and role priority
+    return filteredShifts.sort((a: any, b: any) => {
+      const roleA = jobRoles.find(r => r.id === a.job_role_id);
+      const roleB = jobRoles.find(r => r.id === b.job_role_id);
+      
+      // First sort by department (FOH first)
+      if ((roleA?.is_kitchen || false) !== (roleB?.is_kitchen || false)) {
+        return (roleA?.is_kitchen || false) ? 1 : -1;
+      }
+      
+      // Then sort by role priority
+      const roleAPriority = JOB_ROLE_PRIORITY[roleA?.title] || 999;
+      const roleBPriority = JOB_ROLE_PRIORITY[roleB?.title] || 999;
+      
+      return roleAPriority - roleBPriority;
+    });
+  };
+
+  // Group shifts by date
+  const shiftsByDate = () => {
+    const shifts = getFilteredShifts();
+    const grouped: {[key: string]: any[]} = {};
+    
+    shifts.forEach((shift: any) => {
+      if (!grouped[shift.date]) {
+        grouped[shift.date] = [];
+      }
+      grouped[shift.date].push(shift);
+    });
+    
+    return grouped;
+  };
+
+  // Group shifts by staff
+  const shiftsByStaff = () => {
+    const shifts = getFilteredShifts();
+    const grouped: {[key: string]: any[]} = {};
+    
+    shifts.forEach((shift: any) => {
+      if (!grouped[shift.profile_id]) {
+        grouped[shift.profile_id] = [];
+      }
+      grouped[shift.profile_id].push(shift);
+    });
+    
+    return grouped;
+  };
+
+  const getDayOfWeek = (dateString: string) => {
+    const date = parseISO(dateString);
+    return format(date, 'EEEE');
+  };
+
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    return `${hours}:${minutes}`;
+  };
+
+  const getStaffName = (profileId: string) => {
+    const staff = staffMembers.find(s => s.id === profileId);
+    return staff ? `${staff.first_name} ${staff.last_name}` : 'Unknown Staff';
+  };
+
+  const getJobRoleTitle = (jobRoleId: string) => {
+    const role = jobRoles.find(r => r.id === jobRoleId);
+    return role ? role.title : 'Unknown Role';
+  };
+
+  const getTotalCostByDate = (date: string) => {
+    const shifts = generatedSchedule?.rota_schedule_shifts.filter((s: any) => s.date === date) || [];
+    return shifts.reduce((sum: number, shift: any) => sum + (shift.total_cost || 0), 0);
+  };
+
+  const getRevenueForecast = (date: string) => {
+    return request?.revenue_forecast?.[date] || 0;
+  };
+
+  const getCostPercentage = (date: string) => {
+    const cost = getTotalCostByDate(date);
+    const revenue = getRevenueForecast(date);
+    
+    if (!revenue || revenue === 0) return 0;
+    return (cost / Number(revenue)) * 100;
+  };
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  };
+
+  const getShiftRuleName = (shift: any) => {
+    if (shift.shift_rule_name) {
+      return shift.shift_rule_name;
+    }
+    return getJobRoleTitle(shift.job_role_id);
+  };
+
+  const renderShiftCell = (shift: any) => {
+    const isFromShiftRule = !!shift.shift_rule_id;
+    
+    return (
+      <>
+        <Badge variant={shift.is_secondary_role ? "outline" : "default"}>
+          {getJobRoleTitle(shift.job_role_id)}
+        </Badge>
+        
+        {isFromShiftRule && (
+          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+            From rule: {shift.shift_rule_name || "Unnamed rule"}
+          </div>
+        )}
+        
+        {shift.is_secondary_role && (
+          <div className="text-xs text-muted-foreground mt-1">
+            Secondary role
+          </div>
+        )}
+      </>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Get unique job roles for filtering
+  const uniqueJobRoles = jobRoles.sort((a: any, b: any) => {
+    // Sort FOH first, then Kitchen
+    if (a.is_kitchen !== b.is_kitchen) {
+      return a.is_kitchen ? 1 : -1;
+    }
+    
+    // Then by role priority
+    const priorityA = JOB_ROLE_PRIORITY[a.title] || 999;
+    const priorityB = JOB_ROLE_PRIORITY[b.title] || 999;
+    return priorityA - priorityB;
+  });
+
   return (
-    <div className="space-y-4">
-      <Card className="shadow-md rounded-none border-x-0 m-0 w-full">
-        <CardHeader className="pb-3 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Review Rota Schedule</CardTitle>
-            </div>
-            <div className="flex items-center gap-2">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div>
+          <CardTitle>Review Draft Rota</CardTitle>
+          {request && (
+            <p className="text-sm text-muted-foreground">
+              Week: {format(parseISO(request.week_start_date), 'dd MMM yyyy')} to {format(parseISO(request.week_end_date), 'dd MMM yyyy')}
+            </p>
+          )}
+        </div>
+        <div className="flex space-x-2">
+          {!generatedSchedule ? (
+            <Button 
+              onClick={generateSchedule} 
+              disabled={isGenerating}
+              className="flex items-center"
+            >
+              {isGenerating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ClipboardList className="mr-2 h-4 w-4" />
+              )}
+              {isGenerating ? 'Generating...' : 'Generate Schedule'}
+            </Button>
+          ) : (
+            <>
               <Button 
                 variant="outline" 
-                onClick={fetchLatestSchedule} 
-                disabled={isLoading || isRegenerating}
+                onClick={generateSchedule} 
+                disabled={isGenerating}
               >
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                Refresh Data
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={regenerateSchedule} 
-                disabled={isLoading || isRegenerating}
-              >
-                {isRegenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="mr-2 h-4 w-4" />}
                 Regenerate
               </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : currentSchedule ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="border-2 shadow-none">
-                  <CardHeader>
-                    <CardTitle>Schedule Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-medium">Week Start Date</TableCell>
-                          <TableCell>{format(parseISO(currentSchedule.week_start_date), 'dd/MM/yyyy')}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Week End Date</TableCell>
-                          <TableCell>{format(parseISO(currentSchedule.week_end_date), 'dd/MM/yyyy')}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Total Cost</TableCell>
-                          <TableCell>{formatCurrency(currentSchedule.total_cost)}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Revenue Forecast</TableCell>
-                          <TableCell>{formatCurrency(currentSchedule.revenue_forecast)}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Cost Percentage</TableCell>
-                          <TableCell>{currentSchedule.cost_percentage.toFixed(2)}%</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-2 shadow-none">
-                  <CardHeader>
-                    <CardTitle>Staffing Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <StaffingGanttChart shifts={shifts} />
-                  </CardContent>
-                </Card>
+              <Button onClick={handleApprovalRequest}>
+                Send for Approval
+              </Button>
+            </>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {generatedSchedule ? (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
+              <div className="space-y-2 flex-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Filter by Date</label>
+                    <Select
+                      value={filterDate || 'all'}
+                      onValueChange={(value) => setFilterDate(value === 'all' ? null : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Dates" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Dates</SelectItem>
+                        {Object.keys(shiftsByDate()).map(date => (
+                          <SelectItem key={date} value={date}>
+                            {format(parseISO(date), 'EEE, dd MMM')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Filter by Staff</label>
+                    <Input
+                      type="text"
+                      placeholder="Search staff..."
+                      value={filterStaff}
+                      onChange={e => setFilterStaff(e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
-              
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Start Time</TableHead>
-                    <TableHead>End Time</TableHead>
-                    <TableHead>Break (mins)</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Cost</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {shifts.map((shift) => (
-                    <TableRow key={shift.id}>
-                      <TableCell>{shift.profile_id}</TableCell>
-                      <TableCell>{format(parseISO(shift.date), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell>{shift.start_time}</TableCell>
-                      <TableCell>{shift.end_time}</TableCell>
-                      <TableCell>{shift.break_minutes}</TableCell>
-                      <TableCell>{shift.job_role_id}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(shift.total_cost)}</TableCell>
-                    </TableRow>
+              <div className="space-y-2 flex-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Department</label>
+                    <Select
+                      value={filterDepartment}
+                      onValueChange={setFilterDepartment}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Departments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Departments</SelectItem>
+                        <SelectItem value="foh">FOH</SelectItem>
+                        <SelectItem value="kitchen">Kitchen</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Job Role</label>
+                    <Select 
+                      value={filterRole} 
+                      onValueChange={setFilterRole}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Roles" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        {uniqueJobRoles.map((role: any) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.title} {role.is_kitchen ? '(Kitchen)' : '(FOH)'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="rounded-lg border bg-card overflow-hidden mb-4">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50">
+                <div>
+                  <p className="text-sm font-medium">Total Cost</p>
+                  <p className="text-2xl font-bold">£{(generatedSchedule.total_cost || 0).toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Revenue Forecast</p>
+                  <p className="text-2xl font-bold">£{generatedSchedule.revenue_forecast?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Cost %</p>
+                  <p className={`text-2xl font-bold ${
+                    ((generatedSchedule.cost_percentage || 0) > 30) ? 'text-destructive' : 'text-green-600'
+                  }`}>
+                    {(generatedSchedule.cost_percentage || 0).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="date">View by Date</TabsTrigger>
+                <TabsTrigger value="staff">View by Staff</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="date" className="mt-4">
+                <div className="space-y-4">
+                  {Object.entries(shiftsByDate()).map(([date, shifts]) => (
+                    <Card key={date} className="overflow-hidden">
+                      <CardHeader className="bg-muted/50 py-2">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold">
+                              {format(parseISO(date), 'EEEE, dd MMM yyyy')}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {shifts.length} shift{shifts.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm">
+                              Revenue: £{getRevenueForecast(date)}
+                            </p>
+                            <p className="text-sm">
+                              Cost: £{getTotalCostByDate(date).toFixed(2)} 
+                              ({getCostPercentage(date).toFixed(1)}%)
+                            </p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <div className="px-0">
+                        <Table>
+                          <TableStickyHeader>
+                            <TableRow>
+                              <TableHead>Staff</TableHead>
+                              <TableHead>Role</TableHead>
+                              <TableHead>Time</TableHead>
+                              <TableHead className="text-right">Cost</TableHead>
+                            </TableRow>
+                          </TableStickyHeader>
+                          <TableBody>
+                            {shifts.map((shift: any) => (
+                              <TableRow key={shift.id}>
+                                <TableCell>
+                                  <div className="flex items-center space-x-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage 
+                                        src={staffMembers.find(s => s.id === shift.profile_id)?.avatar_url}
+                                        alt={getStaffName(shift.profile_id)} 
+                                      />
+                                      <AvatarFallback>
+                                        {getInitials(
+                                          staffMembers.find(s => s.id === shift.profile_id)?.first_name || '',
+                                          staffMembers.find(s => s.id === shift.profile_id)?.last_name || ''
+                                        )}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      {getStaffName(shift.profile_id)}
+                                      {shift.hi_score > 0 && (
+                                        <div className="text-xs text-muted-foreground">
+                                          HiQ: {shift.hi_score.toFixed(1)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {renderShiftCell(shift)}
+                                </TableCell>
+                                <TableCell>
+                                  {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                  <div className="text-xs text-muted-foreground">
+                                    {shift.break_minutes}min break
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  £{shift.total_cost.toFixed(2)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              No schedule available to review.
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-end items-center p-4">
-          {currentSchedule?.status === 'approved' ? (
-            <Alert variant="success">
-              <Check className="h-4 w-4" />
-              <AlertDescription>
-                This schedule has already been approved.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <Button onClick={handleApproval} disabled={isLoading || isRegenerating}>
-              Request Approval
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-    </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="staff" className="mt-4">
+                <div className="space-y-4">
+                  {Object.entries(shiftsByStaff()).map(([staffId, shifts]) => {
+                    // Calculate total weekly hours for this staff member
+                    const totalWeeklyHours = calculateTotalWeeklyHours(shifts);
+                    
+                    return (
+                      <Card key={staffId} className="overflow-hidden">
+                        <CardHeader className="bg-muted/50 py-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Avatar>
+                                <AvatarImage 
+                                  src={staffMembers.find(s => s.id === staffId)?.avatar_url}
+                                  alt={getStaffName(staffId)} 
+                                />
+                                <AvatarFallback>
+                                  {getInitials(
+                                    staffMembers.find(s => s.id === staffId)?.first_name || '',
+                                    staffMembers.find(s => s.id === staffId)?.last_name || ''
+                                  )}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="font-semibold">{getStaffName(staffId)}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {shifts.length} shift{shifts.length !== 1 ? 's' : ''} 
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {totalWeeklyHours.toFixed(1)} hours/week
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(totalWeeklyHours / shifts.length).toFixed(1)} avg hours/shift
+                              </p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <div className="px-0">
+                          <Table>
+                            <TableStickyHeader>
+                              <TableRow>
+                                <TableHead>Day</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead className="text-right">Cost</TableHead>
+                              </TableRow>
+                            </TableStickyHeader>
+                            <TableBody>
+                              {shifts.map((shift: any) => (
+                                <TableRow key={shift.id}>
+                                  <TableCell>
+                                    <div>
+                                      {format(parseISO(shift.date), 'EEE, dd MMM')}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {renderShiftCell(shift)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                    <div className="text-xs text-muted-foreground">
+                                      {shift.break_minutes}min break
+                                      <span className="ml-1">({calculateShiftHours(shift).toFixed(1)} hrs)</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    £{shift.total_cost.toFixed(2)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Schedule Generated</h3>
+            <p className="text-muted-foreground max-w-md">
+              Click the "Generate Schedule" button to create an optimized staff schedule based on 
+              the revenue forecasts, staff Hi Scores, and configured thresholds.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
