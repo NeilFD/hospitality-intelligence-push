@@ -1,7 +1,7 @@
 
 // If this file doesn't exist yet, we'll create it with all necessary types
 
-export type ModuleType = 'home' | 'master' | 'pl' | 'wages' | 'food' | 'beverage' | 'team' | 'hiq';
+export type ModuleType = 'home' | 'master' | 'pl' | 'wages' | 'food' | 'beverage' | 'team' | 'hiq' | 'performance' | 'calendar';
 
 export interface Module {
   id: string;
@@ -54,4 +54,19 @@ export interface AppState {
   modules: Module[];
   annualRecord: AnnualRecord;
   setState?: (updates: Partial<AppState>) => void;
+}
+
+// Add the TrackerSummary interface that was missing
+export interface TrackerSummary {
+  year: number;
+  month: number;
+  moduleType: ModuleType;
+  revenue: number;
+  cost: number;
+  purchases: number;
+  creditNotes: number;
+  staffAllowance: number;
+  totalCost: number;
+  gpAmount: number;
+  gpPercentage: number;
 }

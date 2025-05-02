@@ -4,7 +4,7 @@ import { Calendar, BarChart, CheckCircle, Code, DollarSign, Home, Menu, MessageC
 import { ModuleType } from '@/types/kitchen-ledger';
 
 interface ModuleIconProps {
-  type: ModuleType | 'hospitality' | 'message-square' | 'calendar';
+  type: ModuleType | 'hospitality' | 'message-square';
   className?: string;
 }
 
@@ -26,12 +26,12 @@ export const ModuleIcon: React.FC<ModuleIconProps> = ({ type, className }) => {
       return <PieChart className={className} />;
     case 'performance':
       return <BarChart className={className} />;
+    case 'calendar':
+      return <Calendar className={className} />;
     case 'hospitality':
       return <CheckCircle className={className} />;
     case 'message-square':
       return <MessageCircle className={className} />;
-    case 'calendar':
-      return <Calendar className={className} />;
     default:
       return <Settings className={className} />;
   }

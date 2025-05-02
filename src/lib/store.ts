@@ -23,7 +23,7 @@ const initialSuppliers: Supplier[] = [
   { id: '5', name: 'Local Farm Co-op' },
 ];
 
-// Updated default modules - removed performance module
+// Updated default modules - make sure to include all module types
 const defaultModules: Module[] = [
   { id: '0', type: 'home', name: 'Home', enabled: true, displayOrder: 1 },
   { id: '1', type: 'master', name: 'Daily Info', enabled: true, displayOrder: 2 },
@@ -31,8 +31,10 @@ const defaultModules: Module[] = [
   { id: '3', type: 'wages', name: 'Wages Tracker', enabled: true, displayOrder: 4 },
   { id: '4', type: 'food', name: 'Food Hub', enabled: true, displayOrder: 5 },
   { id: '5', type: 'beverage', name: 'Beverage Hub', enabled: true, displayOrder: 6 },
+  { id: '6', type: 'performance', name: 'Performance', enabled: true, displayOrder: 7 },
   { id: '7', type: 'team', name: 'Team Communication', enabled: true, displayOrder: 8 },
-  { id: '8', type: 'hiq', name: 'HiQ', enabled: true, displayOrder: 9 }
+  { id: '8', type: 'hiq', name: 'HiQ', enabled: true, displayOrder: 9 },
+  { id: '9', type: 'calendar', name: 'Calendar', enabled: false, displayOrder: 10 }
 ];
 
 // Create initial month record with empty weeks

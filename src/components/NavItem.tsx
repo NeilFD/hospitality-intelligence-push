@@ -8,7 +8,7 @@ import { ModuleType } from '@/types/kitchen-ledger';
 interface NavItemProps {
   to: string;
   label: string;
-  icon: ModuleType | 'hospitality' | 'message-square';
+  icon: ModuleType | 'hospitality' | 'message-square' | 'calendar';
   active?: boolean;
 }
 
