@@ -1,10 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSetCurrentModule } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, Settings, Users, FileEdit, BarChart, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { 
+  Calendar, 
+  Settings, 
+  Users, 
+  FileEdit, 
+  BarChart, 
+  CheckCircle, 
+  AlertTriangle, 
+  Info 
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +24,7 @@ import RotaThresholdEditor from '@/components/rotas/RotaThresholdEditor';
 import RotaScheduleReview from '@/components/rotas/RotaScheduleReview';
 import RotaScheduleApproval from '@/components/rotas/RotaScheduleApproval';
 import StaffRankingPanel from '@/components/rotas/StaffRankingPanel';
+import RotaAlgorithmConfig from '@/components/rotas/RotaAlgorithmConfig';
 import { useAuthStore } from '@/services/auth-service';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -215,7 +226,7 @@ export default function RotaScheduling() {
           <Alert variant="default" className="bg-blue-50 border-blue-200">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-700">
-              This rota engine now prioritizes days with higher revenue forecasts when scheduling staff, ensuring busier days receive optimal staffing allocation first.
+              Staff scheduling algorithm has been improved with better manager role detection and more balanced hour distribution.
             </AlertDescription>
           </Alert>
         </div>
@@ -224,7 +235,7 @@ export default function RotaScheduling() {
           <Alert variant="default" className="bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700">
-              Salaried staff costs are now correctly calculated when assigned to multiple shifts in a single day, preventing cost duplication while maintaining accurate scheduling.
+              The scheduling engine now includes configurable priority weights to better balance shifts between managers and other staff members.
             </AlertDescription>
           </Alert>
         </div>
@@ -275,7 +286,7 @@ export default function RotaScheduling() {
               </div>
             ) : (
               <Tabs defaultValue="request" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full grid grid-cols-5 mb-6">
+                <TabsList className="w-full grid grid-cols-6 mb-6">
                   <TabsTrigger value="request" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span className="hidden sm:inline">Request Rota</span>
@@ -284,7 +295,7 @@ export default function RotaScheduling() {
                   <TabsTrigger value="thresholds" className="flex items-center gap-2">
                     <BarChart className="h-4 w-4" />
                     <span className="hidden sm:inline">Thresholds</span>
-                    <span className="sm:hidden">Thresholds</span>
+                    <span className="sm:hidden">Thresh.</span>
                   </TabsTrigger>
                   <TabsTrigger value="review" className="flex items-center gap-2">
                     <FileEdit className="h-4 w-4" />
@@ -293,13 +304,18 @@ export default function RotaScheduling() {
                   </TabsTrigger>
                   <TabsTrigger value="approval" className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Approve & Publish</span>
+                    <span className="hidden sm:inline">Approve</span>
                     <span className="sm:hidden">Approve</span>
                   </TabsTrigger>
                   <TabsTrigger value="staff" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span className="hidden sm:inline">Staff Ranking</span>
                     <span className="sm:hidden">Staff</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="config" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Algorithm Config</span>
+                    <span className="sm:hidden">Config</span>
                   </TabsTrigger>
                 </TabsList>
                 
@@ -330,6 +346,10 @@ export default function RotaScheduling() {
                 
                 <TabsContent value="staff" className="mt-0 space-y-4">
                   <StaffRankingPanel location={location} />
+                </TabsContent>
+                
+                <TabsContent value="config" className="mt-0 space-y-4">
+                  <RotaAlgorithmConfig location={location} />
                 </TabsContent>
               </Tabs>
             )}
