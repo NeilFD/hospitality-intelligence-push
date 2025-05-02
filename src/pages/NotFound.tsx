@@ -2,7 +2,7 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Home, Users, ArrowLeft } from "lucide-react";
+import { Home, Users, ArrowLeft, Calendar } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
@@ -15,8 +15,21 @@ const NotFound = () => {
     );
   }, [location.pathname]);
 
-  // Check if this is a profile page that wasn't found
+  // Check what kind of page this might be
   const isProfilePage = path.startsWith('/profile/');
+  const isWeeklyPage = path.includes('/week/'); 
+  const isMonthlyPage = path.includes('/month/');
+  
+  // Determine which module we're in
+  const getModuleFromPath = () => {
+    const parts = path.split('/');
+    if (parts.length > 1) {
+      return parts[1]; // First part after leading slash
+    }
+    return null;
+  };
+  
+  const module = getModuleFromPath();
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center bg-gray-50">
@@ -25,6 +38,10 @@ const NotFound = () => {
         <p className="text-xl text-muted-foreground mb-8">
           {isProfilePage 
             ? "Oops! This team member profile was not found."
+            : isWeeklyPage
+            ? "Oops! This weekly view was not found."
+            : isMonthlyPage
+            ? "Oops! This monthly view was not found."
             : "Oops! This page was not found on the menu."}
         </p>
         
@@ -44,6 +61,34 @@ const NotFound = () => {
               </Button>
             </div>
           )}
+          
+          {isWeeklyPage && module && (
+            <div className="mt-4">
+              <Button variant="outline" asChild>
+                <Link to={`/${module}/dashboard`}>
+                  <Calendar className="mr-2 h-4 w-4" /> Back to {module.charAt(0).toUpperCase() + module.slice(1)} Dashboard
+                </Link>
+              </Button>
+            </div>
+          )}
+          
+          {isMonthlyPage && module && (
+            <div className="mt-4">
+              <Button variant="outline" asChild>
+                <Link to={`/${module}/dashboard`}>
+                  <Calendar className="mr-2 h-4 w-4" /> Back to {module.charAt(0).toUpperCase() + module.slice(1)} Dashboard
+                </Link>
+              </Button>
+            </div>
+          )}
+          
+          <div className="mt-4">
+            <Button variant="outline" asChild>
+              <Link to="javascript:history.back()">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
