@@ -135,10 +135,41 @@ export class RotaSchedulingAlgorithm {
   }
 
   /**
-   * Generate an optimal schedule based on the provided data
+   * Generate a complete schedule based on the configuration
    */
-  generateSchedule = async () => {
+  async generateSchedule() {
     console.log('Starting schedule generation');
+    
+    // Log the entire request object to troubleshoot
+    console.log('Request object:', this.request);
+    
+    // Get dates from request or generate them if not provided
+    const dates = this.request.dates || [];
+    console.log(`Processing ${dates.length} dates for scheduling`);
+    
+    if (!dates.length) {
+      console.error('No dates provided in request');
+      // If no dates are provided, try to generate them from start and end dates
+      if (this.request.week_start_date && this.request.week_end_date) {
+        const startDate = new Date(this.request.week_start_date);
+        const endDate = new Date(this.request.week_end_date);
+        const currentDate = new Date(startDate);
+        
+        while (currentDate <= endDate) {
+          dates.push(currentDate.toISOString().split('T')[0]);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        console.log(`Generated dates array from week bounds: ${dates.join(', ')}`);
+      } else {
+        return {
+          shifts: [],
+          total_cost: 0,
+          revenue_forecast: 0,
+          cost_percentage: 0
+        };
+      }
+    }
     
     // Initialize result object
     const result = {
@@ -154,13 +185,6 @@ export class RotaSchedulingAlgorithm {
     
     // Initialize daily staff allocations
     this.dailyStaffAllocations = {};
-    
-    // Get dates from request
-    const dates = this.request.dates || [];
-    if (!dates.length) {
-      console.error('No dates provided in request');
-      return result;
-    }
     
     // Calculate total revenue forecast
     const totalRevenueForecast = this.calculateTotalRevenue(this.request.revenue_forecast);

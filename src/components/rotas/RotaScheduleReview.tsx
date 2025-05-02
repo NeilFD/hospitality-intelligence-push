@@ -267,9 +267,31 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
 
     setIsGenerating(true);
     try {
-      // Create scheduling algorithm instance
+      // Generate dates array from request's week_start_date and week_end_date
+      const startDate = new Date(request.week_start_date);
+      const endDate = new Date(request.week_end_date);
+      const datesArray = [];
+      
+      // Create a copy of the start date to avoid modifying it
+      const currentDate = new Date(startDate);
+      
+      // Generate all dates between start and end date (inclusive)
+      while (currentDate <= endDate) {
+        datesArray.push(currentDate.toISOString().split('T')[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      // Add dates array to request
+      const requestWithDates = {
+        ...request,
+        dates: datesArray
+      };
+      
+      console.log(`Generated ${datesArray.length} dates for scheduling:`, datesArray);
+
+      // Create scheduling algorithm instance with the enhanced request
       const scheduler = new RotaSchedulingAlgorithm({
-        request,
+        request: requestWithDates,
         staff: staffMembers,
         jobRoles,
         thresholds,
