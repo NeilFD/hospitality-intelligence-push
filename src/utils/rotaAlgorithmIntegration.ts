@@ -53,3 +53,70 @@ export const applyAlgorithmConfiguration = async (
     console.error("Error applying algorithm configuration:", err);
   }
 };
+
+/**
+ * Load shift rules from database for a location
+ */
+export const loadShiftRules = async (
+  algorithm: RotaSchedulingAlgorithm,
+  locationId: string
+): Promise<void> => {
+  try {
+    const { data: shiftRules, error } = await supabase
+      .from('shift_rules')
+      .select('*')
+      .eq('location_id', locationId)
+      .eq('is_active', true);
+      
+    if (error) {
+      console.error("Error fetching shift rules:", error);
+      return;
+    }
+    
+    if (!shiftRules || shiftRules.length === 0) {
+      console.log("No shift rules found for this location");
+      return;
+    }
+    
+    console.log(`Found ${shiftRules.length} active shift rules for location ${locationId}`);
+    
+    // Apply shift rules to algorithm
+    algorithm.setShiftRules(shiftRules);
+    
+  } catch (err) {
+    console.error("Error loading shift rules:", err);
+  }
+};
+
+/**
+ * Load role mappings from database
+ */
+export const loadRoleMappings = async (
+  algorithm: RotaSchedulingAlgorithm,
+  locationId: string
+): Promise<void> => {
+  try {
+    const { data: roleMappings, error } = await supabase
+      .from('job_role_mappings')
+      .select('*')
+      .eq('location_id', locationId);
+      
+    if (error) {
+      console.error("Error fetching role mappings:", error);
+      return;
+    }
+    
+    if (!roleMappings || roleMappings.length === 0) {
+      console.log("No role mappings found for this location");
+      return;
+    }
+    
+    console.log(`Found ${roleMappings.length} role mappings for location ${locationId}`);
+    
+    // Apply role mappings to algorithm
+    algorithm.setRoleMapping(roleMappings);
+    
+  } catch (err) {
+    console.error("Error loading role mappings:", err);
+  }
+};
