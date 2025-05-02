@@ -1,4 +1,3 @@
-
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -298,161 +297,211 @@ export class RotaSchedulingAlgorithm {
     rankedStaff: any[],
     totalCost: number
   ): void {
-    console.log("\nBalancing shifts to meet minimum hour requirements...");
+    console.log("Starting shift balancing for minimum hours...");
     
-    // Find staff who haven't met their minimum hours
-    const staffWithUnmetHours = rankedStaff.filter(staff => {
-      const minHours = staff.min_hours_per_week || 0;
-      if (minHours <= 0) return false;
-      
+    // First, identify staff who are below their minimum hours
+    const staffBelowMinimumHours = rankedStaff.filter(staff => {
       const allocation = staffWeeklyAllocations[staff.id];
+      const minHoursPerWeek = staff.min_hours_per_week || 0;
+      
+      if (minHoursPerWeek <= 0) return false; // Skip staff with no minimum
+      
       const currentHours = allocation ? allocation.hoursWorked : 0;
+      const hourDeficit = minHoursPerWeek - currentHours;
       
-      return currentHours < minHours;
+      if (hourDeficit > 2) { // Only consider significant deficits (more than 2 hours)
+        console.log(`${staff.first_name} ${staff.last_name} is ${hourDeficit.toFixed(1)} hours below minimum (${minHoursPerWeek}h): currently ${currentHours.toFixed(1)}h`);
+        return true;
+      }
+      
+      return false;
     }).sort((a, b) => {
-      // Sort by percentage of minimum hours met (lowest first)
-      const aAlloc = staffWeeklyAllocations[a.id];
-      const bAlloc = staffWeeklyAllocations[b.id];
+      // Sort by largest deficit percentage first
+      const aAllocation = staffWeeklyAllocations[a.id];
+      const bAllocation = staffWeeklyAllocations[b.id];
       
-      const aMinHours = a.min_hours_per_week || 1;
-      const bMinHours = b.min_hours_per_week || 1;
+      const aMinHours = a.min_hours_per_week || 0;
+      const bMinHours = b.min_hours_per_week || 0;
       
-      const aCurrentHours = aAlloc ? aAlloc.hoursWorked : 0;
-      const bCurrentHours = bAlloc ? bAlloc.hoursWorked : 0;
+      const aCurrentHours = aAllocation ? aAllocation.hoursWorked : 0;
+      const bCurrentHours = bAllocation ? bAllocation.hoursWorked : 0;
       
-      const aPercentMet = (aCurrentHours / aMinHours) * 100;
-      const bPercentMet = (bCurrentHours / bMinHours) * 100;
+      // Calculate percentage of minimum hours met
+      const aPercentMet = aMinHours > 0 ? (aCurrentHours / aMinHours) * 100 : 100;
+      const bPercentMet = bMinHours > 0 ? (bCurrentHours / bMinHours) * 100 : 100;
       
+      // Sort ascending by percentage met (lowest percentage first)
       return aPercentMet - bPercentMet;
     });
     
-    if (staffWithUnmetHours.length === 0) {
-      console.log("All staff have met their minimum hours or have no minimum requirements");
+    if (staffBelowMinimumHours.length === 0) {
+      console.log("No staff significantly below minimum hours found.");
       return;
     }
     
-    console.log(`Found ${staffWithUnmetHours.length} staff members who haven't met their minimum hours`);
+    console.log(`Found ${staffBelowMinimumHours.length} staff significantly below minimum hours`);
     
-    // Find staff who have no minimum hours requirement but have shifts
+    // Identify staff who have no minimum hours but have been assigned shifts
     const staffWithNoMinimums = rankedStaff.filter(staff => {
-      const minHours = staff.min_hours_per_week || 0;
-      if (minHours > 0) return false;
-      
       const allocation = staffWeeklyAllocations[staff.id];
-      return allocation && allocation.shifts && allocation.shifts.length > 0;
+      const minHoursPerWeek = staff.min_hours_per_week || 0;
+      
+      // Staff with no minimum hours who have been allocated shifts
+      return minHoursPerWeek === 0 && allocation && allocation.hoursWorked > 0;
+    }).sort((a, b) => {
+      // Sort by most hours allocated first
+      const aHours = staffWeeklyAllocations[a.id].hoursWorked;
+      const bHours = staffWeeklyAllocations[b.id].hoursWorked;
+      
+      // Sort descending (most hours first)
+      return bHours - aHours;
     });
     
-    if (staffWithNoMinimums.length === 0) {
-      console.log("No staff without minimum hours requirements found for rebalancing");
-      return;
-    }
+    console.log(`Found ${staffWithNoMinimums.length} staff with no minimums but assigned shifts`);
     
-    console.log(`Found ${staffWithNoMinimums.length} staff members with no minimum hours who could donate shifts`);
+    // Group shifts by day and role to find potential swaps
+    const shiftsByDayAndRole: Record<string, Record<string, any[]>> = {};
     
-    // Try to reassign shifts
-    for (const staff of staffWithUnmetHours) {
-      const allocation = staffWeeklyAllocations[staff.id];
-      const minHours = staff.min_hours_per_week || 0;
+    shifts.forEach(shift => {
+      const key = `${shift.date}`;
+      if (!shiftsByDayAndRole[key]) {
+        shiftsByDayAndRole[key] = {};
+      }
+      
+      const roleKey = shift.job_role_id;
+      if (!shiftsByDayAndRole[key][roleKey]) {
+        shiftsByDayAndRole[key][roleKey] = [];
+      }
+      
+      shiftsByDayAndRole[key][roleKey].push(shift);
+    });
+    
+    // For each staff member below minimum hours, try to find swaps or add shifts
+    for (const staffMember of staffBelowMinimumHours) {
+      const allocation = staffWeeklyAllocations[staffMember.id];
+      const minHoursPerWeek = staffMember.min_hours_per_week || 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      // Using let instead of const since we'll modify this value
-      let hoursNeeded = minHours - currentHours;
+      // Changed from const to let since we'll be modifying this value
+      let hourDeficit = minHoursPerWeek - currentHours;
       
-      if (hoursNeeded <= 0) continue;
+      console.log(`Attempting to balance hours for ${staffMember.first_name} ${staffMember.last_name}: needs ${hourDeficit.toFixed(1)} more hours`);
       
-      console.log(`${staff.first_name} ${staff.last_name} needs ${hoursNeeded.toFixed(1)} more hours (has: ${currentHours.toFixed(1)}, min: ${minHours})`);
+      // Check if eligible for additional days
+      const currentDays = allocation.daysWorked.length;
+      const maxDays = staffMember.max_days_per_week || 5;
+      const canAddMoreDays = currentDays < maxDays;
       
-      // Look for shifts that could be reassigned
-      for (const donor of staffWithNoMinimums) {
-        const donorAlloc = staffWeeklyAllocations[donor.id];
-        if (!donorAlloc || !donorAlloc.shifts || donorAlloc.shifts.length === 0) continue;
+      // Try to swap shifts - look at shifts assigned to staff with no minimums
+      for (const noMinStaff of staffWithNoMinimums) {
+        const noMinAllocation = staffWeeklyAllocations[noMinStaff.id];
         
-        // Find shifts that this staff member could take over
-        for (const shift of [...donorAlloc.shifts]) {
-          // Find the actual shift in the shifts array
-          const actualShift = shifts.find(s => 
-            s.profile_id === donor.id && 
-            s.date === shift.date && 
-            s.start_time === shift.start_time
-          );
+        // Skip if staff with no minimums has fewer hours than our deficit
+        if (noMinAllocation.hoursWorked < hourDeficit) {
+          continue;
+        }
+        
+        // Get shifts assigned to this staff member with no minimums
+        const candidateShifts = shifts.filter(shift => 
+          shift.profile_id === noMinStaff.id
+        ).sort((a, b) => {
+          // Prefer longer shifts for swapping
+          const aHours = this.calculateHours(a.start_time, a.end_time, a.break_minutes);
+          const bHours = this.calculateHours(b.start_time, b.end_time, b.break_minutes);
           
-          if (!actualShift) continue;
-          
-          // Check if staff can do this job role
-          const jobRole = this.jobRoles.find(r => r.id === actualShift.job_role_id);
+          // Sort descending (longest first)
+          return bHours - aHours;
+        });
+        
+        // Try to swap suitable shifts
+        for (const shift of candidateShifts) {
+          // Check if the understaffed person is eligible for this role
+          const jobRole = this.jobRoles.find(r => r.id === shift.job_role_id);
           if (!jobRole) continue;
           
-          const isEligible = this.isStaffEligibleForRole(staff, jobRole);
-          if (!isEligible) continue;
+          const isEligible = this.isStaffEligibleForRole(staffMember, jobRole);
+          if (!isEligible) {
+            console.log(`${staffMember.first_name} not eligible for ${jobRole.title} role, cannot swap`);
+            continue;
+          }
           
-          // Calculate shift hours
-          const shiftHours = this.calculateHours(
-            actualShift.start_time, 
-            actualShift.end_time, 
-            actualShift.break_minutes
-          );
+          // Check if day is already worked - can only add more hours if already working that day
+          const isAlreadyWorkingThatDay = allocation.daysWorked.includes(shift.date);
           
-          // Skip if this shift would put them over their max daily hours
-          const isAlreadyWorkingThatDay = allocation?.daysWorked?.includes(actualShift.date);
+          if (!isAlreadyWorkingThatDay && !canAddMoreDays) {
+            // Skip if already at max days and not working this day
+            continue;
+          }
+          
+          const shiftHours = this.calculateHours(shift.start_time, shift.end_time, shift.break_minutes);
+          
+          // Check if adding this shift would put them over max daily hours
           if (isAlreadyWorkingThatDay) {
-            const dailyAlloc = this.dailyStaffAllocations[actualShift.date]?.[staff.id];
+            const dailyAlloc = this.dailyStaffAllocations[shift.date]?.[staffMember.id];
             const currentDailyHours = dailyAlloc ? dailyAlloc.hoursWorked : 0;
-            const maxHoursPerDay = staff.max_hours_per_day || 12;
+            const maxHoursPerDay = staffMember.max_hours_per_day || 12;
             
             if (currentDailyHours + shiftHours > maxHoursPerDay) {
+              console.log(`Cannot swap - would exceed max daily hours on ${shift.date}`);
               continue;
             }
           }
           
-          // Check if days constraint would be violated
-          if (!isAlreadyWorkingThatDay) {
-            const currentDays = allocation?.daysWorked?.length || 0;
-            const maxDays = staff.max_days_per_week || 5;
-            if (currentDays >= maxDays) {
-              continue;
-            }
-          }
+          console.log(`Found suitable shift swap: ${shift.date} ${shift.start_time}-${shift.end_time} (${shiftHours}h) from ${noMinStaff.first_name} to ${staffMember.first_name}`);
           
-          console.log(`Reassigning ${actualShift.date} ${actualShift.start_time}-${actualShift.end_time} shift from ${donor.first_name} to ${staff.first_name}`);
+          // Perform the swap - update the shift and allocations
           
-          // Remove shift from donor
-          this.removeShiftAllocation(donor.id, actualShift, staffWeeklyAllocations);
+          // First, remove hours from the original staff member
+          this.removeShiftAllocation(noMinStaff.id, shift, staffWeeklyAllocations);
           
-          // Check if secondary role for new staff member
-          const isSecondaryRole = this.isSecondaryRole(staff, jobRole);
+          // Check if this role is a secondary role for the new staff member
+          const isSecondaryRole = this.isSecondaryRole(staffMember, jobRole);
           
           // Calculate costs for the new staff member
           const { shiftCost, niCost, pensionCost, totalShiftCost } = 
-            this.calculateCosts(staff, shiftHours, actualShift.date);
+            this.calculateCosts(staffMember, shiftHours, shift.date);
           
-          // Update shift details
-          actualShift.profile_id = staff.id;
-          actualShift.is_secondary_role = isSecondaryRole;
-          actualShift.hi_score = staff.hi_score || 0;
-          actualShift.shift_cost = shiftCost;
-          actualShift.employer_ni_cost = niCost;
-          actualShift.employer_pension_cost = pensionCost;
-          actualShift.total_cost = totalShiftCost;
-          actualShift.is_rebalanced = true;
+          // Update the shift with new staff details
+          shift.profile_id = staffMember.id;
+          shift.is_secondary_role = isSecondaryRole;
+          shift.hi_score = staffMember.hi_score || 0;
+          shift.shift_cost = shiftCost;
+          shift.employer_ni_cost = niCost;
+          shift.employer_pension_cost = pensionCost;
+          shift.total_cost = totalShiftCost;
+          shift.is_balanced_shift = true; // Mark as a balanced shift
           
-          // Update allocations for the new staff member
-          this.updateStaffAllocations(staff.id, actualShift.date, shiftHours, actualShift, staffWeeklyAllocations);
+          // Add hours to the new staff member
+          this.updateStaffAllocations(staffMember.id, shift.date, shiftHours, shift, staffWeeklyAllocations);
           
-          // Adjust hours needed
-          hoursNeeded -= shiftHours;
+          // Adjust the running hour deficit
+          hourDeficit -= shiftHours;
           
-          // If we've met the target, stop looking for more shifts
-          if (hoursNeeded <= 1) {
-            console.log(`${staff.first_name}'s hours have been sufficiently increased`);
+          // If we've met the minimum hours, stop looking for more shifts
+          if (hourDeficit <= 2) {
+            console.log(`${staffMember.first_name}'s hour deficit resolved or now minimal: ${hourDeficit.toFixed(1)}h`);
             break;
           }
         }
         
-        // If this staff member has reached their target, move to next
-        if (hoursNeeded <= 1) break;
+        // If the deficit is resolved, stop processing this staff member
+        if (hourDeficit <= 2) {
+          break;
+        }
+      }
+      
+      // Log the final status after balancing attempts
+      const updatedAllocation = staffWeeklyAllocations[staffMember.id];
+      const updatedHours = updatedAllocation ? updatedAllocation.hoursWorked : 0;
+      const remainingDeficit = minHoursPerWeek - updatedHours;
+      
+      if (remainingDeficit > 2) {
+        console.log(`⚠️ Could not fully resolve hour deficit for ${staffMember.first_name}: still needs ${remainingDeficit.toFixed(1)} more hours`);
+      } else {
+        console.log(`✓ Successfully balanced hours for ${staffMember.first_name}: now at ${updatedHours.toFixed(1)}h (min: ${minHoursPerWeek}h)`);
       }
     }
     
-    console.log("Shift balancing completed");
+    console.log("Shift balancing completed.");
   }
 
   /**
