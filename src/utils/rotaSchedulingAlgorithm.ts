@@ -1,3 +1,4 @@
+
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -710,11 +711,11 @@ export class RotaSchedulingAlgorithm {
       if (!allocation) return false;
       
       // Managers with more than 35 hours (typical full time)
-      return allocation.hoursWorked > 35;
+      return Number(allocation.hoursWorked) > 35;
     }).sort((a, b) => {
       // Sort by most hours first
-      const aHours = staffWeeklyAllocations[a.id].hoursWorked;
-      const bHours = staffWeeklyAllocations[b.id].hoursWorked;
+      const aHours = Number(staffWeeklyAllocations[a.id].hoursWorked);
+      const bHours = Number(staffWeeklyAllocations[b.id].hoursWorked);
       return bHours - aHours;
     });
     
@@ -741,10 +742,10 @@ export class RotaSchedulingAlgorithm {
       // Check if we can get hours from managers
       for (const manager of managersWithHighHours) {
         const managerAlloc = staffWeeklyAllocations[manager.id];
-        const managerHours = managerAlloc ? managerAlloc.hoursWorked : 0;
+        const managerHours = managerAlloc ? Number(managerAlloc.hoursWorked) : 0;
         
         // Don't reduce managers below 35 hours if they have minimum hours
-        const managerMinHours = typeof manager.min_hours_per_week === 'number' ? manager.min_hours_per_week : 0;
+        const managerMinHours = Number(manager.min_hours_per_week) || 0;
         const managerMinimum = managerMinHours > 35 ? managerMinHours : 35;
         
         if (managerHours <= managerMinimum) {
