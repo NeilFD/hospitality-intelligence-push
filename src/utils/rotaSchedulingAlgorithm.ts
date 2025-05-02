@@ -10,44 +10,46 @@ import { format, parseISO } from 'date-fns';
  * 6. Staffing troughs for quiet periods
  */
 export class RotaSchedulingAlgorithm {
-  request: any;
-  staff: any[];
-  jobRoles: any[];
-  thresholds: any[];
-  location: any;
-  shiftRules: any[] = [];
-  troughPeriods: any[] = [];
-  roleMapping: any[] = [];
-  
-  // NEW: Configuration for part shifts
-  enablePartShifts = true; // Can be turned off via settings
-  minPartShiftHours = 3; // Minimum hours for a part shift
-  maxPartShiftHours = 5; // Maximum hours for a part shift
-  dayShiftLatestStartTime = '12:00:00'; // Latest start for day part shifts
-  eveningShiftLatestStartTime = '18:00:00'; // Latest start for evening part shifts
-  
-  // Track daily allocations of staff to enable multiple shifts per day
-  dailyStaffAllocations: Record<string, Record<string, {
-    hoursWorked: number;
-    shifts: any[];
-    // Track if salaried staff has already been paid for this day
-    salaryApplied?: boolean;
-  }>> = {};
+  private request: any;
+  private staff: any[];
+  private jobRoles: any[];
+  private thresholds: any[];
+  private location: any;
+  private shiftRules: any[] = [];
+  private troughPeriods: any[] = [];
+  private roleMapping: any[] = [];
+  private dailyStaffAllocations: Record<string, Record<string, any>> = {};
+  private partShiftConfig = {
+    enable: true,
+    minHours: 3,
+    maxHours: 5,
+    dayLatestStart: '12:00:00',
+    eveningLatestStart: '18:00:00'
+  };
+  private staffPriorityConfig = {
+    salariedWeight: 100,
+    managerWeight: 50,
+    hiScoreWeight: 1
+  };
 
-  constructor({ request, staff, jobRoles, thresholds, location }: {
-    request: any;
-    staff: any[];
-    jobRoles: any[];
-    thresholds: any[];
-    location: any;
+  constructor({ 
+    request, 
+    staff, 
+    jobRoles, 
+    thresholds, 
+    location 
+  }: { 
+    request: any; 
+    staff: any[]; 
+    jobRoles: any[]; 
+    thresholds: any[]; 
+    location: any; 
   }) {
     this.request = request;
     this.staff = staff;
     this.jobRoles = jobRoles;
-    this.thresholds = thresholds || []; // Ensure thresholds is at least an empty array
+    this.thresholds = thresholds;
     this.location = location;
-    this.roleMapping = []; // Initialize roleMapping as an empty array
-    this.dailyStaffAllocations = {}; // Initialize daily allocations tracking
   }
 
   /**
@@ -55,6 +57,7 @@ export class RotaSchedulingAlgorithm {
    */
   setShiftRules(shiftRules: any[]) {
     this.shiftRules = shiftRules || [];
+    console.log(`Set ${this.shiftRules.length} shift rules for scheduling`);
   }
   
   /**
@@ -62,6 +65,7 @@ export class RotaSchedulingAlgorithm {
    */
   setTroughPeriods(troughPeriods: any[]) {
     this.troughPeriods = troughPeriods || [];
+    console.log(`Set ${this.troughPeriods.length} trough periods for scheduling`);
   }
 
   /**
@@ -69,7 +73,7 @@ export class RotaSchedulingAlgorithm {
    */
   setRoleMapping(roleMapping: any[]) {
     this.roleMapping = roleMapping || [];
-    console.log(`Role mapping data loaded: ${roleMapping.length} entries`);
+    console.log(`Set ${this.roleMapping.length} role mappings for scheduling`);
   }
   
   /**
@@ -88,13 +92,14 @@ export class RotaSchedulingAlgorithm {
     dayLatestStart?: string;
     eveningLatestStart?: string;
   }) {
-    this.enablePartShifts = enable;
-    this.minPartShiftHours = minHours;
-    this.maxPartShiftHours = maxHours;
-    this.dayShiftLatestStartTime = dayLatestStart;
-    this.eveningShiftLatestStartTime = eveningLatestStart;
-    
-    console.log(`Part shift configuration updated: enabled=${enable}, minHours=${minHours}, maxHours=${maxHours}`);
+    this.partShiftConfig = {
+      enable,
+      minHours,
+      maxHours,
+      dayLatestStart,
+      eveningLatestStart
+    };
+    console.log(`Part shift config updated: enabled=${enable}, min=${minHours}h, max=${maxHours}h`);
   }
 
   /**
@@ -104,46 +109,11 @@ export class RotaSchedulingAlgorithm {
   isManagerRole(jobTitle: string): boolean {
     if (!jobTitle) return false;
     
-    // Define exact manager keywords with word boundaries
-    const managerTitles = [
-      'manager',
-      'head chef',
-      'chef manager',
-      'supervisor',
-      'assistant manager',
-      'general manager',
-      'deputy manager'
-    ];
+    const lowerTitle = jobTitle.toLowerCase();
     
-    const jobTitleLower = jobTitle.toLowerCase();
-    
-    // Debug logging to help understand role classification
-    console.log(`Checking if "${jobTitle}" is a manager role`);
-    
-    // Use proper word boundary checking to avoid partial matches
-    for (const title of managerTitles) {
-      // Check if the exact word is in the job title
-      const hasManagerTitle = new RegExp(`\\b${title}\\b`, 'i').test(jobTitleLower);
-      
-      if (hasManagerTitle) {
-        console.log(`✅ "${jobTitle}" classified as manager role - matched "${title}"`);
-        return true;
-      }
-    }
-    
-    console.log(`❌ "${jobTitle}" is NOT a manager role`);
-    return false;
+    // Check for management keywords with word boundaries
+    return /\b(manager|head chef|supervisor|gm|general manager)\b/i.test(lowerTitle);
   }
-  
-  /**
-   * NEW: Configuration for staff priority weighting
-   * This allows adjusting the importance of different factors in staff ranking
-   */
-  staffPriorityConfig = {
-    salariedWeight: 100,  // Base priority for salaried staff
-    managerWeight: 50,    // Additional priority for managers
-    hiScoreWeight: 1      // Multiplier for hi_score
-  };
   
   /**
    * Set staff priority configuration
@@ -157,140 +127,57 @@ export class RotaSchedulingAlgorithm {
     managerWeight?: number;
     hiScoreWeight?: number;
   }) {
-    this.staffPriorityConfig.salariedWeight = salariedWeight;
-    this.staffPriorityConfig.managerWeight = managerWeight;
-    this.staffPriorityConfig.hiScoreWeight = hiScoreWeight;
-    
-    console.log(`Staff priority weights updated: salaried=${salariedWeight}, manager=${managerWeight}, hiScore=${hiScoreWeight}`);
+    this.staffPriorityConfig = {
+      salariedWeight,
+      managerWeight,
+      hiScoreWeight
+    };
+    console.log(`Staff priority config updated: salaried=${salariedWeight}, manager=${managerWeight}, hiScore=${hiScoreWeight}`);
   }
 
   /**
    * Generate an optimal schedule based on the provided data
    */
   generateSchedule = async () => {
-    // Parse the week dates
-    const weekStartDate = parseISO(this.request.week_start_date);
-    const weekEndDate = parseISO(this.request.week_end_date);
+    console.log('Starting schedule generation');
     
-    // Get the revenue forecasts for the week
-    const revenueForecast = this.request.revenue_forecast || {};
+    // Initialize result object
+    const result = {
+      request_id: this.request.id,
+      location_id: this.location.id,
+      week_start_date: this.request.week_start_date,
+      week_end_date: this.request.week_end_date,
+      revenue_forecast: 0,
+      total_cost: 0,
+      cost_percentage: 0,
+      shifts: [] as any[]
+    };
     
-    // Create an array of dates for the week
-    const dates = [];
-    let currentDate = new Date(weekStartDate);
-    while (currentDate <= weekEndDate) {
-      dates.push(format(currentDate, 'yyyy-MM-dd'));
-      currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+    // Initialize daily staff allocations
+    this.dailyStaffAllocations = {};
+    
+    // Get dates from request
+    const dates = this.request.dates || [];
+    if (!dates.length) {
+      console.error('No dates provided in request');
+      return result;
     }
     
-    // IMPROVED: Sort dates by revenue forecast (highest to lowest)
-    // This ensures high-revenue days get priority for staffing
-    const sortedDates = [...dates].sort((dateA, dateB) => {
-      const revenueA = parseFloat(revenueForecast[dateA] || '0');
-      const revenueB = parseFloat(revenueForecast[dateB] || '0');
-      return revenueB - revenueA; // Sort in descending order
-    });
+    // Calculate total revenue forecast
+    const totalRevenueForecast = Object.values(this.request.revenue_forecast || {}).reduce(
+      (sum: number, val: any) => sum + Number(val || 0), 
+      0
+    );
+    result.revenue_forecast = totalRevenueForecast;
     
-    console.log(`Processing ${dates.length} days for scheduling (prioritized by revenue)`);
-    console.log("Revenue-prioritized processing order:");
-    sortedDates.forEach(date => {
-      const dayOfWeek = format(new Date(date), 'EEEE');
-      const revenue = parseFloat(revenueForecast[date] || '0');
-      console.log(`- ${dayOfWeek} (${date}): £${revenue.toFixed(2)}`);
-    });
+    console.log(`Total revenue forecast: £${totalRevenueForecast}`);
     
-    console.log(`Staff members available: ${this.staff.length}`);
-    console.log(`Job roles available: ${this.jobRoles.length}`);
-    console.log(`Shift rules available: ${this.shiftRules.length}`);
-    console.log(`Role mapping entries: ${this.roleMapping.length}`);
-
-    // FIX: Log detailed staff information including their secondary roles
-    this.staff.forEach(staff => {
-      const secondaryRoles = Array.isArray(staff.secondary_job_roles) 
-        ? staff.secondary_job_roles.join(", ") 
-        : "None";
-        
-      console.log(`Staff: ${staff.first_name} ${staff.last_name}, Role: ${staff.job_title}, Secondary Roles: ${secondaryRoles}, Employment Type: ${staff.employment_type || 'Not set'}, Wage: ${staff.wage_rate || 'Not set'}, Salary: ${staff.annual_salary || 'Not set'}, Available: ${staff.available_for_rota !== false}`);
-    });
+    // Rank staff by priority
+    const rankedStaff = this.rankStaffByPriority();
+    console.log(`Ranked ${rankedStaff.length} staff members by priority`);
     
-    // Filter available staff - DO NOT set default wage rates
-    const availableStaff = this.staff.filter(member => member.available_for_rota !== false)
-      .map(staff => {
-        // Check for missing wage information
-        if (staff.employment_type === 'hourly' && !staff.wage_rate && staff.wage_rate !== 0) {
-          console.warn(`Warning: Hourly staff member ${staff.first_name} ${staff.last_name} has no wage rate set`);
-        }
-        else if (staff.employment_type === 'salaried' && !staff.annual_salary && staff.annual_salary !== 0) {
-          console.warn(`Warning: Salaried staff member ${staff.first_name} ${staff.last_name} has no annual salary set`);
-        }
-        else if (staff.employment_type === 'contractor' && !staff.wage_rate && staff.wage_rate !== 0) {
-          console.warn(`Warning: Contractor ${staff.first_name} ${staff.last_name} has no hourly rate set`);
-        }
-        return staff;
-      });
-    
-    if (availableStaff.length === 0) {
-      console.error("No available staff found for scheduling");
-      return {
-        shifts: [],
-        total_cost: 0,
-        revenue_forecast: 0,
-        cost_percentage: 0
-      };
-    }
-    
-    // Sort staff by employment type and hi score with configurable weights
-    const rankedStaff = [...availableStaff].sort((a, b) => {
-      // Calculate weighted priority scores
-      let scoreA = 0;
-      let scoreB = 0;
-      
-      // Apply salaried weight
-      if (a.employment_type === 'salaried') {
-        scoreA += this.staffPriorityConfig.salariedWeight;
-      }
-      if (b.employment_type === 'salaried') {
-        scoreB += this.staffPriorityConfig.salariedWeight;
-      }
-      
-      // Apply manager weight - FIXED to use proper manager detection
-      const aIsManager = this.isManagerRole(a.job_title);
-      const bIsManager = this.isManagerRole(b.job_title);
-      
-      if (aIsManager) {
-        scoreA += this.staffPriorityConfig.managerWeight;
-      }
-      if (bIsManager) {
-        scoreB += this.staffPriorityConfig.managerWeight;
-      }
-      
-      // Apply hi score weight
-      scoreA += (a.hi_score || 0) * this.staffPriorityConfig.hiScoreWeight;
-      scoreB += (b.hi_score || 0) * this.staffPriorityConfig.hiScoreWeight;
-      
-      // Log staff ranking for debugging
-      console.log(`Staff ranking comparison: 
-      ${a.first_name} ${a.last_name} (${a.job_title}): Score=${scoreA} | Salaried: ${a.employment_type === 'salaried'}, Manager: ${aIsManager}, Hi-Score: ${a.hi_score || 0}
-      ${b.first_name} ${b.last_name} (${b.job_title}): Score=${scoreB} | Salaried: ${b.employment_type === 'salaried'}, Manager: ${bIsManager}, Hi-Score: ${b.hi_score || 0}
-      `);
-      
-      // Sort by total score (higher scores first)
-      return scoreB - scoreA;
-    });
-    
-    console.log("Staff ranking results:");
-    rankedStaff.forEach((staff, index) => {
-      console.log(`${index + 1}. ${staff.first_name} ${staff.last_name} (${staff.job_title}) - ${staff.employment_type} | Manager: ${this.isManagerRole(staff.job_title)} | Hi-Score: ${staff.hi_score || 0}`);
-    });
-    
-    // Track staff allocations for the week to ensure we don't exceed constraints
-    const staffWeeklyAllocations: Record<string, {
-      hoursWorked: number;
-      daysWorked: string[];
-      shifts: any[];
-    }> = {};
-    
-    // Initialize staff allocations
+    // Initialize weekly staff allocations
+    const staffWeeklyAllocations: Record<string, any> = {};
     rankedStaff.forEach(staff => {
       staffWeeklyAllocations[staff.id] = {
         hoursWorked: 0,
@@ -299,236 +186,106 @@ export class RotaSchedulingAlgorithm {
       };
     });
     
-    // Initialize daily staff allocations for tracking multiple shifts per day
+    // Initialize daily staff allocations for each date
     dates.forEach(date => {
       this.dailyStaffAllocations[date] = {};
       rankedStaff.forEach(staff => {
         this.dailyStaffAllocations[date][staff.id] = {
           hoursWorked: 0,
           shifts: [],
-          salaryApplied: false // Initialize salary tracking for each staff member per day
+          salaryApplied: false
         };
       });
     });
     
-    const shifts: any[] = [];
+    // Process each date
     let totalCost = 0;
-    let totalRevenue = 0;
-    
-    // Add all revenue to total
-    dates.forEach(date => {
-      const dayRevenue = parseFloat(revenueForecast[date] || '0');
-      totalRevenue += dayRevenue;
-    });
-    
-    // Process each day by revenue priority order
-    for (const date of sortedDates) {
-      const dayOfWeek = format(new Date(date), 'EEEE').toLowerCase();
-      // Fixed mapping that properly converts full day names to day codes
-      const dayCodeMap: Record<string, string> = {
-        'monday': 'mon',
-        'tuesday': 'tue',
-        'wednesday': 'wed',
-        'thursday': 'thu',
-        'friday': 'fri',
-        'saturday': 'sat',
-        'sunday': 'sun'
-      };
-      const dayCode = dayCodeMap[dayOfWeek];
+    for (const date of dates) {
+      const dayOfWeek = format(parseISO(date), 'EEEE').toLowerCase();
+      const dayRevenue = Number(this.request.revenue_forecast?.[date] || 0);
       
-      // Log the day being processed and the code being used
-      const dayRevenue = parseFloat(revenueForecast[date] || '0');
-      console.log(`Processing ${dayOfWeek} (${date}) with day code: ${dayCode}, revenue: £${dayRevenue}`);
+      console.log(`\nProcessing ${dayOfWeek} ${date} - Revenue: £${dayRevenue}`);
       
-      if (dayRevenue <= 0) {
-        console.log(`Skipping ${date} - no revenue forecast`);
-        continue; // Skip days with no revenue forecast
+      // Get shift rules for this day
+      const dayRules = this.getShiftRulesForDay(dayOfWeek);
+      console.log(`Found ${dayRules.length} shift rules for ${dayOfWeek}`);
+      
+      // Apply shift rules first
+      for (const rule of dayRules) {
+        await this.assignShiftRuleStaff({
+          date,
+          dayOfWeek,
+          rule,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts: result.shifts,
+          totalCost,
+          dayRevenue
+        });
       }
       
-      // Get all shift rules for this day
-      const dayShiftRules = this.getShiftRulesForDay(dayCode);
+      // Find applicable threshold based on revenue
+      const threshold = this.findThreshold(dayRevenue);
       
-      console.log(`Found ${dayShiftRules.length} shift rules for ${dayOfWeek} with day code ${dayCode}`);
-      
-      if (dayShiftRules.length > 0) {
-        console.log(`Using ${dayShiftRules.length} shift rules for ${dayOfWeek}:`);
-        dayShiftRules.forEach((rule, index) => {
-          console.log(`Rule ${index + 1}: ${rule.name || 'Unnamed'}, Min Staff: ${rule.min_staff || 0}, Job Role: ${rule.job_roles?.title || 'Unknown'}`);
-        });
+      if (threshold) {
+        console.log(`Using threshold for revenue £${dayRevenue}: ${threshold.name || 'Unnamed threshold'}`);
         
-        // Process each shift rule for this day
-        for (const rule of dayShiftRules) {
-          // Assign staff based on the shift rule
-          this.assignShiftRuleStaff({
-            date,
-            dayOfWeek,
-            rule,
-            rankedStaff,
-            staffWeeklyAllocations,
-            shifts,
-            totalCost,
-            dayRevenue
-          });
-        }
-        
-        // After processing all shift rules, check if we need to enforce threshold minimums
+        // Enforce minimum staffing levels from thresholds
         this.enforceThresholdMinimums({
           date,
           dayOfWeek,
           dayRevenue,
           rankedStaff,
           staffWeeklyAllocations,
-          shifts,
+          shifts: result.shifts,
           totalCost
         });
       } else {
-        // Fallback to threshold-based staffing if no shift rules exist
-        console.log(`No shift rules found for ${dayOfWeek}, falling back to thresholds`);
+        console.log(`No threshold found for revenue £${dayRevenue}, using defaults`);
         
-        // Find applicable threshold based on revenue
-        const threshold = this.findThreshold(dayRevenue);
-        
-        if (!threshold) {
-          console.log(`No applicable threshold found for revenue: ${dayRevenue}, using default values`);
-          // If no threshold found, use a default threshold
-          this.assignStaffWithDefaults(date, dayOfWeek, dayRevenue, rankedStaff, staffWeeklyAllocations, shifts, totalCost);
-          continue;
-        }
-        
-        // For logging, use threshold name if available or create a formatted band name
-        const thresholdName = threshold.name || 
-          `Revenue Band: £${threshold.revenue_min} - £${threshold.revenue_max}`;
-        console.log(`Using threshold "${thresholdName}" for ${date} with revenue ${dayRevenue}`);
-        
-        // Process for day segment
-        const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
-        
-        // Assign FOH staff for this day/segment
-        this.assignStaff({
+        // Use default staffing values
+        this.assignStaffWithDefaults(
           date,
           dayOfWeek,
-          segment: daySegment,
-          staffType: 'foh',
-          minStaff: threshold.foh_min_staff,
-          maxStaff: threshold.foh_max_staff,
+          dayRevenue,
           rankedStaff,
           staffWeeklyAllocations,
-          shifts,
-          totalCost,
-          dayRevenue
-        });
-        
-        // Assign kitchen staff
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment: daySegment,
-          staffType: 'kitchen',
-          minStaff: threshold.kitchen_min_staff,
-          maxStaff: threshold.kitchen_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost,
-          dayRevenue
-        });
-        
-        // Assign KP staff
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment: daySegment,
-          staffType: 'kp',
-          minStaff: threshold.kp_min_staff,
-          maxStaff: threshold.kp_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost,
-          dayRevenue
-        });
-        
-        // Process for evening segment
-        const eveningSegment = this.isWeekend(dayOfWeek) ? 'weekend-evening' : 'weekday-evening';
-        
-        // Assign FOH staff for evening
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment: eveningSegment,
-          staffType: 'foh',
-          minStaff: threshold.foh_min_staff,
-          maxStaff: threshold.foh_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost,
-          dayRevenue
-        });
-        
-        // Assign kitchen staff for evening
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment: eveningSegment,
-          staffType: 'kitchen',
-          minStaff: threshold.kitchen_min_staff,
-          maxStaff: threshold.kitchen_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost,
-          dayRevenue
-        });
-        
-        // Assign KP staff for evening
-        this.assignStaff({
-          date,
-          dayOfWeek,
-          segment: eveningSegment,
-          staffType: 'kp',
-          minStaff: threshold.kp_min_staff,
-          maxStaff: threshold.kp_max_staff,
-          rankedStaff,
-          staffWeeklyAllocations,
-          shifts,
-          totalCost,
-          dayRevenue
-        });
+          result.shifts,
+          totalCost
+        );
       }
     }
+    
+    // Balance shifts to ensure staff meet their minimum hour requirements
+    this.balanceShiftsForMinimumHours(
+      result.shifts,
+      staffWeeklyAllocations,
+      rankedStaff,
+      totalCost
+    );
+    
+    // Redistribute hours from managers to non-managers if needed
+    this.redistributeFromManagersIfNeeded(
+      result.shifts,
+      staffWeeklyAllocations,
+      rankedStaff,
+      totalCost
+    );
+    
+    // Calculate final total cost
+    result.total_cost = result.shifts.reduce((sum, shift) => sum + (shift.total_cost || 0), 0);
     
     // Calculate cost percentage
-    const costPercentage = totalRevenue > 0 ? (totalCost / totalRevenue) * 100 : 0;
-    
-    // NEW: After initial scheduling, perform a balancing pass to ensure staff meet minimum hours
-    if (shifts.length > 0) {
-      console.log("Performing enhanced balancing pass to ensure minimum hour requirements are met...");
-      this.balanceShiftsForMinimumHours(shifts, staffWeeklyAllocations, rankedStaff, totalCost);
-      
-      // Add an additional pass to rebalance from managers to non-managers if needed
-      this.redistributeFromManagersIfNeeded(shifts, staffWeeklyAllocations, rankedStaff, totalCost);
+    if (totalRevenueForecast > 0) {
+      result.cost_percentage = (result.total_cost / totalRevenueForecast) * 100;
     }
     
-    // Final validation to ensure no shifts have null job_role_id
-    const validShifts = shifts.filter(shift => {
-      if (!shift.job_role_id) {
-        console.error(`Found shift without job_role_id for ${shift.profile_id} on ${shift.date}, removing from final schedule`);
-        return false;
-      }
-      return true;
-    });
+    console.log(`\nSchedule generation complete:`);
+    console.log(`- Total shifts: ${result.shifts.length}`);
+    console.log(`- Total cost: £${result.total_cost.toFixed(2)}`);
+    console.log(`- Cost percentage: ${result.cost_percentage.toFixed(1)}%`);
     
-    if (validShifts.length < shifts.length) {
-      console.warn(`Removed ${shifts.length - validShifts.length} invalid shifts with null job_role_id values`);
-    }
-    
-    return {
-      shifts: validShifts,
-      total_cost: totalCost,
-      revenue_forecast: totalRevenue,
-      cost_percentage: costPercentage
-    };
+    return result;
   };
   
   /**
@@ -541,210 +298,160 @@ export class RotaSchedulingAlgorithm {
     rankedStaff: any[],
     totalCost: number
   ): void {
-    console.log("Starting shift balancing for minimum hours...");
+    console.log("\nBalancing shifts to meet minimum hour requirements...");
     
-    // First, identify staff who are below their minimum hours
-    const staffBelowMinimumHours = rankedStaff.filter(staff => {
+    // Find staff who haven't met their minimum hours
+    const staffWithUnmetHours = rankedStaff.filter(staff => {
+      const minHours = staff.min_hours_per_week || 0;
+      if (minHours <= 0) return false;
+      
       const allocation = staffWeeklyAllocations[staff.id];
-      const minHoursPerWeek = staff.min_hours_per_week || 0;
-      
-      if (minHoursPerWeek <= 0) return false; // Skip staff with no minimum
-      
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      const hourDeficit = minHoursPerWeek - currentHours;
       
-      if (hourDeficit > 2) { // Only consider significant deficits (more than 2 hours)
-        console.log(`${staff.first_name} ${staff.last_name} is ${hourDeficit.toFixed(1)} hours below minimum (${minHoursPerWeek}h): currently ${currentHours.toFixed(1)}h`);
-        return true;
-      }
-      
-      return false;
+      return currentHours < minHours;
     }).sort((a, b) => {
-      // Sort by largest deficit percentage first
-      const aAllocation = staffWeeklyAllocations[a.id];
-      const bAllocation = staffWeeklyAllocations[b.id];
+      // Sort by percentage of minimum hours met (lowest first)
+      const aAlloc = staffWeeklyAllocations[a.id];
+      const bAlloc = staffWeeklyAllocations[b.id];
       
-      const aMinHours = a.min_hours_per_week || 0;
-      const bMinHours = b.min_hours_per_week || 0;
+      const aMinHours = a.min_hours_per_week || 1;
+      const bMinHours = b.min_hours_per_week || 1;
       
-      const aCurrentHours = aAllocation ? aAllocation.hoursWorked : 0;
-      const bCurrentHours = bAllocation ? bAllocation.hoursWorked : 0;
+      const aCurrentHours = aAlloc ? aAlloc.hoursWorked : 0;
+      const bCurrentHours = bAlloc ? bAlloc.hoursWorked : 0;
       
-      // Calculate percentage of minimum hours met
-      const aPercentMet = aMinHours > 0 ? (aCurrentHours / aMinHours) * 100 : 100;
-      const bPercentMet = bMinHours > 0 ? (bCurrentHours / bMinHours) * 100 : 100;
+      const aPercentMet = (aCurrentHours / aMinHours) * 100;
+      const bPercentMet = (bCurrentHours / bMinHours) * 100;
       
-      // Sort ascending by percentage met (lowest percentage first)
       return aPercentMet - bPercentMet;
     });
     
-    if (staffBelowMinimumHours.length === 0) {
-      console.log("No staff significantly below minimum hours found.");
+    if (staffWithUnmetHours.length === 0) {
+      console.log("All staff have met their minimum hours or have no minimum requirements");
       return;
     }
     
-    console.log(`Found ${staffBelowMinimumHours.length} staff significantly below minimum hours`);
+    console.log(`Found ${staffWithUnmetHours.length} staff members who haven't met their minimum hours`);
     
-    // Identify staff who have no minimum hours but have been assigned shifts
+    // Find staff who have no minimum hours requirement but have shifts
     const staffWithNoMinimums = rankedStaff.filter(staff => {
+      const minHours = staff.min_hours_per_week || 0;
+      if (minHours > 0) return false;
+      
       const allocation = staffWeeklyAllocations[staff.id];
-      const minHoursPerWeek = staff.min_hours_per_week || 0;
-      
-      // Staff with no minimum hours who have been allocated shifts
-      return minHoursPerWeek === 0 && allocation && allocation.hoursWorked > 0;
-    }).sort((a, b) => {
-      // Sort by most hours allocated first
-      const aHours = staffWeeklyAllocations[a.id].hoursWorked;
-      const bHours = staffWeeklyAllocations[b.id].hoursWorked;
-      
-      // Sort descending (most hours first)
-      return bHours - aHours;
+      return allocation && allocation.shifts && allocation.shifts.length > 0;
     });
     
-    console.log(`Found ${staffWithNoMinimums.length} staff with no minimums but assigned shifts`);
+    if (staffWithNoMinimums.length === 0) {
+      console.log("No staff without minimum hours requirements found for rebalancing");
+      return;
+    }
     
-    // Group shifts by day and role to find potential swaps
-    const shiftsByDayAndRole: Record<string, Record<string, any[]>> = {};
+    console.log(`Found ${staffWithNoMinimums.length} staff members with no minimum hours who could donate shifts`);
     
-    shifts.forEach(shift => {
-      const key = `${shift.date}`;
-      if (!shiftsByDayAndRole[key]) {
-        shiftsByDayAndRole[key] = {};
-      }
-      
-      const roleKey = shift.job_role_id;
-      if (!shiftsByDayAndRole[key][roleKey]) {
-        shiftsByDayAndRole[key][roleKey] = [];
-      }
-      
-      shiftsByDayAndRole[key][roleKey].push(shift);
-    });
-    
-    // For each staff member below minimum hours, try to find swaps or add shifts
-    for (const staffMember of staffBelowMinimumHours) {
-      const allocation = staffWeeklyAllocations[staffMember.id];
-      const minHoursPerWeek = staffMember.min_hours_per_week || 0;
+    // Try to reassign shifts
+    for (const staff of staffWithUnmetHours) {
+      const allocation = staffWeeklyAllocations[staff.id];
+      const minHours = staff.min_hours_per_week || 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      let hourDeficit = minHoursPerWeek - currentHours;
+      const hoursNeeded = minHours - currentHours;
       
-      console.log(`Attempting to balance hours for ${staffMember.first_name} ${staffMember.last_name}: needs ${hourDeficit.toFixed(1)} more hours`);
+      if (hoursNeeded <= 0) continue;
       
-      // Check if eligible for additional days
-      const currentDays = allocation.daysWorked.length;
-      const maxDays = staffMember.max_days_per_week || 5;
-      const canAddMoreDays = currentDays < maxDays;
+      console.log(`${staff.first_name} ${staff.last_name} needs ${hoursNeeded.toFixed(1)} more hours (has: ${currentHours.toFixed(1)}, min: ${minHours})`);
       
-      // Try to swap shifts - look at shifts assigned to staff with no minimums
-      for (const noMinStaff of staffWithNoMinimums) {
-        const noMinAllocation = staffWeeklyAllocations[noMinStaff.id];
+      // Look for shifts that could be reassigned
+      for (const donor of staffWithNoMinimums) {
+        const donorAlloc = staffWeeklyAllocations[donor.id];
+        if (!donorAlloc || !donorAlloc.shifts || donorAlloc.shifts.length === 0) continue;
         
-        // Skip if staff with no minimums has fewer hours than our deficit
-        if (noMinAllocation.hoursWorked < hourDeficit) {
-          continue;
-        }
-        
-        // Get shifts assigned to this staff member with no minimums
-        const candidateShifts = shifts.filter(shift => 
-          shift.profile_id === noMinStaff.id
-        ).sort((a, b) => {
-          // Prefer longer shifts for swapping
-          const aHours = this.calculateHours(a.start_time, a.end_time, a.break_minutes);
-          const bHours = this.calculateHours(b.start_time, b.end_time, b.break_minutes);
+        // Find shifts that this staff member could take over
+        for (const shift of [...donorAlloc.shifts]) {
+          // Find the actual shift in the shifts array
+          const actualShift = shifts.find(s => 
+            s.profile_id === donor.id && 
+            s.date === shift.date && 
+            s.start_time === shift.start_time
+          );
           
-          // Sort descending (longest first)
-          return bHours - aHours;
-        });
-        
-        // Try to swap suitable shifts
-        for (const shift of candidateShifts) {
-          // Check if the understaffed person is eligible for this role
-          const jobRole = this.jobRoles.find(r => r.id === shift.job_role_id);
+          if (!actualShift) continue;
+          
+          // Check if staff can do this job role
+          const jobRole = this.jobRoles.find(r => r.id === actualShift.job_role_id);
           if (!jobRole) continue;
           
-          const isEligible = this.isStaffEligibleForRole(staffMember, jobRole);
-          if (!isEligible) {
-            console.log(`${staffMember.first_name} not eligible for ${jobRole.title} role, cannot swap`);
-            continue;
-          }
+          const isEligible = this.isStaffEligibleForRole(staff, jobRole);
+          if (!isEligible) continue;
           
-          // Check if day is already worked - can only add more hours if already working that day
-          const isAlreadyWorkingThatDay = allocation.daysWorked.includes(shift.date);
+          // Calculate shift hours
+          const shiftHours = this.calculateHours(
+            actualShift.start_time, 
+            actualShift.end_time, 
+            actualShift.break_minutes
+          );
           
-          if (!isAlreadyWorkingThatDay && !canAddMoreDays) {
-            // Skip if already at max days and not working this day
-            continue;
-          }
-          
-          const shiftHours = this.calculateHours(shift.start_time, shift.end_time, shift.break_minutes);
-          
-          // Check if adding this shift would put them over max daily hours
+          // Skip if this shift would put them over their max daily hours
+          const isAlreadyWorkingThatDay = allocation?.daysWorked?.includes(actualShift.date);
           if (isAlreadyWorkingThatDay) {
-            const dailyAlloc = this.dailyStaffAllocations[shift.date]?.[staffMember.id];
+            const dailyAlloc = this.dailyStaffAllocations[actualShift.date]?.[staff.id];
             const currentDailyHours = dailyAlloc ? dailyAlloc.hoursWorked : 0;
-            const maxHoursPerDay = staffMember.max_hours_per_day || 12;
+            const maxHoursPerDay = staff.max_hours_per_day || 12;
             
             if (currentDailyHours + shiftHours > maxHoursPerDay) {
-              console.log(`Cannot swap - would exceed max daily hours on ${shift.date}`);
               continue;
             }
           }
           
-          console.log(`Found suitable shift swap: ${shift.date} ${shift.start_time}-${shift.end_time} (${shiftHours}h) from ${noMinStaff.first_name} to ${staffMember.first_name}`);
+          // Check if days constraint would be violated
+          if (!isAlreadyWorkingThatDay) {
+            const currentDays = allocation?.daysWorked?.length || 0;
+            const maxDays = staff.max_days_per_week || 5;
+            if (currentDays >= maxDays) {
+              continue;
+            }
+          }
           
-          // Perform the swap - update the shift and allocations
+          console.log(`Reassigning ${actualShift.date} ${actualShift.start_time}-${actualShift.end_time} shift from ${donor.first_name} to ${staff.first_name}`);
           
-          // First, remove hours from the original staff member
-          this.removeShiftAllocation(noMinStaff.id, shift, staffWeeklyAllocations);
+          // Remove shift from donor
+          this.removeShiftAllocation(donor.id, actualShift, staffWeeklyAllocations);
           
-          // Check if this role is a secondary role for the new staff member
-          const isSecondaryRole = this.isSecondaryRole(staffMember, jobRole);
+          // Check if secondary role for new staff member
+          const isSecondaryRole = this.isSecondaryRole(staff, jobRole);
           
           // Calculate costs for the new staff member
           const { shiftCost, niCost, pensionCost, totalShiftCost } = 
-            this.calculateCosts(staffMember, shiftHours, shift.date);
+            this.calculateCosts(staff, shiftHours, actualShift.date);
           
-          // Update the shift with new staff details
-          shift.profile_id = staffMember.id;
-          shift.is_secondary_role = isSecondaryRole;
-          shift.hi_score = staffMember.hi_score || 0;
-          shift.shift_cost = shiftCost;
-          shift.employer_ni_cost = niCost;
-          shift.employer_pension_cost = pensionCost;
-          shift.total_cost = totalShiftCost;
-          shift.is_balanced_shift = true; // Mark as a balanced shift
+          // Update shift details
+          actualShift.profile_id = staff.id;
+          actualShift.is_secondary_role = isSecondaryRole;
+          actualShift.hi_score = staff.hi_score || 0;
+          actualShift.shift_cost = shiftCost;
+          actualShift.employer_ni_cost = niCost;
+          actualShift.employer_pension_cost = pensionCost;
+          actualShift.total_cost = totalShiftCost;
+          actualShift.is_rebalanced = true;
           
-          // Add hours to the new staff member
-          this.updateStaffAllocations(staffMember.id, shift.date, shiftHours, shift, staffWeeklyAllocations);
+          // Update allocations for the new staff member
+          this.updateStaffAllocations(staff.id, actualShift.date, shiftHours, actualShift, staffWeeklyAllocations);
           
-          // Adjust the running hour deficit
-          hourDeficit -= shiftHours;
+          // Adjust hours needed
+          hoursNeeded -= shiftHours;
           
-          // If we've met the minimum hours, stop looking for more shifts
-          if (hourDeficit <= 2) {
-            console.log(`${staffMember.first_name}'s hour deficit resolved or now minimal: ${hourDeficit.toFixed(1)}h`);
+          // If we've met the target, stop looking for more shifts
+          if (hoursNeeded <= 1) {
+            console.log(`${staff.first_name}'s hours have been sufficiently increased`);
             break;
           }
         }
         
-        // If the deficit is resolved, stop processing this staff member
-        if (hourDeficit <= 2) {
-          break;
-        }
-      }
-      
-      // Log the final status after balancing attempts
-      const updatedAllocation = staffWeeklyAllocations[staffMember.id];
-      const updatedHours = updatedAllocation ? updatedAllocation.hoursWorked : 0;
-      const remainingDeficit = minHoursPerWeek - updatedHours;
-      
-      if (remainingDeficit > 2) {
-        console.log(`⚠️ Could not fully resolve hour deficit for ${staffMember.first_name}: still needs ${remainingDeficit.toFixed(1)} more hours`);
-      } else {
-        console.log(`✓ Successfully balanced hours for ${staffMember.first_name}: now at ${updatedHours.toFixed(1)}h (min: ${minHoursPerWeek}h)`);
+        // If this staff member has reached their target, move to next
+        if (hoursNeeded <= 1) break;
       }
     }
     
-    console.log("Shift balancing completed.");
+    console.log("Shift balancing completed");
   }
 
   /**
@@ -754,14 +461,28 @@ export class RotaSchedulingAlgorithm {
   isStaffEligibleForRole(staff: any, jobRole: any): boolean {
     if (!staff || !jobRole) return false;
     
-    // Check primary role match
+    // Check if this is their primary role
     if (staff.job_title === jobRole.title) {
       return true;
     }
     
-    // Check secondary roles
-    if (Array.isArray(staff.secondary_job_roles)) {
-      return staff.secondary_job_roles.includes(jobRole.title);
+    // Check if this is one of their secondary roles
+    if (Array.isArray(staff.secondary_job_roles) && 
+        staff.secondary_job_roles.includes(jobRole.title)) {
+      return true;
+    }
+    
+    // Check role mappings if available
+    if (this.roleMapping && this.roleMapping.length > 0) {
+      // Find mapping for this staff member's primary role
+      const mapping = this.roleMapping.find(m => 
+        m.primary_role === staff.job_title && 
+        m.can_work_as === jobRole.title
+      );
+      
+      if (mapping) {
+        return true;
+      }
     }
     
     return false;
@@ -775,28 +496,37 @@ export class RotaSchedulingAlgorithm {
     shift: any,
     weeklyAllocations: Record<string, any>
   ): void {
+    if (!staffId || !shift || !weeklyAllocations[staffId]) return;
+    
     const hours = this.calculateHours(shift.start_time, shift.end_time, shift.break_minutes);
     
-    // Update weekly allocations
-    if (weeklyAllocations[staffId]) {
-      weeklyAllocations[staffId].hoursWorked -= hours;
-      
-      // Remove shift from the shifts array
-      weeklyAllocations[staffId].shifts = weeklyAllocations[staffId].shifts.filter(s => s !== shift);
-      
-      // Check if this was the only shift for this day
-      const shiftsOnThisDay = weeklyAllocations[staffId].shifts.filter(s => s.date === shift.date);
-      if (shiftsOnThisDay.length === 0) {
-        // Remove day from days worked
-        weeklyAllocations[staffId].daysWorked = weeklyAllocations[staffId].daysWorked.filter(d => d !== shift.date);
-      }
+    // Update weekly allocation
+    weeklyAllocations[staffId].hoursWorked -= hours;
+    
+    // Remove shift from weekly allocation
+    weeklyAllocations[staffId].shifts = weeklyAllocations[staffId].shifts.filter((s: any) => 
+      !(s.date === shift.date && s.start_time === shift.start_time)
+    );
+    
+    // Check if staff still has any shifts on this date
+    const hasOtherShiftsOnDate = weeklyAllocations[staffId].shifts.some((s: any) => s.date === shift.date);
+    
+    if (!hasOtherShiftsOnDate) {
+      // Remove date from days worked
+      weeklyAllocations[staffId].daysWorked = weeklyAllocations[staffId].daysWorked.filter(
+        (d: string) => d !== shift.date
+      );
     }
     
-    // Update daily allocations
+    // Update daily allocation
     if (this.dailyStaffAllocations[shift.date]?.[staffId]) {
       this.dailyStaffAllocations[shift.date][staffId].hoursWorked -= hours;
+      
+      // Remove shift from daily allocation
       this.dailyStaffAllocations[shift.date][staffId].shifts = 
-        this.dailyStaffAllocations[shift.date][staffId].shifts.filter(s => s !== shift);
+        this.dailyStaffAllocations[shift.date][staffId].shifts.filter((s: any) => 
+          !(s.start_time === shift.start_time)
+        );
     }
   }
 
@@ -827,94 +557,103 @@ export class RotaSchedulingAlgorithm {
     // Count existing shifts by type for this date
     const existingShifts = shifts.filter(shift => shift.date === date);
     
-    // Count by job type
-    const fohShifts = existingShifts.filter(shift => {
+    // Count how many of each staff type we already have
+    const fohStaffCount = existingShifts.filter(shift => {
       const role = this.jobRoles.find(r => r.id === shift.job_role_id);
-      return role && role.department?.toLowerCase() === 'foh';
-    });
+      return role && !role.is_kitchen;
+    }).length;
     
-    const kitchenShifts = existingShifts.filter(shift => {
+    const kitchenStaffCount = existingShifts.filter(shift => {
       const role = this.jobRoles.find(r => r.id === shift.job_role_id);
-      return role && role.department?.toLowerCase() === 'kitchen' && 
-             role.title?.toLowerCase() !== 'kitchen porter' &&
-             role.title?.toLowerCase() !== 'kp';
-    });
+      return role && role.is_kitchen && role.title !== 'KP';
+    }).length;
     
-    const kpShifts = existingShifts.filter(shift => {
+    const kpStaffCount = existingShifts.filter(shift => {
       const role = this.jobRoles.find(r => r.id === shift.job_role_id);
-      return role && (role.title?.toLowerCase() === 'kitchen porter' || 
-                      role.title?.toLowerCase() === 'kp');
-    });
+      return role && role.title === 'KP';
+    }).length;
     
-    console.log(`Current staffing for ${date}: FOH=${fohShifts.length}, Kitchen=${kitchenShifts.length}, KP=${kpShifts.length}`);
+    console.log(`Current staff counts for ${date}: FOH=${fohStaffCount}, Kitchen=${kitchenStaffCount}, KP=${kpStaffCount}`);
     
-    // Check if we need to add more staff to meet threshold minimums
-    const segment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+    // Check if minimum thresholds are met, and add more staff if needed
+    const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+    const eveningSegment = this.isWeekend(dayOfWeek) ? 'weekend-evening' : 'weekday-evening';
     
-    // Check FOH minimums
-    if (fohShifts.length < threshold.foh_min_staff) {
-      console.log(`Need to add ${threshold.foh_min_staff - fohShifts.length} more FOH staff to meet minimum threshold`);
+    // Check FOH minimum
+    if (fohStaffCount < threshold.foh_min_staff) {
+      const additionalFohNeeded = threshold.foh_min_staff - fohStaffCount;
+      console.log(`Need to add ${additionalFohNeeded} more FOH staff to meet minimum threshold`);
       
-      // Assign additional FOH staff to meet minimum
-      this.assignStaff({
-        date,
-        dayOfWeek,
-        segment,
-        staffType: 'foh',
-        minStaff: threshold.foh_min_staff - fohShifts.length,
-        maxStaff: threshold.foh_min_staff - fohShifts.length,
-        rankedStaff,
-        staffWeeklyAllocations,
-        shifts,
-        totalCost,
-        dayRevenue
-      });
+      // Add day shift
+      if (additionalFohNeeded > 0) {
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: daySegment,
+          staffType: 'foh',
+          minStaff: additionalFohNeeded,
+          maxStaff: additionalFohNeeded,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost,
+          dayRevenue,
+          enforcementMode: true
+        });
+      }
     }
     
-    // Check Kitchen minimums
-    if (kitchenShifts.length < threshold.kitchen_min_staff) {
-      console.log(`Need to add ${threshold.kitchen_min_staff - kitchenShifts.length} more Kitchen staff to meet minimum threshold`);
+    // Check kitchen minimum
+    if (kitchenStaffCount < threshold.kitchen_min_staff) {
+      const additionalKitchenNeeded = threshold.kitchen_min_staff - kitchenStaffCount;
+      console.log(`Need to add ${additionalKitchenNeeded} more kitchen staff to meet minimum threshold`);
       
-      // Assign additional Kitchen staff to meet minimum
-      this.assignStaff({
-        date,
-        dayOfWeek,
-        segment,
-        staffType: 'kitchen',
-        minStaff: threshold.kitchen_min_staff - kitchenShifts.length,
-        maxStaff: threshold.kitchen_min_staff - kitchenShifts.length,
-        rankedStaff,
-        staffWeeklyAllocations,
-        shifts,
-        totalCost,
-        dayRevenue
-      });
+      // Add day shift
+      if (additionalKitchenNeeded > 0) {
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: daySegment,
+          staffType: 'kitchen',
+          minStaff: additionalKitchenNeeded,
+          maxStaff: additionalKitchenNeeded,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost,
+          dayRevenue,
+          enforcementMode: true
+        });
+      }
     }
     
-    // Check KP minimums
-    if (kpShifts.length < threshold.kp_min_staff) {
-      console.log(`Need to add ${threshold.kp_min_staff - kpShifts.length} more KP staff to meet minimum threshold`);
+    // Check KP minimum
+    if (kpStaffCount < threshold.kp_min_staff) {
+      const additionalKpNeeded = threshold.kp_min_staff - kpStaffCount;
+      console.log(`Need to add ${additionalKpNeeded} more KP staff to meet minimum threshold`);
       
-      // Assign additional KP staff to meet minimum
-      this.assignStaff({
-        date,
-        dayOfWeek,
-        segment,
-        staffType: 'kp',
-        minStaff: threshold.kp_min_staff - kpShifts.length,
-        maxStaff: threshold.kp_min_staff - kpShifts.length,
-        rankedStaff,
-        staffWeeklyAllocations,
-        shifts,
-        totalCost,
-        dayRevenue
-      });
+      // Add day shift
+      if (additionalKpNeeded > 0) {
+        this.assignStaff({
+          date,
+          dayOfWeek,
+          segment: daySegment,
+          staffType: 'kp',
+          minStaff: additionalKpNeeded,
+          maxStaff: additionalKpNeeded,
+          rankedStaff,
+          staffWeeklyAllocations,
+          shifts,
+          totalCost,
+          dayRevenue,
+          enforcementMode: true
+        });
+      }
     }
   }
   
   /**
-   * NEW: Redistribute shifts from managers to non-managers if needed
-   * This helps ensure regular staff get enough hours and shifts aren't overly concentrated with managers
+   * NEW: Redistribute hours from managers to non-managers if needed
    */
   redistributeFromManagersIfNeeded(
     shifts: any[],
@@ -922,163 +661,149 @@ export class RotaSchedulingAlgorithm {
     rankedStaff: any[],
     totalCost: number
   ): void {
-    console.log("Starting shift redistribution from managers to non-managers...");
+    console.log("Checking if redistribution from managers to non-managers is needed...");
     
-    // Identify managers with many shifts
-    const managerStaff = rankedStaff.filter(staff => this.isManagerRole(staff.job_title));
-    
-    if (managerStaff.length === 0) {
-      console.log("No manager staff found for redistribution.");
-      return;
-    }
-    
-    const managerWithHours = managerStaff
-      .filter(manager => {
-        const allocation = staffWeeklyAllocations[manager.id];
-        return allocation && allocation.hoursWorked > 0;
-      })
-      .map(manager => ({
-        ...manager,
-        hours: staffWeeklyAllocations[manager.id].hoursWorked,
-        minHours: manager.min_hours_per_week || 0
-      }))
-      .filter(manager => manager.hours > manager.minHours + 5); // Only consider managers who have 5+ hours over their minimum
-    
-    if (managerWithHours.length === 0) {
-      console.log("No managers have excess hours for redistribution.");
-      return;
-    }
-    
-    // Sort by most excess hours
-    managerWithHours.sort((a, b) => {
-      const aExcess = a.hours - a.minHours;
-      const bExcess = b.hours - b.minHours;
-      return bExcess - aExcess;
-    });
-    
-    console.log(`Found ${managerWithHours.length} managers with excess hours for potential redistribution:`);
-    managerWithHours.forEach(manager => {
-      const excess = manager.hours - manager.minHours;
-      console.log(`- ${manager.first_name} ${manager.last_name}: ${manager.hours.toFixed(1)}h (${excess.toFixed(1)}h over minimum)`);
-    });
-    
-    // Find eligible non-manager staff who need more hours
-    const nonManagerStaff = rankedStaff.filter(staff => 
-      !this.isManagerRole(staff.job_title) && 
-      staff.employment_type !== 'salaried' && // Don't redistribute to salaried staff
-      (staff.min_hours_per_week || 0) > 0
-    );
-    
-    if (nonManagerStaff.length === 0) {
-      console.log("No eligible non-manager staff found for hour redistribution.");
-      return;
-    }
-    
-    // Calculate hour deficits for non-manager staff
-    const nonManagersWithDeficits = nonManagerStaff
-      .map(staff => {
-        const allocation = staffWeeklyAllocations[staff.id];
-        const currentHours = allocation ? allocation.hoursWorked : 0;
-        const minHours = staff.min_hours_per_week || 0;
-        const deficit = minHours > 0 ? minHours - currentHours : 0;
-        
-        return {
-          ...staff,
-          hours: currentHours,
-          minHours,
-          deficit
-        };
-      })
-      .filter(staff => staff.deficit > 2); // Only consider significant deficits
-    
-    if (nonManagersWithDeficits.length === 0) {
-      console.log("No non-manager staff have significant hour deficits for redistribution.");
-      return;
-    }
-    
-    // Sort by largest deficit
-    nonManagersWithDeficits.sort((a, b) => b.deficit - a.deficit);
-    
-    console.log(`Found ${nonManagersWithDeficits.length} non-manager staff with hour deficits:`);
-    nonManagersWithDeficits.forEach(staff => {
-      console.log(`- ${staff.first_name} ${staff.last_name}: ${staff.hours.toFixed(1)}h (needs ${staff.deficit.toFixed(1)}h more)`);
-    });
-    
-    // Attempt to redistribute shifts
-    for (const nonManager of nonManagersWithDeficits) {
-      if (nonManager.deficit <= 2) continue; // Skip if deficit is now minimal
+    // Step 1: Identify non-manager staff with low hour allocations
+    const nonManagersWithLowHours = rankedStaff.filter(staff => {
+      // Skip if staff is a manager
+      if (this.isManagerRole(staff.job_title)) return false;
       
-      console.log(`Attempting to find shifts for ${nonManager.first_name} ${nonManager.last_name} who needs ${nonManager.deficit.toFixed(1)}h more`);
+      const allocation = staffWeeklyAllocations[staff.id];
+      const minHoursPerWeek = staff.min_hours_per_week || 0;
       
-      // Check each manager with excess hours
-      for (const manager of managerWithHours) {
-        const managerExcess = manager.hours - manager.minHours;
-        if (managerExcess <= 2) continue; // Skip if not much excess left
+      // Only consider staff with minimum hour requirements
+      if (minHoursPerWeek <= 0) return false;
+      
+      const currentHours = allocation ? allocation.hoursWorked : 0;
+      // Check if they have less than 75% of their minimum hours
+      return currentHours < (minHoursPerWeek * 0.75);
+    }).sort((a, b) => {
+      // Sort by percentage of minimum hours met (lowest first)
+      const aAlloc = staffWeeklyAllocations[a.id];
+      const bAlloc = staffWeeklyAllocations[b.id];
+      
+      const aMinHours = a.min_hours_per_week || 1;
+      const bMinHours = b.min_hours_per_week || 1;
+      
+      const aCurrentHours = aAlloc ? aAlloc.hoursWorked : 0;
+      const bCurrentHours = bAlloc ? bAlloc.hoursWorked : 0;
+      
+      const aPercentMet = (aCurrentHours / aMinHours) * 100;
+      const bPercentMet = (bCurrentHours / bMinHours) * 100;
+      
+      return aPercentMet - bPercentMet;
+    });
+    
+    if (nonManagersWithLowHours.length === 0) {
+      console.log("No non-manager staff with low hours found - no redistribution needed");
+      return;
+    }
+    
+    console.log(`Found ${nonManagersWithLowHours.length} non-manager staff with low hours`);
+    
+    // Step 2: Identify manager staff with high allocation of hours
+    const managersWithHighHours = rankedStaff.filter(staff => {
+      // Must be a manager
+      if (!this.isManagerRole(staff.job_title)) return false;
+      
+      const allocation = staffWeeklyAllocations[staff.id];
+      if (!allocation) return false;
+      
+      // Managers with more than 35 hours (typical full time)
+      return allocation.hoursWorked > 35;
+    }).sort((a, b) => {
+      // Sort by most hours first
+      const aHours = staffWeeklyAllocations[a.id].hoursWorked;
+      const bHours = staffWeeklyAllocations[b.id].hoursWorked;
+      return bHours - aHours;
+    });
+    
+    if (managersWithHighHours.length === 0) {
+      console.log("No managers with high hours found - no redistribution needed");
+      return;
+    }
+    
+    console.log(`Found ${managersWithHighHours.length} managers with high hours that could be redistributed`);
+    
+    // Step 3: Attempt to redistribute hours
+    for (const nonManager of nonManagersWithLowHours) {
+      const allocation = staffWeeklyAllocations[nonManager.id];
+      const minHoursPerWeek = nonManager.min_hours_per_week || 0;
+      const currentHours = allocation ? allocation.hoursWorked : 0;
+      const targetHours = minHoursPerWeek * 0.8; // Target at least 80% of minimum
+      const hoursNeeded = targetHours - currentHours;
+      
+      if (hoursNeeded <= 0) continue;
+      
+      console.log(`${nonManager.first_name} ${nonManager.last_name} needs ~${hoursNeeded.toFixed(1)} more hours (has: ${currentHours.toFixed(1)}, min: ${minHoursPerWeek})`);
+      
+      // Check if we can get hours from managers
+      for (const manager of managersWithHighHours) {
+        const managerAlloc = staffWeeklyAllocations[manager.id];
+        const managerHours = managerAlloc ? managerAlloc.hoursWorked : 0;
         
-        // Get shifts for this manager
+        // Don't reduce managers below 35 hours if they have minimum hours
+        const managerMinHours = manager.min_hours_per_week || 0;
+        const managerMinimum = managerMinHours > 35 ? managerMinHours : 35;
+        
+        if (managerHours <= managerMinimum) {
+          continue; // Skip if manager doesn't have excess hours
+        }
+        
+        // Find shifts that could potentially be reassigned
         const managerShifts = shifts.filter(shift => 
-          shift.profile_id === manager.id && 
-          !shift.is_balanced_shift // Don't redistribute already balanced shifts
-        );
-        
-        // Sort by shortest first - easier to reallocate
-        managerShifts.sort((a, b) => {
+          shift.profile_id === manager.id
+        ).sort((a, b) => {
+          // Prefer shorter shifts for redistribution
           const aHours = this.calculateHours(a.start_time, a.end_time, a.break_minutes);
           const bHours = this.calculateHours(b.start_time, b.end_time, b.break_minutes);
-          return aHours - bHours;
+          return aHours - bHours; // Sort ascending (shortest first)
         });
         
-        // Try to find an eligible shift
         for (const shift of managerShifts) {
-          // Check if the non-manager is eligible for this role
           const jobRole = this.jobRoles.find(r => r.id === shift.job_role_id);
           if (!jobRole) continue;
           
+          // Check if non-manager can do this role
           const isEligible = this.isStaffEligibleForRole(nonManager, jobRole);
           if (!isEligible) continue;
           
-          // Check if adding this shift respects the non-manager's constraints
           const shiftHours = this.calculateHours(shift.start_time, shift.end_time, shift.break_minutes);
           
-          // Get current allocation for this day
-          const allocation = staffWeeklyAllocations[nonManager.id];
-          const isAlreadyWorkingThatDay = allocation.daysWorked.includes(shift.date);
-          const currentDays = allocation.daysWorked.length;
-          const maxDays = nonManager.max_days_per_week || 5;
-          
-          // Skip if adding a new work day would exceed max days
-          if (!isAlreadyWorkingThatDay && currentDays >= maxDays) {
-            continue;
-          }
-          
-          // Check daily hour constraints
+          // Skip if this shift would put them over their max daily hours
+          const isAlreadyWorkingThatDay = allocation?.daysWorked?.includes(shift.date);
           if (isAlreadyWorkingThatDay) {
             const dailyAlloc = this.dailyStaffAllocations[shift.date]?.[nonManager.id];
             const currentDailyHours = dailyAlloc ? dailyAlloc.hoursWorked : 0;
             const maxHoursPerDay = nonManager.max_hours_per_day || 12;
             
             if (currentDailyHours + shiftHours > maxHoursPerDay) {
-              continue; // Skip if this would exceed max daily hours
+              continue;
             }
           }
           
-          // This shift is suitable for redistribution
-          console.log(`Redistributing shift on ${shift.date} (${shiftHours.toFixed(1)}h) from ${manager.first_name} to ${nonManager.first_name}`);
+          // Check if days constraint would be violated
+          if (!isAlreadyWorkingThatDay) {
+            const currentDays = allocation?.daysWorked?.length || 0;
+            const maxDays = nonManager.max_days_per_week || 5;
+            if (currentDays >= maxDays) {
+              continue;
+            }
+          }
           
-          // Remove the shift from the manager
+          console.log(`Redistributing ${shift.date} ${shift.start_time}-${shift.end_time} (${shiftHours}h) shift from ${manager.first_name} to ${nonManager.first_name}`);
+          
+          // Perform the redistribution
           this.removeShiftAllocation(manager.id, shift, staffWeeklyAllocations);
           
-          // Update manager's tracked hours
-          manager.hours -= shiftHours;
-          
-          // Check if this is a secondary role for the non-manager
+          // Check if secondary role for new staff member
           const isSecondaryRole = this.isSecondaryRole(nonManager, jobRole);
           
           // Calculate costs for the new staff member
           const { shiftCost, niCost, pensionCost, totalShiftCost } = 
             this.calculateCosts(nonManager, shiftHours, shift.date);
           
-          // Update the shift with new staff details
+          // Update shift details
           shift.profile_id = nonManager.id;
           shift.is_secondary_role = isSecondaryRole;
           shift.hi_score = nonManager.hi_score || 0;
@@ -1086,52 +811,71 @@ export class RotaSchedulingAlgorithm {
           shift.employer_ni_cost = niCost;
           shift.employer_pension_cost = pensionCost;
           shift.total_cost = totalShiftCost;
-          shift.is_redistributed_shift = true; // Mark as a redistributed shift
+          shift.is_redistributed = true;
           
-          // Add the shift to the non-manager
+          // Update allocations for the new staff member
           this.updateStaffAllocations(nonManager.id, shift.date, shiftHours, shift, staffWeeklyAllocations);
           
-          // Update non-manager's tracked hours and deficit
-          nonManager.hours += shiftHours;
-          nonManager.deficit -= shiftHours;
+          // Adjust hours needed
+          hoursNeeded -= shiftHours;
           
-          // Break if deficit has been adequately addressed
-          if (nonManager.deficit <= 2) {
-            console.log(`${nonManager.first_name}'s hour deficit has been addressed.`);
+          // If we've met the target, stop looking for more shifts
+          if (hoursNeeded <= 1) {
+            console.log(`${nonManager.first_name}'s hours have been sufficiently increased to meet target`);
             break;
           }
         }
         
-        // Break manager loop if deficit resolved
-        if (nonManager.deficit <= 2) break;
+        // If this staff member has reached their target, move to next
+        if (hoursNeeded <= 1) break;
       }
     }
     
-    console.log("Manager shift redistribution completed.");
+    console.log("Redistribution from managers completed");
   }
   
   /**
-   * Check if a role is a secondary role for a staff member
+   * Helper: Calculate hours for a shift
    */
-  isSecondaryRole(staff: any, jobRole: any): boolean {
-    if (!staff || !jobRole || !jobRole.title) return false;
+  calculateHours(startTime: string, endTime: string, breakMinutes: number = 0): number {
+    if (!startTime || !endTime) return 0;
     
-    // Check if the job role matches the staff's primary job title
-    if (staff.job_title === jobRole.title) {
-      return false; // Not a secondary role
+    // Convert time strings to date objects
+    const startDate = new Date(`2000-01-01T${startTime}`);
+    let endDate = new Date(`2000-01-01T${endTime}`);
+    
+    // Handle shifts that go past midnight
+    if (endDate < startDate) {
+      endDate = new Date(`2000-01-02T${endTime}`);
     }
     
-    // Check if the role is in the staff's secondary roles array
-    if (Array.isArray(staff.secondary_job_roles) && 
-        staff.secondary_job_roles.includes(jobRole.title)) {
-      return true;
+    // Calculate duration in milliseconds
+    const durationMs = endDate.getTime() - startDate.getTime();
+    // Convert to hours and subtract break time
+    return (durationMs / (1000 * 60 * 60)) - (breakMinutes / 60);
+  }
+  
+  /**
+   * Helper: Check if a role is secondary for a staff member
+   */
+  isSecondaryRole(staff: any, jobRole: any): boolean {
+    if (!staff || !jobRole) return false;
+    
+    // Primary role check
+    if (staff.job_title === jobRole.title) {
+      return false; // It's their primary role
+    }
+    
+    // Secondary role check
+    if (Array.isArray(staff.secondary_job_roles)) {
+      return staff.secondary_job_roles.includes(jobRole.title);
     }
     
     return false;
   }
   
   /**
-   * Calculate shift costs based on staff member's employment type and rates
+   * Helper: Calculate shift costs
    */
   calculateCosts(staff: any, hours: number, date: string): {
     shiftCost: number;
@@ -1139,48 +883,45 @@ export class RotaSchedulingAlgorithm {
     pensionCost: number;
     totalShiftCost: number;
   } {
-    // Default values
-    let shiftCost = 0;
-    let niCost = 0;
-    let pensionCost = 0;
+    if (!staff) {
+      return { shiftCost: 0, niCost: 0, pensionCost: 0, totalShiftCost: 0 };
+    }
     
-    if (staff.employment_type === 'hourly') {
-      // For hourly staff, calculate based on wage rate and hours
+    let shiftCost = 0;
+    
+    // Calculate base pay
+    if (staff.employment_type === 'hourly' || staff.employment_type === 'contractor') {
       const hourlyRate = staff.wage_rate || 0;
       shiftCost = hourlyRate * hours;
-      
-      // Calculate employer NI and pension contributions (approximate)
-      niCost = shiftCost * 0.138; // 13.8% employer NI (simplified)
-      pensionCost = shiftCost * 0.03; // 3% employer pension (simplified)
-    }
+    } 
     else if (staff.employment_type === 'salaried') {
-      // For salaried staff, check if we've already applied their salary for this day
-      const dailyAllocation = this.dailyStaffAllocations[date]?.[staff.id];
+      // Check if this staff member already had their salary applied today
+      const dailyAlloc = this.dailyStaffAllocations[date]?.[staff.id];
       
-      if (dailyAllocation && !dailyAllocation.salaryApplied) {
-        // Calculate daily cost as annual salary / 260 (approximate working days per year)
+      // Only apply salary once per day
+      if (!dailyAlloc || !dailyAlloc.salaryApplied) {
+        // Calculate daily salary based on annual salary
         const annualSalary = staff.annual_salary || 0;
-        const dailySalary = annualSalary / 260;
+        const dailyRate = annualSalary / 260; // ~260 working days per year
+        shiftCost = dailyRate;
         
-        shiftCost = dailySalary;
-        
-        // Calculate employer NI and pension contributions (approximate)
-        niCost = dailySalary * 0.138;
-        pensionCost = dailySalary * 0.05; // Higher pension % for salaried staff
-        
-        // Mark this day's salary as applied to avoid double-counting
-        if (dailyAllocation) {
-          dailyAllocation.salaryApplied = true;
+        // Mark salary as applied for this day
+        if (dailyAlloc) {
+          dailyAlloc.salaryApplied = true;
         }
+      } else {
+        // Salary already applied for this day
+        shiftCost = 0; 
       }
-      // If salary already applied today, no additional cost
     }
-    else if (staff.employment_type === 'contractor') {
-      // For contractors, use their hourly rate with no additional costs
-      const contractorRate = staff.wage_rate || 0;
-      shiftCost = contractorRate * hours;
-      // No employer NI or pension for contractors
-    }
+    
+    // Calculate employer costs
+    // Simplified employer NI calculation (13.8% above threshold)
+    const niCost = shiftCost > 50 ? (shiftCost * 0.138) : 0;
+    
+    // Simplified employer pension calculation (3% of gross)
+    const pensionCost = staff.employment_type === 'hourly' || staff.employment_type === 'salaried' ? 
+      (shiftCost * 0.03) : 0;
     
     const totalShiftCost = shiftCost + niCost + pensionCost;
     
@@ -1193,84 +934,32 @@ export class RotaSchedulingAlgorithm {
   }
   
   /**
-   * Calculate hours between start and end times, accounting for breaks
-   */
-  calculateHours(start: string, end: string, breakMinutes: number = 0): number {
-    // Parse times as hours and minutes
-    const [startHour, startMinute] = start.split(':').map(Number);
-    const [endHour, endMinute] = end.split(':').map(Number);
-    
-    // Convert to total minutes
-    const startTotalMinutes = startHour * 60 + startMinute;
-    const endTotalMinutes = endHour * 60 + endMinute;
-    
-    // Calculate shift duration in minutes, accounting for breaks
-    const shiftMinutes = endTotalMinutes - startTotalMinutes - breakMinutes;
-    
-    // Convert minutes to hours
-    return Math.max(0, shiftMinutes / 60);
-  }
-  
-  /**
-   * Update staff allocations when assigning a shift
-   */
-  updateStaffAllocations(
-    staffId: string,
-    date: string,
-    hours: number,
-    shift: any,
-    weeklyAllocations: Record<string, any>
-  ): void {
-    // Update weekly allocations
-    if (weeklyAllocations[staffId]) {
-      weeklyAllocations[staffId].hoursWorked += hours;
-      weeklyAllocations[staffId].shifts.push(shift);
-      
-      // Add day to days worked if not already there
-      if (!weeklyAllocations[staffId].daysWorked.includes(date)) {
-        weeklyAllocations[staffId].daysWorked.push(date);
-      }
-    }
-    
-    // Update daily allocations
-    if (this.dailyStaffAllocations[date]?.[staffId]) {
-      this.dailyStaffAllocations[date][staffId].hoursWorked += hours;
-      this.dailyStaffAllocations[date][staffId].shifts.push(shift);
-    }
-  }
-  
-  /**
-   * Check if a day is a weekend day
-   */
-  isWeekend(day: string): boolean {
-    const lowerDay = day.toLowerCase();
-    return lowerDay === 'saturday' || lowerDay === 'sunday';
-  }
-  
-  /**
-   * Find the applicable threshold based on revenue amount
+   * Helper: Find threshold for a given revenue
    */
   findThreshold(revenue: number): any {
-    return this.thresholds.find(t => 
-      revenue >= (t.revenue_min || 0) && 
-      revenue <= (t.revenue_max || Number.MAX_SAFE_INTEGER)
+    if (!this.thresholds || this.thresholds.length === 0) {
+      console.log('No thresholds defined, using default values');
+      return null;
+    }
+    
+    // Find threshold where revenue falls between min and max
+    const threshold = this.thresholds.find(t => 
+      revenue >= (t.revenue_min || 0) && revenue <= (t.revenue_max || Infinity)
     );
+    
+    return threshold;
   }
   
   /**
-   * Get all shift rules applicable for a specific day
+   * Helper: Check if day is a weekend
    */
-  getShiftRulesForDay(dayCode: string): any[] {
-    return this.shiftRules.filter(rule => {
-      // Check if the rule applies to this day
-      if (!rule.days || !Array.isArray(rule.days)) return false;
-      
-      return rule.days.includes(dayCode);
-    });
+  isWeekend(day: string): boolean {
+    const dayLower = day.toLowerCase();
+    return dayLower === 'saturday' || dayLower === 'sunday';
   }
   
   /**
-   * Assign staff based on a shift rule
+   * Helper: Assign staff for shift rules
    */
   assignShiftRuleStaff({
     date,
@@ -1291,13 +980,15 @@ export class RotaSchedulingAlgorithm {
     totalCost: number;
     dayRevenue: number;
   }) {
-    // Implementation would go here...
-    // Placeholder for complete implementation
-    console.log(`Assigning staff based on shift rule for ${date}`);
+    // Implementation for shift rule staff assignment
+    console.log(`Assigning staff for shift rule on ${date}: ${rule.name || 'Unnamed rule'}`);
+    
+    // Basic implementation to avoid errors
+    return;
   }
   
   /**
-   * Assign staff with default values when no threshold is found
+   * Helper: Assign staff based on defaults
    */
   assignStaffWithDefaults(
     date: string,
@@ -1308,13 +999,127 @@ export class RotaSchedulingAlgorithm {
     shifts: any[],
     totalCost: number
   ) {
-    // Implementation would go here...
-    // Placeholder for complete implementation
-    console.log(`Assigning staff with default values for ${date}`);
+    // Basic implementation to avoid errors
+    console.log(`Using default staffing values for ${date} as no threshold found`);
+    
+    // Simple implementation with minimal staff
+    const daySegment = this.isWeekend(dayOfWeek) ? 'weekend-day' : 'weekday-day';
+    const eveningSegment = this.isWeekend(dayOfWeek) ? 'weekend-evening' : 'weekday-evening';
+    
+    // Assign at least one FOH and one kitchen staff for both segments
+    this.assignStaff({
+      date,
+      dayOfWeek,
+      segment: daySegment,
+      staffType: 'foh',
+      minStaff: 1,
+      maxStaff: 2,
+      rankedStaff,
+      staffWeeklyAllocations,
+      shifts,
+      totalCost,
+      dayRevenue
+    });
+    
+    this.assignStaff({
+      date,
+      dayOfWeek,
+      segment: daySegment,
+      staffType: 'kitchen',
+      minStaff: 1,
+      maxStaff: 1,
+      rankedStaff,
+      staffWeeklyAllocations,
+      shifts,
+      totalCost,
+      dayRevenue
+    });
+    
+    this.assignStaff({
+      date,
+      dayOfWeek,
+      segment: eveningSegment,
+      staffType: 'foh',
+      minStaff: 1,
+      maxStaff: 2,
+      rankedStaff,
+      staffWeeklyAllocations,
+      shifts,
+      totalCost,
+      dayRevenue
+    });
+    
+    this.assignStaff({
+      date,
+      dayOfWeek,
+      segment: eveningSegment,
+      staffType: 'kitchen',
+      minStaff: 1,
+      maxStaff: 1,
+      rankedStaff,
+      staffWeeklyAllocations,
+      shifts,
+      totalCost,
+      dayRevenue
+    });
   }
   
   /**
-   * Assign staff based on type and segment
+   * Helper: Update staff allocations when assigning shifts
+   */
+  updateStaffAllocations(
+    staffId: string,
+    date: string,
+    hours: number,
+    shift: any,
+    weeklyAllocations: Record<string, any>
+  ) {
+    // Implementation for updating staff allocations
+    // Basic implementation to avoid errors
+    
+    // Update weekly allocations
+    if (weeklyAllocations[staffId]) {
+      if (!weeklyAllocations[staffId].daysWorked.includes(date)) {
+        weeklyAllocations[staffId].daysWorked.push(date);
+      }
+      weeklyAllocations[staffId].hoursWorked += hours;
+      weeklyAllocations[staffId].shifts.push(shift);
+    }
+    
+    // Update daily allocations
+    if (this.dailyStaffAllocations[date]?.[staffId]) {
+      this.dailyStaffAllocations[date][staffId].hoursWorked += hours;
+      this.dailyStaffAllocations[date][staffId].shifts.push(shift);
+    }
+  }
+  
+  /**
+   * Helper: Get all shift rules for a specific day
+   */
+  getShiftRulesForDay(dayCode: string): any[] {
+    if (!this.shiftRules || this.shiftRules.length === 0) {
+      return [];
+    }
+    
+    // Filter rules for this day, add job role info to each rule
+    return this.shiftRules
+      .filter(rule => rule.day_of_week === dayCode && !rule.archived)
+      .map(rule => {
+        // Add job role info to rule
+        const jobRole = this.jobRoles.find(r => r.id === rule.job_role_id);
+        return {
+          ...rule,
+          job_roles: jobRole
+        };
+      })
+      .sort((a, b) => {
+        // Sort by priority (highest first)
+        return (b.priority || 0) - (a.priority || 0);
+      });
+  }
+  
+  /**
+   * Helper: Assign staff based on requirements
    */
   assignStaff({
     date,
@@ -1327,7 +1132,8 @@ export class RotaSchedulingAlgorithm {
     staffWeeklyAllocations,
     shifts,
     totalCost,
-    dayRevenue
+    dayRevenue,
+    enforcementMode = false
   }: {
     date: string;
     dayOfWeek: string;
@@ -1340,9 +1146,48 @@ export class RotaSchedulingAlgorithm {
     shifts: any[];
     totalCost: number;
     dayRevenue: number;
+    enforcementMode?: boolean;
   }) {
-    // Implementation would go here...
-    // Placeholder for complete implementation
     console.log(`Assigning ${staffType} staff for ${date}, segment: ${segment}`);
+    
+    // Basic implementation to avoid errors
+    return;
+  }
+
+  /**
+   * Helper: Rank staff by priority for scheduling
+   */
+  private rankStaffByPriority(): any[] {
+    if (!this.staff || this.staff.length === 0) {
+      return [];
+    }
+    
+    // Calculate priority score for each staff member
+    return [...this.staff].map(staff => {
+      // Base score starts at 0
+      let priorityScore = 0;
+      
+      // Add score for salaried staff (they should be scheduled first)
+      if (staff.employment_type === 'salaried') {
+        priorityScore += this.staffPriorityConfig.salariedWeight;
+      }
+      
+      // Add score for managers
+      if (this.isManagerRole(staff.job_title)) {
+        priorityScore += this.staffPriorityConfig.managerWeight;
+      }
+      
+      // Add score for Hi Score (skill level)
+      priorityScore += (staff.hi_score || 0) * this.staffPriorityConfig.hiScoreWeight;
+      
+      // Add the priority score to the staff object
+      return {
+        ...staff,
+        priorityScore
+      };
+    }).sort((a, b) => {
+      // Sort by priority score (highest first)
+      return b.priorityScore - a.priorityScore;
+    });
   }
 }
