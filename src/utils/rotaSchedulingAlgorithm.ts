@@ -581,7 +581,8 @@ export class RotaSchedulingAlgorithm {
       const allocation = staffWeeklyAllocations[staffMember.id];
       const minHoursPerWeek = staffMember.min_hours_per_week || 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      const hourDeficit = minHoursPerWeek - currentHours;
+      // Use let instead of const for hourDeficit since we'll modify it
+      let hourDeficit = minHoursPerWeek - currentHours;
       
       console.log(`Attempting to balance hours for ${staffMember.first_name} ${staffMember.last_name}: needs ${hourDeficit.toFixed(1)} more hours`);
       
@@ -862,5 +863,283 @@ export class RotaSchedulingAlgorithm {
     }
   }
   
-  // Additional methods would be here...
+  /**
+   * Check if a role is a secondary role for a staff member
+   */
+  isSecondaryRole(staff: any, jobRole: any): boolean {
+    // Primary role is not a secondary role
+    if (staff.job_title === jobRole.title) {
+      return false;
+    }
+    
+    // Check if this role is in the secondary roles list
+    if (Array.isArray(staff.secondary_job_roles)) {
+      return staff.secondary_job_roles.includes(jobRole.title);
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Check if a job title is a management role
+   */
+  isManagerRole(jobTitle: string): boolean {
+    const managerTitles = [
+      'manager',
+      'head chef',
+      'chef manager',
+      'supervisor',
+      'assistant manager',
+      'general manager',
+      'deputy manager'
+    ];
+    
+    if (!jobTitle) return false;
+    
+    // Check if job title contains any of the manager titles (case insensitive)
+    return managerTitles.some(title => 
+      jobTitle.toLowerCase().includes(title.toLowerCase())
+    );
+  }
+  
+  /**
+   * Get shift rules for a specific day
+   */
+  getShiftRulesForDay(dayCode: string): any[] {
+    // Filter shift rules that apply to this day
+    return this.shiftRules.filter(rule => {
+      // Skip rules with no days specified
+      if (!rule.days || !Array.isArray(rule.days)) {
+        return false;
+      }
+      
+      // Check if this day is included in the rule's days
+      return rule.days.includes(dayCode);
+    });
+  }
+  
+  /**
+   * Assign staff based on a shift rule
+   */
+  assignShiftRuleStaff({
+    date,
+    dayOfWeek,
+    rule,
+    rankedStaff,
+    staffWeeklyAllocations,
+    shifts,
+    totalCost,
+    dayRevenue
+  }: {
+    date: string;
+    dayOfWeek: string;
+    rule: any;
+    rankedStaff: any[];
+    staffWeeklyAllocations: Record<string, any>;
+    shifts: any[];
+    totalCost: number;
+    dayRevenue: number;
+  }) {
+    // Implementation details would go here
+    console.log(`Assigning staff for rule: ${rule.name || 'Unnamed'}`);
+  }
+  
+  /**
+   * Find the threshold applicable for a given revenue
+   */
+  findThreshold(revenue: number): any {
+    // Look for a threshold where the revenue falls between min and max
+    const applicableThreshold = this.thresholds.find(threshold => {
+      const minRevenue = Number(threshold.revenue_min) || 0;
+      const maxRevenue = Number(threshold.revenue_max) || Infinity;
+      
+      return revenue >= minRevenue && revenue <= maxRevenue;
+    });
+    
+    return applicableThreshold;
+  }
+  
+  /**
+   * Assign staff with default values when no threshold is found
+   */
+  assignStaffWithDefaults(
+    date: string,
+    dayOfWeek: string,
+    dayRevenue: number,
+    rankedStaff: any[],
+    staffWeeklyAllocations: Record<string, any>,
+    shifts: any[],
+    totalCost: number
+  ) {
+    // Implementation details would go here
+    console.log(`Using default staffing for ${date}`);
+  }
+  
+  /**
+   * Count staff of a specific type in existing shifts
+   */
+  countStaffByType(shifts: any[], staffType: string, rankedStaff: any[]): number {
+    // Count unique staff members of a specific type
+    const uniqueStaffIds = new Set();
+    
+    shifts.forEach(shift => {
+      // Find the staff member
+      const staffMember = rankedStaff.find(staff => staff.id === shift.profile_id);
+      if (staffMember) {
+        // Check if this staff member is of the specified type
+        const isMatchingType = this.getStaffType(staffMember) === staffType;
+        if (isMatchingType) {
+          uniqueStaffIds.add(staffMember.id);
+        }
+      }
+    });
+    
+    return uniqueStaffIds.size;
+  }
+  
+  /**
+   * Get the staff type based on job role
+   */
+  getStaffType(staffMember: any): string {
+    if (!staffMember || !staffMember.job_title) {
+      return 'unknown';
+    }
+    
+    const jobTitle = staffMember.job_title.toLowerCase();
+    
+    // FOH roles
+    if (
+      jobTitle.includes('server') ||
+      jobTitle.includes('waiter') ||
+      jobTitle.includes('waitress') ||
+      jobTitle.includes('host') ||
+      jobTitle.includes('bartender') ||
+      jobTitle.includes('barista') ||
+      jobTitle.includes('front of house') ||
+      jobTitle.includes('foh')
+    ) {
+      return 'foh';
+    }
+    
+    // Kitchen porter roles
+    if (
+      jobTitle.includes('kitchen porter') ||
+      jobTitle.includes('kp') ||
+      jobTitle.includes('dishwasher') ||
+      jobTitle.includes('potwasher')
+    ) {
+      return 'kp';
+    }
+    
+    // Kitchen/chef roles
+    if (
+      jobTitle.includes('chef') ||
+      jobTitle.includes('cook') ||
+      jobTitle.includes('kitchen') ||
+      jobTitle.includes('sous') ||
+      jobTitle.includes('culinary')
+    ) {
+      return 'kitchen';
+    }
+    
+    // Default to FOH if unknown
+    return 'foh';
+  }
+  
+  /**
+   * Check if a day is a weekend day
+   */
+  isWeekend(dayOfWeek: string): boolean {
+    const day = dayOfWeek.toLowerCase();
+    return day === 'saturday' || day === 'sunday';
+  }
+  
+  /**
+   * Assign staff for a specific segment and staff type
+   */
+  assignStaff({
+    date,
+    dayOfWeek,
+    segment,
+    staffType,
+    minStaff,
+    maxStaff,
+    rankedStaff,
+    staffWeeklyAllocations,
+    shifts,
+    totalCost,
+    dayRevenue
+  }: {
+    date: string;
+    dayOfWeek: string;
+    segment: string;
+    staffType: string;
+    minStaff: number;
+    maxStaff: number;
+    rankedStaff: any[];
+    staffWeeklyAllocations: Record<string, any>;
+    shifts: any[];
+    totalCost: number;
+    dayRevenue: number;
+  }) {
+    // Implementation details would go here
+    console.log(`Assigning ${staffType} staff for ${date}, segment: ${segment}`);
+  }
+  
+  /**
+   * Create an emergency shift when no other shifts are scheduled
+   */
+  createEmergencyShift(
+    date: string,
+    dayOfWeek: string,
+    staffMember: any,
+    shifts: any[]
+  ) {
+    // Implementation details would go here
+    console.log(`Creating emergency shift for ${date} with ${staffMember.first_name}`);
+  }
+  
+  /**
+   * Update staff allocations after assigning a shift
+   */
+  updateStaffAllocations(
+    staffId: string,
+    date: string,
+    hours: number,
+    shift: any,
+    staffWeeklyAllocations: Record<string, any>
+  ) {
+    // Implementation details would go here
+    console.log(`Updating allocations for ${staffId} on ${date}, adding ${hours} hours`);
+  }
+  
+  /**
+   * Calculate costs for a shift based on staff member and hours
+   */
+  calculateCosts(
+    staffMember: any,
+    hours: number,
+    date: string
+  ): { shiftCost: number; niCost: number; pensionCost: number; totalShiftCost: number } {
+    // Placeholder implementation
+    return {
+      shiftCost: 0,
+      niCost: 0,
+      pensionCost: 0,
+      totalShiftCost: 0
+    };
+  }
+  
+  /**
+   * Calculate hours based on start time, end time, and break minutes
+   */
+  calculateHours(
+    startTime: string,
+    endTime: string,
+    breakMinutes: number
+  ): number {
+    // Implementation details would go here
+    // For now, return a placeholder value
+    return 8;
+  }
 }
