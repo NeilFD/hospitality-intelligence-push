@@ -478,8 +478,21 @@ export class RotaSchedulingAlgorithm {
       }
     }
     
+    // Final validation to ensure no shifts have null job_role_id
+    const validShifts = shifts.filter(shift => {
+      if (!shift.job_role_id) {
+        console.error(`Found shift without job_role_id for ${shift.profile_id} on ${shift.date}, removing from final schedule`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (validShifts.length < shifts.length) {
+      console.warn(`Removed ${shifts.length - validShifts.length} invalid shifts with null job_role_id values`);
+    }
+    
     return {
-      shifts,
+      shifts: validShifts,
       total_cost: totalCost,
       revenue_forecast: totalRevenue,
       cost_percentage: costPercentage
@@ -580,7 +593,7 @@ export class RotaSchedulingAlgorithm {
       const allocation = staffWeeklyAllocations[staffMember.id];
       const minHoursPerWeek = staffMember.min_hours_per_week || 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      let hourDeficit = minHoursPerWeek - currentHours; // Changed from const to let
+      let hourDeficit = minHoursPerWeek - currentHours;
       
       console.log(`Attempting to balance hours for ${staffMember.first_name} ${staffMember.last_name}: needs ${hourDeficit.toFixed(1)} more hours`);
       
@@ -937,11 +950,88 @@ export class RotaSchedulingAlgorithm {
     totalCost: number;
     dayRevenue: number;
   }) {
-    // Implementation details would go here
-    console.log(`Assigning staff for rule: ${rule.name || 'Unnamed'}`);
+    // Get the job role for this rule
+    const jobRole = this.jobRoles.find(role => role.id === rule.job_role_id);
+    if (!jobRole) {
+      console.warn(`No job role found for rule ${rule.name || 'Unnamed'} with ID ${rule.job_role_id}`);
+      return;
+    }
     
-    // This is a stub implementation - replace with actual implementation if needed
-    // For now just log that we're processing this rule
+    console.log(`Assigning staff for rule: ${rule.name || 'Unnamed'} (${jobRole.title})`);
+    
+    // Determine staff type based on job role
+    const staffType = jobRole.is_kitchen ? 'kitchen' : 'foh';
+    const minStaff = rule.min_staff || 1;
+    const maxStaff = rule.max_staff || 1;
+    
+    // Find eligible staff for this role
+    const eligibleStaff = rankedStaff.filter(staff => 
+      this.isStaffEligibleForRole(staff, jobRole)
+    );
+    
+    if (eligibleStaff.length === 0) {
+      console.warn(`No eligible staff found for role ${jobRole.title}`);
+      return;
+    }
+    
+    // Assign staff according to rule constraints
+    const staffToAssign = Math.min(eligibleStaff.length, maxStaff);
+    console.log(`Assigning ${staffToAssign} staff for ${jobRole.title} role`);
+    
+    for (let i = 0; i < staffToAssign; i++) {
+      const staff = eligibleStaff[i];
+      
+      // Check staff availability
+      const allocation = staffWeeklyAllocations[staff.id];
+      if (!allocation) continue;
+      
+      // Check if adding this shift would exceed weekly constraints
+      const maxHoursPerWeek = staff.max_hours_per_week || 40;
+      const maxDaysPerWeek = staff.max_days_per_week || 5;
+      
+      if (allocation.hoursWorked >= maxHoursPerWeek) {
+        console.log(`${staff.first_name} already at max hours (${maxHoursPerWeek})`);
+        continue;
+      }
+      
+      if (allocation.daysWorked.length >= maxDaysPerWeek && !allocation.daysWorked.includes(date)) {
+        console.log(`${staff.first_name} already at max days (${maxDaysPerWeek})`);
+        continue;
+      }
+      
+      // Create shift for this staff member
+      const shiftHours = this.calculateHours(rule.start_time, rule.end_time, 30); // Assume 30 min break
+      const isSecondaryRole = this.isSecondaryRole(staff, jobRole);
+      
+      // Calculate costs
+      const { shiftCost, niCost, pensionCost, totalShiftCost } = 
+        this.calculateCosts(staff, shiftHours, date);
+        
+      const shift = {
+        profile_id: staff.id,
+        date,
+        day_of_week: dayOfWeek,
+        start_time: rule.start_time,
+        end_time: rule.end_time,
+        break_minutes: 30,
+        job_role_id: rule.job_role_id || jobRole.id, // Ensure job_role_id is always set
+        is_secondary_role: isSecondaryRole,
+        hi_score: staff.hi_score || 0,
+        shift_cost: shiftCost,
+        employer_ni_cost: niCost,
+        employer_pension_cost: pensionCost,
+        total_cost: totalShiftCost
+      };
+      
+      // Add shift to list
+      shifts.push(shift);
+      totalCost += totalShiftCost;
+      
+      // Update staff allocations
+      this.updateStaffAllocations(staff.id, date, shiftHours, shift, staffWeeklyAllocations);
+      
+      console.log(`Assigned ${staff.first_name} ${staff.last_name} to ${jobRole.title} shift on ${date}`);
+    }
   }
   
   /**
@@ -971,10 +1061,90 @@ export class RotaSchedulingAlgorithm {
     shifts: any[],
     totalCost: number
   ) {
-    // Implementation details would go here
     console.log(`Using default staffing for ${date}`);
     
-    // This is a stub implementation
+    // Get default job roles for FOH and Kitchen
+    const fohRole = this.jobRoles.find(role => !role.is_kitchen);
+    const kitchenRole = this.jobRoles.find(role => role.is_kitchen);
+    
+    // If no roles found, we can't create shifts
+    if (!fohRole && !kitchenRole) {
+      console.error("Cannot create default shifts - no job roles found");
+      return;
+    }
+    
+    // Create at least one FOH and one kitchen shift
+    if (fohRole) {
+      const fohStaff = rankedStaff.find(staff => this.isStaffEligibleForRole(staff, fohRole));
+      if (fohStaff) {
+        this.createDefaultShift(date, dayOfWeek, fohStaff, fohRole.id, shifts, staffWeeklyAllocations);
+        totalCost += shifts[shifts.length - 1].total_cost;
+      }
+    }
+    
+    if (kitchenRole) {
+      const kitchenStaff = rankedStaff.find(staff => this.isStaffEligibleForRole(staff, kitchenRole));
+      if (kitchenStaff) {
+        this.createDefaultShift(date, dayOfWeek, kitchenStaff, kitchenRole.id, shifts, staffWeeklyAllocations);
+        totalCost += shifts[shifts.length - 1].total_cost;
+      }
+    }
+  }
+  
+  /**
+   * Create a default shift for a staff member
+   */
+  createDefaultShift(
+    date: string,
+    dayOfWeek: string,
+    staffMember: any,
+    jobRoleId: string,
+    shifts: any[],
+    staffWeeklyAllocations: Record<string, any>
+  ) {
+    // Make sure we have a valid job role ID
+    if (!jobRoleId) {
+      const defaultJobRole = this.jobRoles.find(r => r.title === staffMember.job_title) || this.jobRoles[0];
+      if (!defaultJobRole) {
+        console.error(`Cannot create shift - no job role found for ${staffMember.first_name}`);
+        return null;
+      }
+      jobRoleId = defaultJobRole.id;
+    }
+    
+    const shift = {
+      profile_id: staffMember.id,
+      date: date,
+      day_of_week: dayOfWeek,
+      start_time: '09:00:00',
+      end_time: '17:00:00',
+      break_minutes: 30,
+      job_role_id: jobRoleId, // Ensure job role ID is set
+      is_secondary_role: false,
+      hi_score: staffMember.hi_score || 0,
+      shift_cost: 0,
+      employer_ni_cost: 0,
+      employer_pension_cost: 0,
+      total_cost: 0,
+      is_default_shift: true
+    };
+    
+    // Calculate costs based on employment type
+    const shiftHours = this.calculateHours(shift.start_time, shift.end_time, shift.break_minutes);
+    const { shiftCost, niCost, pensionCost, totalShiftCost } = this.calculateCosts(staffMember, shiftHours, date);
+    
+    shift.shift_cost = shiftCost;
+    shift.employer_ni_cost = niCost;
+    shift.employer_pension_cost = pensionCost;
+    shift.total_cost = totalShiftCost;
+    
+    // Add to shifts array
+    shifts.push(shift);
+    
+    // Update allocations
+    this.updateStaffAllocations(staffMember.id, date, shiftHours, shift, staffWeeklyAllocations);
+    
+    return shift;
   }
   
   /**
@@ -1084,10 +1254,123 @@ export class RotaSchedulingAlgorithm {
     totalCost: number;
     dayRevenue: number;
   }) {
-    // Implementation details would go here
     console.log(`Assigning ${staffType} staff for ${date}, segment: ${segment}`);
     
-    // This is a stub implementation
+    // Find eligible staff for this type
+    const eligibleStaff = rankedStaff.filter(staff => {
+      const type = this.getStaffType(staff);
+      return type === staffType;
+    });
+    
+    if (eligibleStaff.length === 0) {
+      console.log(`No ${staffType} staff available`);
+      return;
+    }
+    
+    // Determine shift times based on segment
+    let startTime, endTime;
+    if (segment.includes('day')) {
+      startTime = '09:00:00';
+      endTime = '17:00:00';
+    } else { // evening
+      startTime = '17:00:00';
+      endTime = '23:00:00';
+    }
+    
+    // Find appropriate job role for this staff type
+    const findJobRole = () => {
+      let jobRoleForType;
+      
+      if (staffType === 'foh') {
+        jobRoleForType = this.jobRoles.find(role => !role.is_kitchen);
+      } else if (staffType === 'kitchen') {
+        jobRoleForType = this.jobRoles.find(role => 
+          role.is_kitchen && 
+          !role.title.toLowerCase().includes('porter') && 
+          !role.title.toLowerCase().includes('kp')
+        );
+      } else if (staffType === 'kp') {
+        jobRoleForType = this.jobRoles.find(role => 
+          role.is_kitchen && 
+          (role.title.toLowerCase().includes('porter') || role.title.toLowerCase().includes('kp'))
+        );
+      }
+      
+      // If no matching role found, use the first role based on kitchen/non-kitchen
+      if (!jobRoleForType) {
+        if (staffType === 'foh') {
+          jobRoleForType = this.jobRoles.find(role => !role.is_kitchen);
+        } else {
+          jobRoleForType = this.jobRoles.find(role => role.is_kitchen);
+        }
+      }
+      
+      // Last resort: just use the first job role
+      return jobRoleForType || this.jobRoles[0];
+    };
+    
+    const jobRole = findJobRole();
+    if (!jobRole) {
+      console.error(`No suitable job role found for ${staffType} staff`);
+      return;
+    }
+    
+    // Assign up to minStaff staff members
+    const staffToAssign = Math.min(minStaff, eligibleStaff.length);
+    for (let i = 0; i < staffToAssign; i++) {
+      const staff = eligibleStaff[i];
+      
+      // Check staff constraints
+      const allocation = staffWeeklyAllocations[staff.id];
+      if (!allocation) continue;
+      
+      // Check if adding this shift would exceed weekly constraints
+      const maxHoursPerWeek = staff.max_hours_per_week || 40;
+      const maxDaysPerWeek = staff.max_days_per_week || 5;
+      
+      if (allocation.hoursWorked >= maxHoursPerWeek) {
+        console.log(`${staff.first_name} already at max hours (${maxHoursPerWeek})`);
+        continue;
+      }
+      
+      if (allocation.daysWorked.length >= maxDaysPerWeek && !allocation.daysWorked.includes(date)) {
+        console.log(`${staff.first_name} already at max days (${maxDaysPerWeek})`);
+        continue;
+      }
+      
+      // Create shift for this staff member
+      const shiftHours = this.calculateHours(startTime, endTime, 30); // Assume 30 min break
+      const isSecondaryRole = this.isSecondaryRole(staff, jobRole);
+      
+      // Calculate costs
+      const { shiftCost, niCost, pensionCost, totalShiftCost } = 
+        this.calculateCosts(staff, shiftHours, date);
+        
+      const shift = {
+        profile_id: staff.id,
+        date,
+        day_of_week: dayOfWeek,
+        start_time: startTime,
+        end_time: endTime,
+        break_minutes: 30,
+        job_role_id: jobRole.id, // Ensure job_role_id is not null
+        is_secondary_role: isSecondaryRole,
+        hi_score: staff.hi_score || 0,
+        shift_cost: shiftCost,
+        employer_ni_cost: niCost,
+        employer_pension_cost: pensionCost,
+        total_cost: totalShiftCost
+      };
+      
+      // Add shift to list
+      shifts.push(shift);
+      totalCost += totalShiftCost;
+      
+      // Update staff allocations
+      this.updateStaffAllocations(staff.id, date, shiftHours, shift, staffWeeklyAllocations);
+      
+      console.log(`Assigned ${staff.first_name} ${staff.last_name} to ${jobRole.title} shift on ${date}`);
+    }
   }
   
   /**
@@ -1099,8 +1382,38 @@ export class RotaSchedulingAlgorithm {
     staffMember: any,
     shifts: any[]
   ) {
-    // Implementation details would go here
     console.log(`Creating emergency shift for ${date} with ${staffMember.first_name}`);
+    
+    // Find a suitable job role ID for this staff member
+    let jobRoleId = null;
+    
+    // First try to find the staff member's primary job role
+    const primaryJobRole = this.jobRoles.find(role => role.title === staffMember.job_title);
+    if (primaryJobRole) {
+      jobRoleId = primaryJobRole.id;
+    } 
+    // If no primary role, fall back to any job role matched with staff type
+    else {
+      const staffType = this.getStaffType(staffMember);
+      if (staffType === 'foh') {
+        const fohRole = this.jobRoles.find(role => !role.is_kitchen);
+        if (fohRole) jobRoleId = fohRole.id;
+      } else {
+        const kitchenRole = this.jobRoles.find(role => role.is_kitchen);
+        if (kitchenRole) jobRoleId = kitchenRole.id;
+      }
+    }
+    
+    // If still no job role found, use the first available role
+    if (!jobRoleId && this.jobRoles.length > 0) {
+      jobRoleId = this.jobRoles[0].id;
+    }
+    
+    // If still no job role, log an error
+    if (!jobRoleId) {
+      console.error("Cannot create emergency shift - no job roles available");
+      return null;
+    }
     
     // Create a basic shift for this date with standard hours
     const shift = {
@@ -1110,7 +1423,7 @@ export class RotaSchedulingAlgorithm {
       start_time: '09:00:00',
       end_time: '17:00:00',
       break_minutes: 30,
-      job_role_id: staffMember.primary_job_role_id || null,
+      job_role_id: jobRoleId, // Ensure job_role_id is not null
       is_secondary_role: false,
       hi_score: staffMember.hi_score || 0,
       shift_cost: 0,
@@ -1145,7 +1458,6 @@ export class RotaSchedulingAlgorithm {
     shift: any,
     staffWeeklyAllocations: Record<string, any>
   ) {
-    // Implementation details would go here
     console.log(`Updating allocations for ${staffId} on ${date}, adding ${hours} hours`);
     
     // Update weekly allocations
