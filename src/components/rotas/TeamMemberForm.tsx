@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -5,14 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, AlertCircle, InfoIcon } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { calculateHourlyRateFromSalary } from './CostCalculationUtils';
 
 export default function TeamMemberForm({ 
   isOpen, 
@@ -35,8 +33,6 @@ export default function TeamMemberForm({
   const [employmentType, setEmploymentType] = useState('hourly');
   const [availableForRota, setAvailableForRota] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [estimatedHourlyRate, setEstimatedHourlyRate] = useState<number | null>(null);
   
   // Reset form when opened with different team member
   useEffect(() => {
@@ -46,39 +42,16 @@ export default function TeamMemberForm({
       setEmail(teamMember.email || '');
       setJobTitle(teamMember.job_title || '');
       setRole(teamMember.role || 'Team Member');
-      setHourlyRate(teamMember.wage_rate?.toString() || '10.50');
-      setSalary(teamMember.annual_salary?.toString() || '0');
+      setHourlyRate(teamMember.hourly_rate?.toString() || '10.50');
+      setSalary(teamMember.salary?.toString() || '0');
       setIsFullTimeStudent(teamMember.is_full_time_student || false);
       setMaxDaysPerWeek(teamMember.max_days_per_week || 5);
-      
-      // Normalize employment type - convert 'salary' to 'salaried' for consistency
-      let normalizedEmploymentType = teamMember.employment_type || 'hourly';
-      if (normalizedEmploymentType === 'salary') {
-        normalizedEmploymentType = 'salaried';
-      }
-      setEmploymentType(normalizedEmploymentType);
-      
+      setEmploymentType(teamMember.employment_type || 'hourly');
       setAvailableForRota(teamMember.available_for_rota !== false);
-      
-      // Calculate estimated hourly rate for salaried staff
-      if ((teamMember.employment_type === 'salaried' || teamMember.employment_type === 'salary') && teamMember.annual_salary) {
-        const hourlyEstimate = calculateHourlyRateFromSalary(teamMember.annual_salary);
-        setEstimatedHourlyRate(hourlyEstimate);
-      }
     } else {
       resetForm();
     }
   }, [teamMember, isOpen]);
-
-  // Update estimated hourly rate when salary changes
-  useEffect(() => {
-    if (employmentType === 'salaried' && parseFloat(salary) > 0) {
-      const hourlyEstimate = calculateHourlyRateFromSalary(parseFloat(salary));
-      setEstimatedHourlyRate(hourlyEstimate);
-    } else {
-      setEstimatedHourlyRate(null);
-    }
-  }, [salary, employmentType]);
 
   const resetForm = () => {
     setFirstName('');
@@ -92,8 +65,6 @@ export default function TeamMemberForm({
     setMaxDaysPerWeek(5);
     setEmploymentType('hourly');
     setAvailableForRota(true);
-    setValidationErrors([]);
-    setEstimatedHourlyRate(null);
   };
   
   // Handler functions for checkbox state changes
@@ -104,80 +75,25 @@ export default function TeamMemberForm({
   const handleAvailableForRotaChange = (checked) => {
     setAvailableForRota(checked === true);
   };
-
-  const handleEmploymentTypeChange = (value) => {
-    setEmploymentType(value);
-    
-    // Reset validation errors when employment type changes
-    setValidationErrors([]);
-    
-    // Calculate estimated hourly rate for salaried staff
-    if (value === 'salaried' && parseFloat(salary) > 0) {
-      const hourlyEstimate = calculateHourlyRateFromSalary(parseFloat(salary));
-      setEstimatedHourlyRate(hourlyEstimate);
-    } else {
-      setEstimatedHourlyRate(null);
-    }
-  };
-  
-  const validateForm = () => {
-    const errors = [];
-    
-    if (!firstName.trim()) {
-      errors.push('First name is required');
-    }
-    
-    if (!lastName.trim()) {
-      errors.push('Last name is required');
-    }
-    
-    if (employmentType === 'hourly' && (!hourlyRate || parseFloat(hourlyRate) <= 0)) {
-      errors.push('Please set a valid hourly rate for this team member');
-    }
-    
-    if (employmentType === 'salaried' && (!salary || parseFloat(salary) <= 0)) {
-      errors.push('Please set a valid annual salary for this team member');
-    }
-    
-    if (employmentType === 'contractor' && (!hourlyRate || parseFloat(hourlyRate) <= 0)) {
-      errors.push('Please set a valid contractor rate for this team member');
-    }
-    
-    setValidationErrors(errors);
-    return errors.length === 0;
-  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
-      // Always normalize employment type to 'salaried' (not 'salary')
-      // to maintain consistency throughout the application
-      const normalizedEmploymentType = employmentType === 'salary' ? 'salaried' : employmentType;
-      
       const memberData = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: email.trim(),
         job_title: jobTitle.trim(),
         role,
-        wage_rate: normalizedEmploymentType !== 'salaried' ? parseFloat(hourlyRate) || 0 : 0,
-        annual_salary: normalizedEmploymentType === 'salaried' ? parseFloat(salary) || 0 : 0,
+        hourly_rate: parseFloat(hourlyRate) || 0,
+        salary: parseFloat(salary) || 0,
         is_full_time_student: isFullTimeStudent,
         max_days_per_week: maxDaysPerWeek,
-        employment_type: normalizedEmploymentType,
+        employment_type: employmentType,
         available_for_rota: availableForRota,
-        // Make sure contractor rate is properly saved
-        contractor_rate: normalizedEmploymentType === 'contractor' ? parseFloat(hourlyRate) || 0 : 0
       };
-
-      console.log('Saving team member with data:', memberData);
       
       if (isEditing && teamMember) {
         // Update existing team member
@@ -226,19 +142,6 @@ export default function TeamMemberForm({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {validationErrors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <ul className="list-disc pl-4 mt-2">
-                  {validationErrors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -302,28 +205,13 @@ export default function TeamMemberForm({
           </div>
           
           <div className="border rounded-md p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">Pay & Employment Details</h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center text-muted-foreground text-sm">
-                      <InfoIcon className="h-4 w-4 mr-1" />
-                      <span>Important for cost calculations</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">These details are crucial for accurate rota cost calculations. Ensure all values are set correctly.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+            <h3 className="font-medium">Pay & Employment Details</h3>
             
             <div className="space-y-2">
               <Label htmlFor="employmentType">Employment Type</Label>
               <RadioGroup 
                 value={employmentType} 
-                onValueChange={handleEmploymentTypeChange}
+                onValueChange={setEmploymentType}
                 className="flex flex-col space-y-1"
               >
                 <div className="flex items-center space-x-2">
@@ -351,37 +239,22 @@ export default function TeamMemberForm({
                   min="0"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
-                  className={parseFloat(hourlyRate) <= 0 ? "border-red-400" : ""}
                 />
-                {parseFloat(hourlyRate) <= 0 && (
-                  <p className="text-xs text-red-500">This field is required for hourly staff</p>
-                )}
               </div>
             )}
             
             {employmentType === 'salaried' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="salary">Annual Salary (£)</Label>
-                  <Input 
-                    id="salary"
-                    type="number"
-                    step="100"
-                    min="0"
-                    value={salary}
-                    onChange={(e) => setSalary(e.target.value)}
-                    className={parseFloat(salary) <= 0 ? "border-red-400" : ""}
-                  />
-                  {parseFloat(salary) <= 0 && (
-                    <p className="text-xs text-red-500">This field is required for salaried staff</p>
-                  )}
-                  {estimatedHourlyRate !== null && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Estimated hourly rate: £{estimatedHourlyRate.toFixed(2)} (based on 261 working days/year)
-                    </p>
-                  )}
-                </div>
-              </>
+              <div className="space-y-2">
+                <Label htmlFor="salary">Annual Salary (£)</Label>
+                <Input 
+                  id="salary"
+                  type="number"
+                  step="100"
+                  min="0"
+                  value={salary}
+                  onChange={(e) => setSalary(e.target.value)}
+                />
+              </div>
             )}
             
             {employmentType === 'contractor' && (
@@ -394,11 +267,7 @@ export default function TeamMemberForm({
                   min="0"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
-                  className={parseFloat(hourlyRate) <= 0 ? "border-red-400" : ""}
                 />
-                {parseFloat(hourlyRate) <= 0 && (
-                  <p className="text-xs text-red-500">This field is required for contractors</p>
-                )}
               </div>
             )}
             
@@ -409,7 +278,7 @@ export default function TeamMemberForm({
                 onCheckedChange={handleFullTimeStudentChange}
               />
               <Label htmlFor="fullTimeStudent" className="text-sm">
-                Full-time student (exempt from NI and pension calculations)
+                Full-time student (different NI calculation)
               </Label>
             </div>
           </div>

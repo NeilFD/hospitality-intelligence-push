@@ -5,11 +5,8 @@ import { supabase } from "@/lib/supabase";
 export interface CostCalculationInput {
   hourlyRate: number;
   hours: number;
-  employmentType: 'hourly' | 'salaried' | 'salary' | 'contractor';
+  employmentType: 'hourly' | 'salaried' | 'contractor';
   isFullTimeStudent?: boolean;
-  annualSalary?: number;
-  contractorRate?: number;
-  isSecondShiftOfDay?: boolean; // Add flag for tracking multiple shifts per day
 }
 
 // Interface for cost calculation results
@@ -18,7 +15,6 @@ export interface CostCalculationResult {
   niCost: number;
   pensionCost: number;
   totalCost: number;
-  isSecondShift?: boolean; // Add flag to show if this is a zero-cost second shift
 }
 
 /**
@@ -26,28 +22,12 @@ export interface CostCalculationResult {
  */
 export const calculateEmployerCosts = async (input: CostCalculationInput): Promise<CostCalculationResult> => {
   try {
-    // Handle salaried staff second shift case (skip cost calculation)
-    if ((input.employmentType === 'salaried' || input.employmentType === 'salary') && input.isSecondShiftOfDay) {
-      console.log('Skipping cost calculation for second shift of salaried staff member');
-      return {
-        basicPay: 0,
-        niCost: 0,
-        pensionCost: 0,
-        totalCost: 0,
-        isSecondShift: true
-      };
-    }
-    
-    // Normalize employment type to handle both 'salary' and 'salaried'
-    const normalizedEmploymentType = input.employmentType === 'salary' ? 'salaried' : input.employmentType;
-    
     // Use Supabase function to calculate costs
     const { data, error } = await supabase.rpc('calculate_employer_costs', {
-      wage_rate: normalizedEmploymentType === 'contractor' ? (input.contractorRate || 0) : input.hourlyRate,
+      wage_rate: input.hourlyRate,
       hours_worked: input.hours,
-      employment_type: normalizedEmploymentType,
-      in_ft_education: input.isFullTimeStudent || false,
-      annual_salary: input.annualSalary || 0
+      employment_type: input.employmentType,
+      in_ft_education: input.isFullTimeStudent || false
     });
 
     if (error) {
@@ -60,8 +40,7 @@ export const calculateEmployerCosts = async (input: CostCalculationInput): Promi
       basicPay: data.basic_pay,
       niCost: data.ni_cost,
       pensionCost: data.pension_cost,
-      totalCost: data.total_cost,
-      isSecondShift: false
+      totalCost: data.total_cost
     };
   } catch (error) {
     console.error('Exception calculating employer costs:', error);
@@ -73,80 +52,40 @@ export const calculateEmployerCosts = async (input: CostCalculationInput): Promi
  * Fallback calculation if the RPC fails
  */
 const fallbackCostCalculation = (input: CostCalculationInput): CostCalculationResult => {
-  const { hourlyRate, hours, employmentType, isFullTimeStudent, annualSalary, contractorRate, isSecondShiftOfDay } = input;
-  
-  // Handle salaried staff second shift case (skip cost calculation)
-  if ((employmentType === 'salaried' || employmentType === 'salary') && isSecondShiftOfDay) {
-    console.log('Fallback: Skipping cost calculation for second shift of salaried staff member');
-    return {
-      basicPay: 0,
-      niCost: 0,
-      pensionCost: 0,
-      totalCost: 0,
-      isSecondShift: true
-    };
-  }
+  const { hourlyRate, hours, employmentType, isFullTimeStudent } = input;
   
   // Constants for UK employment costs
   const WEEKLY_NI_THRESHOLD = 175; // National Insurance weekly threshold
   const NI_RATE = 0.138; // Employer NI rate (13.8%)
   const PENSION_RATE = 0.03; // Minimum employer pension contribution (3%)
-  const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
   
-  // Initialize costs
-  let basicPay = 0;
+  // Calculate basic pay
+  const basicPay = hourlyRate * hours;
+  
+  // Initialize additional costs
   let niCost = 0;
   let pensionCost = 0;
   
-  // Normalize employment type to handle both 'salary' and 'salaried'
-  const isSalaried = employmentType === 'salaried' || employmentType === 'salary';
-  
-  // Calculate basic pay based on employment type
-  if (isSalaried && annualSalary) {
-    // For salaried staff: Calculate daily rate based on annual salary
-    const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
-    // Use full daily rate, not hours worked (salaried staff are paid by day, not hour)
-    basicPay = dailyRate;
-    console.log(`Salaried staff cost calculation (${employmentType}): annual=${annualSalary}, daily=${dailyRate}, hours=${hours}, basicPay=${basicPay}`);
-  } else if (employmentType === 'contractor') {
-    // For contractors: Use contractor_rate instead of hourly rate
-    const rate = contractorRate || 0;
-    basicPay = rate * hours;
-    console.log(`Contractor cost calculation: rate=${rate}, hours=${hours}, basicPay=${basicPay}`);
-    // No NI or pension for contractors
-  } else {
-    // For hourly staff: Hourly rate * hours
-    basicPay = hourlyRate * hours;
-  }
-  
-  // Calculate NI and pension only if applicable:
-  // - Not for contractors
-  // - Not for full-time students
+  // Calculate NI and pension only for employees (not contractors)
+  // and different calculation if in full time education
   if (employmentType !== 'contractor' && !isFullTimeStudent) {
     // Calculate NI if pay exceeds threshold
     if (basicPay > WEEKLY_NI_THRESHOLD) {
       niCost = (basicPay - WEEKLY_NI_THRESHOLD) * NI_RATE;
     }
     
-    // Calculate pension contribution (only for eligible employees)
+    // Calculate pension contribution
     pensionCost = basicPay * PENSION_RATE;
   }
   
   // Calculate total cost
   const totalCost = basicPay + niCost + pensionCost;
-
-  // Debug logging
-  console.log(`Cost calculation result for ${employmentType}:`, {
-    basicPay, niCost, pensionCost, totalCost, 
-    details: { hourlyRate, hours, isFullTimeStudent, annualSalary, contractorRate, isSecondShiftOfDay }
-  });
   
   return {
     basicPay,
     niCost,
     pensionCost,
-    totalCost,
-    isSecondShift: false
+    totalCost
   };
 };
 
@@ -194,89 +133,14 @@ export const getJobRoleIdForJobTitle = async (
 };
 
 /**
- * Calculate daily cost for a salaried employee
- * Using 261 working days per year (365 days - 2 days off per week)
+ * Calculate hourly cost for a salaried employee
  */
 export const calculateHourlyRateFromSalary = (
   annualSalary: number,
-  hoursPerDay: number = 8
+  hoursPerWeek: number = 40
 ): number => {
-  const WORKING_DAYS_PER_YEAR = 261; // 365 days - (52 weeks * 2 days off)
-  const dailyRate = annualSalary / WORKING_DAYS_PER_YEAR;
-  return dailyRate / hoursPerDay;
-};
-
-/**
- * Calculate shift cost based on staff profile and shift hours
- * This is a helper function to use in the rota scheduling components
- */
-export const calculateShiftCost = (
-  staffMember: any, 
-  shiftHours: number,
-  isSecondShiftOfDay: boolean = false
-): CostCalculationResult => {
-  // Ensure we have valid staff data
-  if (!staffMember) {
-    console.error('No staff member provided for cost calculation');
-    return { basicPay: 0, niCost: 0, pensionCost: 0, totalCost: 0 };
-  }
-
-  // Extract relevant information from staff member profile
-  const employmentType = staffMember.employment_type || 'hourly';
-  const isFullTimeStudent = staffMember.is_full_time_student || false;
-  
-  // Use the correct rate field based on employment type
-  let hourlyRate = 0;
-  let annualSalary = 0;
-  let contractorRate = 0;
-  
-  // Normalize employment type check to handle both 'salary' and 'salaried'
-  const isSalaried = employmentType === 'salaried' || employmentType === 'salary';
-  
-  if (isSalaried) {
-    annualSalary = staffMember.annual_salary || 0;
-    
-    // If this is a second shift of the day for salaried staff, return zero cost
-    if (isSecondShiftOfDay) {
-      console.log(`Second shift of day for salaried staff member ${staffMember.first_name} ${staffMember.last_name} - no additional cost`);
-      return { 
-        basicPay: 0, 
-        niCost: 0, 
-        pensionCost: 0, 
-        totalCost: 0,
-        isSecondShift: true
-      };
-    }
-  } else if (employmentType === 'hourly') {
-    hourlyRate = staffMember.wage_rate || 0;
-  } else if (employmentType === 'contractor') {
-    contractorRate = staffMember.contractor_rate || 0;
-  }
-
-  console.log(`Calculating shift cost for ${staffMember.first_name} ${staffMember.last_name}:`, {
-    employmentType,
-    isSalaried,
-    isFullTimeStudent,
-    hourlyRate,
-    annualSalary,
-    contractorRate,
-    shiftHours,
-    isSecondShiftOfDay
-  });
-
-  // Create input for calculation
-  const input: CostCalculationInput = {
-    hourlyRate,
-    hours: shiftHours,
-    employmentType,
-    isFullTimeStudent,
-    annualSalary,
-    contractorRate,
-    isSecondShiftOfDay
-  };
-
-  // Use local calculation instead of async Supabase RPC
-  return fallbackCostCalculation(input);
+  const WEEKS_PER_YEAR = 52;
+  return annualSalary / (hoursPerWeek * WEEKS_PER_YEAR);
 };
 
 /**

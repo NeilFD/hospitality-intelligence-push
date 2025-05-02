@@ -5,16 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Calendar, 
-  Settings, 
-  Users, 
-  FileEdit, 
-  BarChart, 
-  CheckCircle, 
-  AlertTriangle, 
-  Info 
-} from 'lucide-react';
+import { Calendar, Clock, Settings, Users, FileEdit, BarChart, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from "sonner";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,9 +15,7 @@ import RotaThresholdEditor from '@/components/rotas/RotaThresholdEditor';
 import RotaScheduleReview from '@/components/rotas/RotaScheduleReview';
 import RotaScheduleApproval from '@/components/rotas/RotaScheduleApproval';
 import StaffRankingPanel from '@/components/rotas/StaffRankingPanel';
-import RotaAlgorithmConfig from '@/components/rotas/RotaAlgorithmConfig';
 import { useAuthStore } from '@/services/auth-service';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function RotaScheduling() {
   const setCurrentModule = useSetCurrentModule();
@@ -34,7 +23,7 @@ export default function RotaScheduling() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('request');
   const [location, setLocation] = useState<any>(null);
-  const [staffIssues, setStaffIssues] = useState<string[]>([]);
+  const [roleMappings, setRoleMappings] = useState<Record<string, any[]>>({});
   
   // Check if user has permission to access this page
   const canAccessPage = profile?.role === 'Super User' || profile?.role === 'Owner' || profile?.role === 'GOD';
@@ -89,7 +78,34 @@ export default function RotaScheduling() {
       
       console.log("Location data loaded:", locationData);
       
-      // Also fetch staff to check availability and wage data issues
+      // Fetch job role mappings
+      const { data: mappingsData, error: mappingsError } = await supabase
+        .from('job_role_mappings')
+        .select('*')
+        .eq('location_id', locationData.id)
+        .order('priority', { ascending: true });
+      
+      if (mappingsError) {
+        toast.error("Error loading role mappings", {
+          description: "There was a problem loading the job role mappings."
+        });
+        console.error("Role mappings error:", mappingsError);
+      } else if (mappingsData) {
+        // Group mappings by job_role_id
+        const mappingsByRole = mappingsData.reduce((acc: Record<string, any[]>, mapping: any) => {
+          const roleId = mapping.job_role_id;
+          if (!acc[roleId]) {
+            acc[roleId] = [];
+          }
+          acc[roleId].push(mapping);
+          return acc;
+        }, {});
+        
+        setRoleMappings(mappingsByRole);
+        console.log(`Loaded role mappings for ${Object.keys(mappingsByRole).length} job roles`);
+      }
+      
+      // Also fetch staff to check availability 
       const { data: staffData, error: staffError } = await supabase
         .from('profiles')
         .select('*')
@@ -101,34 +117,6 @@ export default function RotaScheduling() {
         if (staffData.length === 0) {
           toast.warning("No available staff found", {
             description: "Mark staff as available for rota to include them in scheduling."
-          });
-        }
-        
-        // Check for staff with missing wage information
-        const staffIssuesList: string[] = [];
-        staffData.forEach(staff => {
-          const name = `${staff.first_name} ${staff.last_name}`;
-          
-          if (staff.employment_type === 'hourly' && (!staff.wage_rate || staff.wage_rate <= 0)) {
-            staffIssuesList.push(`${name} (hourly) has no valid hourly rate set`);
-          }
-          
-          // Check for both 'salaried' and 'salary' employment types
-          const isSalaried = staff.employment_type === 'salaried' || staff.employment_type === 'salary';
-          if (isSalaried && (!staff.annual_salary || staff.annual_salary <= 0)) {
-            staffIssuesList.push(`${name} (${staff.employment_type}) has no valid annual salary set`);
-          }
-          
-          if (staff.employment_type === 'contractor' && (!staff.contractor_rate || staff.contractor_rate <= 0)) {
-            staffIssuesList.push(`${name} (contractor) has no valid contractor rate set`);
-          }
-        });
-        
-        setStaffIssues(staffIssuesList);
-        
-        if (staffIssuesList.length > 0) {
-          toast.warning(`${staffIssuesList.length} staff with missing wage data`, {
-            description: "Some staff members have missing or invalid wage information. This will affect cost calculations."
           });
         }
       }
@@ -162,22 +150,6 @@ export default function RotaScheduling() {
         if (jobRoles.length === 0) {
           toast.warning("No job roles defined", {
             description: "You need to create job roles before scheduling can work properly."
-          });
-        }
-      }
-      
-      // Also fetch role mapping data to ensure we can use it in the algorithm
-      const { data: roleMappings, error: roleMappingsError } = await supabase
-        .from('job_role_mappings')
-        .select('*')
-        .eq('location_id', locationData.id);
-        
-      if (!roleMappingsError && roleMappings) {
-        console.log(`Found ${roleMappings.length} role mappings for scheduling`);
-        
-        if (roleMappings.length === 0) {
-          toast.warning("No role mappings defined", {
-            description: "You may want to set up role mappings for optimal staff assignment."
           });
         }
       }
@@ -222,48 +194,6 @@ export default function RotaScheduling() {
           </div>
         </div>
         
-        <div className="px-4 mb-4">
-          <Alert variant="default" className="bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-700">
-              Staff scheduling algorithm has been improved with better manager role detection and more balanced hour distribution.
-            </AlertDescription>
-          </Alert>
-        </div>
-        
-        <div className="px-4 mb-4">
-          <Alert variant="default" className="bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-700">
-              The scheduling engine now includes configurable priority weights to better balance shifts between managers and other staff members.
-            </AlertDescription>
-          </Alert>
-        </div>
-        
-        {staffIssues.length > 0 && (
-          <div className="px-4 mb-4">
-            <Alert variant="default" className="bg-amber-50 border-amber-200">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <AlertDescription>
-                <div className="font-medium text-amber-800 mb-1">
-                  Staff with missing wage information
-                </div>
-                <ul className="text-sm list-disc pl-5 text-amber-700 space-y-1">
-                  {staffIssues.slice(0, 3).map((issue, index) => (
-                    <li key={index}>{issue}</li>
-                  ))}
-                  {staffIssues.length > 3 && (
-                    <li>Plus {staffIssues.length - 3} more issues...</li>
-                  )}
-                </ul>
-                <p className="text-xs mt-2 text-amber-600">
-                  Missing wage information will result in £0.00 costs. Please update staff profiles with correct wage data.
-                </p>
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
-        
         <Card className="shadow-md rounded-none border-x-0 m-0 w-full">
           <CardHeader className="pb-3 px-4">
             <div className="flex items-center justify-between">
@@ -286,7 +216,7 @@ export default function RotaScheduling() {
               </div>
             ) : (
               <Tabs defaultValue="request" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full grid grid-cols-6 mb-6">
+                <TabsList className="w-full grid grid-cols-5 mb-6">
                   <TabsTrigger value="request" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span className="hidden sm:inline">Request Rota</span>
@@ -295,7 +225,7 @@ export default function RotaScheduling() {
                   <TabsTrigger value="thresholds" className="flex items-center gap-2">
                     <BarChart className="h-4 w-4" />
                     <span className="hidden sm:inline">Thresholds</span>
-                    <span className="sm:hidden">Thresh.</span>
+                    <span className="sm:hidden">Thresholds</span>
                   </TabsTrigger>
                   <TabsTrigger value="review" className="flex items-center gap-2">
                     <FileEdit className="h-4 w-4" />
@@ -304,18 +234,13 @@ export default function RotaScheduling() {
                   </TabsTrigger>
                   <TabsTrigger value="approval" className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Approve</span>
+                    <span className="hidden sm:inline">Approve & Publish</span>
                     <span className="sm:hidden">Approve</span>
                   </TabsTrigger>
                   <TabsTrigger value="staff" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span className="hidden sm:inline">Staff Ranking</span>
                     <span className="sm:hidden">Staff</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="config" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">Algorithm Config</span>
-                    <span className="sm:hidden">Config</span>
                   </TabsTrigger>
                 </TabsList>
                 
@@ -324,7 +249,7 @@ export default function RotaScheduling() {
                 </div>
                 
                 <TabsContent value="request" className="mt-0 space-y-4">
-                  <RotaRequestForm location={location} onRequestComplete={() => setActiveTab('review')} />
+                  <RotaRequestForm location={location} roleMappings={roleMappings} onRequestComplete={() => setActiveTab('review')} />
                 </TabsContent>
                 
                 <TabsContent value="thresholds" className="mt-0 space-y-4">
@@ -334,6 +259,7 @@ export default function RotaScheduling() {
                 <TabsContent value="review" className="mt-0 space-y-4">
                   <RotaScheduleReview
                     location={location}
+                    roleMappings={roleMappings}
                     onApprovalRequest={() => setActiveTab('approval')}
                   />
                 </TabsContent>
@@ -341,15 +267,12 @@ export default function RotaScheduling() {
                 <TabsContent value="approval" className="mt-0 space-y-4">
                   <RotaScheduleApproval
                     location={location}
+                    roleMappings={roleMappings}
                   />
                 </TabsContent>
                 
                 <TabsContent value="staff" className="mt-0 space-y-4">
                   <StaffRankingPanel location={location} />
-                </TabsContent>
-                
-                <TabsContent value="config" className="mt-0 space-y-4">
-                  <RotaAlgorithmConfig location={location} />
                 </TabsContent>
               </Tabs>
             )}

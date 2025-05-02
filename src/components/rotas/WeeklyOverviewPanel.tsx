@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, ChevronDown } from 'lucide-react';
@@ -24,15 +25,10 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<'table' | 'gantt'>('gantt');
   const [selectedDay, setSelectedDay] = useState<string>('none');
-  const [averageRates, setAverageRates] = useState<{hourly: number; contractor: number}>({
-    hourly: 11.50,
-    contractor: 15.00
-  });
   
   useEffect(() => {
     if (location?.id) {
       fetchShiftRules();
-      fetchAverageRates();
     }
   }, [location]);
 
@@ -95,40 +91,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchAverageRates = async () => {
-    try {
-      // Fetch all staff profiles to calculate average rates
-      const { data: staffData, error } = await supabase
-        .from('profiles')
-        .select('employment_type, wage_rate, contractor_rate')
-        .eq('available_for_rota', true);
-      
-      if (error) {
-        console.error('Error fetching staff data for rate calculation:', error);
-        return;
-      }
-      
-      // Calculate average hourly rate
-      const hourlyStaff = staffData.filter(s => s.employment_type === 'hourly' && s.wage_rate > 0);
-      const hourlySum = hourlyStaff.reduce((sum, staff) => sum + (staff.wage_rate || 0), 0);
-      const hourlyAvg = hourlyStaff.length > 0 ? hourlySum / hourlyStaff.length : 11.50;
-      
-      // Calculate average contractor rate
-      const contractorStaff = staffData.filter(s => s.employment_type === 'contractor' && s.contractor_rate > 0);
-      const contractorSum = contractorStaff.reduce((sum, staff) => sum + (staff.contractor_rate || 0), 0);
-      const contractorAvg = contractorStaff.length > 0 ? contractorSum / contractorStaff.length : 15.00;
-      
-      setAverageRates({
-        hourly: hourlyAvg,
-        contractor: contractorAvg
-      });
-      
-      console.log('Average rates calculated:', { hourlyAvg, contractorAvg });
-    } catch (error) {
-      console.error('Error calculating average rates:', error);
     }
   };
 
@@ -220,44 +182,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
     const daysToDisplay = selectedDay === 'all' ? dayOrder : [selectedDay];
     console.log('Days to display:', daysToDisplay);
     return daysToDisplay;
-  };
-
-  // Calculate shift cost based on hours and required staff
-  const calculateEstimatedCost = (shift: any): string => {
-    // If we have no explicit min staff, assume 1
-    const minStaff = shift.min_staff || 1;
-    
-    // Calculate shift duration in hours
-    const startHour = parseInt(shift.start_time.split(':')[0]);
-    const startMin = parseInt(shift.start_time.split(':')[1]);
-    const endHour = parseInt(shift.end_time.split(':')[0]);
-    const endMin = parseInt(shift.end_time.split(':')[1]);
-    
-    let hours = endHour - startHour;
-    if (endMin < startMin) {
-      hours -= 1;
-    } else if (endMin > startMin) {
-      hours += (endMin - startMin) / 60;
-    }
-    
-    // Get job role to determine if it's likely to be a contractor position
-    const role = jobRoles.find(r => r.id === shift.job_role_id);
-    const roleTitle = role?.title?.toLowerCase() || '';
-    
-    // Use contractor rate for roles that are typically contractors
-    const isLikelyContractor = 
-      roleTitle.includes('dj') || 
-      roleTitle.includes('entertainer') || 
-      roleTitle.includes('security') ||
-      roleTitle.includes('musician');
-    
-    // Use the appropriate rate based on the likely employment type
-    const rateToUse = isLikelyContractor ? averageRates.contractor : averageRates.hourly;
-    
-    // Calculate estimated cost
-    const estimatedCost = minStaff * hours * rateToUse;
-    
-    return `~£${estimatedCost.toFixed(2)}`;
   };
 
   // Determine opening hours for the Gantt chart
@@ -373,12 +297,6 @@ export default function WeeklyOverviewPanel({ location, jobRoles }: WeeklyOvervi
                                       {rule.min_staff === rule.max_staff
                                         ? rule.min_staff
                                         : `${rule.min_staff}-${rule.max_staff}`}
-                                    </div>
-                                  </div>
-                                  <div className="text-sm text-right">
-                                    <div className="text-muted-foreground">Est. Cost</div>
-                                    <div className="font-medium">
-                                      {calculateEstimatedCost(rule)}
                                     </div>
                                   </div>
                                 </div>
