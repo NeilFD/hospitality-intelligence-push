@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   createBrowserRouter,
@@ -38,6 +37,7 @@ import FoodBeverageForecast from './pages/pl/FoodBeverageForecast';
 import FoodWeeklyTracker from './pages/food/WeeklyTracker';
 import BeverageWeeklyTracker from './pages/beverage/WeeklyTracker';
 import NotFound from './pages/NotFound';
+import WeeklyTracker from './pages/WeeklyTracker';
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -79,6 +79,7 @@ export const router = createBrowserRouter(
         <Route path="/food/month/:year/:month" element={<FoodMonthSummary />} />
         <Route path="/food/annual-summary" element={<FoodAnnualSummary />} />
         <Route path="/food/weekly-tracker" element={<FoodWeeklyTracker />} />
+        <Route path="/food/week/:year/:month/:week" element={<FoodWeeklyTracker />} />
 
         {/* Beverage Hub Routes */}
         <Route path="/beverage" element={<Navigate to="/beverage/dashboard" replace />} />
@@ -86,6 +87,7 @@ export const router = createBrowserRouter(
         <Route path="/beverage/month/:year/:month" element={<BeverageMonthSummary />} />
         <Route path="/beverage/annual-summary" element={<BeverageAnnualSummary />} />
         <Route path="/beverage/weekly-tracker" element={<BeverageWeeklyTracker />} />
+        <Route path="/beverage/week/:year/:month/:week" element={<BeverageWeeklyTracker />} />
 
         {/* Team Routes */}
         <Route path="/team" element={<Navigate to="/team/dashboard" replace />} />
