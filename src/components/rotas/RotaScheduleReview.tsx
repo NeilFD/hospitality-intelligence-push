@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableSti
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RotaSchedulingAlgorithm } from '@/utils/rotaSchedulingAlgorithm';
+import { applyAlgorithmConfiguration } from '@/utils/rotaAlgorithmIntegration';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -282,6 +283,17 @@ export default function RotaScheduleReview({ location, onApprovalRequest }: Rota
       scheduler.setRoleMapping(roleMappings);
       
       console.log(`Using ${shiftRules.length} shift rules for scheduling and ${roleMappings.length} role mappings`);
+      
+      // Apply algorithm configuration from database before generating schedule
+      try {
+        await applyAlgorithmConfiguration(scheduler, location.id);
+        console.log('Algorithm configuration applied successfully');
+      } catch (configError) {
+        console.error('Error applying algorithm configuration:', configError);
+        toast.warning('Failed to apply custom algorithm settings, using defaults', {
+          description: 'Check algorithm configuration settings and try again'
+        });
+      }
       
       // Generate the schedule
       const schedule = await scheduler.generateSchedule();

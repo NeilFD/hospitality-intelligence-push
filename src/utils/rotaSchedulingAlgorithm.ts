@@ -26,11 +26,9 @@ export class RotaSchedulingAlgorithm {
     dayLatestStart: '12:00:00',
     eveningLatestStart: '18:00:00'
   };
-  private staffPriorityConfig = {
-    salariedWeight: 100,
-    managerWeight: 50,
-    hiScoreWeight: 1
-  };
+  private salariedWeight = 100; // Priority weight for salaried staff
+  private managerWeight = 50;   // Priority weight for managers
+  private hiScoreWeight = 1;    // Priority multiplier for HiScore
 
   constructor({ 
     request, 
@@ -129,12 +127,11 @@ export class RotaSchedulingAlgorithm {
     hiScoreWeight?: number;
   }) {
     // FIX: Ensure parameters are numbers before assigning
-    this.staffPriorityConfig = {
-      salariedWeight: Number(salariedWeight),
-      managerWeight: Number(managerWeight),
-      hiScoreWeight: Number(hiScoreWeight)
-    };
-    console.log(`Staff priority config updated: salaried=${salariedWeight}, manager=${managerWeight}, hiScore=${hiScoreWeight}`);
+    this.salariedWeight = salariedWeight;
+    this.managerWeight = managerWeight;
+    this.hiScoreWeight = hiScoreWeight;
+    
+    console.log(`Staff priority weights updated: salaried=${salariedWeight}, manager=${managerWeight}, hiScore=${hiScoreWeight}`);
   }
 
   /**
@@ -1244,16 +1241,16 @@ export class RotaSchedulingAlgorithm {
       
       // Add score for salaried staff (they should be scheduled first)
       if (staff.employment_type === 'salaried') {
-        priorityScore += this.staffPriorityConfig.salariedWeight;
+        priorityScore += this.salariedWeight;
       }
       
       // Add score for managers
       if (this.isManagerRole(staff.job_title)) {
-        priorityScore += this.staffPriorityConfig.managerWeight;
+        priorityScore += this.managerWeight;
       }
       
       // Add score for Hi Score (skill level)
-      priorityScore += (staff.hi_score || 0) * this.staffPriorityConfig.hiScoreWeight;
+      priorityScore += (staff.hi_score || 0) * this.hiScoreWeight;
       
       // Add the priority score to the staff object
       return {
