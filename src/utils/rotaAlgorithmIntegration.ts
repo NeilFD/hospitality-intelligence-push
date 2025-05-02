@@ -80,8 +80,31 @@ export const loadShiftRules = async (
     
     console.log(`Found ${shiftRules.length} active shift rules for location ${locationId}`);
     
+    // Validate that shift rules have the correct format with day_of_week
+    const validShiftRules = shiftRules.filter(rule => {
+      if (!rule.day_of_week) {
+        console.warn(`⚠️ Shift rule missing day_of_week field: ${rule.name || 'Unnamed rule'} (ID: ${rule.id})`);
+        return false;
+      }
+      return true;
+    });
+    
+    // Log any issues with shift rules
+    if (validShiftRules.length < shiftRules.length) {
+      console.warn(`⚠️ ${shiftRules.length - validShiftRules.length} shift rules were filtered out due to missing day_of_week field`);
+    }
+    
+    // Add additional debug logging
+    const dayDistribution = validShiftRules.reduce((acc, rule) => {
+      const day = rule.day_of_week.toLowerCase();
+      acc[day] = (acc[day] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    console.log("Shift rules day distribution:", dayDistribution);
+    
     // Apply shift rules to algorithm
-    algorithm.setShiftRules(shiftRules);
+    algorithm.setShiftRules(validShiftRules);
     
   } catch (err) {
     console.error("Error loading shift rules:", err);
@@ -120,4 +143,3 @@ export const loadRoleMappings = async (
     console.error("Error loading role mappings:", err);
   }
 };
-

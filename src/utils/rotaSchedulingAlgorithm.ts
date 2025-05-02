@@ -231,6 +231,10 @@ export class RotaSchedulingAlgorithm {
       const dayRules = this.getShiftRulesForDay(dayOfWeek);
       console.log(`Found ${dayRules.length} shift rules for ${dayOfWeek}`);
       
+      if (dayRules.length === 0) {
+        console.warn(`⚠️ No shift rules found for ${dayOfWeek}. Check if shift rules are properly configured with day_of_week = "${dayOfWeek}"`);
+      }
+      
       // Apply shift rules first
       for (const rule of dayRules) {
         await this.assignShiftRuleStaff({
@@ -1077,16 +1081,32 @@ export class RotaSchedulingAlgorithm {
   
   /**
    * Get shift rules for a specific day of the week
+   * FIXED: Updated to properly filter using day_of_week direct comparison
    */
   getShiftRulesForDay(dayOfWeek: string): any[] {
     if (!this.shiftRules || !this.shiftRules.length) {
+      console.log(`No shift rules available to filter for ${dayOfWeek}`);
       return [];
     }
     
-    // Get rules where days array includes this day
-    return this.shiftRules.filter(rule => 
-      rule.days && rule.days.includes(dayOfWeek)
-    );
+    // Log all the shift rules days for debugging
+    console.log("Available shift rule days:", this.shiftRules.map(r => r.day_of_week).join(', '));
+    
+    // Get rules where day_of_week equals this day
+    const matchingRules = this.shiftRules.filter(rule => {
+      // Log each rule to see what's happening
+      const isMatch = rule.day_of_week === dayOfWeek;
+      if (isMatch) {
+        console.log(`✓ Found matching rule for ${dayOfWeek}: ${rule.name || 'Unnamed rule'}`);
+      }
+      return isMatch;
+    });
+    
+    if (matchingRules.length === 0) {
+      console.warn(`⚠️ No shift rules matched day_of_week "${dayOfWeek}". Available days: ${[...new Set(this.shiftRules.map(r => r.day_of_week))].join(', ')}`);
+    }
+    
+    return matchingRules;
   }
   
   /**
@@ -1726,4 +1746,3 @@ export class RotaSchedulingAlgorithm {
     return selectedStaff;
   }
 }
-
