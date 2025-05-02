@@ -1,3 +1,4 @@
+
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -354,7 +355,8 @@ export class RotaSchedulingAlgorithm {
       const allocation = staffWeeklyAllocations[staff.id];
       const minHours = staff.min_hours_per_week || 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
-      const hoursNeeded = minHours - currentHours;
+      // Using let instead of const since we'll modify this value
+      let hoursNeeded = minHours - currentHours;
       
       if (hoursNeeded <= 0) continue;
       
@@ -731,7 +733,8 @@ export class RotaSchedulingAlgorithm {
       const minHoursPerWeek = nonManager.min_hours_per_week || 0;
       const currentHours = allocation ? allocation.hoursWorked : 0;
       const targetHours = minHoursPerWeek * 0.8; // Target at least 80% of minimum
-      const hoursNeeded = targetHours - currentHours;
+      // Using let instead of const since we'll modify this value
+      let hoursNeeded = targetHours - currentHours;
       
       if (hoursNeeded <= 0) continue;
       
